@@ -12,18 +12,14 @@ window.SoundManager = {
   cachedNoiseBuffer: null, // Cached to prevent real-time GC stutters on iOS
 
   init() {
-    // Map iOS AudioSession category dynamically based on preferred mode & mute state
-    if (navigator.audioSession) {
-      try {
-        let targetType = "ambient";
-        if (window.playerStats && !window.playerStats.mute) {
-          targetType = window.playerStats.audioSessionMode || "ambient";
+      // Force iOS AudioSession to "playback" category to bypass physical silent switch
+      if (navigator.audioSession) {
+        try {
+          navigator.audioSession.type = "playback";
+        } catch (e) {
+          console.warn("Could not set iOS AudioSession category:", e);
         }
-        navigator.audioSession.type = targetType;
-      } catch (e) {
-        console.warn("Could not set iOS AudioSession category:", e);
       }
-    }
 
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return false;
@@ -74,11 +70,16 @@ window.SoundManager = {
   },
 
   updateVolumes() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    const targetMaster = window.playerStats.mute
-      ? 0
-      : window.playerStats.volumeMaster || 0.5;
+      if (!this.ctx) return;
+      if (navigator.audioSession) {
+        try {
+          navigator.audioSession.type = window.playerStats.mute ? "ambient" : "playback";
+        } catch (e) {}
+      }
+      const now = this.ctx.currentTime;
+      const targetMaster = window.playerStats.mute
+        ? 0
+        : window.playerStats.volumeMaster || 0.5;
     const targetSFX = window.playerStats.volumeSFX || 0.5;
     this.masterGain.gain.setTargetAtTime(
       Math.max(0, Math.min(1, targetMaster)),

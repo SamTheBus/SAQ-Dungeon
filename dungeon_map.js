@@ -321,14 +321,14 @@
       this.rooms.forEach((room, idx) => {
         if (idx === 0) return;
 
-        if (Math.random() < 0.35) {
-          let cx = window.randInt(room.x + 1, room.x + room.w - 2);
-          let cy = window.randInt(room.y + 1, room.y + room.h - 2);
-          if (this.grid[cy][cx] === window.TILE_TYPES.FLOOR) {
-            this.grid[cy][cx] = window.TILE_TYPES.CHEST_SPAWN;
-            this.chests.push({ x: cx, y: cy, opened: false });
-          }
-        }
+        if (Math.random() < 0.20) {
+                  let cx = window.randInt(room.x + 1, room.x + room.w - 2);
+                  let cy = window.randInt(room.y + 1, room.y + room.h - 2);
+                  if (this.grid[cy][cx] === window.TILE_TYPES.FLOOR) {
+                    this.grid[cy][cx] = window.TILE_TYPES.CHEST_SPAWN;
+                    this.chests.push({ x: cx, y: cy, opened: false });
+                  }
+                }
 
         let baseCount = Math.floor((room.w * room.h) / 16);
         let mobCount = Math.floor(baseCount * mobDensityMult);

@@ -68,13 +68,23 @@
       let { clickX, clickY } = handlePointerPosition(e);
 
       // Check Station Prompt Interaction
-      if (window.activeStationPrompt) {
-        let promptY = canvas.height - 50;
-        if (clickY >= promptY - 20 && clickY <= promptY + 20) {
-          window.interactWithStation(window.activeStationPrompt.type);
-          return;
-        }
-      }
+            if (window.activeStationPrompt && window.currentGameState === window.GAME_STATES.HUB) {
+              let p = window.player;
+              let camX = window.DungeonCamera ? window.DungeonCamera.x : 0;
+              let camY = window.DungeonCamera ? window.DungeonCamera.y : 0;
+              let pScreenX = p.x - camX;
+              let pScreenY = p.y - camY - 50;
+
+              let pw = 220;
+              let ph = 36;
+              let px = pScreenX - pw / 2;
+              let py = pScreenY - ph / 2;
+
+              if (clickX >= px - 10 && clickX <= px + pw + 10 && clickY >= py - 10 && clickY <= py + ph + 10) {
+                window.interactWithStation(window.activeStationPrompt.type);
+                return;
+              }
+            }
 
       let mode = window.playerStats
         ? window.playerStats.controlMode || "joystick"
@@ -375,26 +385,28 @@
             let cy = Math.floor(map.height / 2);
             window.spawnBossEncounter(cx, cy, "mini");
           } else if (map.mobSpawns) {
-            let mobHpVal = 40 + depth * 15;
-            let mobAtkVal = 8 + depth * 3;
-            map.mobSpawns.forEach((sp) => {
-              window.activeDungeonMobs.push({
-                id: window.idCounter++,
-                type: "mob",
-                visualTier: 0,
-                visualType: "slime",
-                x: sp.x * tileSize,
-                y: sp.y * tileSize,
-                w: 24,
-                h: 24,
-                hp: BigNum.from(mobHpVal),
-                maxHp: BigNum.from(mobHpVal),
-                atk: mobAtkVal,
-                flashTimer: 0,
-                attackCooldown: 0,
-              });
-            });
-          }
+                      let mobHpVal = Math.floor(40 + depth * 18 + Math.pow(depth, 1.3) * 5);
+                      let mobAtkVal = Math.floor(8 + depth * 3.5);
+
+                      map.mobSpawns.forEach((sp) => {
+                        let mobInfo = window.getMobPoolForDepth(depth);
+                        window.activeDungeonMobs.push({
+                          id: window.idCounter++,
+                          type: "mob",
+                          visualTier: mobInfo.tier,
+                          visualType: mobInfo.type,
+                          x: sp.x * tileSize,
+                          y: sp.y * tileSize,
+                          w: 24,
+                          h: 24,
+                          hp: BigNum.from(mobHpVal),
+                          maxHp: BigNum.from(mobHpVal),
+                          atk: mobAtkVal,
+                          flashTimer: 0,
+                          attackCooldown: 0,
+                        });
+                      });
+                    }
 
           window.updateHUD();
           let floorTitle = isMajorBoss
@@ -765,43 +777,37 @@
                 }
 
                 if (tile === window.TILE_TYPES.CHEST_SPAWN) {
-          map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
+                          map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
+                          let stageScale = window.player.depth;
 
-          let stageScale = window.player.depth;
-                    let effectiveStage = stageScale * 5;
-                    let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
-                    let rolledRarity = window.rollItemRarity(effectiveStage, pStats.qly || 1.0, false);
+                          // 40% Chance Gold Eruption, 60% Chance Equipment Roll
+                          if (Math.random() < 0.40) {
+                            let chestGold = Math.floor(60 * (1 + stageScale * 0.75));
+                            window.spawnHomingGold(p.x, p.y - 10, chestGold);
+                            if (window.SoundManager && typeof window.SoundManager.playCoinCollect === "function") {
+                              window.SoundManager.playCoinCollect();
+                            }
+                          } else {
+                            let effectiveStage = stageScale * 5;
+                            let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+                            let rolledRarity = window.rollItemRarity(effectiveStage, pStats.qly || 1.0, false);
 
-                    let types = [
-                      "weapon",
-                      "subweapon",
-                      "helmet",
-                      "chest",
-                      "boots",
-                      "ring",
-                    ];
-                    let chosenType = types[Math.floor(Math.random() * types.length)];
-                    let newItem = window.createItemObject(
-                      chosenType,
-                      rolledRarity,
-                      stageScale,
-                      0,
-                    );
+                            let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+                            let chosenType = types[Math.floor(Math.random() * types.length)];
+                            let newItem = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
 
-          p.bag.push(newItem);
-          window.updateHUD();
+                            p.bag.push(newItem);
+                            window.updateHUD();
 
-          if (typeof window.pushToast === "function") {
-                      window.pushToast(newItem);
-                    }
+                            if (typeof window.pushToast === "function") {
+                              window.pushToast(newItem);
+                            }
 
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("fairy");
-          }
-        }
+                            if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                              window.SoundManager.play("fairy");
+                            }
+                          }
+                        }
       }
     }
 
@@ -1050,16 +1056,31 @@
                 }
 
                 if (m.hp.lte(0)) {
-                  if (window.spawnDeathParticles) {
-                    window.spawnDeathParticles(m.x + m.w / 2, m.y + m.h / 2, m.type);
-                  }
-                  let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
-                  let rewardXp = Math.floor(25 * (1 + window.player.depth * 0.5));
-                  window.spawnHomingGold(m.x + m.w / 2, m.y + m.h / 2, rewardGold);
-                  window.spawnHomingXp(m.x + m.w / 2, m.y + m.h / 2, rewardXp);
-                  window.activeDungeonMobs.splice(i, 1);
-                  continue;
-                }
+                                  if (window.spawnDeathParticles) {
+                                    window.spawnDeathParticles(m.x + m.w / 2, m.y + m.h / 2, m.type);
+                                  }
+                                  let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
+                                  let rewardXp = Math.floor(25 * (1 + window.player.depth * 0.5));
+                                  window.spawnHomingGold(m.x + m.w / 2, m.y + m.h / 2, rewardGold);
+                                  window.spawnHomingXp(m.x + m.w / 2, m.y + m.h / 2, rewardXp);
+
+                                  // 5% Chance Mob Equipment Drop
+                                  if (Math.random() < 0.05) {
+                                    let stageScale = window.player.depth || 1;
+                                    let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+                                    let rolledRarity = window.rollItemRarity(stageScale * 5, pStats.qly || 1.0, false);
+                                    let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+                                    let chosenType = types[Math.floor(Math.random() * types.length)];
+                                    let droppedItem = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
+
+                                    p.bag.push(droppedItem);
+                                    window.updateHUD();
+                                    if (typeof window.pushToast === "function") window.pushToast(droppedItem);
+                                  }
+
+                                  window.activeDungeonMobs.splice(i, 1);
+                                  continue;
+                                }
               }
 
               // Mob Contact Melee Attack on Player
@@ -1588,33 +1609,44 @@
             ctx.restore();
           }
 
-          // 4. Render Station Proximity Prompt Overlay
-          if (
-            window.activeStationPrompt &&
-            window.currentGameState === window.GAME_STATES.HUB
-          ) {
-            let st = window.activeStationPrompt;
-            let promptY = canvas.height - 40;
+          // 4. Render Station Proximity Prompt Overlay (Floating directly above player in screen space)
+                    if (
+                      window.activeStationPrompt &&
+                      window.currentGameState === window.GAME_STATES.HUB
+                    ) {
+                      let st = window.activeStationPrompt;
+                      let camX = window.DungeonCamera ? window.DungeonCamera.x : 0;
+                      let camY = window.DungeonCamera ? window.DungeonCamera.y : 0;
+                      let pScreenX = p.x - camX;
+                      let pScreenY = p.y - camY - 50;
 
-            ctx.save();
-            ctx.fillStyle = "rgba(10, 14, 23, 0.92)";
-            ctx.strokeStyle = "#00d2ff";
-            ctx.lineWidth = 2;
+                      let pw = 220;
+                      let ph = 36;
+                      let px = pScreenX - pw / 2;
+                      let py = pScreenY - ph / 2;
 
-            let pw = 240;
-            let ph = 32;
-            let px = (canvas.width - pw) / 2;
+                      ctx.save();
+                      ctx.fillStyle = "rgba(10, 14, 23, 0.95)";
+                      ctx.strokeStyle = "#00d2ff";
+                      ctx.lineWidth = 2;
 
-            ctx.fillRect(px, promptY - 16, pw, ph);
-            ctx.strokeRect(px, promptY - 16, pw, ph);
+                      ctx.fillRect(px, py, pw, ph);
+                      ctx.strokeRect(px, py, pw, ph);
 
-            ctx.font = "bold 11px monospace";
-            ctx.fillStyle = "#ffffff";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(`[ TAP TO ENTER: ${st.label} ]`, canvas.width / 2, promptY);
-            ctx.restore();
-          }
+                      // Glowing indicator corner accents
+                      ctx.fillStyle = "#00d2ff";
+                      ctx.fillRect(px - 2, py - 2, 6, 6);
+                      ctx.fillRect(px + pw - 4, py - 2, 6, 6);
+                      ctx.fillRect(px - 2, py + ph - 4, 6, 6);
+                      ctx.fillRect(px + pw - 4, py + ph - 4, 6, 6);
+
+                      ctx.font = "bold 10.5px monospace";
+                      ctx.fillStyle = "#ffffff";
+                      ctx.textAlign = "center";
+                      ctx.textBaseline = "middle";
+                      ctx.fillText(`[ TAP TO ENTER: ${st.label} ]`, pScreenX, pScreenY);
+                      ctx.restore();
+                    }
         }
 
   // --- HUD UPDATER ---
@@ -1705,61 +1737,95 @@
       };
 
       window.showItemTooltip = function (e, item) {
-          if (e && e.stopPropagation) e.stopPropagation();
-          let tooltip = document.getElementById("game-tooltip");
-          if (!tooltip || !item) return;
+                if (e && e.stopPropagation) e.stopPropagation();
+                let tooltip = document.getElementById("game-tooltip");
+                if (!tooltip || !item) return;
 
-          let col = window.getTierColor ? window.getTierColor(item.statsRolled) : "#00d2ff";
-          let starsStr = item.statsRolled === "UNIQUE" ? "UNIQUE ARTIFACT" : `${item.statsRolled || 0} STAR QUALITY`;
-          let typeStr = (item.subType || item.type || "EQUIPMENT").toUpperCase();
+                let col = window.getTierColor ? window.getTierColor(item.statsRolled) : "#00d2ff";
+                let starsStr = item.statsRolled === "UNIQUE" ? "UNIQUE ARTIFACT" : `${item.statsRolled || 0} STAR QUALITY`;
+                let typeStr = (item.subType || item.type || "EQUIPMENT").toUpperCase();
 
-          let iconSvg = (key) => typeof window.getUiIconSvg === "function" ? window.getUiIconSvg(key, 11) : "";
+                let iconSvg = (key) => typeof window.getUiIconSvg === "function" ? window.getUiIconSvg(key, 11) : "";
 
-          let lines = [];
-          if (item.atk) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("atk")} Attack:</span> <span class="tt-val">+${item.atk}</span></div>`);
-          if (item.def) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("def")} Defense:</span> <span class="tt-val">+${item.def}</span></div>`);
-          if (item.maxHp) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("maxHp")} Max HP:</span> <span class="tt-val">+${item.maxHp}</span></div>`);
-          if (item.moveSpeed) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("moveSpeed")} Move Speed:</span> <span class="tt-val">+${item.moveSpeed}</span></div>`);
-          if (item.critChance) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("critChance")} Crit Chance:</span> <span class="tt-val">+${(item.critChance * 100).toFixed(1)}%</span></div>`);
-          if (item.critDamage) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("critDamage")} Crit Multi:</span> <span class="tt-val">+${(item.critDamage * 100).toFixed(0)}%</span></div>`);
-          if (item.block) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("block")} Block Rate:</span> <span class="tt-val">+${(item.block * 100).toFixed(1)}%</span></div>`);
-          if (item.parry) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("parry")} Parry Rate:</span> <span class="tt-val">+${(item.parry * 100).toFixed(1)}%</span></div>`);
-          if (item.dropRate) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("dropRate")} Drop Rate:</span> <span class="tt-val">+${(item.dropRate * 100).toFixed(0)}%</span></div>`);
-          if (item.goldMulti) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("goldMulti")} Gold Multi:</span> <span class="tt-val">+${(item.goldMulti * 100).toFixed(0)}%</span></div>`);
+                // Resolve corresponding equipped slot for comparison
+                let equippedTarget = null;
+                let targetSlotKey = item.type;
+                if (item.type === "shield" || item.type === "dagger" || item.type === "tome" || item.type === "subweapon") {
+                  targetSlotKey = "subweapon";
+                } else if (item.type === "ring") {
+                  targetSlotKey = window.equippedSlots && window.equippedSlots.ring1 ? "ring1" : "ring2";
+                } else if (item.type === "artifact") {
+                  targetSlotKey = "art1";
+                }
 
-          let setHtml = item.setName ? `<div class="tt-set">SET: ${item.setName.toUpperCase()}</div>` : "";
-          let descHtml = item.desc ? `<div class="tt-desc">${item.desc}</div>` : "";
+                if (window.equippedSlots && window.equippedSlots[targetSlotKey] && window.equippedSlots[targetSlotKey].id !== item.id) {
+                  equippedTarget = window.equippedSlots[targetSlotKey];
+                }
 
-          tooltip.innerHTML = `
-            <div class="tt-header" style="color:${col}; border-bottom-color:${col};">${item.name}</div>
-            <div class="tt-sub">${typeStr} • LV.${item.stageLevel || 1} • ${starsStr}</div>
-            ${setHtml}
-            <div class="tt-body">${lines.join("")}</div>
-            ${descHtml}
-          `;
+                let getDiffTag = (statKey, newVal, isPct = false, pctDecimals = 1) => {
+                  if (!equippedTarget) return "";
+                  let oldVal = equippedTarget[statKey] || 0;
+                  let diff = newVal - oldVal;
+                  if (Math.abs(diff) < 0.0001) return "";
 
-          tooltip.style.display = "block";
+                  let diffStr = isPct
+                    ? (diff > 0 ? "+" : "") + (diff * 100).toFixed(pctDecimals) + "%"
+                    : (diff > 0 ? "+" : "") + window.formatNumber(diff);
+                  let arrow = diff > 0 ? "▲" : "▼";
+                  let colorClass = diff > 0 ? "tt-diff-pos" : "tt-diff-neg";
 
-          let clientX = e ? (e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 100)) : 100;
-          let clientY = e ? (e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 100)) : 100;
+                  return ` <span class="${colorClass}">(${diffStr} ${arrow})</span>`;
+                };
 
-          let ttWidth = tooltip.offsetWidth || 200;
-          let ttHeight = tooltip.offsetHeight || 130;
-          let screenW = window.innerWidth;
-          let screenH = window.innerHeight;
+                let lines = [];
+                if (item.atk) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("atk")} Attack:</span> <span class="tt-val">+${window.formatNumber(item.atk)}${getDiffTag("atk", item.atk)}</span></div>`);
+                if (item.def) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("def")} Defense:</span> <span class="tt-val">+${window.formatNumber(item.def)}${getDiffTag("def", item.def)}</span></div>`);
+                if (item.maxHp) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("maxHp")} Max HP:</span> <span class="tt-val">+${window.formatNumber(item.maxHp)}${getDiffTag("maxHp", item.maxHp)}</span></div>`);
+                if (item.moveSpeed) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("moveSpeed")} Move Speed:</span> <span class="tt-val">+${item.moveSpeed}${getDiffTag("moveSpeed", item.moveSpeed)}</span></div>`);
+                if (item.critChance) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("critChance")} Crit Chance:</span> <span class="tt-val">+${(item.critChance * 100).toFixed(1)}%${getDiffTag("critChance", item.critChance, true, 1)}</span></div>`);
+                if (item.critDamage) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("critDamage")} Crit Multi:</span> <span class="tt-val">+${(item.critDamage * 100).toFixed(0)}%${getDiffTag("critDamage", item.critDamage, true, 0)}</span></div>`);
+                if (item.block) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("block")} Block Rate:</span> <span class="tt-val">+${(item.block * 100).toFixed(1)}%${getDiffTag("block", item.block, true, 1)}</span></div>`);
+                if (item.parry) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("parry")} Parry Rate:</span> <span class="tt-val">+${(item.parry * 100).toFixed(1)}%${getDiffTag("parry", item.parry, true, 1)}</span></div>`);
+                if (item.dropRate) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("dropRate")} Drop Rate:</span> <span class="tt-val">+${(item.dropRate * 100).toFixed(0)}%${getDiffTag("dropRate", item.dropRate, true, 0)}</span></div>`);
+                if (item.goldMulti) lines.push(`<div class="tt-stat"><span class="tt-label">${iconSvg("goldMulti")} Gold Multi:</span> <span class="tt-val">+${(item.goldMulti * 100).toFixed(0)}%${getDiffTag("goldMulti", item.goldMulti, true, 0)}</span></div>`);
 
-          let posX = clientX + 10;
-          let posY = clientY + 10;
+                let compareHeaderHtml = equippedTarget
+                  ? `<div class="tt-compare-header">COMPARED TO EQUIPPED (${equippedTarget.name}):</div>`
+                  : "";
+                let setHtml = item.setName ? `<div class="tt-set">SET: ${item.setName.toUpperCase()}</div>` : "";
+                let descHtml = item.desc ? `<div class="tt-desc">${item.desc}</div>` : "";
 
-          if (posX + ttWidth > screenW - 10) posX = clientX - ttWidth - 10;
-          if (posY + ttHeight > screenH - 10) posY = clientY - ttHeight - 10;
+                tooltip.innerHTML = `
+                  <div class="tt-header" style="color:${col}; border-bottom-color:${col};">${item.name}</div>
+                  <div class="tt-sub">${typeStr} • LV.${item.stageLevel || 1} • ${starsStr}</div>
+                  ${setHtml}
+                  ${compareHeaderHtml}
+                  <div class="tt-body">${lines.join("")}</div>
+                  ${descHtml}
+                `;
 
-          posX = Math.max(10, posX);
-          posY = Math.max(10, posY);
+                tooltip.style.display = "block";
 
-          tooltip.style.left = posX + "px";
-          tooltip.style.top = posY + "px";
-        };
+                let clientX = e ? (e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 100)) : 100;
+                let clientY = e ? (e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 100)) : 100;
+
+                let ttWidth = tooltip.offsetWidth || 200;
+                let ttHeight = tooltip.offsetHeight || 130;
+                let screenW = window.innerWidth;
+                let screenH = window.innerHeight;
+
+                let posX = clientX + 10;
+                let posY = clientY + 10;
+
+                if (posX + ttWidth > screenW - 10) posX = clientX - ttWidth - 10;
+                if (posY + ttHeight > screenH - 10) posY = clientY - ttHeight - 10;
+
+                posX = Math.max(10, posX);
+                posY = Math.max(10, posY);
+
+                tooltip.style.left = posX + "px";
+                tooltip.style.top = posY + "px";
+              };
 
       window.hideTooltip = function () {
         let tooltip = document.getElementById("game-tooltip");
@@ -1840,65 +1906,89 @@
                   : `TACTICAL OVERVIEW (FLOOR ${window.player.depth || 1})`;
               }
 
-              // Render Attribute Matrix SP Allocator
-              let sp = stats.sp || 0;
-              if (spCountEl) spCountEl.innerText = `${sp} SP`;
+              // Initialize SP Draft State
+                            if (typeof window.initSPDraft === "function") window.initSPDraft();
+                            let curSP = window.draftSP !== undefined ? window.draftSP : (stats.sp || 0);
+                            let draftAlloc = window.draftSPAllocations || { spStr: 0, spDex: 0, spInt: 0 };
+                            let committedAlloc = stats.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
 
-              if (matrixGridEl) {
-                let alloc = stats.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
-                let canSpend1 = sp >= 1;
-                let canSpend5 = sp >= 5;
+                            let hasStaged = (draftAlloc.spStr || 0) > 0 || (draftAlloc.spDex || 0) > 0 || (draftAlloc.spInt || 0) > 0;
+                            if (spCountEl) spCountEl.innerText = `${curSP} SP`;
 
-                matrixGridEl.innerHTML = `
-                  <div class="stat-line">
-                    <span class="stat-label">STRENGTH (+10 HP, +2.5 ATK)</span>
-                    <div class="sp-btn-group">
-                      <span class="sp-badge">${alloc.spStr || 0}</span>
-                      <button class="sp-btn" ${canSpend1 ? "" : "disabled"} onclick="window.allocateSP('Str', 1)">+1</button>
-                      <button class="sp-btn" ${canSpend5 ? "" : "disabled"} onclick="window.allocateSP('Str', 5)">+5</button>
-                    </div>
-                  </div>
-                  <div class="stat-line">
-                    <span class="stat-label">DEXTERITY (+0.1% CRIT, +1 SPD)</span>
-                    <div class="sp-btn-group">
-                      <span class="sp-badge">${alloc.spDex || 0}</span>
-                      <button class="sp-btn" ${canSpend1 ? "" : "disabled"} onclick="window.allocateSP('Dex', 1)">+1</button>
-                      <button class="sp-btn" ${canSpend5 ? "" : "disabled"} onclick="window.allocateSP('Dex', 5)">+5</button>
-                    </div>
-                  </div>
-                  <div class="stat-line">
-                    <span class="stat-label">INTELLIGENCE (+1 DEF, BARRIER)</span>
-                    <div class="sp-btn-group">
-                      <span class="sp-badge">${alloc.spInt || 0}</span>
-                      <button class="sp-btn" ${canSpend1 ? "" : "disabled"} onclick="window.allocateSP('Int', 1)">+1</button>
-                      <button class="sp-btn" ${canSpend5 ? "" : "disabled"} onclick="window.allocateSP('Int', 5)">+5</button>
-                    </div>
-                  </div>
-                `;
-              }
+                            // Calculate current baseline vs staged draft preview stats
+                            let curStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats(false) : {};
+                            let draftStats = hasStaged && typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats(true) : curStats;
 
-              // 1. Render Character Stats (Clean whole numbers for flat stats)
-                            let rawAtk = pStats.atk && pStats.atk.valueOf ? pStats.atk.valueOf() : Number(pStats.atk || window.player.atk);
-                            let rawDef = pStats.def && pStats.def.valueOf ? pStats.def.valueOf() : Number(pStats.def || window.player.def);
-                            let rawHp = pStats.maxHp && pStats.maxHp.valueOf ? pStats.maxHp.valueOf() : Number(pStats.maxHp || window.player.maxHp);
+                            if (matrixGridEl) {
+                              let canSpend1 = curSP >= 1;
+                              let canSpend5 = curSP >= 5;
 
-                            let atkVal = window.formatNumber ? window.formatNumber(Math.round(rawAtk)) : Math.round(rawAtk);
-                            let defVal = window.formatNumber ? window.formatNumber(Math.round(rawDef)) : Math.round(rawDef);
-                            let hpVal = window.formatNumber ? window.formatNumber(Math.round(rawHp)) : Math.round(rawHp);
+                              let renderAttrRow = (label, attrKey, committedCount, stagedCount) => {
+                                let totalCount = committedCount + stagedCount;
+                                let stagedBadge = stagedCount > 0 ? ` <span style="color:#2ecc71; font-weight:bold;">(+${stagedCount})</span>` : "";
+                                let sub1Disabled = stagedCount < 1 ? "disabled" : "";
 
+                                return `
+                                  <div class="stat-line">
+                                    <span class="stat-label">${label}</span>
+                                    <div class="sp-btn-group">
+                                      <button class="sp-btn sp-btn-sub" ${sub1Disabled} onclick="window.stageSP('${attrKey}', -1)">-1</button>
+                                      <span class="sp-badge">${totalCount}${stagedBadge}</span>
+                                      <button class="sp-btn" ${canSpend1 ? "" : "disabled"} onclick="window.stageSP('${attrKey}', 1)">+1</button>
+                                      <button class="sp-btn" ${canSpend5 ? "" : "disabled"} onclick="window.stageSP('${attrKey}', 5)">+5</button>
+                                    </div>
+                                  </div>
+                                `;
+                              };
+
+                              let confirmBarHtml = hasStaged
+                                ? `
+                                  <div style="display:flex; gap:6px; margin-top:8px;">
+                                    <button class="action-btn" style="flex:1; margin-top:0; padding:8px; font-size:10px; background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#34d399;" onclick="window.confirmSP()">✓ CONFIRM ATTRIBUTES</button>
+                                    <button class="action-btn" style="flex:0.4; margin-top:0; padding:8px; font-size:10px; background:linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); border-color:#f87171;" onclick="window.resetDraftSP()">RESET</button>
+                                  </div>
+                                `
+                                : "";
+
+                              matrixGridEl.innerHTML = `
+                                ${renderAttrRow("STRENGTH (+10 HP, +2.5 ATK)", "Str", committedAlloc.spStr || 0, draftAlloc.spStr || 0)}
+                                ${renderAttrRow("DEXTERITY (+0.1% CRIT, +1 SPD)", "Dex", committedAlloc.spDex || 0, draftAlloc.spDex || 0)}
+                                ${renderAttrRow("INTELLIGENCE (+1 DEF, BARRIER)", "Int", committedAlloc.spInt || 0, draftAlloc.spInt || 0)}
+                                ${confirmBarHtml}
+                              `;
+                            }
+
+                            // 1. Render Character Stats (With live draft preview diffs)
                             let iconSvg = (key) => typeof window.getUiIconSvg === "function" ? window.getUiIconSvg(key, 12) : "";
 
+                            let formatStatValWithDiff = (key, curVal, draftVal, isPct = false, pctDecimals = 1) => {
+                              let curNum = curVal && curVal.valueOf ? curVal.valueOf() : Number(curVal || 0);
+                              let draftNum = draftVal && draftVal.valueOf ? draftVal.valueOf() : Number(draftVal || 0);
+
+                              let curStr = isPct ? (curNum * 100).toFixed(pctDecimals) + "%" : window.formatNumber(Math.round(curNum));
+                              if (!hasStaged) return curStr;
+
+                              let diff = draftNum - curNum;
+                              if (Math.abs(diff) < 0.0001) return curStr;
+
+                              let draftStr = isPct ? (draftNum * 100).toFixed(pctDecimals) + "%" : window.formatNumber(Math.round(draftNum));
+                              let diffStr = isPct ? (diff > 0 ? "+" : "") + (diff * 100).toFixed(pctDecimals) + "%" : (diff > 0 ? "+" : "") + window.formatNumber(Math.round(diff));
+                              let color = diff > 0 ? "#2ecc71" : "#e74c3c";
+
+                              return `<span style="color:#aaa;">${curStr}</span> ➔ <strong style="color:#fff;">${draftStr}</strong> <span style="color:${color}; font-size:8.5px;">(${diffStr})</span>`;
+                            };
+
                             statsListEl.innerHTML = `
-                              <div class="stat-line"><span class="stat-label">${iconSvg("atk")} ATTACK</span><span class="stat-val">${atkVal}</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("def")} DEFENSE</span><span class="stat-val">${defVal}</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("maxHp")} MAX HP</span><span class="stat-val">${hpVal}</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("moveSpeed")} MOVE SPEED</span><span class="stat-val">${Number(pStats.moveSpeed || window.player.speed).toFixed(1)}</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("critChance")} CRIT CHANCE</span><span class="stat-val">${((pStats.critChance || 0.05) * 100).toFixed(1)}%</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("critDamage")} CRIT MULTI</span><span class="stat-val">${((pStats.critDamage || 1.5) * 100).toFixed(0)}%</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("block")} BLOCK RATE</span><span class="stat-val">${((pStats.block || 0) * 100).toFixed(1)}%</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("parry")} PARRY RATE</span><span class="stat-val">${((pStats.parry || 0) * 100).toFixed(1)}%</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("dropRate")} DROP RATE</span><span class="stat-val">${((pStats.drop || 1.0) * 100).toFixed(0)}%</span></div>
-                              <div class="stat-line"><span class="stat-label">${iconSvg("goldMulti")} GOLD MULTI</span><span class="stat-val">${((pStats.gold || 1.0) * 100).toFixed(0)}%</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("atk")} ATTACK</span><span class="stat-val">${formatStatValWithDiff("atk", curStats.atk, draftStats.atk)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("def")} DEFENSE</span><span class="stat-val">${formatStatValWithDiff("def", curStats.def, draftStats.def)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("maxHp")} MAX HP</span><span class="stat-val">${formatStatValWithDiff("maxHp", curStats.maxHp, draftStats.maxHp)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("moveSpeed")} MOVE SPEED</span><span class="stat-val">${formatStatValWithDiff("moveSpeed", curStats.moveSpeed, draftStats.moveSpeed, false)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("critChance")} CRIT CHANCE</span><span class="stat-val">${formatStatValWithDiff("critChance", curStats.critChance, draftStats.critChance, true, 1)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("critDamage")} CRIT MULTI</span><span class="stat-val">${formatStatValWithDiff("critDamage", curStats.critDamage, draftStats.critDamage, true, 0)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("block")} BLOCK RATE</span><span class="stat-val">${formatStatValWithDiff("block", curStats.block, draftStats.block, true, 1)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("parry")} PARRY RATE</span><span class="stat-val">${formatStatValWithDiff("parry", curStats.parry, draftStats.parry, true, 1)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("dropRate")} DROP RATE</span><span class="stat-val">${formatStatValWithDiff("drop", curStats.drop, draftStats.drop, true, 0)}</span></div>
+                              <div class="stat-line"><span class="stat-label">${iconSvg("goldMulti")} GOLD MULTI</span><span class="stat-val">${formatStatValWithDiff("gold", curStats.gold, draftStats.gold, true, 0)}</span></div>
                             `;
 
                             // 2. Render Paperdoll Equipment Slots
@@ -2365,3 +2455,25 @@
             }, 2800);
           };
         })();
+
+        window.getMobPoolForDepth = function (depth) {
+          // Sectors advance every 12 floors (after each Major Boss on Floor 12, 24, 36...)
+          let sector = Math.floor((depth - 1) / 12);
+
+          let pools = [
+            // Sector 1 (Floors 1 - 12): Whispering Woods
+            { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
+            // Sector 2 (Floors 13 - 24): Mountain Peaks & Alpine Mines
+            { tier: 1, types: ["golem", "wyrmling", "gargoyle", "rust_nibbler"] },
+            // Sector 3 (Floors 25 - 36): Inferno Depths & Smeltery
+            { tier: 2, types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"] },
+            // Sector 4 (Floors 37 - 48): Fungal Swamp & Ruins
+            { tier: 3, types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"] },
+            // Sector 5+ (Floors 49+): Void Singularity & Cyber Space
+            { tier: 4, types: ["void_orb", "void_crawler", "void_spectre", "neon_spider", "wireframe_orb", "cursed_blade"] },
+          ];
+
+          let selected = pools[Math.min(sector, pools.length - 1)];
+          let chosenType = selected.types[Math.floor(Math.random() * selected.types.length)];
+          return { tier: selected.tier, type: chosenType };
+        };

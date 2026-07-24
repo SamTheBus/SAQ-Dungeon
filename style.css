@@ -839,3 +839,45 @@ body {
   font-family: monospace;
   margin-bottom: 12px;
 }
+
+/* Tooltip Comparison & Attribute Draft Styles */
+.tt-compare-header {
+  font-size: 7.5px;
+  color: #a855f7;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin-top: 3px;
+  margin-bottom: 2px;
+  border-top: 1px dashed #334155;
+  padding-top: 3px;
+}
+
+.tt-diff-pos {
+  color: #2ecc71;
+  font-weight: bold;
+  font-size: 8px;
+}
+
+.tt-diff-neg {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 8px;
+}
+
+.sp-btn-sub {
+  background: linear-gradient(180deg, #475569 0%, #1e293b 100%) !important;
+  border-color: #64748b !important;
+}
+
+.reload-btn {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+}
+
+.wipe-btn {
+  background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%) !important;
+  border-color: #f87171 !important;
+  color: #ffffff !important;
+  margin-top: 4px;
+}

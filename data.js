@@ -37,16 +37,49 @@ window.getUiIconSvg = function (key, size = 12) {
 
 // --- SYSTEM UTILS ---
 
-window.allocateSP = function (statKey, amount = 1) {
+window.initSPDraft = function () {
+  if (window.draftSPAllocations === undefined || window.draftSPAllocations === null) {
+    window.draftSPAllocations = { spStr: 0, spDex: 0, spInt: 0 };
+    window.draftSP = window.playerStats.sp || 0;
+  }
+};
+
+window.stageSP = function (statKey, amount) {
   let p = window.playerStats;
-  if (!p || p.sp < amount) return;
+  if (!p) return;
+  window.initSPDraft();
 
-  p.sp -= amount;
+  let key = "sp" + statKey;
+  if (amount > 0) {
+    let addAmt = Math.min(amount, window.draftSP);
+    if (addAmt <= 0) return;
+    window.draftSPAllocations[key] = (window.draftSPAllocations[key] || 0) + addAmt;
+    window.draftSP -= addAmt;
+  } else if (amount < 0) {
+    let subAmt = Math.min(Math.abs(amount), window.draftSPAllocations[key] || 0);
+    if (subAmt <= 0) return;
+    window.draftSPAllocations[key] -= subAmt;
+    window.draftSP += subAmt;
+  }
+
+  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+    window.SoundManager.play("hover");
+  }
+
+  if (typeof window.renderProfileModal === "function") window.renderProfileModal();
+};
+
+window.confirmSP = function () {
+  let p = window.playerStats;
+  if (!p || !window.draftSPAllocations) return;
+
   p.spAllocations = p.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
+  p.spAllocations.spStr = (p.spAllocations.spStr || 0) + (window.draftSPAllocations.spStr || 0);
+  p.spAllocations.spDex = (p.spAllocations.spDex || 0) + (window.draftSPAllocations.spDex || 0);
+  p.spAllocations.spInt = (p.spAllocations.spInt || 0) + (window.draftSPAllocations.spInt || 0);
+  p.sp = window.draftSP;
 
-  if (statKey === "Str") p.spAllocations.spStr += amount;
-  else if (statKey === "Dex") p.spAllocations.spDex += amount;
-  else if (statKey === "Int") p.spAllocations.spInt += amount;
+  window.draftSPAllocations = { spStr: 0, spDex: 0, spInt: 0 };
 
   window.invalidatePlayerStats();
   let resolved = window.resolvePlayerStats();
@@ -66,6 +99,15 @@ window.allocateSP = function (statKey, amount = 1) {
   if (typeof window.updateHUD === "function") window.updateHUD();
   if (typeof window.renderProfileModal === "function") window.renderProfileModal();
   if (typeof window.saveGame === "function") window.saveGame();
+};
+
+window.resetDraftSP = function () {
+  if (window.draftSPAllocations) {
+    let stagedTotal = (window.draftSPAllocations.spStr || 0) + (window.draftSPAllocations.spDex || 0) + (window.draftSPAllocations.spInt || 0);
+    window.draftSP = (window.draftSP || 0) + stagedTotal;
+    window.draftSPAllocations = { spStr: 0, spDex: 0, spInt: 0 };
+  }
+  if (typeof window.renderProfileModal === "function") window.renderProfileModal();
 };
 
 window.ParticlePool = window.ParticlePool || {
@@ -486,14 +528,13 @@ Object.assign(window.GameState, {
       );
 
       if (window.playerStats.level > window.playerStats.maxLevel) {
-        window.playerStats.maxLevel = window.playerStats.level;
-        window.playerStats.sp += 6; // Only award SP if we exceed our lifetime peak level!
+              window.playerStats.maxLevel = window.playerStats.level;
+              window.playerStats.sp += 3; // Award 3 SP per peak level
 
-        // Keep active UI Attribute Matrix draft allocations in sync with each consecutive level-up
-        if (window.draftAllocations !== null) {
-          window.draftSP += 6;
-        }
-      }
+              if (window.draftSP !== undefined && window.draftSP !== null) {
+                window.draftSP += 3;
+              }
+            }
 
       // Calculate next xpReq safely using BigNum exponential power scaling
       xpReq = BigNum.from(350).mul(
@@ -1233,13 +1274,11 @@ window.resolvePlayerStats = function (useDraft = false) {
   let achDexPct = 1.0 + aT.dexPct;
   let achIntPct = 1.0 + aT.intPct;
 
-  let alloc =
-    useDraft && window.draftAllocations
-      ? window.draftAllocations
-      : window.playerStats.spAllocations;
-  p.str += (alloc.spStr || 0) * 3;
-  p.dex += (alloc.spDex || 0) * 3;
-  p.int += (alloc.spInt || 0) * 3;
+  let committed = window.playerStats.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
+    let draft = useDraft && window.draftSPAllocations ? window.draftSPAllocations : { spStr: 0, spDex: 0, spInt: 0 };
+    p.str += ((committed.spStr || 0) + (draft.spStr || 0)) * 3;
+    p.dex += ((committed.spDex || 0) + (draft.spDex || 0)) * 3;
+    p.int += ((committed.spInt || 0) + (draft.spInt || 0)) * 3;
 
   let paragonLevel = window.playerStats.paragonLevel || 0;
   let paragonMult = 1.0 + paragonLevel * 0.005; // Compounding +0.5% attributes per Paragon Level

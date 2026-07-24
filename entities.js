@@ -3668,7 +3668,14 @@
       let bounce = 0;
 
       if (currentTier === 0) {
-        // Background glow layer for Rare targets to immediately signify high-tier spawns
+              c.save();
+              let centerBossX = m.x + m.w / 2;
+              let centerBossY = m.y + m.h / 2;
+              c.translate(centerBossX, centerBossY);
+              c.scale(0.5, 0.5);
+              c.translate(-centerBossX, -centerBossY);
+
+              // Background glow layer for Rare targets to immediately signify high-tier spawns
         if (m.isRare) {
           c.save();
           let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
@@ -4220,51 +4227,52 @@
           let eyePulse = 1 + Math.sin(Date.now() / 150) * 0.08;
 
           m.appleOffsets.forEach((ap) => {
-            let appleX = cx + ap.dx;
-            let appleY = cy + ap.dy;
-            let rRadius = m.w * 0.11 * ap.sizeMod * eyePulse;
+                      let appleX = cx + ap.dx;
+                      let appleY = cy + ap.dy;
+                      let rRadius = m.w * 0.11 * ap.sizeMod * eyePulse;
 
-            c.save();
-            c.translate(appleX, appleY);
-            c.rotate(ap.eyeRot);
+                      c.save();
+                      c.translate(appleX, appleY);
+                      c.rotate(ap.eyeRot);
 
-            // Dual-color Eldritch Eye radial gradient (Glow center to crimson edge)
-            let fruitGrad = c.createRadialGradient(0, 0, 1, 0, 0, rRadius);
-            fruitGrad.addColorStop(0, "#ffffff");
-            fruitGrad.addColorStop(0.3, "#f1c40f"); // Yellow iris ring
-            fruitGrad.addColorStop(0.7, "#d35400"); // Rich orange boundary
-            fruitGrad.addColorStop(1, "#c0392b"); // Crimson base
-            c.fillStyle = fruitGrad;
+                      // Dual-color Eldritch Eye radial gradient (Glow center to crimson edge)
+                      let fruitGrad = c.createRadialGradient(0, 0, 1, 0, 0, rRadius);
+                      fruitGrad.addColorStop(0, "#ffffff");
+                      fruitGrad.addColorStop(0.3, "#f1c40f"); // Yellow iris ring
+                      fruitGrad.addColorStop(0.7, "#d35400"); // Rich orange boundary
+                      fruitGrad.addColorStop(1, "#c0392b"); // Crimson base
+                      c.fillStyle = fruitGrad;
 
-            c.beginPath();
-            c.arc(0, 0, rRadius, 0, Math.PI * 2);
-            c.fill();
-            c.stroke();
+                      c.beginPath();
+                      c.arc(0, 0, rRadius, 0, Math.PI * 2);
+                      c.fill();
+                      c.stroke();
 
-            // Menacing black reptilian slit pupil right in the center!
-            c.fillStyle = "#000000";
-            c.beginPath();
-            c.ellipse(0, 0, rRadius * 0.2, rRadius * 0.7, 0, 0, Math.PI * 2);
-            c.fill();
+                      // Menacing black reptilian slit pupil right in the center!
+                      c.fillStyle = "#000000";
+                      c.beginPath();
+                      c.ellipse(0, 0, rRadius * 0.2, rRadius * 0.7, 0, 0, Math.PI * 2);
+                      c.fill();
 
-            // Micro white specular highlight reflecting light
-            c.fillStyle = "#ffffff";
-            c.beginPath();
-            c.arc(
-              -rRadius * 0.25,
-              -rRadius * 0.25,
-              rRadius * 0.15,
-              0,
-              Math.PI * 2,
-            );
-            c.fill();
+                      // Micro white specular highlight reflecting light
+                      c.fillStyle = "#ffffff";
+                      c.beginPath();
+                      c.arc(
+                        -rRadius * 0.25,
+                        -rRadius * 0.25,
+                        rRadius * 0.15,
+                        0,
+                        Math.PI * 2,
+                      );
+                      c.fill();
 
-            c.restore();
-          });
-          c.restore();
-        }
-        c.restore();
-      } else if (currentTier === 1) {
+                      c.restore();
+                    });
+                    c.restore();
+                  }
+                  c.restore();
+                  c.restore(); // Close master 50% boss scale transform
+                } else if (currentTier === 1) {
         let bounceOffset = Math.sin(Date.now() / 200) * 3;
         let blockColor = m.flashTimer > 0 ? "#ffffff" : "#3b3f46";
         let shadowColor = m.flashTimer > 0 ? "#ffffff" : "#1f2126";
@@ -13452,16 +13460,54 @@
   };
 
   window.updateEcoModeStyle = function () {
-    let active = window.playerStats.ecoMode === true;
-    let btn = document.getElementById("settings-toggle-eco");
-    if (btn) {
-      btn.innerText = active ? "Saver: ON" : "Saver: OFF";
-      btn.className = active ? "btn-action" : "btn-action un";
-    }
-    // Toggle class on body for CSS performance overrides
-    if (active) document.body.classList.add("eco-active");
-    else document.body.classList.remove("eco-active");
-  };
+      let active = window.playerStats.ecoMode === true;
+      let btn = document.getElementById("settings-toggle-eco");
+      if (btn) {
+        btn.innerText = active ? "PERFORMANCE: ECO (SAVER ON)" : "PERFORMANCE: MAX FX (SAVER OFF)";
+        btn.className = active ? "settings-btn active" : "settings-btn";
+      }
+      // Toggle class on body for CSS performance overrides
+      if (active) document.body.classList.add("eco-active");
+      else document.body.classList.remove("eco-active");
+    };
+
+    window.forceReloadCacheBust = function () {
+      let baseUrl = window.location.href.split("?")[0];
+      window.location.href = `${baseUrl}?v=${Date.now()}`;
+    };
+
+    window.requestWipeSaveData = function () {
+      let msg1 = "WARNING: This will permanently destroy all character levels, equipped gear, vault storage, and gold. Are you sure you want to erase all data?";
+      let msg2 = "FINAL CONFIRMATION: Type WIPE or confirm below to permanently erase your save file. This action CANNOT be undone!";
+
+      if (typeof window.showCustomConfirm === "function") {
+        window.showCustomConfirm(
+          "WIPE SAVE DATA (1/2)",
+          msg1,
+          "PROCEED TO WIPE",
+          "CANCEL",
+          "#e74c3c",
+          function () {
+            window.showCustomConfirm(
+              "FINAL CONFIRMATION (2/2)",
+              msg2,
+              "ERASE EVERYTHING",
+              "ABORT",
+              "#c0392b",
+              function () {
+                localStorage.removeItem("extraction_crawler_save");
+                window.forceReloadCacheBust();
+              }
+            );
+          }
+        );
+      } else {
+        if (confirm(msg1) && confirm(msg2)) {
+          localStorage.removeItem("extraction_crawler_save");
+          window.forceReloadCacheBust();
+        }
+      }
+    };
 
   window.toggleDpsOverlay = function () {
     window.playerStats.showDpsOverlay = !window.playerStats.showDpsOverlay;
