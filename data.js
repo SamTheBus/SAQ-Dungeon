@@ -1180,6 +1180,28 @@ window.invalidatePlayerStats = function () {
   window.playerStatsDirty = true;
 };
 
+window.updateUI = function () {
+  window.invalidatePlayerStats();
+  let resolved = window.resolvePlayerStats();
+
+  if (window.player && resolved) {
+    let newMaxHp = resolved.maxHp && resolved.maxHp.valueOf ? resolved.maxHp.valueOf() : Number(resolved.maxHp || 100);
+    window.player.maxHp = Math.round(newMaxHp);
+    window.player.hp = Math.min(window.player.hp, window.player.maxHp);
+    window.player.atk = resolved.atk && resolved.atk.valueOf ? resolved.atk.valueOf() : Number(resolved.atk || 15);
+    window.player.def = resolved.def && resolved.def.valueOf ? resolved.def.valueOf() : Number(resolved.def || 5);
+  }
+
+  if (typeof window.updateHUD === "function") {
+    window.updateHUD();
+  }
+
+  let profileModal = document.getElementById("profile-modal");
+  if (profileModal && profileModal.style.display !== "none" && typeof window.renderProfileModal === "function") {
+    window.renderProfileModal();
+  }
+};
+
 window.resolvePlayerStats = function (useDraft = false) {
   if (!useDraft && !window.playerStatsDirty && window.cachedPlayerStats) {
     return window.cachedPlayerStats;
@@ -1477,9 +1499,9 @@ window.resolvePlayerStats = function (useDraft = false) {
 
   // Dynamically adjust offensive percentage scaling based on equipped subweapon archetype
   let activeSubForPct = window.equippedSlots
-    ? window.equippedSlots.subweapon
-    : null;
-  let activeSubTypeForPct = activeSubForPct ? activeSubForPct.subType : null;
+      ? window.equippedSlots.subweapon
+      : null;
+    let activeSubTypeForPct = activeSubForPct ? (activeSubForPct.subType || activeSubForPct.type) : null;
   let mainStatAtkPct = 0;
 
   if (activeSubTypeForPct === "dagger") {
@@ -1498,7 +1520,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   let levelScale = BigNum.from(1.025).pow(window.playerStats.level - 1);
 
   let activeSub = window.equippedSlots ? window.equippedSlots.subweapon : null;
-  let activeSubType = activeSub ? activeSub.subType : null;
+    let activeSubType = activeSub ? (activeSub.subType || activeSub.type) : null;
   let strWeight = 5;
   let dexWeight = 2;
   let intWeight = 1;
@@ -1729,8 +1751,8 @@ window.resolvePlayerStats = function (useDraft = false) {
   let maxParryCap = 0.15;
 
   let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
-  let hasShield = subItem && subItem.subType === "shield";
-  let hasDagger = subItem && subItem.subType === "dagger";
+    let hasShield = subItem && (subItem.subType === "shield" || subItem.type === "shield");
+    let hasDagger = subItem && (subItem.subType === "dagger" || subItem.type === "dagger");
   let hasTitanGrip =
     window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
 
@@ -1765,7 +1787,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   if (p.parry > maxParryCap) p.parry = maxParryCap;
 
   // Calculate Tome passive Arcane Barrier
-  let hasTome = subItem && subItem.subType === "tome";
+    let hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
   if (hasTome) {
     // Base 20% absorption, scaling up to 35% with INT
     let intBonus = Math.min(0.15, (effectiveInt * 0.15) / (effectiveInt + 150));

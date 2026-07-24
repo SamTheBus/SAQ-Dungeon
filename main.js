@@ -155,27 +155,29 @@
     }
 
     canvas.addEventListener("pointerup", stopJoystick);
-    canvas.addEventListener("pointercancel", stopJoystick);
+        canvas.addEventListener("pointercancel", stopJoystick);
 
-    // Start inside Adventurer's Hub
-    window.loadHub();
+        // Allow tapping backdrop overlays to dismiss open modal windows
+        document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+          overlay.addEventListener("pointerdown", function (e) {
+            if (e.target === overlay) {
+              overlay.style.display = "none";
+              if (typeof window.hideTooltip === "function") window.hideTooltip();
+            }
+          });
+        });
+
+        // Start inside Adventurer's Hub
+        window.loadHub();
 
     // Start 60 FPS Engine Loop
     requestAnimationFrame(gameLoop);
   });
 
   window.checkOrientation = function () {
-      let overlay = document.getElementById("rotate-device-overlay");
-      if (!overlay) return;
-      let isPortrait = window.innerHeight > window.innerWidth;
-      let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
-
-      if (isPortrait && isMobile) {
-        overlay.style.display = "flex";
-      } else {
-        overlay.style.display = "none";
-      }
-    };
+        let overlay = document.getElementById("rotate-device-overlay");
+        if (overlay) overlay.style.display = "none";
+      };
 
     window.resizeCanvas = function () {
       if (!canvas) return;
@@ -2110,104 +2112,89 @@
                               };
 
       window.equipFromStash = function (itemId) {
-        window.hideTooltip();
-        if (!window.player.stash) window.player.stash = [];
-        let stash = window.player.stash;
-        let idx = stash.findIndex((i) => i.id == itemId);
-        if (idx === -1) return;
+              window.hideTooltip();
+              if (!window.player.stash) window.player.stash = [];
+              let stash = window.player.stash;
+              let idx = stash.findIndex((i) => i.id == itemId);
+              if (idx === -1) return;
 
-        let item = stash[idx];
-        if (!window.equippedSlots) {
-          window.equippedSlots = {
-            weapon: null, subweapon: null, helmet: null, chest: null,
-            leggings: null, overall: null, boots: null, ring1: null,
-            ring2: null, art1: null, art2: null, art3: null
-          };
-        }
+              let item = stash[idx];
+              if (!window.equippedSlots) {
+                window.equippedSlots = {
+                  weapon: null, subweapon: null, helmet: null, chest: null,
+                  leggings: null, overall: null, boots: null, ring1: null,
+                  ring2: null, art1: null, art2: null, art3: null
+                };
+              }
 
-        // Determine destination slot key
-        let slotKey = item.type;
+              // Determine destination slot key
+              let slotKey = item.type;
 
-        if (item.type === "shield" || item.type === "dagger" || item.type === "tome" || item.type === "subweapon") {
-          slotKey = "subweapon";
-        } else if (item.type === "ring") {
-          slotKey = !window.equippedSlots.ring1 ? "ring1" : "ring2";
-        } else if (item.type === "artifact") {
-          slotKey = !window.equippedSlots.art1 ? "art1" : !window.equippedSlots.art2 ? "art2" : !window.equippedSlots.art3 ? "art3" : "art1";
-        } else if (item.type === "overall") {
-          if (window.equippedSlots.chest) {
-            stash.push(window.equippedSlots.chest);
-            window.equippedSlots.chest = null;
-          }
-          if (window.equippedSlots.leggings) {
-            stash.push(window.equippedSlots.leggings);
-            window.equippedSlots.leggings = null;
-          }
-          slotKey = "overall";
-        } else if (item.type === "chest" || item.type === "leggings") {
-          if (window.equippedSlots.overall) {
-            stash.push(window.equippedSlots.overall);
-            window.equippedSlots.overall = null;
-          }
-          slotKey = item.type;
-        }
+              if (item.type === "shield" || item.type === "dagger" || item.type === "tome" || item.type === "subweapon") {
+                slotKey = "subweapon";
+              } else if (item.type === "ring") {
+                slotKey = !window.equippedSlots.ring1 ? "ring1" : "ring2";
+              } else if (item.type === "artifact") {
+                slotKey = !window.equippedSlots.art1 ? "art1" : !window.equippedSlots.art2 ? "art2" : !window.equippedSlots.art3 ? "art3" : "art1";
+              } else if (item.type === "overall") {
+                if (window.equippedSlots.chest) {
+                  delete window.equippedSlots.chest.isEquippedSlot;
+                  stash.push(window.equippedSlots.chest);
+                  window.equippedSlots.chest = null;
+                }
+                if (window.equippedSlots.leggings) {
+                  delete window.equippedSlots.leggings.isEquippedSlot;
+                  stash.push(window.equippedSlots.leggings);
+                  window.equippedSlots.leggings = null;
+                }
+                slotKey = "overall";
+              } else if (item.type === "chest" || item.type === "leggings") {
+                if (window.equippedSlots.overall) {
+                  delete window.equippedSlots.overall.isEquippedSlot;
+                  stash.push(window.equippedSlots.overall);
+                  window.equippedSlots.overall = null;
+                }
+                slotKey = item.type;
+              }
 
-        // Swap currently equipped item into stash
-        let currentEquipped = window.equippedSlots[slotKey];
-        window.equippedSlots[slotKey] = item;
-        stash.splice(idx, 1);
+              // Swap currently equipped item into stash
+              let currentEquipped = window.equippedSlots[slotKey];
+              if (currentEquipped) {
+                delete currentEquipped.isEquippedSlot;
+                stash.push(currentEquipped);
+              }
+              window.equippedSlots[slotKey] = item;
+              item.isEquippedSlot = slotKey;
+              stash.splice(idx, 1);
 
-        if (currentEquipped) {
-          stash.push(currentEquipped);
-        }
+              if (typeof window.updateUI === "function") window.updateUI();
 
-        if (typeof window.invalidatePlayerStats === "function") window.invalidatePlayerStats();
-        let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : null;
-        if (pStats) {
-          let newMaxHp = pStats.maxHp && pStats.maxHp.valueOf ? pStats.maxHp.valueOf() : Number(pStats.maxHp || 100);
-          window.player.maxHp = newMaxHp;
-          window.player.hp = Math.min(window.player.hp, window.player.maxHp);
-          window.player.atk = pStats.atk && pStats.atk.valueOf ? pStats.atk.valueOf() : Number(pStats.atk || 15);
-          window.player.def = pStats.def && pStats.def.valueOf ? pStats.def.valueOf() : Number(pStats.def || 5);
-        }
+              if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                window.SoundManager.play("swing");
+              }
 
-        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-          window.SoundManager.play("swing");
-        }
-
-        if (typeof window.saveGame === "function") window.saveGame();
-        window.updateHUD();
-        window.renderProfileModal();
-      };
+              if (typeof window.saveGame === "function") window.saveGame();
+            };
 
       window.unequipToStash = function (slotKey) {
-        window.hideTooltip();
-        if (!window.equippedSlots || !window.equippedSlots[slotKey]) return;
+              window.hideTooltip();
+              if (!window.equippedSlots || !window.equippedSlots[slotKey]) return;
 
-        let item = window.equippedSlots[slotKey];
-        if (!window.player.stash) window.player.stash = [];
+              let item = window.equippedSlots[slotKey];
+              delete item.isEquippedSlot;
+              if (!window.player.stash) window.player.stash = [];
 
-        window.player.stash.push(item);
-        window.equippedSlots[slotKey] = null;
+              window.player.stash.push(item);
+              window.equippedSlots[slotKey] = null;
 
-        if (typeof window.invalidatePlayerStats === "function") window.invalidatePlayerStats();
-        let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : null;
-        if (pStats) {
-          let newMaxHp = pStats.maxHp && pStats.maxHp.valueOf ? pStats.maxHp.valueOf() : Number(pStats.maxHp || 100);
-          window.player.maxHp = newMaxHp;
-          window.player.hp = Math.min(window.player.hp, window.player.maxHp);
-          window.player.atk = pStats.atk && pStats.atk.valueOf ? pStats.atk.valueOf() : Number(pStats.atk || 15);
-          window.player.def = pStats.def && pStats.def.valueOf ? pStats.def.valueOf() : Number(pStats.def || 5);
-        }
+              if (typeof window.updateUI === "function") window.updateUI();
 
-        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-          window.SoundManager.play("swing");
-        }
+              if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                window.SoundManager.play("swing");
+              }
 
-        if (typeof window.saveGame === "function") window.saveGame();
-        window.updateHUD();
-        window.renderProfileModal();
-      };
+              if (typeof window.saveGame === "function") window.saveGame();
+            };
 
       window.salvageFromStash = function (itemId) {
               window.hideTooltip();
@@ -2343,46 +2330,46 @@
 
   // --- LOOT SATCHEL & VAULT TOGGLE ---
     window.toggleLootBag = function () {
-      let isHub = window.currentGameState === window.GAME_STATES.HUB;
-      if (isHub) {
-        window.toggleProfileModal();
-        return;
-      }
+          let isHub = window.currentGameState === window.GAME_STATES.HUB;
+          if (isHub) {
+            window.toggleProfileModal();
+            return;
+          }
 
-      let modal = document.getElementById("bag-modal");
-      let listEl = document.getElementById("bag-items-list");
-      let headerEl = modal ? modal.querySelector(".modal-header span") : null;
-      if (!modal || !listEl) return;
+          let modal = document.getElementById("bag-modal");
+          let listEl = document.getElementById("bag-items-list");
+          let headerEl = modal ? modal.querySelector(".modal-header span") : null;
+          if (!modal || !listEl) return;
 
-      let displayList = window.player.bag || [];
+          let displayList = window.player.bag || [];
 
-      if (headerEl) {
-        headerEl.innerText = "EXTRACTED LOOT SATCHEL";
-      }
+          if (headerEl) {
+            headerEl.innerText = "EXTRACTED LOOT SATCHEL";
+          }
 
-      if (modal.style.display === "none") {
-                listEl.innerHTML =
-                  displayList.length > 0
-                    ? displayList
-                        .map((item) => {
-                          let col = window.getTierColor
-                            ? window.getTierColor(item.statsRolled)
-                            : "#2ecc71";
-                          return `
-                        <div style="background:#111; border:1px solid #333; border-left:3px solid ${col}; padding:8px 10px; border-radius:4px; font-size:11px; display:flex; justify-content:space-between; align-items:center;">
-                          <span style="color:${col}; font-weight:bold;">${item.name}</span>
-                          <span style="color:#aaa; font-family:monospace;">Lv.${item.stageLevel || 1}</span>
-                        </div>
-                      `;
-                        })
-                        .join("")
-                    : `<div style="color:#7f8c8d; font-style:italic; padding:20px; text-align:center;">Satchel is empty. Open chests in the dungeon!</div>`;
+          if (modal.style.display === "none" || modal.style.display === "") {
+            listEl.innerHTML =
+              displayList.length > 0
+                ? displayList
+                    .map((item) => {
+                      let col = window.getTierColor
+                        ? window.getTierColor(item.statsRolled)
+                        : "#2ecc71";
+                      return `
+                    <div style="background:#111; border:1px solid #333; border-left:3px solid ${col}; padding:8px 10px; border-radius:4px; font-size:11px; display:flex; justify-content:space-between; align-items:center;">
+                      <span style="color:${col}; font-weight:bold;">${item.name}</span>
+                      <span style="color:#aaa; font-family:monospace;">Lv.${item.stageLevel || 1}</span>
+                    </div>
+                  `;
+                    })
+                    .join("")
+                : `<div style="color:#7f8c8d; font-style:italic; padding:20px; text-align:center;">Satchel is empty. Open chests in the dungeon!</div>`;
 
-                modal.style.display = "flex";
-              } else {
-                modal.style.display = "none";
-              }
-            };
+            modal.style.display = "flex";
+          } else {
+            modal.style.display = "none";
+          }
+        };
 
           // --- ITEM PICKUP TOAST NOTIFICATION ENGINE ---
           window.pushToast = function (item) {

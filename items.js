@@ -3251,22 +3251,16 @@ Object.assign(window.GameState, {
       window.inventory.EQUIP.splice(index, 1);
     }
 
-    if (typeof window.resolvePlayerStats === "function") {
-      let newMaxHp = window.resolvePlayerStats().maxHp;
-      window.playerStats.currentHp = window.BigNumMin(
-        window.playerStats.currentHp,
-        newMaxHp,
-      );
-    }
+    if (typeof window.invalidatePlayerStats === "function") window.invalidatePlayerStats();
+        if (typeof window.updateUI === "function") window.updateUI();
 
-    if (typeof window.checkAchievements === "function")
-      window.checkAchievements();
-    window.state.paperDollDirty = true;
-    window.state.inventoryDirty = true;
-    if (typeof window.updateUI === "function") window.updateUI();
-    if (typeof window.renderInventory === "function") window.renderInventory();
-    if (typeof window.renderForgeTab === "function") window.renderForgeTab();
-    if (typeof window.saveGame === "function") window.saveGame();
+        if (typeof window.checkAchievements === "function")
+          window.checkAchievements();
+        window.state.paperDollDirty = true;
+        window.state.inventoryDirty = true;
+        if (typeof window.renderInventory === "function") window.renderInventory();
+        if (typeof window.renderForgeTab === "function") window.renderForgeTab();
+        if (typeof window.saveGame === "function") window.saveGame();
   },
 });
 
@@ -3305,22 +3299,16 @@ Object.assign(window.GameState, {
       window.inventory.EQUIP.push(item);
     }
 
-    if (typeof window.resolvePlayerStats === "function") {
-      let newMaxHp = window.resolvePlayerStats().maxHp;
-      window.playerStats.currentHp = window.BigNumMin(
-        window.playerStats.currentHp,
-        newMaxHp,
-      );
-    }
+    if (typeof window.invalidatePlayerStats === "function") window.invalidatePlayerStats();
+        if (typeof window.updateUI === "function") window.updateUI();
 
-    if (typeof window.checkAchievements === "function")
-      window.checkAchievements();
-    window.state.paperDollDirty = true;
-    window.state.inventoryDirty = true;
-    if (typeof window.updateUI === "function") window.updateUI();
-    if (typeof window.renderInventory === "function") window.renderInventory();
-    if (typeof window.renderForgeTab === "function") window.renderForgeTab();
-    if (typeof window.saveGame === "function") window.saveGame();
+        if (typeof window.checkAchievements === "function")
+          window.checkAchievements();
+        window.state.paperDollDirty = true;
+        window.state.inventoryDirty = true;
+        if (typeof window.renderInventory === "function") window.renderInventory();
+        if (typeof window.renderForgeTab === "function") window.renderForgeTab();
+        if (typeof window.saveGame === "function") window.saveGame();
   },
 });
 

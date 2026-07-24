@@ -791,12 +791,24 @@ body {
 }
 
 .close-btn {
-  background: transparent;
-  border: none;
+  background: rgba(231, 76, 60, 0.12);
+  border: 1px solid rgba(231, 76, 60, 0.4);
   color: #e74c3c;
-  font-weight: bold;
-  font-size: 12px;
+  border-radius: 5px;
+  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.close-btn:hover,
+.close-btn:active {
+  background: rgba(231, 76, 60, 0.3);
+  border-color: #e74c3c;
+  color: #ffffff;
+  transform: scale(0.95);
 }
 
 .modal-body {
