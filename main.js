@@ -154,11 +154,32 @@
     requestAnimationFrame(gameLoop);
   });
 
-  window.resizeCanvas = function () {
-    if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  };
+  window.checkOrientation = function () {
+      let overlay = document.getElementById("rotate-device-overlay");
+      if (!overlay) return;
+      let isPortrait = window.innerHeight > window.innerWidth;
+      let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+
+      if (isPortrait && isMobile) {
+        overlay.style.display = "flex";
+      } else {
+        overlay.style.display = "none";
+      }
+    };
+
+    window.resizeCanvas = function () {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      window.checkOrientation();
+    };
+
+    // Attempt screen orientation lock on first touch interaction
+    document.addEventListener("pointerdown", function () {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock("landscape").catch(() => {});
+      }
+    }, { once: true });
 
   // --- ADVENTURER'S HUB & STATE TRANSITIONS ---
   window.loadHub = function () {
@@ -202,118 +223,198 @@
       );
     };
 
-  window.enterDungeonRun = function () {
-    window.currentGameState = window.GAME_STATES.DUNGEON;
-    window.player.depth = 1;
-    window.player.bag = [];
-    window.loadDungeonFloor(window.player.depth);
-  };
-
-  window.spawnBossEncounter = function (tileX, tileY) {
-      let map = window.activeDungeonMap;
-      let tileSize = map ? map.tileSize : 32;
-
-      let bossHp = 600;
-      let bossAtk = 28;
-
-      window.mob = {
-        type: "dungeon_boss",
-        name: "Floor Warden",
-        hp: BigNum.from(bossHp),
-        maxHp: BigNum.from(bossHp),
-        atk: bossAtk,
-        x: tileX * tileSize,
-        y: tileY * tileSize,
-        w: 48,
-        h: 48,
-        flashTimer: 0,
-        isStopped: true,
-        bossTileX: tileX,
-        bossTileY: tileY,
-      };
-
-      window.spawnFloatingText(
-        window.player.x,
-        window.player.y - 25,
-        "FLOOR WARDEN ENGAGED",
-        "#e74c3c",
-      );
+  window.enterDungeonRun = function (startFloor = 1) {
+      window.currentGameState = window.GAME_STATES.DUNGEON;
+      window.player.depth = Math.max(1, Number(startFloor) || 1);
+      window.player.bag = [];
+      window.loadDungeonFloor(window.player.depth);
     };
 
-    window.onBossDefeated = function (tileX, tileY) {
-      let map = window.activeDungeonMap;
-      if (map && map.grid && map.grid[tileY] && map.grid[tileY][tileX] !== undefined) {
-        map.grid[tileY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
+    window.openHubPortalModal = function () {
+      let checkpoints = window.playerStats.unlockedCheckpoints || [1];
+      if (checkpoints.length <= 1) {
+        window.enterDungeonRun(1);
+        return;
       }
-      window.spawnFloatingText(
-        window.player.x,
-        window.player.y - 25,
-        "EXTRACTION ZONE OPEN",
-        "#00d2ff",
-      );
+
+      if (typeof window.showCustomConfirm === "function") {
+        let optionsHtml = checkpoints.map((startFloor) => {
+          let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
+          return `<option value="${startFloor}">Sector ${sectorNum} - Floor ${startFloor}</option>`;
+        }).join("");
+
+        let selectHtml = `
+          <div style="margin-top:10px; text-align:center;">
+            <label style="color:#aaa; font-size:11px; display:block; margin-bottom:6px;">SELECT STARTING CHECKPOINT:</label>
+            <select id="hub-checkpoint-select" style="background:#1e293b; color:#00d2ff; border:1px solid #334155; padding:8px 12px; border-radius:6px; font-weight:bold; font-family:monospace; font-size:12px; width:85%;">
+              ${optionsHtml}
+            </select>
+          </div>
+        `;
+
+        window.showCustomConfirm(
+          "DUNGEON PORTAL",
+          `Choose your starting floor checkpoint:${selectHtml}`,
+          "ENTER DUNGEON",
+          "CANCEL",
+          "#a855f7",
+          function () {
+            let selectEl = document.getElementById("hub-checkpoint-select");
+            let chosenFloor = selectEl ? parseInt(selectEl.value, 10) : 1;
+            window.enterDungeonRun(chosenFloor);
+          }
+        );
+      } else {
+        window.enterDungeonRun(checkpoints[checkpoints.length - 1]);
+      }
     };
 
-    window.activeDungeonMobs = [];
+  window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
+        let map = window.activeDungeonMap;
+        let tileSize = map ? map.tileSize : 32;
 
-      window.loadDungeonFloor = function (depth) {
-        if (!window.activeDungeonMap) return;
+        let depth = window.player.depth || 1;
+        let isMini = bossTier === "mini";
 
-        let map;
-        if (depth >= 4) {
-          map = window.activeDungeonMap.generateBossArena();
-        } else {
-          map = window.activeDungeonMap.generate(depth);
-        }
-        let tileSize = map.tileSize;
+        let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
+        let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
+        let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
 
-        window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
-        window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
-        window.player.targetX = window.player.x;
-        window.player.targetY = window.player.y;
+        window.mob = {
+          type: isMini ? "dungeon_miniboss" : "dungeon_boss",
+          name: bossName,
+          hp: BigNum.from(bossHp),
+          maxHp: BigNum.from(bossHp),
+          atk: bossAtk,
+          x: tileX * tileSize,
+          y: tileY * tileSize,
+          w: 48,
+          h: 48,
+          flashTimer: 0,
+          isStopped: true,
+          bossTileX: tileX,
+          bossTileY: tileY,
+          state: "idle",
+          telegraphTimer: 0,
+          maxTelegraphTimer: isMini ? 80 : 65,
+          activeAbility: null,
+          targetX: 0,
+          targetY: 0,
+          attackCooldown: 60,
+          moveset: isMini ? ["slam", "charge"] : ["slam", "nova", "charge"],
+        };
 
-        window.activeDungeonMobs = [];
-        window.mob = null;
-
-        if (depth >= 4) {
-          let cx = Math.floor(map.width / 2);
-          let cy = Math.floor(map.height / 2);
-          window.spawnBossEncounter(cx, cy);
-        } else if (map.mobSpawns) {
-          let mobHpVal = 40 + depth * 15;
-          let mobAtkVal = 8 + depth * 3;
-          map.mobSpawns.forEach((sp) => {
-            window.activeDungeonMobs.push({
-              id: window.idCounter++,
-              type: "mob",
-              visualTier: 0,
-              visualType: "slime",
-              x: sp.x * tileSize,
-              y: sp.y * tileSize,
-              w: 24,
-              h: 24,
-              hp: BigNum.from(mobHpVal),
-              maxHp: BigNum.from(mobHpVal),
-              atk: mobAtkVal,
-              flashTimer: 0,
-              attackCooldown: 0,
-            });
-          });
-        }
-
-        window.updateHUD();
-        let floorTitle = depth >= 4 ? "BOSS ARENA" : `FLOOR ${depth} DESCENT`;
         window.spawnFloatingText(
           window.player.x,
-          window.player.y - 20,
-          floorTitle,
-          depth >= 4 ? "#e74c3c" : "#00d2ff",
+          window.player.y - 25,
+          `${bossName.toUpperCase()} ENGAGED`,
+          isMini ? "#e67e22" : "#e74c3c",
         );
       };
 
+      window.onBossDefeated = function (tileX, tileY) {
+        let map = window.activeDungeonMap;
+        let depth = window.player.depth || 1;
+        let isMajorBoss = (depth % 12 === 0);
+
+        if (isMajorBoss) {
+          let nextCheckpoint = depth + 1;
+          window.playerStats.unlockedCheckpoints = window.playerStats.unlockedCheckpoints || [1];
+          if (!window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)) {
+            window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
+            window.playerStats.unlockedCheckpoints.sort((a, b) => a - b);
+          }
+          window.playerStats.maxFloorCleared = Math.max(
+            window.playerStats.maxFloorCleared || 0,
+            depth,
+          );
+          if (typeof window.saveGame === "function") window.saveGame();
+        }
+
+        if (map && map.grid && map.grid[tileY] && map.grid[tileY][tileX] !== undefined) {
+          map.grid[tileY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
+        }
+        window.spawnFloatingText(
+          window.player.x,
+          window.player.y - 25,
+          isMajorBoss ? "CHECKPOINT UNLOCKED - EXTRACTION OPEN" : "EXTRACTION ZONE OPEN",
+          "#00d2ff",
+        );
+      };
+
+      window.activeDungeonMobs = [];
+
+        window.loadDungeonFloor = function (depth) {
+          if (!window.activeDungeonMap) return;
+
+          let map;
+          let isMiniBoss = (depth % 12 === 4 || depth % 12 === 8);
+          let isMajorBoss = (depth % 12 === 0);
+
+          if (isMiniBoss || isMajorBoss) {
+            map = window.activeDungeonMap.generateBossArena();
+          } else {
+            map = window.activeDungeonMap.generate(depth);
+          }
+          let tileSize = map.tileSize;
+
+          window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
+          window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
+          window.player.targetX = window.player.x;
+          window.player.targetY = window.player.y;
+
+          window.activeDungeonMobs = [];
+          window.mob = null;
+
+          if (isMajorBoss) {
+            let cx = Math.floor(map.width / 2);
+            let cy = Math.floor(map.height / 2);
+            window.spawnBossEncounter(cx, cy, "major");
+          } else if (isMiniBoss) {
+            let cx = Math.floor(map.width / 2);
+            let cy = Math.floor(map.height / 2);
+            window.spawnBossEncounter(cx, cy, "mini");
+          } else if (map.mobSpawns) {
+            let mobHpVal = 40 + depth * 15;
+            let mobAtkVal = 8 + depth * 3;
+            map.mobSpawns.forEach((sp) => {
+              window.activeDungeonMobs.push({
+                id: window.idCounter++,
+                type: "mob",
+                visualTier: 0,
+                visualType: "slime",
+                x: sp.x * tileSize,
+                y: sp.y * tileSize,
+                w: 24,
+                h: 24,
+                hp: BigNum.from(mobHpVal),
+                maxHp: BigNum.from(mobHpVal),
+                atk: mobAtkVal,
+                flashTimer: 0,
+                attackCooldown: 0,
+              });
+            });
+          }
+
+          window.updateHUD();
+          let floorTitle = isMajorBoss
+            ? `FLOOR ${depth} - MAJOR DUNGEON BOSS`
+            : isMiniBoss
+              ? `FLOOR ${depth} - MINI BOSS WARDEN`
+              : `FLOOR ${depth} DESCENT`;
+
+          window.spawnFloatingText(
+            window.player.x,
+            window.player.y - 20,
+            floorTitle,
+            isMajorBoss ? "#e74c3c" : isMiniBoss ? "#e67e22" : "#00d2ff",
+          );
+        };
+
   window.interactWithStation = function (stationType) {
-    if (stationType === window.TILE_TYPES.STATION_PORTAL) {
-      window.enterDungeonRun();
-    } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
+      if (stationType === window.TILE_TYPES.STATION_PORTAL) {
+        window.openHubPortalModal();
+      } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
       window.spawnFloatingText(
         window.player.x,
         window.player.y - 15,
@@ -338,34 +439,64 @@
     };
 
     window.openPortalChoiceModal = function () {
-      let modal = document.getElementById("portal-modal");
-      let titleEl = document.getElementById("portal-modal-title");
-      let subEl = document.getElementById("portal-modal-subtitle");
-      let descendBtn = document.getElementById("portal-btn-descend");
+          let modal = document.getElementById("portal-modal");
+          let titleEl = document.getElementById("portal-modal-title");
+          let subEl = document.getElementById("portal-modal-subtitle");
+          let descendBtn = document.getElementById("portal-btn-descend");
 
-      if (!modal) return;
+          if (!modal) return;
 
-      let depth = window.player.depth || 1;
-      if (titleEl) titleEl.innerText = `DUNGEON PORTAL (FLOOR ${depth})`;
+          let depth = window.player.depth || 1;
+          let nextFloor = depth + 1;
 
-      if (depth >= 3) {
-        if (subEl) subEl.innerText = "The Floor Warden awaits beyond this portal!";
-        if (descendBtn) {
-          descendBtn.innerText = "ENTER BOSS ARENA";
-          descendBtn.style.background = "linear-gradient(180deg, #ef4444 0%, #b91c1c 100%)";
-          descendBtn.style.borderColor = "#f87171";
-        }
-      } else {
-        if (subEl) subEl.innerText = `Floor ${depth} Cleared. Choose your path:`;
-        if (descendBtn) {
-          descendBtn.innerText = `DESCEND TO FLOOR ${depth + 1}`;
-          descendBtn.style.background = "linear-gradient(180deg, #a855f7 0%, #7e22ce 100%)";
-          descendBtn.style.borderColor = "#c084fc";
-        }
-      }
+          let isMiniBossNext = (nextFloor % 12 === 4 || nextFloor % 12 === 8);
+          let isMajorBossNext = (nextFloor % 12 === 0);
 
-      modal.style.display = "flex";
-    };
+          let isMiniBossCurrent = (depth % 12 === 4 || depth % 12 === 8);
+          let isMajorBossCurrent = (depth % 12 === 0);
+
+          if (titleEl) {
+            if (isMajorBossCurrent) {
+              titleEl.innerText = `DUNGEON SECTOR CLEARED (FLOOR ${depth})`;
+            } else if (isMiniBossCurrent) {
+              titleEl.innerText = `MINI BOSS DEFEATED (FLOOR ${depth})`;
+            } else {
+              titleEl.innerText = `DUNGEON PORTAL (FLOOR ${depth})`;
+            }
+          }
+
+          if (isMajorBossNext) {
+            if (subEl) subEl.innerText = `Floor ${depth} Cleared! Major Dungeon Boss awaits on Floor ${nextFloor}!`;
+            if (descendBtn) {
+              descendBtn.innerText = `ENTER MAJOR BOSS ARENA (FLOOR ${nextFloor})`;
+              descendBtn.style.background = "linear-gradient(180deg, #ef4444 0%, #b91c1c 100%)";
+              descendBtn.style.borderColor = "#f87171";
+            }
+          } else if (isMiniBossNext) {
+            if (subEl) subEl.innerText = `Floor ${depth} Cleared! Mini Guard Boss awaits on Floor ${nextFloor}!`;
+            if (descendBtn) {
+              descendBtn.innerText = `ENTER MINI BOSS ARENA (FLOOR ${nextFloor})`;
+              descendBtn.style.background = "linear-gradient(180deg, #f97316 0%, #c2410c 100%)";
+              descendBtn.style.borderColor = "#fb923c";
+            }
+          } else if (isMajorBossCurrent) {
+            if (subEl) subEl.innerText = `Sector Boss Slayed! Checkpoint unlocked for Floor ${nextFloor}.`;
+            if (descendBtn) {
+              descendBtn.innerText = `DESCEND TO SECTOR ${Math.floor(depth / 12) + 1} (FLOOR ${nextFloor})`;
+              descendBtn.style.background = "linear-gradient(180deg, #a855f7 0%, #7e22ce 100%)";
+              descendBtn.style.borderColor = "#c084fc";
+            }
+          } else {
+            if (subEl) subEl.innerText = `Floor ${depth} Cleared. Choose your path:`;
+            if (descendBtn) {
+              descendBtn.innerText = `DESCEND TO FLOOR ${nextFloor}`;
+              descendBtn.style.background = "linear-gradient(180deg, #a855f7 0%, #7e22ce 100%)";
+              descendBtn.style.borderColor = "#c084fc";
+            }
+          }
+
+          modal.style.display = "flex";
+        };
 
     window.executePortalDescend = function () {
       let modal = document.getElementById("portal-modal");
@@ -537,8 +668,11 @@
     }
 
     // --- PHYSICS & LOGIC UPDATE ---
-        function update() {
-          let p = window.player;
+            function update() {
+              let p = window.player;
+              if (p.lastDamageTimer && p.lastDamageTimer > 0) {
+                p.lastDamageTimer--;
+              }
 
           let map = window.activeDungeonMap;
           if (!map || !map.grid) return;
@@ -634,21 +768,25 @@
           map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
 
           let stageScale = window.player.depth;
-          let types = [
-            "weapon",
-            "subweapon",
-            "helmet",
-            "chest",
-            "boots",
-            "ring",
-          ];
-          let chosenType = types[Math.floor(Math.random() * types.length)];
-          let newItem = window.createItemObject(
-            chosenType,
-            window.randInt(1, 4),
-            stageScale,
-            0,
-          );
+                    let effectiveStage = stageScale * 5;
+                    let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+                    let rolledRarity = window.rollItemRarity(effectiveStage, pStats.qly || 1.0, false);
+
+                    let types = [
+                      "weapon",
+                      "subweapon",
+                      "helmet",
+                      "chest",
+                      "boots",
+                      "ring",
+                    ];
+                    let chosenType = types[Math.floor(Math.random() * types.length)];
+                    let newItem = window.createItemObject(
+                      chosenType,
+                      rolledRarity,
+                      stageScale,
+                      0,
+                    );
 
           p.bag.push(newItem);
           window.updateHUD();
@@ -892,12 +1030,13 @@
                             }
 
               // Hero Proximity Auto-Attack
-              if (dist < 38 && p.attackTimer >= 20) {
-                p.attackTimer = 0;
-                window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
-                let pAtk = BigNum.from(pStats.atk || p.atk);
-                m.hp = m.hp.sub(pAtk);
-                m.flashTimer = 5;
+                            if (dist < 38 && p.attackTimer >= 20) {
+                              p.attackTimer = 0;
+                              window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
+                              let pAtk = BigNum.from(pStats.atk || p.atk);
+                              m.hp = m.hp.sub(pAtk);
+                              m.hasTakenDamage = true;
+                              m.flashTimer = 5;
 
                 window.spawnFloatingText(
                   m.x + m.w / 2,
@@ -924,18 +1063,19 @@
               }
 
               // Mob Contact Melee Attack on Player
-              if (dist < 20 && m.attackCooldown <= 0) {
-                m.attackCooldown = 60; // 1s attack cooldown
-                p.hp = Math.max(0, p.hp - m.atk);
-                window.spawnFloatingText(p.x, p.y - 15, `-${m.atk}`, "#e74c3c");
-                if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                  window.SoundManager.play("block");
-                }
-                window.updateHUD();
-                if (p.hp <= 0) {
-                  window.triggerExtraction(false, false);
-                }
-              }
+                            if (dist < 20 && m.attackCooldown <= 0) {
+                              m.attackCooldown = 60; // 1s attack cooldown
+                              p.hp = Math.max(0, p.hp - m.atk);
+                              p.lastDamageTimer = 180; // Display player HP bar for 3s
+                              window.spawnFloatingText(p.x, p.y - 15, `-${m.atk}`, "#e74c3c");
+                              if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                                window.SoundManager.play("block");
+                              }
+                              window.updateHUD();
+                              if (p.hp <= 0) {
+                                window.triggerExtraction(false, false);
+                              }
+                            }
             }
           }
 
@@ -950,10 +1090,11 @@
             let dist = Math.hypot(dx, dy);
 
             if (dist < 48 && p.attackTimer >= 20) {
-              p.attackTimer = 0;
-              let pAtk = BigNum.from(pStats.atk || p.atk);
-              bm.hp = bm.hp.sub(pAtk);
-              bm.flashTimer = 5;
+                          p.attackTimer = 0;
+                          let pAtk = BigNum.from(pStats.atk || p.atk);
+                          bm.hp = bm.hp.sub(pAtk);
+                          bm.hasTakenDamage = true;
+                          bm.flashTimer = 5;
 
               window.spawnFloatingText(
                 bm.x + bm.w / 2,
@@ -981,18 +1122,121 @@
               }
             }
 
-            if (bm && dist < 32 && bm.attackCooldown <= 0) {
-              bm.attackCooldown = 60;
-              p.hp = Math.max(0, p.hp - bm.atk);
-              window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
-              if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                window.SoundManager.play("block");
-              }
-              window.updateHUD();
-              if (p.hp <= 0) {
-                window.triggerExtraction(false, false);
-              }
-            }
+            // Telegraphed Boss Ability AI Engine
+                        if (bm && bm.hp.gt(0)) {
+                          let bossCenterX = bm.x + bm.w / 2;
+                          let bossCenterY = bm.y + bm.h / 2;
+
+                          if (bm.state === "telegraphing") {
+                            bm.telegraphTimer--;
+                            if (bm.telegraphTimer <= 0) {
+                              // Detonate Telegraphed Attack
+                              bm.state = "idle";
+                              bm.attackCooldown = 110;
+
+                              let ability = bm.activeAbility;
+                              if (ability === "slam") {
+                                let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
+                                if (hitDist <= 64) {
+                                                      let slamDmg = Math.round(bm.atk * 1.8);
+                                                      p.hp = Math.max(0, p.hp - slamDmg);
+                                                      p.lastDamageTimer = 180;
+                                  window.spawnFloatingText(p.x, p.y - 15, `-${slamDmg} SLAM`, "#e74c3c");
+                                  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                                    window.SoundManager.play("block");
+                                  }
+                                  window.updateHUD();
+                                  if (p.hp <= 0) window.triggerExtraction(false, false);
+                                }
+                              } else if (ability === "nova") {
+                                for (let i = 0; i < 8; i++) {
+                                  let angle = (i * Math.PI * 2) / 8;
+                                  let speed = 3.8;
+                                  window.projectiles.push({
+                                    x: bossCenterX,
+                                    y: bossCenterY,
+                                    vx: Math.cos(angle) * speed,
+                                    vy: Math.sin(angle) * speed,
+                                    r: 6,
+                                    pulseOffset: i,
+                                    damage: Math.round(bm.atk * 1.1),
+                                    life: 120,
+                                  });
+                                }
+                                if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                                  window.SoundManager.play("spell_fire");
+                                }
+                              } else if (ability === "charge") {
+                                let dashDx = bm.targetX - bossCenterX;
+                                let dashDy = bm.targetY - bossCenterY;
+                                let dashDist = Math.hypot(dashDx, dashDy);
+                                if (dashDist > 0) {
+                                  bm.x += (dashDx / dashDist) * 75;
+                                  bm.y += (dashDy / dashDist) * 75;
+                                }
+                                let hitDist = Math.hypot(p.x - (bm.x + bm.w / 2), p.y - (bm.y + bm.h / 2));
+                                if (hitDist <= 42) {
+                                                      let chargeDmg = Math.round(bm.atk * 1.5);
+                                                      p.hp = Math.max(0, p.hp - chargeDmg);
+                                                      p.lastDamageTimer = 180;
+                                  window.spawnFloatingText(p.x, p.y - 15, `-${chargeDmg} CHARGE`, "#e74c3c");
+                                  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                                    window.SoundManager.play("block");
+                                  }
+                                  window.updateHUD();
+                                  if (p.hp <= 0) window.triggerExtraction(false, false);
+                                }
+                              }
+                              bm.activeAbility = null;
+                            }
+                          } else if (bm.attackCooldown <= 0 && dist < 220) {
+                            // Roll new telegraphed ability
+                            let moves = bm.moveset || ["slam", "nova", "charge"];
+                            let chosen = moves[Math.floor(Math.random() * moves.length)];
+
+                            bm.state = "telegraphing";
+                            bm.activeAbility = chosen;
+                            bm.maxTelegraphTimer = 65;
+                            bm.telegraphTimer = bm.maxTelegraphTimer;
+                            bm.targetX = p.x;
+                            bm.targetY = p.y;
+                          } else if (dist < 30 && bm.attackCooldown <= 0) {
+                            bm.attackCooldown = 60;
+                            p.hp = Math.max(0, p.hp - bm.atk);
+                            window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
+                            if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                              window.SoundManager.play("block");
+                            }
+                            window.updateHUD();
+                            if (p.hp <= 0) window.triggerExtraction(false, false);
+                          }
+                        }
+
+                        // Update Boss Projectiles and Test Player Hitbox
+                        for (let i = window.projectiles.length - 1; i >= 0; i--) {
+                          let proj = window.projectiles[i];
+                          proj.life--;
+                          proj.x += proj.vx;
+                          proj.y += proj.vy;
+
+                          let projDist = Math.hypot(p.x - proj.x, p.y - proj.y);
+                          if (projDist < proj.r + (p.radius || 9)) {
+                                          p.hp = Math.max(0, p.hp - proj.damage);
+                                          p.lastDamageTimer = 180;
+                            window.spawnFloatingText(p.x, p.y - 15, `-${proj.damage}`, "#e74c3c");
+                            if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                              window.SoundManager.play("block");
+                            }
+                            window.updateHUD();
+                            window.projectiles.splice(i, 1);
+                            if (p.hp <= 0) window.triggerExtraction(false, false);
+                            continue;
+                          }
+
+                          if (proj.life <= 0) {
+                            window.projectiles.splice(i, 1);
+                          }
+                        }
           }
         };
 
@@ -1025,15 +1269,119 @@
             -Math.floor(window.DungeonCamera.y),
           );
 
-          if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-            window.activeDungeonMobs.forEach((m) => {
-              window.drawSingleMob(ctx, m);
-            });
-          }
+          // Helper to Render Enemy Overhead Healthbar with White Chasing Fill
+                    let drawMobOverheadBar = function (cCtx, m) {
+                      if (!m || !m.hp || !m.maxHp) return;
+                      let bHp = BigNum.from(m.hp);
+                      let bMaxHp = BigNum.from(m.maxHp);
 
-          if (window.mob) {
-            window.drawSingleMob(ctx, window.mob);
-          }
+                      let hpPct = 1.0;
+                      if (bMaxHp.gt(0)) {
+                        let div = bHp.div(bMaxHp);
+                        hpPct = Math.max(0, Math.min(1, div.m * Math.pow(10, Math.min(15, div.e))));
+                      }
+
+                      if (m.trailingPct === undefined) m.trailingPct = hpPct;
+                      if (m.trailingPct > hpPct) {
+                        m.trailingPct = Math.max(hpPct, m.trailingPct - 0.015);
+                      } else {
+                        m.trailingPct = hpPct;
+                      }
+
+                      if (!m.hasTakenDamage && hpPct < 1.0) {
+                        m.hasTakenDamage = true;
+                      }
+
+                      if (m.hasTakenDamage && m.hp.gt(0)) {
+                        let barW = Math.max(24, m.w || 24);
+                        let barH = 5;
+                        let barX = (m.x + (m.w || 24) / 2) - barW / 2;
+                        let barY = m.y - 8;
+
+                        cCtx.fillStyle = "rgba(10, 10, 10, 0.85)";
+                        cCtx.fillRect(barX, barY, barW, barH);
+
+                        // White Chasing Bar
+                        cCtx.fillStyle = "#ffffff";
+                        cCtx.fillRect(barX, barY, barW * m.trailingPct, barH);
+
+                        // Current Crimson HP Bar
+                        cCtx.fillStyle = "#e74c3c";
+                        cCtx.fillRect(barX, barY, barW * hpPct, barH);
+
+                        cCtx.strokeStyle = "#000000";
+                        cCtx.lineWidth = 1.2;
+                        cCtx.strokeRect(barX, barY, barW, barH);
+                      }
+                    };
+
+                    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+                      window.activeDungeonMobs.forEach((m) => {
+                        window.drawSingleMob(ctx, m);
+                        drawMobOverheadBar(ctx, m);
+                      });
+                    }
+
+                    if (window.mob) {
+                      let bm = window.mob;
+                      // Render Telegraphed Warning Zones
+                      if (bm.state === "telegraphing" && bm.activeAbility) {
+                        ctx.save();
+                        let progress = 1.0 - (bm.telegraphTimer / bm.maxTelegraphTimer);
+                        let pulseAlpha = 0.2 + Math.sin(Date.now() / 60) * 0.15;
+
+                        if (bm.activeAbility === "slam") {
+                          ctx.fillStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
+                          ctx.strokeStyle = "#e74c3c";
+                          ctx.lineWidth = 2.5;
+
+                          ctx.beginPath();
+                          ctx.arc(bm.targetX, bm.targetY, 64, 0, Math.PI * 2);
+                          ctx.fill();
+                          ctx.stroke();
+
+                          ctx.beginPath();
+                          ctx.arc(bm.targetX, bm.targetY, 64 * progress, 0, Math.PI * 2);
+                          ctx.strokeStyle = "#ffffff";
+                          ctx.lineWidth = 1.5;
+                          ctx.stroke();
+                        } else if (bm.activeAbility === "charge") {
+                          let bossCx = bm.x + bm.w / 2;
+                          let bossCy = bm.y + bm.h / 2;
+
+                          ctx.strokeStyle = `rgba(231, 76, 60, ${0.4 + pulseAlpha})`;
+                          ctx.lineWidth = 16;
+                          ctx.lineCap = "round";
+
+                          ctx.beginPath();
+                          ctx.moveTo(bossCx, bossCy);
+                          ctx.lineTo(bm.targetX, bm.targetY);
+                          ctx.stroke();
+
+                          ctx.strokeStyle = "#ffffff";
+                          ctx.lineWidth = 3;
+                          ctx.stroke();
+                        } else if (bm.activeAbility === "nova") {
+                          let bossCx = bm.x + bm.w / 2;
+                          let bossCy = bm.y + bm.h / 2;
+
+                          ctx.strokeStyle = `rgba(230, 126, 34, ${0.4 + pulseAlpha})`;
+                          ctx.lineWidth = 2;
+
+                          for (let i = 0; i < 8; i++) {
+                            let angle = (i * Math.PI * 2) / 8;
+                            ctx.beginPath();
+                            ctx.moveTo(bossCx, bossCy);
+                            ctx.lineTo(bossCx + Math.cos(angle) * 120, bossCy + Math.sin(angle) * 120);
+                            ctx.stroke();
+                          }
+                        }
+                        ctx.restore();
+                      }
+
+                      window.drawSingleMob(ctx, window.mob);
+                      drawMobOverheadBar(ctx, window.mob);
+                    }
 
           // Render Gold Homing Particles in Top-Down Space
           if (window.goldParticles && window.goldParticles.length > 0) {
@@ -1136,27 +1484,67 @@
           }
 
           // Hero Model (With Directional Flip, Equipped Gear, and Slash Arc)
-          let bounce = Math.abs(Math.sin(Date.now() / 150)) * 2;
-          ctx.save();
-          ctx.translate(p.x, p.y - 8);
-          if (p.facing === -1) {
-            ctx.scale(-1, 1);
-          }
-          window.drawSingleHero(
-            ctx,
-            0,
-            0,
-            0.8,
-            window.equippedSlots || {},
-            window.playerStats || {},
-            bounce,
-            {
-              slashFrame: window.hero.slashFrame,
-              deathAnimationTimer: 0,
-              isMainHero: true,
-            },
-          );
-          ctx.restore();
+                    let bounce = Math.abs(Math.sin(Date.now() / 150)) * 2;
+                    ctx.save();
+                    ctx.translate(p.x, p.y - 8);
+                    if (p.facing === -1) {
+                      ctx.scale(-1, 1);
+                    }
+                    window.drawSingleHero(
+                      ctx,
+                      0,
+                      0,
+                      0.8,
+                      window.equippedSlots || {},
+                      window.playerStats || {},
+                      bounce,
+                      {
+                        slashFrame: window.hero.slashFrame,
+                        deathAnimationTimer: 0,
+                        isMainHero: true,
+                      },
+                    );
+                    ctx.restore();
+
+                    // Render Player Overhead Healthbar with White Chasing Fill
+                    let pHpPct = Math.max(0, Math.min(1, p.hp / p.maxHp));
+                    if (p.trailingHpPct === undefined) p.trailingHpPct = pHpPct;
+                    if (p.trailingHpPct > pHpPct) {
+                      p.trailingHpPct = Math.max(pHpPct, p.trailingHpPct - 0.015);
+                    } else {
+                      p.trailingHpPct = pHpPct;
+                    }
+
+                    let isLowHp = pHpPct <= 0.20 && p.hp > 0;
+                    let showPlayerHpBar = (p.lastDamageTimer && p.lastDamageTimer > 0) || isLowHp;
+
+                    if (showPlayerHpBar && p.hp > 0) {
+                      let barW = 32;
+                      let barH = 5;
+                      let barX = p.x - barW / 2;
+                      let barY = p.y - 28;
+
+                      let borderCol = "#000000";
+                      if (isLowHp) {
+                        let pulse = Math.sin(Date.now() / 120) * 0.5 + 0.5;
+                        borderCol = `rgba(231, 76, 60, ${0.4 + pulse * 0.5})`;
+                      }
+
+                      ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
+                      ctx.fillRect(barX, barY, barW, barH);
+
+                      // White Chasing/Trailing Bar
+                      ctx.fillStyle = "#ffffff";
+                      ctx.fillRect(barX, barY, barW * p.trailingHpPct, barH);
+
+                      // Current HP Bar (Green if healthy, Red if low HP)
+                      ctx.fillStyle = isLowHp ? "#e74c3c" : "#2ecc71";
+                      ctx.fillRect(barX, barY, barW * pHpPct, barH);
+
+                      ctx.strokeStyle = borderCol;
+                      ctx.lineWidth = 1.2;
+                      ctx.strokeRect(barX, barY, barW, barH);
+                    }
 
           // Floating Text Effects
           window.floatingTexts.forEach((ft) => {

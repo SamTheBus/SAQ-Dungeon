@@ -4813,13 +4813,14 @@ window.rollGachaCrateItem = function (
     statLinesCount = 5; // Guaranteed Mythic
   } else {
     let vendingLvl = window.playerStats.vendingQLevel || 0;
-    let effectiveVendingLvl =
-      vendingLvl * window.getMilestoneMultiplier(vendingLvl);
-    let probs = window.calculateRarityProbabilities(
-      p.qly + effectiveVendingLvl * 0.01,
-      true,
-      isGlimmering,
-    );
+        let effectiveVendingLvl =
+          vendingLvl * window.getMilestoneMultiplier(vendingLvl);
+        let peakRunStage = window.playerStats.lifetimePeakStage || (window.playerStats.stage || 1);
+        let probs = window.calculateRarityProbabilities(
+          p.qly + effectiveVendingLvl * 0.01,
+          true,
+          peakRunStage,
+        );
     let roll = Math.random() * 100;
     let cumulative = 0;
 

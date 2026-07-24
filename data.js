@@ -389,42 +389,64 @@ window.randFloat = (min, max) => Math.random() * (max - min) + min;
 window.rarityProbCache = window.rarityProbCache || {};
 
 // Universal Normalized Weight-Based Rarity Probability Solver
-window.calculateRarityProbabilities = function (qly, isGacha = false) {
-  let cacheKey = `${qly}_${isGacha}`;
+window.calculateRarityProbabilities = function (qly = 1.0, isGacha = false, floorNumber = 1) {
+  let fl = Math.max(1, Number(floorNumber) || 1);
+  let cacheKey = `${qly}_${isGacha}_${fl}`;
   if (window.rarityProbCache[cacheKey]) {
     return window.rarityProbCache[cacheKey];
   }
 
-  let weights = [0, 0, 0, 0, 0, 0]; // Index maps to stars quality (0 to 5)
+  let weights = [0, 0, 0, 0, 0, 0]; // 0★ to 5★
+
+  // Floor Rarity Gating:
+  // 1★ (Rare) unlocks at Floor 10+
+  // 2★ (Magic) unlocks at Floor 30+
+  // 3★ (Epic) unlocks at Floor 100+
+  // 4★ (Legendary) unlocks at Floor 175+
+  // 5★ (Mythic) unlocks at Floor 300+
+  let maxAllowedTier = 0;
+  if (fl >= 300) maxAllowedTier = 5;
+  else if (fl >= 175) maxAllowedTier = 4;
+  else if (fl >= 100) maxAllowedTier = 3;
+  else if (fl >= 30) maxAllowedTier = 2;
+  else if (fl >= 10) maxAllowedTier = 1;
 
   if (isGacha) {
-    // Intrinsic Base Weights for Gacha Vending Machine at Q=1.0:
-    // 0★: 0 (Guarantees 1★+) | 1★: 54 | 2★: 25 | 3★: 15 | 4★: 5 | 5★: 1
-    weights[0] = 0;
-    weights[1] = 54 / Math.pow(qly, 0.5); // Lowers as quality grows
-    weights[2] = 25 * Math.pow(qly, 0.4);
-    weights[3] = 15 * Math.pow(qly, 0.8);
-    weights[4] = 5 * Math.pow(qly, 1.2);
-    weights[5] = 1 * Math.pow(qly, 1.6);
+    weights[0] = maxAllowedTier === 0 ? 100 : 0;
+    weights[1] = maxAllowedTier >= 1 ? 60 / Math.pow(qly, 0.4) : 0;
+    weights[2] = maxAllowedTier >= 2 ? 25 * Math.pow(qly, 0.4) : 0;
+    weights[3] = maxAllowedTier >= 3 ? 12 * Math.pow(qly, 0.8) : 0;
+    weights[4] = maxAllowedTier >= 4 ? 3 * Math.pow(qly, 1.2) : 0;
+    weights[5] = maxAllowedTier >= 5 ? Math.min(2.5, 0.2 * Math.pow((fl - 300) / 100 + 1, 1.2) * Math.pow(qly, 1.5)) : 0;
   } else {
-    // Intrinsic Base Weights for Campaign & Dungeon Drops at Q=1.0:
-    // 0★: 84.82 | 1★: 11.0 | 2★: 3.2 | 3★: 0.8 | 4★: 0.16 | 5★: 0.02
-    weights[0] = 84.82 / Math.pow(qly, 0.6); // Shrinks as quality grows
-    weights[1] = 11.0 / Math.pow(qly, 0.1); // Slightly scales down relative to upper tiers
-    weights[2] = 3.2 * Math.pow(qly, 0.4);
-    weights[3] = 0.8 * Math.pow(qly, 0.8);
-    // Preserves native quality gating checks
-    weights[4] = qly >= 1.5 ? 0.16 * Math.pow(qly, 1.2) : 0;
-    weights[5] = qly >= 2.0 ? 0.02 * Math.pow(qly, 1.6) : 0;
+    weights[0] = 80.0 / Math.pow(qly, 0.5);
+    weights[1] = maxAllowedTier >= 1 ? 15.0 * Math.pow(qly, 0.2) : 0;
+    weights[2] = maxAllowedTier >= 2 ? 4.0 * Math.pow(qly, 0.4) : 0;
+    weights[3] = maxAllowedTier >= 3 ? 0.9 * Math.pow(qly, 0.6) : 0;
+    weights[4] = maxAllowedTier >= 4 ? 0.1 * Math.pow(qly, 1.0) : 0;
+    weights[5] = maxAllowedTier >= 5 ? Math.min(1.0, 0.01 * Math.pow((fl - 300) / 100 + 1, 1.3) * Math.pow(qly, 1.4)) : 0;
   }
 
   let totalWeight = weights.reduce((sum, w) => sum + w, 0);
-  if (totalWeight <= 0) return [100, 0, 0, 0, 0, 0]; // Fallback sanity check
+  if (totalWeight <= 0) return [100, 0, 0, 0, 0, 0];
 
-  // Return normalized percentage list (0.0% to 100.0%)
   let result = weights.map((w) => (w / totalWeight) * 100);
   window.rarityProbCache[cacheKey] = result;
   return result;
+};
+
+window.rollItemRarity = function (stageLevel = 1, qly = 1.0, isGacha = false) {
+  let probs = window.calculateRarityProbabilities(qly, isGacha, stageLevel);
+  let roll = Math.random() * 100;
+  let cumulative = 0;
+
+  for (let stars = 5; stars >= 0; stars--) {
+    cumulative += probs[stars];
+    if (roll <= cumulative) {
+      return stars;
+    }
+  }
+  return 0;
 };
 
 window.getDepthQualityMultiplier = function (stage) {
@@ -2405,8 +2427,11 @@ window.playerStats = {
   weeklyRewardClaimed: false,
   unviewedAchievements: [],
   selectedPrestigeStage: 80,
-  unlockedTitles: [],
-  tutorialStep: 0,
+  unlockedCheckpoints: [1],
+    selectedCheckpoint: 1,
+    maxFloorCleared: 0,
+    unlockedTitles: [],
+    tutorialStep: 0,
   completedTutorialSteps: [],
   visitedTabs: [],
   visitedSubTabs: [],

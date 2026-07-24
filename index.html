@@ -10,9 +10,20 @@
     <link rel="stylesheet" href="style.css?v=1.000" />
   </head>
   <body>
-    <!-- Main Full-Screen Landscape Viewport -->
-    <div id="game-container">
+  <!-- Main Full-Screen Landscape Viewport -->
+  <div id="game-container">
       <canvas id="gameCanvas"></canvas>
+
+      <!-- Mobile Portrait Auto-Prompt Overlay -->
+      <div id="rotate-device-overlay" class="modal-overlay" style="display: none; flex-direction: column; text-align: center; gap: 12px; z-index: 999999; background: #05030a;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00d2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <path d="M12 18h.01"/>
+              <path d="M19 9l3 3-3 3"/>
+          </svg>
+          <div style="font-weight: 900; font-size: 14px; color: #00d2ff; letter-spacing: 1px;">PLEASE ROTATE YOUR DEVICE</div>
+          <div style="font-size: 10px; color: #94a3b8; font-family: monospace;">Landscape mode required for combat</div>
+      </div>
 
         <!-- Modular Centered Landscape Extraction HUD -->
         <div id="hud-overlay">
