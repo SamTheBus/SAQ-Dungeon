@@ -577,11 +577,11 @@
       }
 
       if (vType === "slime") {
-        let squish = Math.sin(Date.now() / 100) * 3.5;
-        let wScale = m.w / 2 + squish;
-        let hScale = m.h / 2 - squish;
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h - 10 + squish / 2;
+              let squish = Math.sin(Date.now() / 100) * 2.0;
+              let wScale = (m.w / 2) * 0.7 + squish;
+              let hScale = (m.h / 2) * 0.7 - squish;
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h - 6 + squish / 2;
 
         let slimeGrad = c.createRadialGradient(
           cx - 3,
@@ -1244,140 +1244,140 @@
           c.shadowBlur = 0;
         }
       } else if (vType === "sprout") {
-        let squish = Math.sin(Date.now() / 110) * 2.5;
-        let wScale = m.w / 2 + squish;
-        let hScale = m.h / 2 - squish;
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h;
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#fdf6e2";
-        c.beginPath();
-        c.ellipse(
-          cx,
-          cy - hScale * 0.4,
-          wScale * 0.65,
-          hScale * 0.45,
-          0,
-          0,
-          Math.PI * 2,
-        );
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.fillStyle = "#1e272e";
-          let eyeOffsetX = wScale * 0.22;
-          let eyeY = cy - hScale * 0.45;
-          let eyeSize = Math.max(1, hScale * 0.12);
-          c.beginPath();
-          c.arc(cx - eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
-          c.arc(cx + eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
-          c.fill();
-          c.fillStyle = "rgba(231, 76, 60, 0.45)";
-          c.beginPath();
-          c.ellipse(cx - eyeOffsetX - 3, eyeY + 3, 3, 1.5, 0, 0, Math.PI * 2);
-          c.ellipse(cx + eyeOffsetX + 3, eyeY + 3, 3, 1.5, 0, 0, Math.PI * 2);
-          c.fill();
-        }
-        let capY = cy - hScale * 1.05;
-        c.fillStyle =
-          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f1c40f" : "#ff6b1a";
-        c.beginPath();
-        c.ellipse(cx, capY, wScale * 1.25, hScale * 0.85, 0, Math.PI, 0);
-        c.lineTo(cx + wScale * 1.25, capY + hScale * 0.1);
-        c.quadraticCurveTo(
-          cx,
-          capY + hScale * 0.4,
-          cx - wScale * 1.25,
-          capY + hScale * 0.1,
-        );
-        c.closePath();
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.fillStyle = "rgba(255, 255, 255, 0.5)";
-          c.beginPath();
-          c.ellipse(
-            cx - wScale * 0.5,
-            capY - hScale * 0.35,
-            wScale * 0.3,
-            hScale * 0.15,
-            -Math.PI / 6,
-            0,
-            Math.PI * 2,
-          );
-          c.fill();
-        }
+              let squish = Math.sin(Date.now() / 110) * 1.5;
+              let wScale = (m.w / 2 + squish) * 0.65;
+              let hScale = (m.h / 2 - squish) * 0.65;
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h - 4;
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#fdf6e2";
+              c.beginPath();
+              c.ellipse(
+                cx,
+                cy - hScale * 0.4,
+                wScale * 0.65,
+                hScale * 0.45,
+                0,
+                0,
+                Math.PI * 2,
+              );
+              c.fill();
+              c.stroke();
+              if (m.flashTimer === 0) {
+                c.fillStyle = "#1e272e";
+                let eyeOffsetX = wScale * 0.22;
+                let eyeY = cy - hScale * 0.45;
+                let eyeSize = Math.max(1, hScale * 0.12);
+                c.beginPath();
+                c.arc(cx - eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
+                c.arc(cx + eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
+                c.fill();
+                c.fillStyle = "rgba(231, 76, 60, 0.45)";
+                c.beginPath();
+                c.ellipse(cx - eyeOffsetX - 2, eyeY + 2, 2, 1, 0, 0, Math.PI * 2);
+                c.ellipse(cx + eyeOffsetX + 2, eyeY + 2, 2, 1, 0, 0, Math.PI * 2);
+                c.fill();
+              }
+              let capY = cy - hScale * 1.05;
+              c.fillStyle =
+                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f1c40f" : "#ff6b1a";
+              c.beginPath();
+              c.ellipse(cx, capY, wScale * 1.25, hScale * 0.85, 0, Math.PI, 0);
+              c.lineTo(cx + wScale * 1.25, capY + hScale * 0.1);
+              c.quadraticCurveTo(
+                cx,
+                capY + hScale * 0.4,
+                cx - wScale * 1.25,
+                capY + hScale * 0.1,
+              );
+              c.closePath();
+              c.fill();
+              c.stroke();
+              if (m.flashTimer === 0) {
+                c.fillStyle = "rgba(255, 255, 255, 0.5)";
+                c.beginPath();
+                c.ellipse(
+                  cx - wScale * 0.5,
+                  capY - hScale * 0.35,
+                  wScale * 0.3,
+                  hScale * 0.15,
+                  -Math.PI / 6,
+                  0,
+                  Math.PI * 2,
+                );
+                c.fill();
+              }
       } else if (vType === "thorn_wyrm") {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h / 2 + 10;
-        let time = Date.now() / 130;
-        c.strokeStyle = "#000000";
-        c.lineWidth = 2;
-        for (let i = 0; i < 5; i++) {
-          let segX = cx + i * 9;
-          let segY = cy + Math.sin(time - i * 0.8) * 5;
-          c.beginPath();
-          c.moveTo(segX, segY + 4);
-          c.lineTo(segX - 3, segY + 12 + Math.sin(time * 2 + i) * 3);
-          c.stroke();
-        }
-        for (let i = 4; i >= 0; i--) {
-          let segX = cx + i * 9;
-          let segY = cy + Math.sin(time - i * 0.8) * 5;
-          let radius = 10 - i * 1.1;
-          c.fillStyle =
-            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#e67e22" : "#27ae60";
-          c.beginPath();
-          c.arc(segX, segY, radius, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-          if (m.flashTimer === 0) {
-            c.fillStyle = m.isRare ? "#f1c40f" : "#1e8449";
-            c.beginPath();
-            c.moveTo(segX + 2, segY - radius);
-            c.quadraticCurveTo(
-              segX + 5,
-              segY - radius - 6,
-              segX,
-              segY - radius - 8,
-            );
-            c.quadraticCurveTo(
-              segX - 3,
-              segY - radius - 4,
-              segX - 2,
-              segY - radius,
-            );
-            c.closePath();
-            c.fill();
-            c.stroke();
-          }
-        }
-        c.fillStyle =
-          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f39c12" : "#2ecc71";
-        let hX = cx - 8;
-        let hY = cy + Math.sin(time) * 5;
-        c.beginPath();
-        c.arc(hX, hY, 11, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.fillStyle = m.isRare ? "#ffea75" : "#2ecc71";
-          c.beginPath();
-          c.moveTo(hX - 4, hY - 8);
-          c.quadraticCurveTo(hX - 12, hY - 16, hX - 15, hY - 14);
-          c.quadraticCurveTo(hX - 8, hY - 6, hX - 2, hY - 6);
-          c.closePath();
-          c.fill();
-          c.stroke();
-          c.fillStyle = "#ffffff";
-          c.beginPath();
-          c.arc(hX - 4, hY - 2, 2.5, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-          c.fillStyle = "#1e272e";
-          c.beginPath();
-          c.arc(hX - 5, hY - 2, 1.2, 0, Math.PI * 2);
-          c.fill();
-        }
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2 + 2;
+              let time = Date.now() / 130;
+              c.strokeStyle = "#000000";
+              c.lineWidth = 1.5;
+              for (let i = 0; i < 5; i++) {
+                let segX = cx + i * 5.5;
+                let segY = cy + Math.sin(time - i * 0.8) * 3;
+                c.beginPath();
+                c.moveTo(segX, segY + 2);
+                c.lineTo(segX - 2, segY + 7 + Math.sin(time * 2 + i) * 2);
+                c.stroke();
+              }
+              for (let i = 4; i >= 0; i--) {
+                let segX = cx + i * 5.5;
+                let segY = cy + Math.sin(time - i * 0.8) * 3;
+                let radius = 6.2 - i * 0.7;
+                c.fillStyle =
+                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#e67e22" : "#27ae60";
+                c.beginPath();
+                c.arc(segX, segY, radius, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                if (m.flashTimer === 0) {
+                  c.fillStyle = m.isRare ? "#f1c40f" : "#1e8449";
+                  c.beginPath();
+                  c.moveTo(segX + 1, segY - radius);
+                  c.quadraticCurveTo(
+                    segX + 3,
+                    segY - radius - 4,
+                    segX,
+                    segY - radius - 5,
+                  );
+                  c.quadraticCurveTo(
+                    segX - 2,
+                    segY - radius - 2,
+                    segX - 1,
+                    segY - radius,
+                  );
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+                }
+              }
+              c.fillStyle =
+                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f39c12" : "#2ecc71";
+              let hX = cx - 5;
+              let hY = cy + Math.sin(time) * 3;
+              c.beginPath();
+              c.arc(hX, hY, 6.8, 0, Math.PI * 2);
+              c.fill();
+              c.stroke();
+              if (m.flashTimer === 0) {
+                c.fillStyle = m.isRare ? "#ffea75" : "#2ecc71";
+                c.beginPath();
+                c.moveTo(hX - 2, hY - 5);
+                c.quadraticCurveTo(hX - 7, hY - 10, hX - 9, hY - 9);
+                c.quadraticCurveTo(hX - 5, hY - 4, hX - 1, hY - 4);
+                c.closePath();
+                c.fill();
+                c.stroke();
+                c.fillStyle = "#ffffff";
+                c.beginPath();
+                c.arc(hX - 2.5, hY - 1, 1.5, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                c.fillStyle = "#1e272e";
+                c.beginPath();
+                c.arc(hX - 3, hY - 1, 0.8, 0, Math.PI * 2);
+                c.fill();
+              }
       } else if (vType === "gargoyle") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2;
@@ -1521,77 +1521,77 @@
           c.fill();
         }
       } else if (vType === "lava_serpent") {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h / 2 + 5;
-        let time = Date.now() / 140;
-        if (
-          Math.random() < 0.15 &&
-          window.particles.length < 200 &&
-          !window.isGamePaused
-        ) {
-          window.particles.push({
-            x: cx + window.randFloat(0, 30),
-            y: cy - 10,
-            vx: -window.randFloat(0.5, 1.5),
-            vy: -window.randFloat(1, 2.5),
-            radius: window.randFloat(1, 3),
-            color: "rgba(230, 126, 34, 0.4)",
-            alpha: 0.8,
-            life: window.randInt(15, 30),
-          });
-        }
-        for (let i = 5; i >= 0; i--) {
-          let segX = cx + i * 10;
-          let segY = cy + Math.sin(time - i * 0.8) * 6;
-          let radius = 10.5 - i * 1.1;
-          c.fillStyle =
-            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff8c00" : "#1c0905";
-          c.beginPath();
-          c.arc(segX, segY, radius, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-          if (m.flashTimer === 0) {
-            c.fillStyle = m.isRare ? "#ffffff" : "#ff3300";
-            c.beginPath();
-            c.arc(segX, segY, radius * 0.45, 0, Math.PI * 2);
-            c.fill();
-            c.fillStyle = "#2c110c";
-            c.beginPath();
-            c.moveTo(segX + 1, segY - radius);
-            c.lineTo(segX - 3, segY - radius - 5);
-            c.lineTo(segX - 4, segY - radius);
-            c.closePath();
-            c.fill();
-            c.stroke();
-          }
-        }
-        c.fillStyle =
-          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff4500" : "#110200";
-        let hX = cx - 8;
-        let hY = cy + Math.sin(time) * 6;
-        c.beginPath();
-        c.moveTo(hX + 10, hY - 10);
-        c.lineTo(hX - 12, hY - 8);
-        c.lineTo(hX - 14, hY + 2);
-        c.lineTo(hX + 10, hY + 11);
-        c.closePath();
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.fillStyle = "#e67e22";
-          c.beginPath();
-          c.moveTo(hX + 4, hY - 9);
-          c.quadraticCurveTo(hX + 12, hY - 18, hX + 16, hY - 16);
-          c.lineTo(hX + 6, hY - 4);
-          c.closePath();
-          c.fill();
-          c.stroke();
-          c.fillStyle = "#f1c40f";
-          c.beginPath();
-          c.arc(hX - 3, hY - 2, 2, 0, Math.PI * 2);
-          c.fill();
-        }
-      } else if (vType === "hell_bat") {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2 + 2;
+              let time = Date.now() / 140;
+              if (
+                Math.random() < 0.15 &&
+                window.particles.length < 200 &&
+                !window.isGamePaused
+              ) {
+                window.particles.push({
+                  x: cx + window.randFloat(0, 15),
+                  y: cy - 6,
+                  vx: -window.randFloat(0.5, 1.5),
+                  vy: -window.randFloat(1, 2.5),
+                  radius: window.randFloat(1, 2),
+                  color: "rgba(230, 126, 34, 0.4)",
+                  alpha: 0.8,
+                  life: window.randInt(15, 30),
+                });
+              }
+              for (let i = 5; i >= 0; i--) {
+                let segX = cx + i * 5.5;
+                let segY = cy + Math.sin(time - i * 0.8) * 3.5;
+                let radius = 6.5 - i * 0.7;
+                c.fillStyle =
+                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff8c00" : "#1c0905";
+                c.beginPath();
+                c.arc(segX, segY, radius, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                if (m.flashTimer === 0) {
+                  c.fillStyle = m.isRare ? "#ffffff" : "#ff3300";
+                  c.beginPath();
+                  c.arc(segX, segY, radius * 0.45, 0, Math.PI * 2);
+                  c.fill();
+                  c.fillStyle = "#2c110c";
+                  c.beginPath();
+                  c.moveTo(segX + 1, segY - radius);
+                  c.lineTo(segX - 2, segY - radius - 3);
+                  c.lineTo(segX - 3, segY - radius);
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+                }
+              }
+              c.fillStyle =
+                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff4500" : "#110200";
+              let hX = cx - 5;
+              let hY = cy + Math.sin(time) * 3.5;
+              c.beginPath();
+              c.moveTo(hX + 6, hY - 6);
+              c.lineTo(hX - 7, hY - 5);
+              c.lineTo(hX - 8, hY + 1);
+              c.lineTo(hX + 6, hY + 7);
+              c.closePath();
+              c.fill();
+              c.stroke();
+              if (m.flashTimer === 0) {
+                c.fillStyle = "#e67e22";
+                c.beginPath();
+                c.moveTo(hX + 2, hY - 5);
+                c.quadraticCurveTo(hX + 7, hY - 11, hX + 10, hY - 10);
+                c.lineTo(hX + 3, hY - 2);
+                c.closePath();
+                c.fill();
+                c.stroke();
+                c.fillStyle = "#f1c40f";
+                c.beginPath();
+                c.arc(hX - 2, hY - 1, 1.2, 0, Math.PI * 2);
+                c.fill();
+              }
+            } else if (vType === "hell_bat") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2 + Math.sin(Date.now() / 110) * 3;
         let batWing = Math.sin(Date.now() / 70) * 11;
@@ -1629,56 +1629,56 @@
           c.fill();
         }
       } else if (vType === "swamp_basilisk") {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h / 2 + 5;
-        let time = Date.now() / 150;
-        for (let i = 5; i >= 0; i--) {
-          let segX = cx + i * 10;
-          let segY = cy + Math.sin(time - i * 0.8) * 6;
-          let radius = 10.5 - i * 1.1;
-          c.fillStyle =
-            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#1a3a22";
-          c.beginPath();
-          c.arc(segX, segY, radius, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-          if (m.flashTimer === 0) {
-            c.fillStyle = m.isRare ? "#ff007f" : "#9b59b6";
-            c.beginPath();
-            c.moveTo(segX + 2, segY - radius);
-            c.lineTo(segX - 2, segY - radius - 6);
-            c.lineTo(segX - 4, segY - radius);
-            c.closePath();
-            c.fill();
-            c.stroke();
-          }
-        }
-        c.fillStyle =
-          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#122c19";
-        let hX = cx - 8;
-        let hY = cy + Math.sin(time) * 6;
-        c.beginPath();
-        c.moveTo(hX + 11, hY - 11);
-        c.lineTo(hX - 13, hY - 5);
-        c.lineTo(hX - 11, hY + 6);
-        c.lineTo(hX + 11, hY + 11);
-        c.closePath();
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.fillStyle = "#ffffff";
-          c.beginPath();
-          c.moveTo(hX - 10, hY - 1);
-          c.lineTo(hX - 13, hY + 4);
-          c.lineTo(hX - 7, hY + 2);
-          c.closePath();
-          c.fill();
-          c.fillStyle = "#f1c40f";
-          c.beginPath();
-          c.arc(hX - 3, hY - 3, 2, 0, Math.PI * 2);
-          c.fill();
-        }
-      } else if (vType === "toxic_fly") {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2 + 2;
+              let time = Date.now() / 150;
+              for (let i = 5; i >= 0; i--) {
+                let segX = cx + i * 5.5;
+                let segY = cy + Math.sin(time - i * 0.8) * 3.5;
+                let radius = 6.5 - i * 0.7;
+                c.fillStyle =
+                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#1a3a22";
+                c.beginPath();
+                c.arc(segX, segY, radius, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                if (m.flashTimer === 0) {
+                  c.fillStyle = m.isRare ? "#ff007f" : "#9b59b6";
+                  c.beginPath();
+                  c.moveTo(segX + 1, segY - radius);
+                  c.lineTo(segX - 1, segY - radius - 4);
+                  c.lineTo(segX - 2, segY - radius);
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+                }
+              }
+              c.fillStyle =
+                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#122c19";
+              let hX = cx - 5;
+              let hY = cy + Math.sin(time) * 3.5;
+              c.beginPath();
+              c.moveTo(hX + 7, hY - 7);
+              c.lineTo(hX - 8, hY - 3);
+              c.lineTo(hX - 7, hY + 4);
+              c.lineTo(hX + 7, hY + 7);
+              c.closePath();
+              c.fill();
+              c.stroke();
+              if (m.flashTimer === 0) {
+                c.fillStyle = "#ffffff";
+                c.beginPath();
+                c.moveTo(hX - 6, hY - 1);
+                c.lineTo(hX - 8, hY + 2);
+                c.lineTo(hX - 4, hY + 1);
+                c.closePath();
+                c.fill();
+                c.fillStyle = "#f1c40f";
+                c.beginPath();
+                c.arc(hX - 2, hY - 2, 1.2, 0, Math.PI * 2);
+                c.fill();
+              }
+            } else if (vType === "toxic_fly") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2 + Math.sin(Date.now() / 110) * 4;
         let wing = Math.sin(Date.now() / 60) * 11;
@@ -1790,66 +1790,66 @@
           c.restore();
         }
       } else if (vType === "void_crawler") {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h / 2 + 5;
-        let time = Date.now() / 150;
-        c.strokeStyle = "#000000";
-        c.lineWidth = 1.8;
-        for (let i = 0; i < 6; i++) {
-          let segX = cx + i * 9;
-          let segY = cy + Math.sin(time - i * 0.7) * 5.5;
-          c.beginPath();
-          c.moveTo(segX, segY + 2);
-          c.lineTo(segX - 5, segY + 14 + Math.sin(time * 3.5 + i) * 4);
-          c.stroke();
-        }
-        for (let i = 6; i >= 0; i--) {
-          let segX = cx + i * 9;
-          let segY = cy + Math.sin(time - i * 0.7) * 5.5;
-          let radius = 10 - i * 1.1;
-          c.fillStyle =
-            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#1a022b";
-          c.beginPath();
-          c.arc(segX, segY, radius, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-          if (m.flashTimer === 0) {
-            c.strokeStyle = "#8e44ad";
-            c.lineWidth = 1.5;
-            c.beginPath();
-            c.moveTo(segX - 2, segY - radius + 3);
-            c.lineTo(segX + 2, segY - radius + 3);
-            c.stroke();
-          }
-        }
-        c.fillStyle =
-          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#11001c";
-        let hX = cx - 8;
-        let hY = cy + Math.sin(time) * 5.5;
-        c.beginPath();
-        c.arc(hX, hY, 10.5, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.strokeStyle = "#8e44ad";
-          c.lineWidth = 1.8;
-          c.beginPath();
-          c.moveTo(hX - 4, hY - 6);
-          c.quadraticCurveTo(
-            hX - 15,
-            hY - 14 + Math.sin(time * 3) * 4,
-            hX - 22,
-            hY - 10 + Math.sin(time * 3) * 4,
-          );
-          c.stroke();
-          c.fillStyle = "#ff007f";
-          c.beginPath();
-          c.arc(hX - 5, hY - 3, 1.5, 0, Math.PI * 2);
-          c.arc(hX - 2, hY - 1, 1.2, 0, Math.PI * 2);
-          c.arc(hX - 5, hY + 1, 1.2, 0, Math.PI * 2);
-          c.fill();
-        }
-      } else if (vType === "void_spectre") {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2 + 2;
+              let time = Date.now() / 150;
+              c.strokeStyle = "#000000";
+              c.lineWidth = 1.5;
+              for (let i = 0; i < 6; i++) {
+                let segX = cx + i * 5.5;
+                let segY = cy + Math.sin(time - i * 0.7) * 3.5;
+                c.beginPath();
+                c.moveTo(segX, segY + 1);
+                c.lineTo(segX - 3, segY + 9 + Math.sin(time * 3.5 + i) * 2.5);
+                c.stroke();
+              }
+              for (let i = 6; i >= 0; i--) {
+                let segX = cx + i * 5.5;
+                let segY = cy + Math.sin(time - i * 0.7) * 3.5;
+                let radius = 6.2 - i * 0.7;
+                c.fillStyle =
+                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#1a022b";
+                c.beginPath();
+                c.arc(segX, segY, radius, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                if (m.flashTimer === 0) {
+                  c.strokeStyle = "#8e44ad";
+                  c.lineWidth = 1.0;
+                  c.beginPath();
+                  c.moveTo(segX - 1, segY - radius + 2);
+                  c.lineTo(segX + 1, segY - radius + 2);
+                  c.stroke();
+                }
+              }
+              c.fillStyle =
+                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#11001c";
+              let hX = cx - 5;
+              let hY = cy + Math.sin(time) * 3.5;
+              c.beginPath();
+              c.arc(hX, hY, 6.5, 0, Math.PI * 2);
+              c.fill();
+              c.stroke();
+              if (m.flashTimer === 0) {
+                c.strokeStyle = "#8e44ad";
+                c.lineWidth = 1.2;
+                c.beginPath();
+                c.moveTo(hX - 2, hY - 4);
+                c.quadraticCurveTo(
+                  hX - 9,
+                  hY - 9 + Math.sin(time * 3) * 2.5,
+                  hX - 14,
+                  hY - 6 + Math.sin(time * 3) * 2.5,
+                );
+                c.stroke();
+                c.fillStyle = "#ff007f";
+                c.beginPath();
+                c.arc(hX - 3, hY - 2, 1.0, 0, Math.PI * 2);
+                c.arc(hX - 1, hY - 1, 0.8, 0, Math.PI * 2);
+                c.arc(hX - 3, hY + 1, 0.8, 0, Math.PI * 2);
+                c.fill();
+              }
+            } else if (vType === "void_spectre") {
         // Render a floating ethereal void phantom cloaked in cosmic energy
         let hover = Math.sin(Date.now() / 150) * 5;
         let cx = m.x + m.w / 2;
