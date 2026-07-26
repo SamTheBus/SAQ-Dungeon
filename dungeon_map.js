@@ -68,31 +68,37 @@
       this.grid[cy][cx] = window.TILE_TYPES.SPAWN_PLAYER;
 
       this.stations = [
-        {
-          type: window.TILE_TYPES.STATION_PORTAL,
-          label: "DUNGEON PORTAL",
-          x: cx,
-          y: 4,
-        },
-        {
-          type: window.TILE_TYPES.STATION_FORGE,
-          label: "BLACKSMITH FORGE",
-          x: 5,
-          y: cy,
-        },
-        {
-          type: window.TILE_TYPES.STATION_ENCHANT,
-          label: "CELESTIAL ALTAR",
-          x: cx,
-          y: 12,
-        },
-        {
-          type: window.TILE_TYPES.STATION_INN,
-          label: "RECOVERY INN",
-          x: 19,
-          y: cy,
-        },
-      ];
+              {
+                type: window.TILE_TYPES.STATION_PORTAL,
+                label: "DUNGEON PORTAL",
+                x: cx,
+                y: 4,
+              },
+              {
+                type: window.TILE_TYPES.STATION_FORGE,
+                label: "BLACKSMITH FORGE",
+                x: 5,
+                y: cy,
+              },
+              {
+                type: window.TILE_TYPES.STATION_ENCHANT,
+                label: "CELESTIAL ALTAR",
+                x: cx,
+                y: 12,
+              },
+              {
+                type: window.TILE_TYPES.STATION_INN,
+                label: "RECOVERY INN",
+                x: 19,
+                y: cy,
+              },
+              {
+                type: window.TILE_TYPES.STATION_GACHAPON,
+                label: "GACHAPON VENDING",
+                x: 19,
+                y: 12,
+              },
+            ];
 
       this.stations.forEach((st) => {
         if (this.grid[st.y] && this.grid[st.y][st.x] !== undefined) {
@@ -931,38 +937,47 @@
                   pCtx.fillRect(px + 2, py + tileSize - 4, 2, 2);
                   pCtx.fillRect(px + tileSize - 4, py + tileSize - 4, 2, 2);
                 } else if (stationTile.type === window.TILE_TYPES.STATION_INN) {
-                  pCtx.fillStyle = isAlt ? "#0a3328" : "#06241a";
-                  pCtx.fillRect(px, py, tileSize, tileSize);
+                                          pCtx.fillStyle = isAlt ? "#0a3328" : "#06241a";
+                                          pCtx.fillRect(px, py, tileSize, tileSize);
 
-                  pCtx.strokeStyle = "rgba(16, 185, 129, 0.35)";
-                  pCtx.lineWidth = 1;
-                  pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+                                          pCtx.strokeStyle = "rgba(16, 185, 129, 0.35)";
+                                          pCtx.lineWidth = 1;
+                                          pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
 
-                  if (tileHash > 0.4) {
-                    pCtx.fillStyle = "rgba(16, 185, 129, 0.25)";
-                    pCtx.beginPath();
-                    pCtx.arc(px + 4, py + 4, 3, 0, Math.PI * 2);
-                    pCtx.arc(
-                      px + tileSize - 4,
-                      py + tileSize - 4,
-                      2.5,
-                      0,
-                      Math.PI * 2,
-                      );
-                    pCtx.fill();
-                  }
-                }
+                                          if (tileHash > 0.4) {
+                                            pCtx.fillStyle = "rgba(16, 185, 129, 0.25)";
+                                            pCtx.beginPath();
+                                            pCtx.arc(px + 4, py + 4, 3, 0, Math.PI * 2);
+                                            pCtx.arc(
+                                              px + tileSize - 4,
+                                              py + tileSize - 4,
+                                              2.5,
+                                              0,
+                                              Math.PI * 2,
+                                            );
+                                            pCtx.fill();
+                                          }
+                                        } else if (stationTile.type === window.TILE_TYPES.STATION_GACHAPON) {
+                                          pCtx.fillStyle = isAlt ? "#1f1d15" : "#191710";
+                                          pCtx.fillRect(px, py, tileSize, tileSize);
+
+                                          pCtx.strokeStyle = "rgba(241, 196, 15, 0.25)";
+                                          pCtx.lineWidth = 1;
+                                          pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+                                        }
 
                 pCtx.strokeStyle =
-                  stationTile.type === window.TILE_TYPES.STATION_FORGE
-                    ? "#ea580c"
-                    : stationTile.type === window.TILE_TYPES.STATION_PORTAL
-                      ? "#9333ea"
-                      : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
-                        ? "#00d2ff"
-                        : stationTile.type === window.TILE_TYPES.STATION_STASH
-                          ? "#0284c7"
-                          : "#059669";
+                                  stationTile.type === window.TILE_TYPES.STATION_FORGE
+                                    ? "#ea580c"
+                                    : stationTile.type === window.TILE_TYPES.STATION_PORTAL
+                                      ? "#9333ea"
+                                      : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
+                                        ? "#00d2ff"
+                                        : stationTile.type === window.TILE_TYPES.STATION_STASH
+                                          ? "#0284c7"
+                                          : stationTile.type === window.TILE_TYPES.STATION_GACHAPON
+                                            ? "#f1c40f"
+                                            : "#059669";
                 pCtx.lineWidth = 1.5;
 
                 if (dx === -1) {
@@ -2395,25 +2410,96 @@
         ctx.stroke();
 
         for (let i = 0; i < 6; i++) {
-          let seed = i * 71.4;
-          let progress = (time / 650 + seed) % 1.0;
-          let sporeX = cx + Math.sin(time / 140 + seed) * 14;
-          let sporeY = cy + 4 - progress * 28;
-          let sporeAlpha = (1.0 - progress) * 0.85;
-          let sporeSize = 1.8 * (1.0 - progress * 0.3);
+                  let seed = i * 71.4;
+                  let progress = (time / 650 + seed) % 1.0;
+                  let sporeX = cx + Math.sin(time / 140 + seed) * 14;
+                  let sporeY = cy + 4 - progress * 28;
+                  let sporeAlpha = (1.0 - progress) * 0.85;
+                  let sporeSize = 1.8 * (1.0 - progress * 0.3);
 
-          ctx.fillStyle =
-            i % 2 === 0
-              ? `rgba(167, 243, 208, ${sporeAlpha})`
-              : `rgba(52, 211, 153, ${sporeAlpha})`;
-          ctx.beginPath();
-          ctx.arc(sporeX, sporeY, sporeSize, 0, Math.PI * 2);
-          ctx.fill();
-        }
+                  ctx.fillStyle =
+                    i % 2 === 0
+                      ? `rgba(167, 243, 208, ${sporeAlpha})`
+                      : `rgba(52, 211, 153, ${sporeAlpha})`;
+                  ctx.beginPath();
+                  ctx.arc(sporeX, sporeY, sporeSize, 0, Math.PI * 2);
+                  ctx.fill();
+                }
 
-        ctx.restore();
-      }
-    };
+                ctx.restore();
+              } else if (tileType === window.TILE_TYPES.STATION_GACHAPON) {
+                let cx = px + tileSize / 2;
+                let cy = py + tileSize / 2;
+                let time = Date.now();
+
+                ctx.save();
+
+                // 1. Shadow Base
+                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                ctx.beginPath();
+                ctx.ellipse(cx, cy + 10, 14, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 2. Red Metal Body (Vending Base)
+                ctx.fillStyle = "#c0392b";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(cx - 10, cy - 2, 20, 14, [2]);
+                ctx.fill();
+                ctx.stroke();
+
+                // Dispenser hatch slot
+                ctx.fillStyle = "#1e272e";
+                ctx.fillRect(cx - 4, cy + 6, 8, 5);
+                ctx.strokeRect(cx - 4, cy + 6, 8, 5);
+
+                // Turn dial
+                let dialAngle = (time / 1000) % (Math.PI * 2);
+                ctx.save();
+                ctx.translate(cx, cy + 2);
+                ctx.rotate(dialAngle);
+                ctx.fillStyle = "#ffd700";
+                ctx.fillRect(-4, -1, 8, 2);
+                ctx.strokeRect(-4, -1, 8, 2);
+                ctx.restore();
+
+                // 3. Glass Dome (Sphere holding capsules)
+                ctx.fillStyle = "rgba(224, 242, 254, 0.35)";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy - 8, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Cap on top of dome
+                ctx.fillStyle = "#c0392b";
+                ctx.fillRect(cx - 5, cy - 19, 10, 3);
+                ctx.strokeRect(cx - 5, cy - 19, 10, 3);
+
+                // 4. Colorful capsules inside dome
+                let capsuleColors = ["#ffd700", "#38bdf8", "#ec4899", "#2ecc71", "#a855f7"];
+                for (let i = 0; i < 6; i++) {
+                  let seed = i * 45.6;
+                  let capX = cx + Math.sin(seed) * 5;
+                  let capY = cy - 8 + Math.cos(seed * 1.5) * 4;
+                  ctx.fillStyle = capsuleColors[i % capsuleColors.length];
+                  ctx.beginPath();
+                  ctx.arc(capX, capY, 2, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+
+                // Glass shine curve
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(cx, cy - 8, 7, -Math.PI / 3, -Math.PI * 0.8, true);
+                ctx.stroke();
+
+                ctx.restore();
+              }
+            };
 
     // PASS 2.5: Environmental Props (Wall Torches, Guild Banners & Bioluminescent Mushrooms)
     let time = Date.now();

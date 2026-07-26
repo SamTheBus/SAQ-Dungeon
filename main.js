@@ -155,14 +155,23 @@
                   outerColor: "rgba(168, 85, 247, 0.55)",
                 });
               } else if (st.type === window.TILE_TYPES.STATION_INN) {
-                lights.push({
-                  x: sx,
-                  y: sy,
-                  r: 120,
-                  innerColor: "rgba(180, 255, 200, 0.95)",
-                  outerColor: "rgba(46, 204, 113, 0.45)",
-                });
-              }
+                              lights.push({
+                                x: sx,
+                                y: sy,
+                                r: 120,
+                                innerColor: "rgba(180, 255, 200, 0.95)",
+                                outerColor: "rgba(46, 204, 113, 0.45)",
+                              });
+                            } else if (st.type === window.TILE_TYPES.STATION_GACHAPON) {
+                              let gachaFlicker = Math.sin(time / 150) * 8;
+                              lights.push({
+                                x: sx,
+                                y: sy,
+                                r: 130 + gachaFlicker,
+                                innerColor: "rgba(255, 240, 180, 0.95)",
+                                outerColor: "rgba(241, 196, 15, 0.45)",
+                              });
+                            }
             }
           });
         }
@@ -931,30 +940,39 @@
       let cy = Math.floor(map.height / 2);
       window.spawnBossEncounter(cx, cy, "mini");
     } else if (map.mobSpawns) {
-            let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-            let mobHpVal = Math.floor((40 + depth * 18 + Math.pow(depth, 1.3) * 5) * enemyScale);
-            let mobAtkVal = Math.floor((8 + depth * 3.5) * enemyScale);
+                let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+                let mobHpVal = Math.floor((40 + depth * 18 + Math.pow(depth, 1.3) * 5) * enemyScale);
+                let mobAtkVal = Math.floor((8 + depth * 3.5) * enemyScale);
 
-            map.mobSpawns.forEach((sp) => {
-              let mobInfo = window.getMobPoolForDepth(depth);
-              window.activeDungeonMobs.push({
-                id: window.idCounter++,
-                type: "mob",
-                visualTier: mobInfo.tier,
-                visualType: mobInfo.type,
-                x: sp.x * tileSize,
-                y: sp.y * tileSize,
-                w: 24,
-                h: 24,
-                hp: BigNum.from(mobHpVal),
-                maxHp: BigNum.from(mobHpVal),
-                atk: mobAtkVal,
-                flashTimer: 0,
-                attackCooldown: 0,
-                facing: -1,
-              });
-            });
-          }
+                let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+                let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
+
+                map.mobSpawns.forEach((sp) => {
+                  let mobInfo = window.getMobPoolForDepth(depth);
+                  let isRare = Math.random() < rareRate;
+
+                  let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
+                  let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
+
+                  window.activeDungeonMobs.push({
+                    id: window.idCounter++,
+                    type: "mob",
+                    visualTier: mobInfo.tier,
+                    visualType: mobInfo.type,
+                    x: sp.x * tileSize,
+                    y: sp.y * tileSize,
+                    w: 24,
+                    h: 24,
+                    hp: BigNum.from(finalHp),
+                    maxHp: BigNum.from(finalHp),
+                    atk: finalAtk,
+                    flashTimer: 0,
+                    attackCooldown: 0,
+                    facing: -1,
+                    isRare: isRare,
+                  });
+                });
+              }
 
     window.updateHUD();
     let floorTitle = isMajorBoss
@@ -972,27 +990,31 @@
   };
 
   window.interactWithStation = function (stationType) {
-    if (stationType === window.TILE_TYPES.STATION_PORTAL) {
-      window.openHubPortalModal();
-    } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
-      if (typeof window.toggleForgeModal === "function") {
-        window.toggleForgeModal();
+      if (stationType === window.TILE_TYPES.STATION_PORTAL) {
+        window.openHubPortalModal();
+      } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
+        if (typeof window.toggleForgeModal === "function") {
+          window.toggleForgeModal();
+        }
+      } else if (stationType === window.TILE_TYPES.STATION_ENCHANT) {
+        if (typeof window.toggleEnchantmentModal === "function") {
+          window.toggleEnchantmentModal();
+        }
+      } else if (stationType === window.TILE_TYPES.STATION_GACHAPON) {
+        if (typeof window.openGachaModal === "function") {
+          window.openGachaModal();
+        }
+      } else if (stationType === window.TILE_TYPES.STATION_INN) {
+        window.spawnFloatingText(
+          window.player.x,
+          window.player.y - 15,
+          "RECOVERY INN RESTORED HP",
+          "#34d399",
+        );
+        window.player.hp = window.player.maxHp;
+        window.updateHUD();
       }
-    } else if (stationType === window.TILE_TYPES.STATION_ENCHANT) {
-      if (typeof window.toggleEnchantmentModal === "function") {
-        window.toggleEnchantmentModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_INN) {
-      window.spawnFloatingText(
-        window.player.x,
-        window.player.y - 15,
-        "RECOVERY INN RESTORED HP",
-        "#34d399",
-      );
-      window.player.hp = window.player.maxHp;
-      window.updateHUD();
-    }
-  };
+    };
 
   window.requestAbandonRun = function () {
     if (window.currentGameState === window.GAME_STATES.HUB) return;
@@ -2367,6 +2389,10 @@
                   p.attackTimer = 0;
                   window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
 
+                  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                    window.SoundManager.play("swing");
+                  }
+
                   let mobCenterX = m.x + m.w / 2;
                   let mobCenterY = m.y + m.h / 2;
 
@@ -2652,9 +2678,13 @@
             }
 
       if (dist < 48 && p.attackTimer >= 20) {
-              p.attackTimer = 0;
+                    p.attackTimer = 0;
 
-              let bossCenterX = bm.x + bm.w / 2;
+                    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                      window.SoundManager.play("swing");
+                    }
+
+                    let bossCenterX = bm.x + bm.w / 2;
               // Face the boss being attacked!
               let dxToBoss = bossCenterX - p.x;
               if (dxToBoss < -0.1) p.facing = -1;
@@ -4467,60 +4497,60 @@
         : curStats;
 
     if (matrixGridEl) {
-      let canSpend1 = curSP >= 1;
-      let canSpend5 = curSP >= 5;
+          let canSpend1 = curSP >= 1;
+          let canSpend5 = curSP >= 5;
 
-      let renderAttrCard = (
-        name,
-        desc,
-        attrKey,
-        committedCount,
-        stagedCount,
-        iconType,
-      ) => {
-        let totalCount = committedCount + stagedCount;
-        let stagedBadge =
-          stagedCount > 0
-            ? `<span class="attr-staged-val">(+${stagedCount})</span>`
-            : "";
-        let sub1Disabled = stagedCount < 1 ? "disabled" : "";
-        let isStaged = stagedCount > 0;
-        let iconSvg =
-          typeof window.getUiIconSvg === "function"
-            ? window.getUiIconSvg(iconType, 13)
-            : "";
+          let renderAttrCard = (
+            name,
+            desc,
+            attrKey,
+            committedCount,
+            stagedCount,
+            iconType,
+          ) => {
+            let totalCount = committedCount + stagedCount;
+            let stagedBadge =
+              stagedCount > 0
+                ? `<span class="attr-staged-val">(+${stagedCount})</span>`
+                : "";
+            let sub1Disabled = stagedCount < 1 ? "disabled" : "";
+            let isStaged = stagedCount > 0;
+            let iconSvg =
+              typeof window.getUiIconSvg === "function"
+                ? window.getUiIconSvg(iconType, 13)
+                : "";
 
-        return `
-              <div class="attr-card ${isStaged ? "staged-active" : ""}">
-                <div class="attr-card-header">
-                  <div class="attr-title-group">
-                    ${iconSvg}
-                    <span class="attr-name">${name}</span>
+            return `
+                  <div class="attr-card ${isStaged ? "staged-active" : ""}">
+                    <div class="attr-card-header">
+                      <div class="attr-title-group">
+                        ${iconSvg}
+                        <span class="attr-name">${name}</span>
+                      </div>
+                      <div class="attr-count-badge">
+                        <span class="attr-total-val">${totalCount}</span>
+                        ${stagedBadge}
+                      </div>
+                    </div>
+                    <div class="attr-desc">${desc}</div>
+                    <div class="attr-btn-bar">
+                      <button class="sp-btn sp-btn-sub" ${sub1Disabled} onpointerdown="event.stopPropagation(); window.stageSP('${attrKey}', -1)" onclick="event.stopPropagation();">-1</button>
+                      <button class="sp-btn sp-btn-add" ${canSpend1 ? "" : "disabled"} onpointerdown="event.stopPropagation(); window.stageSP('${attrKey}', 1)" onclick="event.stopPropagation();">+1</button>
+                      <button class="sp-btn sp-btn-add" ${canSpend5 ? "" : "disabled"} onpointerdown="event.stopPropagation(); window.stageSP('${attrKey}', 5)" onclick="event.stopPropagation();">+5</button>
+                      <button class="sp-btn sp-btn-add" ${canSpend1 ? "" : "disabled"} onpointerdown="event.stopPropagation(); window.stageSP('${attrKey}', ${curSP})" onclick="event.stopPropagation();">MAX</button>
+                    </div>
                   </div>
-                  <div class="attr-count-badge">
-                    <span class="attr-total-val">${totalCount}</span>
-                    ${stagedBadge}
-                  </div>
-                </div>
-                <div class="attr-desc">${desc}</div>
-                <div class="attr-btn-bar">
-                  <button class="sp-btn sp-btn-sub" ${sub1Disabled} onclick="window.stageSP('${attrKey}', -1)">-1</button>
-                  <button class="sp-btn sp-btn-add" ${canSpend1 ? "" : "disabled"} onclick="window.stageSP('${attrKey}', 1)">+1</button>
-                  <button class="sp-btn sp-btn-add" ${canSpend5 ? "" : "disabled"} onclick="window.stageSP('${attrKey}', 5)">+5</button>
-                  <button class="sp-btn sp-btn-add" ${canSpend1 ? "" : "disabled"} onclick="window.stageSP('${attrKey}', ${curSP})">MAX</button>
-                </div>
-              </div>
-            `;
-      };
+                `;
+          };
 
-      let confirmBarHtml = hasStaged
-        ? `
-                <div style="display:flex; gap:6px; margin-top:6px;">
-                  <button class="action-btn" style="flex:1; margin-top:0; padding:8px; font-size:10px; background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#34d399;" onclick="window.confirmSP()">CONFIRM ATTRIBUTES</button>
-                  <button class="action-btn" style="flex:0.4; margin-top:0; padding:8px; font-size:10px; background:linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); border-color:#f87171;" onclick="window.resetDraftSP()">RESET</button>
-                </div>
-              `
-        : "";
+          let confirmBarHtml = hasStaged
+            ? `
+                    <div style="display:flex; gap:6px; margin-top:6px;">
+                      <button class="action-btn" style="flex:1; margin-top:0; padding:8px; font-size:10px; background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#34d399;" onpointerdown="event.stopPropagation(); window.confirmSP()" onclick="event.stopPropagation();">CONFIRM ATTRIBUTES</button>
+                      <button class="action-btn" style="flex:0.4; margin-top:0; padding:8px; font-size:10px; background:linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); border-color:#f87171;" onpointerdown="event.stopPropagation(); window.resetDraftSP()" onclick="event.stopPropagation();">RESET</button>
+                    </div>
+                  `
+            : "";
 
       matrixGridEl.innerHTML = `
                   ${renderAttrCard("STRENGTH", "+10 Max HP, +2.5 Attack Power", "Str", committedAlloc.spStr || 0, draftAlloc.spStr || 0, "str")}

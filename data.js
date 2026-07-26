@@ -101,6 +101,52 @@ window.resetDraftSP = function () {
   }
 };
 
+window.confirmSP = function () {
+  let p = window.playerStats;
+  if (!p) return;
+  window.initSPDraft();
+
+  let draft = window.draftSPAllocations;
+  if (!draft) return;
+
+  let totalStaged = (draft.spStr || 0) + (draft.spDex || 0) + (draft.spInt || 0);
+  if (totalStaged <= 0) return;
+
+  p.spAllocations = p.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
+  p.spAllocations.spStr = (p.spAllocations.spStr || 0) + (draft.spStr || 0);
+  p.spAllocations.spDex = (p.spAllocations.spDex || 0) + (draft.spDex || 0);
+  p.spAllocations.spInt = (p.spAllocations.spInt || 0) + (draft.spInt || 0);
+
+  p.sp = Math.max(0, p.sp - totalStaged);
+
+  window.draftSPAllocations = { spStr: 0, spDex: 0, spInt: 0 };
+  window.draftSP = p.sp;
+
+  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+    window.SoundManager.play("revive");
+  }
+
+  if (typeof window.pushHeaderToast === "function") {
+    window.pushHeaderToast("[Attributes] Confirmed and committed!", "#2ecc71");
+  }
+
+  if (typeof window.invalidatePlayerStats === "function") {
+    window.invalidatePlayerStats();
+  }
+
+  if (typeof window.updateUI === "function") {
+    window.updateUI();
+  }
+
+  if (typeof window.renderProfileModal === "function") {
+    window.renderProfileModal();
+  }
+
+  if (typeof window.saveGame === "function") {
+    window.saveGame();
+  }
+};
+
 window.ParticlePool = window.ParticlePool || {
   pool: [],
   get(

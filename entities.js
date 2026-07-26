@@ -6148,11 +6148,11 @@
           ctx.restore();
         }
       } else if (subType === "tome") {
-                ctx.save();
-                let tomeFloat = Math.sin(Date.now() / 200) * 5;
-                ctx.translate(16, -10 + bounce + tomeFloat); // Elevated and extended forward to float heroically
-                ctx.rotate(Math.PI / 12);
-        ctx.rotate(Math.PI / 12);
+                      ctx.save();
+                      let tomeFloat = Math.sin(Date.now() / 200) * 5;
+                      ctx.translate(25, -15 + bounce + tomeFloat); // Elevated and extended further forward to float heroically
+                      ctx.rotate(Math.PI / 12);
+              ctx.rotate(Math.PI / 12);
 
         let tomeItem = equipped.subweapon;
         let isUniqueConduit = tomeItem && tomeItem.isUniqueConduit;

@@ -630,35 +630,37 @@ window.generateItemCardHtml = function (
   }
 
   // --- EXPLICIT AFFIXES ---
-  if (item.id !== "dummy") {
-    let affixes = [];
-    let rangeLines = [];
-    const statsKeys = [
-      { key: "atk", label: "Attack", baseKey: "baseAtk" },
-      { key: "maxHp", label: "Max HP", baseKey: "baseMaxHp" },
-      { key: "def", label: "Defense", baseKey: "baseDef" },
-      { key: "moveSpeed", label: "Move Speed", baseKey: "baseMoveSpeed" },
-      { key: "str", label: "STR", baseKey: "baseStr" },
-      { key: "dex", label: "DEX", baseKey: "baseDex" },
-      { key: "int", label: "INT", baseKey: "baseInt" },
-      {
-        key: "critChance",
-        label: "Crit Chance",
-        isPct: true,
-        baseKey: "baseCritChance",
-      },
-      {
-        key: "critDamage",
-        label: "Crit Multi",
-        isPct: true,
-        baseKey: "baseCritDamage",
-      },
-      { key: "block", label: "Block Rate", isPct: true, baseKey: "baseBlock" },
-      { key: "parry", label: "Parry Rate", isPct: true, baseKey: "baseParry" },
-      { key: "dropRate", label: "Drop Rate", isPct: true },
-      { key: "quality", label: "Drop Quality", isPct: true },
-      { key: "goldMulti", label: "Gold Multi", isPct: true },
-    ];
+      if (item.id !== "dummy") {
+        let affixes = [];
+        let rangeLines = [];
+        const statsKeys = [
+          { key: "atk", label: "Attack", baseKey: "baseAtk" },
+          { key: "maxHp", label: "Max HP", baseKey: "baseMaxHp" },
+          { key: "def", label: "Defense", baseKey: "baseDef" },
+          { key: "moveSpeed", label: "Move Speed", baseKey: "baseMoveSpeed" },
+          { key: "str", label: "STR", baseKey: "baseStr" },
+          { key: "dex", label: "DEX", baseKey: "baseDex" },
+          { key: "int", label: "INT", baseKey: "baseInt" },
+          {
+            key: "critChance",
+            label: "Crit Chance",
+            isPct: true,
+            baseKey: "baseCritChance",
+          },
+          {
+            key: "critDamage",
+            label: "Crit Multi",
+            isPct: true,
+            baseKey: "baseCritDamage",
+          },
+          { key: "block", label: "Block Rate", isPct: true, baseKey: "baseBlock" },
+          { key: "parry", label: "Parry Rate", isPct: true, baseKey: "baseParry" },
+          { key: "activeAttackSpeed", label: "Active Atk Spd", isPct: true, baseKey: "baseActiveSpeed" },
+          { key: "idleAttackSpeed", label: "Idle Atk Spd", isPct: true, baseKey: "baseIdleSpeed" },
+          { key: "dropRate", label: "Drop Rate", isPct: true },
+          { key: "quality", label: "Drop Quality", isPct: true },
+          { key: "goldMulti", label: "Gold Multi", isPct: true },
+        ];
 
     statsKeys.forEach((s) => {
       let totalVal = item[s.key] || 0;
@@ -707,15 +709,33 @@ window.generateItemCardHtml = function (
     }
 
     let setName = window.getItemSetName ? window.getItemSetName(item) : null;
-    if (setName && window.SET_DEFINITIONS && window.SET_DEFINITIONS[setName]) {
-      let setDef = window.SET_DEFINITIONS[setName];
-      html += `<div style="margin-top:10px; padding-top:6px; border-top:1px dashed #555;">`;
-      html += `<div style="font-weight:bold; color:#f1c40f; font-size:10px;">✦ SET: ${setDef.name}</div>`;
-      setDef.bonuses.forEach((b) => {
-        html += `<div style="font-size:9px; color:#2ecc71; margin-top:2px;">• (${b.count} pieces): ${b.desc}</div>`;
-      });
-      html += `</div>`;
-    }
+      if (setName && window.SET_DEFINITIONS && window.SET_DEFINITIONS[setName]) {
+        let setDef = window.SET_DEFINITIONS[setName];
+
+        let currentSetCount = 0;
+        if (window.equippedSlots) {
+          const eligibleSetSlots = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
+          eligibleSetSlots.forEach((slot) => {
+            let eqItem = window.equippedSlots[slot];
+            if (eqItem) {
+              let eqSetName = window.getItemSetName ? window.getItemSetName(eqItem) : null;
+              if (eqSetName === setName) {
+                currentSetCount += (slot === "overall" ? 2 : 1);
+              }
+            }
+          });
+        }
+
+        html += `<div style="margin-top:10px; padding-top:6px; border-top:1px dashed #555;">`;
+        html += `<div style="font-weight:bold; color:#f1c40f; font-size:10px;">✦ SET: ${setDef.name} <span style="color:#aaa; font-size:9px; font-weight:normal;">(${currentSetCount} Equipped)</span></div>`;
+        setDef.bonuses.forEach((b) => {
+          let isActive = currentSetCount >= b.count;
+          let color = isActive ? "#2ecc71" : "#64748b";
+          let weightStyle = isActive ? "font-weight:bold;" : "font-weight:normal; opacity:0.65;";
+          html += `<div style="font-size:9px; color:${color}; ${weightStyle} margin-top:2px;">• (${b.count} pieces): ${b.desc}</div>`;
+        });
+        html += `</div>`;
+      }
   }
 
   // --- NET CHANGE COMPARED TO EQUIPPED ---
@@ -3167,40 +3187,42 @@ Object.assign(window.ItemFactory, {
   },
 
   buildProceduralName(item) {
-    if (item.statsRolled === "UNIQUE") return item.name;
-    let stars = item.statsRolled;
+      if (item.statsRolled === "UNIQUE") return item.name;
+      let stars = item.statsRolled;
 
-    // Prioritize the Set Name as the theme prefix if it exists!
-    let themeName = item.setName || "Standard";
+      // Prioritize the Set Name as the theme prefix if it exists!
+      let themeName = item.setName || "Standard";
 
-    if (!item.setName && stars > 0) {
-      const nomenclature = {
-        bonusAtk: "Fierce",
-        bonusMaxHp: "Grizzled",
-        bonusDef: "Hardened",
-        bonusMoveSpeed: "Fleet",
-        bonusCritChance: "Precise",
-        bonusCritDamage: "Savage",
-        bonusBlock: "Stalwart",
-        bonusParry: "Nimble",
-        bonusStr: "Heavy",
-        bonusDex: "Swift",
-        bonusInt: "Erudite",
-      };
+      if (!item.setName && stars > 0) {
+        const nomenclature = {
+          bonusAtk: "Fierce",
+          bonusMaxHp: "Grizzled",
+          bonusDef: "Hardened",
+          bonusMoveSpeed: "Fleet",
+          bonusCritChance: "Precise",
+          bonusCritDamage: "Savage",
+          bonusBlock: "Stalwart",
+          bonusParry: "Nimble",
+          bonusStr: "Heavy",
+          bonusDex: "Swift",
+          bonusInt: "Erudite",
+          bonusActiveSpeed: "Hasty",
+          bonusIdleSpeed: "Slothful",
+        };
 
-      let highestKey = null;
-      let maxVal = -1;
-      Object.keys(nomenclature).forEach((k) => {
-        if (item[k] > maxVal) {
-          maxVal = item[k];
-          highestKey = k;
-        }
-      });
-      if (highestKey) themeName = nomenclature[highestKey];
-    }
+        let highestKey = null;
+        let maxVal = 0;
+        Object.keys(nomenclature).forEach((k) => {
+          if (item[k] && item[k] > maxVal) {
+            maxVal = item[k];
+            highestKey = k;
+          }
+        });
+        if (highestKey) themeName = nomenclature[highestKey];
+      }
 
-    return `${themeName} ${item.noun} (Lv. ${item.stageLevel})`;
-  },
+      return `${themeName} ${item.noun} (Lv. ${item.stageLevel})`;
+    },
 });
 
 // Legacy Compatibility Aliases to protect references
@@ -6557,14 +6579,14 @@ window.executeParagonUpgrade = function () {
     coresOwned < costCores
   ) {
     window.pushHeaderToast(
-      "❌ Insufficient resources for Paragon Infusion!",
+      "[Error] Insufficient resources for Paragon Infusion!",
       "#e74c3c",
     );
     return;
   }
 
   window.showCustomConfirm(
-    "🧬 Paragon Infusion Matrix",
+    "[Paragon] Infusion Matrix",
     `Are you sure you want to sacrifice these resources to fuse Paragon Level ${parLevel + 1}?`,
     "Infuse Matrix",
     "Cancel",
@@ -6591,7 +6613,7 @@ window.executeParagonUpgrade = function () {
       p.paragonLevel = parLevel + 1;
 
       window.pushHeaderToast(
-        `🧬 Paragon Infused to Level ${p.paragonLevel}!`,
+        `[Paragon] Infused to Level ${p.paragonLevel}!`,
         "#ff007f",
       );
       if (window.SoundManager) window.SoundManager.play("revive");
@@ -6606,3 +6628,429 @@ window.executeParagonUpgrade = function () {
     },
   );
 };
+
+    window.gachaState = {
+              activeMachine: 'standard', // 'standard' | 'glimmering'
+              capsules: [],
+              isSpinning: false,
+              spinTimer: 0,
+              crankAngle: 0,
+              animationFrameId: null,
+              hasBallDispensed: false
+            };
+
+            window.toggleGachaModal = function () {
+              if (typeof window.hideTooltip === "function") window.hideTooltip();
+              let modal = document.getElementById("gacha-modal");
+              if (!modal) return;
+
+              if (modal.style.display === "none" || modal.style.display === "") {
+                modal.style.display = "flex";
+                window.switchGachaMachine(window.gachaState.activeMachine || 'standard');
+                window.initGachaPhysics();
+              } else {
+                modal.style.display = "none";
+                if (window.gachaState.animationFrameId) {
+                  cancelAnimationFrame(window.gachaState.animationFrameId);
+                  window.gachaState.animationFrameId = null;
+                }
+              }
+            };
+
+            window.openGachaModal = function () {
+              window.toggleGachaModal();
+            };
+
+            window.switchGachaMachine = function (machineType) {
+              window.gachaState.activeMachine = machineType;
+              let modal = document.getElementById("gacha-modal");
+              if (!modal) return;
+
+              let tabStd = document.getElementById("gacha-tab-standard");
+              let tabGlim = document.getElementById("gacha-tab-glimmering");
+              let ratesTitle = document.getElementById("gacha-rates-title");
+              let ratesPct = document.getElementById("gacha-rates-percentages");
+
+              if (machineType === 'standard') {
+                modal.className = "modal-overlay gacha-theme-standard";
+                if (tabStd) tabStd.classList.add("active");
+                if (tabGlim) tabGlim.classList.remove("active");
+                if (ratesTitle) ratesTitle.innerText = "STANDARD VENDING TERMINAL";
+                if (ratesPct) {
+                  ratesPct.innerHTML = `
+                    <span style="color:#e74c3c;">5★: 1.27%</span>
+                    <span style="color:#f1c40f;">4★: 5.98%</span>
+                    <span style="color:#e67e22;">3★: 16.9%</span>
+                    <span style="color:#9b59b6;">2★: 26.4%</span>
+                    <span style="color:#3498db;">1★: 49.5%</span>
+                  `;
+                }
+              } else {
+                modal.className = "modal-overlay gacha-theme-glimmering";
+                if (tabStd) tabStd.classList.remove("active");
+                if (tabGlim) tabGlim.classList.add("active");
+                if (ratesTitle) ratesTitle.innerText = "GLIMMERING BOOSTER TERMINAL";
+                if (ratesPct) {
+                  ratesPct.innerHTML = `
+                    <span style="color:#e74c3c;">5★: 1.3%</span>
+                    <span style="color:#f1c40f;">4★: 6.0%</span>
+                    <span style="color:#e67e22;">3★: 16.9%</span>
+                    <span style="color:#1abc9c;">ART: 5.0%</span>
+                  `;
+                }
+              }
+
+              window.updateGachaBalances();
+              let resultsPanel = document.getElementById("gacha-results-panel");
+              if (resultsPanel) resultsPanel.style.display = "none";
+
+              // Spawn clean, machine-aligned colored balls in the physics simulator
+              window.populateGachaCapsules();
+            };
+
+            window.updateGachaBalances = function () {
+              let panelStd = document.getElementById("gacha-panel-standard-keys");
+              let panelGlim = document.getElementById("gacha-panel-glimmering-keys");
+              let stdCount = (window.inventory && window.inventory.ETC) ? (window.inventory.ETC["Gacha Key"] || 0) : 0;
+              let glimCount = (window.inventory && window.inventory.ETC) ? (window.inventory.ETC["Glimmering Gachapon Key"] || 0) : 0;
+
+              if (panelStd) panelStd.innerText = stdCount;
+              if (panelGlim) panelGlim.innerText = glimCount;
+
+              // Update Pity UI stats
+              let pityText = document.getElementById("gacha-pity-text");
+              let pityTarget = document.getElementById("gacha-pity-target");
+              let pityFill = document.getElementById("gacha-pity-fill");
+
+              if (window.gachaState.activeMachine === 'standard') {
+                let current = window.playerStats.vendingPity || 0;
+                if (pityText) pityText.innerText = `${current} / 50`;
+                if (pityTarget) pityTarget.innerText = "50";
+                if (pityFill) pityFill.style.width = `${(current / 50) * 100}%`;
+              } else {
+                let current = window.playerStats.glimmeringPity || 0;
+                if (pityText) pityText.innerText = `${current} / 25`;
+                if (pityTarget) pityTarget.innerText = "25";
+                if (pityFill) pityFill.style.width = `${(current / 25) * 100}%`;
+              }
+            };
+
+            window.populateGachaCapsules = function () {
+              let standardCapsuleColors = ["#f1c40f", "#3498db", "#9b59b6", "#e67e22", "#e74c3c", "#2ecc71"];
+              let glimmeringCapsuleColors = ["#ffffff", "#e84393", "#00d2ff", "#a855f7"];
+              let poolColors = window.gachaState.activeMachine === 'standard' ? standardCapsuleColors : glimmeringCapsuleColors;
+
+              window.gachaState.capsules = [];
+              for (let i = 0; i < 18; i++) {
+                let col1 = poolColors[i % poolColors.length];
+                let col2 = "#ffffff";
+                window.gachaState.capsules.push({
+                  x: 40 + Math.random() * 200,
+                  y: 80 + Math.random() * 50,
+                  vx: (Math.random() - 0.5) * 1,
+                  vy: (Math.random() - 0.5) * 1,
+                  radius: 7.5,
+                  color1: col1,
+                  color2: col2,
+                  angle: Math.random() * Math.PI * 2,
+                  spinSpeed: (Math.random() - 0.5) * 0.05
+                });
+              }
+            };
+
+            window.initGachaPhysics = function () {
+              let canvas = document.getElementById("gacha-physics-canvas");
+              if (!canvas) return;
+              let ctx = canvas.getContext("2d");
+
+              if (window.gachaState.animationFrameId) {
+                cancelAnimationFrame(window.gachaState.animationFrameId);
+              }
+
+              function loop() {
+                updatePhysics(canvas);
+                renderPhysics(ctx, canvas);
+                window.gachaState.animationFrameId = requestAnimationFrame(loop);
+              }
+
+              loop();
+            };
+
+            function updatePhysics(canvas) {
+              let caps = window.gachaState.capsules;
+              let gravity = 0.22;
+              let bounceDamp = 0.55;
+
+              // Dimensions
+              let width = canvas.width;
+              let height = canvas.height;
+              let bottomWall = 146; // Keep above bottom rim
+
+              // Center of the rounded dome arch
+              let domeCenterX = width / 2;
+              let domeCenterY = 110;
+              let domeRadius = 115;
+
+              if (window.gachaState.isSpinning) {
+                window.gachaState.spinTimer--;
+                if (window.gachaState.spinTimer <= 0) {
+                  window.gachaState.isSpinning = false;
+                }
+              }
+
+              caps.forEach((c) => {
+                if (window.gachaState.isSpinning) {
+                  // Chaotic spin forces applied directly
+                  c.vx += (Math.random() - 0.5) * 6;
+                  c.vy += -Math.random() * 3.5 - 1.5;
+                  c.angle += (Math.random() - 0.5) * 0.4;
+                } else {
+                  c.vy += gravity;
+                  c.vx *= 0.985;
+                  c.vy *= 0.985;
+                  c.angle += c.vx * 0.02;
+                }
+
+                c.x += c.vx;
+                c.y += c.vy;
+
+                // 1. Bottom Flat Wall Collision
+                if (c.y > bottomWall - c.radius) {
+                  c.y = bottomWall - c.radius;
+                  c.vy = -c.vy * bounceDamp;
+                  c.vx *= 0.85; // Floor drag friction
+                }
+
+                // 2. Left & Right Side Wall Boundary
+                if (c.x < 18 + c.radius) {
+                  c.x = 18 + c.radius;
+                  c.vx = -c.vx * bounceDamp;
+                }
+                if (c.x > width - 18 - c.radius) {
+                  c.x = width - 18 - c.radius;
+                  c.vx = -c.vx * bounceDamp;
+                }
+
+                // 3. Rounded Dome Arch Upper Boundary
+                if (c.y < domeCenterY) {
+                  let dx = c.x - domeCenterX;
+                  let dy = c.y - domeCenterY;
+                  let dist = Math.hypot(dx, dy);
+                  let maxDist = domeRadius - c.radius;
+
+                  if (dist > maxDist) {
+                    let nx = dx / dist;
+                    let ny = dy / dist;
+
+                    // Move ball back inside arch safely
+                    c.x = domeCenterX + nx * maxDist;
+                    c.y = domeCenterY + ny * maxDist;
+
+                    // Reflect velocity across standard normal vector
+                    let dot = c.vx * nx + c.vy * ny;
+                    c.vx = (c.vx - 2 * dot * nx) * bounceDamp;
+                    c.vy = (c.vy - 2 * dot * ny) * bounceDamp;
+                  }
+                }
+              });
+
+              // 4. Elastic Particle-to-Particle Ball Collisions
+              for (let i = 0; i < caps.length; i++) {
+                for (let j = i + 1; j < caps.length; j++) {
+                  let b1 = caps[i];
+                  let b2 = caps[j];
+                  let dx = b2.x - b1.x;
+                  let dy = b2.y - b1.y;
+                  let dist = Math.hypot(dx, dy);
+                  let minDist = b1.radius + b2.radius;
+
+                  if (dist < minDist) {
+                    let overlap = minDist - dist;
+                    let nx = dx / dist;
+                    let ny = dy / dist;
+
+                    // Separate spheres cleanly
+                    b1.x -= nx * overlap * 0.5;
+                    b1.y -= ny * overlap * 0.5;
+                    b2.x += nx * overlap * 0.5;
+                    b2.y += ny * overlap * 0.5;
+
+                    // Simple elastic collision velocity swap
+                    let kx = b1.vx - b2.vx;
+                    let ky = b1.vy - b2.vy;
+                    let p = 2 * (nx * kx + ny * ky) / 2;
+
+                    b1.vx -= p * nx * 0.85;
+                    b1.vy -= p * ny * 0.85;
+                    b2.vx += p * nx * 0.85;
+                    b2.vy += p * ny * 0.85;
+                  }
+                }
+              }
+            }
+
+            function renderPhysics(ctx, canvas) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+              // Draw the static inside floor boundary
+              ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+              ctx.beginPath();
+              ctx.rect(0, 143, canvas.width, 17);
+              ctx.fill();
+
+              window.gachaState.capsules.forEach((c) => {
+                ctx.save();
+                ctx.translate(c.x, c.y);
+                ctx.rotate(c.angle);
+
+                // Double outline stroke
+                ctx.strokeStyle = "#05070a";
+                ctx.lineWidth = 1.5;
+
+                // Half-half capsule splits
+                ctx.fillStyle = c.color1;
+                ctx.beginPath();
+                ctx.arc(0, 0, c.radius, Math.PI / 2, -Math.PI / 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = c.color2;
+                ctx.beginPath();
+                ctx.arc(0, 0, c.radius, -Math.PI / 2, Math.PI / 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Center seam divider line
+                ctx.beginPath();
+                ctx.moveTo(0, -c.radius);
+                ctx.lineTo(0, c.radius);
+                ctx.stroke();
+
+                // Specular shiny highlight glare
+                ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.beginPath();
+                ctx.ellipse(-c.radius * 0.35, -c.radius * 0.35, c.radius * 0.22, c.radius * 0.12, Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+              });
+            }
+
+            window.triggerGachaSpin = function () {
+              if (window.gachaState.isSpinning) return;
+
+              let machine = window.gachaState.activeMachine;
+              let count = (window.inventory && window.inventory.ETC) ? (window.inventory.ETC[machine === 'standard' ? "Gacha Key" : "Glimmering Gachapon Key"] || 0) : 0;
+              if (count < 1) {
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("No keys remaining for this machine!", "#e74c3c");
+                }
+                return;
+              }
+
+              window.gachaState.isSpinning = true;
+              window.gachaState.spinTimer = 70; // 70 frames (~1.2s of violent shakes)
+
+              // Play turning sound immediately
+              if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                window.SoundManager.play("swing");
+              }
+
+              // Spin the Crank Dial visual
+              let dial = document.getElementById("gacha-crank-dial");
+              if (dial) {
+                window.gachaState.crankAngle += 360;
+                dial.style.transform = `rotate(${window.gachaState.crankAngle}deg)`;
+              }
+
+              // Trigger drop-exit capsule visual
+              setTimeout(() => {
+                let colorsList = window.gachaState.activeMachine === 'standard'
+                  ? ["#f1c40f", "#3498db", "#9b59b6", "#e67e22", "#e74c3c", "#2ecc71"]
+                  : ["#ffffff", "#e84393", "#00d2ff", "#a855f7"];
+                let randomColor = colorsList[Math.floor(Math.random() * colorsList.length)];
+
+                // Play unboxing/drop vortex animations
+                let dropCap = document.getElementById("gacha-falling-capsule");
+                if (dropCap) {
+                  dropCap.style.background = `linear-gradient(135deg, ${randomColor} 50%, #ffffff 50%)`;
+                  dropCap.style.display = "block";
+                  setTimeout(() => {
+                    dropCap.style.display = "none";
+                  }, 400);
+                }
+
+                // Drop down into dispenser bin slot
+                setTimeout(() => {
+                  let binBall = document.getElementById("gacha-dropped-ball");
+                  if (binBall) {
+                    binBall.style.background = `linear-gradient(135deg, ${randomColor} 50%, #ffffff 50%)`;
+                    binBall.style.display = "block";
+                  }
+
+                  // Fire actual unbox roll logic after landing settles
+                  setTimeout(() => {
+                    let isGlim = window.gachaState.activeMachine === 'glimmering';
+                    window.triggerGachaPull(isGlim, false);
+
+                    let binBall = document.getElementById("gacha-dropped-ball");
+                    if (binBall) binBall.style.display = "none";
+                  }, 500);
+
+                }, 300);
+
+              }, 650);
+            };
+
+            window.triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
+              if (typeof window.hideTooltip === "function") window.hideTooltip();
+
+              let result = window.rollGachaCrateItem(isGlimmering, useStandardForGlimmering);
+              if (result.error) {
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast(result.error, "#e74c3c");
+                }
+                return;
+              }
+
+              let item = result.item;
+              if (!item) return;
+
+              window.updateGachaBalances();
+              if (typeof window.updateUI === "function") window.updateUI();
+
+              if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                window.SoundManager.play("fairy");
+              }
+
+              let color = window.getTierColor(item.statsRolled);
+              if (typeof window.spawnPurchaseCelebration === "function") {
+                window.spawnPurchaseCelebration("gacha", color, item.statsRolled);
+              }
+
+              let resultsPanel = document.getElementById("gacha-results-panel");
+              let resultsRender = document.getElementById("gacha-results-render");
+              let resultsItemName = document.getElementById("gacha-results-item-name");
+
+              if (resultsPanel && resultsRender && resultsItemName) {
+                resultsPanel.style.display = "block";
+                if (typeof window.getEquipIconHtml === "function") {
+                  resultsRender.innerHTML = window.getEquipIconHtml(item, 44);
+                } else {
+                  resultsRender.innerHTML = "";
+                }
+                resultsItemName.innerText = item.name;
+                resultsItemName.style.color = color;
+              }
+
+              if (typeof window.pushHeaderToast === "function") {
+                window.pushHeaderToast(`Received: ${item.name}!`, color);
+              }
+            };
+
+            if (typeof window.cloneItemForTooltip !== "function") {
+              window.cloneItemForTooltip = function (item) {
+                if (!item) return null;
+                return JSON.parse(JSON.stringify(item));
+              };
+            }
