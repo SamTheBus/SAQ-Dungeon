@@ -58,13 +58,991 @@
      Advanced Combat Resolution Visuals, and Particle Spawners.
      ========================================================================= */
 
-  // --- RENDERING CONSTANTS (DEPTH HIERARCHY) ---
-  window.penSky = 1.0;
-  window.penFar = 1.3;
-  window.penBgScenery = 1.3;
-  window.penFgScenery = 1.5;
-  window.penHero = 1.8;
-  window.penBoss = 2.4;
+  // === MEMORY-SAFE COMBAT VISUALS POOLING ENGINE ===
+
+  class PoolParticle {
+    constructor() {
+      this.active = false;
+      this.x = 0;
+      this.y = 0;
+      this.vx = 0;
+      this.vy = 0;
+      this.radius = 0;
+      this.color = "#ffffff";
+      this.alpha = 1;
+      this.life = 0;
+      this.maxLife = 0;
+      this.gravity = 0.25;
+      this.fade = false;
+      this.growth = 0;
+    }
+
+    init(
+      x,
+      y,
+      vx,
+      vy,
+      radius,
+      color,
+      alpha = 1,
+      life = 30,
+      gravity = 0.25,
+      fade = false,
+      growth = 0,
+    ) {
+      this.active = true;
+      this.x = x;
+      this.y = y;
+      this.vx = vx;
+      this.vy = vy;
+      this.radius = radius;
+      this.color = color;
+      this.alpha = alpha;
+      this.life = life;
+      this.maxLife = life;
+      this.gravity = gravity;
+      this.fade = fade;
+      this.growth = growth;
+    }
+  }
+
+  class ParticlePool {
+    constructor(size = 500) {
+      this.pool = Array.from({ length: size }, () => new PoolParticle());
+    }
+
+    get(x, y, vx, vy, radius, color, alpha, life, gravity, fade, growth) {
+      let p = this.pool.find((item) => !item.active);
+      if (!p) {
+        p = new PoolParticle();
+        this.pool.push(p);
+      }
+      p.init(x, y, vx, vy, radius, color, alpha, life, gravity, fade, growth);
+      return p;
+    }
+  }
+
+  class PoolCombatEffect {
+    constructor() {
+      this.active = false;
+      this.type = "slash";
+      this.x = 0;
+      this.y = 0;
+      this.vx = 0;
+      this.vy = -0.4;
+      this.amount = 0;
+      this.color = "#ffffff";
+      this.life = 0;
+      this.maxLife = 40;
+      this.text = "";
+      this.isCumulative = false;
+      this.targetId = null;
+    }
+
+    init(
+      type,
+      x,
+      y,
+      vx,
+      vy,
+      amount,
+      color,
+      life = 40,
+      text = "",
+      isCumulative = false,
+      targetId = null,
+    ) {
+      this.active = true;
+      this.type = type;
+      this.x = x;
+      this.y = y;
+      this.vx = vx;
+      this.vy = vy;
+      this.amount = amount;
+      this.color = color;
+      this.life = life;
+      this.maxLife = life;
+      this.text = text;
+      this.isCumulative = isCumulative;
+      this.targetId = targetId;
+    }
+  }
+
+  class CombatEffectPool {
+    constructor(size = 150) {
+      this.pool = Array.from({ length: size }, () => new PoolCombatEffect());
+    }
+
+    get(type, x, y, vx, vy, amount, color, life, text, isCumulative, targetId) {
+      let e = this.pool.find((item) => !item.active);
+      if (!e) {
+        e = new PoolCombatEffect();
+        this.pool.push(e);
+      }
+      e.init(
+        type,
+        x,
+        y,
+        vx,
+        vy,
+        amount,
+        color,
+        life,
+        text,
+        isCumulative,
+        targetId,
+      );
+      return e;
+    }
+  }
+
+  class CombatVisualsEngine {
+    constructor() {
+      this.particlePool = new ParticlePool(500);
+      this.effectPool = new CombatEffectPool(150);
+      this.beams = [];
+      this.projectiles = [];
+      this.screenShakeTimer = 0;
+      this.screenShakeIntensity = 0;
+    }
+
+    formatNumber(val) {
+      if (val === null || val === undefined) return "0";
+      return typeof window.formatNumber === "function"
+        ? window.formatNumber(val)
+        : String(val);
+    }
+
+    triggerScreenShake(intensity = 6, duration = 12) {
+      this.screenShakeIntensity = intensity;
+      this.screenShakeTimer = duration;
+    }
+
+    spawnBeam(x, color = "#f1c40f", life = 45, followPlayer = false, offsetX = 0) {
+          this.beams.push({ x, color, life, maxLife: life, followPlayer, offsetX });
+        }
+
+    spawnProjectile(x, y, vx, vy, type = "standard", radius = 10) {
+      this.projectiles.push({
+        x,
+        y,
+        vx,
+        vy,
+        type,
+        r: radius,
+        pulseOffset: Math.random() * 10,
+      });
+    }
+
+    spawnParticles(x, y, count = 15, theme = "default", speed = 4) {
+      const colors = window.PARTICLE_THEMES[theme] ||
+        window.PARTICLE_THEMES.default_slime || [
+          "#2ecc71",
+          "#27ae60",
+          "#a3fd83",
+        ];
+      for (let i = 0; i < count; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let vel = (Math.random() * 0.8 + 0.2) * speed;
+        let life = Math.floor(Math.random() * 20 + 25);
+        this.particlePool.get(
+          x,
+          y,
+          Math.cos(angle) * vel,
+          Math.sin(angle) * vel - (Math.random() * 2 + 1),
+          Math.random() * 3 + 1.5,
+          colors[Math.floor(Math.random() * colors.length)],
+          1,
+          life,
+          0.25,
+          true,
+          0,
+        );
+      }
+    }
+
+    spawnDamageEffect(
+      x,
+      y,
+      amount,
+      type = "slash",
+      isCrit = false,
+      targetObj = null,
+    ) {
+      let hitColor = "#ecf0f1";
+      let offsetX = (Math.random() - 0.5) * 30;
+      let offsetY = (Math.random() - 0.5) * 20 - 10;
+      let targetId = targetObj ? targetObj.id : null;
+
+      if (targetObj && targetObj.isBoss && targetObj.maxHp) {
+        let numericAmt =
+          typeof amount === "object"
+            ? amount.m * Math.pow(10, amount.e)
+            : amount;
+        let numericMaxHp =
+          typeof targetObj.maxHp === "object"
+            ? targetObj.maxHp.m * Math.pow(10, targetObj.maxHp.e)
+            : targetObj.maxHp;
+        if (numericAmt >= numericMaxHp * 0.6) {
+          const funnyPhrases = [
+            "OUCH!!",
+            "OW!!!",
+            "OWWY!!",
+            "OOF",
+            "MY SPINE!!",
+            "NOT THE FACE!!",
+            "STOP IT!!",
+            "BRUH!!!",
+            "REALLY?!",
+            "HELP!!",
+            "WTF?!",
+            "RUDE!!",
+            "EMOTIONAL DAMAGE",
+            "MY LEG!",
+          ];
+          targetObj.funnyText =
+            funnyPhrases[Math.floor(Math.random() * funnyPhrases.length)];
+          targetObj.funnyTextTimer = 60;
+        }
+      }
+
+      if (isCrit) {
+        this.effectPool.get(
+          "crit",
+          x + offsetX,
+          y + offsetY,
+          (Math.random() - 0.5) * 2.4,
+          -(Math.random() * 1.0 + 1.0),
+          amount,
+          "#e74c3c",
+          45,
+          "",
+          false,
+          targetId,
+        );
+      } else {
+        if (type === "lightning") hitColor = "#f1c40f";
+        else if (type === "fire") hitColor = "#e67e22";
+        else if (type === "frost") hitColor = "#3498db";
+        else if (type === "echo") hitColor = "#9b59b6";
+        else if (type === "counter" || type === "shield_bash")
+          hitColor = "#f1c40f";
+        else if (type === "aegis_counter") hitColor = "#9b59b6";
+        else if (type === "parry_counter" || type === "riposte")
+          hitColor = "#a855f7";
+        else if (type === "bleed") hitColor = "#960018";
+        else if (type === "poison") hitColor = "#2ecc71";
+        else if (type === "dagger") hitColor = "#a5b1c2";
+        else if (type === "decay") hitColor = "#ff007f";
+        else if (type === "distortion") hitColor = "#ff2200";
+        else if (type === "static") hitColor = "#e74c3c";
+
+        this.effectPool.get(
+          type,
+          x + offsetX,
+          y + offsetY,
+          (Math.random() - 0.5) * 2.4,
+          -(Math.random() * 0.9 + 0.6),
+          amount,
+          hitColor,
+          40,
+          "",
+          false,
+          targetId,
+        );
+      }
+
+      let activeEffects = this.effectPool.pool.filter((e) => e.active);
+      let existingTotal = activeEffects.find(
+        (e) => e.isCumulative && e.targetId === targetId && e.life > 0,
+      );
+      if (existingTotal) {
+        let addVal =
+          typeof amount === "object"
+            ? amount.m * Math.pow(10, amount.e)
+            : amount;
+        let curVal =
+          typeof existingTotal.amount === "object"
+            ? existingTotal.amount.m * Math.pow(10, existingTotal.amount.e)
+            : existingTotal.amount;
+        existingTotal.amount = curVal + addVal;
+        existingTotal.text = `TOTAL: ${this.formatNumber(existingTotal.amount)}`;
+        existingTotal.life = 55;
+        existingTotal.x = x - 25;
+        existingTotal.y = y - 35;
+      } else {
+        this.effectPool.get(
+          "cumulative",
+          x - 25,
+          y - 35,
+          0,
+          -0.4,
+          amount,
+          "#f1c40f",
+          55,
+          `TOTAL: ${this.formatNumber(amount)}`,
+          true,
+          targetId,
+        );
+      }
+    }
+
+    update() {
+      if (this.screenShakeTimer > 0) {
+        this.screenShakeTimer--;
+      }
+
+      this.particlePool.pool.forEach((pt) => {
+        if (!pt.active) return;
+        pt.life--;
+        if (pt.life <= 0) {
+          pt.active = false;
+          return;
+        }
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += pt.gravity;
+        pt.radius += pt.growth;
+        if (pt.fade && pt.maxLife > 0) {
+          pt.alpha = pt.life / pt.maxLife;
+        }
+      });
+
+      this.effectPool.pool.forEach((eff) => {
+        if (!eff.active) return;
+        eff.life--;
+        if (eff.life <= 0) {
+          eff.active = false;
+          return;
+        }
+        eff.x += eff.vx;
+        eff.y += eff.vy;
+      });
+
+      for (let i = this.beams.length - 1; i >= 0; i--) {
+        let bm = this.beams[i];
+        bm.life--;
+        if (bm.life <= 0) this.beams.splice(i, 1);
+      }
+
+      for (let i = this.projectiles.length - 1; i >= 0; i--) {
+        let p = this.projectiles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (Math.random() < 0.4) {
+          let pColor =
+            p.type === "fireball"
+              ? "#e67e22"
+              : p.type === "maelstrom"
+                ? "#2ecc71"
+                : "#3498db";
+          this.particlePool.get(
+            p.x - 5,
+            p.y + (Math.random() - 0.5) * 6,
+            -p.vx * 0.2,
+            (Math.random() - 0.5) * 1.5,
+            Math.random() * 2 + 1.5,
+            pColor,
+            1,
+            18,
+            0,
+            true,
+            0,
+          );
+        }
+
+        if (p.x < -50 || p.x > 2000 || p.y < -50 || p.y > 2000) {
+          this.projectiles.splice(i, 1);
+        }
+      }
+    }
+
+    render(ctx) {
+      ctx.save();
+
+      if (this.screenShakeTimer > 0) {
+        let rx = (Math.random() - 0.5) * this.screenShakeIntensity;
+        let ry = (Math.random() - 0.5) * this.screenShakeIntensity;
+        ctx.translate(rx, ry);
+      }
+
+      this.beams.forEach((bm) => {
+                    ctx.save();
+                    ctx.globalAlpha = (bm.life / bm.maxLife) * 0.75;
+                    let bx = bm.followPlayer && window.player ? window.player.x + (bm.offsetX || 0) : bm.x;
+                    let by = window.player ? window.player.y : (window.DungeonCamera ? window.DungeonCamera.y : 0);
+                    let beamGrad = ctx.createLinearGradient(bx - 20, 0, bx + 20, 0);
+                    beamGrad.addColorStop(0, "rgba(255,255,255,0)");
+                    beamGrad.addColorStop(0.5, bm.color);
+                    beamGrad.addColorStop(1, "rgba(255,255,255,0)");
+                    ctx.fillStyle = beamGrad;
+                    ctx.fillRect(bx - 25, by - 10000, 50, 20000);
+                    ctx.restore();
+                  });
+
+      this.projectiles.forEach((p) => {
+        ctx.save();
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2.0;
+        let r = p.r + Math.sin(Date.now() / 80 + p.pulseOffset) * 2;
+
+        if (p.type === "maelstrom") {
+          ctx.fillStyle = "#2ecc71";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, -Math.PI / 3, Math.PI / 3, false);
+          ctx.quadraticCurveTo(
+            p.x - r / 2,
+            p.y,
+            p.x,
+            p.y - r * Math.sin(Math.PI / 3),
+          );
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        } else if (p.type === "fireball") {
+          ctx.fillStyle = "#c0392b";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r + 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = "#e67e22";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = "#f1c40f";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = "#3498db";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
+
+      this.particlePool.pool.forEach((pt) => {
+        if (!pt.active) return;
+        ctx.save();
+        ctx.globalAlpha = pt.alpha;
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      this.effectPool.pool.forEach((eff) => {
+        if (!eff.active) return;
+        ctx.save();
+        let hx = eff.x;
+        let hy = eff.y;
+
+        if (eff.type === "regen") {
+          ctx.beginPath();
+          ctx.moveTo(hx, hy - 4);
+          ctx.bezierCurveTo(hx - 4, hy - 9, hx - 9, hy - 4, hx - 9, hy + 1);
+          ctx.quadraticCurveTo(hx - 9, hy + 6, hx, hy + 12);
+          ctx.quadraticCurveTo(hx + 9, hy + 6, hx + 9, hy + 1);
+          ctx.bezierCurveTo(hx + 9, hy - 4, hx + 4, hy - 9, hx, hy - 4);
+          ctx.closePath();
+          ctx.fillStyle = "#e74c3c";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          ctx.fill();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(hx - 2.5, hy - 3.5, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          let text = `+${this.formatNumber(eff.amount)}`;
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = eff.color || "#2ecc71";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else if (eff.type === "crit") {
+          let fixedAngle = 0.35;
+          let spikes = 6;
+
+          ctx.beginPath();
+          for (let i = 0; i < spikes * 2; i++) {
+            let angle = (i * Math.PI) / spikes + fixedAngle;
+            let r = i % 2 === 0 ? 14 : 3.5;
+            ctx.lineTo(hx + Math.cos(angle) * r, hy + Math.sin(angle) * r);
+          }
+          ctx.closePath();
+          ctx.fillStyle = "#e74c3c";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          ctx.fill();
+
+          ctx.beginPath();
+          for (let i = 0; i < spikes * 2; i++) {
+            let angle = (i * Math.PI) / spikes + fixedAngle;
+            let r = i % 2 === 0 ? 9 : 2.5;
+            ctx.lineTo(hx + Math.cos(angle) * r, hy + Math.sin(angle) * r);
+          }
+          ctx.closePath();
+          ctx.fillStyle = "#f1c40f";
+          ctx.fill();
+
+          ctx.beginPath();
+          for (let i = 0; i < spikes * 2; i++) {
+            let angle = (i * Math.PI) / spikes + fixedAngle;
+            let r = i % 2 === 0 ? 5.5 : 1.5;
+            ctx.lineTo(hx + Math.cos(angle) * r, hy + Math.sin(angle) * r);
+          }
+          ctx.closePath();
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
+
+          let text = this.formatNumber(eff.amount);
+          ctx.font = "900 18px 'Arial Black', Impact, sans-serif";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 4.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 16, hy + 5);
+
+          let textGrad = ctx.createLinearGradient(
+            hx + 16,
+            hy - 10,
+            hx + 16,
+            hy + 10,
+          );
+          textGrad.addColorStop(0, "#fff200");
+          textGrad.addColorStop(0.5, "#f39c12");
+          textGrad.addColorStop(1, "#ee5253");
+          ctx.fillStyle = textGrad;
+          ctx.fillText(text, hx + 16, hy + 5);
+        } else if (eff.type === "block") {
+          ctx.beginPath();
+          ctx.moveTo(hx - 6, hy - 6);
+          ctx.lineTo(hx + 6, hy - 6);
+          ctx.quadraticCurveTo(hx + 6, hy, hx + 5, hy + 3);
+          ctx.quadraticCurveTo(hx, hy + 10, hx, hy + 10);
+          ctx.quadraticCurveTo(hx - 5, hy + 3, hx - 6, hy);
+          ctx.closePath();
+          ctx.fillStyle = "#3498db";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          ctx.fill();
+
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(hx, hy - 5);
+          ctx.lineTo(hx, hy + 8);
+          ctx.moveTo(hx - 4, hy + 1);
+          ctx.lineTo(hx + 4, hy + 1);
+          ctx.stroke();
+
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText("BLOCK", hx + 13, hy + 4);
+          ctx.fillStyle = "#3498db";
+          ctx.fillText("BLOCK", hx + 13, hy + 4);
+        } else if (eff.type === "parry") {
+          ctx.save();
+          ctx.translate(hx, hy);
+
+          ctx.save();
+          ctx.rotate(Math.PI / 4);
+          ctx.fillStyle = "#ecf0f1";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.rect(-2.5, -18, 5, 22);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = "#f1c40f";
+          ctx.fillRect(-6, 4, 12, 3);
+          ctx.strokeRect(-6, 4, 12, 3);
+          ctx.restore();
+
+          ctx.save();
+          ctx.rotate(-Math.PI / 4);
+          ctx.fillStyle = "#ecf0f1";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.rect(-2.5, -18, 5, 22);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = "#f1c40f";
+          ctx.fillRect(-6, 4, 12, 3);
+          ctx.strokeRect(-6, 4, 12, 3);
+          ctx.restore();
+
+          ctx.restore();
+
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText("PARRY", hx + 13, hy + 4);
+          ctx.fillStyle = "#9b59b6";
+          ctx.fillText("PARRY", hx + 13, hy + 4);
+        } else if (eff.type === "barrier") {
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 4.0;
+          ctx.beginPath();
+          ctx.arc(hx, hy, 8, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = "#9b59b6";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.arc(hx, hy, 8, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+          ctx.stroke();
+
+          let text = `BARRIER -${eff.amount}%`;
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = "#9b59b6";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else if (eff.type === "lightning") {
+          ctx.beginPath();
+          ctx.moveTo(hx + 2.5, hy - 9);
+          ctx.lineTo(hx - 5, hy + 1.5);
+          ctx.lineTo(hx - 0.5, hy + 1.5);
+          ctx.lineTo(hx - 4.5, hy + 10);
+          ctx.lineTo(hx + 4.5, hy - 0.5);
+          ctx.lineTo(hx, hy - 0.5);
+          ctx.closePath();
+          ctx.fillStyle = "#f1c40f";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          ctx.fill();
+
+          let text = this.formatNumber(eff.amount);
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = "#f1c40f";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else if (eff.type === "fire") {
+          ctx.beginPath();
+          ctx.moveTo(hx, hy - 9);
+          ctx.quadraticCurveTo(hx - 7, hy - 2, hx - 7, hy + 4);
+          ctx.quadraticCurveTo(hx - 7, hy + 9.5, hx, hy + 9.5);
+          ctx.quadraticCurveTo(hx + 7, hy + 9.5, hx + 7, hy + 4);
+          ctx.quadraticCurveTo(hx + 7, hy - 2, hx, hy - 9);
+          ctx.closePath();
+          ctx.fillStyle = "#e67e22";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(hx, hy - 4);
+          ctx.quadraticCurveTo(hx - 4, hy + 1, hx - 4, hy + 5.5);
+          ctx.quadraticCurveTo(hx - 4, hy + 8, hx, hy + 8);
+          ctx.quadraticCurveTo(hx + 4, hy + 8, hx + 4, hy + 5.5);
+          ctx.quadraticCurveTo(hx + 4, hy + 1, hx, hy - 4);
+          ctx.closePath();
+          ctx.fillStyle = "#f1c40f";
+          ctx.fill();
+
+          let text = this.formatNumber(eff.amount);
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = "#e67e22";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else if (eff.type === "frost") {
+          ctx.beginPath();
+          ctx.moveTo(hx, hy - 9);
+          ctx.lineTo(hx + 6, hy);
+          ctx.lineTo(hx, hy + 9);
+          ctx.lineTo(hx - 6, hy);
+          ctx.closePath();
+          ctx.fillStyle = "#dff9fb";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          ctx.fill();
+
+          let text = this.formatNumber(eff.amount);
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = "#3498db";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else if (eff.type === "bleed") {
+          ctx.fillStyle = "#c0392b";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.moveTo(hx, hy - 8);
+          ctx.quadraticCurveTo(hx - 6, hy, hx - 6, hy + 4);
+          ctx.quadraticCurveTo(hx - 6, hy + 9, hx, hy + 9);
+          ctx.quadraticCurveTo(hx + 6, hy + 9, hx + 6, hy + 4);
+          ctx.quadraticCurveTo(hx + 6, hy - 2, hx, hy - 8);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          let text = this.formatNumber(eff.amount);
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = "#960018";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else if (eff.type === "poison") {
+          ctx.beginPath();
+          ctx.arc(hx, hy, 6, 0, Math.PI * 2);
+          ctx.fillStyle = "#2ecc71";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          ctx.fill();
+
+          let text = this.formatNumber(eff.amount);
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = "#2ecc71";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else if (eff.type === "echo") {
+          ctx.fillStyle = "#9b59b6";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.arc(hx, hy - 2, 6, Math.PI, 0, false);
+          ctx.quadraticCurveTo(hx + 6, hy + 6, hx + 3, hy + 8);
+          ctx.lineTo(hx - 3, hy + 8);
+          ctx.quadraticCurveTo(hx - 6, hy + 6, hx - 6, hy - 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          let text = this.formatNumber(eff.amount);
+          ctx.font = "bold 15px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.lineJoin = "round";
+          ctx.strokeText(text, hx + 14, hy + 4);
+          ctx.fillStyle = "#9b59b6";
+          ctx.fillText(text, hx + 14, hy + 4);
+        } else {
+          let text = eff.text || this.formatNumber(eff.amount);
+          ctx.font = "bold 16px sans-serif";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 4;
+          ctx.lineJoin = "miter";
+          ctx.strokeText(text, eff.x, eff.y);
+          ctx.fillStyle = eff.color || "#ffffff";
+          ctx.fillText(text, eff.x, eff.y);
+        }
+
+        ctx.restore();
+      });
+
+      ctx.restore();
+    }
+
+    drawTargetHealthBar(ctx, target) {
+      if (!target || !target.hp || target.hp <= 0) return;
+
+      let bHp =
+        typeof target.hp === "object"
+          ? target.hp.m * Math.pow(10, target.hp.e)
+          : target.hp;
+      let bMaxHp =
+        typeof target.maxHp === "object"
+          ? target.maxHp.m * Math.pow(10, target.maxHp.e)
+          : target.maxHp;
+      let hpPct = Math.max(0, Math.min(1, bHp / bMaxHp));
+
+      target.trailingPct =
+        target.trailingPct !== undefined ? target.trailingPct : hpPct;
+      if (target.trailingPct > hpPct) {
+        target.trailingPct = Math.max(hpPct, target.trailingPct - 0.015);
+      } else {
+        target.trailingPct = hpPct;
+      }
+
+      ctx.save();
+
+      if (
+        target.isBoss ||
+        target.type === "dungeon_boss" ||
+        target.type === "boss"
+      ) {
+        let barW = ctx.canvas.width * 0.6;
+        let barH = 14;
+        let barX = (ctx.canvas.width - barW) / 2;
+        let barY = 40;
+
+        ctx.fillStyle = "#111111";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.rect(barX, barY, barW, barH);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(
+          barX + 2,
+          barY + 2,
+          Math.max(0, (barW - 4) * target.trailingPct),
+          barH - 4,
+        );
+
+        let fillGrad = ctx.createLinearGradient(barX, barY, barX, barY + barH);
+        fillGrad.addColorStop(0, "#e74c3c");
+        fillGrad.addColorStop(1, "#c0392b");
+        ctx.fillStyle = fillGrad;
+        ctx.fillRect(
+          barX + 2,
+          barY + 2,
+          Math.max(0, (barW - 4) * hpPct),
+          barH - 4,
+        );
+
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        let bossName = target.name || "STAGE WARDEN";
+        ctx.strokeText(bossName, ctx.canvas.width / 2, barY - 4);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(bossName, ctx.canvas.width / 2, barY - 4);
+
+        if (target.funnyTextTimer > 0 && target.funnyText) {
+          target.funnyTextTimer--;
+          ctx.font = "900 13px 'Arial Black', Impact, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        }
+
+        this.drawStatusDots(
+          ctx,
+          barX + (barW - 55) / 2,
+          barY + barH + 6,
+          target.bleedStacks || 0,
+          "#e74c3c",
+        );
+        this.drawStatusDots(
+          ctx,
+          barX + (barW - 55) / 2,
+          barY + barH + 15,
+          target.poisonStacks || 0,
+          "#2ecc71",
+        );
+      } else if (hpPct < 1.0) {
+        let barW = target.w || 30;
+        let barX = target.x;
+        let barY = target.y - 12;
+
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(barX, barY, barW, 6);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(barX, barY, target.trailingPct * barW, 6);
+
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(barX, barY, hpPct * barW, 6);
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(barX, barY, barW, 6);
+
+        this.drawStatusDots(
+          ctx,
+          barX,
+          barY - 6,
+          target.bleedStacks || 0,
+          "#e74c3c",
+        );
+        this.drawStatusDots(
+          ctx,
+          barX,
+          barY - 12,
+          target.poisonStacks || 0,
+          "#2ecc71",
+        );
+      }
+
+      ctx.restore();
+    }
+
+    drawStatusDots(ctx, startX, y, stacks, color) {
+      if (stacks <= 0) return;
+      let dotSize = 2.0;
+      let dotSpacing = 3;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.arc(
+          startX + i * (dotSize * 2 + dotSpacing) + dotSize,
+          y,
+          dotSize,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = i < stacks ? color : "rgba(44, 62, 80, 0.7)";
+        ctx.fill();
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+    }
+  }
+
+  window.combatVisuals = new CombatVisualsEngine();
 
   // Initialize central RenderEngine Namespace
   window.RenderEngine = {
@@ -90,8 +1068,49 @@
 
   // --- VISUAL EFFECT & PARTICLE SPAWNERS ---
 
-  // Append spawnDeathParticles inside window.RenderEngine
+  // Append spawnHitSparks & spawnDeathParticles inside window.RenderEngine
   Object.assign(window.RenderEngine, {
+    spawnHitSparks(x, y, isCrit = false, dirX = 1, dirY = 0) {
+      if (
+        window.playerStats &&
+        window.playerStats.ecoMode &&
+        window.particles.length > 120
+      )
+        return;
+      if (window.particles.length > 250) return;
+      let count = isCrit ? 10 : 5;
+      if (window.playerStats && window.playerStats.ecoMode) {
+        count = Math.max(2, Math.floor(count * 0.4));
+      }
+      let baseAngle = Math.atan2(dirY, dirX);
+      let colors = isCrit
+        ? ["#ffffff", "#ffd700", "#ff4757"]
+        : ["#ffffff", "#eccc68", "#f1c40f"];
+
+      for (let i = 0; i < count; i++) {
+        let spread = (Math.random() - 0.5) * (Math.PI * 0.65);
+        let angle = baseAngle + spread;
+        let speed = window.randFloat(3.0, isCrit ? 8.0 : 5.5);
+        let life = window.randInt(10, 22);
+
+        window.particles.push(
+          window.ParticlePool.get(
+            x,
+            y,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed,
+            window.randFloat(1.2, isCrit ? 3.2 : 2.2),
+            colors[Math.floor(Math.random() * colors.length)],
+            1.0,
+            life,
+            life,
+            0.15,
+            true,
+          ),
+        );
+      }
+    },
+
     spawnDeathParticles(x, y, mobType) {
       if (window.playerStats.ecoMode && window.particles.length > 100) return;
       if (window.particles.length > 200) return;
@@ -318,140 +1337,49 @@
 
   // Append spawnDamageEffect inside window.RenderEngine
   Object.assign(window.RenderEngine, {
-    spawnDamageEffect(amount, type, isCrit) {
-      if (!window.mob) return;
+    spawnDamageEffect(
+      x,
+      y,
+      amount,
+      type = "slash",
+      isCrit = false,
+      targetObj = null,
+    ) {
+      if (typeof x !== "number" || typeof y !== "number") {
+        isCrit = !!amount;
+        type = y || "slash";
+        amount = x;
 
-      const isBoss =
-        window.mob.type === "boss" ||
-        window.mob.type === "dungeon_boss" ||
-        window.mob.type === "prestige_boss" ||
-        window.mob.type === "rift_guardian" ||
-        window.mob.type === "aegis_goliath" ||
-        window.mob.type === "chronos_arbitrator" ||
-        window.mob.type === "nexus_overseer";
-      if (
-        isBoss &&
-        BigNum.from(amount).gte(BigNum.from(window.mob.maxHp).mul(0.6))
-      ) {
-        const funnyPhrases = [
-          "OUCH!!",
-          "OW!!!",
-          "OWWY!!",
-          "OOF",
-          "MY SPINE!!",
-          "NOT THE FACE!!",
-          "STOP IT!!",
-          "BRUH!!!",
-          "REALLY?!",
-          "HELP!!",
-          "BOB SAGET!!",
-          "WTF?!",
-          "RUDE!!",
-          "EMOTIONAL DAMAGE",
-          "MY LEG!",
-          "STOP HITTING ME",
-        ];
-        window.mob.funnyText =
-          funnyPhrases[Math.floor(Math.random() * funnyPhrases.length)];
-        window.mob.funnyTextTimer = 60;
+        if (
+          window.mob &&
+          window.mob.hp &&
+          window.mob.hp.gt &&
+          window.mob.hp.gt(0)
+        ) {
+          x = window.mob.x + window.mob.w / 2;
+          y = window.mob.y + window.mob.h / 2;
+          targetObj = window.mob;
+        } else if (window.player) {
+          x = window.player.x;
+          y = window.player.y - 12;
+          targetObj = window.player;
+        } else {
+          return;
+        }
       }
 
-      let hitColor = "#ecf0f1";
-      let hitText = window.formatNumber(amount);
-      const icons = {
-        slash: "⚔️",
-        dagger: "🗡️",
-        lightning: "⚡",
-        fire: "🔥",
-        frost: "❄️",
-        echo: "👻",
-        counter: "🛡️",
-        bleed: "🩸",
-      };
-
-      if (isCrit) {
-        hitColor = "#e74c3c";
-        hitText = "💥 " + window.formatNumber(amount);
-      } else {
-        if (type === "lightning") hitColor = "#f1c40f";
-        else if (type === "fire") hitColor = "#e67e22";
-        else if (type === "frost") hitColor = "#3498db";
-        else if (type === "echo") hitColor = "#9b59b6";
-        else if (type === "counter") hitColor = "#f1c40f";
-        else if (type === "aegis_counter") hitColor = "#9b59b6";
-        else if (type === "parry_counter") hitColor = "#a855f7";
-        else if (type === "bleed") hitColor = "#960018";
-        else if (type === "poison")
-          hitColor = "#2ecc71"; // Vibrant toxic green
-        else if (type === "dagger") hitColor = "#a5b1c2"; // Elegant steel-grey
-      }
-
-      // Add "poison" to the icon index
-      const iconsWithPoison = {
-        ...icons,
-        poison: "🧪",
-      };
-
-      if (type !== "slash")
-        hitText = `${iconsWithPoison[type] || "❖"} ${hitText}`;
-
-      let offsetX = window.randFloat(-40, 40);
-      let offsetY = window.randFloat(-50, 15);
-
-      if (isCrit) {
-        window.effects.push(
-          window.CombatEffectPool.get(
-            "crit",
-            window.mob.x + window.mob.w / 2 + offsetX,
-            window.mob.y + offsetY,
-            window.randFloat(-1.2, 1.2),
-            window.randFloat(-2.0, -1.0),
-            amount,
-            undefined,
-            45,
-          ),
+      if (window.combatVisuals) {
+        window.combatVisuals.spawnDamageEffect(
+          x,
+          y,
+          amount,
+          type,
+          isCrit,
+          targetObj,
         );
-      } else {
-        // Enforce cel-shaded vector rendering for every single combat damage source!
-        window.effects.push(
-          window.CombatEffectPool.get(
-            type,
-            window.mob.x + window.mob.w / 2 + offsetX,
-            window.mob.y + offsetY,
-            window.randFloat(-1.2, 1.2),
-            window.randFloat(-1.5, -0.6),
-            amount,
-            hitColor,
-            40,
-          ),
-        );
-      }
-
-      let existingTotal = window.effects.find(
-        (e) => e.isCumulative && e.life > 0,
-      );
-      if (existingTotal) {
-        existingTotal.amount += amount;
-        existingTotal.text = `TOTAL: ${window.formatNumber(existingTotal.amount)}`;
-        existingTotal.life = 55;
-        existingTotal.x = window.mob.x + window.mob.w / 2 - 25;
-        existingTotal.y = window.mob.y - 25;
-      } else {
-        window.effects.push(
-          window.CombatEffectPool.get(
-            undefined,
-            window.mob.x + window.mob.w / 2 - 25,
-            window.mob.y - 25,
-            0,
-            -0.4,
-            amount,
-            "#f1c40f",
-            55,
-            0,
-            `TOTAL: ${window.formatNumber(amount)}`,
-            true,
-          ),
-        );
+        if (isCrit) {
+          window.combatVisuals.triggerScreenShake(4, 8);
+        }
       }
     },
   });
@@ -461,41 +1389,57 @@
     window.RenderEngine.spawnDamageEffect(amount, type, isCrit);
 
   // Append renderNemesisPreview inside window.RenderEngine
-  Object.assign(window.RenderEngine, {
-    renderNemesisPreview(mobData) {
-      const dCanvas = document.getElementById("death-enemy-canvas");
-      if (!dCanvas) return;
-      const dCtx = dCanvas.getContext("2d");
-      dCtx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+    Object.assign(window.RenderEngine, {
+      renderNemesisPreview(mobData) {
+        if (window.nemesisAnimFrameId) {
+          cancelAnimationFrame(window.nemesisAnimFrameId);
+          window.nemesisAnimFrameId = null;
+        }
 
-      if (!mobData) {
-        dCtx.fillStyle = "#c0392b";
-        dCtx.font = "bold 20px sans-serif";
-        dCtx.textAlign = "center";
-        dCtx.textBaseline = "middle";
-        dCtx.fillText("💀", dCanvas.width / 2, dCanvas.height / 2);
-        return;
-      }
+        const dCanvas = document.getElementById("death-enemy-canvas");
+        if (!dCanvas) return;
+        const dCtx = dCanvas.getContext("2d");
 
-      let renderMob = { ...mobData };
-      renderMob.flashTimer = 0;
+        if (!mobData) {
+          dCtx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+          dCtx.fillStyle = "#c0392b";
+          dCtx.font = "bold 11px monospace";
+          dCtx.textAlign = "center";
+          dCtx.textBaseline = "middle";
+          dCtx.fillText("[NO TARGET]", dCanvas.width / 2, dCanvas.height / 2);
+          return;
+        }
 
-      // Calculate containing scale to keep the sprite within 80% of canvas bounds
-      let maxDim = Math.max(renderMob.w, renderMob.h);
-      let scale = maxDim > 0 ? (dCanvas.width * 0.8) / maxDim : 1.0;
+        let renderMob = { ...mobData };
+        renderMob.flashTimer = 0;
 
-      dCtx.save();
-      // Dynamically target the exact center point of the active canvas dimensions
-      dCtx.translate(dCanvas.width / 2, dCanvas.height / 2);
-      dCtx.scale(scale, scale);
-      dCtx.translate(
-        -(renderMob.x + renderMob.w / 2),
-        -(renderMob.y + renderMob.h / 2),
-      );
-      window.RenderEngine.drawSingleMob(dCtx, renderMob);
-      dCtx.restore();
-    },
-  });
+        let maxDim = Math.max(renderMob.w, renderMob.h);
+        let scale = maxDim > 0 ? (dCanvas.width * 0.8) / maxDim : 1.0;
+
+        function animLoop() {
+          let summaryModal = document.getElementById("summary-modal");
+          if (!summaryModal || summaryModal.style.display === "none") {
+            window.nemesisAnimFrameId = null;
+            return;
+          }
+
+          dCtx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+          dCtx.save();
+          dCtx.translate(dCanvas.width / 2, dCanvas.height / 2);
+          dCtx.scale(scale, scale);
+          dCtx.translate(
+            -(renderMob.x + renderMob.w / 2),
+            -(renderMob.y + renderMob.h / 2)
+          );
+          window.RenderEngine.drawSingleMob(dCtx, renderMob);
+          dCtx.restore();
+
+          window.nemesisAnimFrameId = requestAnimationFrame(animLoop);
+        }
+
+        animLoop();
+      },
+    });
 
   // Legacy Compatibility Aliases to protect references
   window.renderNemesisPreview = (mobData) =>
@@ -507,9 +1451,40 @@
   window.RenderEngine.drawSingleMob = (c, m) => window.drawSingleMob(c, m);
 
   window.drawSingleMob = function (c, m) {
-    if (!m) return;
-    let t = m.visualTier;
+      if (!m) return;
+      let t = m.visualTier;
+      let rx = m.recoilX || 0;
+      let ry = m.recoilY || 0;
+      let facing = m.facing !== undefined ? m.facing : -1;
+
+      c.save();
+      c.translate(rx, ry);
+
+      if (facing === 1) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+        c.translate(cx, cy);
+        c.scale(-1, 1);
+        c.translate(-cx, -cy);
+      }
+
+      // Ground Drop Shadow Pass
     c.save();
+    let mobShadowW = m.w * 0.45;
+    let mobShadowH = Math.max(3, m.h * 0.15);
+    c.fillStyle = "rgba(0, 0, 0, 0.35)";
+    c.beginPath();
+    c.ellipse(
+      m.x + m.w / 2,
+      m.y + m.h - 2,
+      mobShadowW,
+      mobShadowH,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    c.fill();
+    c.restore();
 
     let penWidth =
       m.type === "boss" ||
@@ -577,11 +1552,11 @@
       }
 
       if (vType === "slime") {
-              let squish = Math.sin(Date.now() / 100) * 2.0;
-              let wScale = (m.w / 2) * 0.7 + squish;
-              let hScale = (m.h / 2) * 0.7 - squish;
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h - 6 + squish / 2;
+        let squish = Math.sin(Date.now() / 100) * 2.0;
+        let wScale = (m.w / 2) * 0.7 + squish;
+        let hScale = (m.h / 2) * 0.7 - squish;
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h - 6 + squish / 2;
 
         let slimeGrad = c.createRadialGradient(
           cx - 3,
@@ -1244,140 +2219,140 @@
           c.shadowBlur = 0;
         }
       } else if (vType === "sprout") {
-              let squish = Math.sin(Date.now() / 110) * 1.5;
-              let wScale = (m.w / 2 + squish) * 0.65;
-              let hScale = (m.h / 2 - squish) * 0.65;
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h - 4;
-              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#fdf6e2";
-              c.beginPath();
-              c.ellipse(
-                cx,
-                cy - hScale * 0.4,
-                wScale * 0.65,
-                hScale * 0.45,
-                0,
-                0,
-                Math.PI * 2,
-              );
-              c.fill();
-              c.stroke();
-              if (m.flashTimer === 0) {
-                c.fillStyle = "#1e272e";
-                let eyeOffsetX = wScale * 0.22;
-                let eyeY = cy - hScale * 0.45;
-                let eyeSize = Math.max(1, hScale * 0.12);
-                c.beginPath();
-                c.arc(cx - eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
-                c.arc(cx + eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
-                c.fill();
-                c.fillStyle = "rgba(231, 76, 60, 0.45)";
-                c.beginPath();
-                c.ellipse(cx - eyeOffsetX - 2, eyeY + 2, 2, 1, 0, 0, Math.PI * 2);
-                c.ellipse(cx + eyeOffsetX + 2, eyeY + 2, 2, 1, 0, 0, Math.PI * 2);
-                c.fill();
-              }
-              let capY = cy - hScale * 1.05;
-              c.fillStyle =
-                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f1c40f" : "#ff6b1a";
-              c.beginPath();
-              c.ellipse(cx, capY, wScale * 1.25, hScale * 0.85, 0, Math.PI, 0);
-              c.lineTo(cx + wScale * 1.25, capY + hScale * 0.1);
-              c.quadraticCurveTo(
-                cx,
-                capY + hScale * 0.4,
-                cx - wScale * 1.25,
-                capY + hScale * 0.1,
-              );
-              c.closePath();
-              c.fill();
-              c.stroke();
-              if (m.flashTimer === 0) {
-                c.fillStyle = "rgba(255, 255, 255, 0.5)";
-                c.beginPath();
-                c.ellipse(
-                  cx - wScale * 0.5,
-                  capY - hScale * 0.35,
-                  wScale * 0.3,
-                  hScale * 0.15,
-                  -Math.PI / 6,
-                  0,
-                  Math.PI * 2,
-                );
-                c.fill();
-              }
+        let squish = Math.sin(Date.now() / 110) * 1.5;
+        let wScale = (m.w / 2 + squish) * 0.65;
+        let hScale = (m.h / 2 - squish) * 0.65;
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h - 4;
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#fdf6e2";
+        c.beginPath();
+        c.ellipse(
+          cx,
+          cy - hScale * 0.4,
+          wScale * 0.65,
+          hScale * 0.45,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        c.fill();
+        c.stroke();
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#1e272e";
+          let eyeOffsetX = wScale * 0.22;
+          let eyeY = cy - hScale * 0.45;
+          let eyeSize = Math.max(1, hScale * 0.12);
+          c.beginPath();
+          c.arc(cx - eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
+          c.arc(cx + eyeOffsetX, eyeY, eyeSize, 0, Math.PI * 2);
+          c.fill();
+          c.fillStyle = "rgba(231, 76, 60, 0.45)";
+          c.beginPath();
+          c.ellipse(cx - eyeOffsetX - 2, eyeY + 2, 2, 1, 0, 0, Math.PI * 2);
+          c.ellipse(cx + eyeOffsetX + 2, eyeY + 2, 2, 1, 0, 0, Math.PI * 2);
+          c.fill();
+        }
+        let capY = cy - hScale * 1.05;
+        c.fillStyle =
+          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f1c40f" : "#ff6b1a";
+        c.beginPath();
+        c.ellipse(cx, capY, wScale * 1.25, hScale * 0.85, 0, Math.PI, 0);
+        c.lineTo(cx + wScale * 1.25, capY + hScale * 0.1);
+        c.quadraticCurveTo(
+          cx,
+          capY + hScale * 0.4,
+          cx - wScale * 1.25,
+          capY + hScale * 0.1,
+        );
+        c.closePath();
+        c.fill();
+        c.stroke();
+        if (m.flashTimer === 0) {
+          c.fillStyle = "rgba(255, 255, 255, 0.5)";
+          c.beginPath();
+          c.ellipse(
+            cx - wScale * 0.5,
+            capY - hScale * 0.35,
+            wScale * 0.3,
+            hScale * 0.15,
+            -Math.PI / 6,
+            0,
+            Math.PI * 2,
+          );
+          c.fill();
+        }
       } else if (vType === "thorn_wyrm") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2 + 2;
-              let time = Date.now() / 130;
-              c.strokeStyle = "#000000";
-              c.lineWidth = 1.5;
-              for (let i = 0; i < 5; i++) {
-                let segX = cx + i * 5.5;
-                let segY = cy + Math.sin(time - i * 0.8) * 3;
-                c.beginPath();
-                c.moveTo(segX, segY + 2);
-                c.lineTo(segX - 2, segY + 7 + Math.sin(time * 2 + i) * 2);
-                c.stroke();
-              }
-              for (let i = 4; i >= 0; i--) {
-                let segX = cx + i * 5.5;
-                let segY = cy + Math.sin(time - i * 0.8) * 3;
-                let radius = 6.2 - i * 0.7;
-                c.fillStyle =
-                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#e67e22" : "#27ae60";
-                c.beginPath();
-                c.arc(segX, segY, radius, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
-                if (m.flashTimer === 0) {
-                  c.fillStyle = m.isRare ? "#f1c40f" : "#1e8449";
-                  c.beginPath();
-                  c.moveTo(segX + 1, segY - radius);
-                  c.quadraticCurveTo(
-                    segX + 3,
-                    segY - radius - 4,
-                    segX,
-                    segY - radius - 5,
-                  );
-                  c.quadraticCurveTo(
-                    segX - 2,
-                    segY - radius - 2,
-                    segX - 1,
-                    segY - radius,
-                  );
-                  c.closePath();
-                  c.fill();
-                  c.stroke();
-                }
-              }
-              c.fillStyle =
-                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f39c12" : "#2ecc71";
-              let hX = cx - 5;
-              let hY = cy + Math.sin(time) * 3;
-              c.beginPath();
-              c.arc(hX, hY, 6.8, 0, Math.PI * 2);
-              c.fill();
-              c.stroke();
-              if (m.flashTimer === 0) {
-                c.fillStyle = m.isRare ? "#ffea75" : "#2ecc71";
-                c.beginPath();
-                c.moveTo(hX - 2, hY - 5);
-                c.quadraticCurveTo(hX - 7, hY - 10, hX - 9, hY - 9);
-                c.quadraticCurveTo(hX - 5, hY - 4, hX - 1, hY - 4);
-                c.closePath();
-                c.fill();
-                c.stroke();
-                c.fillStyle = "#ffffff";
-                c.beginPath();
-                c.arc(hX - 2.5, hY - 1, 1.5, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
-                c.fillStyle = "#1e272e";
-                c.beginPath();
-                c.arc(hX - 3, hY - 1, 0.8, 0, Math.PI * 2);
-                c.fill();
-              }
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + 2;
+        let time = Date.now() / 130;
+        c.strokeStyle = "#000000";
+        c.lineWidth = 1.5;
+        for (let i = 0; i < 5; i++) {
+          let segX = cx + i * 5.5;
+          let segY = cy + Math.sin(time - i * 0.8) * 3;
+          c.beginPath();
+          c.moveTo(segX, segY + 2);
+          c.lineTo(segX - 2, segY + 7 + Math.sin(time * 2 + i) * 2);
+          c.stroke();
+        }
+        for (let i = 4; i >= 0; i--) {
+          let segX = cx + i * 5.5;
+          let segY = cy + Math.sin(time - i * 0.8) * 3;
+          let radius = 6.2 - i * 0.7;
+          c.fillStyle =
+            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#e67e22" : "#27ae60";
+          c.beginPath();
+          c.arc(segX, segY, radius, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+          if (m.flashTimer === 0) {
+            c.fillStyle = m.isRare ? "#f1c40f" : "#1e8449";
+            c.beginPath();
+            c.moveTo(segX + 1, segY - radius);
+            c.quadraticCurveTo(
+              segX + 3,
+              segY - radius - 4,
+              segX,
+              segY - radius - 5,
+            );
+            c.quadraticCurveTo(
+              segX - 2,
+              segY - radius - 2,
+              segX - 1,
+              segY - radius,
+            );
+            c.closePath();
+            c.fill();
+            c.stroke();
+          }
+        }
+        c.fillStyle =
+          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#f39c12" : "#2ecc71";
+        let hX = cx - 5;
+        let hY = cy + Math.sin(time) * 3;
+        c.beginPath();
+        c.arc(hX, hY, 6.8, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        if (m.flashTimer === 0) {
+          c.fillStyle = m.isRare ? "#ffea75" : "#2ecc71";
+          c.beginPath();
+          c.moveTo(hX - 2, hY - 5);
+          c.quadraticCurveTo(hX - 7, hY - 10, hX - 9, hY - 9);
+          c.quadraticCurveTo(hX - 5, hY - 4, hX - 1, hY - 4);
+          c.closePath();
+          c.fill();
+          c.stroke();
+          c.fillStyle = "#ffffff";
+          c.beginPath();
+          c.arc(hX - 2.5, hY - 1, 1.5, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+          c.fillStyle = "#1e272e";
+          c.beginPath();
+          c.arc(hX - 3, hY - 1, 0.8, 0, Math.PI * 2);
+          c.fill();
+        }
       } else if (vType === "gargoyle") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2;
@@ -1521,77 +2496,77 @@
           c.fill();
         }
       } else if (vType === "lava_serpent") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2 + 2;
-              let time = Date.now() / 140;
-              if (
-                Math.random() < 0.15 &&
-                window.particles.length < 200 &&
-                !window.isGamePaused
-              ) {
-                window.particles.push({
-                  x: cx + window.randFloat(0, 15),
-                  y: cy - 6,
-                  vx: -window.randFloat(0.5, 1.5),
-                  vy: -window.randFloat(1, 2.5),
-                  radius: window.randFloat(1, 2),
-                  color: "rgba(230, 126, 34, 0.4)",
-                  alpha: 0.8,
-                  life: window.randInt(15, 30),
-                });
-              }
-              for (let i = 5; i >= 0; i--) {
-                let segX = cx + i * 5.5;
-                let segY = cy + Math.sin(time - i * 0.8) * 3.5;
-                let radius = 6.5 - i * 0.7;
-                c.fillStyle =
-                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff8c00" : "#1c0905";
-                c.beginPath();
-                c.arc(segX, segY, radius, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
-                if (m.flashTimer === 0) {
-                  c.fillStyle = m.isRare ? "#ffffff" : "#ff3300";
-                  c.beginPath();
-                  c.arc(segX, segY, radius * 0.45, 0, Math.PI * 2);
-                  c.fill();
-                  c.fillStyle = "#2c110c";
-                  c.beginPath();
-                  c.moveTo(segX + 1, segY - radius);
-                  c.lineTo(segX - 2, segY - radius - 3);
-                  c.lineTo(segX - 3, segY - radius);
-                  c.closePath();
-                  c.fill();
-                  c.stroke();
-                }
-              }
-              c.fillStyle =
-                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff4500" : "#110200";
-              let hX = cx - 5;
-              let hY = cy + Math.sin(time) * 3.5;
-              c.beginPath();
-              c.moveTo(hX + 6, hY - 6);
-              c.lineTo(hX - 7, hY - 5);
-              c.lineTo(hX - 8, hY + 1);
-              c.lineTo(hX + 6, hY + 7);
-              c.closePath();
-              c.fill();
-              c.stroke();
-              if (m.flashTimer === 0) {
-                c.fillStyle = "#e67e22";
-                c.beginPath();
-                c.moveTo(hX + 2, hY - 5);
-                c.quadraticCurveTo(hX + 7, hY - 11, hX + 10, hY - 10);
-                c.lineTo(hX + 3, hY - 2);
-                c.closePath();
-                c.fill();
-                c.stroke();
-                c.fillStyle = "#f1c40f";
-                c.beginPath();
-                c.arc(hX - 2, hY - 1, 1.2, 0, Math.PI * 2);
-                c.fill();
-              }
-            } else if (vType === "hell_bat") {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + 2;
+        let time = Date.now() / 140;
+        if (
+          Math.random() < 0.15 &&
+          window.particles.length < 200 &&
+          !window.isGamePaused
+        ) {
+          window.particles.push({
+            x: cx + window.randFloat(0, 15),
+            y: cy - 6,
+            vx: -window.randFloat(0.5, 1.5),
+            vy: -window.randFloat(1, 2.5),
+            radius: window.randFloat(1, 2),
+            color: "rgba(230, 126, 34, 0.4)",
+            alpha: 0.8,
+            life: window.randInt(15, 30),
+          });
+        }
+        for (let i = 5; i >= 0; i--) {
+          let segX = cx + i * 5.5;
+          let segY = cy + Math.sin(time - i * 0.8) * 3.5;
+          let radius = 6.5 - i * 0.7;
+          c.fillStyle =
+            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff8c00" : "#1c0905";
+          c.beginPath();
+          c.arc(segX, segY, radius, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+          if (m.flashTimer === 0) {
+            c.fillStyle = m.isRare ? "#ffffff" : "#ff3300";
+            c.beginPath();
+            c.arc(segX, segY, radius * 0.45, 0, Math.PI * 2);
+            c.fill();
+            c.fillStyle = "#2c110c";
+            c.beginPath();
+            c.moveTo(segX + 1, segY - radius);
+            c.lineTo(segX - 2, segY - radius - 3);
+            c.lineTo(segX - 3, segY - radius);
+            c.closePath();
+            c.fill();
+            c.stroke();
+          }
+        }
+        c.fillStyle =
+          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff4500" : "#110200";
+        let hX = cx - 5;
+        let hY = cy + Math.sin(time) * 3.5;
+        c.beginPath();
+        c.moveTo(hX + 6, hY - 6);
+        c.lineTo(hX - 7, hY - 5);
+        c.lineTo(hX - 8, hY + 1);
+        c.lineTo(hX + 6, hY + 7);
+        c.closePath();
+        c.fill();
+        c.stroke();
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#e67e22";
+          c.beginPath();
+          c.moveTo(hX + 2, hY - 5);
+          c.quadraticCurveTo(hX + 7, hY - 11, hX + 10, hY - 10);
+          c.lineTo(hX + 3, hY - 2);
+          c.closePath();
+          c.fill();
+          c.stroke();
+          c.fillStyle = "#f1c40f";
+          c.beginPath();
+          c.arc(hX - 2, hY - 1, 1.2, 0, Math.PI * 2);
+          c.fill();
+        }
+      } else if (vType === "hell_bat") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2 + Math.sin(Date.now() / 110) * 3;
         let batWing = Math.sin(Date.now() / 70) * 11;
@@ -1629,56 +2604,56 @@
           c.fill();
         }
       } else if (vType === "swamp_basilisk") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2 + 2;
-              let time = Date.now() / 150;
-              for (let i = 5; i >= 0; i--) {
-                let segX = cx + i * 5.5;
-                let segY = cy + Math.sin(time - i * 0.8) * 3.5;
-                let radius = 6.5 - i * 0.7;
-                c.fillStyle =
-                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#1a3a22";
-                c.beginPath();
-                c.arc(segX, segY, radius, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
-                if (m.flashTimer === 0) {
-                  c.fillStyle = m.isRare ? "#ff007f" : "#9b59b6";
-                  c.beginPath();
-                  c.moveTo(segX + 1, segY - radius);
-                  c.lineTo(segX - 1, segY - radius - 4);
-                  c.lineTo(segX - 2, segY - radius);
-                  c.closePath();
-                  c.fill();
-                  c.stroke();
-                }
-              }
-              c.fillStyle =
-                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#122c19";
-              let hX = cx - 5;
-              let hY = cy + Math.sin(time) * 3.5;
-              c.beginPath();
-              c.moveTo(hX + 7, hY - 7);
-              c.lineTo(hX - 8, hY - 3);
-              c.lineTo(hX - 7, hY + 4);
-              c.lineTo(hX + 7, hY + 7);
-              c.closePath();
-              c.fill();
-              c.stroke();
-              if (m.flashTimer === 0) {
-                c.fillStyle = "#ffffff";
-                c.beginPath();
-                c.moveTo(hX - 6, hY - 1);
-                c.lineTo(hX - 8, hY + 2);
-                c.lineTo(hX - 4, hY + 1);
-                c.closePath();
-                c.fill();
-                c.fillStyle = "#f1c40f";
-                c.beginPath();
-                c.arc(hX - 2, hY - 2, 1.2, 0, Math.PI * 2);
-                c.fill();
-              }
-            } else if (vType === "toxic_fly") {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + 2;
+        let time = Date.now() / 150;
+        for (let i = 5; i >= 0; i--) {
+          let segX = cx + i * 5.5;
+          let segY = cy + Math.sin(time - i * 0.8) * 3.5;
+          let radius = 6.5 - i * 0.7;
+          c.fillStyle =
+            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#1a3a22";
+          c.beginPath();
+          c.arc(segX, segY, radius, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+          if (m.flashTimer === 0) {
+            c.fillStyle = m.isRare ? "#ff007f" : "#9b59b6";
+            c.beginPath();
+            c.moveTo(segX + 1, segY - radius);
+            c.lineTo(segX - 1, segY - radius - 4);
+            c.lineTo(segX - 2, segY - radius);
+            c.closePath();
+            c.fill();
+            c.stroke();
+          }
+        }
+        c.fillStyle =
+          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#00b894" : "#122c19";
+        let hX = cx - 5;
+        let hY = cy + Math.sin(time) * 3.5;
+        c.beginPath();
+        c.moveTo(hX + 7, hY - 7);
+        c.lineTo(hX - 8, hY - 3);
+        c.lineTo(hX - 7, hY + 4);
+        c.lineTo(hX + 7, hY + 7);
+        c.closePath();
+        c.fill();
+        c.stroke();
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#ffffff";
+          c.beginPath();
+          c.moveTo(hX - 6, hY - 1);
+          c.lineTo(hX - 8, hY + 2);
+          c.lineTo(hX - 4, hY + 1);
+          c.closePath();
+          c.fill();
+          c.fillStyle = "#f1c40f";
+          c.beginPath();
+          c.arc(hX - 2, hY - 2, 1.2, 0, Math.PI * 2);
+          c.fill();
+        }
+      } else if (vType === "toxic_fly") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2 + Math.sin(Date.now() / 110) * 4;
         let wing = Math.sin(Date.now() / 60) * 11;
@@ -1790,66 +2765,66 @@
           c.restore();
         }
       } else if (vType === "void_crawler") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2 + 2;
-              let time = Date.now() / 150;
-              c.strokeStyle = "#000000";
-              c.lineWidth = 1.5;
-              for (let i = 0; i < 6; i++) {
-                let segX = cx + i * 5.5;
-                let segY = cy + Math.sin(time - i * 0.7) * 3.5;
-                c.beginPath();
-                c.moveTo(segX, segY + 1);
-                c.lineTo(segX - 3, segY + 9 + Math.sin(time * 3.5 + i) * 2.5);
-                c.stroke();
-              }
-              for (let i = 6; i >= 0; i--) {
-                let segX = cx + i * 5.5;
-                let segY = cy + Math.sin(time - i * 0.7) * 3.5;
-                let radius = 6.2 - i * 0.7;
-                c.fillStyle =
-                  m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#1a022b";
-                c.beginPath();
-                c.arc(segX, segY, radius, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
-                if (m.flashTimer === 0) {
-                  c.strokeStyle = "#8e44ad";
-                  c.lineWidth = 1.0;
-                  c.beginPath();
-                  c.moveTo(segX - 1, segY - radius + 2);
-                  c.lineTo(segX + 1, segY - radius + 2);
-                  c.stroke();
-                }
-              }
-              c.fillStyle =
-                m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#11001c";
-              let hX = cx - 5;
-              let hY = cy + Math.sin(time) * 3.5;
-              c.beginPath();
-              c.arc(hX, hY, 6.5, 0, Math.PI * 2);
-              c.fill();
-              c.stroke();
-              if (m.flashTimer === 0) {
-                c.strokeStyle = "#8e44ad";
-                c.lineWidth = 1.2;
-                c.beginPath();
-                c.moveTo(hX - 2, hY - 4);
-                c.quadraticCurveTo(
-                  hX - 9,
-                  hY - 9 + Math.sin(time * 3) * 2.5,
-                  hX - 14,
-                  hY - 6 + Math.sin(time * 3) * 2.5,
-                );
-                c.stroke();
-                c.fillStyle = "#ff007f";
-                c.beginPath();
-                c.arc(hX - 3, hY - 2, 1.0, 0, Math.PI * 2);
-                c.arc(hX - 1, hY - 1, 0.8, 0, Math.PI * 2);
-                c.arc(hX - 3, hY + 1, 0.8, 0, Math.PI * 2);
-                c.fill();
-              }
-            } else if (vType === "void_spectre") {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + 2;
+        let time = Date.now() / 150;
+        c.strokeStyle = "#000000";
+        c.lineWidth = 1.5;
+        for (let i = 0; i < 6; i++) {
+          let segX = cx + i * 5.5;
+          let segY = cy + Math.sin(time - i * 0.7) * 3.5;
+          c.beginPath();
+          c.moveTo(segX, segY + 1);
+          c.lineTo(segX - 3, segY + 9 + Math.sin(time * 3.5 + i) * 2.5);
+          c.stroke();
+        }
+        for (let i = 6; i >= 0; i--) {
+          let segX = cx + i * 5.5;
+          let segY = cy + Math.sin(time - i * 0.7) * 3.5;
+          let radius = 6.2 - i * 0.7;
+          c.fillStyle =
+            m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#1a022b";
+          c.beginPath();
+          c.arc(segX, segY, radius, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+          if (m.flashTimer === 0) {
+            c.strokeStyle = "#8e44ad";
+            c.lineWidth = 1.0;
+            c.beginPath();
+            c.moveTo(segX - 1, segY - radius + 2);
+            c.lineTo(segX + 1, segY - radius + 2);
+            c.stroke();
+          }
+        }
+        c.fillStyle =
+          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#ff007f" : "#11001c";
+        let hX = cx - 5;
+        let hY = cy + Math.sin(time) * 3.5;
+        c.beginPath();
+        c.arc(hX, hY, 6.5, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        if (m.flashTimer === 0) {
+          c.strokeStyle = "#8e44ad";
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.moveTo(hX - 2, hY - 4);
+          c.quadraticCurveTo(
+            hX - 9,
+            hY - 9 + Math.sin(time * 3) * 2.5,
+            hX - 14,
+            hY - 6 + Math.sin(time * 3) * 2.5,
+          );
+          c.stroke();
+          c.fillStyle = "#ff007f";
+          c.beginPath();
+          c.arc(hX - 3, hY - 2, 1.0, 0, Math.PI * 2);
+          c.arc(hX - 1, hY - 1, 0.8, 0, Math.PI * 2);
+          c.arc(hX - 3, hY + 1, 0.8, 0, Math.PI * 2);
+          c.fill();
+        }
+      } else if (vType === "void_spectre") {
         // Render a floating ethereal void phantom cloaked in cosmic energy
         let hover = Math.sin(Date.now() / 150) * 5;
         let cx = m.x + m.w / 2;
@@ -3668,14 +4643,14 @@
       let bounce = 0;
 
       if (currentTier === 0) {
-              c.save();
-              let centerBossX = m.x + m.w / 2;
-              let centerBossY = m.y + m.h / 2;
-              c.translate(centerBossX, centerBossY);
-              c.scale(0.5, 0.5);
-              c.translate(-centerBossX, -centerBossY);
+        c.save();
+        let centerBossX = m.x + m.w / 2;
+        let centerBossY = m.y + m.h / 2;
+        c.translate(centerBossX, centerBossY);
+        c.scale(0.5, 0.5);
+        c.translate(-centerBossX, -centerBossY);
 
-              // Background glow layer for Rare targets to immediately signify high-tier spawns
+        // Background glow layer for Rare targets to immediately signify high-tier spawns
         if (m.isRare) {
           c.save();
           let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
@@ -4227,52 +5202,52 @@
           let eyePulse = 1 + Math.sin(Date.now() / 150) * 0.08;
 
           m.appleOffsets.forEach((ap) => {
-                      let appleX = cx + ap.dx;
-                      let appleY = cy + ap.dy;
-                      let rRadius = m.w * 0.11 * ap.sizeMod * eyePulse;
+            let appleX = cx + ap.dx;
+            let appleY = cy + ap.dy;
+            let rRadius = m.w * 0.11 * ap.sizeMod * eyePulse;
 
-                      c.save();
-                      c.translate(appleX, appleY);
-                      c.rotate(ap.eyeRot);
+            c.save();
+            c.translate(appleX, appleY);
+            c.rotate(ap.eyeRot);
 
-                      // Dual-color Eldritch Eye radial gradient (Glow center to crimson edge)
-                      let fruitGrad = c.createRadialGradient(0, 0, 1, 0, 0, rRadius);
-                      fruitGrad.addColorStop(0, "#ffffff");
-                      fruitGrad.addColorStop(0.3, "#f1c40f"); // Yellow iris ring
-                      fruitGrad.addColorStop(0.7, "#d35400"); // Rich orange boundary
-                      fruitGrad.addColorStop(1, "#c0392b"); // Crimson base
-                      c.fillStyle = fruitGrad;
+            // Dual-color Eldritch Eye radial gradient (Glow center to crimson edge)
+            let fruitGrad = c.createRadialGradient(0, 0, 1, 0, 0, rRadius);
+            fruitGrad.addColorStop(0, "#ffffff");
+            fruitGrad.addColorStop(0.3, "#f1c40f"); // Yellow iris ring
+            fruitGrad.addColorStop(0.7, "#d35400"); // Rich orange boundary
+            fruitGrad.addColorStop(1, "#c0392b"); // Crimson base
+            c.fillStyle = fruitGrad;
 
-                      c.beginPath();
-                      c.arc(0, 0, rRadius, 0, Math.PI * 2);
-                      c.fill();
-                      c.stroke();
+            c.beginPath();
+            c.arc(0, 0, rRadius, 0, Math.PI * 2);
+            c.fill();
+            c.stroke();
 
-                      // Menacing black reptilian slit pupil right in the center!
-                      c.fillStyle = "#000000";
-                      c.beginPath();
-                      c.ellipse(0, 0, rRadius * 0.2, rRadius * 0.7, 0, 0, Math.PI * 2);
-                      c.fill();
+            // Menacing black reptilian slit pupil right in the center!
+            c.fillStyle = "#000000";
+            c.beginPath();
+            c.ellipse(0, 0, rRadius * 0.2, rRadius * 0.7, 0, 0, Math.PI * 2);
+            c.fill();
 
-                      // Micro white specular highlight reflecting light
-                      c.fillStyle = "#ffffff";
-                      c.beginPath();
-                      c.arc(
-                        -rRadius * 0.25,
-                        -rRadius * 0.25,
-                        rRadius * 0.15,
-                        0,
-                        Math.PI * 2,
-                      );
-                      c.fill();
+            // Micro white specular highlight reflecting light
+            c.fillStyle = "#ffffff";
+            c.beginPath();
+            c.arc(
+              -rRadius * 0.25,
+              -rRadius * 0.25,
+              rRadius * 0.15,
+              0,
+              Math.PI * 2,
+            );
+            c.fill();
 
-                      c.restore();
-                    });
-                    c.restore();
-                  }
-                  c.restore();
-                  c.restore(); // Close master 50% boss scale transform
-                } else if (currentTier === 1) {
+            c.restore();
+          });
+          c.restore();
+        }
+        c.restore();
+        c.restore(); // Close master 50% boss scale transform
+      } else if (currentTier === 1) {
         let bounceOffset = Math.sin(Date.now() / 200) * 3;
         let blockColor = m.flashTimer > 0 ? "#ffffff" : "#3b3f46";
         let shadowColor = m.flashTimer > 0 ? "#ffffff" : "#1f2126";
@@ -4820,6 +5795,15 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(scale, scale);
+
+    // Ground Drop Shadow Pass (Ambient Occlusion)
+    ctx.save();
+    let shadowScale = Math.max(0.65, 1.0 - Math.abs(bounce) * 0.05);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.beginPath();
+    ctx.ellipse(0, 16, 11 * shadowScale, 4.5 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     const penHero = 1.8;
     ctx.strokeStyle = "#000000";
@@ -5776,7 +6760,9 @@
           ctx.lineJoin = "round";
 
           let isMoving =
-            options.isMainHero && (!window.mob || !window.mob.isStopped);
+            options.isMoving !== undefined
+              ? options.isMoving
+              : options.isMainHero && window.player && window.player.isMoving;
 
           // Initialize or update persistent procedural weight on the character state object
           if (playerStats.scarfWeight === undefined) {
@@ -7753,5632 +8739,6 @@
     ctx.restore();
   };
 
-  // --- MISSING MAIN RENDER LOOP ---
-  window.draw = function () {
-    window.nowMs = window.Date.now();
-    const ctx = window.ctx;
-    const canvas = window.canvas;
-    if (!ctx || !canvas) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let tier = window.getStageTier();
-
-    const penSky = 1.0;
-    const penFar = 1.3;
-    const penBgScenery = 1.3;
-    const penFgScenery = 1.5;
-    const penHero = 1.8;
-    const penBoss = 2.4;
-
-    // 1. SKY & BACKGROUND FILL
-    if (window.playerStats.isUberBoss) {
-      let skyGrad = ctx.createLinearGradient(0, 0, 0, 230);
-      skyGrad.addColorStop(0, "#0d011a");
-      skyGrad.addColorStop(0.5, "#25033c");
-      skyGrad.addColorStop(1, "#030005");
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, canvas.width, 230);
-      let singPulse = 45 + Math.sin(Date.now() / 150) * 10;
-      let singGrad = ctx.createRadialGradient(
-        canvas.width / 2,
-        110,
-        5,
-        canvas.width / 2,
-        110,
-        singPulse,
-      );
-      singGrad.addColorStop(0, "#000000");
-      singGrad.addColorStop(0.3, "#e84393");
-      singGrad.addColorStop(0.7, "rgba(142, 68, 173, 0.15)");
-      singGrad.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = singGrad;
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, 110, singPulse, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(155, 89, 182, 0.45)";
-      ctx.lineWidth = 1.5;
-      ctx.save();
-      ctx.translate(canvas.width / 2, 110);
-      ctx.rotate(Date.now() / 500);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, singPulse * 1.6, singPulse * 0.4, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    } else if (window.playerStats.isPrestigeBossMode) {
-      let skyGrad = ctx.createLinearGradient(0, 0, 0, 230);
-      skyGrad.addColorStop(0, "#0a0302");
-      skyGrad.addColorStop(0.5, "#2d0802");
-      skyGrad.addColorStop(1, "#9e2a02");
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, canvas.width, 230);
-      ctx.fillStyle = "#0c0302";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 1.5;
-      for (let i = 40; i < canvas.width; i += 180) {
-        ctx.beginPath();
-        ctx.rect(i, 0, 35, 230);
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(i, 30);
-        ctx.quadraticCurveTo(i - 40, 60, i - 90, 60);
-        ctx.lineTo(i - 90, 75);
-        ctx.quadraticCurveTo(i - 40, 75, i, 45);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.strokeStyle = "#1b1412";
-      ctx.lineWidth = 2.5;
-      for (let x = 110; x < canvas.width; x += 180) {
-        let chainLength = 90 + Math.sin(Date.now() / 400 + x) * 15;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, chainLength);
-        ctx.stroke();
-        ctx.fillStyle = "#110a08";
-        for (let y = 10; y < chainLength; y += 12) {
-          ctx.beginPath();
-          ctx.ellipse(x, y, 4, 6, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-      }
-      let lavaHorizonGrad = ctx.createLinearGradient(0, 210, 0, 230);
-      lavaHorizonGrad.addColorStop(0, "rgba(230, 126, 34, 0)");
-      lavaHorizonGrad.addColorStop(0.5, "#e67e22");
-      lavaHorizonGrad.addColorStop(1, "#f1c40f");
-      ctx.fillStyle = lavaHorizonGrad;
-      ctx.fillRect(0, 210, canvas.width, 20);
-    } else if (window.playerStats.isCrucibleMode) {
-      let skyGrad = ctx.createLinearGradient(0, 0, 0, 230);
-      skyGrad.addColorStop(0, "#05010c");
-      skyGrad.addColorStop(1, "#150221");
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, canvas.width, 230);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-      for (let i = 0; i < 25; i++) {
-        let size = (Math.sin(Date.now() / 200 + i) * 0.5 + 0.5) * 1.5;
-        ctx.fillRect((i * 47) % canvas.width, (i * 13) % 190, size, size);
-      }
-      let pulseRad = 65 + Math.sin(Date.now() / 250) * 15;
-      let spaceGlow = ctx.createRadialGradient(
-        canvas.width / 2,
-        110,
-        2,
-        canvas.width / 2,
-        110,
-        pulseRad,
-      );
-      spaceGlow.addColorStop(0, "rgba(155, 89, 182, 0.45)");
-      spaceGlow.addColorStop(0.5, "rgba(232, 67, 147, 0.15)");
-      spaceGlow.addColorStop(1, "rgba(155, 89, 182, 0)");
-      ctx.fillStyle = spaceGlow;
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, 110, pulseRad, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (window.playerStats.isDungeonMode) {
-      let caveGrad = ctx.createLinearGradient(0, 0, 0, 230);
-      if (window.playerStats.currentDungeon === "gold") {
-        caveGrad.addColorStop(0, "#0f0800");
-        caveGrad.addColorStop(1, "#1d1205");
-      } else if (window.playerStats.currentDungeon === "mat") {
-        caveGrad.addColorStop(0, "#040d08");
-        caveGrad.addColorStop(1, "#0d2115");
-      } else {
-        caveGrad.addColorStop(0, "#06070a");
-        caveGrad.addColorStop(1, "#12181f");
-      }
-      ctx.fillStyle = caveGrad;
-      ctx.fillRect(0, 0, canvas.width, 230);
-      ctx.fillStyle =
-        window.playerStats.currentDungeon === "gold"
-          ? "#140a00"
-          : window.playerStats.currentDungeon === "mat"
-            ? "#050f0a"
-            : "#0d1117";
-      ctx.beginPath();
-      ctx.moveTo(0, 230);
-      ctx.quadraticCurveTo(180, 40, 380, 230);
-      ctx.quadraticCurveTo(580, 20, 800, 230);
-      ctx.fill();
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = penFar;
-      ctx.stroke();
-      if (window.playerStats.currentDungeon === "gold") {
-        ctx.strokeStyle = "#1b1108";
-        ctx.lineWidth = 6;
-        for (let i = 100; i < canvas.width; i += 220) {
-          ctx.beginPath();
-          ctx.moveTo(i - 40, 230);
-          ctx.lineTo(i - 40, 90);
-          ctx.lineTo(i + 40, 90);
-          ctx.lineTo(i + 40, 230);
-          ctx.stroke();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penFar;
-          ctx.stroke();
-        }
-      } else if (window.playerStats.currentDungeon === "equip") {
-        // Vaulted roof support girders/trusses (Dark structural framework)
-        ctx.save();
-        ctx.strokeStyle = "#07080a";
-        ctx.lineWidth = 14;
-        ctx.beginPath();
-        // Horizontal main support truss
-        ctx.moveTo(0, 30);
-        ctx.lineTo(canvas.width, 30);
-        ctx.stroke();
-
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
-        // Diagonal lattice bracing lines
-        for (let tx = 0; tx < canvas.width; tx += 60) {
-          ctx.beginPath();
-          ctx.moveTo(tx, 0);
-          ctx.lineTo(tx + 30, 30);
-          ctx.lineTo(tx + 60, 0);
-          ctx.stroke();
-        }
-        ctx.restore();
-
-        // 1. Central Smeltery Hearth (Glowing Background Furnace)
-        let hearthX = canvas.width / 2;
-        let hearthY = 230;
-        let hearthW = 120;
-        let hearthH = 140;
-
-        ctx.save();
-        ctx.fillStyle = "#0c0d12"; // Inner deep fire pit shadow
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(hearthX - hearthW / 2, hearthY);
-        ctx.lineTo(hearthX - hearthW / 2, hearthY - hearthH + 30);
-        ctx.quadraticCurveTo(
-          hearthX,
-          hearthY - hearthH - 10,
-          hearthX + hearthW / 2,
-          hearthY - hearthH + 30,
-        );
-        ctx.lineTo(hearthX + hearthW / 2, hearthY);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Slow, heavily dampened breathing core (period slowed to 1.8 seconds, amplitude reduced to 0.035)
-        let firePulse = 0.965 + Math.sin(Date.now() / 1800) * 0.035;
-        let fireGrad = ctx.createRadialGradient(
-          hearthX,
-          hearthY - 10,
-          5,
-          hearthX,
-          hearthY - 10,
-          (hearthW / 2) * firePulse,
-        );
-        fireGrad.addColorStop(0, "#ffffff");
-        fireGrad.addColorStop(0.25, "#f1c40f"); // Searing gold
-        fireGrad.addColorStop(0.55, "#e67e22"); // Molten orange
-        fireGrad.addColorStop(0.88, "#960018"); // Ashy crimson
-        fireGrad.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = fireGrad;
-        ctx.beginPath();
-        ctx.moveTo(hearthX - hearthW / 2 + 5, hearthY);
-        ctx.lineTo(hearthX - hearthW / 2 + 5, hearthY - hearthH + 35);
-        ctx.quadraticCurveTo(
-          hearthX,
-          hearthY - hearthH,
-          hearthX + hearthW / 2 - 5,
-          hearthY - hearthH + 35,
-        );
-        ctx.lineTo(hearthX + hearthW / 2 - 5, hearthY);
-        ctx.closePath();
-        ctx.fill();
-
-        // Solid iron horizontal structural band and rivets across the furnace face
-        ctx.strokeStyle = "#101317";
-        ctx.lineWidth = 4;
-        ctx.fillStyle = "#1e222b";
-        ctx.beginPath();
-        ctx.rect(hearthX - hearthW / 2 - 4, hearthY - 45, hearthW + 8, 12);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#0c0d12";
-        for (let rx = -hearthW / 2; rx <= hearthW / 2; rx += 24) {
-          ctx.beginPath();
-          ctx.arc(hearthX + rx, hearthY - 39, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-
-        // Bricked Border (Heavier industrial frame)
-        ctx.fillStyle = "#1e222b";
-        ctx.lineWidth = 2;
-        for (let angle = Math.PI; angle <= Math.PI * 2; angle += Math.PI / 10) {
-          let bx = hearthX + Math.cos(angle) * (hearthW / 2 + 10);
-          let by = hearthY - hearthH + 30 + Math.sin(angle) * 30;
-          ctx.beginPath();
-          ctx.arc(bx, by, 8, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-        ctx.restore();
-
-        // 2. Silhouette Gearworks (Slowed down significantly to feel heavy and non-distracting)
-        let drawBackgroundGear = (
-          gx,
-          gy,
-          radius,
-          teeth,
-          speedMult,
-          direction,
-        ) => {
-          ctx.save();
-          ctx.translate(gx, gy);
-          ctx.rotate((Date.now() / speedMult) * direction);
-          ctx.fillStyle = "#0c0d12"; // Solid silhouette dark grey
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 2;
-
-          // Base gear circle
-          ctx.beginPath();
-          ctx.arc(0, 0, radius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          // Draw gear teeth
-          for (let j = 0; j < teeth; j++) {
-            ctx.save();
-            ctx.rotate((j * Math.PI * 2) / teeth);
-            ctx.beginPath();
-            ctx.rect(
-              -radius * 0.12,
-              -radius - radius * 0.15,
-              radius * 0.24,
-              radius * 0.25,
-            );
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-          }
-
-          // Inner axle cutout
-          ctx.fillStyle = "#030406";
-          ctx.beginPath();
-          ctx.arc(0, 0, radius * 0.35, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
-        };
-
-        // Rotations slowed down to 11s and 9.5s periods
-        drawBackgroundGear(110, 75, 45, 12, 11000, 1); // Clockwise
-        drawBackgroundGear(690, 95, 35, 10, 9500, -1); // Counter-clockwise
-
-        // 3. Detailed Industrial Pipe & Valve Networks
-        ctx.save();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 8;
-        ctx.lineJoin = "round";
-
-        // Draw master horizontal pipe path
-        ctx.beginPath();
-        ctx.moveTo(-10, 50);
-        ctx.lineTo(240, 50);
-        ctx.lineTo(240, 110);
-        ctx.lineTo(560, 110);
-        ctx.lineTo(560, 50);
-        ctx.lineTo(canvas.width + 10, 50);
-        ctx.stroke();
-
-        // Draw secondary vertical feed pipes
-        ctx.beginPath();
-        ctx.moveTo(110, 50);
-        ctx.lineTo(110, 160);
-        ctx.moveTo(690, 50);
-        ctx.lineTo(690, 160);
-        ctx.stroke();
-
-        // Outer copper pipe shading
-        ctx.strokeStyle = "#7e5109"; // Weathered bronze/copper
-        ctx.lineWidth = 5;
-        ctx.stroke();
-
-        // Inner glowing core line (Hot thermal energy flow)
-        let pipePulse = 0.5 + Math.sin(Date.now() / 180) * 0.5;
-        ctx.strokeStyle = `rgba(241, 196, 15, ${0.6 + pipePulse * 0.4})`; // Pulsing gold steam
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Draw Pressure Gauges
-        let drawPressureGauge = (pgX, pgY) => {
-          ctx.fillStyle = "#f8fafc";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.arc(pgX, pgY, 11, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          // Copper bezel
-          ctx.strokeStyle = "#7e5109";
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.arc(pgX, pgY, 9, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Moving Indicator Needle
-          let angle = -Math.PI / 1.5 + Math.sin(Date.now() / 400 + pgX) * 0.4;
-          ctx.strokeStyle = "#c0392b"; // Red needle
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(pgX, pgY);
-          ctx.lineTo(pgX + Math.cos(angle) * 7, pgY + Math.sin(angle) * 7);
-          ctx.stroke();
-        };
-        drawPressureGauge(240, 80);
-        drawPressureGauge(560, 80);
-        ctx.restore();
-
-        // 4. Zero-Allocation Floating Foundry Sparks (Deterministically generated)
-        ctx.save();
-        for (let j = 0; j < 12; j++) {
-          let seed = Math.sin(j * 432.18);
-          // Normalize time factor to a loop of 1.4 seconds
-          let sparkTime = (Date.now() / 1400 + seed) % 1.0;
-
-          // Spawn along the width of the canvas, rising upward
-          let spX =
-            ((j * 73) % (canvas.width + 40)) -
-            20 +
-            Math.sin(sparkTime * Math.PI * 2 + j) * 8;
-          let spY = 230 - sparkTime * 180; // Rise from floor level (230) up to 50
-
-          let spAlpha =
-            Math.min(1.0, (1.0 - sparkTime) * 1.5) * (0.3 + (j % 4) * 0.25);
-          let spSize = 1.0 + (j % 3) * 0.8;
-
-          ctx.fillStyle =
-            j % 2 === 0
-              ? `rgba(255, 170, 0, ${spAlpha})`
-              : `rgba(255, 220, 80, ${spAlpha})`;
-          ctx.fillRect(spX, spY, spSize, spSize);
-        }
-        ctx.restore();
-
-        // 5. Heavy Iron Hanging Chains and Glowing Pendulum Lanterns
-        for (let i = 180; i < canvas.width; i += 220) {
-          ctx.save();
-          // Asynchronous, physics-aligned subtle sway logic
-          // Use a unique period and a non-rational phase modifier per loop index
-          let period = 1500 + (i % 3) * 200; // Varying rates: 1500ms, 1700ms, 1900ms
-          let phase = i * 0.77; // Breaking neat 2*PI spatial alignments
-          let swingAngle = Math.sin(Date.now() / period + phase) * 0.032; // Highly subtle, heavy 0.032 radians arc
-
-          ctx.translate(i, 0);
-          ctx.rotate(swingAngle);
-
-          // Draw Heavy Hanging Chain (vertical dark loops)
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 2.5;
-          let chainLen = 140;
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(0, chainLen);
-          ctx.stroke();
-
-          // Overlay individual chain links
-          ctx.fillStyle = "#2c3e50";
-          for (let y = 10; y < chainLen; y += 14) {
-            ctx.beginPath();
-            ctx.arc(0, y, 2, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          // Draw detailed Iron Lantern Housing at bottom of the chain
-          let ly = chainLen;
-          ctx.translate(0, ly);
-
-          // Lantern Cap
-          ctx.fillStyle = "#1e272e";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penFar;
-          ctx.beginPath();
-          ctx.moveTo(-10, 0);
-          ctx.lineTo(10, 0);
-          ctx.lineTo(6, -6);
-          ctx.lineTo(-6, -6);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // Lantern Glowing Glass Body
-          let pulse = 0.8 + Math.sin(Date.now() / 150 + i * 1.3) * 0.2;
-          ctx.fillStyle = `rgba(241, 196, 15, ${0.4 + pulse * 0.45})`; // Warm firelight glow
-          ctx.beginPath();
-          ctx.moveTo(-7, 0);
-          ctx.lineTo(7, 0);
-          ctx.lineTo(5, 14);
-          ctx.lineTo(-5, 14);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // White-hot lantern filament
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.arc(0, 6, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Lantern Iron Guard Cage (Vertical side bars)
-          ctx.strokeStyle = "#1e272e";
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.moveTo(-7, 0);
-          ctx.lineTo(-5, 14);
-          ctx.moveTo(7, 0);
-          ctx.lineTo(5, 14);
-          ctx.moveTo(0, 0);
-          ctx.lineTo(0, 14); // center guard bar
-          ctx.stroke();
-
-          // Bottom Cap & Finial Ring
-          ctx.fillStyle = "#1e272e";
-          ctx.beginPath();
-          ctx.rect(-5, 14, 10, 3);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.restore();
-        }
-      }
-    } else {
-      let skyGrad = ctx.createLinearGradient(0, 0, 0, 230);
-      if (window.playerStats.isBossMode) {
-        skyGrad.addColorStop(0, "#140618");
-        skyGrad.addColorStop(1, "#030005");
-      } else {
-        if (tier === 0) {
-          skyGrad.addColorStop(0, "#121829"); // Deep night-indigo blue
-          skyGrad.addColorStop(0.45, "#4a154b"); // Plum violet
-          skyGrad.addColorStop(0.8, "#ff7675"); // Warm sunset peach
-          skyGrad.addColorStop(1, "#ffeaa7"); // Horizon golden dawn mist
-        } else if (tier === 1) {
-          skyGrad.addColorStop(0, "#080b18"); // Deep midnight blue
-          skyGrad.addColorStop(0.5, "#0d1b2a"); // Midnight teal
-          skyGrad.addColorStop(1, "#1b263b"); // Horizon twilight teal
-        } else if (tier === 2) {
-          skyGrad.addColorStop(0, "#5a0e0e");
-          skyGrad.addColorStop(1, "#0e0202");
-        } else if (tier === 3) {
-          skyGrad.addColorStop(0, "#082113");
-          skyGrad.addColorStop(1, "#193623");
-        } else {
-          skyGrad.addColorStop(0, "#070313");
-          skyGrad.addColorStop(1, "#020005");
-        }
-      }
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, canvas.width, 230);
-
-      if (tier === 0) {
-        // 1. Giant Solstice Dawn Sun (Radiating light)
-        ctx.save();
-        let sunPulse = 35 + Math.sin(Date.now() / 600) * 1.5;
-        let sunGrad = ctx.createRadialGradient(
-          180,
-          90,
-          2,
-          180,
-          90,
-          sunPulse + 30,
-        );
-        sunGrad.addColorStop(0, "#ffffff");
-        sunGrad.addColorStop(0.2, "#ffe082");
-        sunGrad.addColorStop(0.6, "rgba(255, 118, 117, 0.15)");
-        sunGrad.addColorStop(1, "rgba(255, 118, 117, 0)");
-        ctx.fillStyle = sunGrad;
-        ctx.beginPath();
-        ctx.arc(180, 90, sunPulse + 30, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        // 2. Stylized Fluffy Pixel-Art Clouds
-        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
-        let cloudScroll1 = ((Date.now() / 320) % (canvas.width + 120)) - 60;
-        let cloudScroll2 =
-          ((Date.now() / 480 + 350) % (canvas.width + 120)) - 60;
-
-        ctx.beginPath();
-        ctx.arc(cloudScroll1, 40, 12, 0, Math.PI * 2);
-        ctx.arc(cloudScroll1 + 14, 35, 16, 0, Math.PI * 2);
-        ctx.arc(cloudScroll1 + 28, 40, 10, 0, Math.PI * 2);
-        ctx.arc(cloudScroll1 - 10, 43, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-        ctx.lineWidth = penSky;
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(cloudScroll2, 60, 9, 0, Math.PI * 2);
-        ctx.arc(cloudScroll2 + 12, 56, 13, 0, Math.PI * 2);
-        ctx.arc(cloudScroll2 + 24, 60, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 3. Jagged Distant Violet Peaks (Parallax Mountain Range)
-        ctx.fillStyle = "#271b3e"; // Deep violet
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        ctx.lineTo(0, 150);
-        ctx.lineTo(100, 90);
-        ctx.lineTo(180, 160);
-        ctx.lineTo(290, 75);
-        ctx.lineTo(390, 150);
-        ctx.lineTo(510, 65);
-        ctx.lineTo(610, 160);
-        ctx.lineTo(680, 105);
-        ctx.lineTo(800, 230);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penSky;
-        ctx.stroke();
-
-        // 4. Horizon Dawn Mist Overlap
-        let horizonMist = ctx.createLinearGradient(0, 120, 0, 230);
-        horizonMist.addColorStop(0, "rgba(255, 234, 167, 0)");
-        horizonMist.addColorStop(0.7, "rgba(255, 234, 167, 0.15)");
-        horizonMist.addColorStop(1, "rgba(255, 234, 167, 0.45)");
-        ctx.fillStyle = horizonMist;
-        ctx.fillRect(0, 120, canvas.width, 110);
-
-        // 5. Silhouette Pine Forest Row (Jagged horizon tree lines)
-        ctx.save();
-        ctx.fillStyle = "#0c1f13"; // Deepest pine silhouette green
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        let treeX = 0;
-        while (treeX < canvas.width + 30) {
-          let py = 175 + Math.sin(treeX * 0.01) * 6; // slow hill wave
-          let treeHeight =
-            12 + Math.sin(treeX * 0.05) * 4 + (treeX % 3 === 0 ? 3 : -2); // varied natural heights
-
-          ctx.lineTo(treeX, py);
-          ctx.lineTo(treeX + 4, py - treeHeight * 0.4); // First branch tier (left)
-          ctx.lineTo(treeX + 2, py - treeHeight * 0.35); // Inward notch
-          ctx.lineTo(treeX + 6, py - treeHeight * 0.7); // Second branch tier (left)
-          ctx.lineTo(treeX + 4, py - treeHeight * 0.65); // Inward notch
-          ctx.lineTo(treeX + 8, py - treeHeight); // Apex / Spire tip
-          ctx.lineTo(treeX + 12, py - treeHeight * 0.65); // Second branch tier (right)
-          ctx.lineTo(treeX + 10, py - treeHeight * 0.7); // Inward notch
-          ctx.lineTo(treeX + 14, py - treeHeight * 0.35); // First branch tier (right)
-          ctx.lineTo(treeX + 12, py - treeHeight * 0.4); // Inward notch
-          ctx.lineTo(treeX + 16, py); // Base right
-
-          treeX += 13 + (treeX % 4); // overlapping spacing
-        }
-        ctx.lineTo(canvas.width, 230);
-        ctx.closePath();
-        ctx.fill();
-
-        // Soft dark green contour stroke instead of harsh black to keep it misty and cohesive
-        ctx.strokeStyle = "#07130a";
-        ctx.lineWidth = 1.0;
-        ctx.stroke();
-        ctx.restore();
-      } else if (tier === 1) {
-        // 1. Clean Atmospheric Twilight Sky
-        let skyGrad = ctx.createLinearGradient(0, 0, 0, 230);
-        skyGrad.addColorStop(0, "#060a12");
-        skyGrad.addColorStop(1, "#121b2d");
-        ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, canvas.width, 230);
-
-        // 2. Flowing Vector Aurora Ribbon (Three-layered, vertical-fading curtains)
-        ctx.save();
-        let auroraTime = Date.now() / 2200;
-
-        // Ribbon A: Luminous Emerald-Teal (Primary sweeping ribbon)
-        let gA = ctx.createLinearGradient(0, 15, 0, 115);
-        gA.addColorStop(0, "rgba(0, 255, 136, 0.0)");
-        gA.addColorStop(0.5, "rgba(0, 255, 136, 0.16)");
-        gA.addColorStop(1, "rgba(0, 255, 136, 0.0)");
-        ctx.fillStyle = gA;
-
-        let waveA1 = Math.sin(auroraTime) * 12;
-        let waveA2 = Math.cos(auroraTime * 0.9) * 8;
-
-        ctx.beginPath();
-        ctx.moveTo(0, 45 + waveA1);
-        ctx.bezierCurveTo(
-          canvas.width * 0.35,
-          15 + waveA2,
-          canvas.width * 0.65,
-          85 - waveA1,
-          canvas.width,
-          35 + waveA2,
-        );
-        ctx.lineTo(canvas.width, 75 + waveA2);
-        ctx.bezierCurveTo(
-          canvas.width * 0.65,
-          115 - waveA1,
-          canvas.width * 0.35,
-          55 + waveA2,
-          0,
-          85 + waveA1,
-        );
-        ctx.closePath();
-        ctx.fill();
-
-        // Ribbon B: Electric Cyan (Secondary crossing ribbon)
-        let gB = ctx.createLinearGradient(0, 25, 0, 125);
-        gB.addColorStop(0, "rgba(0, 240, 255, 0.0)");
-        gB.addColorStop(0.5, "rgba(0, 240, 255, 0.14)");
-        gB.addColorStop(1, "rgba(0, 240, 255, 0.0)");
-        ctx.fillStyle = gB;
-
-        let waveB1 = Math.cos(auroraTime * 1.1) * 10;
-        let waveB2 = Math.sin(auroraTime * 0.7) * 14;
-
-        ctx.beginPath();
-        ctx.moveTo(0, 60 + waveB1);
-        ctx.bezierCurveTo(
-          canvas.width * 0.25,
-          85 + waveB2,
-          canvas.width * 0.75,
-          25 - waveB1,
-          canvas.width,
-          50 + waveB2,
-        );
-        ctx.lineTo(canvas.width, 85 + waveB2);
-        ctx.bezierCurveTo(
-          canvas.width * 0.75,
-          55 - waveB1,
-          canvas.width * 0.25,
-          115 + waveB2,
-          0,
-          95 + waveB1,
-        );
-        ctx.closePath();
-        ctx.fill();
-
-        // Ribbon C: Soft Cosmic Purple (Deep background accent)
-        let gC = ctx.createLinearGradient(0, 35, 0, 135);
-        gC.addColorStop(0, "rgba(155, 89, 182, 0.0)");
-        gC.addColorStop(0.5, "rgba(155, 89, 182, 0.1)");
-        gC.addColorStop(1, "rgba(155, 89, 182, 0.0)");
-        ctx.fillStyle = gC;
-
-        let waveC1 = Math.sin(auroraTime * 1.3) * 8;
-
-        ctx.beginPath();
-        ctx.moveTo(0, 75 + waveC1);
-        ctx.bezierCurveTo(
-          canvas.width * 0.45,
-          105 - waveC1,
-          canvas.width * 0.55,
-          45 + waveC1,
-          canvas.width,
-          85 - waveC1,
-        );
-        ctx.lineTo(canvas.width, 105 - waveC1);
-        ctx.bezierCurveTo(
-          canvas.width * 0.55,
-          65 + waveC1,
-          canvas.width * 0.45,
-          125 - waveC1,
-          0,
-          95 + waveC1,
-        );
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.restore();
-
-        // 3. Twinkling Celestial Pixel Stars
-        for (let i = 0; i < 12; i++) {
-          let starX = (i * 123 + 17) % canvas.width;
-          let starY = (i * 37 + 11) % 110;
-          let pulse = 0.3 + Math.sin(Date.now() / 350 + i) * 0.7;
-          ctx.fillStyle = `rgba(255, 255, 255, ${0.15 + pulse * 0.5})`;
-          ctx.fillRect(
-            starX,
-            starY,
-            i % 4 === 0 ? 1.5 : 0.8,
-            i % 4 === 0 ? 1.5 : 0.8,
-          );
-        }
-
-        // 4. Elegant 4-Point Sparkle Stars (✦)
-        let drawSparkleStar = (cx, cy, size, pulseSpeed, offset) => {
-          let scale = 0.4 + Math.sin(Date.now() / pulseSpeed + offset) * 0.6;
-          let s = size * scale;
-          if (s <= 0.5) return;
-          ctx.fillStyle = `rgba(165, 243, 252, ${0.3 + scale * 0.6})`;
-          ctx.beginPath();
-          ctx.moveTo(cx, cy - s);
-          ctx.quadraticCurveTo(cx, cy, cx + s, cy);
-          ctx.quadraticCurveTo(cx, cy, cx, cy + s);
-          ctx.quadraticCurveTo(cx, cy, cx - s, cy);
-          ctx.quadraticCurveTo(cx, cy, cx, cy - s);
-          ctx.closePath();
-          ctx.fill();
-        };
-        drawSparkleStar(240, 35, 6, 600, 0);
-        drawSparkleStar(480, 25, 4.5, 850, 2);
-        drawSparkleStar(110, 55, 5, 700, 4);
-        drawSparkleStar(630, 45, 5.5, 900, 1);
-
-        // 5. Slow Drifting Shooting Star (Diagonal gliding streak)
-        let shootTime = Date.now() / 4000;
-        let shootX = ((shootTime * 180) % (canvas.width + 250)) - 100;
-        let shootY = 20 + shootX * 0.25;
-        if (shootX > -50 && shootX < canvas.width + 50) {
-          let cometGrad = ctx.createLinearGradient(
-            shootX,
-            shootY,
-            shootX - 35,
-            shootY - 9,
-          );
-          cometGrad.addColorStop(0, "rgba(255, 255, 255, 0.85)");
-          cometGrad.addColorStop(0.3, "rgba(56, 189, 248, 0.4)");
-          cometGrad.addColorStop(1, "rgba(56, 189, 248, 0.0)");
-          ctx.strokeStyle = cometGrad;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(shootX, shootY);
-          ctx.lineTo(shootX - 35, shootY - 9);
-          ctx.stroke();
-        }
-
-        // 3. Layered Geometric Mountain Spires with Crisp Snowcaps
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-        ctx.lineJoin = "round";
-
-        let drawGeometricPeak = (peakX, peakY, width, height) => {
-          // Base Mountain
-          ctx.fillStyle = "#1c233a";
-          ctx.beginPath();
-          ctx.moveTo(peakX - width, 230);
-          ctx.lineTo(peakX, peakY);
-          ctx.lineTo(peakX + width, 230);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // Geometric Snowcap
-          let capHeight = height * 0.35;
-          let capY = peakY + capHeight;
-          let capLeftX = peakX - width * (capHeight / height);
-          let capRightX = peakX + width * (capHeight / height);
-
-          ctx.fillStyle = "#f8fafc";
-          ctx.beginPath();
-          ctx.moveTo(peakX, peakY);
-          ctx.lineTo(capRightX, capY);
-          ctx.lineTo(peakX + width * 0.1, capY + 3);
-          ctx.lineTo(peakX, capY - 2);
-          ctx.lineTo(peakX - width * 0.1, capY + 4);
-          ctx.lineTo(capLeftX, capY);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-        };
-
-        drawGeometricPeak(150, 100, 140, 130);
-        drawGeometricPeak(520, 80, 160, 150);
-        drawGeometricPeak(330, 115, 120, 115);
-
-        // 4. Subtle Arctic Valley Fog
-        let fogGrad = ctx.createLinearGradient(0, 150, 0, 230);
-        fogGrad.addColorStop(0, "rgba(224, 242, 254, 0)");
-        fogGrad.addColorStop(1, "rgba(224, 242, 254, 0.08)");
-        ctx.fillStyle = fogGrad;
-        ctx.fillRect(0, 150, canvas.width, 80);
-
-        // 5. Clean, Non-distracting Ancient Ruins Pillars
-        ctx.fillStyle = "#111625";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-
-        let drawCleanPillar = (x, y, w, h) => {
-          ctx.beginPath();
-          ctx.rect(x, y, w, h);
-          ctx.fill();
-          ctx.stroke();
-
-          // Slabs
-          ctx.beginPath();
-          ctx.rect(x - 3, y, w + 6, 6);
-          ctx.fill();
-          ctx.stroke();
-
-          // Vertical fractures
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(x + w / 2, y + 6);
-          ctx.lineTo(x + w / 2, y + h);
-          ctx.stroke();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penFar;
-        };
-
-        drawCleanPillar(45, 80, 18, 150);
-        drawCleanPillar(715, 95, 18, 135);
-
-        // 6. Crisp Geometric Glacial Ground Wall
-        let groundWallGrad = ctx.createLinearGradient(0, 180, 0, 230);
-        groundWallGrad.addColorStop(0, "#101b2b");
-        groundWallGrad.addColorStop(1, "#080d16");
-        ctx.fillStyle = groundWallGrad;
-
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        ctx.lineTo(0, 185);
-        ctx.lineTo(220, 175);
-        ctx.lineTo(460, 188);
-        ctx.lineTo(620, 170);
-        ctx.lineTo(canvas.width, 185);
-        ctx.lineTo(canvas.width, 230);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Luminescent Ice Ledge Stroke
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 2.0;
-        ctx.beginPath();
-        ctx.moveTo(0, 185);
-        ctx.lineTo(220, 175);
-        ctx.lineTo(460, 188);
-        ctx.lineTo(620, 170);
-        ctx.lineTo(canvas.width, 185);
-        ctx.stroke();
-
-        // Fine White Ledge Highlight
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo(0, 184);
-        ctx.lineTo(220, 174);
-        ctx.lineTo(460, 187);
-        ctx.lineTo(620, 169);
-        ctx.lineTo(canvas.width, 184);
-        ctx.stroke();
-      } else if (tier === 2) {
-        // 1. Soot and Ash Sky Gradient
-        let skyGrad = ctx.createLinearGradient(0, 0, 0, 230);
-        skyGrad.addColorStop(0, "#080201"); // Ashy soot
-        skyGrad.addColorStop(0.6, "#240602"); // Crimson dust
-        skyGrad.addColorStop(1, "#3f0c02"); // Horizon orange-red
-        ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, canvas.width, 230);
-
-        // 2. Billowing Volcanic Storm Clouds with Orange Rim-Lighting
-        ctx.fillStyle = "#160f0f";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.8;
-        let drawBillow = (cx, cy, r) => {
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          // Luminous under-glow highlighting
-          ctx.strokeStyle = "#d35400";
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r - 1.5, Math.PI * 0.2, Math.PI * 0.8);
-          ctx.stroke();
-          ctx.restore();
-        };
-        drawBillow(100, 15, 30);
-        drawBillow(140, 10, 40);
-        drawBillow(190, 15, 30);
-        drawBillow(600, 15, 35);
-        drawBillow(650, 10, 42);
-
-        // 3. Rising Volcanic Ash Embers (Deterministic lightweight loop)
-        for (let i = 0; i < 15; i++) {
-          let emberX =
-            ((i * 97 + Date.now() * 0.05) % (canvas.width + 20)) - 10;
-          let emberY = 210 - ((i * 41 + Date.now() * 0.12) % 180);
-          let size = 1.5 + (i % 3) * 0.8;
-          let alpha = 0.2 + (i % 4) * 0.2;
-          ctx.fillStyle = `rgba(230, 126, 34, ${alpha})`;
-          ctx.fillRect(emberX, emberY, size, size);
-        }
-
-        // Set outlining defaults for background structures
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-        ctx.lineJoin = "round";
-
-        // 4. Far Left Dormant Volcano with Shaded Side Profile
-        ctx.fillStyle = "#2d0b06";
-        ctx.beginPath();
-        ctx.moveTo(-50, 230);
-        ctx.lineTo(80, 130);
-        ctx.lineTo(110, 130);
-        ctx.lineTo(240, 230);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Dimensional Shading on the right slope
-        ctx.fillStyle = "#1e0402";
-        ctx.beginPath();
-        ctx.moveTo(95, 130);
-        ctx.lineTo(240, 230);
-        ctx.lineTo(110, 130);
-        ctx.closePath();
-        ctx.fill();
-
-        // 5. Active Center-Right Volcano with Erupting Caldera Pool
-        ctx.fillStyle = "#2d0b06";
-        ctx.beginPath();
-        ctx.moveTo(220, 230);
-        ctx.lineTo(330, 95); // Left caldera lip
-        ctx.lineTo(370, 95); // Right caldera lip
-        ctx.lineTo(480, 230);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Dimensional shading on the left slope of Active Peak
-        ctx.fillStyle = "#1e0402";
-        ctx.beginPath();
-        ctx.moveTo(330, 95);
-        ctx.lineTo(220, 230);
-        ctx.lineTo(350, 95);
-        ctx.closePath();
-        ctx.fill();
-
-        // Active boiling crater core (glowing pool inside caldera)
-        ctx.fillStyle = "#ff2200";
-        ctx.beginPath();
-        ctx.ellipse(350, 95, 20, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 6. Erupting Magma Fountain (Spewing droplets loop)
-        let erTime = Date.now() / 1200;
-        let erX = 350;
-        let erY = 95;
-        for (let i = 0; i < 6; i++) {
-          let tSeed = (erTime + i * 1.5) % 1.0;
-          let dropX = erX + Math.sin(i * 12 + erTime * 0.5) * 35 * tSeed;
-          let dropY = erY - 55 * Math.sin(tSeed * Math.PI) + 10 * tSeed;
-          let r = 2.0 * (1.0 - tSeed * 0.4);
-          if (tSeed > 0.1) {
-            ctx.fillStyle = i % 2 === 0 ? "#ffd700" : "#ff5500";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1.0;
-            ctx.beginPath();
-            ctx.arc(dropX, dropY, r, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          }
-        }
-
-        // 7. Winding Molten Fissure Cracks (Static paths, creeping inner flow)
-        let drawMoltenFissure = (startX, startY, segmentPoints, delay) => {
-          ctx.save();
-
-          // Outer solid orange crack
-          ctx.strokeStyle = "#e67e22";
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          segmentPoints.forEach((pt) => ctx.lineTo(pt.x, pt.y));
-          ctx.stroke();
-
-          // Viscous, slow-creeping flow inside crack (Slowed divisor to 110)
-          ctx.strokeStyle = "#ffd700";
-          ctx.lineWidth = 0.8;
-          ctx.setLineDash([8, 12]);
-          ctx.lineDashOffset = -(Date.now() / 110 + delay * 15) % 20;
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          segmentPoints.forEach((pt) => ctx.lineTo(pt.x, pt.y));
-          ctx.stroke();
-
-          ctx.restore();
-        };
-
-        drawMoltenFissure(
-          100,
-          135,
-          [
-            { x: 85, y: 155 },
-            { x: 95, y: 175 },
-            { x: 75, y: 195 },
-            { x: 80, y: 230 },
-          ],
-          0,
-        );
-        drawMoltenFissure(
-          350,
-          98,
-          [
-            { x: 360, y: 125 },
-            { x: 345, y: 155 },
-            { x: 370, y: 185 },
-            { x: 355, y: 230 },
-          ],
-          2,
-        );
-
-        // 8. Branching Molten Lava Waterfalls (Static rock channels, creeping flow)
-        let drawWaterfall = (tx, ty, bx, by, delay) => {
-          ctx.save();
-          let ctrlX = (tx + bx) / 2;
-          let ctrlY = (ty + by) / 2;
-
-          // Rigid outer black outlined channel
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 6.5;
-          ctx.lineCap = "round";
-          ctx.beginPath();
-          ctx.moveTo(tx, ty);
-          ctx.quadraticCurveTo(ctrlX, ctrlY, bx, by);
-          ctx.stroke();
-
-          // Rigid orange lava stream
-          ctx.strokeStyle = "#ff4500";
-          ctx.lineWidth = 4.5;
-          ctx.beginPath();
-          ctx.moveTo(tx, ty);
-          ctx.quadraticCurveTo(ctrlX, ctrlY, bx, by);
-          ctx.stroke();
-
-          // Heavy creeping liquid core highlight (Slowed divisor to 80)
-          ctx.strokeStyle = "#ffd700";
-          ctx.lineWidth = 2.0;
-          ctx.setLineDash([12, 18]);
-          ctx.lineDashOffset = -(Date.now() / 80 + delay * 10) % 30;
-          ctx.beginPath();
-          ctx.moveTo(tx, ty);
-          ctx.quadraticCurveTo(ctrlX, ctrlY, bx, by);
-          ctx.stroke();
-
-          ctx.restore();
-        };
-        drawWaterfall(350, 95, 330, 150, 0);
-        drawWaterfall(330, 150, 310, 230, 2);
-        drawWaterfall(330, 150, 360, 230, 4);
-
-        // 9. Mid-Ground Obsidian Basalt Crags
-        ctx.fillStyle = "#160402";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        ctx.lineTo(80, 160);
-        ctx.lineTo(130, 185);
-        ctx.lineTo(220, 140);
-        ctx.lineTo(290, 195);
-        ctx.lineTo(410, 150);
-        ctx.lineTo(490, 210);
-        ctx.lineTo(600, 135);
-        ctx.lineTo(680, 180);
-        ctx.lineTo(800, 115);
-        ctx.lineTo(canvas.width, 230);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 10. Hexagonal Basalt Pillar Clusters (Edges)
-        let drawBasaltCluster = (baseX, height, width, count) => {
-          ctx.save();
-          ctx.fillStyle = "#120302";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penFar;
-
-          for (let i = 0; i < count; i++) {
-            let colX = baseX + i * (width * 0.7);
-            let colH =
-              height - Math.sin(i * 1.5) * 20 - (i % 2 === 0 ? 10 : -10);
-            let colY = 230 - colH;
-
-            // Hexagonal flat top cap
-            ctx.beginPath();
-            ctx.moveTo(colX - width / 2, colY);
-            ctx.lineTo(colX - width / 4, colY - 5);
-            ctx.lineTo(colX + width / 4, colY - 5);
-            ctx.lineTo(colX + width / 2, colY);
-            ctx.lineTo(colX + width / 4, colY + 3);
-            ctx.lineTo(colX - width / 4, colY + 3);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Column shaft
-            ctx.beginPath();
-            ctx.rect(colX - width / 2, colY, width, colH);
-            ctx.fill();
-            ctx.stroke();
-
-            // Column edge highlight
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(colX, colY + 3);
-            ctx.lineTo(colX, 230);
-            ctx.stroke();
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFar;
-          }
-          ctx.restore();
-        };
-        drawBasaltCluster(20, 95, 16, 4);
-        drawBasaltCluster(730, 110, 16, 4);
-
-        // 11. Slow Undulating Molten Lava River (Subtle, high-viscosity basaltic wave)
-        let lavaBaseGrad = ctx.createLinearGradient(0, 215, 0, 230);
-        lavaBaseGrad.addColorStop(0, "#ffd700");
-        lavaBaseGrad.addColorStop(0.3, "#ff5500");
-        lavaBaseGrad.addColorStop(1, "#3c0401");
-        ctx.fillStyle = lavaBaseGrad;
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2.0;
-
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        for (let x = 0; x <= canvas.width; x += 30) {
-          // Locked wave to tight 1.0px height to avoid fast water look
-          let waveY = 224 + Math.sin(Date.now() / 500 + x * 0.06) * 1.0;
-          ctx.lineTo(x, waveY);
-        }
-        ctx.lineTo(canvas.width, 230);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 12. Spawning & Deflating Magma Bubble Domes
-        for (let i = 0; i < 3; i++) {
-          let bubbleX =
-            ((i * 240 + Date.now() * 0.02) % (canvas.width - 60)) + 30;
-          let bubbleCycle = (Date.now() / 600 + i * 2) % Math.PI;
-          let bubbleR = 5.0 * Math.sin(bubbleCycle);
-          let bubbleY = 224 + Math.sin(Date.now() / 500 + bubbleX * 0.06) * 1.0;
-          if (bubbleR > 1.0) {
-            ctx.save();
-            ctx.fillStyle = "#ff5500";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.arc(bubbleX, bubbleY, bubbleR, Math.PI, 0); // half circle bubble dome
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            // Specular light highlight on the dome
-            ctx.fillStyle = "#ffd700";
-            ctx.beginPath();
-            ctx.arc(
-              bubbleX - bubbleR * 0.3,
-              bubbleY - bubbleR * 0.4,
-              bubbleR * 0.2,
-              0,
-              Math.PI * 2,
-            );
-            ctx.fill();
-            ctx.restore();
-          }
-        }
-      } else if (tier === 3) {
-        let mistGrad = ctx.createLinearGradient(0, 170, 0, 230);
-        mistGrad.addColorStop(0, "rgba(39, 174, 96, 0)");
-        mistGrad.addColorStop(1, "rgba(39, 174, 96, 0.12)");
-        ctx.fillStyle = mistGrad;
-        ctx.fillRect(0, 170, canvas.width, 60);
-        ctx.fillStyle = "#0c1f13";
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        ctx.quadraticCurveTo(80, 180, 160, 200);
-        ctx.quadraticCurveTo(240, 175, 340, 210);
-        ctx.quadraticCurveTo(460, 160, 580, 205);
-        ctx.quadraticCurveTo(680, 190, 800, 230);
-        ctx.fill();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-        ctx.stroke();
-        ctx.fillStyle = "#07140c";
-        ctx.beginPath();
-        ctx.ellipse(50, 170, 80, 50, 0, 0, Math.PI * 2);
-        ctx.ellipse(750, 160, 90, 60, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      } else if (tier === 4) {
-        let nebula = ctx.createRadialGradient(
-          canvas.width / 2,
-          100,
-          5,
-          canvas.width / 2,
-          100,
-          120,
-        );
-        nebula.addColorStop(0, "rgba(155, 89, 182, 0.3)");
-        nebula.addColorStop(1, "rgba(155, 89, 182, 0)");
-        ctx.fillStyle = nebula;
-        ctx.beginPath();
-        ctx.arc(canvas.width / 2, 100, 120, 0, Math.PI * 2);
-        ctx.fill();
-        let starPulse = Math.sin(Date.now() / 300) * 0.4 + 0.6;
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.4 * starPulse})`;
-        for (let i = 0; i < 30; i++) {
-          ctx.fillRect(
-            (i * 59 + 23) % canvas.width,
-            (i * 29 + 11 + 50) % 190,
-            1.5,
-            1.5,
-          );
-        }
-        ctx.fillStyle = "#100221";
-        let hover = Math.sin(Date.now() / 400) * 4;
-        ctx.beginPath();
-        ctx.moveTo(120, 190 + hover);
-        ctx.lineTo(140, 100 + hover);
-        ctx.lineTo(160, 190 + hover);
-        ctx.lineTo(140, 215 + hover);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-        ctx.stroke();
-        ctx.fillStyle = "#0b0116";
-        ctx.beginPath();
-        ctx.moveTo(520, 200 - hover);
-        ctx.lineTo(535, 125 - hover);
-        ctx.lineTo(550, 200 - hover);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#130426";
-        ctx.beginPath();
-        ctx.ellipse(
-          320,
-          170 + hover * 1.5,
-          45,
-          12,
-          Math.PI / 12,
-          0,
-          Math.PI * 2,
-        );
-        ctx.ellipse(
-          650,
-          140 - hover * 1.2,
-          35,
-          10,
-          -Math.PI / 8,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-        ctx.stroke();
-      } else if (tier === 5) {
-        let goldenGlow = ctx.createLinearGradient(0, 0, 0, 230);
-        goldenGlow.addColorStop(0, "#1c1400");
-        goldenGlow.addColorStop(0.6, "#2d1f05");
-        goldenGlow.addColorStop(1, "#120a00");
-        ctx.fillStyle = goldenGlow;
-        ctx.fillRect(0, 0, canvas.width, 230);
-        let gearAngle = Date.now() / 4000;
-        ctx.save();
-        ctx.translate(canvas.width / 2 + 100, 80);
-        ctx.rotate(gearAngle);
-        ctx.strokeStyle = "#f1c40f";
-        ctx.lineWidth = 1.5;
-        ctx.fillStyle = "rgba(241, 196, 15, 0.05)";
-        ctx.beginPath();
-        ctx.arc(0, 0, 45, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        for (let i = 0; i < 8; i++) {
-          ctx.rotate(Math.PI / 4);
-          ctx.fillRect(-6, -55, 12, 10);
-          ctx.strokeRect(-6, -55, 12, 10);
-        }
-        ctx.restore();
-        ctx.fillStyle = "#2d1a04";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-        let hover = Math.sin(Date.now() / 350) * 5;
-        ctx.beginPath();
-        ctx.roundRect(140, 40 + hover, 24, 110, [3]);
-        ctx.roundRect(580, 50 - hover, 20, 95, [3]);
-        ctx.fill();
-        ctx.stroke();
-      } else {
-        let cyberSky = ctx.createLinearGradient(0, 0, 0, 230);
-        cyberSky.addColorStop(0, "#01040a");
-        cyberSky.addColorStop(1, "#000000");
-        ctx.fillStyle = cyberSky;
-        ctx.fillRect(0, 0, canvas.width, 230);
-        ctx.strokeStyle = "rgba(52, 152, 219, 0.25)";
-        ctx.lineWidth = 1.0;
-        let horizonY = 150;
-        for (let i = -100; i < canvas.width + 100; i += 60) {
-          ctx.beginPath();
-          ctx.moveTo(i, horizonY);
-          ctx.lineTo(i * 1.8 - canvas.width * 0.4, 230);
-          ctx.stroke();
-        }
-        ctx.fillStyle = "rgba(46, 204, 113, 0.45)";
-        for (let i = 0; i < 15; i++) {
-          let rx = (i * 57) % canvas.width;
-          let ry = ((Date.now() / 6 + i * 35) % 190) + 40;
-          ctx.fillRect(rx, ry, 1.2, 12);
-        }
-      }
-    }
-
-    // 2. BACKGROUND SCENERY & VEGETATION (Every element outlined)
-    window.bgScenery.forEach((s) => {
-      s.seed = s.seed || Math.random();
-      // Prune background drawing cycles by 50% in Eco Mode to balance visual density and CPU temperature
-      if (window.playerStats && window.playerStats.ecoMode && s.seed > 0.5)
-        return;
-      let ts = s.size;
-
-      // Frustum Culling: Skip expensive vector drawing and canvas states if off-screen
-      let margin = ts * 60;
-      if (s.x < -margin || s.x > (canvas ? canvas.width + margin : 800)) return;
-
-      ctx.save();
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = penBgScenery * ts;
-      ctx.lineJoin = "round";
-
-      if (
-        window.playerStats.isCrucibleMode ||
-        window.playerStats.isPrestigeBossMode ||
-        window.playerStats.isUberBoss
-      ) {
-        ctx.restore();
-        return;
-      }
-      if (window.playerStats.isDungeonMode) {
-        let isCeiling = s.seed < 0.45;
-        if (isCeiling) {
-          let h = 35 + s.seed * 50 * ts;
-          let w = 12 + s.seed * 22 * ts;
-          if (window.playerStats.currentDungeon === "equip") {
-            // Hanging iron structural girder supporting the roof
-            ctx.fillStyle = "#1e242c";
-            ctx.beginPath();
-            ctx.rect(s.x - 4, 0, 8, h);
-            ctx.fill();
-            ctx.stroke();
-            // Horizontal cross brackets along the structural shaft
-            ctx.fillStyle = "#0c0d12";
-            for (let gy = 10; gy < h; gy += 15) {
-              ctx.beginPath();
-              ctx.rect(s.x - 6, gy, 12, 3);
-              ctx.fill();
-              ctx.stroke();
-            }
-          } else {
-            let color =
-              window.playerStats.currentDungeon === "gold"
-                ? "#332211"
-                : "#1b2d1f";
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(s.x - w / 2, 0);
-            ctx.lineTo(s.x, h);
-            ctx.lineTo(s.x + w / 2, 0);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.strokeStyle = "rgba(255,255,255,0.06)";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(s.x, h);
-            ctx.lineTo(s.x - w / 4, 0);
-            ctx.stroke();
-          }
-        } else {
-          let h = 22 + s.seed * 45 * ts;
-          let w = 10 + s.seed * 18 * ts;
-          if (window.playerStats.currentDungeon === "equip") {
-            // Vertical floor support pillar
-            ctx.fillStyle = "#1e242c";
-            ctx.beginPath();
-            ctx.rect(s.x - 6, 230 - h, 12, h);
-            ctx.fill();
-            ctx.stroke();
-            // Cast-iron bolted plates at base
-            ctx.fillStyle = "#0c0d12";
-            ctx.beginPath();
-            ctx.rect(s.x - 8, 224, 16, 6);
-            ctx.fill();
-            ctx.stroke();
-          } else {
-            let color =
-              window.playerStats.currentDungeon === "gold"
-                ? "#261a0c"
-                : "#121f16";
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(s.x - w / 2, 230);
-            ctx.lineTo(s.x, 230 - h);
-            ctx.lineTo(s.x + w / 2, 230);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.strokeStyle = "rgba(255,255,255,0.04)";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(s.x, 230 - h);
-            ctx.lineTo(s.x + w / 4, 230);
-            ctx.stroke();
-          }
-        }
-      } else {
-        if (s.type === "tree") {
-          let tx = s.x,
-            ty = s.y - 68 * ts; // Raised canopy height from 40 to 68 to make trees towering!
-          if (tier === 0) {
-            if (s.seed < 0.35) {
-              // --- THE ELDER OAK (Fantasy Stylized - Thick & Robust) ---
-              // Ancient thick trunk with root flares
-              ctx.fillStyle = "#3b220c"; // Rich warm bark
-              ctx.beginPath();
-              ctx.moveTo(tx - 7 * ts, s.y);
-              ctx.lineTo(tx - 3.5 * ts, ty + 20 * ts);
-              // Left heavy fork
-              ctx.quadraticCurveTo(
-                tx - 12 * ts,
-                ty + 12 * ts,
-                tx - 18 * ts,
-                ty + 4 * ts,
-              );
-              ctx.lineTo(tx - 14 * ts, ty + 2 * ts);
-              ctx.quadraticCurveTo(tx - 4 * ts, ty + 10 * ts, tx, ty + 15 * ts);
-              // Right heavy fork
-              ctx.quadraticCurveTo(
-                tx + 4 * ts,
-                ty + 10 * ts,
-                tx + 14 * ts,
-                ty + 2 * ts,
-              );
-              ctx.lineTo(tx + 18 * ts, ty + 4 * ts);
-              ctx.quadraticCurveTo(
-                tx + 12 * ts,
-                ty + 12 * ts,
-                tx + 3.5 * ts,
-                ty + 20 * ts,
-              );
-              ctx.lineTo(tx + 7 * ts, s.y);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
-
-              // Strong bark details
-              ctx.strokeStyle = "#1a0f07";
-              ctx.lineWidth = 1.8 * ts;
-              ctx.beginPath();
-              ctx.moveTo(tx - 2 * ts, s.y - 3 * ts);
-              ctx.quadraticCurveTo(
-                tx - 3 * ts,
-                ty + 30 * ts,
-                tx - 1 * ts,
-                ty + 22 * ts,
-              );
-              ctx.moveTo(tx + 2 * ts, s.y - 8 * ts);
-              ctx.quadraticCurveTo(tx + 1 * ts, ty + 32 * ts, tx, ty + 24 * ts);
-              ctx.stroke();
-              ctx.strokeStyle = "#000000"; // reset
-              ctx.lineWidth = penBgScenery * ts;
-
-              // Leafy Canopy Clumps (Thicker, overlapping foliage clouds)
-              let drawCanopyClump = (cx, cy, r, c1, c2) => {
-                let foliageGrad = ctx.createRadialGradient(
-                  cx - r * 0.3,
-                  cy - r * 0.3,
-                  1,
-                  cx,
-                  cy,
-                  r,
-                );
-                foliageGrad.addColorStop(0, c1);
-                foliageGrad.addColorStop(1, c2);
-                ctx.fillStyle = foliageGrad;
-                ctx.beginPath();
-                ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-              };
-
-              // Base depth layers (Large and voluminous)
-              drawCanopyClump(tx, ty - 12 * ts, 36 * ts, "#123318", "#081d0c");
-              drawCanopyClump(
-                tx - 22 * ts,
-                ty - 2 * ts,
-                28 * ts,
-                "#123318",
-                "#081d0c",
-              );
-              drawCanopyClump(
-                tx + 22 * ts,
-                ty - 2 * ts,
-                28 * ts,
-                "#123318",
-                "#081d0c",
-              );
-
-              // Mid-green body
-              drawCanopyClump(tx, ty - 18 * ts, 30 * ts, "#1e8449", "#114620");
-              drawCanopyClump(
-                tx - 16 * ts,
-                ty - 6 * ts,
-                22 * ts,
-                "#1e8449",
-                "#114620",
-              );
-              drawCanopyClump(
-                tx + 16 * ts,
-                ty - 6 * ts,
-                22 * ts,
-                "#1e8449",
-                "#114620",
-              );
-
-              // High-fidelity highlights
-              drawCanopyClump(
-                tx - 8 * ts,
-                ty - 24 * ts,
-                16 * ts,
-                "#58d68d",
-                "#145a32",
-              );
-              drawCanopyClump(
-                tx + 8 * ts,
-                ty - 24 * ts,
-                16 * ts,
-                "#58d68d",
-                "#145a32",
-              );
-            } else if (s.seed < 0.7) {
-              // --- HIGHLAND SPRUCE (Dense, Wide, & Majestic) ---
-              // Sturdy thick trunk
-              ctx.fillStyle = "#2d1a04";
-              ctx.beginPath();
-              ctx.rect(tx - 4 * ts, ty + 10 * ts, 8 * ts, s.y - (ty + 10 * ts));
-              ctx.fill();
-              ctx.stroke();
-
-              // Wide scalloped boughs (Overlapping dense pine layers)
-              let drawPineBough = (by, w, h, c1, c2) => {
-                ctx.save();
-                let boughGrad = ctx.createLinearGradient(
-                  tx - w,
-                  by,
-                  tx + w,
-                  by + h,
-                );
-                boughGrad.addColorStop(0, c1);
-                boughGrad.addColorStop(1, c2);
-                ctx.fillStyle = boughGrad;
-
-                ctx.beginPath();
-                ctx.moveTo(tx, by);
-                ctx.lineTo(tx + w, by + h);
-                // Beautiful scalloped branch needles
-                let toothCount = 7;
-                for (let i = 0; i <= toothCount; i++) {
-                  let ratio = i / toothCount;
-                  let kx = tx + w - ratio * w * 2;
-                  let ky =
-                    by +
-                    h -
-                    Math.sin(ratio * Math.PI) * (h * 0.2) +
-                    (i % 2 === 0 ? 3 * ts : -2 * ts);
-                  ctx.lineTo(kx, ky);
-                }
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                ctx.restore();
-              };
-
-              // Tier 1 (Fat Base)
-              drawPineBough(
-                ty + 15 * ts,
-                38 * ts,
-                20 * ts,
-                "#11381c",
-                "#051308",
-              );
-              // Tier 2 (Lower Mid)
-              drawPineBough(
-                ty - 2 * ts,
-                30 * ts,
-                16 * ts,
-                "#195c2b",
-                "#09240f",
-              );
-              // Tier 3 (Upper Mid)
-              drawPineBough(
-                ty - 16 * ts,
-                22 * ts,
-                13 * ts,
-                "#228b22",
-                "#0c3b17",
-              );
-              // Tier 4 (Top Spire)
-              drawPineBough(
-                ty - 28 * ts,
-                14 * ts,
-                11 * ts,
-                "#58d68d",
-                "#145229",
-              );
-
-              // Hanging pine cones (Earthy brown droplets)
-              ctx.fillStyle = "#5c3a21";
-              let drawPineCone = (cx, cy) => {
-                ctx.beginPath();
-                ctx.ellipse(cx, cy, 2.2 * ts, 4.2 * ts, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-              };
-              drawPineCone(tx - 18 * ts, ty + 28 * ts);
-              drawPineCone(tx + 18 * ts, ty + 28 * ts);
-              drawPineCone(tx - 12 * ts, ty + 10 * ts);
-              drawPineCone(tx + 12 * ts, ty + 10 * ts);
-            } else {
-              // --- GOLDEN WHISPERING ASPEN (Fluffy Gold Clouds) ---
-              // Thicker white birch trunk with characteristic bark eye knots
-              ctx.fillStyle = "#f1f5f9"; // Solid slate white
-              ctx.beginPath();
-              ctx.rect(tx - 3 * ts, ty - 15 * ts, 6 * ts, s.y - (ty - 15 * ts));
-              ctx.fill();
-              ctx.stroke();
-
-              // Black birch knots
-              ctx.fillStyle = "#1e293b";
-              for (let kY = ty - 10 * ts; kY < s.y - 10 * ts; kY += 14 * ts) {
-                ctx.beginPath();
-                ctx.ellipse(
-                  tx - 3 * ts,
-                  kY,
-                  2.5 * ts,
-                  1.2 * ts,
-                  0,
-                  0,
-                  Math.PI * 2,
-                );
-                ctx.ellipse(
-                  tx + 3 * ts,
-                  kY + 7 * ts,
-                  2.5 * ts,
-                  1.2 * ts,
-                  0,
-                  0,
-                  Math.PI * 2,
-                );
-                ctx.fill();
-              }
-
-              // Main branches reaching up into the canopy
-              ctx.strokeStyle = "#475569";
-              ctx.lineWidth = 1.8 * ts;
-              ctx.beginPath();
-              ctx.moveTo(tx, ty - 5 * ts);
-              ctx.quadraticCurveTo(
-                tx - 10 * ts,
-                ty - 15 * ts,
-                tx - 16 * ts,
-                ty - 24 * ts,
-              );
-              ctx.moveTo(tx, ty - 10 * ts);
-              ctx.quadraticCurveTo(
-                tx + 10 * ts,
-                ty - 20 * ts,
-                tx + 16 * ts,
-                ty - 28 * ts,
-              );
-              ctx.stroke();
-              ctx.strokeStyle = "#000000"; // reset
-              ctx.lineWidth = penBgScenery * ts;
-
-              // High-fidelity layered autumn cloud clusters (Matches the cozy Oak styling!)
-              let drawAspenClump = (cx, cy, r, c1, c2) => {
-                let foliageGrad = ctx.createRadialGradient(
-                  cx - r * 0.3,
-                  cy - r * 0.3,
-                  1,
-                  cx,
-                  cy,
-                  r,
-                );
-                foliageGrad.addColorStop(0, c1);
-                foliageGrad.addColorStop(1, c2);
-                ctx.fillStyle = foliageGrad;
-                ctx.beginPath();
-                ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-              };
-
-              // Base Warm Amber Layer
-              drawAspenClump(tx, ty - 14 * ts, 30 * ts, "#d35400", "#7e2200");
-              drawAspenClump(
-                tx - 18 * ts,
-                ty - 6 * ts,
-                22 * ts,
-                "#d35400",
-                "#7e2200",
-              );
-              drawAspenClump(
-                tx + 18 * ts,
-                ty - 6 * ts,
-                22 * ts,
-                "#d35400",
-                "#7e2200",
-              );
-
-              // Bright Golden-Orange Mid-Layer
-              drawAspenClump(tx, ty - 20 * ts, 24 * ts, "#f39c12", "#ca6f1e");
-              drawAspenClump(
-                tx - 14 * ts,
-                ty - 10 * ts,
-                18 * ts,
-                "#f39c12",
-                "#ca6f1e",
-              );
-              drawAspenClump(
-                tx + 14 * ts,
-                ty - 10 * ts,
-                18 * ts,
-                "#f39c12",
-                "#ca6f1e",
-              );
-
-              // Sun-kissed Yellow Highlights
-              drawAspenClump(
-                tx - 6 * ts,
-                ty - 26 * ts,
-                13 * ts,
-                "#f9e79f",
-                "#f1c40f",
-              );
-              drawAspenClump(
-                tx + 6 * ts,
-                ty - 26 * ts,
-                13 * ts,
-                "#f9e79f",
-                "#f1c40f",
-              );
-            }
-          } else if (tier === 1) {
-            if (s.seed < 0.55) {
-              // --- FROZEN ALPINE SPRUCE (Snow-covered evergreens) ---
-              ctx.fillStyle = "#1c0d02"; // Dark wood
-              ctx.beginPath();
-              ctx.rect(tx - 3 * ts, ty + 10 * ts, 6 * ts, s.y - (ty + 10 * ts));
-              ctx.fill();
-              ctx.stroke();
-
-              let drawSnowyBough = (by, w, h, foliageColor, snowColor) => {
-                ctx.save();
-                // 1. Dark Pine Needles Base
-                ctx.fillStyle = foliageColor;
-                ctx.beginPath();
-                ctx.moveTo(tx, by);
-                ctx.lineTo(tx + w, by + h);
-                let toothCount = 5;
-                for (let i = 0; i <= toothCount; i++) {
-                  let ratio = i / toothCount;
-                  let kx = tx + w - ratio * w * 2;
-                  let ky =
-                    by +
-                    h -
-                    Math.sin(ratio * Math.PI) * (h * 0.2) +
-                    (i % 2 === 0 ? 2 * ts : -2 * ts);
-                  ctx.lineTo(kx, ky);
-                }
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 2. Thick Snow Blanket overlay
-                ctx.fillStyle = snowColor;
-                ctx.beginPath();
-                ctx.moveTo(tx, by);
-                ctx.lineTo(tx + w * 0.8, by + h * 0.8);
-                ctx.quadraticCurveTo(
-                  tx,
-                  by + h * 0.4,
-                  tx - w * 0.8,
-                  by + h * 0.8,
-                );
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                ctx.restore();
-              };
-
-              // 4 Overlapping thick snow layers
-              drawSnowyBough(
-                ty + 15 * ts,
-                32 * ts,
-                16 * ts,
-                "#09240f",
-                "#cbd5e1",
-              ); // bottom shadow
-              drawSnowyBough(
-                ty + 13 * ts,
-                28 * ts,
-                14 * ts,
-                "#0c3b17",
-                "#ffffff",
-              ); // bottom snow
-              drawSnowyBough(
-                ty - 2 * ts,
-                22 * ts,
-                12 * ts,
-                "#0c3b17",
-                "#cbd5e1",
-              ); // mid shadow
-              drawSnowyBough(
-                ty - 4 * ts,
-                18 * ts,
-                10 * ts,
-                "#1a5e2f",
-                "#ffffff",
-              ); // mid snow
-              drawSnowyBough(
-                ty - 16 * ts,
-                12 * ts,
-                8 * ts,
-                "#1a5e2f",
-                "#ffffff",
-              ); // top
-            } else {
-              // --- FROZEN DECIDUOUS LARCH ---
-              ctx.fillStyle = "#1c0d02";
-              ctx.beginPath();
-              ctx.moveTo(tx - 2 * ts, s.y);
-              ctx.lineTo(tx - 0.5 * ts, ty + 10 * ts);
-              ctx.quadraticCurveTo(tx - 8 * ts, ty, tx - 14 * ts, ty - 10 * ts);
-              ctx.moveTo(tx + 2 * ts, s.y);
-              ctx.lineTo(tx + 0.5 * ts, ty + 10 * ts);
-              ctx.quadraticCurveTo(tx + 8 * ts, ty, tx + 14 * ts, ty - 10 * ts);
-              ctx.stroke();
-              ctx.fill();
-
-              // Ice-crystals clumps on branches
-              let drawIceSpire = (ix, iy, r) => {
-                let grad = ctx.createRadialGradient(ix, iy, 1, ix, iy, r);
-                grad.addColorStop(0, "#ffffff");
-                grad.addColorStop(1, "rgba(56, 189, 248, 0.65)");
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(ix, iy, r, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-              };
-              drawIceSpire(tx - 14 * ts, ty - 10 * ts, 8 * ts);
-              drawIceSpire(tx + 14 * ts, ty - 10 * ts, 8 * ts);
-              drawIceSpire(tx, ty + 5 * ts, 10 * ts);
-            }
-          } else if (tier === 2) {
-            if (s.seed < 0.5) {
-              ctx.fillStyle = "#110502";
-              ctx.beginPath();
-              ctx.moveTo(tx - 12 * ts, 230);
-              ctx.lineTo(tx, ty - 15 * ts);
-              ctx.lineTo(tx + 12 * ts, 230);
-              ctx.fill();
-              ctx.stroke();
-            } else {
-              ctx.fillStyle = "#210904";
-              ctx.beginPath();
-              ctx.moveTo(tx - 32 * ts, 230);
-              ctx.lineTo(tx - 12 * ts, ty + 14 * ts);
-              ctx.lineTo(tx - 6 * ts, ty + 7 * ts);
-              ctx.lineTo(tx - 5 * ts, ty + 10 * ts);
-              ctx.lineTo(tx + 5 * ts, ty + 10 * ts);
-              ctx.lineTo(tx + 8 * ts, ty + 13 * ts);
-              ctx.lineTo(tx + 32 * ts, 230);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
-            }
-          } else if (tier === 3) {
-            if (s.seed < 0.5) {
-              ctx.fillStyle = "#5c503b";
-              ctx.beginPath();
-              ctx.rect(tx - 4 * ts, ty, 8 * ts, 40 * ts);
-              ctx.fill();
-              ctx.stroke();
-              ctx.fillStyle = "#144222";
-              ctx.beginPath();
-              ctx.ellipse(tx, ty, 20 * ts, 15 * ts, 0, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-              ctx.fillStyle = "#1b5e30";
-              ctx.beginPath();
-              ctx.ellipse(
-                tx - 6 * ts,
-                ty + 5 * ts,
-                15 * ts,
-                10 * ts,
-                0,
-                0,
-                Math.PI * 2,
-              );
-              ctx.fill();
-              ctx.stroke();
-              ctx.strokeStyle = "#3e321e";
-              ctx.lineWidth = 3 * ts;
-              ctx.beginPath();
-              ctx.moveTo(tx - 4 * ts, 210);
-              ctx.quadraticCurveTo(tx - 12 * ts, 220, tx - 18 * ts, 230);
-              ctx.moveTo(tx + 4 * ts, 210);
-              ctx.quadraticCurveTo(tx + 12 * ts, 220, tx + 18 * ts, 230);
-              ctx.stroke();
-            } else {
-              ctx.fillStyle = "#4a3c28";
-              ctx.beginPath();
-              ctx.rect(tx - 3 * ts, ty, 6 * ts, 40 * ts);
-              ctx.fill();
-              ctx.stroke();
-              ctx.fillStyle = "#0c2b18";
-              ctx.beginPath();
-              ctx.arc(tx, ty, 16 * ts, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-              ctx.strokeStyle = "#1b4f30";
-              ctx.lineWidth = 2 * ts;
-              ctx.beginPath();
-              ctx.moveTo(tx - 10 * ts, ty);
-              ctx.lineTo(tx - 10 * ts, ty + 25 * ts);
-              ctx.moveTo(tx + 8 * ts, ty + 3 * ts);
-              ctx.lineTo(tx + 8 * ts, ty + 30 * ts);
-              ctx.stroke();
-            }
-          } else if (tier === 4) {
-            ctx.fillStyle = "#4a154b";
-            let hover = Math.sin(Date.now() / 200 + s.seed * 100) * 4;
-            ctx.beginPath();
-            ctx.moveTo(tx, ty + hover - 12 * ts);
-            ctx.lineTo(tx + 12 * ts, ty + hover + 8 * ts);
-            ctx.lineTo(tx, ty + hover + 28 * ts);
-            ctx.lineTo(tx - 12 * ts, ty + hover + 8 * ts);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = "#8e44ad";
-            ctx.beginPath();
-            ctx.moveTo(tx, ty + hover - 12 * ts);
-            ctx.lineTo(tx + 5 * ts, ty + hover + 8 * ts);
-            ctx.lineTo(tx, ty + hover + 28 * ts);
-            ctx.fill();
-            ctx.stroke();
-          }
-        } else {
-          let bx = s.x,
-            by = s.y,
-            bs = ts;
-          if (tier === 0) {
-            if (s.seed < 0.4) {
-              ctx.fillStyle = "#113f21";
-              ctx.beginPath();
-              ctx.arc(bx, by, 16 * bs, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-              ctx.fillStyle = "#1e8449";
-              ctx.beginPath();
-              ctx.arc(bx + 8 * bs, by, 12 * bs, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.arc(bx - 8 * bs, by, 12 * bs, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-              ctx.fillStyle = "#e74c3c";
-              ctx.beginPath();
-              ctx.arc(bx - 6 * bs, by - 4 * bs, 2, 0, Math.PI * 2);
-              ctx.arc(bx + 4 * bs, by + 2 * bs, 2, 0, Math.PI * 2);
-              ctx.arc(bx + 8 * bs, by - 6 * bs, 2, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-            } else if (s.seed < 0.75) {
-              ctx.fillStyle = "#27ae60";
-              for (let i = 0; i < 5; i++) {
-                ctx.save();
-                ctx.translate(bx, by);
-                ctx.rotate(-Math.PI / 4 + (i * Math.PI) / 8);
-                ctx.beginPath();
-                ctx.ellipse(0, -10 * bs, 4 * bs, 12 * bs, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-                ctx.restore();
-              }
-            } else {
-              ctx.fillStyle = "#1e3d29";
-              ctx.beginPath();
-              ctx.arc(bx, by, 14 * bs, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-              ctx.fillStyle = "#e84393";
-              ctx.beginPath();
-              ctx.arc(bx - 4 * bs, by - 6 * bs, 3, 0, Math.PI * 2);
-              ctx.arc(bx + 6 * bs, by - 2 * bs, 3, 0, Math.PI * 2);
-              ctx.arc(bx + 1 * bs, by + 4 * bs, 2, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-            }
-          } else if (tier === 1) {
-            if (s.seed < 0.5) {
-              // --- ANCIENT ALPS STONE ARCHWAY ---
-              ctx.fillStyle = "#334155"; // Grey slate
-              // Left Pillar
-              ctx.beginPath();
-              ctx.rect(bx - 14 * bs, by - 24 * bs, 6 * bs, 24 * bs);
-              ctx.fill();
-              ctx.stroke();
-              // Right Pillar
-              ctx.beginPath();
-              ctx.rect(bx + 8 * bs, by - 24 * bs, 6 * bs, 24 * bs);
-              ctx.fill();
-              ctx.stroke();
-              // Lintel arch brick
-              ctx.fillStyle = "#475569";
-              ctx.beginPath();
-              ctx.roundRect(bx - 18 * bs, by - 30 * bs, 36 * bs, 7 * bs, [
-                2 * bs,
-              ]);
-              ctx.fill();
-              ctx.stroke();
-
-              // ICICLES hanging from archway
-              ctx.fillStyle = "rgba(209, 250, 255, 0.7)";
-              ctx.strokeStyle = "#475569";
-              ctx.lineWidth = 0.8;
-              let drawIcicle = (ix, iy, ih) => {
-                ctx.beginPath();
-                ctx.moveTo(ix - 1.5 * bs, iy);
-                ctx.lineTo(ix, iy + ih * bs);
-                ctx.lineTo(ix + 1.5 * bs, iy);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-              };
-              drawIcicle(bx - 6 * bs, by - 23 * bs, 6);
-              drawIcicle(bx + 4 * bs, by - 23 * bs, 8);
-              drawIcicle(bx - 12 * bs, by - 23 * bs, 5);
-              ctx.lineWidth = penBgScenery * bs; // reset
-            } else {
-              // --- ANCIENT FALLEN OBELISK ---
-              ctx.fillStyle = "#1e293b"; // Dark slate
-              ctx.beginPath();
-              ctx.rect(bx - 10 * bs, by - 6 * bs, 20 * bs, 6 * bs);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.save();
-              ctx.translate(bx, by - 6 * bs);
-              ctx.rotate(0.35 + s.seed * 0.4);
-              ctx.fillStyle = "#334155";
-              ctx.beginPath();
-              ctx.rect(-6 * bs, -15 * bs, 12 * bs, 15 * bs);
-              ctx.fill();
-              ctx.stroke();
-              ctx.restore();
-            }
-          } else if (tier === 2) {
-            if (s.seed < 0.5) {
-              ctx.fillStyle = "#2c1e1c";
-              ctx.beginPath();
-              ctx.ellipse(bx, by, 22 * bs, 10 * bs, 0, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-              ctx.fillStyle = "#f1c40f";
-              ctx.beginPath();
-              ctx.moveTo(bx - 8 * bs, by);
-              ctx.lineTo(bx, by - 6 * bs);
-              ctx.lineTo(bx + 8 * bs, by);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
-            } else {
-              ctx.fillStyle = "#3d0e05";
-              ctx.beginPath();
-              ctx.arc(bx, by, 10 * bs, Math.PI, 0);
-              ctx.fill();
-              ctx.stroke();
-              let sizePulse =
-                Math.abs(Math.sin(Date.now() / 300 + s.seed * 10)) * 4 + 2;
-              ctx.fillStyle = "#e67e22";
-              ctx.beginPath();
-              ctx.arc(
-                bx - 2 * bs,
-                by - 3 * bs,
-                sizePulse * bs * 0.4,
-                0,
-                Math.PI * 2,
-              );
-              ctx.fill();
-              ctx.stroke();
-            }
-          } else if (tier === 3) {
-            if (s.seed < 0.5) {
-              ctx.fillStyle = "#0a2614";
-              ctx.beginPath();
-              ctx.ellipse(bx, by, 26 * bs, 7 * bs, 0, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-            } else {
-              ctx.strokeStyle = "#1b4f30";
-              ctx.lineWidth = 2;
-              ctx.beginPath();
-              ctx.moveTo(bx - 4, by);
-              ctx.lineTo(bx - 2, by - 14 * bs);
-              ctx.moveTo(bx + 4, by);
-              ctx.lineTo(bx + 2, by - 12 * bs);
-              ctx.stroke();
-              ctx.fillStyle = "#5c3d1e";
-              ctx.beginPath();
-              ctx.rect(bx - 3.5, by - 14 * bs, 3, 5 * bs);
-              ctx.fill();
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.rect(bx + 2.5, by - 12 * bs, 3, 4 * bs);
-              ctx.fill();
-              ctx.stroke();
-            }
-          } else if (tier === 4) {
-            ctx.fillStyle = "rgba(142, 68, 173, 0.25)";
-            ctx.beginPath();
-            ctx.arc(bx, by, 22 * bs, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          }
-        }
-      }
-      ctx.restore();
-    });
-
-    // 3. GROUND FLOOR
-    ctx.save();
-    let floorPatternOffset = Math.sin(Date.now() / 2400) * 15;
-    let microShift = Math.cos(Date.now() / 500) * 1.5;
-    let totalShift = floorPatternOffset + microShift;
-
-    if (window.playerStats.isUberBoss) {
-      let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-      groundGrad.addColorStop(0, "#05010a");
-      groundGrad.addColorStop(1, "#120224");
-      ctx.fillStyle = groundGrad;
-      ctx.fillRect(0, 230, canvas.width, 90);
-      ctx.strokeStyle = "rgba(142, 68, 173, 0.45)";
-      ctx.lineWidth = 1;
-      for (let i = -100; i < canvas.width + 100; i += 50) {
-        let gx = i - ((window.groundScroll + totalShift) % 50);
-        ctx.beginPath();
-        ctx.moveTo(gx, 230);
-        ctx.lineTo(gx - 30, 320);
-        ctx.stroke();
-      }
-    } else if (window.playerStats.isPrestigeBossMode) {
-      let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-      groundGrad.addColorStop(0, "#1c1110");
-      groundGrad.addColorStop(1, "#080302");
-      ctx.fillStyle = groundGrad;
-      ctx.fillRect(0, 230, canvas.width, 90);
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, 230);
-      ctx.lineTo(canvas.width, 230);
-      ctx.moveTo(0, 250);
-      ctx.lineTo(canvas.width, 250);
-      ctx.moveTo(0, 274);
-      ctx.lineTo(canvas.width, 274);
-      ctx.moveTo(0, 298);
-      ctx.lineTo(canvas.width, 298);
-      ctx.stroke();
-      for (let i = -60; i < canvas.width + 60; i += 80) {
-        let offset = i - ((window.groundScroll + totalShift) % 80);
-        ctx.beginPath();
-        ctx.moveTo(offset, 230);
-        ctx.lineTo(offset + 5, 250);
-        ctx.moveTo(offset + 40, 250);
-        ctx.lineTo(offset + 45, 274);
-        ctx.moveTo(offset - 10, 274);
-        ctx.lineTo(offset - 5, 320);
-        ctx.stroke();
-      }
-      let fissurePulse = Math.sin(Date.now() / 150) * 0.2 + 0.8;
-      ctx.strokeStyle = `rgba(230, 126, 34, ${fissurePulse})`;
-      ctx.lineWidth = 2;
-      for (let i = 100; i < canvas.width; i += 180) {
-        let ox = i - ((window.groundScroll + totalShift * 1.5) % 180);
-        ctx.beginPath();
-        ctx.moveTo(ox, 230);
-        ctx.lineTo(ox + 8, 250);
-        ctx.lineTo(ox - 12, 274);
-        ctx.stroke();
-      }
-    } else if (window.playerStats.isCrucibleMode) {
-      let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-      groundGrad.addColorStop(0, "#0a0316");
-      groundGrad.addColorStop(1, "#030005");
-      ctx.fillStyle = groundGrad;
-      ctx.fillRect(0, 230, canvas.width, 90);
-      ctx.strokeStyle = "rgba(155, 89, 182, 0.45)";
-      ctx.lineWidth = 1;
-      for (let i = -100; i < canvas.width + 100; i += 40) {
-        let gx = i - ((window.groundScroll + totalShift) % 40);
-        ctx.beginPath();
-        ctx.moveTo(gx, 230);
-        ctx.lineTo(gx - 20, 320);
-        ctx.stroke();
-      }
-      ctx.beginPath();
-      ctx.moveTo(0, 245);
-      ctx.lineTo(canvas.width, 245);
-      ctx.moveTo(0, 265);
-      ctx.lineTo(canvas.width, 265);
-      ctx.stroke();
-    } else if (window.playerStats.isDungeonMode) {
-      if (window.playerStats.currentDungeon === "gold") {
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#2c1c0a");
-        groundGrad.addColorStop(1, "#120a03");
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-        ctx.strokeStyle = "rgba(241, 196, 15, 0.35)";
-        ctx.lineWidth = 2;
-        for (let i = -100; i < canvas.width + 100; i += 120) {
-          let gx = i - ((window.groundScroll + totalShift) % 120);
-          ctx.beginPath();
-          ctx.moveTo(gx, 250);
-          ctx.quadraticCurveTo(gx + 20, 260, gx + 40, 255);
-          ctx.quadraticCurveTo(gx + 60, 245, gx + 80, 265);
-          ctx.stroke();
-        }
-        ctx.fillStyle = "#3e2723";
-        ctx.strokeStyle = "#5d6d7e";
-        ctx.lineWidth = 2;
-        for (let i = -60; i < canvas.width + 60; i += 40) {
-          ctx.fillRect(
-            i - ((window.groundScroll + totalShift) % 40),
-            265,
-            8,
-            20,
-          );
-        }
-        ctx.beginPath();
-        ctx.moveTo(0, 268);
-        ctx.lineTo(canvas.width, 268);
-        ctx.moveTo(0, 282);
-        ctx.lineTo(canvas.width, 282);
-        ctx.stroke();
-      } else if (window.playerStats.currentDungeon === "mat") {
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#19221c");
-        groundGrad.addColorStop(1, "#0a0e0b");
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-        ctx.strokeStyle = "#0f1511";
-        ctx.lineWidth = 1.5;
-        for (let i = -120; i < canvas.width + 120; i += 100) {
-          let gx = i - ((window.groundScroll + totalShift) % 100);
-          ctx.beginPath();
-          ctx.moveTo(gx, 230);
-          ctx.lineTo(gx - 30, 320);
-          ctx.stroke();
-          ctx.fillStyle = "#1e2821";
-          ctx.beginPath();
-          ctx.arc(gx + 5, 245, 2, 0, Math.PI * 2);
-          ctx.arc(gx - 15, 280, 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.fillStyle = "rgba(46, 204, 113, 0.3)";
-        ctx.strokeStyle = "#2ecc71";
-        ctx.lineWidth = 1;
-        for (let i = -150; i < canvas.width + 150; i += 180) {
-          let gx = i - ((window.groundScroll + totalShift) % 180);
-          ctx.beginPath();
-          ctx.ellipse(gx + 40, 262, 35, 12, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          let bubbleOffset = (Date.now() / 15 + gx) % 24;
-          if (bubbleOffset < 12) {
-            ctx.fillStyle = "rgba(46, 204, 113, 0.55)";
-            ctx.beginPath();
-            ctx.arc(
-              gx + 30 + bubbleOffset,
-              262 - bubbleOffset / 4,
-              2 + bubbleOffset / 6,
-              0,
-              Math.PI * 2,
-            );
-            ctx.fill();
-          }
-        }
-      } else {
-        // 1. Volcanic Iron-Vault Ground Base (Rich deep soot)
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#11161b"); // Slate industrial iron
-        groundGrad.addColorStop(1, "#07090c"); // Deep coal-black
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-
-        // 2. Thick Molten Orange Under-Grate Seams
-        let pulse = 0.8 + Math.sin(Date.now() / 250) * 0.2;
-        ctx.strokeStyle = `rgba(230, 126, 34, ${0.4 + pulse * 0.4})`; // Molten orange seams
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        // Horizontal molten lines peeking through iron plate joints
-        ctx.moveTo(0, 252);
-        ctx.lineTo(canvas.width, 252);
-        ctx.moveTo(0, 276);
-        ctx.lineTo(canvas.width, 276);
-        ctx.stroke();
-
-        ctx.strokeStyle = `rgba(241, 196, 15, ${0.4 + pulse * 0.5})`; // White-hot inner core line
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // 3. Rigid Heavy Iron-Grate Plate Panels (Locked solid to window.groundScroll - NO swaying)
-        ctx.fillStyle = "#1c2229";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penFar;
-
-        // Draw top horizon outline of the vault plates
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        ctx.lineTo(canvas.width, 230);
-        ctx.stroke();
-
-        // We draw vertical plate seams scrolling linearly on groundScroll only (NO swaying totalShift!)
-        let scrollOffset = window.groundScroll % 80;
-        for (let i = -80; i < canvas.width + 80; i += 80) {
-          let gx = i - scrollOffset;
-
-          // Draw solid dark iron-plate border cuts
-          ctx.beginPath();
-          ctx.moveTo(gx, 230);
-          ctx.lineTo(gx, 320);
-          ctx.stroke();
-
-          // Draw heavy rivets on the plate corners
-          ctx.fillStyle = "#0c0f13";
-          ctx.beginPath();
-          ctx.arc(gx - 4, 235, 1.5, 0, Math.PI * 2);
-          ctx.arc(gx + 4, 235, 1.5, 0, Math.PI * 2);
-          ctx.arc(gx - 4, 315, 1.5, 0, Math.PI * 2);
-          ctx.arc(gx + 4, 315, 1.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-      }
-    } else {
-      if (tier === 0) {
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#194d22");
-        groundGrad.addColorStop(0.15, "#223d1c");
-        groundGrad.addColorStop(1, "#0c1a0c");
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-
-        ctx.fillStyle = "#1e4d22";
-        for (let i = -20; i < canvas.width + 20; i += 8) {
-          let gx = i - ((window.groundScroll + totalShift * 0.4) % 8);
-          let h = 4 + Math.sin(i * 1.7) * 3;
-          let bend = Math.sin(Date.now() / 300 + i) * 2.5;
-          ctx.beginPath();
-          ctx.moveTo(gx, 230);
-          ctx.quadraticCurveTo(gx + bend, 230 - h, gx + bend + 1, 230 - h);
-          ctx.quadraticCurveTo(gx + 3, 230, gx + 6, 230);
-          ctx.fill();
-        }
-      } else if (tier === 1) {
-        // Thick snow-tundra ground fill
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#f8fafc"); // Pristine snow surface
-        groundGrad.addColorStop(0.15, "#cbd5e1"); // Shadow snow layer
-        groundGrad.addColorStop(1, "#1e293b"); // Deep frozen slate base
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-
-        // Wind-swept horizontal snow drift patterns
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-        ctx.lineWidth = 1.5;
-        for (let i = -120; i < canvas.width + 120; i += 120) {
-          let gx = i - ((window.groundScroll + totalShift) % 120);
-          ctx.beginPath();
-          ctx.moveTo(gx, 250);
-          ctx.quadraticCurveTo(gx + 30, 255, gx + 60, 250);
-          ctx.stroke();
-        }
-
-        // Glacial blue ice cracks deep under snow
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 1.0;
-        for (let i = -160; i < canvas.width + 160; i += 160) {
-          let gx = i - ((window.groundScroll + totalShift) % 160);
-          ctx.beginPath();
-          ctx.moveTo(gx, 265);
-          ctx.lineTo(gx + 12, 285);
-          ctx.lineTo(gx - 4, 310);
-          ctx.stroke();
-        }
-
-        // Horizon snow drift fluff sitting on the border
-        ctx.fillStyle = "#f8fafc";
-        ctx.beginPath();
-        ctx.moveTo(0, 230);
-        for (let x = 0; x < canvas.width + 20; x += 20) {
-          ctx.quadraticCurveTo(x - 10, 230 - 3, x, 230);
-        }
-        ctx.lineTo(canvas.width, 230);
-        ctx.closePath();
-        ctx.fill();
-      } else if (tier === 2) {
-        // 1. Obsidian Basalt Ground Base
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#120302"); // Dark cooled basalt
-        groundGrad.addColorStop(0.3, "#080100"); // Depth shadows
-        groundGrad.addColorStop(1, "#020000"); // Pitch black
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-
-        // 2. Cooling Plate Boundaries (Procedural Index-Based Random Spider Fractures)
-        let drawCrackedTectonicGrid = (lineW, color) => {
-          ctx.save();
-          ctx.strokeStyle = color;
-          ctx.lineWidth = lineW;
-          ctx.lineCap = "round";
-          ctx.lineJoin = "round";
-
-          // Fast sine-based hash to deterministically randomize crack shapes based on grid index
-          let hash = (val) => {
-            let x = Math.sin(val) * 10000;
-            return x - Math.floor(x);
-          };
-
-          let spacing = 120; // Structural grid gap
-          let startI = Math.floor(window.groundScroll / spacing) - 2;
-          let endI = startI + Math.ceil(canvas.width / spacing) + 4;
-
-          for (let i = startI; i <= endI; i++) {
-            let worldX = i * spacing;
-            let gx = worldX - window.groundScroll;
-
-            // Generate unique, non-repeating offsets for each coordinate index
-            let h1 = hash(i) * 14 - 7;
-            let h2 = hash(i + 0.5) * 14 - 7;
-            let h3 = hash(i + 1.2) * 18 - 9;
-            let h4 = hash(i + 1.9) * 18 - 9;
-            let h5 = hash(i + 2.5) * 14 - 7;
-
-            // Major jagged vertical/diagonal fissure (cooling crack)
-            ctx.beginPath();
-            ctx.moveTo(gx, 230);
-            ctx.lineTo(gx - 10 + h1, 248);
-            ctx.lineTo(gx + 8 + h2, 268);
-            ctx.lineTo(gx - 18 + h3, 292);
-            ctx.lineTo(gx + 12 + h4, 320);
-            ctx.stroke();
-
-            // Branching diagonal spider cracks (procedurally distributed via hash)
-            if (hash(i + 3.1) > 0.3) {
-              ctx.beginPath();
-              ctx.moveTo(gx + 8 + h2, 268);
-              ctx.lineTo(gx + 45 + h5, 275);
-              ctx.lineTo(gx + 72 + h1, 262);
-              ctx.lineTo(gx + 115 + h3, 280);
-              ctx.stroke();
-            }
-
-            if (hash(i + 4.2) > 0.4) {
-              ctx.beginPath();
-              ctx.moveTo(gx - 12 + h1, 248);
-              ctx.lineTo(gx + 30 + h4, 252);
-              ctx.lineTo(gx + 65 + h2, 238);
-              ctx.stroke();
-            }
-
-            if (hash(i + 5.7) > 0.3) {
-              ctx.beginPath();
-              ctx.moveTo(gx - 18 + h3, 292);
-              ctx.lineTo(gx + 40 + h1, 305);
-              ctx.lineTo(gx + 90 + h5, 295);
-              ctx.lineTo(gx + 130 + h2, 315);
-              ctx.stroke();
-            }
-          }
-          ctx.restore();
-        };
-
-        // Render deep, glowing lava crust crack under-glow first
-        drawCrackedTectonicGrid(3.5, "rgba(192, 57, 43, 0.75)");
-
-        // Render thin bright golden-yellow molten core on top
-        let pulse = 0.7 + Math.sin(Date.now() / 200) * 0.3;
-        drawCrackedTectonicGrid(
-          1.5,
-          `rgba(241, 196, 15, ${0.45 + pulse * 0.45})`,
-        );
-      } else if (tier === 3) {
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#0e1a12");
-        groundGrad.addColorStop(1, "#050a07");
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-        ctx.strokeStyle = "#142c1d";
-        ctx.lineWidth = 3;
-        for (let i = -120; i < canvas.width + 120; i += 90) {
-          let gx = i - ((window.groundScroll + totalShift) % 90);
-          ctx.beginPath();
-          ctx.moveTo(gx, 245);
-          ctx.quadraticCurveTo(gx + 40, 260, gx + 80, 248);
-          ctx.stroke();
-        }
-        for (let i = -200; i < canvas.width + 200; i += 220) {
-          let gx = i - ((window.groundScroll + totalShift) % 220);
-          let pop = (Date.now() / 25 + i) % 70;
-          if (pop < 35) {
-            ctx.fillStyle = "#193f26";
-            ctx.strokeStyle = "#27ae60";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(gx + 60, 270, pop / 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          } else if (pop < 42) {
-            ctx.strokeStyle =
-              "rgba(46, 204, 113, " + (1 - (pop - 35) / 7) + ")";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.ellipse(
-              gx + 60,
-              270,
-              (pop - 35) * 3,
-              (pop - 35) * 1.2,
-              0,
-              0,
-              Math.PI * 2,
-            );
-            ctx.stroke();
-          }
-        }
-      } else {
-        let groundGrad = ctx.createLinearGradient(0, 230, 0, 320);
-        groundGrad.addColorStop(0, "#0a0114");
-        groundGrad.addColorStop(1, "#030005");
-        ctx.fillStyle = groundGrad;
-        ctx.fillRect(0, 230, canvas.width, 90);
-        ctx.strokeStyle = "rgba(155, 89, 182, 0.35)";
-        ctx.lineWidth = 1;
-        for (let h = 230; h <= 320; h += 14) {
-          ctx.beginPath();
-          ctx.moveTo(0, h);
-          ctx.lineTo(canvas.width, h);
-          ctx.stroke();
-        }
-        for (let i = -200; i < canvas.width + 200; i += 60) {
-          let gx = i - ((window.groundScroll + totalShift) % 60);
-          ctx.beginPath();
-          ctx.moveTo(gx, 230);
-          ctx.lineTo(gx * 1.5 - canvas.width * 0.25, 320);
-          ctx.stroke();
-        }
-      }
-    }
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 2.0;
-    ctx.beginPath();
-    ctx.moveTo(0, 230);
-    ctx.lineTo(canvas.width, 230);
-    ctx.stroke();
-    ctx.restore();
-
-    window.beams.forEach((bm) => {
-      ctx.save();
-      ctx.globalAlpha = (bm.life / bm.maxLife) * 0.7;
-      let beamGrad = ctx.createLinearGradient(bm.x - 20, 0, bm.x + 20, 0);
-      beamGrad.addColorStop(0, "rgba(255,255,255,0)");
-      beamGrad.addColorStop(0.5, bm.color);
-      beamGrad.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = beamGrad;
-      ctx.fillRect(bm.x - 25, 0, 50, 230);
-      ctx.restore();
-    });
-
-    // 4. DYNAMIC HERO RENDERING
-    let hx = window.hero.x;
-    let hy = window.hero.y;
-    ctx.save();
-    let bounce = 0;
-    let slumpRotation = 0;
-    let Yoffset = 0;
-    let deathOpacity = 1.0;
-
-    if (window.deathAnimationTimer > 0) {
-      let t =
-        (window.deathMaxFrames - window.deathAnimationTimer) /
-        window.deathMaxFrames;
-      slumpRotation = (t * Math.PI) / 2.2;
-      Yoffset = t * 18;
-      bounce = 0;
-      deathOpacity = Math.max(0, 1.0 - t * 0.85);
-      ctx.translate(hx + 12, hy + 15 + Yoffset);
-      ctx.rotate(-slumpRotation);
-      ctx.globalAlpha = deathOpacity;
-    } else {
-      ctx.translate(hx + 12, hy + 15);
-      bounce =
-        !window.mob || !window.mob.isStopped
-          ? Math.abs(Math.sin(Date.now() / 150)) * 3
-          : 0;
-    }
-
-    window.drawSingleHero(
-      ctx,
-      0,
-      0,
-      1.0,
-      window.equippedSlots,
-      window.playerStats,
-      bounce,
-      {
-        slashFrame: window.hero.slashFrame,
-        deathAnimationTimer: window.deathAnimationTimer,
-        isMainHero: true,
-      },
-    );
-
-    ctx.restore();
-
-    // 5. STYLIZED MONSTERS DRAW
-    if (window.mob) {
-      window.drawSingleMob(ctx, window.mob);
-
-      // Lazy-cache HP percentage to eliminate real-time BigNum allocations at 60fps
-      if (
-        window.mob.lastCachedHp_m !== window.mob.hp.m ||
-        window.mob.lastCachedHp_e !== window.mob.hp.e
-      ) {
-        window.mob.lastCachedHp_m = window.mob.hp.m;
-        window.mob.lastCachedHp_e = window.mob.hp.e;
-        let bHp = BigNum.from(window.mob.hp);
-        let bMaxHp = BigNum.from(window.mob.maxHp);
-        window.mob.hpPct = Math.max(
-          0,
-          Math.min(
-            1,
-            Number(
-              bHp.div(bMaxHp).m * Math.pow(10, Math.min(15, bHp.div(bMaxHp).e)),
-            ),
-          ),
-        );
-      }
-      let hpPct = window.mob.hpPct !== undefined ? window.mob.hpPct : 1.0;
-
-      if (
-        hpPct < 1.0 &&
-        window.mob.type !== "boss" &&
-        window.mob.type !== "dungeon_boss" &&
-        window.mob.type !== "prestige_boss" &&
-        window.mob.type !== "rift_guardian" &&
-        window.mob.type !== "aegis_goliath" &&
-        window.mob.type !== "chronos_arbitrator" &&
-        window.mob.type !== "nexus_overseer"
-      ) {
-        let barW = window.mob.w;
-        let barX = window.mob.x;
-        ctx.fillStyle = "#111111";
-        ctx.beginPath();
-        ctx.rect(barX, window.mob.y - 13, barW, 7);
-        ctx.fill();
-
-        // High-performance percentage lerp replaces heavy float trailing HP updates
-        window.mob.trailingPct =
-          window.mob.trailingPct !== undefined ? window.mob.trailingPct : hpPct;
-        if (window.mob.trailingPct > hpPct) {
-          window.mob.trailingPct = Math.max(
-            hpPct,
-            window.mob.trailingPct - 0.015,
-          );
-        } else {
-          window.mob.trailingPct = hpPct;
-        }
-        let trailingPct = window.mob.trailingPct;
-
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.rect(barX, window.mob.y - 13, trailingPct * barW, 7);
-        ctx.fill();
-        ctx.fillStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.rect(barX, window.mob.y - 13, hpPct * barW, 7);
-        ctx.fill();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(barX, window.mob.y - 13, barW, 7);
-
-        // Bleed Stacks Row
-        if (window.mob.bleedStacks > 0) {
-          let dotSize = 2.2;
-          let dotSpacing = 3;
-          let totalWidth = 5 * (dotSize * 2) + 4 * dotSpacing;
-          let startDotX = barX + (barW - totalWidth) / 2;
-          let dotY = window.mob.y - 4;
-          for (let i = 0; i < 5; i++) {
-            ctx.beginPath();
-            ctx.arc(
-              startDotX + i * (dotSize * 2 + dotSpacing) + dotSize,
-              dotY,
-              dotSize,
-              0,
-              Math.PI * 2,
-            );
-            ctx.fillStyle = i < window.mob.bleedStacks ? "#e74c3c" : "#2c3e50";
-            ctx.fill();
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          }
-        }
-        // Poison Stacks Row (Stacked slightly higher)
-        if (window.mob.poisonStacks > 0) {
-          let dotSize = 2.2;
-          let dotSpacing = 3;
-          let totalWidth = 5 * (dotSize * 2) + 4 * dotSpacing;
-          let startDotX = barX + (barW - totalWidth) / 2;
-          let dotY = window.mob.y - 9;
-          for (let i = 0; i < 5; i++) {
-            ctx.beginPath();
-            ctx.arc(
-              startDotX + i * (dotSize * 2 + dotSpacing) + dotSize,
-              dotY,
-              dotSize,
-              0,
-              Math.PI * 2,
-            );
-            ctx.fillStyle = i < window.mob.poisonStacks ? "#2ecc71" : "#1a301f";
-            ctx.fill();
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          }
-        }
-      }
-    }
-
-    // 6. FAIRIES
-    window.activeFairies.forEach((f) => {
-      let flap = Math.abs(Math.sin(Date.now() / 100 + f.offset)) * 8 + 2;
-      let hover = Math.sin(Date.now() / 200 + f.offset) * 10;
-      let fx = f.x;
-      let fy = f.y + hover;
-
-      // Frustum Culling: Skip rendering fairies if they are off-screen
-      if (fx < -30 || fx > (canvas ? canvas.width + 30 : 800)) return;
-
-      ctx.save();
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = f.color || "#ffb6c1";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-      ctx.beginPath();
-      ctx.ellipse(fx - 4, fy - 4, 6, flap, Math.PI / 6, 0, Math.PI * 2);
-      ctx.ellipse(fx + 4, fy - 4, 6, flap, -Math.PI / 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = f.color || "#ffb6c1";
-      ctx.beginPath();
-      ctx.arc(fx, fy, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    });
-
-    // 6.5. FOREGROUND SCENERY OBJECTS (Outlines unified)
-    window.fgScenery.forEach((s) => {
-      let sx = s.x,
-        sy = s.y,
-        ss = s.size;
-      s.seed = s.seed || Math.random();
-      // Prune foreground drawing cycles by 50% in Eco Mode to balance visual density and CPU temperature
-      if (window.playerStats && window.playerStats.ecoMode && s.seed > 0.5)
-        return;
-
-      // Frustum Culling: Skip expensive vector drawing and canvas states if off-screen
-      let margin = ss * 40;
-      if (sx < -margin || sx > (canvas ? canvas.width + margin : 800)) return;
-
-      ctx.save();
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = penFgScenery * ss;
-      ctx.lineJoin = "round";
-
-      if (
-        window.playerStats.isCrucibleMode ||
-        window.playerStats.isPrestigeBossMode ||
-        window.playerStats.isUberBoss
-      ) {
-        ctx.restore();
-        return; // Block foreground scenery in space / lava castle
-      }
-      if (window.playerStats.isDungeonMode) {
-        if (window.playerStats.currentDungeon === "gold") {
-          if (s.type === "grass") {
-            ctx.fillStyle = "#f1c40f";
-            ctx.beginPath();
-            ctx.moveTo(sx - 5 * ss, sy);
-            ctx.lineTo(sx - 2 * ss, sy - 6 * ss);
-            ctx.lineTo(sx + 4 * ss, sy - 7 * ss);
-            ctx.lineTo(sx + 7 * ss, sy - 2 * ss);
-            ctx.lineTo(sx + 2 * ss, sy);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(sx, sy - 5 * ss, 1.5, 1.5);
-          } else if (s.type === "flower") {
-            ctx.fillStyle = "#3e2723";
-            ctx.beginPath();
-            ctx.rect(sx - 2, sy - 30 * ss, 4, 30 * ss);
-            ctx.fill();
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.rect(sx - 2, sy - 30 * ss, 12 * ss, 3 * ss);
-            ctx.fill();
-            ctx.stroke();
-            let lx = sx + 8 * ss,
-              ly = sy - 27 * ss;
-            ctx.fillStyle = "#2c3e50";
-            ctx.beginPath();
-            ctx.rect(lx - 3, ly, 6, 8);
-            ctx.fill();
-            ctx.stroke();
-            let glow = ctx.createRadialGradient(
-              lx,
-              ly + 4,
-              1,
-              lx,
-              ly + 4,
-              16 * ss,
-            );
-            glow.addColorStop(0, "rgba(241, 196, 15, 0.8)");
-            glow.addColorStop(1, "rgba(241, 196, 15, 0)");
-            ctx.fillStyle = glow;
-            ctx.beginPath();
-            ctx.arc(lx, ly + 4, 16 * ss, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            ctx.fillStyle = "#5c4033";
-            ctx.beginPath();
-            ctx.rect(sx - 10 * ss, sy - 20 * ss, 20 * ss, 20 * ss);
-            ctx.fill();
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(sx - 10 * ss, sy - 20 * ss);
-            ctx.lineTo(sx + 10 * ss, sy);
-            ctx.stroke();
-          }
-        } else if (window.playerStats.currentDungeon === "mat") {
-          if (s.type === "grass") {
-            ctx.fillStyle = "#27ae60";
-            ctx.beginPath();
-            ctx.ellipse(sx, sy - 3 * ss, 9 * ss, 5 * ss, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          } else if (s.type === "flower") {
-            ctx.fillStyle = "#95a5a6";
-            ctx.beginPath();
-            ctx.rect(sx - 1.5 * ss, sy - 12 * ss, 3 * ss, 12 * ss);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = "#2ecc71";
-            ctx.beginPath();
-            ctx.arc(sx, sy - 12 * ss, 7 * ss, Math.PI, 0);
-            ctx.fill();
-            ctx.stroke();
-          } else {
-            ctx.fillStyle = "#7f8c8d";
-            ctx.beginPath();
-            ctx.rect(sx - 8 * ss, sy - 18 * ss, 16 * ss, 18 * ss);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = "#34495e";
-            ctx.beginPath();
-            ctx.rect(sx - 8 * ss, sy - 15 * ss, 16 * ss, 2 * ss);
-            ctx.fill();
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.rect(sx - 8 * ss, sy - 6 * ss, 16 * ss, 2 * ss);
-            ctx.fill();
-            ctx.stroke();
-          }
-        } else if (window.playerStats.currentDungeon === "equip") {
-          if (s.type === "grass") {
-            // Robust stacks of refined metal ingots
-            let w = 18 * ss;
-            let h = 6 * ss;
-            ctx.fillStyle = "#34495e"; // Steel body
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFgScenery * ss;
-
-            // Bottom Left Bar
-            ctx.beginPath();
-            ctx.roundRect(sx - w * 0.7, sy - h, w, h, [1.5]);
-            ctx.fill();
-            ctx.stroke();
-
-            // Bottom Right Bar
-            ctx.beginPath();
-            ctx.roundRect(sx - w * 0.1, sy - h, w, h, [1.5]);
-            ctx.fill();
-            ctx.stroke();
-
-            // Top Center Bar
-            ctx.beginPath();
-            ctx.roundRect(sx - w * 0.4, sy - h * 1.8, w, h, [1.5]);
-            ctx.fill();
-            ctx.stroke();
-
-            // Shiny metallic reflection line highlights
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-            ctx.lineWidth = 1.2 * ss;
-            ctx.beginPath();
-            ctx.moveTo(sx - w * 0.2, sy - h * 1.4);
-            ctx.lineTo(sx + w * 0.4, sy - h * 1.4);
-            ctx.stroke();
-          } else if (s.type === "flower") {
-            // Thick brass steam exhaust pipe
-            let pipeW = 10 * ss;
-            let pipeH = 22 * ss;
-
-            // Main vertical pipe body
-            ctx.fillStyle = "#7e5109"; // Weathered brass
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFgScenery * ss;
-            ctx.beginPath();
-            ctx.rect(sx - pipeW / 2, sy - pipeH, pipeW, pipeH);
-            ctx.fill();
-            ctx.stroke();
-
-            // Heavy flange joint collar at base
-            ctx.fillStyle = "#1e222b";
-            ctx.beginPath();
-            ctx.roundRect(
-              sx - pipeW * 0.8,
-              sy - 4 * ss,
-              pipeW * 1.6,
-              4 * ss,
-              [1],
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // Flared bell mouth at the top of the exhaust
-            ctx.fillStyle = "#1e222b";
-            ctx.beginPath();
-            ctx.moveTo(sx - pipeW * 0.8, sy - pipeH);
-            ctx.lineTo(sx + pipeW * 0.8, sy - pipeH);
-            ctx.lineTo(sx + pipeW * 0.5, sy - pipeH + 4 * ss);
-            ctx.lineTo(sx - pipeW * 0.5, sy - pipeH + 4 * ss);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Zero-allocation rising steam puff animation
-            ctx.save();
-            let animTime = (Date.now() / 900 + s.seed * 5) % 1.0;
-            let steamY = sy - pipeH - animTime * 15 * ss;
-            let steamR = (2.5 + animTime * 4.5) * ss;
-            let steamAlpha = (1.0 - animTime) * 0.45;
-            ctx.fillStyle = `rgba(220, 224, 230, ${steamAlpha})`;
-            ctx.beginPath();
-            ctx.arc(
-              sx + Math.sin(animTime * 5) * 3 * ss,
-              steamY,
-              steamR,
-              0,
-              Math.PI * 2,
-            );
-            ctx.fill();
-            ctx.restore();
-          } else {
-            // Sturdy wooden stump base
-            let stumpW = 18 * ss;
-            let stumpH = 12 * ss;
-            ctx.fillStyle = "#5c3a21"; // Rich wood stump
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFgScenery * ss;
-            ctx.beginPath();
-            ctx.rect(sx - stumpW / 2, sy - stumpH, stumpW, stumpH);
-            ctx.fill();
-            ctx.stroke();
-
-            // Stump bark grain texture lines
-            ctx.strokeStyle = "#3d2514";
-            ctx.lineWidth = 1 * ss;
-            ctx.beginPath();
-            ctx.moveTo(sx - stumpW * 0.2, sy - stumpH + 2 * ss);
-            ctx.lineTo(sx - stumpW * 0.2, sy - 2 * ss);
-            ctx.moveTo(sx + stumpW * 0.25, sy - stumpH + 3 * ss);
-            ctx.lineTo(sx + stumpW * 0.25, sy - 1 * ss);
-            ctx.stroke();
-
-            // Robust steel anvil sitting on top
-            let anvilY = sy - stumpH;
-            ctx.fillStyle = "#2c3e50"; // Dark forge steel
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFgScenery * ss;
-            ctx.beginPath();
-            // Horn (pointed left beak)
-            ctx.moveTo(sx - 11 * ss, anvilY - 8 * ss);
-            ctx.quadraticCurveTo(
-              sx - 5 * ss,
-              anvilY - 7 * ss,
-              sx - 3 * ss,
-              anvilY - 8 * ss,
-            );
-            // Block flat top surface
-            ctx.lineTo(sx + 8 * ss, anvilY - 8 * ss);
-            // Heel (right step edge)
-            ctx.lineTo(sx + 9 * ss, anvilY - 6 * ss);
-            ctx.lineTo(sx + 4 * ss, anvilY - 6 * ss);
-            // Narrow waisted mid-section
-            ctx.lineTo(sx + 3 * ss, anvilY - 3 * ss);
-            // Flanged bottom base feet
-            ctx.lineTo(sx + 7 * ss, anvilY);
-            ctx.lineTo(sx - 7 * ss, anvilY);
-            ctx.lineTo(sx - 3 * ss, anvilY - 3 * ss);
-            ctx.lineTo(sx - 4 * ss, anvilY - 6 * ss);
-            ctx.lineTo(sx - 11 * ss, anvilY - 6 * ss);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Shiny horizontal reflection highlight on top of anvil block
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-            ctx.lineWidth = 1 * ss;
-            ctx.beginPath();
-            ctx.moveTo(sx - 3 * ss, anvilY - 7 * ss);
-            ctx.lineTo(sx + 7 * ss, anvilY - 7 * ss);
-            ctx.stroke();
-          }
-        }
-      } else {
-        if (tier === 0) {
-          if (s.type === "grass") {
-            let sway = Math.sin(Date.now() / 220 + s.seed * 80) * 3.5 * ss;
-
-            // 1. Shadow grass blades in background (Darker forest green)
-            ctx.fillStyle = "#1e4620";
-            ctx.beginPath();
-            // Back blade 1
-            ctx.moveTo(sx - 2 * ss, sy);
-            ctx.quadraticCurveTo(
-              sx - 6 * ss + sway,
-              sy - 14 * ss,
-              sx - 11 * ss + sway,
-              sy - 19 * ss,
-            );
-            ctx.quadraticCurveTo(
-              sx - 2 * ss + sway,
-              sy - 8 * ss,
-              sx + 2 * ss,
-              sy,
-            );
-            // Back blade 2
-            ctx.moveTo(sx + 3 * ss, sy);
-            ctx.quadraticCurveTo(
-              sx + 8 * ss + sway,
-              sy - 16 * ss,
-              sx + 5 * ss + sway,
-              sy - 23 * ss,
-            );
-            ctx.quadraticCurveTo(
-              sx + 8 * ss + sway,
-              sy - 10 * ss,
-              sx + 7 * ss,
-              sy,
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // 2. Main foreground grass blades (Vibrant meadow green)
-            ctx.fillStyle = "#2ecc71";
-            ctx.beginPath();
-            // Center tall blade
-            ctx.moveTo(sx - 1 * ss, sy);
-            ctx.quadraticCurveTo(
-              sx + sway * 0.7,
-              sy - 18 * ss,
-              sx - 2 * ss + sway,
-              sy - 25 * ss,
-            );
-            ctx.quadraticCurveTo(
-              sx + 1 * ss + sway * 0.5,
-              sy - 12 * ss,
-              sx + 3 * ss,
-              sy,
-            );
-            // Left blade
-            ctx.moveTo(sx - 4 * ss, sy);
-            ctx.quadraticCurveTo(
-              sx - 8 * ss + sway * 1.2,
-              sy - 10 * ss,
-              sx - 12 * ss + sway * 1.2,
-              sy - 13 * ss,
-            );
-            ctx.quadraticCurveTo(
-              sx - 5 * ss + sway,
-              sy - 5 * ss,
-              sx - 1 * ss,
-              sy,
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // 3. Tiny Clover Leaves at the Base (Adds lovely high-fidelity details!)
-            ctx.fillStyle = "#27ae60";
-            let drawCloverLeaf = (cx, cy, r) => {
-              ctx.beginPath();
-              ctx.arc(cx - r * 0.5, cy, r, 0, Math.PI * 2);
-              ctx.arc(cx + r * 0.5, cy, r, 0, Math.PI * 2);
-              ctx.arc(cx, cy - r * 0.5, r, 0, Math.PI * 2);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
-            };
-            drawCloverLeaf(sx - 5 * ss, sy - 2 * ss, 2 * ss);
-            drawCloverLeaf(sx + 6 * ss, sy - 3 * ss, 1.8 * ss);
-          } else if (s.type === "flower") {
-            let swayF = Math.sin(Date.now() / 200 + s.seed * 100) * 3 * ss;
-            let fx = sx + swayF;
-            let fy = sy - 16 * ss;
-
-            // 1. Organic curving stem (Green vines)
-            ctx.strokeStyle = "#1b5e20";
-            ctx.lineWidth = 1.8 * ss;
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.quadraticCurveTo(sx + swayF * 0.5, sy - 8 * ss, fx, fy);
-            ctx.stroke();
-            ctx.strokeStyle = "#000000"; // reset
-            ctx.lineWidth = penFgScenery * ss;
-
-            // Delicate pointed stem leaves
-            ctx.fillStyle = "#27ae60";
-            ctx.beginPath();
-            ctx.ellipse(
-              sx - 2 * ss + swayF * 0.3,
-              sy - 6 * ss,
-              5 * ss,
-              2 * ss,
-              Math.PI / 4,
-              0,
-              Math.PI * 2,
-            );
-            ctx.ellipse(
-              sx + 2 * ss + swayF * 0.4,
-              sy - 10 * ss,
-              4.5 * ss,
-              1.8 * ss,
-              -Math.PI / 4,
-              0,
-              Math.PI * 2,
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // 2. Layered Blooming Flower Head (Swaying with the stem)
-            // Shadow/Base Petal ring
-            ctx.fillStyle = "#7e1b1b"; // Dark contrast base
-            for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 3) {
-              ctx.beginPath();
-              ctx.arc(
-                fx + Math.cos(angle) * 6 * ss,
-                fy + Math.sin(angle) * 6 * ss,
-                5 * ss,
-                0,
-                Math.PI * 2,
-              );
-              ctx.fill();
-              ctx.stroke();
-            }
-
-            // Bright Colorful Main Petals
-            ctx.fillStyle = s.color;
-            for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 3) {
-              ctx.beginPath();
-              ctx.arc(
-                fx + Math.cos(angle) * 5 * ss,
-                fy + Math.sin(angle) * 5 * ss,
-                4.2 * ss,
-                0,
-                Math.PI * 2,
-              );
-              ctx.fill();
-              ctx.stroke();
-            }
-
-            // Glowing Golden Flower Center Core
-            let centerGrad = ctx.createRadialGradient(
-              fx - 1 * ss,
-              fy - 1 * ss,
-              0.5,
-              fx,
-              fy,
-              4 * ss,
-            );
-            centerGrad.addColorStop(0, "#ffffff");
-            centerGrad.addColorStop(0.4, "#f1c40f");
-            centerGrad.addColorStop(1, "#ca8a04");
-            ctx.fillStyle = centerGrad;
-            ctx.beginPath();
-            ctx.arc(fx, fy, 4 * ss, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          } else {
-            if (s.seed < 0.5) {
-              // Majestic layered default bush (Larger, more voluminous!)
-              ctx.fillStyle = "#14421e"; // Deep shadow base
-              ctx.beginPath();
-              ctx.arc(sx, sy - 12 * ss, 22 * ss, 0, Math.PI * 2);
-              ctx.arc(sx - 16 * ss, sy - 8 * ss, 16 * ss, 0, Math.PI * 2);
-              ctx.arc(sx + 16 * ss, sy - 8 * ss, 16 * ss, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.fillStyle = "#196f3d"; // Bright highlight layer
-              ctx.beginPath();
-              ctx.arc(sx, sy - 14 * ss, 16 * ss, 0, Math.PI * 2);
-              ctx.arc(sx - 11 * ss, sy - 10 * ss, 12 * ss, 0, Math.PI * 2);
-              ctx.arc(sx + 11 * ss, sy - 10 * ss, 12 * ss, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-            } else {
-              if (s.seed < 0.75) {
-                // --- PREMIUM WILD BERRY BUSH (Scaled up & layered) ---
-                let bx = sx,
-                  by = sy,
-                  bs = ss * 1.35; // Expanded volume scale factor
-                // Base dark foliage layer
-                ctx.fillStyle = "#144222";
-                ctx.beginPath();
-                ctx.arc(bx, by - 6 * bs, 16 * bs, 0, Math.PI * 2);
-                ctx.arc(bx - 10 * bs, by - 2 * bs, 11 * bs, 0, Math.PI * 2);
-                ctx.arc(bx + 10 * bs, by - 2 * bs, 11 * bs, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-
-                // Highlight leafy layer
-                ctx.fillStyle = "#2ecc71";
-                ctx.beginPath();
-                ctx.arc(bx - 3 * bs, by - 8 * bs, 11 * bs, 0, Math.PI * 2);
-                ctx.arc(bx + 3 * bs, by - 6 * bs, 10 * bs, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-
-                // Glowing Wild Berries (Ruby red circles with specular highlights!)
-                ctx.fillStyle = "#ef4444";
-                let drawBerry = (bxOffset, byOffset, br) => {
-                  ctx.beginPath();
-                  ctx.arc(
-                    bx + bxOffset * bs,
-                    by + byOffset * bs,
-                    br * bs,
-                    0,
-                    Math.PI * 2,
-                  );
-                  ctx.fill();
-                  ctx.stroke();
-                  ctx.fillStyle = "#fff";
-                  ctx.beginPath();
-                  ctx.arc(
-                    bx + (bxOffset - 0.5) * bs,
-                    by + (byOffset - 0.5) * bs,
-                    br * 0.3 * bs,
-                    0,
-                    Math.PI * 2,
-                  );
-                  ctx.fill();
-                  ctx.fillStyle = "#ef4444"; // reset
-                };
-                drawBerry(-8, -6, 2.2);
-                drawBerry(6, -8, 2.5);
-                drawBerry(-2, -2, 2.0);
-                drawBerry(8, -1, 2.2);
-              } else {
-                // --- PREMIUM WILD FERNS / LEAFY SHRUBS (Scaled up & dense) ---
-                ctx.fillStyle = "#1e824c";
-                let fs = ss * 1.35; // Expanded height scale factor
-                for (let i = 0; i < 4; i++) {
-                  let curve = Math.sin(Date.now() / 180 + s.seed * 50 + i) * 3;
-                  ctx.beginPath();
-                  ctx.moveTo(sx - 8 + i * 5, sy);
-                  ctx.quadraticCurveTo(
-                    sx + curve,
-                    sy - 28 * fs,
-                    sx - 12 + i * 8 + curve,
-                    sy - 32 * fs,
-                  );
-                  ctx.quadraticCurveTo(sx + curve, sy - 12, sx + 8, sy);
-                  ctx.fill();
-                  ctx.stroke();
-                }
-              }
-            }
-          }
-        } else if (tier === 1) {
-          if (s.type === "grass") {
-            // --- COZY FROST-BITTEN ALPINE GRASS ---
-            let sway = Math.sin(Date.now() / 200 + s.seed * 50) * 2 * ss;
-            // Dark frozen backing blade
-            ctx.fillStyle = "#1e293b";
-            ctx.beginPath();
-            ctx.moveTo(sx - 3 * ss, sy);
-            ctx.quadraticCurveTo(
-              sx - 5 * ss + sway,
-              sy - 14 * ss,
-              sx - 9 * ss + sway,
-              sy - 18 * ss,
-            );
-            ctx.quadraticCurveTo(
-              sx - 1 * ss + sway,
-              sy - 8 * ss,
-              sx + 2 * ss,
-              sy,
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // Light blue/teal frost blade
-            ctx.fillStyle = "#93c5fd"; // Soft ice blue
-            ctx.beginPath();
-            ctx.moveTo(sx - 1 * ss, sy);
-            ctx.quadraticCurveTo(
-              sx + sway,
-              sy - 16 * ss,
-              sx - 3 * ss + sway,
-              sy - 21 * ss,
-            );
-            ctx.quadraticCurveTo(
-              sx + 1 * ss + sway,
-              sy - 10 * ss,
-              sx + 3 * ss,
-              sy,
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // Tiny white snowcap on the grass tip
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(sx - 3 * ss + sway, sy - 21 * ss, 2 * ss, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (s.type === "flower") {
-            // --- GLACIAL FROST CRYSTAL ---
-            let hover = Math.sin(Date.now() / 250 + s.seed * 100) * 3 * ss;
-            let cx = sx,
-              cy = sy - 12 * ss + hover;
-
-            ctx.save();
-            ctx.shadowBlur = 10 * ss;
-            ctx.shadowColor = "#38bdf8";
-
-            // Translucent outer blue shard
-            ctx.fillStyle = "rgba(14, 165, 233, 0.4)";
-            ctx.beginPath();
-            ctx.moveTo(cx, cy - 14 * ss);
-            ctx.lineTo(cx + 8 * ss, cy);
-            ctx.lineTo(cx, cy + 14 * ss);
-            ctx.lineTo(cx - 8 * ss, cy);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Bright white core shard
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.moveTo(cx, cy - 10 * ss);
-            ctx.lineTo(cx + 5 * ss, cy);
-            ctx.lineTo(cx, cy + 10 * ss);
-            ctx.lineTo(cx - 5 * ss, cy);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-
-            // Tiny sparkly ice particles drifting upward
-            ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-            let sparkY = (Date.now() / 20 + s.seed * 100) % 25;
-            ctx.fillRect(cx - 4 * ss, cy - sparkY, 1.2 * ss, 1.2 * ss);
-          } else {
-            // --- MOSS-COVERED SNOWY RUIN BRICK (Replaces bushes) ---
-            ctx.fillStyle = "#334155"; // Slate stone
-            ctx.beginPath();
-            ctx.rect(sx - 12 * ss, sy - 12 * ss, 24 * ss, 12 * ss);
-            ctx.fill();
-            ctx.stroke();
-
-            // Frosty moss patch
-            ctx.fillStyle = "#164d1f";
-            ctx.beginPath();
-            ctx.rect(sx - 12 * ss, sy - 12 * ss, 14 * ss, 3 * ss);
-            ctx.fill();
-
-            // Fluffy snow cap on the stone block
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.roundRect(sx - 14 * ss, sy - 15 * ss, 28 * ss, 4.5 * ss, [
-              1.5 * ss,
-            ]);
-            ctx.fill();
-            ctx.stroke();
-          }
-        } else if (tier === 2) {
-          if (s.type === "grass") {
-            // Active Volcanic Fumarole (Puffing ash and sparks)
-            ctx.fillStyle = "#1c0b08";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFgScenery * ss;
-            ctx.beginPath();
-            ctx.moveTo(sx - 9 * ss, sy);
-            ctx.lineTo(sx - 4 * ss, sy - 7 * ss);
-            ctx.lineTo(sx + 4 * ss, sy - 7 * ss);
-            ctx.lineTo(sx + 9 * ss, sy);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Glowing molten core inside mouth
-            ctx.fillStyle = "#e67e22";
-            ctx.beginPath();
-            ctx.ellipse(sx, sy - 7 * ss, 4 * ss, 1.5 * ss, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // Translucent, expanding volcanic soot clouds
-            let animT = (Date.now() / 800 + s.seed * 10) % 1.0;
-            let puffY = sy - 8 * ss - animT * 22 * ss;
-            let puffR = (2.2 + animT * 4.5) * ss;
-            let puffAlpha = (1.0 - animT) * 0.45;
-
-            ctx.fillStyle = `rgba(100, 95, 95, ${puffAlpha})`;
-            ctx.beginPath();
-            ctx.arc(
-              sx + Math.sin(animT * 4) * 3 * ss,
-              puffY,
-              puffR,
-              0,
-              Math.PI * 2,
-            );
-            ctx.fill();
-
-            // Rising single golden spark
-            let sparkY =
-              sy - 8 * ss - ((Date.now() / 400 + s.seed * 15) % 1.0) * 30 * ss;
-            ctx.fillStyle = "#ffd700";
-            ctx.fillRect(
-              sx + Math.cos(Date.now() / 150 + s.seed * 5) * 3 * ss,
-              sparkY,
-              1.2 * ss,
-              1.2 * ss,
-            );
-          } else if (s.type === "flower") {
-            // Sharp Glowing Fire Crystal Cluster
-            ctx.save();
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFgScenery * ss;
-            ctx.lineJoin = "miter";
-
-            // Middle Crystal (Tallest)
-            ctx.fillStyle = "#e74c3c";
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(sx - 3 * ss, sy - 14 * ss);
-            ctx.lineTo(sx, sy - 18 * ss);
-            ctx.lineTo(sx + 3 * ss, sy - 14 * ss);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Left side Crystal
-            ctx.fillStyle = "#d35400";
-            ctx.beginPath();
-            ctx.moveTo(sx - 2 * ss, sy);
-            ctx.lineTo(sx - 8 * ss, sy - 10 * ss);
-            ctx.lineTo(sx - 5 * ss, sy - 13 * ss);
-            ctx.lineTo(sx, sy - 6 * ss);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Right side Crystal
-            ctx.fillStyle = "#ffd700";
-            ctx.beginPath();
-            ctx.moveTo(sx + 2 * ss, sy);
-            ctx.lineTo(sx + 7 * ss, sy - 8 * ss);
-            ctx.lineTo(sx + 4 * ss, sy - 11 * ss);
-            ctx.lineTo(sx, sy - 5 * ss);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Glowing inner facet (pulses over time)
-            let pulse = 0.5 + Math.sin(Date.now() / 180 + s.seed * 50) * 0.5;
-            ctx.fillStyle = `rgba(255, 242, 0, ${0.45 + pulse * 0.45})`;
-            ctx.beginPath();
-            ctx.moveTo(sx, sy - 4 * ss);
-            ctx.lineTo(sx - 1.2 * ss, sy - 12 * ss);
-            ctx.lineTo(sx, sy - 15 * ss);
-            ctx.lineTo(sx + 1.2 * ss, sy - 12 * ss);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.restore();
-          } else {
-            // Scorched Roots & Basalt Brimstone Stone
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = penFgScenery * ss;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-
-            // Basalt base stone
-            ctx.fillStyle = "#2d0b06";
-            ctx.beginPath();
-            ctx.moveTo(sx - 12 * ss, sy);
-            ctx.lineTo(sx - 6 * ss, sy - 8 * ss);
-            ctx.lineTo(sx + 6 * ss, sy - 8 * ss);
-            ctx.lineTo(sx + 12 * ss, sy);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#ff5500";
-            ctx.beginPath();
-            ctx.rect(sx - 3 * ss, sy - 8 * ss, 6 * ss, 2 * ss);
-            ctx.fill();
-
-            // Burnt black roots wrapping around the hot stone
-            ctx.fillStyle = "#110200";
-            ctx.beginPath();
-            ctx.moveTo(sx - 14 * ss, sy);
-            ctx.quadraticCurveTo(sx - 6 * ss, sy - 11 * ss, sx, sy - 4 * ss);
-            ctx.lineTo(sx - 2 * ss, sy);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(sx + 14 * ss, sy);
-            ctx.quadraticCurveTo(
-              sx + 4 * ss,
-              sy - 14 * ss,
-              sx - 2 * ss,
-              sy - 6 * ss,
-            );
-            ctx.lineTo(sx + 1 * ss, sy);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-          }
-        } else if (tier === 3) {
-          if (s.type === "grass") {
-            ctx.fillStyle = "#144222";
-            ctx.beginPath();
-            ctx.ellipse(sx, sy - 2 * ss, 12 * ss, 4 * ss, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          } else if (s.type === "flower") {
-            ctx.fillStyle = "#5c503b";
-            ctx.beginPath();
-            ctx.rect(sx - 1.5 * ss, sy - 14 * ss, 3 * ss, 14 * ss);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = "#9b59b6";
-            ctx.beginPath();
-            ctx.arc(sx, sy - 14 * ss, 7 * ss, Math.PI, 0);
-            ctx.fill();
-            ctx.stroke();
-          } else {
-            ctx.fillStyle = "#0c1a0c";
-            ctx.beginPath();
-            ctx.ellipse(sx, sy, 15 * ss, 7 * ss, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          }
-        } else {
-          if (s.type === "grass") {
-            let rot = Date.now() / 800 + s.seed * 100;
-            ctx.fillStyle = "rgba(155, 89, 182, 0.7)";
-            ctx.save();
-            ctx.translate(sx, sy - 8);
-            ctx.rotate(rot);
-            ctx.beginPath();
-            ctx.rect(-2 * ss, -2 * ss, 4 * ss, 4 * ss);
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-          } else if (s.type === "flower") {
-            let hover = Math.sin(Date.now() / 300 + s.seed * 100) * 6;
-            ctx.fillStyle = "#9b59b6";
-            ctx.beginPath();
-            ctx.moveTo(sx, sy - 16 + hover);
-            ctx.lineTo(sx + 4 * ss, sy - 8 + hover);
-            ctx.lineTo(sx, sy + hover);
-            ctx.lineTo(sx - 4 * ss, sy - 8 + hover);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-          } else {
-            let angle = Date.now() / 200;
-            ctx.save();
-            ctx.translate(sx, sy - 4);
-            ctx.rotate(angle);
-            let grad = ctx.createRadialGradient(0, 0, 1, 0, 0, 14 * ss);
-            grad.addColorStop(0, "#000");
-            grad.addColorStop(0.5, "#8e44ad");
-            grad.addColorStop(1, "rgba(26,188,156,0)");
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.ellipse(0, 0, 16 * ss, 6 * ss, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-          }
-        }
-      }
-      ctx.restore();
-    });
-
-    if (window.getStageTier() === 1 && !window.playerStats.isDungeonMode) {
-      let spawnChance = window.playerStats.ecoMode ? 0.1 : 0.4;
-      if (Math.random() < spawnChance) {
-        window.snowflakes.push({
-          x: Math.random() * canvas.width,
-          y: -10,
-          r: Math.random() * 1.8 + 0.8,
-          speed: Math.random() * 0.8 + 0.4,
-          swingSpeed: Math.random() * 0.02 + 0.01,
-          swingRange: Math.random() * 1.5 + 0.5,
-        });
-      }
-    } else {
-      window.snowflakes = [];
-    }
-
-    // Spawn floating morning fireflies in the Forest environment (Tier 0)
-    if (
-      window.getStageTier() === 0 &&
-      !window.playerStats.isDungeonMode &&
-      !window.playerStats.isCrucibleMode &&
-      !window.playerStats.isPrestigeBossMode &&
-      !window.isGamePaused
-    ) {
-      if (Math.random() < 0.12 && window.particles.length < 300) {
-        window.particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * 240, // Spawn across the entire vertical height of the sky!
-          vx: (Math.random() - 0.5) * 0.6,
-          vy: -window.randFloat(0.15, 0.45), // Slow, drifting vertical float
-          radius: window.randFloat(1.0, 2.5), // Beautiful pulsing bodies
-          color:
-            Math.random() > 0.45
-              ? "rgba(163, 253, 131, 0.65)" // Glowing soft gold-green
-              : "rgba(254, 240, 138, 0.55)", // Soft morning sun yellow
-          alpha: 1.0,
-          gravity: -0.005, // Drifts upward
-          life: window.randInt(120, 200), // Longer lifespan to fill empty areas
-        });
-      }
-    }
-    for (let i = window.snowflakes.length - 1; i >= 0; i--) {
-      let sf = window.snowflakes[i];
-      sf.y += sf.speed;
-      sf.x += Math.sin(window.logicClock * sf.swingSpeed) * sf.swingRange * 0.4;
-      if (sf.y > canvas.height + 10 || sf.x < -10 || sf.x > canvas.width + 10)
-        window.snowflakes.splice(i, 1);
-    }
-
-    // 7. REVIVE EFFECT
-    if (window.reviveTimer > 0) {
-      ctx.save();
-      let t = (90 - window.reviveTimer) / 90;
-      let beamX = window.hero.x + 12;
-      let groundY = 230;
-      ctx.lineWidth = 3 * (1 - t);
-      for (let i = 0; i < 3; i++) {
-        let ringProgress = (t + i * 0.25) % 1.0;
-        let ringAlpha = (1 - ringProgress) * 0.8;
-        ctx.strokeStyle = `rgba(241, 196, 15, ${ringAlpha})`;
-        ctx.beginPath();
-        ctx.ellipse(
-          beamX,
-          groundY,
-          ringProgress * 120,
-          ringProgress * 25,
-          0,
-          0,
-          Math.PI * 2,
-        );
-        ctx.stroke();
-      }
-      let outerBeam = ctx.createLinearGradient(beamX - 45, 0, beamX + 45, 0);
-      outerBeam.addColorStop(0, "rgba(26, 188, 15, 0)");
-      outerBeam.addColorStop(0.5, "rgba(26, 188, 15, " + 0.35 * (1 - t) + ")");
-      outerBeam.addColorStop(1, "rgba(26, 188, 15, 0)");
-      ctx.fillStyle = outerBeam;
-      ctx.fillRect(beamX - 45, 0, 90, groundY);
-      let innerBeam = ctx.createLinearGradient(beamX - 15, 0, beamX + 15, 0);
-      innerBeam.addColorStop(0, "rgba(255, 255, 255, 0)");
-      innerBeam.addColorStop(
-        0.5,
-        "rgba(255, 243, 176, " + 0.85 * (1 - t) + ")",
-      );
-      innerBeam.addColorStop(1, "rgba(255, 255, 255, 0)");
-      ctx.fillStyle = innerBeam;
-      ctx.fillRect(beamX - 15, 0, 30, groundY);
-      ctx.fillStyle = "rgba(254, 211, 48, " + (1 - t) + ")";
-      for (let i = 0; i < 10; i++) {
-        let sparkSeed = Math.sin(i * 45.3) * 0.5 + 0.5;
-        let sparkY = groundY - ((t * 220 + sparkSeed * 180) % 180);
-        ctx.beginPath();
-        ctx.arc(
-          beamX + Math.sin(t * 8 + i) * 12 * sparkSeed,
-          sparkY,
-          (2 + sparkSeed * 3.5) * (1 - t),
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-      }
-      if (t < 0.3) {
-        ctx.fillStyle = `rgba(255, 253, 235, ${(1 - t / 0.3) * 0.5})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      ctx.restore();
-      window.reviveTimer--;
-    }
-
-    if (window.deathAnimationTimer > 0) {
-      ctx.save();
-      let t =
-        (window.deathMaxFrames - window.deathAnimationTimer) /
-        window.deathMaxFrames;
-      let centerX = window.hero.x + 12;
-      let centerY = window.hero.y + 15;
-      let vignette = ctx.createRadialGradient(
-        centerX,
-        centerY,
-        Math.max(10, 200 * (1 - t)),
-        centerX,
-        centerY,
-        Math.max(100, 600 * (1 - t)),
-      );
-      vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-      vignette.addColorStop(0.5, "rgba(20, 0, 0, " + t * 0.6 + ")");
-      vignette.addColorStop(1, "rgba(0, 0, 0, " + t * 0.95 + ")");
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
-    }
-
-    // 8. PROJECTILES
-    window.projectiles.forEach((proj) => {
-      ctx.save();
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2.0;
-      let currentRad =
-        proj.r + Math.sin(Date.now() / 80 + proj.pulseOffset) * 2;
-      if (proj.isMaelstromCrescent) {
-        ctx.fillStyle = "#2ecc71";
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, currentRad, -Math.PI / 3, Math.PI / 3, false);
-        ctx.quadraticCurveTo(
-          proj.x - currentRad / 2,
-          proj.y,
-          proj.x,
-          proj.y - currentRad * Math.sin(Math.PI / 3),
-        );
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = "#c0392b";
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, currentRad + 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#e67e22";
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, currentRad, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#f1c40f";
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, currentRad * 0.55, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(proj.x - 2, proj.y - 2, currentRad * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    });
-
-    if (window.getStageTier() === 1 && !window.playerStats.isDungeonMode) {
-      ctx.save();
-      ctx.fillStyle = "rgba(240, 248, 255, 0.85)";
-      ctx.shadowColor = "#ffffff";
-      ctx.shadowBlur = 2;
-      window.snowflakes.forEach((sf) => {
-        ctx.beginPath();
-        ctx.arc(sf.x, sf.y, sf.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.restore();
-    }
-
-    // 9. BOSS UI
-    if (
-      window.mob &&
-      [
-        "boss",
-        "dungeon_boss",
-        "prestige_boss",
-        "rift_guardian",
-        "aegis_goliath",
-        "chronos_arbitrator",
-        "nexus_overseer",
-      ].includes(window.mob.type)
-    ) {
-      ctx.save();
-      let bossName = "Threat Detected";
-      let barColor = "#e74c3c";
-      let barGlow = "#c0392b";
-      if (window.mob.type === "prestige_boss") {
-        bossName = "Hooktail, The Scarlet Calamity";
-        barColor = "#e67e22";
-        barGlow = "#f1c40f";
-      } else if (window.mob.type === "aegis_goliath") {
-        bossName = "Aegis Goliath, The Iron Sentinel";
-        barColor = "#3498db";
-        barGlow = "#2ecc71";
-      } else if (window.mob.type === "chronos_arbitrator") {
-        bossName = "Chronos Arbitrator, The Timeless God";
-        barColor = "#f1c40f";
-        barGlow = "#dca04c";
-      } else if (window.mob.type === "nexus_overseer") {
-        bossName = "Nexus Overseer, The Glitch Singularity";
-        barColor = "#ff007f";
-        barGlow = "#e84393";
-      } else if (window.mob.type === "dungeon_boss") {
-        if (window.mob.isCrucible) {
-          bossName = "Astral Guardian";
-          barColor = "#8e44ad";
-          barGlow = "#e84393";
-        } else {
-          let dType =
-            window.mob.visualType === "gilded_vault_keeper"
-              ? "gold"
-              : window.mob.visualType === "corrosive_abomination"
-                ? "mat"
-                : window.mob.visualType === "overlord_iron_vault"
-                  ? "equip"
-                  : window.playerStats.currentDungeon || "gold";
-          if (dType === "gold") {
-            bossName = "Gilded Vault Keeper";
-            barColor = "#f1c40f";
-            barGlow = "#d4af37";
-          } else if (dType === "mat") {
-            bossName = "Corrosive Abomination";
-            barColor = "#2ecc71";
-            barGlow = "#27ae60";
-          } else {
-            bossName = "Overlord of the Iron Vault";
-            barColor = "#3498db";
-            barGlow = "#2980b9";
-          }
-        }
-      } else {
-        bossName = "Stage Warden";
-      }
-
-      let barW = canvas.width * (canvas.width <= 420 ? 0.75 : 0.55);
-      let barH = 14;
-      let barX = (canvas.width - barW) / 2;
-      let barY = 52;
-      ctx.fillStyle = "#111111";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(barX, barY, barW, barH, 4);
-      else ctx.rect(barX, barY, barW, barH);
-      ctx.fill();
-      ctx.stroke();
-
-      // Lazy-cache HP percentage to eliminate real-time BigNum allocations at 60fps
-      if (
-        window.mob.lastCachedHp_m !== window.mob.hp.m ||
-        window.mob.lastCachedHp_e !== window.mob.hp.e
-      ) {
-        window.mob.lastCachedHp_m = window.mob.hp.m;
-        window.mob.lastCachedHp_e = window.mob.hp.e;
-        let bHp = BigNum.from(window.mob.hp);
-        let bMaxHp = BigNum.from(window.mob.maxHp);
-        window.mob.hpPct = Math.max(
-          0,
-          Math.min(
-            1,
-            Number(
-              bHp.div(bMaxHp).m * Math.pow(10, Math.min(15, bHp.div(bMaxHp).e)),
-            ),
-          ),
-        );
-      }
-      let hpPct = window.mob.hpPct !== undefined ? window.mob.hpPct : 1.0;
-
-      // High-performance percentage lerp replaces heavy float trailing HP updates
-      window.mob.trailingPct =
-        window.mob.trailingPct !== undefined ? window.mob.trailingPct : hpPct;
-      if (window.mob.trailingPct > hpPct) {
-        window.mob.trailingPct = Math.max(
-          hpPct,
-          window.mob.trailingPct - 0.012,
-        );
-      } else {
-        window.mob.trailingPct = hpPct;
-      }
-      let trailingPct = window.mob.trailingPct;
-
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      if (ctx.roundRect)
-        ctx.roundRect(
-          barX + 2,
-          barY + 2,
-          Math.max(0, (barW - 4) * trailingPct),
-          barH - 4,
-          2,
-        );
-      else
-        ctx.rect(
-          barX + 2,
-          barY + 2,
-          Math.max(0, (barW - 4) * trailingPct),
-          barH - 4,
-        );
-      ctx.fill();
-
-      let fillGrad = ctx.createLinearGradient(barX, barY, barX, barY + barH);
-      fillGrad.addColorStop(0, barColor);
-      fillGrad.addColorStop(1, barGlow);
-      ctx.fillStyle = fillGrad;
-      ctx.beginPath();
-      if (ctx.roundRect)
-        ctx.roundRect(
-          barX + 2,
-          barY + 2,
-          Math.max(0, (barW - 4) * hpPct),
-          barH - 4,
-          2,
-        );
-      else
-        ctx.rect(barX + 2, barY + 2, Math.max(0, (barW - 4) * hpPct), barH - 4);
-      ctx.fill();
-
-      if (window.mob.funnyTextTimer > 0 && window.mob.funnyText) {
-        ctx.save();
-        ctx.translate(barX + barW / 2, barY + barH / 2);
-        // Removed rotation to match straight retro arcade aesthetic
-        ctx.font = "900 13px 'Arial Black', 'Impact', sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(window.mob.funnyText.toUpperCase(), 0, 0);
-        ctx.fillStyle = "#ffffff"; // Solid white fill to match the reference style
-        ctx.fillText(window.mob.funnyText.toUpperCase(), 0, 0);
-        ctx.restore();
-      }
-
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 3;
-      ctx.strokeText(bossName, canvas.width / 2, barY - 4);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(bossName, canvas.width / 2, barY - 4);
-
-      // Boss Bleed Row
-      if (window.mob.bleedStacks > 0) {
-        let dotSize = 3.5;
-        let dotSpacing = 5;
-        let totalWidth = 5 * (dotSize * 2) + 4 * dotSpacing;
-        let startDotX = (canvas.width - totalWidth) / 2;
-        let dotY = barY + barH + 7;
-        for (let i = 0; i < 5; i++) {
-          ctx.beginPath();
-          ctx.arc(
-            startDotX + i * (dotSize * 2 + dotSpacing) + dotSize,
-            dotY,
-            dotSize,
-            0,
-            Math.PI * 2,
-          );
-          if (i < window.mob.bleedStacks) {
-            ctx.fillStyle = "#e74c3c";
-            ctx.shadowColor = "#e74c3c";
-            ctx.shadowBlur = 4;
-          } else {
-            ctx.fillStyle = "rgba(44, 62, 80, 0.7)";
-          }
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-        }
-      }
-      // Boss Poison Row (Ticked slightly lower)
-      if (window.mob.poisonStacks > 0) {
-        let dotSize = 3.5;
-        let dotSpacing = 5;
-        let totalWidth = 5 * (dotSize * 2) + 4 * dotSpacing;
-        let startDotX = (canvas.width - totalWidth) / 2;
-        let dotY = barY + barH + 17;
-        for (let i = 0; i < 5; i++) {
-          ctx.beginPath();
-          ctx.arc(
-            startDotX + i * (dotSize * 2 + dotSpacing) + dotSize,
-            dotY,
-            dotSize,
-            0,
-            Math.PI * 2,
-          );
-          if (i < window.mob.poisonStacks) {
-            ctx.fillStyle = "#2ecc71";
-            ctx.shadowColor = "#2ecc71";
-            ctx.shadowBlur = 4;
-          } else {
-            ctx.fillStyle = "rgba(26, 82, 40, 0.7)";
-          }
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-        }
-      }
-      ctx.restore();
-    }
-
-    // 10. BUFF ICONS & DPS HUD
-    let pStats = window.resolvePlayerStats();
-    let activeBuffsList = [];
-    let potDurationMax = 18000 * (1 + pStats.int * 0.001);
-    let normalBuffMax = window.checkArtifactTrait("extend_buffs") ? 900 : 600;
-
-    if (window.playerStats.frenzyTimer > 0)
-      activeBuffsList.push({
-        icon: "🔥",
-        timer: window.playerStats.frenzyTimer,
-        max: normalBuffMax,
-        color: "#e67e22",
-      });
-    if (window.playerStats.adrenalineTimer > 0)
-      activeBuffsList.push({
-        icon: "⚡",
-        timer: window.playerStats.adrenalineTimer,
-        max: normalBuffMax,
-        color: "#f1c40f",
-      });
-    if (window.playerStats.atkPotionTimer > 0)
-      activeBuffsList.push({
-        icon: "⚔️",
-        timer: window.playerStats.atkPotionTimer,
-        max: potDurationMax,
-        color: "#2ecc71",
-      });
-    if (window.playerStats.hpPotionTimer > 0)
-      activeBuffsList.push({
-        icon: "❤️",
-        timer: window.playerStats.hpPotionTimer,
-        max: potDurationMax,
-        color: "#e74c3c",
-      });
-    if (window.playerStats.defPotionTimer > 0)
-      activeBuffsList.push({
-        icon: "🛡️",
-        timer: window.playerStats.defPotionTimer,
-        max: potDurationMax,
-        color: "#3498db",
-      });
-    if (window.playerStats.hastePotionTimer > 0)
-      activeBuffsList.push({
-        icon: "👟",
-        timer: window.playerStats.hastePotionTimer,
-        max: potDurationMax,
-        color: "#f1c40f",
-      });
-    if (window.playerStats.xpPotionTimer > 0)
-      activeBuffsList.push({
-        icon: "🧠",
-        timer: window.playerStats.xpPotionTimer,
-        max: potDurationMax,
-        color: "#a855f7",
-      });
-    if (window.playerStats.dropPotionTimer > 0)
-      activeBuffsList.push({
-        icon: "🍀",
-        timer: window.playerStats.dropPotionTimer,
-        max: potDurationMax,
-        color: "#22c55e",
-      });
-    if (window.playerStats.qlyPotionTimer > 0)
-      activeBuffsList.push({
-        icon: "💎",
-        timer: window.playerStats.qlyPotionTimer,
-        max: potDurationMax,
-        color: "#ec4899",
-      });
-
-    if (
-      window.equippedSlots.weapon &&
-      window.equippedSlots.weapon.isUniqueSingularity
-    ) {
-      if (window.playerStats.singularityState === "dormant")
-        activeBuffsList.push({
-          icon: "🌌",
-          timer: window.playerStats.singularityTimer || 1800,
-          max: 1800,
-          color: "#5b2c6f",
-        });
-      else if (window.playerStats.singularityState === "pulsing")
-        activeBuffsList.push({
-          icon: "💫",
-          timer: window.playerStats.singularityTimer || 420,
-          max: 420,
-          color: Math.floor(Date.now() / 150) % 2 === 0 ? "#ff007f" : "#8e44ad",
-        });
-      else if (window.playerStats.singularityState === "storing")
-        activeBuffsList.push({
-          icon: "⚛️",
-          timer: window.playerStats.singularityTimer || 300,
-          max: 300,
-          color: "#e84393",
-        });
-    }
-
-    let startX = 15;
-    let startY = 10;
-    let iconSize = 28;
-    let spacing = 8;
-    activeBuffsList.forEach((buff, idx) => {
-      let bx = startX + idx * (iconSize + spacing);
-      let by = startY;
-      ctx.save();
-      ctx.fillStyle = "#1c1c1c";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx, by, iconSize, iconSize, 4);
-      else ctx.rect(bx, by, iconSize, iconSize);
-      ctx.fill();
-      ctx.stroke();
-      let progressPct = Math.min(1, buff.timer / buff.max);
-      ctx.beginPath();
-      ctx.arc(
-        bx + iconSize / 2,
-        by + iconSize / 2,
-        iconSize / 2 - 2,
-        -Math.PI / 2,
-        -Math.PI / 2 + Math.PI * 2 * progressPct,
-      );
-      ctx.strokeStyle = buff.color;
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "12px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(buff.icon, bx + iconSize / 2, by + iconSize / 2);
-      let secondsLeft = Math.ceil(buff.timer / 60);
-      ctx.font = "bold 8px monospace";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2;
-      ctx.strokeText(secondsLeft + "s", bx + iconSize / 2, by + iconSize + 6);
-      ctx.fillText(secondsLeft + "s", bx + iconSize / 2, by + iconSize + 6);
-      ctx.restore();
-    });
-
-    window.particles.forEach((pt) => {
-      // Frustum Culling: Skip rendering particles that are off-screen
-      if (
-        pt.x < -10 ||
-        pt.x > (canvas ? canvas.width + 10 : 800) ||
-        pt.y < -10 ||
-        pt.y > (canvas ? canvas.height + 10 : 400)
-      )
-        return;
-
-      ctx.save();
-      if (pt.alpha !== undefined) ctx.globalAlpha = pt.alpha;
-      ctx.fillStyle = pt.color;
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    });
-
-    // Draw Gold Homing Particles
-    if (window.goldParticles) {
-      ctx.save();
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 1.2;
-      for (let i = 0; i < window.goldParticles.length; i++) {
-        let gp = window.goldParticles[i];
-        let r = 4.5;
-        let pulse = Math.abs(Math.sin(Date.now() / 80 + i)) * 0.3 + 0.8;
-
-        ctx.fillStyle = "#b7950b"; // Dark gold border
-        ctx.beginPath();
-        ctx.ellipse(gp.x, gp.y, r * pulse + 0.6, r + 0.6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#ffd700"; // Bright yellow gold
-        ctx.beginPath();
-        ctx.ellipse(gp.x, gp.y, r * pulse, r, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#ffffff"; // Inner white shine
-        ctx.beginPath();
-        ctx.ellipse(
-          gp.x - 1,
-          gp.y - 1,
-          r * 0.3 * pulse,
-          r * 0.3,
-          0,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    window.effects.forEach((eff) => {
-      ctx.save();
-      let hx = eff.x;
-      let hy = eff.y - 5; // Align centered vertically with text
-
-      if (eff.type === "regen") {
-        // 1. Draw Cel-Shaded RPG Crimson Heart
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - 4);
-        ctx.bezierCurveTo(hx - 4, hy - 9, hx - 9, hy - 4, hx - 9, hy + 1);
-        ctx.quadraticCurveTo(hx - 9, hy + 6, hx, hy + 12);
-        ctx.quadraticCurveTo(hx + 9, hy + 6, hx + 9, hy + 1);
-        ctx.bezierCurveTo(hx + 9, hy - 4, hx + 4, hy - 9, hx, hy - 4);
-        ctx.closePath();
-
-        ctx.fillStyle = "#e74c3c"; // Crimson red
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.fill();
-
-        // 16-bit Specs highlight shine
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(hx - 2.5, hy - 3.5, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Draw +n Green Healing Numbers
-        let hitText = `+${window.formatNumber(eff.amount)}`;
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#2ecc71";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "crit") {
-        let fixedAngle = 0.35; // Completely static, NO SPINNING as the text floats!
-
-        // 1. Draw 3-Layer Vector Spiky Cartoon Explosion (💥 Silhouette)
-        let spikes = 6; // 6 prominent points for an asymmetric comic explosion feel
-
-        // Layer 1: Outer Crimson-Red Blast (Asymmetric & spiky)
-        ctx.beginPath();
-        for (let i = 0; i < spikes * 2; i++) {
-          let angle = (i * Math.PI) / spikes + fixedAngle;
-          let r = i % 2 === 0 ? 14 : 3.5; // High contrast between points and valleys
-          ctx.lineTo(hx + Math.cos(angle) * r, hy + Math.sin(angle) * r);
-        }
-        ctx.closePath();
-        ctx.fillStyle = "#e74c3c"; // Vibrant red-orange
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.fill();
-
-        // Layer 2: Inner Golden-Yellow Blast
-        ctx.beginPath();
-        for (let i = 0; i < spikes * 2; i++) {
-          let angle = (i * Math.PI) / spikes + fixedAngle;
-          let r = i % 2 === 0 ? 9 : 2.5;
-          ctx.lineTo(hx + Math.cos(angle) * r, hy + Math.sin(angle) * r);
-        }
-        ctx.closePath();
-        ctx.fillStyle = "#f1c40f"; // Bright gold-yellow
-        ctx.fill();
-
-        // Layer 3: Central White-Hot Core Flash
-        ctx.beginPath();
-        for (let i = 0; i < spikes * 2; i++) {
-          let angle = (i * Math.PI) / spikes + fixedAngle;
-          let r = i % 2 === 0 ? 5.5 : 1.5;
-          ctx.lineTo(hx + Math.cos(angle) * r, hy + Math.sin(angle) * r);
-        }
-        ctx.closePath();
-        ctx.fillStyle = "#ffffff";
-        ctx.fill();
-
-        // 2. Draw Heavy Gold-to-Crimson Gradient Typography (No leading "+")
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "900 18px 'Arial Black', Impact, sans-serif";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 4.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 16, hy + 5);
-
-        let textGrad = ctx.createLinearGradient(
-          hx + 16,
-          hy - 10,
-          hx + 16,
-          hy + 10,
-        );
-        textGrad.addColorStop(0, "#fff200"); // Yellow Gold
-        textGrad.addColorStop(0.5, "#f39c12"); // Vibrant Orange
-        textGrad.addColorStop(1, "#ee5253"); // Searing Red-Orange
-        ctx.fillStyle = textGrad;
-        ctx.fillText(hitText, hx + 16, hy + 5);
-      } else if (eff.type === "block") {
-        // 1. Draw Symmetric Steel Heater Shield
-        ctx.beginPath();
-        ctx.moveTo(hx - 6, hy - 6);
-        ctx.lineTo(hx + 6, hy - 6);
-        ctx.quadraticCurveTo(hx + 6, hy, hx + 5, hy + 3);
-        ctx.quadraticCurveTo(hx, hy + 10, hx, hy + 10);
-        ctx.quadraticCurveTo(hx - 5, hy + 3, hx - 6, hy);
-        ctx.quadraticCurveTo(hx - 6, hy, hx - 6, hy - 6);
-        ctx.closePath();
-
-        ctx.fillStyle = "#3498db"; // Sturdy Steel Blue
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.fill();
-
-        // Silver/White Cross Emblem
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - 5);
-        ctx.lineTo(hx, hy + 8);
-        ctx.moveTo(hx - 4, hy + 1);
-        ctx.lineTo(hx + 4, hy + 1);
-        ctx.stroke();
-
-        // 2. Draw Text "BLOCK" (Sleek Blue)
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText("BLOCK", hx + 13, hy + 4);
-        ctx.fillStyle = "#3498db";
-        ctx.fillText("BLOCK", hx + 13, hy + 4);
-      } else if (eff.type === "parry") {
-        // 1. Draw Crossed Steel Sabers (💥 Parry Clash) - Perfectly sized & crisp outlines
-        ctx.save();
-        ctx.translate(hx, hy);
-
-        // Saber 1 (bottom-left to top-right)
-        ctx.save();
-        ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = "#ecf0f1"; // Clean silver-white
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5; // Proper thin outline
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.rect(-2.5, -18, 5, 22); // Wider, longer blade
-        ctx.fill();
-        ctx.stroke();
-
-        // Blade edge highlight
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.rect(0, -18, 2.5, 22);
-        ctx.fill();
-
-        // Crossguard
-        ctx.fillStyle = "#f1c40f"; // Gold
-        ctx.beginPath();
-        ctx.rect(-6, 4, 12, 3);
-        ctx.fill();
-        ctx.stroke();
-
-        // Red Pommel
-        ctx.fillStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.arc(0, 10, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-
-        // Saber 2 (bottom-right to top-left)
-        ctx.save();
-        ctx.rotate(-Math.PI / 4);
-        ctx.fillStyle = "#ecf0f1"; // Clean silver-white
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5;
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.rect(-2.5, -18, 5, 22);
-        ctx.fill();
-        ctx.stroke();
-
-        // Blade edge highlight
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.rect(0, -18, 2.5, 22);
-        ctx.fill();
-
-        // Crossguard
-        ctx.fillStyle = "#f1c40f"; // Gold
-        ctx.beginPath();
-        ctx.rect(-6, 4, 12, 3);
-        ctx.fill();
-        ctx.stroke();
-
-        // Red Pommel
-        ctx.fillStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.arc(0, 10, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-
-        ctx.restore();
-
-        // 2. Draw Text "PARRY" (Vibrant Purple)
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText("PARRY", hx + 13, hy + 4);
-        ctx.fillStyle = "#9b59b6";
-        ctx.fillText("PARRY", hx + 13, hy + 4);
-      } else if (eff.type === "barrier") {
-        // 1. Draw concentric circles with black shadows/under-stroke first
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 4.0;
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.arc(hx, hy, 8, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Core cross outlines
-        ctx.beginPath();
-        ctx.moveTo(hx - 4, hy);
-        ctx.lineTo(hx + 4, hy);
-        ctx.moveTo(hx, hy - 4);
-        ctx.lineTo(hx, hy + 4);
-        ctx.stroke();
-
-        // 2. Colored overlay
-        ctx.strokeStyle = "#9b59b6"; // Arcane Purple
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.arc(hx, hy, 8, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo(hx - 3, hy);
-        ctx.lineTo(hx + 3, hy);
-        ctx.moveTo(hx, hy - 3);
-        ctx.lineTo(hx, hy + 3);
-        ctx.stroke();
-
-        // 2. Draw Text "BARRIER -X%"
-        let hitText = `BARRIER -${eff.amount}%`;
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = "#9b59b6";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "lightning") {
-        // 1. Draw Sharp Golden Lightning Bolt
-        ctx.beginPath();
-        ctx.moveTo(hx + 2.5, hy - 9);
-        ctx.lineTo(hx - 5, hy + 1.5);
-        ctx.lineTo(hx - 0.5, hy + 1.5);
-        ctx.lineTo(hx - 4.5, hy + 10);
-        ctx.lineTo(hx + 4.5, hy - 0.5);
-        ctx.lineTo(hx, hy - 0.5);
-        ctx.closePath();
-
-        ctx.fillStyle = "#f1c40f"; // Yellow lightning
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.fill();
-
-        // Flash inner shine
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo(hx + 1, hy - 6);
-        ctx.lineTo(hx - 3, hy + 1);
-        ctx.stroke();
-
-        // 2. Draw Damage Text (Bright Yellow)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = "#f1c40f";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "fire") {
-        // 1. Draw 2-Layer Flickering Fire Flame
-        // Outer Flame (Vibrant Orange)
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - 9);
-        ctx.quadraticCurveTo(hx - 7, hy - 2, hx - 7, hy + 4);
-        ctx.quadraticCurveTo(hx - 7, hy + 9.5, hx, hy + 9.5);
-        ctx.quadraticCurveTo(hx + 7, hy + 9.5, hx + 7, hy + 4);
-        ctx.quadraticCurveTo(hx + 7, hy - 2, hx, hy - 9);
-        ctx.closePath();
-        ctx.fillStyle = "#e67e22"; // Orange
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.fill();
-
-        // Inner Flame Core (Hot Yellow)
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - 4);
-        ctx.quadraticCurveTo(hx - 4, hy + 1, hx - 4, hy + 5.5);
-        ctx.quadraticCurveTo(hx - 4, hy + 8, hx, hy + 8);
-        ctx.quadraticCurveTo(hx + 4, hy + 8, hx + 4, hy + 5.5);
-        ctx.quadraticCurveTo(hx + 4, hy + 1, hx, hy - 4);
-        ctx.closePath();
-        ctx.fillStyle = "#f1c40f"; // Hot Yellow
-        ctx.fill();
-
-        // 2. Draw Damage Text (Orange)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = "#e67e22";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "frost") {
-        // 1. Draw Sharp Geometric Ice Shard
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - 9);
-        ctx.lineTo(hx + 6, hy);
-        ctx.lineTo(hx, hy + 9);
-        ctx.lineTo(hx - 6, hy);
-        ctx.closePath();
-
-        ctx.fillStyle = "#dff9fb"; // Icy white
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.fill();
-
-        // Inner frost veins (Light Blue)
-        ctx.strokeStyle = "#3498db";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(hx - 4, hy);
-        ctx.lineTo(hx + 4, hy);
-        ctx.moveTo(hx, hy - 6);
-        ctx.lineTo(hx, hy + 6);
-        ctx.stroke();
-
-        // 2. Draw Damage Text (Cool Ice Blue)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = "#3498db";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "slash") {
-        // 1. Draw Crossed Swords (Cel-Shaded)
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        // Blade 1 outline
-        ctx.beginPath();
-        ctx.moveTo(hx - 8, hy + 8);
-        ctx.lineTo(hx + 8, hy - 8);
-        ctx.stroke();
-
-        // Blade 2 outline
-        ctx.beginPath();
-        ctx.moveTo(hx + 8, hy + 8);
-        ctx.lineTo(hx - 8, hy - 8);
-        ctx.stroke();
-
-        // Fill Blade 1 (Silver)
-        ctx.strokeStyle = "#ecf0f1";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(hx - 8, hy + 8);
-        ctx.lineTo(hx + 8, hy - 8);
-        ctx.stroke();
-
-        // Fill Blade 2 (Silver)
-        ctx.beginPath();
-        ctx.moveTo(hx + 8, hy + 8);
-        ctx.lineTo(hx - 8, hy - 8);
-        ctx.stroke();
-
-        // Crossguards (Gold dots)
-        ctx.fillStyle = "#f1c40f";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(hx - 3, hy + 3, 2, 0, Math.PI * 2);
-        ctx.arc(hx + 3, hy + 3, 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 2. Draw Damage Text (White)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#fff";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "dagger") {
-        // 1. Draw sharp pointed stiletto (Cel-Shaded) - Highly visible & beautifully outlined
-        ctx.save();
-        ctx.translate(hx, hy);
-        ctx.rotate(-Math.PI / 4); // Angled up-right
-
-        // Blade outline - scaled up nicely to prevent black lines overlapping the face
-        ctx.fillStyle = "#ecf0f1"; // Clean silver-white
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5; // Appropriate thin stroke
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(-4, 4);
-        ctx.lineTo(0, -18);
-        ctx.lineTo(4, 4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Shimmer highlight on blade half
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.moveTo(0, -18);
-        ctx.lineTo(4, 4);
-        ctx.lineTo(0, 4);
-        ctx.closePath();
-        ctx.fill();
-
-        // Gold Guard (Larger, more visible)
-        ctx.fillStyle = "#f1c40f";
-        ctx.beginPath();
-        ctx.roundRect(-8, 4, 16, 4, [2]);
-        ctx.fill();
-        ctx.stroke();
-
-        // Wood Hilt (Larger, more visible)
-        ctx.fillStyle = "#5c3a21";
-        ctx.beginPath();
-        ctx.rect(-2.5, 8, 5, 10);
-        ctx.fill();
-        ctx.stroke();
-
-        // Pommel jewel
-        ctx.fillStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.arc(0, 18, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-
-        // 2. Draw Damage Text (Muted Steel Blue)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#fff";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "echo") {
-        // 1. Draw Ghostly Purple Skull/Wisp (Cel-Shaded)
-        ctx.fillStyle = "#9b59b6";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.arc(hx, hy - 2, 6, Math.PI, 0, false);
-        ctx.quadraticCurveTo(hx + 6, hy + 6, hx + 3, hy + 8);
-        ctx.lineTo(hx - 3, hy + 8);
-        ctx.quadraticCurveTo(hx - 6, hy + 6, hx - 6, hy - 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Black eyes
-        ctx.fillStyle = "#000000";
-        ctx.beginPath();
-        ctx.arc(hx - 2, hy - 2, 1.5, 0, Math.PI * 2);
-        ctx.arc(hx + 2, hy - 2, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Draw Damage Text (Soft Purple)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#9b59b6";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "counter") {
-        // 1. Draw Golden Mini Heater Shield (Cel-Shaded)
-        ctx.fillStyle = "#f1c40f"; // Golden counter shield
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(hx - 6, hy - 6);
-        ctx.lineTo(hx + 6, hy - 6);
-        ctx.quadraticCurveTo(hx + 6, hy, hx + 5, hy + 3);
-        ctx.quadraticCurveTo(hx, hy + 9, hx, hy + 9);
-        ctx.quadraticCurveTo(hx - 5, hy + 3, hx - 6, hy);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Red interior crest
-        ctx.fillStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.moveTo(hx - 3, hy - 4);
-        ctx.lineTo(hx + 3, hy - 4);
-        ctx.quadraticCurveTo(hx + 3, hy, hx, hy + 5);
-        ctx.quadraticCurveTo(hx - 3, hy, hx - 3, hy - 4);
-        ctx.closePath();
-        ctx.fill();
-
-        // 2. Draw Damage Text (Golden Orange)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#f1c40f";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "aegis_counter") {
-        // 1. Draw Purple Aegis Shield (Cel-Shaded)
-        ctx.fillStyle = "#8e44ad"; // Void purple
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(hx - 6, hy - 6);
-        ctx.lineTo(hx + 6, hy - 6);
-        ctx.lineTo(hx + 8, hy + 2);
-        ctx.lineTo(hx, hy + 10);
-        ctx.lineTo(hx - 8, hy + 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Glowing cyan core center cross
-        ctx.strokeStyle = "#00ffff";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - 4);
-        ctx.lineTo(hx, hy + 7);
-        ctx.moveTo(hx - 4, hy + 1);
-        ctx.lineTo(hx + 4, hy + 1);
-        ctx.stroke();
-
-        // 2. Draw Damage Text (Glowing Purple-Pink)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#8e44ad";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "parry_counter") {
-        // 1. Draw Crossed Mini Steel Sabers (Cel-Shaded)
-        ctx.save();
-        ctx.translate(hx, hy);
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5;
-        ctx.lineJoin = "round";
-
-        // Saber 1 (bottom-left to top-right)
-        ctx.save();
-        ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = "#ecf0f1";
-        ctx.beginPath();
-        ctx.rect(-1.2, -10, 2.4, 12);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#f1c40f";
-        ctx.fillRect(-3, 2, 6, 1.5);
-        ctx.strokeRect(-3, 2, 6, 1.5);
-        ctx.restore();
-
-        // Saber 2 (bottom-right to top-left)
-        ctx.save();
-        ctx.rotate(-Math.PI / 4);
-        ctx.fillStyle = "#ecf0f1";
-        ctx.beginPath();
-        ctx.rect(-1.2, -10, 2.4, 12);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#f1c40f";
-        ctx.fillRect(-3, 2, 6, 1.5);
-        ctx.strokeRect(-3, 2, 6, 1.5);
-        ctx.restore();
-
-        ctx.restore();
-
-        // 2. Draw Damage Text (Vibrant Parry Purple)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#9b59b6";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "bleed") {
-        // 1. Draw Shiny Crimson Blood Droplet
-        ctx.fillStyle = "#c0392b"; // Deep crimson blood
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - 8);
-        ctx.quadraticCurveTo(hx - 6, hy, hx - 6, hy + 4);
-        ctx.quadraticCurveTo(hx - 6, hy + 9, hx, hy + 9);
-        ctx.quadraticCurveTo(hx + 6, hy + 9, hx + 6, hy + 4);
-        ctx.quadraticCurveTo(hx + 6, hy - 2, hx, hy - 8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Specular shine
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.ellipse(hx - 2, hy + 2, 1.2, 2.5, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Draw Damage Text (Dark Crimson)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#960018";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "poison") {
-        // 1. Draw 2-Layer Bubbling Toxic Spore / Biohazard Droplet
-        ctx.beginPath();
-        ctx.arc(hx, hy, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#2ecc71"; // Vibrant toxic green
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.fill();
-
-        // Draw tiny inner bubbles / nucleus
-        ctx.fillStyle = "#27ae60";
-        ctx.beginPath();
-        ctx.arc(hx - 2, hy - 2, 1.5, 0, Math.PI * 2);
-        ctx.arc(hx + 2, hy + 2, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // White specular shine
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(hx - 2, hy - 2, 0.6, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Draw Damage Text (Vibrant Green)
-        let hitText = window.formatNumber(eff.amount);
-        ctx.font = "bold 15px monospace";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-        ctx.strokeText(hitText, hx + 14, hy + 4);
-        ctx.fillStyle = eff.color || "#2ecc71";
-        ctx.fillText(hitText, hx + 14, hy + 4);
-      } else if (eff.type === "item_drop") {
-        ctx.font = "bold 13px sans-serif";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = "round";
-
-        let text = eff.text;
-        let iconColor = eff.iconColor || "#ffb6c1";
-        let itemType = eff.itemType || "soul";
-
-        let textWidth = ctx.measureText(text).width;
-
-        ctx.strokeText(text, hx, hy);
-        ctx.fillStyle = eff.color || "#ffffff";
-        ctx.fillText(text, hx, hy);
-
-        ctx.save();
-        ctx.translate(hx + textWidth + 8, hy - 4);
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5;
-        ctx.fillStyle = iconColor;
-
-        if (itemType === "soul") {
-          ctx.beginPath();
-          ctx.moveTo(0, -6);
-          ctx.bezierCurveTo(-4, 0, -4, 5, 0, 5);
-          ctx.bezierCurveTo(4, 5, 4, 0, 0, -6);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.arc(-1.2, 1.2, 0.7, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (itemType === "scrap") {
-          ctx.beginPath();
-          ctx.moveTo(-3, -3);
-          ctx.lineTo(3, -5);
-          ctx.lineTo(5, 2);
-          ctx.lineTo(-2, 4);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-        } else if (itemType === "core") {
-          ctx.beginPath();
-          ctx.rect(-3.5, -3.5, 7, 7);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(-1, -1, 2, 2);
-        } else if (itemType === "key") {
-          ctx.beginPath();
-          ctx.arc(-1.5, -1.5, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(1, -1.5);
-          ctx.lineTo(5, -1.5);
-          ctx.lineTo(5, 1);
-          ctx.stroke();
-        } else if (itemType === "shard") {
-          ctx.beginPath();
-          ctx.moveTo(0, -5);
-          ctx.lineTo(3.5, 0);
-          ctx.lineTo(0, 5);
-          ctx.lineTo(-3.5, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-        } else {
-          ctx.beginPath();
-          ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-        ctx.restore();
-      } else {
-        ctx.font = "bold 18px sans-serif";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 4;
-        ctx.lineJoin = "miter";
-        ctx.miterLimit = 2;
-        ctx.strokeText(eff.text, eff.x, eff.y);
-        ctx.fillStyle = eff.color;
-        ctx.fillText(eff.text, eff.x, eff.y);
-      }
-      ctx.restore();
-    });
-
-    // Render Crucible Cinematic Wave Transition Splash
-    if (
-      window.playerStats.isCrucibleMode &&
-      window.crucibleTransitionSplash &&
-      window.crucibleTransitionSplash.timer > 0
-    ) {
-      ctx.save();
-      let splash = window.crucibleTransitionSplash;
-      let progress = (splash.maxTimer - splash.timer) / splash.maxTimer;
-      let opacity = 1.0;
-
-      // Smoothly fade in/out
-      if (progress < 0.15) opacity = progress / 0.15;
-      else if (progress > 0.85) opacity = (1.0 - progress) / 0.15;
-
-      ctx.globalAlpha = opacity;
-      let cy = canvas.height / 2;
-
-      // Draw translucent dark background banner
-      ctx.fillStyle = "rgba(10, 8, 16, 0.88)";
-      ctx.strokeStyle = splash.color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.rect(0, cy - 35, canvas.width, 65);
-      ctx.fill();
-      ctx.stroke();
-
-      // Draw Title Text
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = "900 13px 'Arial Black', Impact, sans-serif";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 4;
-      ctx.strokeText(splash.title, canvas.width / 2, cy - 12);
-      ctx.fillStyle = splash.color;
-      ctx.fillText(splash.title, canvas.width / 2, cy - 12);
-
-      // Draw Subtitle Description
-      ctx.font = "bold 9.5px monospace";
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 3;
-      ctx.strokeText(splash.sub, canvas.width / 2, cy + 12);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(splash.sub, canvas.width / 2, cy + 12);
-
-      ctx.restore();
-      splash.timer--;
-    }
-
-    // Render Void Suppression Orbs on canvas
-    if (window.activeRiftOrbs && window.activeRiftOrbs.length > 0) {
-      window.activeRiftOrbs.forEach((orb) => {
-        if (orb.type === "glimmering_pixie") {
-          ctx.save();
-
-          let flap = Math.abs(Math.sin(Date.now() / 80 + orb.id)) * 6 + 2;
-          let hover = orb.pauseTimer > 0 ? Math.sin(Date.now() / 100) * 1.5 : 0;
-          let ox = orb.x;
-          let oy = orb.y + hover;
-
-          // 1. Draw glowing outer radial backdrop
-          let glowGrad = ctx.createRadialGradient(
-            ox,
-            oy,
-            1,
-            ox,
-            oy,
-            orb.radius * 2,
-          );
-          glowGrad.addColorStop(0, "rgba(46, 204, 113, 0.45)");
-          glowGrad.addColorStop(0.6, "rgba(85, 239, 196, 0.15)");
-          glowGrad.addColorStop(1, "rgba(0,0,0,0)");
-          ctx.fillStyle = glowGrad;
-          ctx.beginPath();
-          ctx.arc(ox, oy, orb.radius * 2, 0, Math.PI * 2);
-          ctx.fill();
-
-          // 2. Draw flapping wings
-          ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.ellipse(ox - 4, oy - 2, 5, flap, Math.PI / 6, 0, Math.PI * 2);
-          ctx.ellipse(ox + 4, oy - 2, 5, flap, -Math.PI / 6, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          // 3. Draw central sprite core ball
-          let coreGrad = ctx.createRadialGradient(
-            ox - 2,
-            oy - 2,
-            1,
-            ox,
-            oy,
-            orb.radius,
-          );
-          if (window.isGamePaused) {
-            coreGrad.addColorStop(0, "#cbd5e1");
-            coreGrad.addColorStop(1, "#475569");
-          } else {
-            coreGrad.addColorStop(0, "#ffffff"); // White-hot center
-            coreGrad.addColorStop(0.3, "#2ecc71"); // Emerald
-            coreGrad.addColorStop(1, "#145a32"); // Deep forest green
-          }
-          ctx.fillStyle = coreGrad;
-          ctx.beginPath();
-          ctx.arc(ox, oy, orb.radius, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          // 4. Draw outer shrinking timer ring
-          let progress = orb.timer / orb.maxTimer;
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.arc(ox, oy, orb.radius * 1.5 * progress, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.restore();
-          return;
-        }
-
-        if (orb.type === "aetheric_spark") {
-          ctx.save();
-
-          // 1. Draw glowing outer radial backdrop
-          let glowGrad = ctx.createRadialGradient(
-            orb.x,
-            orb.y,
-            2,
-            orb.x,
-            orb.y,
-            orb.radius * 2,
-          );
-          glowGrad.addColorStop(0, "rgba(255, 215, 0, 0.4)");
-          glowGrad.addColorStop(0.6, "rgba(241, 196, 15, 0.15)");
-          glowGrad.addColorStop(1, "rgba(0,0,0,0)");
-          ctx.fillStyle = glowGrad;
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, orb.radius * 2, 0, Math.PI * 2);
-          ctx.fill();
-
-          // 2. Draw central core with bright yellow radial gradient
-          let coreGrad = ctx.createRadialGradient(
-            orb.x - 2,
-            orb.y - 2,
-            1,
-            orb.x,
-            orb.y,
-            orb.radius,
-          );
-          if (window.isGamePaused) {
-            coreGrad.addColorStop(0, "#cbd5e1");
-            coreGrad.addColorStop(1, "#64748b");
-          } else {
-            coreGrad.addColorStop(0, "#ffffff"); // White-hot center
-            coreGrad.addColorStop(0.5, "#ffd700"); // Rich gold
-            coreGrad.addColorStop(1, "#b58700"); // Dark bronze/gold
-          }
-          ctx.fillStyle = coreGrad;
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Cel-shaded outline
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.8;
-          ctx.stroke();
-
-          // 3. Draw Orbiting Star Rays
-          if (!window.isGamePaused) {
-            ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 1.5;
-            let rot = Date.now() / 100 + orb.id;
-            ctx.save();
-            ctx.translate(orb.x, orb.y);
-            ctx.rotate(rot);
-            for (let j = 0; j < 4; j++) {
-              ctx.rotate(Math.PI / 2);
-              ctx.beginPath();
-              ctx.moveTo(0, -orb.radius * 1.1);
-              ctx.lineTo(0, -orb.radius * 1.5);
-              ctx.stroke();
-            }
-            ctx.restore();
-          }
-
-          // 4. Draw shrinking outer countdown ring
-          let progress = orb.timer / orb.maxTimer;
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, orb.radius * 1.5 * progress, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.restore();
-          return;
-        }
-
-        if (orb.type === "aetheric_conduit") {
-          ctx.save();
-
-          // 1. Draw Dotted Connecting Path
-          ctx.strokeStyle = "rgba(0, 210, 255, 0.22)";
-          ctx.lineWidth = 1.8;
-          ctx.setLineDash([4, 6]);
-          ctx.beginPath();
-          ctx.moveTo(orb.x, orb.y);
-          ctx.lineTo(orb.endX, orb.endY);
-          ctx.stroke();
-          ctx.setLineDash([]); // Reset
-
-          // 2. Draw Solid Glowing Active Traced Path
-          if (orb.progress > 0) {
-            let px = orb.x + orb.progress * (orb.endX - orb.x);
-            let py = orb.y + orb.progress * (orb.endY - orb.y);
-
-            ctx.strokeStyle = "#00d2ff"; // Neon Cyan
-            ctx.lineWidth = 3.0;
-            ctx.beginPath();
-            ctx.moveTo(orb.x, orb.y);
-            ctx.lineTo(px, py);
-            ctx.stroke();
-
-            // Draw spark following their finger
-            let pulse = 2.5 + Math.sin(Date.now() / 80) * 1.5;
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(px, py, pulse, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#00ffff";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          }
-
-          // 3. Draw Start Crystal (A)
-          let startGrad = ctx.createRadialGradient(
-            orb.x - 2,
-            orb.y - 2,
-            1,
-            orb.x,
-            orb.y,
-            orb.radius,
-          );
-          startGrad.addColorStop(0, "#ffffff");
-          startGrad.addColorStop(0.4, "#00d2ff");
-          startGrad.addColorStop(1, "#031d0d");
-          ctx.fillStyle = startGrad;
-
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.8;
-          ctx.stroke();
-
-          // 4. Draw End Crystal (B)
-          let endGrad = ctx.createRadialGradient(
-            orb.endX - 2,
-            orb.endY - 2,
-            1,
-            orb.endX,
-            orb.endY,
-            orb.radius,
-          );
-          endGrad.addColorStop(0, "#ffffff");
-          endGrad.addColorStop(0.4, "#ff007f"); // Contrasting hot pink target
-          endGrad.addColorStop(1, "#110521");
-          ctx.fillStyle = endGrad;
-
-          ctx.beginPath();
-          ctx.arc(orb.endX, orb.endY, orb.radius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          // Glowing receiver ring if fully charged
-          if (orb.connected) {
-            ctx.strokeStyle = "#2ecc71"; // Flashes green
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.arc(orb.endX, orb.endY, orb.radius * 1.5, 0, Math.PI * 2);
-            ctx.stroke();
-          }
-
-          ctx.restore();
-          return;
-        }
-
-        if (orb.type === "perfect_strike") {
-          ctx.save();
-
-          // 1. Draw central core bullseye
-          ctx.fillStyle = "rgba(231, 76, 60, 0.25)"; // Soft red center glow
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.strokeStyle = "#e74c3c"; // Crimson core
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, orb.radius * 0.4, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Crosshairs
-          ctx.beginPath();
-          ctx.moveTo(orb.x - orb.radius * 1.5, orb.y);
-          ctx.lineTo(orb.x + orb.radius * 1.5, orb.y);
-          ctx.moveTo(orb.x, orb.y - orb.radius * 1.5);
-          ctx.lineTo(orb.x, orb.y + orb.radius * 1.5);
-          ctx.stroke();
-
-          // 2. Draw outer shrinking alignment ring
-          let progress = orb.timer / orb.maxTimer;
-          let outerR = orb.radius + orb.radius * 2.5 * progress;
-
-          // Check sweet spot window (10-25 frames) to dynamically shift ring color to neon green
-          let isPerfect = orb.timer >= 10 && orb.timer <= 25;
-          ctx.strokeStyle = isPerfect ? "#2ecc71" : "#f1c40f"; // Green for perfect alignment, yellow-orange otherwise
-          ctx.lineWidth = isPerfect ? 2.5 : 1.5;
-
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, outerR, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Center micro dot
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.0;
-          ctx.strokeRect(orb.x - 1, orb.y - 1, 2, 2);
-
-          ctx.restore();
-          return;
-        }
-
-        if (orb.type === "anomalous_shard") {
-          // 1. Draw glowing outer warning base
-          let warningGrad = ctx.createLinearGradient(
-            orb.x - 12,
-            orb.y,
-            orb.x + 12,
-            orb.y,
-          );
-          warningGrad.addColorStop(0, "rgba(255, 34, 0, 0)");
-          warningGrad.addColorStop(0.5, "rgba(255, 34, 0, 0.35)");
-          warningGrad.addColorStop(1, "rgba(255, 34, 0, 0)");
-          ctx.fillStyle = warningGrad;
-          ctx.fillRect(orb.x - 22, orb.y - 4, 44, 6);
-
-          // 2. Draw the Basalt Crystal Cluster
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.8;
-          ctx.lineJoin = "round";
-
-          // Left Shard (Smaller)
-          ctx.fillStyle = "#1e272e"; // Dark slate
-          ctx.beginPath();
-          ctx.moveTo(orb.x - 12, orb.y);
-          ctx.lineTo(orb.x - 14, orb.y - 14);
-          ctx.lineTo(orb.x - 8, orb.y - 18);
-          ctx.lineTo(orb.x - 4, orb.y);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // Right Shard (Medium)
-          ctx.fillStyle = "#2c3e50"; // Steel stone
-          ctx.beginPath();
-          ctx.moveTo(orb.x + 4, orb.y);
-          ctx.lineTo(orb.x + 8, orb.y - 18);
-          ctx.lineTo(orb.x + 14, orb.y - 14);
-          ctx.lineTo(orb.x + 12, orb.y);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // Center Main Shard (Tallest, glowing crimson core)
-          let stoneGrad = ctx.createLinearGradient(
-            orb.x - 8,
-            orb.y,
-            orb.x + 8,
-            orb.y - 28,
-          );
-          stoneGrad.addColorStop(0, "#1c1c1f");
-          stoneGrad.addColorStop(0.5, "#ff3300"); // Core glow
-          stoneGrad.addColorStop(1, "#111116");
-          ctx.fillStyle = stoneGrad;
-
-          ctx.beginPath();
-          ctx.moveTo(orb.x - 8, orb.y);
-          ctx.lineTo(orb.x - 10, orb.y - 24);
-          ctx.lineTo(orb.x, orb.y - 32); // Tall central point
-          ctx.lineTo(orb.x + 10, orb.y - 24);
-          ctx.lineTo(orb.x + 8, orb.y);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // Draw micro light highlights on crystal edges
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.moveTo(orb.x - 10, orb.y - 24);
-          ctx.lineTo(orb.x, orb.y - 32);
-          ctx.lineTo(orb.x + 10, orb.y - 24);
-          ctx.stroke();
-
-          // 3. Draw mini health bar below the shard (Y-offset 234)
-          let barW = 24;
-          let barH = 3;
-          let barX = orb.x - barW / 2;
-          let barY = orb.y + 4;
-
-          ctx.fillStyle = "#111111";
-          ctx.fillRect(barX, barY, barW, barH);
-
-          let hpPct = orb.hp / orb.maxHp;
-          ctx.fillStyle = "#ff2200"; // Red HP fill
-          ctx.fillRect(barX, barY, barW * hpPct, barH);
-
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 0.8;
-          ctx.strokeRect(barX, barY, barW, barH);
-
-          ctx.restore();
-          return;
-        }
-
-        ctx.save();
-
-        // 1. Draw glowing outer radial backdrop
-        let glowGrad = ctx.createRadialGradient(
-          orb.x,
-          orb.y,
-          2,
-          orb.x,
-          orb.y,
-          orb.radius * 1.5,
-        );
-        glowGrad.addColorStop(0, "rgba(255, 0, 127, 0.45)");
-        glowGrad.addColorStop(0.6, "rgba(142, 68, 173, 0.15)");
-        glowGrad.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = glowGrad;
-        ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.radius * 1.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Draw core ball with radial gradient
-        let coreGrad = ctx.createRadialGradient(
-          orb.x - 3,
-          orb.y - 3,
-          1,
-          orb.x,
-          orb.y,
-          orb.radius,
-        );
-        if (window.isGamePaused) {
-          coreGrad.addColorStop(0, "#7f8c8d");
-          coreGrad.addColorStop(1, "#2c3e50");
-        } else {
-          coreGrad.addColorStop(0, "#ffffff"); // White-hot core
-          coreGrad.addColorStop(0.3, "#ff007f"); // Neon magenta
-          coreGrad.addColorStop(1, "#110521"); // Dark void purple
-        }
-        ctx.fillStyle = coreGrad;
-        ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Cel-shaded black outline
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.8;
-        ctx.stroke();
-
-        // 3. Draw shrinking outer countdown boundary
-        let progress = orb.timer / orb.maxTimer;
-        ctx.strokeStyle = "#00ffff"; // Glowing neon cyan
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.radius * 1.6 * progress, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // 4. Draw Orbiting Spark Satellites
-        let rot = Date.now() / 150 + orb.id; // Offset rotation by ID
-        ctx.fillStyle = "#ff007f";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.0;
-        for (let i = 0; i < 2; i++) {
-          let angle = rot + i * Math.PI;
-          let sx = orb.x + Math.cos(angle) * (orb.radius * 1.3);
-          let sy = orb.y + Math.sin(angle) * (orb.radius * 1.3);
-          ctx.beginPath();
-          ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-
-        ctx.restore();
-      });
-    }
-
-    if (
-      window.isGamePaused &&
-      document.getElementById("death-overlay") &&
-      document.getElementById("death-overlay").style.display === "flex"
-    ) {
-      window.renderNemesisPreview(window.playerStats.killedByMob);
-    }
-  };
-
   window.toggleMenuHub = function () {
     let overlay = document.getElementById("menu-hub-overlay");
     let card = document.getElementById("menu-hub-card");
@@ -13460,54 +8820,77 @@
   };
 
   window.updateEcoModeStyle = function () {
-      let active = window.playerStats.ecoMode === true;
-      let btn = document.getElementById("settings-toggle-eco");
-      if (btn) {
-        btn.innerText = active ? "PERFORMANCE: ECO (SAVER ON)" : "PERFORMANCE: MAX FX (SAVER OFF)";
-        btn.className = active ? "settings-btn active" : "settings-btn";
+    let active = window.playerStats.ecoMode === true;
+    let btn = document.getElementById("settings-toggle-eco");
+    if (btn) {
+      btn.innerText = active
+        ? "PERFORMANCE: ECO (SAVER ON)"
+        : "PERFORMANCE: MAX FX (SAVER OFF)";
+      btn.className = active ? "settings-btn active" : "settings-btn";
+    }
+    // Toggle class on body for CSS performance overrides
+    if (active) document.body.classList.add("eco-active");
+    else document.body.classList.remove("eco-active");
+  };
+
+  window.toggleLighting = function () {
+    if (!window.playerStats) return;
+    window.playerStats.enableLighting = !window.playerStats.enableLighting;
+    window.updateLightingStyle();
+    if (typeof window.saveGame === "function") window.saveGame();
+  };
+
+  window.updateLightingStyle = function () {
+    let enabled =
+      window.playerStats && window.playerStats.enableLighting !== false;
+    let btn = document.getElementById("settings-toggle-lighting");
+    if (btn) {
+      btn.innerText = enabled
+        ? "DYNAMIC LIGHTING: ENABLED"
+        : "DYNAMIC LIGHTING: DISABLED";
+      btn.className = enabled ? "settings-btn active" : "settings-btn";
+    }
+  };
+
+  window.forceReloadCacheBust = function () {
+    let baseUrl = window.location.href.split("?")[0];
+    window.location.href = `${baseUrl}?v=${Date.now()}`;
+  };
+
+  window.requestWipeSaveData = function () {
+    let msg1 =
+      "WARNING: This will permanently destroy all character levels, equipped gear, vault storage, and gold. Are you sure you want to erase all data?";
+    let msg2 =
+      "FINAL CONFIRMATION: Type WIPE or confirm below to permanently erase your save file. This action CANNOT be undone!";
+
+    if (typeof window.showCustomConfirm === "function") {
+      window.showCustomConfirm(
+        "WIPE SAVE DATA (1/2)",
+        msg1,
+        "PROCEED TO WIPE",
+        "CANCEL",
+        "#e74c3c",
+        function () {
+          window.showCustomConfirm(
+            "FINAL CONFIRMATION (2/2)",
+            msg2,
+            "ERASE EVERYTHING",
+            "ABORT",
+            "#c0392b",
+            function () {
+              localStorage.removeItem("extraction_crawler_save");
+              window.forceReloadCacheBust();
+            },
+          );
+        },
+      );
+    } else {
+      if (confirm(msg1) && confirm(msg2)) {
+        localStorage.removeItem("extraction_crawler_save");
+        window.forceReloadCacheBust();
       }
-      // Toggle class on body for CSS performance overrides
-      if (active) document.body.classList.add("eco-active");
-      else document.body.classList.remove("eco-active");
-    };
-
-    window.forceReloadCacheBust = function () {
-      let baseUrl = window.location.href.split("?")[0];
-      window.location.href = `${baseUrl}?v=${Date.now()}`;
-    };
-
-    window.requestWipeSaveData = function () {
-      let msg1 = "WARNING: This will permanently destroy all character levels, equipped gear, vault storage, and gold. Are you sure you want to erase all data?";
-      let msg2 = "FINAL CONFIRMATION: Type WIPE or confirm below to permanently erase your save file. This action CANNOT be undone!";
-
-      if (typeof window.showCustomConfirm === "function") {
-        window.showCustomConfirm(
-          "WIPE SAVE DATA (1/2)",
-          msg1,
-          "PROCEED TO WIPE",
-          "CANCEL",
-          "#e74c3c",
-          function () {
-            window.showCustomConfirm(
-              "FINAL CONFIRMATION (2/2)",
-              msg2,
-              "ERASE EVERYTHING",
-              "ABORT",
-              "#c0392b",
-              function () {
-                localStorage.removeItem("extraction_crawler_save");
-                window.forceReloadCacheBust();
-              }
-            );
-          }
-        );
-      } else {
-        if (confirm(msg1) && confirm(msg2)) {
-          localStorage.removeItem("extraction_crawler_save");
-          window.forceReloadCacheBust();
-        }
-      }
-    };
+    }
+  };
 
   window.toggleDpsOverlay = function () {
     window.playerStats.showDpsOverlay = !window.playerStats.showDpsOverlay;

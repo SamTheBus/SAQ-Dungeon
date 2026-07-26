@@ -12,14 +12,14 @@ window.SoundManager = {
   cachedNoiseBuffer: null, // Cached to prevent real-time GC stutters on iOS
 
   init() {
-      // Force iOS AudioSession to "playback" category to bypass physical silent switch
-      if (navigator.audioSession) {
-        try {
-          navigator.audioSession.type = "playback";
-        } catch (e) {
-          console.warn("Could not set iOS AudioSession category:", e);
-        }
+    // Force iOS AudioSession to "playback" category to bypass physical silent switch
+    if (navigator.audioSession) {
+      try {
+        navigator.audioSession.type = "playback";
+      } catch (e) {
+        console.warn("Could not set iOS AudioSession category:", e);
       }
+    }
 
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return false;
@@ -70,17 +70,20 @@ window.SoundManager = {
   },
 
   updateVolumes() {
-      if (!this.ctx) return;
-      if (navigator.audioSession) {
-        try {
-          navigator.audioSession.type = window.playerStats.mute ? "ambient" : "playback";
-        } catch (e) {}
-      }
-      const now = this.ctx.currentTime;
-      const targetMaster = window.playerStats.mute
-        ? 0
-        : window.playerStats.volumeMaster || 0.5;
-    const targetSFX = window.playerStats.volumeSFX || 0.5;
+    if (!this.ctx) return;
+    const pStats = window.playerStats || {};
+    if (navigator.audioSession) {
+      try {
+        navigator.audioSession.type = pStats.mute ? "ambient" : "playback";
+      } catch (e) {}
+    }
+    const now = this.ctx.currentTime;
+    const targetMaster = pStats.mute
+      ? 0
+      : pStats.volumeMaster !== undefined
+        ? pStats.volumeMaster
+        : 0.5;
+    const targetSFX = pStats.volumeSFX !== undefined ? pStats.volumeSFX : 0.5;
     this.masterGain.gain.setTargetAtTime(
       Math.max(0, Math.min(1, targetMaster)),
       now,
@@ -108,7 +111,14 @@ window.SoundManager = {
     const dest = this.sfxGain;
     switch (type) {
       case "swing":
+      case "hover":
         this.synthesizeSwing(now, dest);
+        break;
+      case "hit":
+        this.synthesizeHit(now, dest, false);
+        break;
+      case "crit":
+        this.synthesizeHit(now, dest, true);
         break;
       case "block":
         this.synthesizeBlock(now, dest);
@@ -147,7 +157,7 @@ window.SoundManager = {
     const duration = window.randFloat(0.08, 0.12);
     const gainNode = this.ctx.createGain();
     gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.32, now + 0.008); // Boosted from 0.12
+    gainNode.gain.linearRampToValueAtTime(0.32, now + 0.008);
     gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
     const noiseSource = this.ctx.createBufferSource();
@@ -173,7 +183,7 @@ window.SoundManager = {
     );
     const oscGain = this.ctx.createGain();
     oscGain.gain.setValueAtTime(0, now);
-    oscGain.gain.linearRampToValueAtTime(0.12, now + 0.006); // Boosted from 0.04
+    oscGain.gain.linearRampToValueAtTime(0.12, now + 0.006);
     oscGain.gain.linearRampToValueAtTime(0, now + duration * 0.85);
 
     osc.connect(oscGain);
@@ -190,6 +200,90 @@ window.SoundManager = {
         (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
       duration * 1000 + 40,
     );
+  },
+
+  synthesizeHit(now, dest, isCrit = false) {
+    const duration = isCrit ? 0.22 : 0.14;
+    const gainNode = this.ctx.createGain();
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(isCrit ? 0.38 : 0.26, now + 0.004);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    // 1. Sub-Bass Thud
+    const subOsc = this.ctx.createOscillator();
+    subOsc.type = "triangle";
+    let startFreq = isCrit ? 220 : 160;
+    let endFreq = isCrit ? 45 : 30;
+    subOsc.frequency.setValueAtTime(startFreq, now);
+    subOsc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.08);
+
+    const subGain = this.ctx.createGain();
+    subGain.gain.setValueAtTime(0.25, now);
+    subGain.gain.linearRampToValueAtTime(0.001, now + 0.09);
+    subOsc.connect(subGain);
+    subGain.connect(gainNode);
+
+    // 2. Flesh/Armor Impact Noise Transient
+    if (this.cachedNoiseBuffer) {
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
+
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = "bandpass";
+      noiseFilter.frequency.setValueAtTime(isCrit ? 1800 : 1200, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+      noiseFilter.Q.setValueAtTime(2.5, now);
+
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(isCrit ? 0.22 : 0.15, now + 0.002);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
+
+      noiseSource.start(now);
+      noiseSource.stop(now + 0.06);
+    }
+
+    // 3. High-Register Critical Strike Ring
+    if (isCrit) {
+      const pingOsc = this.ctx.createOscillator();
+      pingOsc.type = "sine";
+      pingOsc.frequency.setValueAtTime(1400, now);
+      pingOsc.frequency.exponentialRampToValueAtTime(800, now + 0.12);
+
+      const pingGain = this.ctx.createGain();
+      pingGain.gain.setValueAtTime(0, now);
+      pingGain.gain.linearRampToValueAtTime(0.18, now + 0.003);
+      pingGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+      pingOsc.connect(pingGain);
+      pingGain.connect(gainNode);
+      pingOsc.start(now);
+      pingOsc.stop(now + 0.13);
+    }
+
+    gainNode.connect(dest);
+    subOsc.start(now);
+    subOsc.stop(now + duration);
+
+    setTimeout(
+      () => {
+        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+      },
+      duration * 1000 + 40,
+    );
+  },
+
+  playHitImpact(isCrit = false) {
+    if (window.playerStats && window.playerStats.mute) return;
+    if (!this.init()) return;
+    if (this.activeChannelCount >= this.maxConcurrent) return;
+    this.activeChannelCount++;
+    const now = this.ctx.currentTime;
+    this.synthesizeHit(now, this.sfxGain, isCrit);
   },
 
   synthesizeBlock(now, dest) {

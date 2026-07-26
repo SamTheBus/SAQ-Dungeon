@@ -1759,7 +1759,7 @@ window.getAchievementBadgeHtml = function (ach, unlocked, size = 32) {
   }
 
   let romanOverlay = romanNum
-      ? `<span style="
+    ? `<span style="
               position: absolute;
               bottom: -2px;
               right: -2px;
@@ -1775,9 +1775,9 @@ window.getAchievementBadgeHtml = function (ach, unlocked, size = 32) {
               line-height: 1;
               z-index: 2;
             ">${romanNum}</span>`
-      : "";
+    : "";
 
-    return `
+  return `
       <div style="position:relative; display:inline-block; width:${size}px; height:${size}px;">
         <div style="width:100%; height:100%; border-radius:6px; background:${bgGradient}; border:1.5px solid ${glowColor}; display:flex; align-items:center; justify-content:center; box-shadow:${unlocked ? "0 0 10px rgba(241,196,15,0.3)" : "none"};">
           <svg viewBox="0 0 32 32" width="80%" height="80%">
@@ -1787,63 +1787,66 @@ window.getAchievementBadgeHtml = function (ach, unlocked, size = 32) {
         ${romanOverlay}
       </div>
     `;
-  };
+};
 
-  window.getEquipIconHtml = function (item, size = 32) {
-    if (!item) return "";
-    let color = window.getTierColor
-      ? window.getTierColor(item.statsRolled)
-      : "#00d2ff";
-    let uid = item.id || Math.floor(Math.random() * 10000);
-    let innerSvg = "";
+window.getEquipIconHtml = function (item, size = 32) {
+  if (!item) return "";
+  let color = window.getTierColor
+    ? window.getTierColor(item.statsRolled)
+    : "#00d2ff";
+  let uid = item.id || Math.floor(Math.random() * 10000);
+  let innerSvg = "";
 
-    // 1. Check Uniques & Artifacts
-    if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
-      innerSvg = window.AssetCatalog.uniques.staff(uid);
-    else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
-      innerSvg = window.AssetCatalog.uniques.sword(uid);
-    else if (item.isUniqueSingularity && window.AssetCatalog.uniques.singularity)
-      innerSvg = window.AssetCatalog.uniques.singularity(uid);
-    else if (item.isUniqueMaelstrom && window.AssetCatalog.uniques.maelstrom)
-      innerSvg = window.AssetCatalog.uniques.maelstrom(uid);
-    else if (item.isUniqueAegis && window.AssetCatalog.uniques.aegis)
-      innerSvg = window.AssetCatalog.uniques.aegis(uid);
-    else if (item.isUniqueWatch && window.AssetCatalog.uniques.watch)
-      innerSvg = window.AssetCatalog.uniques.watch(uid);
-    else if (item.isUniqueChronicle && window.AssetCatalog.uniques.chronicle)
-      innerSvg = window.AssetCatalog.uniques.chronicle(uid);
-    else if (item.isUniqueWarpCore && window.AssetCatalog.uniques.warpcore)
-      innerSvg = window.AssetCatalog.uniques.warpcore(uid);
-    else if (item.isUniqueTempest && window.AssetCatalog.uniques.tempest)
-      innerSvg = window.AssetCatalog.uniques.tempest(uid);
-    else if (
-      item.type === "artifact" &&
-      item.trait &&
-      window.AssetCatalog.artifacts[item.trait]
+  // 1. Check Uniques & Artifacts
+  if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
+    innerSvg = window.AssetCatalog.uniques.staff(uid);
+  else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
+    innerSvg = window.AssetCatalog.uniques.sword(uid);
+  else if (item.isUniqueSingularity && window.AssetCatalog.uniques.singularity)
+    innerSvg = window.AssetCatalog.uniques.singularity(uid);
+  else if (item.isUniqueMaelstrom && window.AssetCatalog.uniques.maelstrom)
+    innerSvg = window.AssetCatalog.uniques.maelstrom(uid);
+  else if (item.isUniqueAegis && window.AssetCatalog.uniques.aegis)
+    innerSvg = window.AssetCatalog.uniques.aegis(uid);
+  else if (item.isUniqueWatch && window.AssetCatalog.uniques.watch)
+    innerSvg = window.AssetCatalog.uniques.watch(uid);
+  else if (item.isUniqueChronicle && window.AssetCatalog.uniques.chronicle)
+    innerSvg = window.AssetCatalog.uniques.chronicle(uid);
+  else if (item.isUniqueWarpCore && window.AssetCatalog.uniques.warpcore)
+    innerSvg = window.AssetCatalog.uniques.warpcore(uid);
+  else if (item.isUniqueTempest && window.AssetCatalog.uniques.tempest)
+    innerSvg = window.AssetCatalog.uniques.tempest(uid);
+  else if (
+    item.type === "artifact" &&
+    item.trait &&
+    window.AssetCatalog.artifacts[item.trait]
+  ) {
+    innerSvg = window.AssetCatalog.artifacts[item.trait](uid);
+  }
+
+  // 2. Generic Equipment Matching (by Noun, SubType, or Type)
+  if (!innerSvg && window.AssetCatalog.genericEquipment) {
+    let nounKey = (item.noun || "").toLowerCase().replace(/[\s-]/g, "_");
+    let subKey = (item.subType || "").toLowerCase().replace(/[\s-]/g, "_");
+    let typeKey = (item.type || "").toLowerCase().replace(/[\s-]/g, "_");
+
+    if (nounKey && window.AssetCatalog.genericEquipment[nounKey]) {
+      innerSvg = window.AssetCatalog.genericEquipment[nounKey](uid, color);
+    } else if (subKey && window.AssetCatalog.genericEquipment[subKey]) {
+      innerSvg = window.AssetCatalog.genericEquipment[subKey](uid, color);
+    } else if (typeKey && window.AssetCatalog.genericEquipment[typeKey]) {
+      innerSvg = window.AssetCatalog.genericEquipment[typeKey](uid, color);
+    } else if (
+      item.type === "subweapon" &&
+      window.AssetCatalog.genericEquipment.shield
     ) {
-      innerSvg = window.AssetCatalog.artifacts[item.trait](uid);
+      innerSvg = window.AssetCatalog.genericEquipment.shield(uid, color);
+    } else {
+      innerSvg = `<rect x="6" y="6" width="20" height="20" rx="3" fill="${color}" stroke="#000" stroke-width="1.8" />`;
     }
+  }
 
-    // 2. Generic Equipment Matching (by Noun, SubType, or Type)
-    if (!innerSvg && window.AssetCatalog.genericEquipment) {
-      let nounKey = (item.noun || "").toLowerCase().replace(/[\s-]/g, "_");
-      let subKey = (item.subType || "").toLowerCase().replace(/[\s-]/g, "_");
-      let typeKey = (item.type || "").toLowerCase().replace(/[\s-]/g, "_");
-
-      if (nounKey && window.AssetCatalog.genericEquipment[nounKey]) {
-        innerSvg = window.AssetCatalog.genericEquipment[nounKey](uid, color);
-      } else if (subKey && window.AssetCatalog.genericEquipment[subKey]) {
-        innerSvg = window.AssetCatalog.genericEquipment[subKey](uid, color);
-      } else if (typeKey && window.AssetCatalog.genericEquipment[typeKey]) {
-        innerSvg = window.AssetCatalog.genericEquipment[typeKey](uid, color);
-      } else {
-        innerSvg = `<rect x="6" y="6" width="20" height="20" rx="3" fill="${color}" stroke="#000" stroke-width="1.8" />`;
-      }
-    }
-
-    let rgb = window.hexToRgbValues
-      ? window.hexToRgbValues(color)
-      : "50, 50, 50";
-    let bg = `rgba(${rgb}, 0.15)`;
-    return window.AssetCatalog.compile("0 0 32 32", innerSvg, size, bg, color);
-  };
+  let rgb = window.hexToRgbValues ? window.hexToRgbValues(color) : "50, 50, 50";
+  let bg = `rgba(${rgb}, 0.15)`;
+  return window.AssetCatalog.compile("0 0 32 32", innerSvg, size, bg, color);
+};

@@ -38,7 +38,10 @@ window.getUiIconSvg = function (key, size = 12) {
 // --- SYSTEM UTILS ---
 
 window.initSPDraft = function () {
-  if (window.draftSPAllocations === undefined || window.draftSPAllocations === null) {
+  if (
+    window.draftSPAllocations === undefined ||
+    window.draftSPAllocations === null
+  ) {
     window.draftSPAllocations = { spStr: 0, spDex: 0, spInt: 0 };
     window.draftSP = window.playerStats.sp || 0;
   }
@@ -53,10 +56,14 @@ window.stageSP = function (statKey, amount) {
   if (amount > 0) {
     let addAmt = Math.min(amount, window.draftSP);
     if (addAmt <= 0) return;
-    window.draftSPAllocations[key] = (window.draftSPAllocations[key] || 0) + addAmt;
+    window.draftSPAllocations[key] =
+      (window.draftSPAllocations[key] || 0) + addAmt;
     window.draftSP -= addAmt;
   } else if (amount < 0) {
-    let subAmt = Math.min(Math.abs(amount), window.draftSPAllocations[key] || 0);
+    let subAmt = Math.min(
+      Math.abs(amount),
+      window.draftSPAllocations[key] || 0,
+    );
     if (subAmt <= 0) return;
     window.draftSPAllocations[key] -= subAmt;
     window.draftSP += subAmt;
@@ -66,53 +73,49 @@ window.stageSP = function (statKey, amount) {
     window.SoundManager.play("hover");
   }
 
-  if (typeof window.renderProfileModal === "function") window.renderProfileModal();
-};
-
-window.confirmSP = function () {
-  let p = window.playerStats;
-  if (!p || !window.draftSPAllocations) return;
-
-  p.spAllocations = p.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
-  p.spAllocations.spStr = (p.spAllocations.spStr || 0) + (window.draftSPAllocations.spStr || 0);
-  p.spAllocations.spDex = (p.spAllocations.spDex || 0) + (window.draftSPAllocations.spDex || 0);
-  p.spAllocations.spInt = (p.spAllocations.spInt || 0) + (window.draftSPAllocations.spInt || 0);
-  p.sp = window.draftSP;
-
-  window.draftSPAllocations = { spStr: 0, spDex: 0, spInt: 0 };
-
-  window.invalidatePlayerStats();
-  let resolved = window.resolvePlayerStats();
-
-  if (window.player) {
-    let newMaxHp = resolved.maxHp && resolved.maxHp.valueOf ? resolved.maxHp.valueOf() : Number(resolved.maxHp || 100);
-    window.player.maxHp = newMaxHp;
-    window.player.hp = Math.min(window.player.hp, window.player.maxHp);
-    window.player.atk = resolved.atk && resolved.atk.valueOf ? resolved.atk.valueOf() : Number(resolved.atk || 15);
-    window.player.def = resolved.def && resolved.def.valueOf ? resolved.def.valueOf() : Number(resolved.def || 5);
+  if (typeof window.invalidatePlayerStats === "function") {
+    window.invalidatePlayerStats();
   }
 
-  if (window.SoundManager && typeof window.SoundManager.play === "function") {
-    window.SoundManager.play("spell");
+  if (typeof window.renderProfileModal === "function") {
+    window.renderProfileModal();
   }
-
-  if (typeof window.updateHUD === "function") window.updateHUD();
-  if (typeof window.renderProfileModal === "function") window.renderProfileModal();
-  if (typeof window.saveGame === "function") window.saveGame();
 };
 
 window.resetDraftSP = function () {
   if (window.draftSPAllocations) {
-    let stagedTotal = (window.draftSPAllocations.spStr || 0) + (window.draftSPAllocations.spDex || 0) + (window.draftSPAllocations.spInt || 0);
+    let stagedTotal =
+      (window.draftSPAllocations.spStr || 0) +
+      (window.draftSPAllocations.spDex || 0) +
+      (window.draftSPAllocations.spInt || 0);
     window.draftSP = (window.draftSP || 0) + stagedTotal;
     window.draftSPAllocations = { spStr: 0, spDex: 0, spInt: 0 };
   }
-  if (typeof window.renderProfileModal === "function") window.renderProfileModal();
+
+  if (typeof window.invalidatePlayerStats === "function") {
+    window.invalidatePlayerStats();
+  }
+
+  if (typeof window.renderProfileModal === "function") {
+    window.renderProfileModal();
+  }
 };
 
 window.ParticlePool = window.ParticlePool || {
   pool: [],
-  get(x, y, vx, vy, radius, color, alpha = 1, life = 30, maxLife = 30, gravity = 0.1, fade = true) {
+  get(
+    x,
+    y,
+    vx,
+    vy,
+    radius,
+    color,
+    alpha = 1,
+    life = 30,
+    maxLife = 30,
+    gravity = 0.1,
+    fade = true,
+  ) {
     let p = this.pool.pop() || {};
     p.x = x;
     p.y = y;
@@ -129,12 +132,24 @@ window.ParticlePool = window.ParticlePool || {
   },
   recycle(p) {
     if (this.pool.length < 500) this.pool.push(p);
-  }
+  },
 };
 
 window.CombatEffectPool = window.CombatEffectPool || {
   pool: [],
-  get(type, x, y, vx, vy, amount, color, life = 40, gravity = 0, text = null, isCumulative = false) {
+  get(
+    type,
+    x,
+    y,
+    vx,
+    vy,
+    amount,
+    color,
+    life = 40,
+    gravity = 0,
+    text = null,
+    isCumulative = false,
+  ) {
     let e = this.pool.pop() || {};
     e.type = type || "slash";
     e.x = x;
@@ -152,7 +167,7 @@ window.CombatEffectPool = window.CombatEffectPool || {
   },
   recycle(e) {
     if (this.pool.length < 200) this.pool.push(e);
-  }
+  },
 };
 
 window.getEffectiveStage = function (stage) {
@@ -431,7 +446,11 @@ window.randFloat = (min, max) => Math.random() * (max - min) + min;
 window.rarityProbCache = window.rarityProbCache || {};
 
 // Universal Normalized Weight-Based Rarity Probability Solver
-window.calculateRarityProbabilities = function (qly = 1.0, isGacha = false, floorNumber = 1) {
+window.calculateRarityProbabilities = function (
+  qly = 1.0,
+  isGacha = false,
+  floorNumber = 1,
+) {
   let fl = Math.max(1, Number(floorNumber) || 1);
   let cacheKey = `${qly}_${isGacha}_${fl}`;
   if (window.rarityProbCache[cacheKey]) {
@@ -459,14 +478,26 @@ window.calculateRarityProbabilities = function (qly = 1.0, isGacha = false, floo
     weights[2] = maxAllowedTier >= 2 ? 25 * Math.pow(qly, 0.4) : 0;
     weights[3] = maxAllowedTier >= 3 ? 12 * Math.pow(qly, 0.8) : 0;
     weights[4] = maxAllowedTier >= 4 ? 3 * Math.pow(qly, 1.2) : 0;
-    weights[5] = maxAllowedTier >= 5 ? Math.min(2.5, 0.2 * Math.pow((fl - 300) / 100 + 1, 1.2) * Math.pow(qly, 1.5)) : 0;
+    weights[5] =
+      maxAllowedTier >= 5
+        ? Math.min(
+            2.5,
+            0.2 * Math.pow((fl - 300) / 100 + 1, 1.2) * Math.pow(qly, 1.5),
+          )
+        : 0;
   } else {
     weights[0] = 80.0 / Math.pow(qly, 0.5);
     weights[1] = maxAllowedTier >= 1 ? 15.0 * Math.pow(qly, 0.2) : 0;
     weights[2] = maxAllowedTier >= 2 ? 4.0 * Math.pow(qly, 0.4) : 0;
     weights[3] = maxAllowedTier >= 3 ? 0.9 * Math.pow(qly, 0.6) : 0;
     weights[4] = maxAllowedTier >= 4 ? 0.1 * Math.pow(qly, 1.0) : 0;
-    weights[5] = maxAllowedTier >= 5 ? Math.min(1.0, 0.01 * Math.pow((fl - 300) / 100 + 1, 1.3) * Math.pow(qly, 1.4)) : 0;
+    weights[5] =
+      maxAllowedTier >= 5
+        ? Math.min(
+            1.0,
+            0.01 * Math.pow((fl - 300) / 100 + 1, 1.3) * Math.pow(qly, 1.4),
+          )
+        : 0;
   }
 
   let totalWeight = weights.reduce((sum, w) => sum + w, 0);
@@ -528,18 +559,18 @@ Object.assign(window.GameState, {
       );
 
       if (window.playerStats.level > window.playerStats.maxLevel) {
-              window.playerStats.maxLevel = window.playerStats.level;
-              window.playerStats.sp += 3; // Award 3 SP per peak level
+        window.playerStats.maxLevel = window.playerStats.level;
+        window.playerStats.sp += 3; // Award 3 SP per peak level
 
-              if (window.draftSP !== undefined && window.draftSP !== null) {
-                window.draftSP += 3;
-              }
-            }
+        if (window.draftSP !== undefined && window.draftSP !== null) {
+          window.draftSP += 3;
+        }
+      }
 
       // Calculate next xpReq safely using BigNum exponential power scaling
-      xpReq = BigNum.from(350).mul(
-        BigNum.from(1.45).pow(window.playerStats.level - 1),
-      );
+            xpReq = BigNum.from(600).mul(
+              BigNum.from(1.55).pow(window.playerStats.level - 1),
+            );
       leveledUp = true;
     }
 
@@ -549,27 +580,23 @@ Object.assign(window.GameState, {
     }
 
     window.triggerLevelUpEffect = function () {
-      let heroX = window.hero.x + 12;
-      let heroY = window.hero.y + 15;
-      // Explode 60 golden particles in a ring
-      for (let i = 0; i < 60; i++) {
-        let angle = (i / 60) * Math.PI * 2;
-        window.particles.push({
-          x: heroX,
-          y: heroY,
-          vx: Math.cos(angle) * 8,
-          vy: Math.sin(angle) * 8,
-          radius: window.randFloat(2, 5),
-          color: "#f1c40f",
-          alpha: 1,
-          life: 60,
-          gravity: 0.1,
-        });
-      }
-    };
+          let p = window.player;
+          if (!p) return;
 
-    if (leveledUp) {
-      window.triggerLevelUpEffect();
+          p.levelUpTimer = 90; // Lasts 90 frames (~1.5s) and tracks player position
+
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnBeam(p.x, "#ffd700", 90, true, 0);
+            window.combatVisuals.spawnBeam(p.x, "rgba(0, 210, 255, 0.7)", 75, true, -14);
+            window.combatVisuals.spawnBeam(p.x, "rgba(0, 210, 255, 0.7)", 75, true, 14);
+            window.combatVisuals.spawnBeam(p.x, "rgba(232, 121, 249, 0.6)", 60, true, -24);
+            window.combatVisuals.spawnBeam(p.x, "rgba(232, 121, 249, 0.6)", 60, true, 24);
+            window.combatVisuals.triggerScreenShake(4, 14);
+          }
+        };
+
+              if (leveledUp) {
+                window.triggerLevelUpEffect();
 
       // Check if they reached Level 13 for the first time to trigger Clan Hall Unlock
       if (
@@ -611,30 +638,46 @@ Object.assign(window.GameState, {
 
       window.invalidatePlayerStats();
             let p = window.resolvePlayerStats();
-            window.playerStats.currentHp = p.maxHp; // Fully heal to new Max HP
 
             if (window.player) {
-              let newMaxHp = p.maxHp && p.maxHp.valueOf ? p.maxHp.valueOf() : Number(p.maxHp || 100);
+              let newMaxHp =
+                p.maxHp && p.maxHp.valueOf
+                  ? p.maxHp.valueOf()
+                  : Number(p.maxHp || 100);
               window.player.maxHp = Math.round(newMaxHp);
-              window.player.hp = window.player.maxHp;
-              window.player.atk = p.atk && p.atk.valueOf ? p.atk.valueOf() : Number(p.atk || 15);
-              window.player.def = p.def && p.def.valueOf ? p.def.valueOf() : Number(p.def || 5);
+
+              // Restore 25% Max HP burst on level up instead of full 100% refill
+              let healBurst = Math.round(newMaxHp * 0.25);
+              window.player.hp = Math.min(newMaxHp, window.player.hp + healBurst);
+              window.playerStats.currentHp = BigNum.from(window.player.hp);
+
+              window.player.atk =
+                p.atk && p.atk.valueOf ? p.atk.valueOf() : Number(p.atk || 15);
+              window.player.def =
+                p.def && p.def.valueOf ? p.def.valueOf() : Number(p.def || 5);
             }
 
       if (!isOffline) {
-        if (window.SoundManager) window.SoundManager.play("revive");
-        if (typeof window.pushLog === "function") {
-          window.pushLog(
-            `<strong style="color:#d946ef;">🎉 LEVEL UP! Reached Level ${window.playerStats.level}! (+6 SP)</strong>`,
-          );
-        }
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast(
-            `🎉 Level Up! Reached Level ${window.playerStats.level}! (+6 SP)`,
-            "#d946ef",
-          );
-        }
-      }
+              if (window.SoundManager) window.SoundManager.play("revive");
+              if (typeof window.pushLog === "function") {
+                window.pushLog(
+                  `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 SP)</strong>`,
+                );
+              }
+              if (typeof window.pushHeaderToast === "function") {
+                window.pushHeaderToast(
+                  `Level Up! Reached Level ${window.playerStats.level}! (+3 SP)`,
+                  "#d946ef",
+                );
+              }
+              if (typeof window.spawnFloatingText === "function" && window.player) {
+                        let px = window.player.x;
+                        let py = window.player.y;
+                        window.spawnFloatingText(px, py - 20, `LEVEL UP! (LV.${window.playerStats.level})`, "#d946ef", true);
+                        window.spawnFloatingText(px, py - 32, "+15 HP  +3 ATK  +1.5 DEF", "#2ecc71", true);
+                        window.spawnFloatingText(px, py - 44, "+3 SP AVAILABLE", "#00d2ff", true);
+                      }
+            }
       if (typeof window.checkAchievements === "function") {
         window.checkAchievements();
       }
@@ -1185,11 +1228,33 @@ window.updateUI = function () {
   let resolved = window.resolvePlayerStats();
 
   if (window.player && resolved) {
-    let newMaxHp = resolved.maxHp && resolved.maxHp.valueOf ? resolved.maxHp.valueOf() : Number(resolved.maxHp || 100);
-    window.player.maxHp = Math.round(newMaxHp);
-    window.player.hp = Math.min(window.player.hp, window.player.maxHp);
-    window.player.atk = resolved.atk && resolved.atk.valueOf ? resolved.atk.valueOf() : Number(resolved.atk || 15);
-    window.player.def = resolved.def && resolved.def.valueOf ? resolved.def.valueOf() : Number(resolved.def || 5);
+    let oldMaxHp = window.player.maxHp || 100;
+    let newMaxHp = Math.round(
+      resolved.maxHp && resolved.maxHp.valueOf
+        ? resolved.maxHp.valueOf()
+        : Number(resolved.maxHp || 100),
+    );
+    window.player.maxHp = newMaxHp;
+
+    if (window.currentGameState === window.GAME_STATES.HUB) {
+      window.player.hp = newMaxHp;
+    } else if (newMaxHp > oldMaxHp) {
+      window.player.hp = Math.min(
+        newMaxHp,
+        window.player.hp + (newMaxHp - oldMaxHp),
+      );
+    } else {
+      window.player.hp = Math.min(window.player.hp, newMaxHp);
+    }
+
+    window.player.atk =
+      resolved.atk && resolved.atk.valueOf
+        ? resolved.atk.valueOf()
+        : Number(resolved.atk || 15);
+    window.player.def =
+      resolved.def && resolved.def.valueOf
+        ? resolved.def.valueOf()
+        : Number(resolved.def || 5);
   }
 
   if (typeof window.updateHUD === "function") {
@@ -1197,7 +1262,11 @@ window.updateUI = function () {
   }
 
   let profileModal = document.getElementById("profile-modal");
-  if (profileModal && profileModal.style.display !== "none" && typeof window.renderProfileModal === "function") {
+  if (
+    profileModal &&
+    profileModal.style.display !== "none" &&
+    typeof window.renderProfileModal === "function"
+  ) {
     window.renderProfileModal();
   }
 };
@@ -1296,11 +1365,18 @@ window.resolvePlayerStats = function (useDraft = false) {
   let achDexPct = 1.0 + aT.dexPct;
   let achIntPct = 1.0 + aT.intPct;
 
-  let committed = window.playerStats.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
-    let draft = useDraft && window.draftSPAllocations ? window.draftSPAllocations : { spStr: 0, spDex: 0, spInt: 0 };
-    p.str += ((committed.spStr || 0) + (draft.spStr || 0)) * 3;
-    p.dex += ((committed.spDex || 0) + (draft.spDex || 0)) * 3;
-    p.int += ((committed.spInt || 0) + (draft.spInt || 0)) * 3;
+  let committed = window.playerStats.spAllocations || {
+    spStr: 0,
+    spDex: 0,
+    spInt: 0,
+  };
+  let draft =
+    useDraft && window.draftSPAllocations
+      ? window.draftSPAllocations
+      : { spStr: 0, spDex: 0, spInt: 0 };
+  p.str += ((committed.spStr || 0) + (draft.spStr || 0)) * 1;
+    p.dex += ((committed.spDex || 0) + (draft.spDex || 0)) * 1;
+    p.int += ((committed.spInt || 0) + (draft.spInt || 0)) * 1;
 
   let paragonLevel = window.playerStats.paragonLevel || 0;
   let paragonMult = 1.0 + paragonLevel * 0.005; // Compounding +0.5% attributes per Paragon Level
@@ -1490,18 +1566,25 @@ window.resolvePlayerStats = function (useDraft = false) {
   achDefPct += setCtx.defPctBonus;
 
   p.str = Math.floor(p.str * achStrPct);
-  p.dex = Math.floor(p.dex * achDexPct);
-  p.int = Math.floor(p.int * achIntPct);
+    p.dex = Math.floor(p.dex * achDexPct);
+    p.int = Math.floor(p.int * achIntPct);
 
-  let effectiveStr = Math.max(0, p.str - 5);
-  let effectiveDex = Math.max(0, p.dex - 5);
-  let effectiveInt = Math.max(0, p.int - 5);
+    let effectiveStr = Math.max(0, p.str - 5);
+    let effectiveDex = Math.max(0, p.dex - 5);
+    let effectiveInt = Math.max(0, p.int - 5);
+
+    // Apply Dexterity Attribute Matrix points to Move Speed, Crit Chance, and Crit Multiplier
+    p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
+    p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
+    p.moveSpeed += effectiveDex * 1.0;    // +1 Move Speed per point
 
   // Dynamically adjust offensive percentage scaling based on equipped subweapon archetype
   let activeSubForPct = window.equippedSlots
-      ? window.equippedSlots.subweapon
-      : null;
-    let activeSubTypeForPct = activeSubForPct ? (activeSubForPct.subType || activeSubForPct.type) : null;
+    ? window.equippedSlots.subweapon
+    : null;
+  let activeSubTypeForPct = activeSubForPct
+    ? activeSubForPct.subType || activeSubForPct.type
+    : null;
   let mainStatAtkPct = 0;
 
   if (activeSubTypeForPct === "dagger") {
@@ -1520,7 +1603,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   let levelScale = BigNum.from(1.025).pow(window.playerStats.level - 1);
 
   let activeSub = window.equippedSlots ? window.equippedSlots.subweapon : null;
-    let activeSubType = activeSub ? (activeSub.subType || activeSub.type) : null;
+  let activeSubType = activeSub ? activeSub.subType || activeSub.type : null;
   let strWeight = 5;
   let dexWeight = 2;
   let intWeight = 1;
@@ -1536,16 +1619,16 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   let allocStr = p.str - 5;
-    let allocDex = p.dex - 5;
-    let allocInt = p.int - 5;
+  let allocDex = p.dex - 5;
+  let allocInt = p.int - 5;
 
-    let baseCharAtk = BigNum.from(10 + (window.playerStats.level - 1) * 2)
+  let baseCharAtk = BigNum.from(10 + (window.playerStats.level - 1) * 3)
       .mul(levelScale)
-      .add(Math.max(0, allocStr) * 2 + Math.max(0, allocDex) * 1);
-    let baseCharHp = BigNum.from(100 + (window.playerStats.level - 1) * 10)
+      .add(Math.max(0, allocStr) * 2.5 + Math.max(0, allocDex) * 1);
+    let baseCharHp = BigNum.from(100 + (window.playerStats.level - 1) * 15)
       .mul(levelScale)
       .add(Math.max(0, allocStr) * 10);
-    let baseCharDef = BigNum.from(Math.max(0, window.playerStats.level - 1))
+    let baseCharDef = BigNum.from((window.playerStats.level - 1) * 1.5)
       .mul(levelScale)
       .add(Math.max(0, allocInt) * 1);
 
@@ -1659,16 +1742,16 @@ window.resolvePlayerStats = function (useDraft = false) {
     }
   }
 
-  let potStrengthMultiplier = 1.0;
-  if (window.playerStats.unlockedAchievements && window.AchievementsData) {
-    window.playerStats.unlockedAchievements.forEach((id) => {
-      let ach = window.AchievementsData.find((a) => a.id === id);
-      if (ach && ach.stats && ach.stats.potStrengthPct)
-        potStrengthMultiplier += ach.stats.potStrengthPct;
-    });
-  }
-  if (window.checkArtifactTrait("alchemist_alembic"))
-    potStrengthMultiplier += 0.3;
+  let potStrengthMultiplier = 1.0 + effectiveInt * 0.005; // +0.5% Potion Potency per INT point
+    if (window.playerStats.unlockedAchievements && window.AchievementsData) {
+      window.playerStats.unlockedAchievements.forEach((id) => {
+        let ach = window.AchievementsData.find((a) => a.id === id);
+        if (ach && ach.stats && ach.stats.potStrengthPct)
+          potStrengthMultiplier += ach.stats.potStrengthPct;
+      });
+    }
+    if (window.checkArtifactTrait("alchemist_alembic"))
+      potStrengthMultiplier += 0.3;
 
   if (window.playerStats.astralAwakeningTimer > 0) {
     p.atk = p.atk.mul(2.0);
@@ -1751,8 +1834,10 @@ window.resolvePlayerStats = function (useDraft = false) {
   let maxParryCap = 0.15;
 
   let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
-    let hasShield = subItem && (subItem.subType === "shield" || subItem.type === "shield");
-    let hasDagger = subItem && (subItem.subType === "dagger" || subItem.type === "dagger");
+  let hasShield =
+    subItem && (subItem.subType === "shield" || subItem.type === "shield");
+  let hasDagger =
+    subItem && (subItem.subType === "dagger" || subItem.type === "dagger");
   let hasTitanGrip =
     window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
 
@@ -1787,7 +1872,8 @@ window.resolvePlayerStats = function (useDraft = false) {
   if (p.parry > maxParryCap) p.parry = maxParryCap;
 
   // Calculate Tome passive Arcane Barrier
-    let hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
+  let hasTome =
+    subItem && (subItem.subType === "tome" || subItem.type === "tome");
   if (hasTome) {
     // Base 20% absorption, scaling up to 35% with INT
     let intBonus = Math.min(0.15, (effectiveInt * 0.15) / (effectiveInt + 150));
@@ -2109,12 +2195,201 @@ window.resolvePlayerStats = function (useDraft = false) {
 
   window.playerStats.crucibleSelfDmgReduction = p.crucibleSelfDmgReduction;
 
+  subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
+    if (subItem) {
+      p.subType = subItem.subType || subItem.type;
+      p.subArchetype = subItem.subArchetype || null;
+      if (
+          p.subType === "tome" ||
+          subItem.type === "tome" ||
+          subItem.isUniqueWatch ||
+          subItem.isUniqueChronicle ||
+          subItem.isUniqueConduit
+        ) {
+          p.subType = "tome";
+          p.spellType = subItem.spellType || "tri";
+          p.spellChance =
+            subItem.spellChance !== undefined ? subItem.spellChance : 0.33;
+          p.spellPower = subItem.spellPower || 1.5;
+        } else {
+        p.spellType = subItem.spellType || null;
+        p.spellChance = subItem.spellChance || 0;
+        p.spellPower = subItem.spellPower || 1.0;
+      }
+      p.riposteDamage = subItem.riposteDamage || 0.8;
+      p.bleedChance = subItem.bleedChance || 0;
+      p.offhandChance = subItem.offhandChance || 0;
+      p.offhandDmg = subItem.offhandDmg || 0.35;
+      p.reflectDamage = subItem.reflectDamage || 1.0;
+      p.bashAtkBonus = subItem.bashAtkBonus || 0;
+      p.parryMitigation = subItem.parryMitigation || 0.60;
+      p.blockCapBonus = subItem.blockCapBonus || 0;
+      p.parryCapBonus = subItem.parryCapBonus || 0;
+    } else {
+    p.subType = null;
+    p.spellType = null;
+    p.spellChance = 0;
+    p.spellPower = 1.0;
+    p.riposteDamage = 0.8;
+    p.bleedChance = 0;
+    p.offhandChance = 0;
+    p.offhandDmg = 0.35;
+    p.reflectDamage = 0.4;
+  }
+
   if (!useDraft) {
     window.cachedPlayerStats = p;
     window.playerStatsDirty = false;
   }
 
   return p;
+};
+
+// --- REAL-TIME COMBAT DAMAGE RESOLUTION PIPELINE ---
+window.damagePlayer = function (rawDmg, sourceMob = null) {
+  let p = window.player;
+  if (!p || p.hp <= 0) return 0;
+  let pStats =
+    typeof window.resolvePlayerStats === "function"
+      ? window.resolvePlayerStats()
+      : {};
+
+  // Step 1: Arcane Barrier Absorption (Tomes)
+  let absorbed = 0;
+  if (pStats.arcaneBarrier && pStats.arcaneBarrier > 0) {
+    absorbed = Math.floor(rawDmg * pStats.arcaneBarrier);
+    if (absorbed > 0) {
+      if (window.SoundManager) window.SoundManager.play("spell");
+      if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+        window.RenderEngine.spawnDamageEffect(
+          p.x,
+          p.y - 22,
+          absorbed,
+          "barrier",
+          false,
+        );
+      }
+    }
+  }
+
+  let remainingDmg = Math.max(1, rawDmg - absorbed);
+  let netDmg = Math.max(1, remainingDmg - (pStats.def || 0));
+
+  // Step 2: Parry Check (Daggers)
+    if (pStats.parry && Math.random() < pStats.parry) {
+      let parryMitigation = pStats.parryMitigation || 0.60;
+      let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
+      p.hp = Math.max(0, p.hp - parriedDmg);
+      p.lastDamageTimer = 180;
+
+      if (window.SoundManager) window.SoundManager.play("parry");
+      if (window.combatVisuals)
+        window.combatVisuals.spawnDamageEffect(
+          p.x,
+          p.y - 15,
+          parriedDmg,
+          "parry",
+          false,
+          p,
+        );
+
+      if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+        let riposteDmg = BigNum.from(pStats.atk || 15).mul(
+          pStats.riposteDamage || 0.8,
+        );
+        sourceMob.hp = sourceMob.hp.sub(riposteDmg);
+        sourceMob.flashTimer = 6;
+        let mobCx = sourceMob.x + sourceMob.w / 2;
+        let mobCy = sourceMob.y + sourceMob.h / 2;
+        if (window.combatVisuals) {
+          window.combatVisuals.spawnDamageEffect(
+            mobCx,
+            mobCy,
+            riposteDmg,
+            "parry_counter",
+            false,
+            sourceMob,
+          );
+        }
+        if (sourceMob.hp.lte(0)) {
+                  let rewardGold = Math.floor(
+                    15 * (1 + (window.player ? window.player.depth : 1) * 0.5),
+                  );
+                  let rewardXp = Math.floor(
+                    15 + (window.player ? window.player.depth : 1) * 4,
+                  );
+                  window.spawnHomingGold(mobCx, mobCy, rewardGold);
+                  window.spawnHomingXp(mobCx, mobCy, rewardXp);
+                }
+      }
+      if (typeof window.updateHUD === "function") window.updateHUD();
+      return parriedDmg;
+    }
+
+    // Step 3: Block Check (Shields)
+    if (pStats.block && Math.random() < pStats.block) {
+      p.lastDamageTimer = 180;
+
+      if (window.SoundManager) window.SoundManager.play("block");
+      if (window.combatVisuals)
+        window.combatVisuals.spawnDamageEffect(
+          p.x,
+          p.y - 15,
+          0,
+          "block",
+          false,
+          p,
+        );
+
+      if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+        let defBash = BigNum.from(pStats.def || 5).mul(pStats.reflectDamage || 1.0);
+        let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
+        let reflectDmg = defBash.add(atkBash);
+
+        if (reflectDmg.gt(0)) {
+          sourceMob.hp = sourceMob.hp.sub(reflectDmg);
+          sourceMob.flashTimer = 6;
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnDamageEffect(
+              sourceMob.x + sourceMob.w / 2,
+              sourceMob.y + sourceMob.h / 2,
+              reflectDmg,
+              "counter",
+              false,
+              sourceMob,
+            );
+          }
+        }
+      }
+
+      if (typeof window.updateHUD === "function") window.updateHUD();
+      return 0;
+    }
+
+  // Step 4: Unmitigated Damage Hit
+    let finalDmg = Math.max(1, Math.round(netDmg));
+    p.hp = Math.max(0, p.hp - finalDmg);
+    p.lastDamageTimer = 180;
+    window.spawnFloatingText(p.x, p.y - 15, `-${finalDmg}`, "#e74c3c");
+
+    if (p.hp <= 0) {
+      if (sourceMob) {
+        window.playerStats.killedByMob = { ...sourceMob };
+        window.playerStats.killedBy = sourceMob.name || "Dungeon Monster";
+      } else {
+        window.playerStats.killedByMob = null;
+        window.playerStats.killedBy = "Environmental Hazard";
+      }
+      window.playerStats.deathCount = (window.playerStats.deathCount || 0) + 1;
+      if (typeof window.startDeathSequence === "function") {
+        window.startDeathSequence();
+      }
+    }
+
+    if (window.SoundManager) window.SoundManager.play("hit");
+    if (typeof window.updateHUD === "function") window.updateHUD();
+
+    return finalDmg;
 };
 
 // --- INITIAL GLOBAL STATE ---
@@ -2489,10 +2764,10 @@ window.playerStats = {
   unviewedAchievements: [],
   selectedPrestigeStage: 80,
   unlockedCheckpoints: [1],
-    selectedCheckpoint: 1,
-    maxFloorCleared: 0,
-    unlockedTitles: [],
-    tutorialStep: 0,
+  selectedCheckpoint: 1,
+  maxFloorCleared: 0,
+  unlockedTitles: [],
+  tutorialStep: 0,
   completedTutorialSteps: [],
   visitedTabs: [],
   visitedSubTabs: [],
@@ -2532,6 +2807,7 @@ window.playerStats = {
   chatX: null,
   chatY: null,
   controlMode: "joystick",
+  enableLighting: true,
 };
 
 window.toggleControlMode = function () {
@@ -2858,6 +3134,7 @@ window.state = {
   efficiency: 1.0,
   currentSubTab: "EQUIP",
   currentActivitiesSubTab: "DUNGEONS",
+  preferredRingComparisonSlot: "ring1",
 };
 window.isGamePaused = false;
 window.isCloudSynced = false;
@@ -2868,8 +3145,8 @@ window.lastUpdateTime = Date.now();
 window.sessionStartTime = Date.now();
 window.respawnIntervalId = null;
 window.recalculateXpRequirement = function () {
-  window.playerStats.xpReq = BigNum.from(350).mul(
-    BigNum.from(1.45).pow(window.playerStats.level - 1),
+  window.playerStats.xpReq = BigNum.from(600).mul(
+    BigNum.from(1.55).pow(window.playerStats.level - 1),
   );
 };
 // Expose the manual boss rechallenge actuator to the DOM window
@@ -2897,17 +3174,43 @@ window.saveGame = function () {
     let saveData = {
       playerStats: { ...window.playerStats },
       equippedSlots: window.equippedSlots || {},
-      inventory: window.inventory || { EQUIP: [], ARTIFACT: [], SIGIL: [], ETC: {}, USE: {} },
-      stash: (window.player && window.player.stash) ? window.player.stash : [],
-      bag: (window.player && window.player.bag) ? window.player.bag : [],
+      inventory: window.inventory || {
+        EQUIP: [],
+        ARTIFACT: [],
+        SIGIL: [],
+        ETC: {},
+        USE: {},
+      },
+      stash: window.player && window.player.stash ? window.player.stash : [],
+      bag: window.player && window.player.bag ? window.player.bag : [],
       version: window.GAME_VERSION || 1.0,
     };
 
-    if (saveData.playerStats.xp) saveData.playerStats.xp = { m: saveData.playerStats.xp.m, e: saveData.playerStats.xp.e };
-    if (saveData.playerStats.xpReq) saveData.playerStats.xpReq = { m: saveData.playerStats.xpReq.m, e: saveData.playerStats.xpReq.e };
-    if (saveData.playerStats.currentHp) saveData.playerStats.currentHp = { m: saveData.playerStats.currentHp.m, e: saveData.playerStats.currentHp.e };
-    if (saveData.playerStats.coins) saveData.playerStats.coins = { m: saveData.playerStats.coins.m, e: saveData.playerStats.coins.e };
-    if (saveData.playerStats.totalGoldEarned) saveData.playerStats.totalGoldEarned = { m: saveData.playerStats.totalGoldEarned.m, e: saveData.playerStats.totalGoldEarned.e };
+    if (saveData.playerStats.xp)
+      saveData.playerStats.xp = {
+        m: saveData.playerStats.xp.m,
+        e: saveData.playerStats.xp.e,
+      };
+    if (saveData.playerStats.xpReq)
+      saveData.playerStats.xpReq = {
+        m: saveData.playerStats.xpReq.m,
+        e: saveData.playerStats.xpReq.e,
+      };
+    if (saveData.playerStats.currentHp)
+      saveData.playerStats.currentHp = {
+        m: saveData.playerStats.currentHp.m,
+        e: saveData.playerStats.currentHp.e,
+      };
+    if (saveData.playerStats.coins)
+      saveData.playerStats.coins = {
+        m: saveData.playerStats.coins.m,
+        e: saveData.playerStats.coins.e,
+      };
+    if (saveData.playerStats.totalGoldEarned)
+      saveData.playerStats.totalGoldEarned = {
+        m: saveData.playerStats.totalGoldEarned.m,
+        e: saveData.playerStats.totalGoldEarned.e,
+      };
 
     localStorage.setItem("extraction_crawler_save", JSON.stringify(saveData));
   } catch (err) {
@@ -2928,9 +3231,13 @@ window.loadGame = function () {
 
       window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
       window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
-      window.playerStats.currentHp = BigNum.from(window.playerStats.currentHp || 100);
+      window.playerStats.currentHp = BigNum.from(
+        window.playerStats.currentHp || 100,
+      );
       window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
-      window.playerStats.totalGoldEarned = BigNum.from(window.playerStats.totalGoldEarned || 0);
+      window.playerStats.totalGoldEarned = BigNum.from(
+        window.playerStats.totalGoldEarned || 0,
+      );
     }
 
     if (parsed.equippedSlots) {
@@ -2950,11 +3257,19 @@ window.loadGame = function () {
       if (item && item.id !== undefined) itemMap.set(item.id, item);
     });
     savedStash.forEach((item) => {
-      if (item && item.id !== undefined && !itemMap.has(item.id)) itemMap.set(item.id, item);
+      if (item && item.id !== undefined && !itemMap.has(item.id))
+        itemMap.set(item.id, item);
     });
 
     let mergedItems = Array.from(itemMap.values());
-    if (!window.inventory) window.inventory = { EQUIP: [], ARTIFACT: [], SIGIL: [], ETC: {}, USE: {} };
+    if (!window.inventory)
+      window.inventory = {
+        EQUIP: [],
+        ARTIFACT: [],
+        SIGIL: [],
+        ETC: {},
+        USE: {},
+      };
     window.inventory.EQUIP = mergedItems;
 
     if (window.player) {
@@ -2964,10 +3279,28 @@ window.loadGame = function () {
       }
     }
 
-    if (typeof window.invalidatePlayerStats === "function") {
-      window.invalidatePlayerStats();
-    }
-  } catch (err) {
+    if (typeof window.recalculateItemStats === "function") {
+          let allItems = [
+            ...Object.values(window.equippedSlots || {}),
+            ...(window.inventory?.EQUIP || []),
+            ...(window.inventory?.ARTIFACT || []),
+            ...(window.player?.stash || []),
+            ...(window.player?.bag || []),
+          ];
+          allItems.forEach((item) => {
+            if (item && typeof item === "object" && item.type) {
+              window.recalculateItemStats(item);
+            }
+          });
+        }
+
+        if (typeof window.invalidatePlayerStats === "function") {
+          window.invalidatePlayerStats();
+        }
+        if (typeof window.updateUI === "function") {
+          window.updateUI();
+        }
+      } catch (err) {
     console.warn("Failed to load game from localStorage:", err);
   }
 };
