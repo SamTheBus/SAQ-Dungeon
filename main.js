@@ -3138,18 +3138,32 @@
       window.preventTooltipLeaks("stat-tooltip");
     });
 
-  window.toggleProfileModal = function () {
-    window.hideTooltip();
-    let modal = document.getElementById("profile-modal");
-    if (!modal) return;
+  window.activeProfileMobileTab = "stats";
 
-    if (modal.style.display === "none" || modal.style.display === "") {
-      modal.style.display = "flex";
-      window.renderProfileModal();
-    } else {
-      modal.style.display = "none";
-    }
-  };
+    window.switchProfileTab = function (tabKey) {
+      window.activeProfileMobileTab = tabKey;
+      const tabs = ["stats", "gear", "satchel"];
+      tabs.forEach((t) => {
+        let btn = document.getElementById(`profile-tab-${t}`);
+        let sec = document.getElementById(`profile-sec-${t}`);
+        if (btn) btn.classList.toggle("active", t === tabKey);
+        if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
+      });
+    };
+
+    window.toggleProfileModal = function () {
+      window.hideTooltip();
+      let modal = document.getElementById("profile-modal");
+      if (!modal) return;
+
+      if (modal.style.display === "none" || modal.style.display === "") {
+        modal.style.display = "flex";
+        window.switchProfileTab(window.activeProfileMobileTab || "stats");
+        window.renderProfileModal();
+      } else {
+        modal.style.display = "none";
+      }
+    };
 
   window.renderProfileModal = function () {
     let statsListEl = document.getElementById("profile-stats-list");

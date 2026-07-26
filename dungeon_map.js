@@ -556,34 +556,43 @@
   }
 
   class Camera {
-    constructor() {
-      this.x = 0;
-      this.y = 0;
-      this.viewportW = 750;
-      this.viewportH = 320;
-      this.zoom = 1.6;
-    }
-
-    update(targetX, targetY, mapWidthPx, mapHeightPx) {
-      let effW = this.viewportW / this.zoom;
-      let effH = this.viewportH / this.zoom;
-
-      this.x = targetX - effW / 2;
-      this.y = targetY - effH / 2;
-
-      if (mapWidthPx <= effW) {
-        this.x = (mapWidthPx - effW) / 2;
-      } else {
-        this.x = Math.max(0, Math.min(this.x, mapWidthPx - effW));
+      constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.viewportW = 750;
+        this.viewportH = 320;
+        this.zoom = 1.6;
       }
 
-      if (mapHeightPx <= effH) {
-        this.y = (mapHeightPx - effH) / 2;
-      } else {
-        this.y = Math.max(0, Math.min(this.y, mapHeightPx - effH));
+      update(targetX, targetY, mapWidthPx, mapHeightPx) {
+        let baseZoom = 1.6;
+        if (this.viewportW > 0 && this.viewportH > 0) {
+          let fitZoomW = this.viewportW / Math.max(1, mapWidthPx);
+          let fitZoomH = this.viewportH / Math.max(1, mapHeightPx);
+          let fitZoom = Math.max(fitZoomW, fitZoomH);
+          baseZoom = Math.max(baseZoom, fitZoom);
+        }
+        this.zoom = Math.max(1.0, Math.min(2.2, baseZoom));
+
+        let effW = this.viewportW / this.zoom;
+        let effH = this.viewportH / this.zoom;
+
+        this.x = targetX - effW / 2;
+        this.y = targetY - effH / 2;
+
+        if (mapWidthPx <= effW) {
+          this.x = (mapWidthPx - effW) / 2;
+        } else {
+          this.x = Math.max(0, Math.min(this.x, mapWidthPx - effW));
+        }
+
+        if (mapHeightPx <= effH) {
+          this.y = (mapHeightPx - effH) / 2;
+        } else {
+          this.y = Math.max(0, Math.min(this.y, mapHeightPx - effH));
+        }
       }
     }
-  }
 
   window.DungeonMapGenerator = DungeonMapGenerator;
   window.DungeonCamera = new Camera();
@@ -2660,13 +2669,13 @@ window.drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
       };
 
   window.renderMinimap = function (ctx, canvas) {
-      let map = window.activeDungeonMap;
-      if (!map || !map.grid || map.grid.length === 0) return;
+        let map = window.activeDungeonMap;
+        if (!map || !map.grid || map.grid.length === 0) return;
 
-      let mw = 95;
-      let mh = 55;
-      let mx = canvas.width - mw - 10;
-      let my = 46;
+        let mw = 90;
+        let mh = 50;
+        let mx = canvas.width - mw - 10;
+        let my = 58;
 
       ctx.save();
       ctx.fillStyle = "rgba(5, 3, 10, 0.88)";
