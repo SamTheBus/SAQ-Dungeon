@@ -2758,60 +2758,223 @@
 
         ctx.restore();
       } else if (tileType === window.TILE_TYPES.STATION_SHOP) {
-        let cx = px + tileSize / 2;
-        let cy = py + tileSize / 2;
-        let time = Date.now();
+              let cx = px + tileSize / 2;
+              let cy = py + tileSize / 2;
+              let time = Date.now();
 
-        ctx.save();
+              ctx.save();
 
-        // Base Shadow
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        ctx.beginPath();
-        ctx.ellipse(cx, cy + 10, 16, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
+              // 1. Woven Ornamental Rug Base Pad (Underneath the stall)
+              let rugW = 72;
+              let rugH = 28;
+              let rugX = cx - rugW / 2;
+              let rugY = cy - 6;
 
-        // Counter Wooden Table
-        ctx.fillStyle = "#5c3a21";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(cx - 14, cy, 28, 12, [2]);
-        ctx.fill();
-        ctx.stroke();
+              ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+              ctx.beginPath();
+              ctx.roundRect(rugX - 2, rugY - 2, rugW + 4, rugH + 4, [4]);
+              ctx.fill();
 
-        ctx.fillStyle = "#78350f";
-        ctx.fillRect(cx - 13, cy + 1, 26, 3);
+              ctx.fillStyle = "#6b1111";
+              ctx.strokeStyle = "#4a0b0b";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.roundRect(rugX, rugY, rugW, rugH, [3]);
+              ctx.fill();
+              ctx.stroke();
 
-        // Canopy Awning Posts
-        ctx.fillStyle = "#3d1d0b";
-        ctx.fillRect(cx - 12, cy - 16, 3, 16);
-        ctx.fillRect(cx + 9, cy - 16, 3, 16);
+              ctx.strokeStyle = "#d4af37";
+              ctx.lineWidth = 1.0;
+              ctx.strokeRect(rugX + 3, rugY + 3, rugW - 6, rugH - 6);
 
-        // Striped Canopy Top
-        let canopyY = cy - 20;
-        ctx.fillStyle = "#d35400";
-        ctx.beginPath();
-        ctx.roundRect(cx - 16, canopyY, 32, 7, [2]);
-        ctx.fill();
-        ctx.stroke();
+              ctx.fillStyle = "#f1c40f";
+              for (let tX = rugX + 4; tX <= rugX + rugW - 4; tX += 6) {
+                ctx.fillRect(tX - 1, rugY - 3, 2, 3);
+                ctx.fillRect(tX - 1, rugY + rugH, 2, 3);
+              }
 
-        ctx.fillStyle = "#f1c40f";
-        ctx.fillRect(cx - 10, canopyY, 5, 7);
-        ctx.fillRect(cx, canopyY, 5, 7);
-        ctx.fillRect(cx + 10, canopyY, 5, 7);
+              // 2. Oak Trade Counter Structure
+              let tableW = 60;
+              let tableH = 18;
+              let tableX = cx - tableW / 2;
+              let tableY = cy - 2;
 
-        // Hanging Brass Lantern
-        let lanternSway = Math.sin(time / 220) * 2;
-        ctx.fillStyle = "#ffd700";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(cx - 8 + lanternSway, cy - 8, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+              ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+              ctx.beginPath();
+              ctx.ellipse(cx, tableY + tableH + 2, tableW / 2 + 4, 4, 0, 0, Math.PI * 2);
+              ctx.fill();
 
-        ctx.restore();
-      } else if (tileType === window.TILE_TYPES.STATION_GACHAPON) {
+              ctx.fillStyle = "#4a2d18";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 2.0;
+              ctx.beginPath();
+              ctx.roundRect(tableX, tableY, tableW, tableH, [2]);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#331c0e";
+              ctx.fillRect(tableX + 4, tableY + 3, 14, tableH - 6);
+              ctx.strokeRect(tableX + 4, tableY + 3, 14, tableH - 6);
+              ctx.fillRect(tableX + 23, tableY + 3, 14, tableH - 6);
+              ctx.strokeRect(tableX + 23, tableY + 3, 14, tableH - 6);
+              ctx.fillRect(tableX + 42, tableY + 3, 14, tableH - 6);
+              ctx.strokeRect(tableX + 42, tableY + 3, 14, tableH - 6);
+
+              ctx.fillStyle = "#78350f";
+              ctx.fillRect(tableX - 2, tableY - 3, tableW + 4, 5);
+              ctx.strokeRect(tableX - 2, tableY - 3, tableW + 4, 5);
+
+              ctx.fillStyle = "#800020";
+              ctx.fillRect(cx - 16, tableY - 3, 32, 5);
+              ctx.strokeStyle = "#f1c40f";
+              ctx.lineWidth = 0.8;
+              ctx.strokeRect(cx - 16, tableY - 3, 32, 5);
+
+              // Wares Displayed on Counter
+              ctx.fillStyle = "#2ecc71";
+              ctx.beginPath();
+              ctx.arc(cx - 10, tableY - 5, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(cx - 11, tableY - 8, 2, 2);
+
+              ctx.fillStyle = "#d4af37";
+              ctx.beginPath();
+              ctx.ellipse(cx, tableY - 4, 4, 3, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = "#000";
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+
+              ctx.fillStyle = "#bdc3c7";
+              ctx.beginPath();
+              ctx.moveTo(cx + 8, tableY - 7);
+              ctx.lineTo(cx + 12, tableY - 3);
+              ctx.lineTo(cx + 10, tableY - 2);
+              ctx.closePath();
+              ctx.fill();
+
+              // 3. Canopy Support Posts
+              let postLeftX = tableX - 2;
+              let postRightX = tableX + tableW - 2;
+              let postTopY = cy - 32;
+
+              ctx.fillStyle = "#3d1d0b";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1.8;
+
+              ctx.fillRect(postLeftX, postTopY, 4, 30);
+              ctx.strokeRect(postLeftX, postTopY, 4, 30);
+              ctx.fillRect(postRightX, postTopY, 4, 30);
+              ctx.strokeRect(postRightX, postTopY, 4, 30);
+
+              ctx.fillStyle = "#f1c40f";
+              ctx.fillRect(postLeftX - 1, postTopY - 1, 6, 3);
+              ctx.fillRect(postRightX - 1, postTopY - 1, 6, 3);
+
+              // 4. Striped Velvet Canopy Awning
+              let awningW = 68;
+              let awningH = 14;
+              let awningX = cx - awningW / 2;
+              let awningY = postTopY - 8;
+
+              ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+              ctx.beginPath();
+              ctx.roundRect(awningX - 1, awningY + 2, awningW + 2, awningH, [3]);
+              ctx.fill();
+
+              ctx.fillStyle = "#8b0000";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 2.0;
+              ctx.beginPath();
+              ctx.roundRect(awningX, awningY, awningW, awningH, [4, 4, 0, 0]);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#f1c40f";
+              let stripeW = 8;
+              for (let sX = awningX + 6; sX < awningX + awningW - 4; sX += stripeW * 2) {
+                ctx.fillRect(sX, awningY, stripeW, awningH);
+              }
+
+              ctx.fillStyle = "#8b0000";
+              ctx.strokeStyle = "#d4af37";
+              ctx.lineWidth = 1.2;
+
+              let scallopCount = 7;
+              let scallopW = awningW / scallopCount;
+              for (let i = 0; i < scallopCount; i++) {
+                let scX = awningX + i * scallopW + scallopW / 2;
+                let scY = awningY + awningH;
+                ctx.beginPath();
+                ctx.arc(scX, scY, scallopW / 2, 0, Math.PI);
+                ctx.fill();
+                ctx.stroke();
+              }
+
+              // 5. Dual Hanging Brass Lanterns
+              let lanternSway1 = Math.sin(time / 180) * 2;
+              let lanternSway2 = Math.cos(time / 210) * 2;
+
+              let l1X = postLeftX + 2 + lanternSway1;
+              let l1Y = postTopY + 10;
+              ctx.strokeStyle = "#f1c40f";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.moveTo(postLeftX + 2, postTopY + 4);
+              ctx.lineTo(l1X, l1Y);
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffd700";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.arc(l1X, l1Y + 3, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(l1X, l1Y + 3, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              let l2X = postRightX + 2 + lanternSway2;
+              let l2Y = postTopY + 10;
+              ctx.strokeStyle = "#f1c40f";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.moveTo(postRightX + 2, postTopY + 4);
+              ctx.lineTo(l2X, l2Y);
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffd700";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.arc(l2X, l2Y + 3, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(l2X, l2Y + 3, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              // 6. Ambient Drifting Gold Spark Particles
+              for (let i = 0; i < 4; i++) {
+                let seed = i * 53.7;
+                let progress = (time / 700 + seed) % 1.0;
+                let sparkX = cx + Math.sin(time / 140 + seed) * 24;
+                let sparkY = tableY - progress * 20;
+                let alpha = (1.0 - progress) * 0.8;
+                let size = 1.5 * (1.0 - progress * 0.3);
+
+                ctx.fillStyle = `rgba(241, 196, 15, ${alpha})`;
+                ctx.fillRect(sparkX - size / 2, sparkY - size / 2, size, size);
+              }
+
+              ctx.restore();
+            } else if (tileType === window.TILE_TYPES.STATION_GACHAPON) {
         let cx = px + tileSize / 2;
         let cy = py + tileSize / 2;
         let time = Date.now();

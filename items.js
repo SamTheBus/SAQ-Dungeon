@@ -6250,6 +6250,18 @@ window.getGoldUpgradeCost = function (type, level) {
 
 window.activeShopTab = "gear";
 
+window.updateShopHeaderWallet = function () {
+  let goldEl = document.getElementById("shop-wallet-gold");
+  let soulsEl = document.getElementById("shop-wallet-souls");
+  if (goldEl && window.playerStats) {
+    goldEl.innerText = window.formatNumber(window.playerStats.coins || 0);
+  }
+  if (soulsEl && window.inventory && window.inventory.ETC) {
+    let souls = window.inventory.ETC["Monster Soul"] || 0;
+    soulsEl.innerText = souls.toLocaleString();
+  }
+};
+
 window.toggleShopModal = function () {
   if (typeof window.hideTooltip === "function") window.hideTooltip();
   let modal = document.getElementById("shop-modal");
@@ -6263,6 +6275,7 @@ window.toggleShopModal = function () {
     ) {
       window.refreshShopStock(true);
     }
+    window.updateShopHeaderWallet();
     window.switchShopTab(window.activeShopTab || "gear");
   } else {
     modal.style.display = "none";
@@ -6275,6 +6288,8 @@ window.switchShopTab = function (tabKey) {
     let btn = document.getElementById(`shop-tab-${t}`);
     if (btn) btn.classList.toggle("active", t === tabKey);
   });
+
+  window.updateShopHeaderWallet();
 
   let content = document.getElementById("shop-content-panel");
   if (!content) return;
@@ -6368,9 +6383,10 @@ window.executeManualShopRefresh = function () {
   }
 
   window.refreshShopStock(true);
-  window.pushHeaderToast("✦ Merchant Inventory Refreshed!", "#2ecc71");
-  if (window.SoundManager) window.SoundManager.play("swing");
-  window.renderMarketShop();
+    window.updateShopHeaderWallet();
+    window.pushHeaderToast("✦ Merchant Inventory Refreshed!", "#2ecc71");
+    if (window.SoundManager) window.SoundManager.play("swing");
+    window.renderMarketShop();
 };
 
 window.renderMarketShop = function () {
@@ -6383,28 +6399,106 @@ window.renderMarketShop = function () {
       ? window.inventory.ETC["Monster Soul"] || 0
       : 0;
 
+  let now = Date.now();
+  let refreshTime = window.playerStats.shopRefreshTime || 0;
+  let remainingMs = Math.max(0, refreshTime - now);
+  let remainingMins = Math.floor(remainingMs / 60000);
+  let remainingSecs = Math.floor((remainingMs % 60000) / 1000);
+  let timerStr = `${remainingMins}m ${remainingSecs < 10 ? "0" : ""}${remainingSecs}s`;
+
   let itemsHtml = items
     .map((item, idx) => {
       let col = window.getTierColor(item.statsRolled);
       let isPurchased = !!item.purchased;
       let costText = window.formatNumber(item.cost);
       let canAfford = BigNum.from(window.playerStats.coins).gte(item.cost);
-      let costColor = canAfford ? "#f1c40f" : "#e74c3c";
+
+      let eq = window.getEquippedItemForComparison(item.type);
+      let deltasHtml = "";
+      if (eq && !isPurchased) {
+        let deltaParts = [];
+        let diffAtk = (item.atk || 0) - (eq.atk || 0);
+        let diffDef = (item.def || 0) - (eq.def || 0);
+        let diffHp = (item.maxHp || 0) - (eq.maxHp || 0);
+
+        if (diffAtk > 0)
+          deltaParts.push(
+            `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffAtk)} ATK</span>`,
+          );
+        else if (diffAtk < 0)
+          deltaParts.push(
+            `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffAtk)} ATK</span>`,
+          );
+
+        if (diffDef > 0)
+          deltaParts.push(
+            `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffDef)} DEF</span>`,
+          );
+        else if (diffDef < 0)
+          deltaParts.push(
+            `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffDef)} DEF</span>`,
+          );
+
+        if (diffHp > 0)
+          deltaParts.push(
+            `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffHp)} HP</span>`,
+          );
+        else if (diffHp < 0)
+          deltaParts.push(
+            `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffHp)} HP</span>`,
+          );
+
+        if (deltaParts.length > 0) {
+          deltasHtml = `<div class="shop-card-deltas">${deltaParts.join(" • ")}</div>`;
+        }
+      }
+
+      let statSummary = [];
+      if (item.atk > 0)
+        statSummary.push(
+          `${window.getUiIconSvg("atk", 10)} +${window.formatNumber(item.atk)}`,
+        );
+      if (item.def > 0)
+        statSummary.push(
+          `${window.getUiIconSvg("def", 10)} +${window.formatNumber(item.def)}`,
+        );
+      if (item.maxHp > 0)
+        statSummary.push(
+          `${window.getUiIconSvg("maxHp", 10)} +${window.formatNumber(item.maxHp)}`,
+        );
+      if (item.critChance > 0)
+        statSummary.push(
+          `${window.getUiIconSvg("critChance", 10)} +${Math.round(item.critChance * 100)}%`,
+        );
 
       let btnHtml = isPurchased
-        ? `<button class="action-btn-sm" style="background:#334155; border-color:#475569; color:#94a3b8;" disabled>SOLD OUT</button>`
-        : `<button class="action-btn-sm action-btn-equip" style="border-color:${canAfford ? "#34d399" : "#f87171"};" ${canAfford ? "" : "disabled"} onclick="event.stopPropagation(); window.buyShopItem(${idx});">BUY (${costText} G)</button>`;
+        ? `<button class="shop-buy-btn sold-out" disabled>SOLD OUT</button>`
+        : `<button class="shop-buy-btn ${canAfford ? "affordable" : "unaffordable"}" ${canAfford ? "" : "disabled"} onclick="event.stopPropagation(); window.buyShopItem(${idx});">
+            <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8"/><circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6"/></svg>
+            <span>BUY (${costText})</span>
+          </button>`;
 
       return `
-      <div class="stash-card" style="border-left: 3.5px solid ${col}; opacity:${isPurchased ? "0.5" : "1.0"}; padding: 8px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.playerStats.shopItems[${idx}])">
-        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-          ${window.getEquipIconHtml(item, 32)}
-          <div style="display: flex; flex-direction: column; min-width: 0;">
-            <span style="color:${col}; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
-            <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${item.statsRolled}★ ${window.getTierName(item.statsRolled)} • Price: <strong style="color:${costColor}">${costText} Gold</strong></span>
+      <div class="shop-showcase-card ${isPurchased ? "card-sold-out" : ""}" style="border-left: 4px solid ${col};" onclick="window.showItemTooltip(event, window.playerStats.shopItems[${idx}])">
+        <div class="shop-card-left">
+          <div class="shop-card-icon-container" style="border-color:${col};">
+            ${window.getEquipIconHtml(item, 38)}
+          </div>
+          <div class="shop-card-details">
+            <div class="shop-card-title-row">
+              <span class="shop-card-name" style="color:${col};">${item.name}</span>
+              <span class="shop-card-tier-badge" style="color:${col}; border-color:${col}55; background:${col}15;">${item.statsRolled}★ ${window.getTierName(item.statsRolled)}</span>
+            </div>
+            <div class="shop-card-type-row">
+              <span>${(item.subType || item.type || "EQUIP").toUpperCase()} • LV.${item.stageLevel || 1}</span>
+            </div>
+            <div class="shop-card-stats-row">
+              ${statSummary.join("  ")}
+            </div>
+            ${deltasHtml}
           </div>
         </div>
-        <div style="flex-shrink: 0; margin-left: 8px;">
+        <div class="shop-card-right">
           ${btnHtml}
         </div>
       </div>
@@ -6413,12 +6507,34 @@ window.renderMarketShop = function () {
     .join("");
 
   content.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:6px; font-family:monospace; font-size:9.5px;">
-      <span style="color:#94a3b8;">Merchant Refresh Stock:</span>
-      <button class="action-btn-sm" style="background:#1e293b; border-color:#00d2ff; color:#00d2ff;" onclick="window.executeManualShopRefresh()">REFRESH (50 Souls) [Owned: ${soulsOwned}]</button>
+    <!-- Vendor Banner Quote -->
+    <div class="merchant-banner-quote">
+      <div class="merchant-avatar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f1c40f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </div>
+      <div class="merchant-quote-content">
+        <span class="merchant-speaker">MARCUS THE WANDERING VENDOR</span>
+        <span class="merchant-dialogue">"Greetings, Hero! Direct imports straight from the deepest caverns. Inspected, tuned, and ready for battle."</span>
+      </div>
     </div>
-    <div style="display:flex; flex-direction:column; gap:4px;">
-      ${itemsHtml || '<div style="color:#64748b; font-style:italic; text-align:center; padding:20px;">Merchant is preparing stock...</div>'}
+
+    <!-- Restock Control Bar -->
+    <div class="shop-restock-bar">
+      <div class="restock-timer-info">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Auto-Restock in: <strong style="color:#38bdf8;">${timerStr}</strong></span>
+      </div>
+      <button class="shop-refresh-btn" onclick="window.executeManualShopRefresh()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span>RESTOCK (50 Souls)</span>
+      </button>
+    </div>
+
+    <div class="shop-showcase-list">
+      ${itemsHtml || '<div style="color:#64748b; font-style:italic; text-align:center; padding:25px;">Merchant Marcus is restocking his display counter...</div>'}
     </div>
   `;
 };
@@ -6442,17 +6558,42 @@ window.renderMysticalShop = function () {
       if (item.currency === "Gold") {
         canAfford = BigNum.from(window.playerStats.coins).gte(costVal);
       } else {
-        let owned = window.inventory.ETC["Luminous Soul"] || 0;
+        let owned =
+          window.inventory && window.inventory.ETC
+            ? window.inventory.ETC["Luminous Soul"] || 0
+            : 0;
         canAfford = owned >= item.cost;
       }
 
+      let iconHtml = window.getUseIconHtml
+        ? window.getUseIconHtml(item.name, 36)
+        : "";
+      if (!iconHtml && window.getEtcIconHtml) {
+        iconHtml = window.getEtcIconHtml(item.name, 36);
+      }
+
+      let currencyIcon =
+        item.currency === "Gold"
+          ? `<svg width="11" height="11" viewBox="0 0 12 12" style="display:inline-block; vertical-align:middle;"><circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8"/><circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6"/></svg>`
+          : `<svg width="11" height="11" viewBox="0 0 12 12" style="display:inline-block; vertical-align:middle;"><path d="M6 1.5 C6 1.5, 2 6, 2 9 C2 11, 3.8 11.5, 6 11.5 C8.2 11.5, 10 11, 10 9 C10 6, 6 1.5, 6 1.5 Z" fill="#ffb6c1" stroke="#000" stroke-width="0.8"/></svg>`;
+
       return `
-      <div class="material-card" style="border-left: 3.5px solid ${item.color || "#00d2ff"}; padding: 8px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
-          <span style="color:${item.color || "#fff"}; font-weight:bold; font-size:11px;">${item.name}</span>
-          <span style="font-size:8.5px; color:#94a3b8; font-family:monospace; margin-top:2px;">${item.desc}</span>
+      <div class="mystical-trade-card" style="border-left: 3.5px solid ${item.color || "#00d2ff"};">
+        <div class="mystical-card-left">
+          <div class="mystical-icon-box" style="border-color:${item.color || "#00d2ff"};">
+            ${iconHtml}
+          </div>
+          <div class="mystical-card-details">
+            <span class="mystical-card-title" style="color:${item.color || "#fff"};">${item.name}</span>
+            <span class="mystical-card-desc">${item.desc}</span>
+          </div>
         </div>
-        <button class="action-btn-sm action-btn-equip" style="margin-left:8px; flex-shrink:0;" ${canAfford ? "" : "disabled"} onclick="window.buyMysticalItem(${idx})">BUY (${costStr} ${item.currency})</button>
+        <div class="mystical-card-right">
+          <button class="shop-buy-btn ${canAfford ? "affordable" : "unaffordable"}" ${canAfford ? "" : "disabled"} onclick="window.buyMysticalItem(${idx})">
+            ${currencyIcon}
+            <span>${costStr} ${item.currency.toUpperCase()}</span>
+          </button>
+        </div>
       </div>
     `;
     })
@@ -6460,26 +6601,70 @@ window.renderMysticalShop = function () {
 
   let transmutationsHtml = (window.POTION_TRANSMUTATIONS || [])
     .map((t, idx) => {
-      let owned = window.inventory.USE[t.req] || 0;
+      let owned =
+        window.inventory && window.inventory.USE
+          ? window.inventory.USE[t.req] || 0
+          : 0;
       let canBrew = owned >= t.amount;
+      let resultIcon = window.getUseIconHtml
+        ? window.getUseIconHtml(t.result, 36)
+        : "";
+
+      let reqColor = canBrew ? "#34d399" : "#f87171";
 
       return `
-      <div class="consumable-card" style="border-left: 3.5px solid ${t.color || "#2ecc71"}; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
-          <span style="color:${t.color || "#2ecc71"}; font-weight:bold; font-size:10.5px;">${t.result}</span>
-          <span style="font-size:8px; color:#94a3b8; font-family:monospace;">Requires: ${t.amount}x ${t.req} (Owned: ${owned})</span>
+      <div class="alchemy-workbench-card" style="border-left: 3.5px solid ${t.color || "#2ecc71"};">
+        <div class="alchemy-card-left">
+          <div class="alchemy-icon-box" style="border-color:${t.color || "#2ecc71"};">
+            ${resultIcon}
+          </div>
+          <div class="alchemy-card-details">
+            <span class="alchemy-card-title" style="color:${t.color || "#2ecc71"};">${t.result}</span>
+            <div class="alchemy-recipe-nodes">
+              <span class="recipe-req-label">Required Ingredient:</span>
+              <span class="recipe-ingredient-chip" style="border-color:${reqColor}; background:${canBrew ? "rgba(52,211,153,0.12)" : "rgba(239,68,68,0.12)"}; color:${reqColor};">
+                ${t.amount}x ${t.req} (Owned: ${owned})
+              </span>
+            </div>
+          </div>
         </div>
-        <button class="action-btn-sm action-btn-equip" style="margin-left:8px; flex-shrink:0;" ${canBrew ? "" : "disabled"} onclick="window.transmutePotion(${idx})">BREW</button>
+        <div class="alchemy-card-right">
+          <button class="shop-buy-btn ${canBrew ? "affordable" : "unaffordable"}" ${canBrew ? "" : "disabled"} onclick="window.transmutePotion(${idx})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 2v5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 7V2"/><path d="M8.5 2h7"/></svg>
+            <span>BREW ELIXIR</span>
+          </button>
+        </div>
       </div>
     `;
     })
     .join("");
 
+  let pStats =
+    typeof window.resolvePlayerStats === "function"
+      ? window.resolvePlayerStats()
+      : {};
+  let intVal = pStats.int || 5;
+  let potDurationMult = (1.0 + (intVal - 5) * 0.005).toFixed(2);
+
   content.innerHTML = `
-    <div style="text-align:left; font-family:monospace; font-size:9.5px; color:#f1c40f; font-weight:bold; margin-bottom:6px; text-transform:uppercase;">[ MYSTICAL TRADES ]</div>
-    ${mysticalList}
-    <div style="text-align:left; font-family:monospace; font-size:9.5px; color:#2ecc71; font-weight:bold; margin-top:12px; margin-bottom:6px; text-transform:uppercase;">[ POTION TRANSMUTATION ]</div>
-    ${transmutationsHtml}
+    <!-- Section 1: Mystical Trades -->
+    <div class="alchemy-section-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f1c40f" stroke-width="2.5"><polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"/></svg>
+      <span>MYSTICAL RELIC EXCHANGE</span>
+    </div>
+    <div class="mystical-trades-list">
+      ${mysticalList}
+    </div>
+
+    <!-- Section 2: Alchemy Transmutation Workbench -->
+    <div class="alchemy-section-header" style="margin-top: 14px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2.5"><path d="M10 2v5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 7V2"/><path d="M8.5 2h7"/></svg>
+      <span>ALCHEMICAL TRANSMUTATION WORKBENCH</span>
+      <span class="alchemy-int-note">(INT: ${intVal} • Potion Duration: ${potDurationMult}x)</span>
+    </div>
+    <div class="alchemy-workbench-list">
+      ${transmutationsHtml}
+    </div>
   `;
 };
 
@@ -6494,8 +6679,9 @@ window.renderGoldUpgrades = function () {
       type: "shop",
       title: "MERCHANT STOCK QUALITY",
       field: "shopQLevel",
-      desc: "Improves star-rating probabilities for items sold in the Equipment Market.",
+      desc: "Improves star-rating probabilities for weapons and armor sold in the Equipment Market.",
       statBonus: `+${(p.shopQLevel || 0) * 2}% Quality Chance`,
+      iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f1c40f" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`,
     },
     {
       type: "vending",
@@ -6503,6 +6689,7 @@ window.renderGoldUpgrades = function () {
       field: "vendingQLevel",
       desc: "Elevates high-star drop rates when spinning the Arcade Gachapon machine.",
       statBonus: `+${(p.vendingQLevel || 0) * 1}% Gacha Quality`,
+      iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00d2ff" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/></svg>`,
     },
     {
       type: "global",
@@ -6510,6 +6697,7 @@ window.renderGoldUpgrades = function () {
       field: "globalQLevel",
       desc: "Increases baseline item drop quality and star rolls across all dungeon runs.",
       statBonus: `+${(p.globalQLevel || 0) * 1}% Global Drop Quality`,
+      iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
     },
   ];
 
@@ -6519,18 +6707,37 @@ window.renderGoldUpgrades = function () {
       let cost = window.getGoldUpgradeCost(s.type, curLvl);
       let costText = window.formatNumber(cost);
       let canAfford = BigNum.from(p.coins).gte(cost);
-      let costColor = canAfford ? "#f1c40f" : "#e74c3c";
+
+      let maxLvlCap = 50;
+      let progressPct = Math.min(100, (curLvl / maxLvlCap) * 100);
 
       return `
-      <div id="sink-card-${s.type}" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid #334155; border-left: 4px solid #f1c40f; border-radius: 6px; padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="color: #f1c40f; font-weight: 800; font-size: 11px; letter-spacing: 0.5px;">${s.title}</span>
-          <span style="font-family: monospace; font-size: 10px; color: #ffffff; font-weight: bold;">LV. ${curLvl}</span>
+      <div id="sink-card-${s.type}" class="commerce-ledger-card">
+        <div class="ledger-card-header">
+          <div class="ledger-icon-box">
+            ${s.iconSvg}
+          </div>
+          <div class="ledger-header-info">
+            <div class="ledger-title-row">
+              <span class="ledger-card-title">${s.title}</span>
+              <span class="ledger-level-badge">LV. ${curLvl}</span>
+            </div>
+            <span class="ledger-card-desc">${s.desc}</span>
+            <div class="ledger-progress-bar">
+              <div class="ledger-progress-fill" style="width:${progressPct}%;"></div>
+            </div>
+          </div>
         </div>
-        <div style="font-size: 8.5px; color: #94a3b8; font-family: monospace; line-height: 1.3;">${s.desc}</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px stroke rgba(255,255,255,0.08); padding-top: 4px;">
-          <span style="font-size: 9px; color: #2ecc71; font-family: monospace; font-weight: bold;">Active: ${s.statBonus}</span>
-          <button class="action-btn-sm action-btn-equip" style="border-color:${canAfford ? "#34d399" : "#f87171"};" ${canAfford ? "" : "disabled"} onclick="window.buyGoldUpgrade('${s.type}')">UPGRADE (${costText} G)</button>
+
+        <div class="ledger-card-footer">
+          <div class="ledger-return-badge">
+            <span class="return-label">ACTIVE RETURN:</span>
+            <strong class="return-val">${s.statBonus}</strong>
+          </div>
+          <button class="shop-buy-btn ${canAfford ? "affordable" : "unaffordable"}" ${canAfford ? "" : "disabled"} onclick="window.buyGoldUpgrade('${s.type}')">
+            <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8"/><circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6"/></svg>
+            <span>INVEST (${costText})</span>
+          </button>
         </div>
       </div>
     `;
@@ -6538,8 +6745,13 @@ window.renderGoldUpgrades = function () {
     .join("");
 
   content.innerHTML = `
-    <div style="text-align:left; font-family:monospace; font-size:9.5px; color:#f1c40f; font-weight:bold; margin-bottom:8px; text-transform:uppercase;">[ PERMANENT COMMERCE INVESTMENTS ]</div>
-    ${cardsHtml}
+    <div class="alchemy-section-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f1c40f" stroke-width="2.5"><path d="M12 2v20M17 5l-5-5-5 5"/><circle cx="12" cy="12" r="10"/></svg>
+      <span>IMPERIAL COMMERCE CONTRACTS & PERMANENT PERKS</span>
+    </div>
+    <div class="commerce-ledger-list">
+      ${cardsHtml}
+    </div>
   `;
 };
 
@@ -6582,7 +6794,8 @@ window.buyShopItem = function (index) {
   }
 
   window.updateUI();
-  window.renderMarketShop();
+    window.updateShopHeaderWallet();
+    window.renderMarketShop();
   if (typeof window.renderInventory === "function") window.renderInventory();
   window.saveGame();
 };
@@ -6633,7 +6846,8 @@ window.buyMysticalItem = function (index) {
   }
 
   window.updateUI();
-  window.renderMysticalShop();
+    window.updateShopHeaderWallet();
+    window.renderMysticalShop();
   if (typeof window.renderInventory === "function") window.renderInventory();
   window.saveGame();
 };
@@ -6670,7 +6884,8 @@ window.buyGoldUpgrade = function (type) {
   }
 
   window.updateUI();
-  window.renderGoldUpgrades();
+    window.updateShopHeaderWallet();
+    window.renderGoldUpgrades();
 
   let cardEl = document.getElementById(`sink-card-${type}`);
   if (cardEl) {
@@ -6712,8 +6927,9 @@ window.transmutePotion = function (index) {
   }
 
   window.updateUI();
-  window.renderInventory();
-  window.renderMysticalShop();
+    window.updateShopHeaderWallet();
+    window.renderInventory();
+    window.renderMysticalShop();
   window.saveGame();
 };
 

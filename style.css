@@ -2019,3 +2019,644 @@ summary {
     opacity: 0;
   }
 }
+
+/* --- BAZAAR MERCHANT MODAL FRAME & HEADER --- */
+.shop-modal-card {
+  max-width: 680px !important;
+  width: 94vw !important;
+  background: radial-gradient(
+      circle at top,
+      rgba(241, 196, 15, 0.1) 0%,
+      rgba(15, 23, 42, 0.98) 70%
+    ),
+    #0b0f19 !important;
+  border: 2px solid #f1c40f !important;
+  box-shadow:
+    0 16px 50px rgba(0, 0, 0, 0.95),
+    0 0 25px rgba(241, 196, 15, 0.25),
+    inset 0 0 20px rgba(241, 196, 15, 0.05) !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+}
+
+.shop-header-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1.5px solid rgba(241, 196, 15, 0.3);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.shop-merchant-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shop-merchant-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(241, 196, 15, 0.15);
+  border: 1.5px solid #f1c40f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
+  flex-shrink: 0;
+}
+
+.shop-title-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.shop-main-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.shop-sub-title {
+  font-size: 8.5px;
+  color: #94a3b8;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+
+.shop-wallet-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+.shop-wallet-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.shop-wallet-badge.gold-badge {
+  background: rgba(241, 196, 15, 0.12);
+  border: 1px solid rgba(241, 196, 15, 0.5);
+  color: #ffd700;
+}
+
+.shop-wallet-badge.souls-badge {
+  background: rgba(160, 174, 192, 0.12);
+  border: 1px solid rgba(160, 174, 192, 0.5);
+  color: #e2e8f0;
+}
+
+.shop-tab-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.shop-tab-btn {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  color: #94a3b8;
+  border: 1.5px solid rgba(51, 65, 85, 0.7);
+  border-radius: 6px;
+  padding: 7px 6px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.shop-tab-btn.active {
+  background: linear-gradient(180deg, #b45309 0%, #78350f 100%);
+  color: #ffffff;
+  border-color: #ffd700;
+  box-shadow: 0 0 12px rgba(241, 196, 15, 0.35);
+}
+
+.shop-tab-btn:active {
+  transform: scale(0.97);
+}
+
+.shop-content-panel {
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* --- MERCHANT SHOWCASE CARDS & QUOTE BANNER --- */
+.merchant-banner-quote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(241, 196, 15, 0.25);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.merchant-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(241, 196, 15, 0.15);
+  border: 1px solid #f1c40f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.merchant-quote-content {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  min-width: 0;
+}
+
+.merchant-speaker {
+  font-size: 8px;
+  font-weight: 900;
+  color: #f1c40f;
+  letter-spacing: 1px;
+  font-family: monospace;
+}
+
+.merchant-dialogue {
+  font-size: 9.5px;
+  color: #e2e8f0;
+  font-style: italic;
+  line-height: 1.25;
+}
+
+.shop-restock-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-family: monospace;
+  font-size: 9px;
+}
+
+.restock-timer-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #94a3b8;
+}
+
+.shop-refresh-btn {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  color: #38bdf8;
+  border: 1px solid #0284c7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 8.5px;
+  font-weight: 800;
+  font-family: monospace;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.shop-refresh-btn:active {
+  transform: scale(0.96);
+}
+
+.shop-showcase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shop-showcase-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid rgba(51, 65, 85, 0.7);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.shop-showcase-card:hover,
+.shop-showcase-card:active {
+  background: rgba(30, 41, 59, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
+}
+
+.shop-showcase-card.card-sold-out {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+  cursor: default;
+}
+
+.shop-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-card-icon-container {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.shop-card-details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  min-width: 0;
+  gap: 2px;
+}
+
+.shop-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.shop-card-name {
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shop-card-tier-badge {
+  font-size: 8px;
+  font-weight: 900;
+  font-family: monospace;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.shop-card-type-row {
+  font-size: 8.5px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.shop-card-stats-row {
+  font-size: 9px;
+  color: #e2e8f0;
+  font-family: monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shop-card-deltas {
+  font-size: 8.5px;
+  font-family: monospace;
+  font-weight: bold;
+  margin-top: 1px;
+}
+
+.shop-card-right {
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.shop-buy-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 9.5px;
+  font-weight: 900;
+  font-family: monospace;
+  cursor: pointer;
+  border: 1px solid;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.shop-buy-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.shop-buy-btn.affordable {
+  background: linear-gradient(180deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  border-color: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.25);
+}
+
+.shop-buy-btn.unaffordable {
+  background: rgba(220, 38, 38, 0.2);
+  color: #f87171;
+  border-color: #ef4444;
+  cursor: not-allowed;
+}
+
+.shop-buy-btn.sold-out {
+  background: #1e293b;
+  color: #64748b;
+  border-color: #334155;
+  cursor: not-allowed;
+}
+
+/* --- MYSTICAL & ALCHEMY TAB STYLES --- */
+.alchemy-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 8px;
+}
+
+.alchemy-int-note {
+  margin-left: auto;
+  font-size: 8px;
+  color: #38bdf8;
+  font-weight: normal;
+  text-transform: none;
+}
+
+.mystical-trades-list,
+.alchemy-workbench-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mystical-trade-card,
+.alchemy-workbench-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid rgba(51, 65, 85, 0.7);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.15s ease;
+}
+
+.mystical-trade-card:hover,
+.alchemy-workbench-card:hover {
+  background: rgba(30, 41, 59, 0.92);
+  transform: translateY(-1px);
+}
+
+.mystical-card-left,
+.alchemy-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mystical-icon-box,
+.alchemy-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mystical-card-details,
+.alchemy-card-details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  min-width: 0;
+  gap: 2px;
+}
+
+.mystical-card-title,
+.alchemy-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mystical-card-desc {
+  font-size: 8.5px;
+  color: #94a3b8;
+  font-family: monospace;
+  line-height: 1.25;
+}
+
+.alchemy-recipe-nodes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 8.5px;
+  margin-top: 1px;
+}
+
+.recipe-req-label {
+  color: #64748b;
+}
+
+.recipe-ingredient-chip {
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-weight: bold;
+}
+
+.mystical-card-right,
+.alchemy-card-right {
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+/* --- COMMERCE UPGRADES INVESTMENT LEDGER STYLES --- */
+.commerce-ledger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.commerce-ledger-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid rgba(241, 196, 15, 0.35);
+  border-left: 4px solid #f1c40f;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+}
+
+.commerce-ledger-card:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: #f1c40f;
+  transform: translateY(-1px);
+}
+
+.ledger-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ledger-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: rgba(241, 196, 15, 0.12);
+  border: 1.5px solid rgba(241, 196, 15, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ledger-header-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.ledger-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ledger-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd700;
+  letter-spacing: 0.5px;
+}
+
+.ledger-level-badge {
+  font-family: monospace;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ledger-card-desc {
+  font-size: 8.5px;
+  color: #94a3b8;
+  font-family: monospace;
+  line-height: 1.25;
+}
+
+.ledger-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #090c10;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.ledger-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f1c40f, #2ecc71);
+  transition: width 0.25s ease;
+}
+
+.ledger-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  padding-top: 6px;
+}
+
+.ledger-return-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: monospace;
+  font-size: 9px;
+}
+
+.return-label {
+  color: #64748b;
+}
+
+.return-val {
+  color: #34d399;
+  font-weight: 900;
+}
+
+.sink-upgraded-flash {
+  animation: sinkFlashPulse 0.5s ease-out;
+}
+
+@keyframes sinkFlashPulse {
+  0% {
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.8);
+    border-color: #ffffff;
+  }
+  100% {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  }
+}

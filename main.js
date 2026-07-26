@@ -172,15 +172,16 @@
               outerColor: "rgba(241, 196, 15, 0.45)",
             });
           } else if (st.type === window.TILE_TYPES.STATION_SHOP) {
-            let shopFlicker = Math.sin(time / 180) * 6;
-            lights.push({
-              x: sx,
-              y: sy,
-              r: 140 + shopFlicker,
-              innerColor: "rgba(255, 230, 150, 0.95)",
-              outerColor: "rgba(241, 196, 15, 0.45)",
-            });
-          }
+                      let shopFlicker =
+                        Math.sin(time / 140) * 8 + Math.cos(time / 90) * 4;
+                      lights.push({
+                        x: sx,
+                        y: sy - 6,
+                        r: 175 + shopFlicker,
+                        innerColor: "rgba(255, 220, 130, 0.98)",
+                        outerColor: "rgba(230, 126, 34, 0.50)",
+                      });
+                    }
         }
       });
     }
