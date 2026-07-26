@@ -51,6 +51,9 @@
     tier2: ["#e74c3c", "#e67e22", "#2c0e08"],
     tier3: ["#27ae60", "#1b4f30", "#9b59b6"],
     tier4: ["#8e44ad", "#e84393", "#0d011a"],
+    pottery_clay: ["#d35400", "#e67e22", "#ba4a00", "#7f8c8d"],
+    ancient_urn: ["#2980b9", "#3498db", "#111827", "#f1c40f"],
+    wooden_barrel: ["#5c3a21", "#78350f", "#3d1d0b", "#475569"],
   };
 
   /* ==========================================================================
@@ -5941,12 +5944,12 @@
       let isChronicle = equipped.subweapon.isUniqueChronicle;
 
       if (subType === "shield") {
-                  // Heavy defensive arm sway rotation
-                  let sway = Math.sin(Date.now() / 320) * 0.05;
+        // Heavy defensive arm sway rotation
+        let sway = Math.sin(Date.now() / 320) * 0.05;
 
-                  ctx.save();
-                  ctx.translate(16, 2 + bounce);
-                  ctx.rotate(-sway + 0.1); // Held forward with heroic clearance
+        ctx.save();
+        ctx.translate(16, 2 + bounce);
+        ctx.rotate(-sway + 0.1); // Held forward with heroic clearance
 
         let shieldItem = equipped.subweapon;
         let noun =
@@ -6097,14 +6100,14 @@
         ctx.restore();
 
         // Orbiting Void Sparks (Aegis Unique only)
-                if (
-                  isAegis &&
-                  (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-                ) {
-                  ctx.save();
-                  ctx.translate(16, 2 + bounce);
-                  ctx.rotate(-sway + 0.1);
-                  let orbitTime = Date.now() / 250;
+        if (
+          isAegis &&
+          (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+        ) {
+          ctx.save();
+          ctx.translate(16, 2 + bounce);
+          ctx.rotate(-sway + 0.1);
+          let orbitTime = Date.now() / 250;
           ctx.fillStyle = "#110221";
           ctx.strokeStyle = "#8e44ad";
           ctx.lineWidth = 1.0;
@@ -6148,11 +6151,11 @@
           ctx.restore();
         }
       } else if (subType === "tome") {
-                      ctx.save();
-                      let tomeFloat = Math.sin(Date.now() / 200) * 5;
-                      ctx.translate(25, -15 + bounce + tomeFloat); // Elevated and extended further forward to float heroically
-                      ctx.rotate(Math.PI / 12);
-              ctx.rotate(Math.PI / 12);
+        ctx.save();
+        let tomeFloat = Math.sin(Date.now() / 200) * 5;
+        ctx.translate(25, -15 + bounce + tomeFloat); // Elevated and extended further forward to float heroically
+        ctx.rotate(Math.PI / 12);
+        ctx.rotate(Math.PI / 12);
 
         let tomeItem = equipped.subweapon;
         let isUniqueConduit = tomeItem && tomeItem.isUniqueConduit;
@@ -6413,23 +6416,23 @@
 
         ctx.restore();
       } else if (subType === "dagger") {
-                let dItem = equipped.subweapon;
-                let stars = dItem
-                  ? dItem.statsRolled === "UNIQUE"
-                    ? 5
-                    : dItem.statsRolled || 0
-                  : 0;
-                let tierColor = window.getTierColor(
-                  dItem ? (dItem.statsRolled === "UNIQUE" ? 5 : dItem.statsRolled) : 0,
-                );
-                if (dItem && dItem.isUniqueViper) tierColor = "#2ecc71";
+        let dItem = equipped.subweapon;
+        let stars = dItem
+          ? dItem.statsRolled === "UNIQUE"
+            ? 5
+            : dItem.statsRolled || 0
+          : 0;
+        let tierColor = window.getTierColor(
+          dItem ? (dItem.statsRolled === "UNIQUE" ? 5 : dItem.statsRolled) : 0,
+        );
+        if (dItem && dItem.isUniqueViper) tierColor = "#2ecc71";
 
-                // Dynamic breathing sway rotation
-                let sway = Math.sin(Date.now() / 240) * 0.08;
+        // Dynamic breathing sway rotation
+        let sway = Math.sin(Date.now() / 240) * 0.08;
 
-                ctx.save();
-                                ctx.translate(14, 6 + bounce); // Extended forward to match sword reach
-                                ctx.rotate(Math.PI * 3/4 - sway); // Rotate 180 degrees so the blade points out/forward (away from face)
+        ctx.save();
+        ctx.translate(14, 6 + bounce); // Extended forward to match sword reach
+        ctx.rotate((Math.PI * 3) / 4 - sway); // Rotate 180 degrees so the blade points out/forward (away from face)
 
         // 1. Draw Hilt Grip & Core Pommel
         ctx.fillStyle = "#1c1c1f"; // Dark metallic hilt core
@@ -6683,14 +6686,14 @@
         ctx.restore();
 
         // 4. Quality-Scaled Active Spark Trails (Spirals off the moving blade tip)
-                if (!window.isGamePaused && options.isMainHero && stars > 0) {
-                  let spawnChance = window.playerStats.ecoMode ? 0.08 : 0.25;
-                  if (Math.random() < spawnChance * stars) {
-                    let theta = Math.PI * 3/4 - sway; // Align particle emission angle with updated blade direction
-                    let worldTipX = x + (14 + 14 * Math.sin(theta)) * scale; // Align tip spawn origin with hand translation
-                    let worldTipY = y + (6 + bounce - 14 * Math.cos(theta)) * scale;
+        if (!window.isGamePaused && options.isMainHero && stars > 0) {
+          let spawnChance = window.playerStats.ecoMode ? 0.08 : 0.25;
+          if (Math.random() < spawnChance * stars) {
+            let theta = (Math.PI * 3) / 4 - sway; // Align particle emission angle with updated blade direction
+            let worldTipX = x + (14 + 14 * Math.sin(theta)) * scale; // Align tip spawn origin with hand translation
+            let worldTipY = y + (6 + bounce - 14 * Math.cos(theta)) * scale;
 
-                    window.particles.push(
+            window.particles.push(
               window.ParticlePool.get(
                 worldTipX,
                 worldTipY,
@@ -8773,17 +8776,17 @@
 
     let isFacingLeft = options.facing === -1;
 
-        if (isFacingLeft) {
-          // Facing Left: Left hand (Subweapon) is in the back (drawn first), Right hand (Main Weapon) is in the front (drawn last)
-          drawSubweapon();
-          drawBodyAndCostume();
-          drawMainWeapon();
-        } else {
-          // Facing Right: Right hand (Main Weapon) is in the back (drawn first), Left hand (Subweapon) is in the front (drawn last)
-          drawMainWeapon();
-          drawBodyAndCostume();
-          drawSubweapon();
-        }
+    if (isFacingLeft) {
+      // Facing Left: Left hand (Subweapon) is in the back (drawn first), Right hand (Main Weapon) is in the front (drawn last)
+      drawSubweapon();
+      drawBodyAndCostume();
+      drawMainWeapon();
+    } else {
+      // Facing Right: Right hand (Main Weapon) is in the back (drawn first), Left hand (Subweapon) is in the front (drawn last)
+      drawMainWeapon();
+      drawBodyAndCostume();
+      drawSubweapon();
+    }
 
     ctx.restore();
   };

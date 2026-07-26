@@ -2,10 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-      <meta
-              name="viewport"
-              content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-      />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <title>Top-Down Extraction Crawler</title>
     <link rel="stylesheet" href="style.css?v=1.000" />
   </head>
@@ -16,12 +16,13 @@
       <!-- Modular Centered Landscape Extraction HUD -->
       <div id="hud-overlay">
         <!-- Pod 1: Hero Identity, Health, XP Tracks & Gold Badge -->
-        <div class="hud-pod hud-hero-pod">
-          <div
-            class="hero-badge-info clickable-badge"
-            onclick="window.toggleProfileModal()"
-            title="View Hero Profile & Equipment"
-          >
+        <div
+          class="hud-pod hud-hero-pod clickable-badge"
+          onclick="window.toggleProfileModal()"
+          title="View Hero Profile & Equipment"
+          style="cursor: pointer"
+        >
+          <div class="hero-badge-info">
             <span id="hud-player-name" class="hero-name">HERO</span>
             <span id="hud-player-level" class="hero-lvl">LV.1</span>
           </div>
@@ -468,122 +469,312 @@
               MATERIALS
             </button>
           </div>
-            <div id="bag-items-list" class="modal-body">
-                <!-- Items rendered dynamically -->
-            </div>
+          <div id="bag-items-list" class="modal-body">
+            <!-- Items rendered dynamically -->
+          </div>
         </div>
       </div>
 
-        <!-- Dedicated Gachapon Vending Modal -->
+      <!-- Dedicated Merchant Market Modal -->
+      <div
+        id="shop-modal"
+        class="modal-overlay"
+        style="display: none"
+        onpointerdown="event.stopPropagation()"
+      >
         <div
-                id="gacha-modal"
-                class="modal-overlay gacha-theme-standard"
-                style="display: none"
-                onpointerdown="event.stopPropagation()"
+          class="modal-card"
+          style="max-width: 620px; width: 92vw; border-color: #f1c40f"
         >
-            <div
-                    id="gacha-machine-card"
-                    class="modal-card gacha-card"
-                    onpointerdown="event.stopPropagation()"
+          <div class="modal-header">
+            <span>MERCHANT MARKETPLACE</span>
+            <button class="close-btn" onclick="window.toggleShopModal()">
+              <span
+                style="
+                  font-size: 10px;
+                  font-weight: bold;
+                  font-family: monospace;
+                "
+                >Close</span
+              >
+            </button>
+          </div>
+          <div class="satchel-tab-bar">
+            <button
+              id="shop-tab-gear"
+              class="satchel-tab-btn active"
+              onclick="window.switchShopTab('gear')"
             >
-                <div class="modal-header">
-                <span style="display: flex; align-items: center; gap: 4px;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <rect x="5" y="2" width="14" height="20" rx="2" />
-                    <circle cx="12" cy="8" r="4" />
-                    <line x1="9" y1="16" x2="15" y2="16" />
-                  </svg>
-                  ARCADE GACHAPON
-                </span>
-                    <button
-                            class="close-btn"
-                            onpointerdown="event.stopPropagation(); window.toggleGachaModal();"
-                            onclick="
-                    event.stopPropagation();
-                    window.toggleGachaModal();
-                  "
-                            title="Close Modal"
-                    >
-                        <span style="font-size: 10px; font-weight: bold; font-family: monospace;">Close</span>
-                    </button>
-                </div>
-
-                <!-- Machine Tab Selectors -->
-                <div style="display: flex; gap: 6px; margin-bottom: 12px;">
-                    <button id="gacha-tab-standard" class="gacha-tab-btn active" onclick="window.switchGachaMachine('standard')">STANDARD MACHINE</button>
-                    <button id="gacha-tab-glimmering" class="gacha-tab-btn" onclick="window.switchGachaMachine('glimmering')">GLIMMERING MACHINE</button>
-                </div>
-
-                <!-- Physical Arcade Dome -->
-                <div class="gacha-dome-housing">
-                    <div class="gacha-dome-glass">
-                        <canvas id="gacha-physics-canvas" width="280" height="160"></canvas>
-                        <!-- Falling Capsule Graphic -->
-                        <div id="gacha-falling-capsule" class="gacha-capsule-drop" style="display: none;"></div>
-                    </div>
-                </div>
-
-                <!-- Terminal Rate Statistics -->
-                <div class="gacha-terminal-rates">
-                    <div id="gacha-rates-title" class="gacha-rates-header">STANDARD VENDING TERMINAL</div>
-                    <div id="gacha-rates-percentages" class="gacha-rates-body">
-                        <!-- Rendered dynamically depending on machine -->
-                    </div>
-                </div>
-
-                <!-- Pity Progress bar -->
-                <div class="gacha-pity-container">
-                    <div style="display: flex; justify-content: space-between; font-size: 9px; font-family: monospace; font-weight: bold; margin-bottom: 3px;">
-                        <span style="color: #cbd5e1;">Pity progress: <span id="gacha-pity-text">0 / 50</span></span>
-                        <span style="color: #ef4444;">Guaranteed 5-Star on <span id="gacha-pity-target">50</span></span>
-                    </div>
-                    <div class="gacha-pity-bg">
-                        <div id="gacha-pity-fill" class="gacha-pity-fill" style="width: 0%;"></div>
-                    </div>
-                </div>
-
-                <!-- Crank Controls & Key Inventory -->
-                <div class="gacha-crank-panel">
-                    <div style="display: flex; flex-direction: column; gap: 2px; text-align: left; font-family: monospace; font-size: 9.5px; color: #94a3b8;">
-                        <div style="display: flex; justify-content: space-between; width: 130px;">
-                            <span>STANDARD KEYS:</span>
-                            <strong id="gacha-panel-standard-keys" style="color: #ffd700;">0</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; width: 130px;">
-                            <span>GLIMMERING KEYS:</span>
-                            <strong id="gacha-panel-glimmering-keys" style="color: #00d2ff;">0</strong>
-                        </div>
-                    </div>
-
-                    <!-- Big Rotating Crank Node -->
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                        <div id="gacha-crank-dial" class="gacha-dial" onclick="window.triggerGachaSpin()">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                        </div>
-                        <span class="gacha-crank-label">CLICK CRANK TO SPIN!</span>
-                    </div>
-                </div>
-
-                <!-- Capsule Release Dispenser Box -->
-                <div class="gacha-dispenser-bin">
-                    <div id="gacha-dropped-ball" class="gacha-dispensed-ball" style="display: none;"></div>
-                </div>
-
-                <!-- Unboxed Pull Results Overlay Panel -->
-                <div id="gacha-results-panel" style="margin-top: 10px; display: none;">
-                    <div style="background: rgba(0, 0, 0, 0.7); border: 1.5px dashed #f1c40f; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;">
-                        <span style="color: #ffd700; font-family: monospace; font-size: 10px; font-weight: 800; letter-spacing: 1px;">[ UNBOXED REWARD CODE ]</span>
-                        <div id="gacha-results-render" style="display: flex; align-items: center; justify-content: center;"></div>
-                        <span id="gacha-results-item-name" style="font-weight: bold; font-size: 12px;"></span>
-                    </div>
-                </div>
-            </div>
+              EQUIPMENT MARKET
+            </button>
+            <button
+              id="shop-tab-alchemy"
+              class="satchel-tab-btn"
+              onclick="window.switchShopTab('alchemy')"
+            >
+              MYSTICAL & ALCHEMY
+            </button>
+            <button
+              id="shop-tab-sinks"
+              class="satchel-tab-btn"
+              onclick="window.switchShopTab('sinks')"
+            >
+              COMMERCE UPGRADES
+            </button>
+          </div>
+          <div
+            id="shop-content-panel"
+            class="modal-body"
+            style="max-height: 60vh"
+          >
+            <!-- Rendered dynamically -->
+          </div>
         </div>
+      </div>
+      <div
+        id="gacha-modal"
+        class="modal-overlay gacha-theme-standard"
+        style="display: none"
+        onpointerdown="event.stopPropagation()"
+      >
+        <div
+          id="gacha-machine-card"
+          class="modal-card gacha-card"
+          onpointerdown="event.stopPropagation()"
+        >
+          <div class="modal-header">
+            <span style="display: flex; align-items: center; gap: 4px">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <rect x="5" y="2" width="14" height="20" rx="2" />
+                <circle cx="12" cy="8" r="4" />
+                <line x1="9" y1="16" x2="15" y2="16" />
+              </svg>
+              ARCADE GACHAPON
+            </span>
+            <button
+              class="close-btn"
+              onpointerdown="event.stopPropagation(); window.toggleGachaModal();"
+              onclick="
+                event.stopPropagation();
+                window.toggleGachaModal();
+              "
+              title="Close Modal"
+            >
+              <span
+                style="
+                  font-size: 10px;
+                  font-weight: bold;
+                  font-family: monospace;
+                "
+                >Close</span
+              >
+            </button>
+          </div>
 
-        <!-- Dedicated Blacksmith Forge Modal -->
+          <!-- Machine Tab Selectors -->
+          <div style="display: flex; gap: 6px; margin-bottom: 12px">
+            <button
+              id="gacha-tab-standard"
+              class="gacha-tab-btn active"
+              onclick="window.switchGachaMachine('standard')"
+            >
+              STANDARD MACHINE
+            </button>
+            <button
+              id="gacha-tab-glimmering"
+              class="gacha-tab-btn"
+              onclick="window.switchGachaMachine('glimmering')"
+            >
+              GLIMMERING MACHINE
+            </button>
+          </div>
+
+          <!-- Physical Arcade Dome -->
+          <div class="gacha-dome-housing">
+            <div class="gacha-dome-glass">
+              <canvas
+                id="gacha-physics-canvas"
+                width="280"
+                height="160"
+              ></canvas>
+              <!-- Falling Capsule Graphic -->
+              <div
+                id="gacha-falling-capsule"
+                class="gacha-capsule-drop"
+                style="display: none"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Terminal Rate Statistics -->
+          <div class="gacha-terminal-rates">
+            <div id="gacha-rates-title" class="gacha-rates-header">
+              STANDARD VENDING TERMINAL
+            </div>
+            <div id="gacha-rates-percentages" class="gacha-rates-body">
+              <!-- Rendered dynamically depending on machine -->
+            </div>
+          </div>
+
+          <!-- Pity Progress bar -->
+          <div class="gacha-pity-container">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                font-size: 9px;
+                font-family: monospace;
+                font-weight: bold;
+                margin-bottom: 3px;
+              "
+            >
+              <span style="color: #cbd5e1"
+                >Pity progress: <span id="gacha-pity-text">0 / 50</span></span
+              >
+              <span style="color: #ef4444"
+                >Guaranteed 5-Star on
+                <span id="gacha-pity-target">50</span></span
+              >
+            </div>
+            <div class="gacha-pity-bg">
+              <div
+                id="gacha-pity-fill"
+                class="gacha-pity-fill"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Crank Controls & Key Inventory -->
+          <div class="gacha-crank-panel">
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                text-align: left;
+                font-family: monospace;
+                font-size: 9.5px;
+                color: #94a3b8;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  width: 130px;
+                "
+              >
+                <span>STANDARD KEYS:</span>
+                <strong id="gacha-panel-standard-keys" style="color: #ffd700"
+                  >0</strong
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  width: 130px;
+                "
+              >
+                <span>GLIMMERING KEYS:</span>
+                <strong id="gacha-panel-glimmering-keys" style="color: #00d2ff"
+                  >0</strong
+                >
+              </div>
+            </div>
+
+            <!-- Big Rotating Crank Node -->
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+              "
+            >
+              <div
+                id="gacha-crank-dial"
+                class="gacha-dial"
+                onclick="window.triggerGachaSpin()"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#94a3b8"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </div>
+              <span class="gacha-crank-label">CLICK CRANK TO SPIN!</span>
+            </div>
+          </div>
+
+          <!-- Capsule Release Dispenser Box -->
+          <div class="gacha-dispenser-bin">
+            <div
+              id="gacha-dropped-ball"
+              class="gacha-dispensed-ball"
+              style="display: none"
+            ></div>
+          </div>
+
+          <!-- Unboxed Pull Results Overlay Panel -->
+          <div id="gacha-results-panel" style="margin-top: 10px; display: none">
+            <div
+              style="
+                background: rgba(0, 0, 0, 0.7);
+                border: 1.5px dashed #f1c40f;
+                border-radius: 6px;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                text-align: center;
+              "
+            >
+              <span
+                style="
+                  color: #ffd700;
+                  font-family: monospace;
+                  font-size: 10px;
+                  font-weight: 800;
+                  letter-spacing: 1px;
+                "
+                >[ UNBOXED REWARD CODE ]</span
+              >
+              <div
+                id="gacha-results-render"
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              ></div>
+              <span
+                id="gacha-results-item-name"
+                style="font-weight: bold; font-size: 12px"
+              ></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dedicated Blacksmith Forge Modal -->
       <div
         id="forge-modal"
         class="modal-overlay"
@@ -785,40 +976,112 @@
         </div>
       </div>
 
-        <!-- Tactical Deployment Preparation Modal -->
-        <div id="deployment-modal" class="modal-overlay" style="display: none;" onpointerdown="event.stopPropagation()">
-            <div class="modal-card" style="max-width: 520px; width: 92vw; border-color: #00d2ff; background: #0b0f19;">
-                <div class="modal-header" style="border-bottom: 1.5px solid #1e293b; padding-bottom: 8px; margin-bottom: 10px;">
-                    <span>TACTICAL RUN DEPLOYMENT</span>
-                    <button class="close-btn" onpointerdown="event.stopPropagation(); document.getElementById('deployment-modal').style.display='none';">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.45; text-align: left; margin-bottom: 10px; font-family: monospace;">
-                    Uninsured items are lost upon defeat but grant massive loot find multipliers. The first (most expensive) insured item has its Gold premium completely waived!
-                </div>
-                <div id="deployment-gear-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 2px;">
-                    <!-- Rendered dynamically -->
-                </div>
-                <div id="deployment-stats-panel" style="margin-top: 10px; margin-bottom: 10px;">
-                    <!-- Updated dynamically -->
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 5px;">
-                    <button id="btn-deploy-secure" class="action-btn" style="flex: 1; margin-top: 0; padding: 10px; font-size: 11px; background: linear-gradient(180deg, #10b981 0%, #047857 100%); border-color: #34d399;" onclick="window.executeDeployment(true)">
-                        DEPLOY SECURE
-                    </button>
-                    <button class="action-btn" style="flex: 1; margin-top: 0; padding: 10px; font-size: 11px; background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); border-color: #f87171;" onclick="window.executeDeployment(false)">
-                        DEPLOY UNINSURED
-                    </button>
-                </div>
-            </div>
+      <!-- Tactical Deployment Preparation Modal -->
+      <div
+        id="deployment-modal"
+        class="modal-overlay"
+        style="display: none"
+        onpointerdown="event.stopPropagation()"
+      >
+        <div
+          class="modal-card"
+          style="
+            max-width: 520px;
+            width: 92vw;
+            border-color: #00d2ff;
+            background: #0b0f19;
+          "
+        >
+          <div
+            class="modal-header"
+            style="
+              border-bottom: 1.5px solid #1e293b;
+              padding-bottom: 8px;
+              margin-bottom: 10px;
+            "
+          >
+            <span>TACTICAL RUN DEPLOYMENT</span>
+            <button
+              class="close-btn"
+              onpointerdown="event.stopPropagation(); document.getElementById('deployment-modal').style.display='none';"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div
+            style="
+              font-size: 10.5px;
+              color: #94a3b8;
+              line-height: 1.45;
+              text-align: left;
+              margin-bottom: 10px;
+              font-family: monospace;
+            "
+          >
+            Uninsured items are lost upon defeat. You can only insure up to 3
+            equipped items. The first is free, while the second costs its Gold
+            premium + 50 Monster Souls, and the third costs its Gold premium +
+            100 Monster Souls!
+          </div>
+          <div
+            id="deployment-selectors-panel"
+            style="display: flex; gap: 8px; margin-bottom: 10px"
+          >
+            <!-- Rendered dynamically (Checkpoint & Sigil) -->
+          </div>
+          <div
+            id="deployment-gear-list"
+            style="
+              max-height: 180px;
+              overflow-y: auto;
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+              padding-right: 2px;
+            "
+          >
+            <!-- Rendered dynamically -->
+          </div>
+          <div
+            id="deployment-stats-panel"
+            style="margin-top: 10px; margin-bottom: 10px"
+          >
+            <!-- Updated dynamically -->
+          </div>
+          <div style="display: flex; margin-top: 5px">
+            <button
+              id="btn-deploy-secure"
+              class="action-btn"
+              style="
+                flex: 1;
+                margin-top: 0;
+                padding: 10px;
+                font-size: 11px;
+                background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+                border-color: #34d399;
+              "
+              onclick="window.executeDeployment()"
+            >
+              DEPLOY RUN
+            </button>
+          </div>
         </div>
+      </div>
 
-        <!-- Extraction Victory / Defeat Overlay -->
-        <div id="summary-modal" class="modal-overlay" style="display: none">
+      <!-- Extraction Victory / Defeat Overlay -->
+      <div id="summary-modal" class="modal-overlay" style="display: none">
         <div
           class="modal-card summary-card"
           onpointerdown="event.stopPropagation()"

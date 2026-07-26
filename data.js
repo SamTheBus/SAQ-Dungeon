@@ -109,7 +109,8 @@ window.confirmSP = function () {
   let draft = window.draftSPAllocations;
   if (!draft) return;
 
-  let totalStaged = (draft.spStr || 0) + (draft.spDex || 0) + (draft.spInt || 0);
+  let totalStaged =
+    (draft.spStr || 0) + (draft.spDex || 0) + (draft.spInt || 0);
   if (totalStaged <= 0) return;
 
   p.spAllocations = p.spAllocations || { spStr: 0, spDex: 0, spInt: 0 };
@@ -497,7 +498,9 @@ window.calculateRarityProbabilities = function (
   isGacha = false,
   floorNumber = 1,
 ) {
-  let fl = Math.max(1, Number(floorNumber) || 1);
+  let fl = isGacha
+    ? Math.max(1, Number(floorNumber) || 1)
+    : window.playerStats.maxFloorCleared || 0;
   let cacheKey = `${qly}_${isGacha}_${fl}`;
   if (window.rarityProbCache[cacheKey]) {
     return window.rarityProbCache[cacheKey];
@@ -505,18 +508,20 @@ window.calculateRarityProbabilities = function (
 
   let weights = [0, 0, 0, 0, 0, 0]; // 0★ to 5★
 
-  // Floor Rarity Gating:
-  // 1★ (Rare) unlocks at Floor 10+
-  // 2★ (Magic) unlocks at Floor 30+
-  // 3★ (Epic) unlocks at Floor 100+
-  // 4★ (Legendary) unlocks at Floor 175+
-  // 5★ (Mythic) unlocks at Floor 300+
   let maxAllowedTier = 0;
-  if (fl >= 300) maxAllowedTier = 5;
-  else if (fl >= 175) maxAllowedTier = 4;
-  else if (fl >= 100) maxAllowedTier = 3;
-  else if (fl >= 30) maxAllowedTier = 2;
-  else if (fl >= 10) maxAllowedTier = 1;
+  if (isGacha) {
+    if (fl >= 300) maxAllowedTier = 5;
+    else if (fl >= 175) maxAllowedTier = 4;
+    else if (fl >= 100) maxAllowedTier = 3;
+    else if (fl >= 30) maxAllowedTier = 2;
+    else if (fl >= 10) maxAllowedTier = 1;
+  } else {
+    if (fl >= 120) maxAllowedTier = 5;
+    else if (fl >= 72) maxAllowedTier = 4;
+    else if (fl >= 48) maxAllowedTier = 3;
+    else if (fl >= 24) maxAllowedTier = 2;
+    else if (fl >= 12) maxAllowedTier = 1;
+  }
 
   if (isGacha) {
     weights[0] = maxAllowedTier === 0 ? 100 : 0;
@@ -568,6 +573,23 @@ window.rollItemRarity = function (stageLevel = 1, qly = 1.0, isGacha = false) {
   return 0;
 };
 
+window.rollSigilRarity = function (maxStars, qly = 1.0) {
+  let weights = [];
+  let totalWeight = 0;
+  for (let i = 0; i <= maxStars; i++) {
+    let w = (i + 1) * Math.pow(qly, i * 0.4);
+    weights.push(w);
+    totalWeight += w;
+  }
+  let roll = Math.random() * totalWeight;
+  let cumulative = 0;
+  for (let i = 0; i <= maxStars; i++) {
+    cumulative += weights[i];
+    if (roll <= cumulative) return i;
+  }
+  return 0;
+};
+
 window.getDepthQualityMultiplier = function (stage) {
   let s = Number(stage);
   if (isNaN(s) || s < 1) s = 1;
@@ -580,21 +602,21 @@ window.getDepthQualityMultiplier = function (stage) {
 window.GameState = window.GameState || {};
 Object.assign(window.GameState, {
   gainXp(amount) {
-      let amt = BigNum.from(amount);
-      if (amt.lte(0)) return;
+    let amt = BigNum.from(amount);
+    if (amt.lte(0)) return;
 
-      let p = window.resolvePlayerStats();
-      let finalAmount = amt.mul(p.xpRate || 1.0);
-      window.playerStats.xp = BigNum.from(window.playerStats.xp || 0).add(
-        finalAmount,
-      );
-      let leveledUp = false;
+    let p = window.resolvePlayerStats();
+    let finalAmount = amt.mul(p.xpRate || 1.0);
+    window.playerStats.xp = BigNum.from(window.playerStats.xp || 0).add(
+      finalAmount,
+    );
+    let leveledUp = false;
 
-      let xp = BigNum.from(window.playerStats.xp);
-      let xpReq = BigNum.from(window.playerStats.xpReq || 100);
+    let xp = BigNum.from(window.playerStats.xp);
+    let xpReq = BigNum.from(window.playerStats.xpReq || 100);
 
-      // Process potential consecutive level-ups via a loop
-      while (xp.gte(xpReq)) {
+    // Process potential consecutive level-ups via a loop
+    while (xp.gte(xpReq)) {
       xp = xp.sub(xpReq);
       window.playerStats.level++;
 
@@ -728,45 +750,45 @@ Object.assign(window.GameState, {
       }
 
       if (window.SoundManager) window.SoundManager.play("revive");
-            if (typeof window.pushLog === "function") {
-              window.pushLog(
-                `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 SP)</strong>`,
-              );
-            }
-            if (typeof window.pushHeaderToast === "function") {
-              window.pushHeaderToast(
-                `Level Up! Reached Level ${window.playerStats.level}! (+3 SP)`,
-                "#d946ef",
-              );
-            }
-            if (typeof window.spawnFloatingText === "function" && window.player) {
-              let px = window.player.x;
-              let py = window.player.y;
-              window.spawnFloatingText(
-                px,
-                py - 20,
-                `LEVEL UP! (LV.${window.playerStats.level})`,
-                "#d946ef",
-                true,
-              );
-              window.spawnFloatingText(
-                px,
-                py - 32,
-                "+15 HP  +3 ATK  +1.5 DEF",
-                "#2ecc71",
-                true,
-              );
-              window.spawnFloatingText(
-                px,
-                py - 44,
-                "+3 SP AVAILABLE",
-                "#00d2ff",
-                true,
-              );
-            }
-            if (typeof window.checkAchievements === "function") {
-              window.checkAchievements();
-            }
+      if (typeof window.pushLog === "function") {
+        window.pushLog(
+          `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 SP)</strong>`,
+        );
+      }
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          `Level Up! Reached Level ${window.playerStats.level}! (+3 SP)`,
+          "#d946ef",
+        );
+      }
+      if (typeof window.spawnFloatingText === "function" && window.player) {
+        let px = window.player.x;
+        let py = window.player.y;
+        window.spawnFloatingText(
+          px,
+          py - 20,
+          `LEVEL UP! (LV.${window.playerStats.level})`,
+          "#d946ef",
+          true,
+        );
+        window.spawnFloatingText(
+          px,
+          py - 32,
+          "+15 HP  +3 ATK  +1.5 DEF",
+          "#2ecc71",
+          true,
+        );
+        window.spawnFloatingText(
+          px,
+          py - 44,
+          "+3 SP AVAILABLE",
+          "#00d2ff",
+          true,
+        );
+      }
+      if (typeof window.checkAchievements === "function") {
+        window.checkAchievements();
+      }
       // Evaluate tutorial triggers immediately after level-up animations/sounds settle
       setTimeout(() => {
         if (window.HoorTutorial) {
@@ -1011,8 +1033,8 @@ window.getAchievementProgress = function (ach) {
         : 0;
     }
     if (ach.id === "sing_weekend_warrior")
-          return window.playerStats.hasTriggeredWeekendWarrior ? 1 : 0;
-        if (ach.id === "sing_long_run")
+      return window.playerStats.hasTriggeredWeekendWarrior ? 1 : 0;
+    if (ach.id === "sing_long_run")
       return window.playerStats.sessionPlaytime >= 3600000 ? 1 : 0;
     if (ach.id === "sing_clicking_tempest")
       return window.playerStats.maxCanvasClicksInWindow >= 100 ? 1 : 0;
@@ -2621,6 +2643,7 @@ window.CRUCIBLE_DRAFT_POOL = [
 ];
 
 window.playerStats = {
+  recoveryLoot: null,
   currentRunEnemyStrength: 1.0,
   currentRunDropRateBonus: 0.0,
   currentRunDropQualityBonus: 0.0,
@@ -2824,7 +2847,7 @@ window.playerStats = {
   hasTriggeredPerfectDeflection: false,
   hasTriggeredWitchingHour: false,
   hasTriggeredHighNoon: false,
-    hasTriggeredAethericRecharge: false,
+  hasTriggeredAethericRecharge: false,
   hasTriggeredNightOwl: false,
   hasTriggeredEarlyBird: false,
   hasTriggeredCoffeeRun: false,
@@ -2870,7 +2893,7 @@ window.playerStats = {
   unlockedSkins: ["default"],
   equippedCostume: "knight",
   unlockedCostumes: ["knight"],
-  playerName: "Guest",
+  playerName: "Hero",
   clanId: null,
   audioSessionMode: "ambient",
   clanName: null,
@@ -3324,6 +3347,7 @@ window.loadGame = function () {
 
     if (parsed.playerStats) {
       Object.assign(window.playerStats, parsed.playerStats);
+      window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
 
       window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
       window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);

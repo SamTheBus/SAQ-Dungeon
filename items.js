@@ -630,37 +630,47 @@ window.generateItemCardHtml = function (
   }
 
   // --- EXPLICIT AFFIXES ---
-      if (item.id !== "dummy") {
-        let affixes = [];
-        let rangeLines = [];
-        const statsKeys = [
-          { key: "atk", label: "Attack", baseKey: "baseAtk" },
-          { key: "maxHp", label: "Max HP", baseKey: "baseMaxHp" },
-          { key: "def", label: "Defense", baseKey: "baseDef" },
-          { key: "moveSpeed", label: "Move Speed", baseKey: "baseMoveSpeed" },
-          { key: "str", label: "STR", baseKey: "baseStr" },
-          { key: "dex", label: "DEX", baseKey: "baseDex" },
-          { key: "int", label: "INT", baseKey: "baseInt" },
-          {
-            key: "critChance",
-            label: "Crit Chance",
-            isPct: true,
-            baseKey: "baseCritChance",
-          },
-          {
-            key: "critDamage",
-            label: "Crit Multi",
-            isPct: true,
-            baseKey: "baseCritDamage",
-          },
-          { key: "block", label: "Block Rate", isPct: true, baseKey: "baseBlock" },
-          { key: "parry", label: "Parry Rate", isPct: true, baseKey: "baseParry" },
-          { key: "activeAttackSpeed", label: "Active Atk Spd", isPct: true, baseKey: "baseActiveSpeed" },
-          { key: "idleAttackSpeed", label: "Idle Atk Spd", isPct: true, baseKey: "baseIdleSpeed" },
-          { key: "dropRate", label: "Drop Rate", isPct: true },
-          { key: "quality", label: "Drop Quality", isPct: true },
-          { key: "goldMulti", label: "Gold Multi", isPct: true },
-        ];
+  if (item.id !== "dummy") {
+    let affixes = [];
+    let rangeLines = [];
+    const statsKeys = [
+      { key: "atk", label: "Attack", baseKey: "baseAtk" },
+      { key: "maxHp", label: "Max HP", baseKey: "baseMaxHp" },
+      { key: "def", label: "Defense", baseKey: "baseDef" },
+      { key: "moveSpeed", label: "Move Speed", baseKey: "baseMoveSpeed" },
+      { key: "str", label: "STR", baseKey: "baseStr" },
+      { key: "dex", label: "DEX", baseKey: "baseDex" },
+      { key: "int", label: "INT", baseKey: "baseInt" },
+      {
+        key: "critChance",
+        label: "Crit Chance",
+        isPct: true,
+        baseKey: "baseCritChance",
+      },
+      {
+        key: "critDamage",
+        label: "Crit Multi",
+        isPct: true,
+        baseKey: "baseCritDamage",
+      },
+      { key: "block", label: "Block Rate", isPct: true, baseKey: "baseBlock" },
+      { key: "parry", label: "Parry Rate", isPct: true, baseKey: "baseParry" },
+      {
+        key: "activeAttackSpeed",
+        label: "Active Atk Spd",
+        isPct: true,
+        baseKey: "baseActiveSpeed",
+      },
+      {
+        key: "idleAttackSpeed",
+        label: "Idle Atk Spd",
+        isPct: true,
+        baseKey: "baseIdleSpeed",
+      },
+      { key: "dropRate", label: "Drop Rate", isPct: true },
+      { key: "quality", label: "Drop Quality", isPct: true },
+      { key: "goldMulti", label: "Gold Multi", isPct: true },
+    ];
 
     statsKeys.forEach((s) => {
       let totalVal = item[s.key] || 0;
@@ -709,33 +719,45 @@ window.generateItemCardHtml = function (
     }
 
     let setName = window.getItemSetName ? window.getItemSetName(item) : null;
-      if (setName && window.SET_DEFINITIONS && window.SET_DEFINITIONS[setName]) {
-        let setDef = window.SET_DEFINITIONS[setName];
+    if (setName && window.SET_DEFINITIONS && window.SET_DEFINITIONS[setName]) {
+      let setDef = window.SET_DEFINITIONS[setName];
 
-        let currentSetCount = 0;
-        if (window.equippedSlots) {
-          const eligibleSetSlots = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
-          eligibleSetSlots.forEach((slot) => {
-            let eqItem = window.equippedSlots[slot];
-            if (eqItem) {
-              let eqSetName = window.getItemSetName ? window.getItemSetName(eqItem) : null;
-              if (eqSetName === setName) {
-                currentSetCount += (slot === "overall" ? 2 : 1);
-              }
+      let currentSetCount = 0;
+      if (window.equippedSlots) {
+        const eligibleSetSlots = [
+          "weapon",
+          "subweapon",
+          "helmet",
+          "chest",
+          "leggings",
+          "overall",
+          "boots",
+        ];
+        eligibleSetSlots.forEach((slot) => {
+          let eqItem = window.equippedSlots[slot];
+          if (eqItem) {
+            let eqSetName = window.getItemSetName
+              ? window.getItemSetName(eqItem)
+              : null;
+            if (eqSetName === setName) {
+              currentSetCount += slot === "overall" ? 2 : 1;
             }
-          });
-        }
-
-        html += `<div style="margin-top:10px; padding-top:6px; border-top:1px dashed #555;">`;
-        html += `<div style="font-weight:bold; color:#f1c40f; font-size:10px;">✦ SET: ${setDef.name} <span style="color:#aaa; font-size:9px; font-weight:normal;">(${currentSetCount} Equipped)</span></div>`;
-        setDef.bonuses.forEach((b) => {
-          let isActive = currentSetCount >= b.count;
-          let color = isActive ? "#2ecc71" : "#64748b";
-          let weightStyle = isActive ? "font-weight:bold;" : "font-weight:normal; opacity:0.65;";
-          html += `<div style="font-size:9px; color:${color}; ${weightStyle} margin-top:2px;">• (${b.count} pieces): ${b.desc}</div>`;
+          }
         });
-        html += `</div>`;
       }
+
+      html += `<div style="margin-top:10px; padding-top:6px; border-top:1px dashed #555;">`;
+      html += `<div style="font-weight:bold; color:#f1c40f; font-size:10px;">✦ SET: ${setDef.name} <span style="color:#aaa; font-size:9px; font-weight:normal;">(${currentSetCount} Equipped)</span></div>`;
+      setDef.bonuses.forEach((b) => {
+        let isActive = currentSetCount >= b.count;
+        let color = isActive ? "#2ecc71" : "#64748b";
+        let weightStyle = isActive
+          ? "font-weight:bold;"
+          : "font-weight:normal; opacity:0.65;";
+        html += `<div style="font-size:9px; color:${color}; ${weightStyle} margin-top:2px;">• (${b.count} pieces): ${b.desc}</div>`;
+      });
+      html += `</div>`;
+    }
   }
 
   // --- NET CHANGE COMPARED TO EQUIPPED ---
@@ -2809,6 +2831,36 @@ Object.assign(window.ItemFactory, {
       }
     }
 
+    if (chosenType === "sigil") {
+      let stars = statLinesCount;
+      let rewardMult = 0.1 + stars * 0.15;
+      let qlyBoost = stars >= 3 ? (stars - 2) * 0.1 : 0.0;
+
+      let buffsCount = Math.max(1, Math.min(3, Math.floor(stars / 2) + 1));
+      let availableBuffs = [...(window.CAVERN_BUFFS || [])];
+      let selectedBuffs = [];
+      for (let i = 0; i < buffsCount && availableBuffs.length > 0; i++) {
+        let randIdx = Math.floor(Math.random() * availableBuffs.length);
+        selectedBuffs.push(availableBuffs.splice(randIdx, 1)[0]);
+      }
+
+      let debuffsCount = Math.max(1, Math.min(3, Math.floor(stars / 2) + 1));
+      let availableDebuffs = [...(window.CAVERN_DEBUFFS || [])];
+      let selectedDebuffs = [];
+      for (let i = 0; i < debuffsCount && availableDebuffs.length > 0; i++) {
+        let randIdx = Math.floor(Math.random() * availableDebuffs.length);
+        selectedDebuffs.push(availableDebuffs.splice(randIdx, 1)[0]);
+      }
+
+      item.name = `Cavern Sigil (Lv. ${stageScale})`;
+      item.statsRolled = stars;
+      item.buffs = selectedBuffs;
+      item.debuffs = selectedDebuffs;
+      item.rewardMultiplier = rewardMult;
+      item.qualityBoost = qlyBoost;
+      return item;
+    }
+
     if (chosenType === "artifact") {
       let filterPool = window.ARTIFACT_POOL;
       if (allowedTraits && allowedTraits.length > 0) {
@@ -3187,42 +3239,42 @@ Object.assign(window.ItemFactory, {
   },
 
   buildProceduralName(item) {
-      if (item.statsRolled === "UNIQUE") return item.name;
-      let stars = item.statsRolled;
+    if (item.statsRolled === "UNIQUE") return item.name;
+    let stars = item.statsRolled;
 
-      // Prioritize the Set Name as the theme prefix if it exists!
-      let themeName = item.setName || "Standard";
+    // Prioritize the Set Name as the theme prefix if it exists!
+    let themeName = item.setName || "Standard";
 
-      if (!item.setName && stars > 0) {
-        const nomenclature = {
-          bonusAtk: "Fierce",
-          bonusMaxHp: "Grizzled",
-          bonusDef: "Hardened",
-          bonusMoveSpeed: "Fleet",
-          bonusCritChance: "Precise",
-          bonusCritDamage: "Savage",
-          bonusBlock: "Stalwart",
-          bonusParry: "Nimble",
-          bonusStr: "Heavy",
-          bonusDex: "Swift",
-          bonusInt: "Erudite",
-          bonusActiveSpeed: "Hasty",
-          bonusIdleSpeed: "Slothful",
-        };
+    if (!item.setName && stars > 0) {
+      const nomenclature = {
+        bonusAtk: "Fierce",
+        bonusMaxHp: "Grizzled",
+        bonusDef: "Hardened",
+        bonusMoveSpeed: "Fleet",
+        bonusCritChance: "Precise",
+        bonusCritDamage: "Savage",
+        bonusBlock: "Stalwart",
+        bonusParry: "Nimble",
+        bonusStr: "Heavy",
+        bonusDex: "Swift",
+        bonusInt: "Erudite",
+        bonusActiveSpeed: "Hasty",
+        bonusIdleSpeed: "Slothful",
+      };
 
-        let highestKey = null;
-        let maxVal = 0;
-        Object.keys(nomenclature).forEach((k) => {
-          if (item[k] && item[k] > maxVal) {
-            maxVal = item[k];
-            highestKey = k;
-          }
-        });
-        if (highestKey) themeName = nomenclature[highestKey];
-      }
+      let highestKey = null;
+      let maxVal = 0;
+      Object.keys(nomenclature).forEach((k) => {
+        if (item[k] && item[k] > maxVal) {
+          maxVal = item[k];
+          highestKey = k;
+        }
+      });
+      if (highestKey) themeName = nomenclature[highestKey];
+    }
 
-      return `${themeName} ${item.noun} (Lv. ${item.stageLevel})`;
-    },
+    return `${themeName} ${item.noun} (Lv. ${item.stageLevel})`;
+  },
 });
 
 // Legacy Compatibility Aliases to protect references
@@ -4669,23 +4721,23 @@ window.executeSalvageItemLogic = function (
   let w = cvs ? cvs.width : 750;
   let h = cvs ? cvs.height : 250;
   for (let i = 0; i < 30; i++) {
-      if (window.particles && window.ParticlePool) {
-        window.particles.push(
-          window.ParticlePool.get(
-            w / 2,
-            h / 2,
-            (Math.random() - 0.5) * 12,
-            (Math.random() - 0.5) * 12,
-            Math.random() * 3 + 1.5,
-            isArt ? "#9b59b6" : Math.random() > 0.5 ? "#bdc3c7" : "#e74c3c",
-            1,
-            35,
-            0.25,
-            true
-          )
-        );
-      }
+    if (window.particles && window.ParticlePool) {
+      window.particles.push(
+        window.ParticlePool.get(
+          w / 2,
+          h / 2,
+          (Math.random() - 0.5) * 12,
+          (Math.random() - 0.5) * 12,
+          Math.random() * 3 + 1.5,
+          isArt ? "#9b59b6" : Math.random() > 0.5 ? "#bdc3c7" : "#e74c3c",
+          1,
+          35,
+          0.25,
+          true,
+        ),
+      );
     }
+  }
 
   if (inDungeonRun) {
     if (typeof window.pushLog === "function")
@@ -5265,24 +5317,24 @@ Object.assign(window.ForgeManager, {
           let w = cvs ? cvs.width : 750;
           let h = cvs ? cvs.height : 250;
           for (let i = 0; i < 45; i++) {
-                      if (window.particles && window.ParticlePool) {
-                        let partLife = Math.floor(Math.random() * 30 + 15);
-                        window.particles.push(
-                          window.ParticlePool.get(
-                            w / 2 + (Math.random() - 0.5) * 120,
-                            h / 2 + (Math.random() - 0.5) * 40,
-                            (Math.random() - 0.5) * 12,
-                            (Math.random() - 0.7) * 9,
-                            Math.random() * 3.5 + 1.5,
-                            Math.random() > 0.5 ? "#7f8c8d" : "#e74c3c",
-                            1,
-                            partLife,
-                            0.25,
-                            true
-                          )
-                        );
-                      }
-                    }
+            if (window.particles && window.ParticlePool) {
+              let partLife = Math.floor(Math.random() * 30 + 15);
+              window.particles.push(
+                window.ParticlePool.get(
+                  w / 2 + (Math.random() - 0.5) * 120,
+                  h / 2 + (Math.random() - 0.5) * 40,
+                  (Math.random() - 0.5) * 12,
+                  (Math.random() - 0.7) * 9,
+                  Math.random() * 3.5 + 1.5,
+                  Math.random() > 0.5 ? "#7f8c8d" : "#e74c3c",
+                  1,
+                  partLife,
+                  0.25,
+                  true,
+                ),
+              );
+            }
+          }
 
           let outputReport = Object.keys(bulkScrapsHarvested)
             .map((k) => `x${bulkScrapsHarvested[k]} ${k}`)
@@ -5648,23 +5700,23 @@ Object.assign(window.ForgeManager, {
     let w = cvs ? cvs.width : 750;
     let h = cvs ? cvs.height : 250;
     for (let i = 0; i < 35; i++) {
-          if (window.particles && window.ParticlePool) {
-            window.particles.push(
-              window.ParticlePool.get(
-                w / 2,
-                h / 2,
-                (Math.random() - 0.5) * 10,
-                (Math.random() - 0.5) * 10,
-                Math.random() * 3 + 1,
-                "#9b59b6",
-                1,
-                40,
-                0.25,
-                true
-              )
-            );
-          }
-        }
+      if (window.particles && window.ParticlePool) {
+        window.particles.push(
+          window.ParticlePool.get(
+            w / 2,
+            h / 2,
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10,
+            Math.random() * 3 + 1,
+            "#9b59b6",
+            1,
+            40,
+            0.25,
+            true,
+          ),
+        );
+      }
+    }
 
     if (typeof window.resolvePlayerStats === "function") {
       let newMaxHp = window.resolvePlayerStats().maxHp;
@@ -5725,23 +5777,23 @@ Object.assign(window.ForgeManager, {
     let w = cvs ? cvs.width : 750;
     let h = cvs ? cvs.height : 250;
     for (let i = 0; i < 35; i++) {
-          if (window.particles && window.ParticlePool) {
-            window.particles.push(
-              window.ParticlePool.get(
-                w / 2,
-                h / 2,
-                (Math.random() - 0.5) * 8,
-                (Math.random() - 0.5) * 8,
-                Math.random() * 2 + 1,
-                "#7f8c8d",
-                1,
-                30,
-                0.25,
-                true
-              )
-            );
-          }
-        }
+      if (window.particles && window.ParticlePool) {
+        window.particles.push(
+          window.ParticlePool.get(
+            w / 2,
+            h / 2,
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 8,
+            Math.random() * 2 + 1,
+            "#7f8c8d",
+            1,
+            30,
+            0.25,
+            true,
+          ),
+        );
+      }
+    }
 
     if (typeof window.resolvePlayerStats === "function") {
       let newMaxHp = window.resolvePlayerStats().maxHp;
@@ -6184,6 +6236,313 @@ window.rollGachaCrateItem = function (
 
 // --- MERCHANT & TRANSACTION OPERATIONS ---
 
+window.getGoldUpgradeCost = function (type, level) {
+  let lvl = Math.max(0, level || 0);
+  if (type === "vending") {
+    return BigNum.from(15000).mul(BigNum.from(1.75).pow(lvl));
+  } else if (type === "shop") {
+    return BigNum.from(30000).mul(BigNum.from(1.95).pow(lvl));
+  } else if (type === "global") {
+    return BigNum.from(100000).mul(BigNum.from(2.25).pow(lvl));
+  }
+  return BigNum.from(10000);
+};
+
+window.activeShopTab = "gear";
+
+window.toggleShopModal = function () {
+  if (typeof window.hideTooltip === "function") window.hideTooltip();
+  let modal = document.getElementById("shop-modal");
+  if (!modal) return;
+
+  if (modal.style.display === "none" || modal.style.display === "") {
+    modal.style.display = "flex";
+    if (
+      !window.playerStats.shopItems ||
+      window.playerStats.shopItems.length === 0
+    ) {
+      window.refreshShopStock(true);
+    }
+    window.switchShopTab(window.activeShopTab || "gear");
+  } else {
+    modal.style.display = "none";
+  }
+};
+
+window.switchShopTab = function (tabKey) {
+  window.activeShopTab = tabKey;
+  ["gear", "alchemy", "sinks"].forEach((t) => {
+    let btn = document.getElementById(`shop-tab-${t}`);
+    if (btn) btn.classList.toggle("active", t === tabKey);
+  });
+
+  let content = document.getElementById("shop-content-panel");
+  if (!content) return;
+
+  if (tabKey === "gear") {
+    window.renderMarketShop();
+  } else if (tabKey === "alchemy") {
+    window.renderMysticalShop();
+  } else if (tabKey === "sinks") {
+    window.renderGoldUpgrades();
+  }
+};
+
+window.refreshShopStock = function (force = false) {
+  let now = Date.now();
+  let nextRefresh = window.playerStats.shopRefreshTime || 0;
+
+  if (
+    !force &&
+    now < nextRefresh &&
+    window.playerStats.shopItems &&
+    window.playerStats.shopItems.length > 0
+  ) {
+    return;
+  }
+
+  let peakRunStage =
+    window.playerStats.maxFloorCleared || window.playerStats.stage || 1;
+  let stageScale = peakRunStage;
+  let shopLvl = window.playerStats.shopQLevel || 0;
+
+  let types = [
+    "weapon",
+    "subweapon",
+    "helmet",
+    "chest",
+    "leggings",
+    "overall",
+    "boots",
+    "ring",
+  ];
+  let stock = [];
+
+  for (let i = 0; i < 4; i++) {
+    let chosenType = types[Math.floor(Math.random() * types.length)];
+    let probs = window.calculateRarityProbabilities(
+      1.0 + shopLvl * 0.02,
+      false,
+      stageScale,
+    );
+    let roll = Math.random() * 100;
+    let cumulative = 0;
+    let stars = 0;
+
+    for (let s = 5; s >= 0; s--) {
+      cumulative += probs[s];
+      if (roll <= cumulative) {
+        stars = s;
+        break;
+      }
+    }
+
+    let item = window.createItemObject(chosenType, stars, stageScale, 0);
+    let costMult = 250 * (1 + stageScale * 0.65) * Math.pow(1.65, stars);
+    item.cost = BigNum.from(Math.ceil(costMult));
+    item.purchased = false;
+    stock.push(item);
+  }
+
+  window.playerStats.shopItems = stock;
+  window.playerStats.shopRefreshTime = now + 3600000; // 1 hour
+  if (typeof window.saveGame === "function") window.saveGame();
+};
+
+window.executeManualShopRefresh = function () {
+  let soulsOwned =
+    window.inventory && window.inventory.ETC
+      ? window.inventory.ETC["Monster Soul"] || 0
+      : 0;
+  if (soulsOwned < 50) {
+    window.pushHeaderToast(
+      "[X] Requires 50 Monster Souls to refresh!",
+      "#e74c3c",
+    );
+    return;
+  }
+
+  window.inventory.ETC["Monster Soul"] -= 50;
+  if (window.inventory.ETC["Monster Soul"] === 0) {
+    delete window.inventory.ETC["Monster Soul"];
+  }
+
+  window.refreshShopStock(true);
+  window.pushHeaderToast("✦ Merchant Inventory Refreshed!", "#2ecc71");
+  if (window.SoundManager) window.SoundManager.play("swing");
+  window.renderMarketShop();
+};
+
+window.renderMarketShop = function () {
+  let content = document.getElementById("shop-content-panel");
+  if (!content) return;
+
+  let items = window.playerStats.shopItems || [];
+  let soulsOwned =
+    window.inventory && window.inventory.ETC
+      ? window.inventory.ETC["Monster Soul"] || 0
+      : 0;
+
+  let itemsHtml = items
+    .map((item, idx) => {
+      let col = window.getTierColor(item.statsRolled);
+      let isPurchased = !!item.purchased;
+      let costText = window.formatNumber(item.cost);
+      let canAfford = BigNum.from(window.playerStats.coins).gte(item.cost);
+      let costColor = canAfford ? "#f1c40f" : "#e74c3c";
+
+      let btnHtml = isPurchased
+        ? `<button class="action-btn-sm" style="background:#334155; border-color:#475569; color:#94a3b8;" disabled>SOLD OUT</button>`
+        : `<button class="action-btn-sm action-btn-equip" style="border-color:${canAfford ? "#34d399" : "#f87171"};" ${canAfford ? "" : "disabled"} onclick="event.stopPropagation(); window.buyShopItem(${idx});">BUY (${costText} G)</button>`;
+
+      return `
+      <div class="stash-card" style="border-left: 3.5px solid ${col}; opacity:${isPurchased ? "0.5" : "1.0"}; padding: 8px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.playerStats.shopItems[${idx}])">
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+          ${window.getEquipIconHtml(item, 32)}
+          <div style="display: flex; flex-direction: column; min-width: 0;">
+            <span style="color:${col}; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+            <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${item.statsRolled}★ ${window.getTierName(item.statsRolled)} • Price: <strong style="color:${costColor}">${costText} Gold</strong></span>
+          </div>
+        </div>
+        <div style="flex-shrink: 0; margin-left: 8px;">
+          ${btnHtml}
+        </div>
+      </div>
+    `;
+    })
+    .join("");
+
+  content.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:6px; font-family:monospace; font-size:9.5px;">
+      <span style="color:#94a3b8;">Merchant Refresh Stock:</span>
+      <button class="action-btn-sm" style="background:#1e293b; border-color:#00d2ff; color:#00d2ff;" onclick="window.executeManualShopRefresh()">REFRESH (50 Souls) [Owned: ${soulsOwned}]</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      ${itemsHtml || '<div style="color:#64748b; font-style:italic; text-align:center; padding:20px;">Merchant is preparing stock...</div>'}
+    </div>
+  `;
+};
+
+window.renderMysticalShop = function () {
+  let content = document.getElementById("shop-content-panel");
+  if (!content) return;
+
+  let mysticalList = (window.MYSTICAL_STOCK || [])
+    .map((item, idx) => {
+      let costVal =
+        item.currency === "Gold"
+          ? BigNum.from(item.cost).mul(window.playerStats.level || 1)
+          : item.cost;
+      let costStr =
+        item.currency === "Gold"
+          ? window.formatNumber(costVal)
+          : costVal.toLocaleString();
+
+      let canAfford = false;
+      if (item.currency === "Gold") {
+        canAfford = BigNum.from(window.playerStats.coins).gte(costVal);
+      } else {
+        let owned = window.inventory.ETC["Luminous Soul"] || 0;
+        canAfford = owned >= item.cost;
+      }
+
+      return `
+      <div class="material-card" style="border-left: 3.5px solid ${item.color || "#00d2ff"}; padding: 8px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
+          <span style="color:${item.color || "#fff"}; font-weight:bold; font-size:11px;">${item.name}</span>
+          <span style="font-size:8.5px; color:#94a3b8; font-family:monospace; margin-top:2px;">${item.desc}</span>
+        </div>
+        <button class="action-btn-sm action-btn-equip" style="margin-left:8px; flex-shrink:0;" ${canAfford ? "" : "disabled"} onclick="window.buyMysticalItem(${idx})">BUY (${costStr} ${item.currency})</button>
+      </div>
+    `;
+    })
+    .join("");
+
+  let transmutationsHtml = (window.POTION_TRANSMUTATIONS || [])
+    .map((t, idx) => {
+      let owned = window.inventory.USE[t.req] || 0;
+      let canBrew = owned >= t.amount;
+
+      return `
+      <div class="consumable-card" style="border-left: 3.5px solid ${t.color || "#2ecc71"}; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
+          <span style="color:${t.color || "#2ecc71"}; font-weight:bold; font-size:10.5px;">${t.result}</span>
+          <span style="font-size:8px; color:#94a3b8; font-family:monospace;">Requires: ${t.amount}x ${t.req} (Owned: ${owned})</span>
+        </div>
+        <button class="action-btn-sm action-btn-equip" style="margin-left:8px; flex-shrink:0;" ${canBrew ? "" : "disabled"} onclick="window.transmutePotion(${idx})">BREW</button>
+      </div>
+    `;
+    })
+    .join("");
+
+  content.innerHTML = `
+    <div style="text-align:left; font-family:monospace; font-size:9.5px; color:#f1c40f; font-weight:bold; margin-bottom:6px; text-transform:uppercase;">[ MYSTICAL TRADES ]</div>
+    ${mysticalList}
+    <div style="text-align:left; font-family:monospace; font-size:9.5px; color:#2ecc71; font-weight:bold; margin-top:12px; margin-bottom:6px; text-transform:uppercase;">[ POTION TRANSMUTATION ]</div>
+    ${transmutationsHtml}
+  `;
+};
+
+window.renderGoldUpgrades = function () {
+  let content = document.getElementById("shop-content-panel");
+  if (!content) return;
+
+  let p = window.playerStats;
+
+  let sinks = [
+    {
+      type: "shop",
+      title: "MERCHANT STOCK QUALITY",
+      field: "shopQLevel",
+      desc: "Improves star-rating probabilities for items sold in the Equipment Market.",
+      statBonus: `+${(p.shopQLevel || 0) * 2}% Quality Chance`,
+    },
+    {
+      type: "vending",
+      title: "GACHAPON MACHINE TIER",
+      field: "vendingQLevel",
+      desc: "Elevates high-star drop rates when spinning the Arcade Gachapon machine.",
+      statBonus: `+${(p.vendingQLevel || 0) * 1}% Gacha Quality`,
+    },
+    {
+      type: "global",
+      title: "GLOBAL EXTRACTION QUALITY",
+      field: "globalQLevel",
+      desc: "Increases baseline item drop quality and star rolls across all dungeon runs.",
+      statBonus: `+${(p.globalQLevel || 0) * 1}% Global Drop Quality`,
+    },
+  ];
+
+  let cardsHtml = sinks
+    .map((s) => {
+      let curLvl = p[s.field] || 0;
+      let cost = window.getGoldUpgradeCost(s.type, curLvl);
+      let costText = window.formatNumber(cost);
+      let canAfford = BigNum.from(p.coins).gte(cost);
+      let costColor = canAfford ? "#f1c40f" : "#e74c3c";
+
+      return `
+      <div id="sink-card-${s.type}" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid #334155; border-left: 4px solid #f1c40f; border-radius: 6px; padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: #f1c40f; font-weight: 800; font-size: 11px; letter-spacing: 0.5px;">${s.title}</span>
+          <span style="font-family: monospace; font-size: 10px; color: #ffffff; font-weight: bold;">LV. ${curLvl}</span>
+        </div>
+        <div style="font-size: 8.5px; color: #94a3b8; font-family: monospace; line-height: 1.3;">${s.desc}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px stroke rgba(255,255,255,0.08); padding-top: 4px;">
+          <span style="font-size: 9px; color: #2ecc71; font-family: monospace; font-weight: bold;">Active: ${s.statBonus}</span>
+          <button class="action-btn-sm action-btn-equip" style="border-color:${canAfford ? "#34d399" : "#f87171"};" ${canAfford ? "" : "disabled"} onclick="window.buyGoldUpgrade('${s.type}')">UPGRADE (${costText} G)</button>
+        </div>
+      </div>
+    `;
+    })
+    .join("");
+
+  content.innerHTML = `
+    <div style="text-align:left; font-family:monospace; font-size:9.5px; color:#f1c40f; font-weight:bold; margin-bottom:8px; text-transform:uppercase;">[ PERMANENT COMMERCE INVESTMENTS ]</div>
+    ${cardsHtml}
+  `;
+};
+
 window.buyShopItem = function (index) {
   let item = window.playerStats.shopItems[index];
   if (!item || item.purchased) return;
@@ -6191,19 +6550,18 @@ window.buyShopItem = function (index) {
   let coins = BigNum.from(window.playerStats.coins);
   let cost = BigNum.from(item.cost);
   if (coins.lt(cost)) {
-    window.pushHeaderToast("❌ Insufficient Gold!", "#e74c3c");
+    window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
     return;
   }
 
   let maxBag = window.getMaxBagSlots();
   if (window.inventory.EQUIP.length >= maxBag) {
-    window.pushHeaderToast("❌ Inventory Full!", "#e74c3c");
+    window.pushHeaderToast("[X] Inventory Full!", "#e74c3c");
     return;
   }
 
   window.playerStats.coins = coins.sub(cost);
   item.purchased = true;
-  item.justPurchased = true;
 
   if (window.playerStats.coins.eq(0)) {
     window.playerStats.hasTriggeredExactChange = true;
@@ -6212,15 +6570,8 @@ window.buyShopItem = function (index) {
   window.inventory.EQUIP.push(item);
   window.frozenItemDb[item.id] = window.cloneItemForTooltip(item);
 
-  window.pushHeaderToast(`🛒 Purchased ${item.name}!`, "#2ecc71");
-  if (
-    window.SoundManager &&
-    typeof window.SoundManager.playLootDrop === "function"
-  ) {
-    window.SoundManager.playLootDrop(item.statsRolled);
-  } else if (window.SoundManager) {
-    window.SoundManager.play("fairy");
-  }
+  window.pushHeaderToast(`✦ Purchased ${item.name}!`, "#2ecc71");
+  if (window.SoundManager) window.SoundManager.play("fairy");
 
   if (window.spawnPurchaseCelebration) {
     window.spawnPurchaseCelebration(
@@ -6231,8 +6582,8 @@ window.buyShopItem = function (index) {
   }
 
   window.updateUI();
-  if (typeof window.renderMarketShop === "function") window.renderMarketShop();
-  window.renderInventory();
+  window.renderMarketShop();
+  if (typeof window.renderInventory === "function") window.renderInventory();
   window.saveGame();
 };
 
@@ -6242,11 +6593,10 @@ window.buyMysticalItem = function (index) {
   let currency = item.currency;
 
   if (currency === "Gold") {
-    // Modified scaling from exponential to a balanced linear level scaling (item.cost * player level)
     cost = BigNum.from(item.cost).mul(window.playerStats.level || 1);
     let coins = BigNum.from(window.playerStats.coins);
     if (coins.lt(cost)) {
-      window.pushHeaderToast("❌ Insufficient Gold!", "#e74c3c");
+      window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
       return;
     }
     window.playerStats.coins = coins.sub(cost);
@@ -6256,23 +6606,15 @@ window.buyMysticalItem = function (index) {
   } else if (currency === "Luminous Soul") {
     let owned = window.inventory.ETC["Luminous Soul"] || 0;
     if (owned < cost) {
-      window.pushHeaderToast("❌ Insufficient Luminous Souls!", "#e74c3c");
+      window.pushHeaderToast("[X] Insufficient Luminous Souls!", "#e74c3c");
       return;
     }
     window.inventory.ETC["Luminous Soul"] -= cost;
     if (window.inventory.ETC["Luminous Soul"] === 0) {
       delete window.inventory.ETC["Luminous Soul"];
     }
-  } else if (currency === "Astral Shards") {
-    let owned = window.playerStats.astralShards || 0;
-    if (owned < cost) {
-      window.pushHeaderToast("❌ Insufficient Astral Shards!", "#e74c3c");
-      return;
-    }
-    window.playerStats.astralShards -= cost;
   }
 
-  // Grant item
   if (
     item.name === "Gacha Key" ||
     item.name === "Astral Essence" ||
@@ -6283,55 +6625,45 @@ window.buyMysticalItem = function (index) {
     window.addUseDrop(item.name, 1);
   }
 
-  window.pushHeaderToast(`🛒 Purchased ${item.name}!`, "#2ecc71");
-  window.SoundManager.play("fairy");
+  window.pushHeaderToast(`✦ Purchased ${item.name}!`, "#2ecc71");
+  if (window.SoundManager) window.SoundManager.play("fairy");
 
   if (window.spawnPurchaseCelebration) {
     window.spawnPurchaseCelebration("alchemy", item.color || "#9b59b6", 3);
   }
 
   window.updateUI();
-  if (typeof window.renderMysticalShop === "function")
-    window.renderMysticalShop();
-  window.renderInventory();
+  window.renderMysticalShop();
+  if (typeof window.renderInventory === "function") window.renderInventory();
   window.saveGame();
 };
 
 window.buyGoldUpgrade = function (type) {
   let p = window.playerStats;
-  let cost = 0;
-  let levelField = "";
-
-  if (type === "vending") {
-    levelField = "vendingQLevel";
-    // Elevated cost scaling exponent (1.5 -> 1.75) to prevent trivialization during deep stage progression
-    cost = BigNum.from(15000).mul(BigNum.from(1.75).pow(p.vendingQLevel || 0));
-  } else if (type === "shop") {
-    levelField = "shopQLevel";
-    // Elevated cost scaling exponent (1.65 -> 1.95) to prevent trivialization during deep stage progression
-    cost = BigNum.from(30000).mul(BigNum.from(1.95).pow(p.shopQLevel || 0));
-  } else if (type === "global") {
-    levelField = "globalQLevel";
-    // Elevated cost scaling exponent (1.85 -> 2.25) to prevent trivialization during deep stage progression
-    cost = BigNum.from(100000).mul(BigNum.from(2.25).pow(p.globalQLevel || 0));
-  }
+  let levelField =
+    type === "vending"
+      ? "vendingQLevel"
+      : type === "shop"
+        ? "shopQLevel"
+        : "globalQLevel";
+  let curLvl = p[levelField] || 0;
+  let costBig = window.getGoldUpgradeCost(type, curLvl);
 
   let coins = BigNum.from(p.coins);
-  let costBig = BigNum.from(cost);
   if (coins.lt(costBig)) {
-    window.pushHeaderToast("❌ Insufficient Gold!", "#e74c3c");
+    window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
     return;
   }
 
   p.coins = coins.sub(costBig);
-  p[levelField] = (p[levelField] || 0) + 1;
+  p[levelField] = curLvl + 1;
 
   if (p.coins.eq(0)) {
     p.hasTriggeredExactChange = true;
   }
 
-  window.pushHeaderToast("🎉 Upgrade Acquired!", "#2ecc71");
-  window.SoundManager.play("spell");
+  window.pushHeaderToast("✦ Upgrade Acquired!", "#2ecc71");
+  if (window.SoundManager) window.SoundManager.play("spell");
 
   if (window.spawnPurchaseCelebration) {
     window.spawnPurchaseCelebration("upgrade", "#f1c40f", 4);
@@ -6340,7 +6672,6 @@ window.buyGoldUpgrade = function (type) {
   window.updateUI();
   window.renderGoldUpgrades();
 
-  // Find newly rendered card and trigger physical purchase slam flash!
   let cardEl = document.getElementById(`sink-card-${type}`);
   if (cardEl) {
     cardEl.classList.add("sink-upgraded-flash");
@@ -6629,428 +6960,459 @@ window.executeParagonUpgrade = function () {
   );
 };
 
-    window.gachaState = {
-              activeMachine: 'standard', // 'standard' | 'glimmering'
-              capsules: [],
-              isSpinning: false,
-              spinTimer: 0,
-              crankAngle: 0,
-              animationFrameId: null,
-              hasBallDispensed: false
-            };
+window.gachaState = {
+  activeMachine: "standard", // 'standard' | 'glimmering'
+  capsules: [],
+  isSpinning: false,
+  spinTimer: 0,
+  crankAngle: 0,
+  animationFrameId: null,
+  hasBallDispensed: false,
+};
 
-            window.toggleGachaModal = function () {
-              if (typeof window.hideTooltip === "function") window.hideTooltip();
-              let modal = document.getElementById("gacha-modal");
-              if (!modal) return;
+window.toggleGachaModal = function () {
+  if (typeof window.hideTooltip === "function") window.hideTooltip();
+  let modal = document.getElementById("gacha-modal");
+  if (!modal) return;
 
-              if (modal.style.display === "none" || modal.style.display === "") {
-                modal.style.display = "flex";
-                window.switchGachaMachine(window.gachaState.activeMachine || 'standard');
-                window.initGachaPhysics();
-              } else {
-                modal.style.display = "none";
-                if (window.gachaState.animationFrameId) {
-                  cancelAnimationFrame(window.gachaState.animationFrameId);
-                  window.gachaState.animationFrameId = null;
-                }
-              }
-            };
+  if (modal.style.display === "none" || modal.style.display === "") {
+    modal.style.display = "flex";
+    window.switchGachaMachine(window.gachaState.activeMachine || "standard");
+    window.initGachaPhysics();
+  } else {
+    modal.style.display = "none";
+    if (window.gachaState.animationFrameId) {
+      cancelAnimationFrame(window.gachaState.animationFrameId);
+      window.gachaState.animationFrameId = null;
+    }
+  }
+};
 
-            window.openGachaModal = function () {
-              window.toggleGachaModal();
-            };
+window.openGachaModal = function () {
+  window.toggleGachaModal();
+};
 
-            window.switchGachaMachine = function (machineType) {
-              window.gachaState.activeMachine = machineType;
-              let modal = document.getElementById("gacha-modal");
-              if (!modal) return;
+window.switchGachaMachine = function (machineType) {
+  window.gachaState.activeMachine = machineType;
+  let modal = document.getElementById("gacha-modal");
+  if (!modal) return;
 
-              let tabStd = document.getElementById("gacha-tab-standard");
-              let tabGlim = document.getElementById("gacha-tab-glimmering");
-              let ratesTitle = document.getElementById("gacha-rates-title");
-              let ratesPct = document.getElementById("gacha-rates-percentages");
+  let tabStd = document.getElementById("gacha-tab-standard");
+  let tabGlim = document.getElementById("gacha-tab-glimmering");
+  let ratesTitle = document.getElementById("gacha-rates-title");
+  let ratesPct = document.getElementById("gacha-rates-percentages");
 
-              if (machineType === 'standard') {
-                modal.className = "modal-overlay gacha-theme-standard";
-                if (tabStd) tabStd.classList.add("active");
-                if (tabGlim) tabGlim.classList.remove("active");
-                if (ratesTitle) ratesTitle.innerText = "STANDARD VENDING TERMINAL";
-                if (ratesPct) {
-                  ratesPct.innerHTML = `
+  if (machineType === "standard") {
+    modal.className = "modal-overlay gacha-theme-standard";
+    if (tabStd) tabStd.classList.add("active");
+    if (tabGlim) tabGlim.classList.remove("active");
+    if (ratesTitle) ratesTitle.innerText = "STANDARD VENDING TERMINAL";
+    if (ratesPct) {
+      ratesPct.innerHTML = `
                     <span style="color:#e74c3c;">5★: 1.27%</span>
                     <span style="color:#f1c40f;">4★: 5.98%</span>
                     <span style="color:#e67e22;">3★: 16.9%</span>
                     <span style="color:#9b59b6;">2★: 26.4%</span>
                     <span style="color:#3498db;">1★: 49.5%</span>
                   `;
-                }
-              } else {
-                modal.className = "modal-overlay gacha-theme-glimmering";
-                if (tabStd) tabStd.classList.remove("active");
-                if (tabGlim) tabGlim.classList.add("active");
-                if (ratesTitle) ratesTitle.innerText = "GLIMMERING BOOSTER TERMINAL";
-                if (ratesPct) {
-                  ratesPct.innerHTML = `
+    }
+  } else {
+    modal.className = "modal-overlay gacha-theme-glimmering";
+    if (tabStd) tabStd.classList.remove("active");
+    if (tabGlim) tabGlim.classList.add("active");
+    if (ratesTitle) ratesTitle.innerText = "GLIMMERING BOOSTER TERMINAL";
+    if (ratesPct) {
+      ratesPct.innerHTML = `
                     <span style="color:#e74c3c;">5★: 1.3%</span>
                     <span style="color:#f1c40f;">4★: 6.0%</span>
                     <span style="color:#e67e22;">3★: 16.9%</span>
                     <span style="color:#1abc9c;">ART: 5.0%</span>
                   `;
-                }
-              }
+    }
+  }
 
-              window.updateGachaBalances();
-              let resultsPanel = document.getElementById("gacha-results-panel");
-              if (resultsPanel) resultsPanel.style.display = "none";
+  window.updateGachaBalances();
+  let resultsPanel = document.getElementById("gacha-results-panel");
+  if (resultsPanel) resultsPanel.style.display = "none";
 
-              // Spawn clean, machine-aligned colored balls in the physics simulator
-              window.populateGachaCapsules();
-            };
+  // Spawn clean, machine-aligned colored balls in the physics simulator
+  window.populateGachaCapsules();
+};
 
-            window.updateGachaBalances = function () {
-              let panelStd = document.getElementById("gacha-panel-standard-keys");
-              let panelGlim = document.getElementById("gacha-panel-glimmering-keys");
-              let stdCount = (window.inventory && window.inventory.ETC) ? (window.inventory.ETC["Gacha Key"] || 0) : 0;
-              let glimCount = (window.inventory && window.inventory.ETC) ? (window.inventory.ETC["Glimmering Gachapon Key"] || 0) : 0;
+window.updateGachaBalances = function () {
+  let panelStd = document.getElementById("gacha-panel-standard-keys");
+  let panelGlim = document.getElementById("gacha-panel-glimmering-keys");
+  let stdCount =
+    window.inventory && window.inventory.ETC
+      ? window.inventory.ETC["Gacha Key"] || 0
+      : 0;
+  let glimCount =
+    window.inventory && window.inventory.ETC
+      ? window.inventory.ETC["Glimmering Gachapon Key"] || 0
+      : 0;
 
-              if (panelStd) panelStd.innerText = stdCount;
-              if (panelGlim) panelGlim.innerText = glimCount;
+  if (panelStd) panelStd.innerText = stdCount;
+  if (panelGlim) panelGlim.innerText = glimCount;
 
-              // Update Pity UI stats
-              let pityText = document.getElementById("gacha-pity-text");
-              let pityTarget = document.getElementById("gacha-pity-target");
-              let pityFill = document.getElementById("gacha-pity-fill");
+  // Update Pity UI stats
+  let pityText = document.getElementById("gacha-pity-text");
+  let pityTarget = document.getElementById("gacha-pity-target");
+  let pityFill = document.getElementById("gacha-pity-fill");
 
-              if (window.gachaState.activeMachine === 'standard') {
-                let current = window.playerStats.vendingPity || 0;
-                if (pityText) pityText.innerText = `${current} / 50`;
-                if (pityTarget) pityTarget.innerText = "50";
-                if (pityFill) pityFill.style.width = `${(current / 50) * 100}%`;
-              } else {
-                let current = window.playerStats.glimmeringPity || 0;
-                if (pityText) pityText.innerText = `${current} / 25`;
-                if (pityTarget) pityTarget.innerText = "25";
-                if (pityFill) pityFill.style.width = `${(current / 25) * 100}%`;
-              }
-            };
+  if (window.gachaState.activeMachine === "standard") {
+    let current = window.playerStats.vendingPity || 0;
+    if (pityText) pityText.innerText = `${current} / 50`;
+    if (pityTarget) pityTarget.innerText = "50";
+    if (pityFill) pityFill.style.width = `${(current / 50) * 100}%`;
+  } else {
+    let current = window.playerStats.glimmeringPity || 0;
+    if (pityText) pityText.innerText = `${current} / 25`;
+    if (pityTarget) pityTarget.innerText = "25";
+    if (pityFill) pityFill.style.width = `${(current / 25) * 100}%`;
+  }
+};
 
-            window.populateGachaCapsules = function () {
-              let standardCapsuleColors = ["#f1c40f", "#3498db", "#9b59b6", "#e67e22", "#e74c3c", "#2ecc71"];
-              let glimmeringCapsuleColors = ["#ffffff", "#e84393", "#00d2ff", "#a855f7"];
-              let poolColors = window.gachaState.activeMachine === 'standard' ? standardCapsuleColors : glimmeringCapsuleColors;
+window.populateGachaCapsules = function () {
+  let standardCapsuleColors = [
+    "#f1c40f",
+    "#3498db",
+    "#9b59b6",
+    "#e67e22",
+    "#e74c3c",
+    "#2ecc71",
+  ];
+  let glimmeringCapsuleColors = ["#ffffff", "#e84393", "#00d2ff", "#a855f7"];
+  let poolColors =
+    window.gachaState.activeMachine === "standard"
+      ? standardCapsuleColors
+      : glimmeringCapsuleColors;
 
-              window.gachaState.capsules = [];
-              for (let i = 0; i < 18; i++) {
-                let col1 = poolColors[i % poolColors.length];
-                let col2 = "#ffffff";
-                window.gachaState.capsules.push({
-                  x: 40 + Math.random() * 200,
-                  y: 80 + Math.random() * 50,
-                  vx: (Math.random() - 0.5) * 1,
-                  vy: (Math.random() - 0.5) * 1,
-                  radius: 7.5,
-                  color1: col1,
-                  color2: col2,
-                  angle: Math.random() * Math.PI * 2,
-                  spinSpeed: (Math.random() - 0.5) * 0.05
-                });
-              }
-            };
+  window.gachaState.capsules = [];
+  for (let i = 0; i < 18; i++) {
+    let col1 = poolColors[i % poolColors.length];
+    let col2 = "#ffffff";
+    window.gachaState.capsules.push({
+      x: 40 + Math.random() * 200,
+      y: 80 + Math.random() * 50,
+      vx: (Math.random() - 0.5) * 1,
+      vy: (Math.random() - 0.5) * 1,
+      radius: 7.5,
+      color1: col1,
+      color2: col2,
+      angle: Math.random() * Math.PI * 2,
+      spinSpeed: (Math.random() - 0.5) * 0.05,
+    });
+  }
+};
 
-            window.initGachaPhysics = function () {
-              let canvas = document.getElementById("gacha-physics-canvas");
-              if (!canvas) return;
-              let ctx = canvas.getContext("2d");
+window.initGachaPhysics = function () {
+  let canvas = document.getElementById("gacha-physics-canvas");
+  if (!canvas) return;
+  let ctx = canvas.getContext("2d");
 
-              if (window.gachaState.animationFrameId) {
-                cancelAnimationFrame(window.gachaState.animationFrameId);
-              }
+  if (window.gachaState.animationFrameId) {
+    cancelAnimationFrame(window.gachaState.animationFrameId);
+  }
 
-              function loop() {
-                updatePhysics(canvas);
-                renderPhysics(ctx, canvas);
-                window.gachaState.animationFrameId = requestAnimationFrame(loop);
-              }
+  function loop() {
+    updatePhysics(canvas);
+    renderPhysics(ctx, canvas);
+    window.gachaState.animationFrameId = requestAnimationFrame(loop);
+  }
 
-              loop();
-            };
+  loop();
+};
 
-            function updatePhysics(canvas) {
-              let caps = window.gachaState.capsules;
-              let gravity = 0.22;
-              let bounceDamp = 0.55;
+function updatePhysics(canvas) {
+  let caps = window.gachaState.capsules;
+  let gravity = 0.22;
+  let bounceDamp = 0.55;
 
-              // Dimensions
-              let width = canvas.width;
-              let height = canvas.height;
-              let bottomWall = 146; // Keep above bottom rim
+  // Dimensions
+  let width = canvas.width;
+  let height = canvas.height;
+  let bottomWall = 146; // Keep above bottom rim
 
-              // Center of the rounded dome arch
-              let domeCenterX = width / 2;
-              let domeCenterY = 110;
-              let domeRadius = 115;
+  // Center of the rounded dome arch
+  let domeCenterX = width / 2;
+  let domeCenterY = 110;
+  let domeRadius = 115;
 
-              if (window.gachaState.isSpinning) {
-                window.gachaState.spinTimer--;
-                if (window.gachaState.spinTimer <= 0) {
-                  window.gachaState.isSpinning = false;
-                }
-              }
+  if (window.gachaState.isSpinning) {
+    window.gachaState.spinTimer--;
+    if (window.gachaState.spinTimer <= 0) {
+      window.gachaState.isSpinning = false;
+    }
+  }
 
-              caps.forEach((c) => {
-                if (window.gachaState.isSpinning) {
-                  // Chaotic spin forces applied directly
-                  c.vx += (Math.random() - 0.5) * 6;
-                  c.vy += -Math.random() * 3.5 - 1.5;
-                  c.angle += (Math.random() - 0.5) * 0.4;
-                } else {
-                  c.vy += gravity;
-                  c.vx *= 0.985;
-                  c.vy *= 0.985;
-                  c.angle += c.vx * 0.02;
-                }
+  caps.forEach((c) => {
+    if (window.gachaState.isSpinning) {
+      // Chaotic spin forces applied directly
+      c.vx += (Math.random() - 0.5) * 6;
+      c.vy += -Math.random() * 3.5 - 1.5;
+      c.angle += (Math.random() - 0.5) * 0.4;
+    } else {
+      c.vy += gravity;
+      c.vx *= 0.985;
+      c.vy *= 0.985;
+      c.angle += c.vx * 0.02;
+    }
 
-                c.x += c.vx;
-                c.y += c.vy;
+    c.x += c.vx;
+    c.y += c.vy;
 
-                // 1. Bottom Flat Wall Collision
-                if (c.y > bottomWall - c.radius) {
-                  c.y = bottomWall - c.radius;
-                  c.vy = -c.vy * bounceDamp;
-                  c.vx *= 0.85; // Floor drag friction
-                }
+    // 1. Bottom Flat Wall Collision
+    if (c.y > bottomWall - c.radius) {
+      c.y = bottomWall - c.radius;
+      c.vy = -c.vy * bounceDamp;
+      c.vx *= 0.85; // Floor drag friction
+    }
 
-                // 2. Left & Right Side Wall Boundary
-                if (c.x < 18 + c.radius) {
-                  c.x = 18 + c.radius;
-                  c.vx = -c.vx * bounceDamp;
-                }
-                if (c.x > width - 18 - c.radius) {
-                  c.x = width - 18 - c.radius;
-                  c.vx = -c.vx * bounceDamp;
-                }
+    // 2. Left & Right Side Wall Boundary
+    if (c.x < 18 + c.radius) {
+      c.x = 18 + c.radius;
+      c.vx = -c.vx * bounceDamp;
+    }
+    if (c.x > width - 18 - c.radius) {
+      c.x = width - 18 - c.radius;
+      c.vx = -c.vx * bounceDamp;
+    }
 
-                // 3. Rounded Dome Arch Upper Boundary
-                if (c.y < domeCenterY) {
-                  let dx = c.x - domeCenterX;
-                  let dy = c.y - domeCenterY;
-                  let dist = Math.hypot(dx, dy);
-                  let maxDist = domeRadius - c.radius;
+    // 3. Rounded Dome Arch Upper Boundary
+    if (c.y < domeCenterY) {
+      let dx = c.x - domeCenterX;
+      let dy = c.y - domeCenterY;
+      let dist = Math.hypot(dx, dy);
+      let maxDist = domeRadius - c.radius;
 
-                  if (dist > maxDist) {
-                    let nx = dx / dist;
-                    let ny = dy / dist;
+      if (dist > maxDist) {
+        let nx = dx / dist;
+        let ny = dy / dist;
 
-                    // Move ball back inside arch safely
-                    c.x = domeCenterX + nx * maxDist;
-                    c.y = domeCenterY + ny * maxDist;
+        // Move ball back inside arch safely
+        c.x = domeCenterX + nx * maxDist;
+        c.y = domeCenterY + ny * maxDist;
 
-                    // Reflect velocity across standard normal vector
-                    let dot = c.vx * nx + c.vy * ny;
-                    c.vx = (c.vx - 2 * dot * nx) * bounceDamp;
-                    c.vy = (c.vy - 2 * dot * ny) * bounceDamp;
-                  }
-                }
-              });
+        // Reflect velocity across standard normal vector
+        let dot = c.vx * nx + c.vy * ny;
+        c.vx = (c.vx - 2 * dot * nx) * bounceDamp;
+        c.vy = (c.vy - 2 * dot * ny) * bounceDamp;
+      }
+    }
+  });
 
-              // 4. Elastic Particle-to-Particle Ball Collisions
-              for (let i = 0; i < caps.length; i++) {
-                for (let j = i + 1; j < caps.length; j++) {
-                  let b1 = caps[i];
-                  let b2 = caps[j];
-                  let dx = b2.x - b1.x;
-                  let dy = b2.y - b1.y;
-                  let dist = Math.hypot(dx, dy);
-                  let minDist = b1.radius + b2.radius;
+  // 4. Elastic Particle-to-Particle Ball Collisions
+  for (let i = 0; i < caps.length; i++) {
+    for (let j = i + 1; j < caps.length; j++) {
+      let b1 = caps[i];
+      let b2 = caps[j];
+      let dx = b2.x - b1.x;
+      let dy = b2.y - b1.y;
+      let dist = Math.hypot(dx, dy);
+      let minDist = b1.radius + b2.radius;
 
-                  if (dist < minDist) {
-                    let overlap = minDist - dist;
-                    let nx = dx / dist;
-                    let ny = dy / dist;
+      if (dist < minDist) {
+        let overlap = minDist - dist;
+        let nx = dx / dist;
+        let ny = dy / dist;
 
-                    // Separate spheres cleanly
-                    b1.x -= nx * overlap * 0.5;
-                    b1.y -= ny * overlap * 0.5;
-                    b2.x += nx * overlap * 0.5;
-                    b2.y += ny * overlap * 0.5;
+        // Separate spheres cleanly
+        b1.x -= nx * overlap * 0.5;
+        b1.y -= ny * overlap * 0.5;
+        b2.x += nx * overlap * 0.5;
+        b2.y += ny * overlap * 0.5;
 
-                    // Simple elastic collision velocity swap
-                    let kx = b1.vx - b2.vx;
-                    let ky = b1.vy - b2.vy;
-                    let p = 2 * (nx * kx + ny * ky) / 2;
+        // Simple elastic collision velocity swap
+        let kx = b1.vx - b2.vx;
+        let ky = b1.vy - b2.vy;
+        let p = (2 * (nx * kx + ny * ky)) / 2;
 
-                    b1.vx -= p * nx * 0.85;
-                    b1.vy -= p * ny * 0.85;
-                    b2.vx += p * nx * 0.85;
-                    b2.vy += p * ny * 0.85;
-                  }
-                }
-              }
-            }
+        b1.vx -= p * nx * 0.85;
+        b1.vy -= p * ny * 0.85;
+        b2.vx += p * nx * 0.85;
+        b2.vy += p * ny * 0.85;
+      }
+    }
+  }
+}
 
-            function renderPhysics(ctx, canvas) {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
+function renderPhysics(ctx, canvas) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-              // Draw the static inside floor boundary
-              ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
-              ctx.beginPath();
-              ctx.rect(0, 143, canvas.width, 17);
-              ctx.fill();
+  // Draw the static inside floor boundary
+  ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+  ctx.beginPath();
+  ctx.rect(0, 143, canvas.width, 17);
+  ctx.fill();
 
-              window.gachaState.capsules.forEach((c) => {
-                ctx.save();
-                ctx.translate(c.x, c.y);
-                ctx.rotate(c.angle);
+  window.gachaState.capsules.forEach((c) => {
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.angle);
 
-                // Double outline stroke
-                ctx.strokeStyle = "#05070a";
-                ctx.lineWidth = 1.5;
+    // Double outline stroke
+    ctx.strokeStyle = "#05070a";
+    ctx.lineWidth = 1.5;
 
-                // Half-half capsule splits
-                ctx.fillStyle = c.color1;
-                ctx.beginPath();
-                ctx.arc(0, 0, c.radius, Math.PI / 2, -Math.PI / 2);
-                ctx.fill();
-                ctx.stroke();
+    // Half-half capsule splits
+    ctx.fillStyle = c.color1;
+    ctx.beginPath();
+    ctx.arc(0, 0, c.radius, Math.PI / 2, -Math.PI / 2);
+    ctx.fill();
+    ctx.stroke();
 
-                ctx.fillStyle = c.color2;
-                ctx.beginPath();
-                ctx.arc(0, 0, c.radius, -Math.PI / 2, Math.PI / 2);
-                ctx.fill();
-                ctx.stroke();
+    ctx.fillStyle = c.color2;
+    ctx.beginPath();
+    ctx.arc(0, 0, c.radius, -Math.PI / 2, Math.PI / 2);
+    ctx.fill();
+    ctx.stroke();
 
-                // Center seam divider line
-                ctx.beginPath();
-                ctx.moveTo(0, -c.radius);
-                ctx.lineTo(0, c.radius);
-                ctx.stroke();
+    // Center seam divider line
+    ctx.beginPath();
+    ctx.moveTo(0, -c.radius);
+    ctx.lineTo(0, c.radius);
+    ctx.stroke();
 
-                // Specular shiny highlight glare
-                ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-                ctx.beginPath();
-                ctx.ellipse(-c.radius * 0.35, -c.radius * 0.35, c.radius * 0.22, c.radius * 0.12, Math.PI / 4, 0, Math.PI * 2);
-                ctx.fill();
+    // Specular shiny highlight glare
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.beginPath();
+    ctx.ellipse(
+      -c.radius * 0.35,
+      -c.radius * 0.35,
+      c.radius * 0.22,
+      c.radius * 0.12,
+      Math.PI / 4,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fill();
 
-                ctx.restore();
-              });
-            }
+    ctx.restore();
+  });
+}
 
-            window.triggerGachaSpin = function () {
-              if (window.gachaState.isSpinning) return;
+window.triggerGachaSpin = function () {
+  if (window.gachaState.isSpinning) return;
 
-              let machine = window.gachaState.activeMachine;
-              let count = (window.inventory && window.inventory.ETC) ? (window.inventory.ETC[machine === 'standard' ? "Gacha Key" : "Glimmering Gachapon Key"] || 0) : 0;
-              if (count < 1) {
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("No keys remaining for this machine!", "#e74c3c");
-                }
-                return;
-              }
+  let machine = window.gachaState.activeMachine;
+  let count =
+    window.inventory && window.inventory.ETC
+      ? window.inventory.ETC[
+          machine === "standard" ? "Gacha Key" : "Glimmering Gachapon Key"
+        ] || 0
+      : 0;
+  if (count < 1) {
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast("No keys remaining for this machine!", "#e74c3c");
+    }
+    return;
+  }
 
-              window.gachaState.isSpinning = true;
-              window.gachaState.spinTimer = 70; // 70 frames (~1.2s of violent shakes)
+  window.gachaState.isSpinning = true;
+  window.gachaState.spinTimer = 70; // 70 frames (~1.2s of violent shakes)
 
-              // Play turning sound immediately
-              if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                window.SoundManager.play("swing");
-              }
+  // Play turning sound immediately
+  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+    window.SoundManager.play("swing");
+  }
 
-              // Spin the Crank Dial visual
-              let dial = document.getElementById("gacha-crank-dial");
-              if (dial) {
-                window.gachaState.crankAngle += 360;
-                dial.style.transform = `rotate(${window.gachaState.crankAngle}deg)`;
-              }
+  // Spin the Crank Dial visual
+  let dial = document.getElementById("gacha-crank-dial");
+  if (dial) {
+    window.gachaState.crankAngle += 360;
+    dial.style.transform = `rotate(${window.gachaState.crankAngle}deg)`;
+  }
 
-              // Trigger drop-exit capsule visual
-              setTimeout(() => {
-                let colorsList = window.gachaState.activeMachine === 'standard'
-                  ? ["#f1c40f", "#3498db", "#9b59b6", "#e67e22", "#e74c3c", "#2ecc71"]
-                  : ["#ffffff", "#e84393", "#00d2ff", "#a855f7"];
-                let randomColor = colorsList[Math.floor(Math.random() * colorsList.length)];
+  // Trigger drop-exit capsule visual
+  setTimeout(() => {
+    let colorsList =
+      window.gachaState.activeMachine === "standard"
+        ? ["#f1c40f", "#3498db", "#9b59b6", "#e67e22", "#e74c3c", "#2ecc71"]
+        : ["#ffffff", "#e84393", "#00d2ff", "#a855f7"];
+    let randomColor = colorsList[Math.floor(Math.random() * colorsList.length)];
 
-                // Play unboxing/drop vortex animations
-                let dropCap = document.getElementById("gacha-falling-capsule");
-                if (dropCap) {
-                  dropCap.style.background = `linear-gradient(135deg, ${randomColor} 50%, #ffffff 50%)`;
-                  dropCap.style.display = "block";
-                  setTimeout(() => {
-                    dropCap.style.display = "none";
-                  }, 400);
-                }
+    // Play unboxing/drop vortex animations
+    let dropCap = document.getElementById("gacha-falling-capsule");
+    if (dropCap) {
+      dropCap.style.background = `linear-gradient(135deg, ${randomColor} 50%, #ffffff 50%)`;
+      dropCap.style.display = "block";
+      setTimeout(() => {
+        dropCap.style.display = "none";
+      }, 400);
+    }
 
-                // Drop down into dispenser bin slot
-                setTimeout(() => {
-                  let binBall = document.getElementById("gacha-dropped-ball");
-                  if (binBall) {
-                    binBall.style.background = `linear-gradient(135deg, ${randomColor} 50%, #ffffff 50%)`;
-                    binBall.style.display = "block";
-                  }
+    // Drop down into dispenser bin slot
+    setTimeout(() => {
+      let binBall = document.getElementById("gacha-dropped-ball");
+      if (binBall) {
+        binBall.style.background = `linear-gradient(135deg, ${randomColor} 50%, #ffffff 50%)`;
+        binBall.style.display = "block";
+      }
 
-                  // Fire actual unbox roll logic after landing settles
-                  setTimeout(() => {
-                    let isGlim = window.gachaState.activeMachine === 'glimmering';
-                    window.triggerGachaPull(isGlim, false);
+      // Fire actual unbox roll logic after landing settles
+      setTimeout(() => {
+        let isGlim = window.gachaState.activeMachine === "glimmering";
+        window.triggerGachaPull(isGlim, false);
 
-                    let binBall = document.getElementById("gacha-dropped-ball");
-                    if (binBall) binBall.style.display = "none";
-                  }, 500);
+        let binBall = document.getElementById("gacha-dropped-ball");
+        if (binBall) binBall.style.display = "none";
+      }, 500);
+    }, 300);
+  }, 650);
+};
 
-                }, 300);
+window.triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
+  if (typeof window.hideTooltip === "function") window.hideTooltip();
 
-              }, 650);
-            };
+  let result = window.rollGachaCrateItem(
+    isGlimmering,
+    useStandardForGlimmering,
+  );
+  if (result.error) {
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(result.error, "#e74c3c");
+    }
+    return;
+  }
 
-            window.triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
-              if (typeof window.hideTooltip === "function") window.hideTooltip();
+  let item = result.item;
+  if (!item) return;
 
-              let result = window.rollGachaCrateItem(isGlimmering, useStandardForGlimmering);
-              if (result.error) {
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast(result.error, "#e74c3c");
-                }
-                return;
-              }
+  window.updateGachaBalances();
+  if (typeof window.updateUI === "function") window.updateUI();
 
-              let item = result.item;
-              if (!item) return;
+  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+    window.SoundManager.play("fairy");
+  }
 
-              window.updateGachaBalances();
-              if (typeof window.updateUI === "function") window.updateUI();
+  let color = window.getTierColor(item.statsRolled);
+  if (typeof window.spawnPurchaseCelebration === "function") {
+    window.spawnPurchaseCelebration("gacha", color, item.statsRolled);
+  }
 
-              if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                window.SoundManager.play("fairy");
-              }
+  let resultsPanel = document.getElementById("gacha-results-panel");
+  let resultsRender = document.getElementById("gacha-results-render");
+  let resultsItemName = document.getElementById("gacha-results-item-name");
 
-              let color = window.getTierColor(item.statsRolled);
-              if (typeof window.spawnPurchaseCelebration === "function") {
-                window.spawnPurchaseCelebration("gacha", color, item.statsRolled);
-              }
+  if (resultsPanel && resultsRender && resultsItemName) {
+    resultsPanel.style.display = "block";
+    if (typeof window.getEquipIconHtml === "function") {
+      resultsRender.innerHTML = window.getEquipIconHtml(item, 44);
+    } else {
+      resultsRender.innerHTML = "";
+    }
+    resultsItemName.innerText = item.name;
+    resultsItemName.style.color = color;
+  }
 
-              let resultsPanel = document.getElementById("gacha-results-panel");
-              let resultsRender = document.getElementById("gacha-results-render");
-              let resultsItemName = document.getElementById("gacha-results-item-name");
+  if (typeof window.pushHeaderToast === "function") {
+    window.pushHeaderToast(`Received: ${item.name}!`, color);
+  }
+};
 
-              if (resultsPanel && resultsRender && resultsItemName) {
-                resultsPanel.style.display = "block";
-                if (typeof window.getEquipIconHtml === "function") {
-                  resultsRender.innerHTML = window.getEquipIconHtml(item, 44);
-                } else {
-                  resultsRender.innerHTML = "";
-                }
-                resultsItemName.innerText = item.name;
-                resultsItemName.style.color = color;
-              }
-
-              if (typeof window.pushHeaderToast === "function") {
-                window.pushHeaderToast(`Received: ${item.name}!`, color);
-              }
-            };
-
-            if (typeof window.cloneItemForTooltip !== "function") {
-              window.cloneItemForTooltip = function (item) {
-                if (!item) return null;
-                return JSON.parse(JSON.stringify(item));
-              };
-            }
+if (typeof window.cloneItemForTooltip !== "function") {
+  window.cloneItemForTooltip = function (item) {
+    if (!item) return null;
+    return JSON.parse(JSON.stringify(item));
+  };
+}

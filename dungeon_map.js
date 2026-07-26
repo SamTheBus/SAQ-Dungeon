@@ -10,25 +10,26 @@
     }
 
     reset() {
-          this.depth = 1;
-          this.width = window.DUNGEON_CONFIG.BASE_WIDTH;
-          this.height = window.DUNGEON_CONFIG.BASE_HEIGHT;
-          this.tileSize = window.DUNGEON_CONFIG.TILE_SIZE;
-          this.grid = [];
-          this.exploredGrid = [];
-          this.rooms = [];
-          this.spawnTile = { x: 0, y: 0 };
-          this.extractionTile = { x: 0, y: 0 };
-          this.chests = [];
-          this.mobSpawns = [];
-          this.stations = [];
-          this.torches = [];
-          this.shrooms = [];
-          this.portalDiscovered = false;
-          this.spawnRoomId = null;
-          this.needsPreRender = true;
-          this.preRenderCanvas = null;
-        }
+      this.depth = 1;
+      this.width = window.DUNGEON_CONFIG.BASE_WIDTH;
+      this.height = window.DUNGEON_CONFIG.BASE_HEIGHT;
+      this.tileSize = window.DUNGEON_CONFIG.TILE_SIZE;
+      this.grid = [];
+      this.exploredGrid = [];
+      this.rooms = [];
+      this.spawnTile = { x: 0, y: 0 };
+      this.extractionTile = { x: 0, y: 0 };
+      this.chests = [];
+      this.mobSpawns = [];
+      this.breakables = [];
+      this.stations = [];
+      this.torches = [];
+      this.shrooms = [];
+      this.portalDiscovered = false;
+      this.spawnRoomId = null;
+      this.needsPreRender = true;
+      this.preRenderCanvas = null;
+    }
 
     getGridDimensions(depth) {
       let d = Math.max(1, Number(depth) || 1);
@@ -68,37 +69,43 @@
       this.grid[cy][cx] = window.TILE_TYPES.SPAWN_PLAYER;
 
       this.stations = [
-              {
-                type: window.TILE_TYPES.STATION_PORTAL,
-                label: "DUNGEON PORTAL",
-                x: cx,
-                y: 4,
-              },
-              {
-                type: window.TILE_TYPES.STATION_FORGE,
-                label: "BLACKSMITH FORGE",
-                x: 5,
-                y: cy,
-              },
-              {
-                type: window.TILE_TYPES.STATION_ENCHANT,
-                label: "CELESTIAL ALTAR",
-                x: cx,
-                y: 12,
-              },
-              {
-                type: window.TILE_TYPES.STATION_INN,
-                label: "RECOVERY INN",
-                x: 19,
-                y: cy,
-              },
-              {
-                type: window.TILE_TYPES.STATION_GACHAPON,
-                label: "GACHAPON VENDING",
-                x: 19,
-                y: 12,
-              },
-            ];
+        {
+          type: window.TILE_TYPES.STATION_PORTAL,
+          label: "DUNGEON PORTAL",
+          x: cx,
+          y: 4,
+        },
+        {
+          type: window.TILE_TYPES.STATION_FORGE,
+          label: "BLACKSMITH FORGE",
+          x: 5,
+          y: cy,
+        },
+        {
+          type: window.TILE_TYPES.STATION_SHOP,
+          label: "MERCHANT MARKET",
+          x: 5,
+          y: 12,
+        },
+        {
+          type: window.TILE_TYPES.STATION_ENCHANT,
+          label: "CELESTIAL ALTAR",
+          x: cx,
+          y: 12,
+        },
+        {
+          type: window.TILE_TYPES.STATION_INN,
+          label: "RECOVERY INN",
+          x: 19,
+          y: cy,
+        },
+        {
+          type: window.TILE_TYPES.STATION_GACHAPON,
+          label: "GACHAPON VENDING",
+          x: 19,
+          y: 12,
+        },
+      ];
 
       this.stations.forEach((st) => {
         if (this.grid[st.y] && this.grid[st.y][st.x] !== undefined) {
@@ -156,6 +163,19 @@
 
       this.chests = [];
       this.mobSpawns = [];
+
+      // Check if Recovery Chest belongs on this Boss Floor
+      let rec = window.playerStats && window.playerStats.recoveryLoot;
+      if (
+        rec &&
+        rec.floor === this.depth &&
+        rec.items &&
+        rec.items.length > 0
+      ) {
+        let rcX = cx - 4;
+        let rcY = 3;
+        this.grid[rcY][rcX] = window.TILE_TYPES.RECOVERY_CHEST;
+      }
 
       return this;
     }
@@ -374,13 +394,13 @@
     }
 
     placeSpawnAndExtraction() {
-          if (this.rooms.length === 0) return;
+      if (this.rooms.length === 0) return;
 
-          let startRoomIndex = Math.floor(Math.random() * this.rooms.length);
-          let startRoom = this.rooms[startRoomIndex];
-          this.spawnRoomId = startRoom.id;
-          this.spawnTile = { x: startRoom.cx, y: startRoom.cy };
-          this.grid[startRoom.cy][startRoom.cx] = window.TILE_TYPES.SPAWN_PLAYER;
+      let startRoomIndex = Math.floor(Math.random() * this.rooms.length);
+      let startRoom = this.rooms[startRoomIndex];
+      this.spawnRoomId = startRoom.id;
+      this.spawnTile = { x: startRoom.cx, y: startRoom.cy };
+      this.grid[startRoom.cy][startRoom.cx] = window.TILE_TYPES.SPAWN_PLAYER;
 
       let candidateRooms = this.rooms
         .filter((r) => r.id !== startRoom.id)
@@ -401,11 +421,40 @@
 
       this.extractionTile = { x: chosen.cx, y: chosen.cy };
       this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
+
+      // Spawn Recovery Chest in exit room if lost loot matches current floor depth
+      let rec = window.playerStats && window.playerStats.recoveryLoot;
+      if (
+        rec &&
+        rec.floor === this.depth &&
+        rec.items &&
+        rec.items.length > 0
+      ) {
+        let candidateTiles = [];
+        for (let ry = chosen.y; ry < chosen.y + chosen.h; ry++) {
+          for (let rx = chosen.x; rx < chosen.x + chosen.w; rx++) {
+            let distToPortal = Math.hypot(rx - chosen.cx, ry - chosen.cy);
+            if (
+              distToPortal >= 2.2 &&
+              this.grid[ry][rx] === window.TILE_TYPES.FLOOR
+            ) {
+              candidateTiles.push({ x: rx, y: ry, dist: distToPortal });
+            }
+          }
+        }
+        if (candidateTiles.length > 0) {
+          candidateTiles.sort((a, b) => b.dist - a.dist);
+          let targetTile = candidateTiles[0]; // Tile farthest from portal inside exit room
+          this.grid[targetTile.y][targetTile.x] =
+            window.TILE_TYPES.RECOVERY_CHEST;
+        }
+      }
     }
 
     populateEntities() {
       this.chests = [];
       this.mobSpawns = [];
+      this.breakables = [];
       this.torches = [];
       this.shrooms = [];
 
@@ -428,9 +477,9 @@
       }
 
       this.rooms.forEach((room, idx) => {
-              if (room.id === this.spawnRoomId) return;
+        if (room.id === this.spawnRoomId) return;
 
-              // Populate Bioluminescent Mushroom clusters in room corners
+        // Populate Bioluminescent Mushroom clusters in room corners
         if (Math.random() < 0.45) {
           let mx = Math.random() < 0.5 ? room.x + 1 : room.x + room.w - 2;
           let my = Math.random() < 0.5 ? room.y + 1 : room.y + room.h - 2;
@@ -459,24 +508,63 @@
             this.mobSpawns.push({ x: mx, y: my, room: idx });
           }
         }
+
+        // Populate Breakable Pottery, Urns & Barrels along walls/corners
+        let propCount = window.randInt(2, 5);
+        let propTypes = ["clay_pot", "ancient_urn", "wooden_barrel"];
+        for (let pIdx = 0; pIdx < propCount; pIdx++) {
+          let side = Math.floor(Math.random() * 4);
+          let px = room.x + 1;
+          let py = room.y + 1;
+
+          if (side === 0) {
+            px = window.randInt(room.x + 1, room.x + room.w - 2);
+            py = room.y + 1;
+          } else if (side === 1) {
+            px = window.randInt(room.x + 1, room.x + room.w - 2);
+            py = room.y + room.h - 2;
+          } else if (side === 2) {
+            px = room.x + 1;
+            py = window.randInt(room.y + 1, room.y + room.h - 2);
+          } else {
+            px = room.x + room.w - 2;
+            py = window.randInt(room.y + 1, room.y + room.h - 2);
+          }
+
+          if (this.grid[py] && this.grid[py][px] === window.TILE_TYPES.FLOOR) {
+            this.grid[py][px] = window.TILE_TYPES.POTTERY_SPAWN;
+            let chosenProp =
+              propTypes[Math.floor(Math.random() * propTypes.length)];
+            let hp = chosenProp === "wooden_barrel" ? 2 : 1;
+            this.breakables.push({
+              id: window.idCounter++,
+              type: chosenProp,
+              x: px,
+              y: py,
+              hp: hp,
+              maxHp: hp,
+              flashTimer: 0,
+            });
+          }
+        }
       });
     }
 
     revealSightRadius(px, py, pInt = 0) {
-          if (!this.exploredGrid || !this.grid) return;
-          let tileSize = this.tileSize;
-          let centerC = Math.floor(px / tileSize);
-          let centerR = Math.floor(py / tileSize);
+      if (!this.exploredGrid || !this.grid) return;
+      let tileSize = this.tileSize;
+      let centerC = Math.floor(px / tileSize);
+      let centerR = Math.floor(py / tileSize);
 
-          let effectiveInt = Math.max(0, (pInt || 0) - 5);
-          // Enhanced base sight radius from 7 to 12 tiles, and increased max limit to 18 for optimal widescreen coverage
-          let radius = Math.min(18, 12 + Math.floor(effectiveInt / 15));
-          let radiusSq = radius * radius;
+      let effectiveInt = Math.max(0, (pInt || 0) - 5);
+      // Enhanced base sight radius from 7 to 12 tiles, and increased max limit to 18 for optimal widescreen coverage
+      let radius = Math.min(18, 12 + Math.floor(effectiveInt / 15));
+      let radiusSq = radius * radius;
 
-          let minR = Math.max(0, centerR - radius);
-          let maxR = Math.min(this.height - 1, centerR + radius);
-          let minC = Math.max(0, centerC - radius);
-          let maxC = Math.min(this.width - 1, centerC + radius);
+      let minR = Math.max(0, centerR - radius);
+      let maxR = Math.min(this.height - 1, centerR + radius);
+      let minC = Math.max(0, centerC - radius);
+      let maxC = Math.min(this.width - 1, centerC + radius);
 
       for (let r = minR; r <= maxR; r++) {
         let dr = r - centerR;
@@ -612,623 +700,769 @@
     }
   }
 
+  window.drawBreakableProp = function (ctx, prop, px, py, tileSize) {
+    if (!prop) return;
+    let cx = px + tileSize / 2;
+    let cy = py + tileSize / 2;
+    let isFlash = prop.flashTimer > 0;
+
+    ctx.save();
+
+    // Base Drop Shadow
+    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 10, 10, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (prop.type === "clay_pot") {
+      ctx.fillStyle = isFlash ? "#ffffff" : "#d35400";
+      ctx.strokeStyle = isFlash ? "#ffffff" : "#000000";
+      ctx.lineWidth = 1.5;
+
+      // Bulbous Base
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 3, 9, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      if (!isFlash) {
+        // Terracotta Shading Highlight
+        ctx.fillStyle = "#e67e22";
+        ctx.beginPath();
+        ctx.ellipse(cx - 3, cy + 1, 3.5, 4, -Math.PI / 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Banding Lines
+        ctx.strokeStyle = "#ba4a00";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.arc(cx, cy + 3, 7, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+      }
+
+      // Neck & Flared Rim
+      ctx.fillStyle = isFlash ? "#ffffff" : "#e67e22";
+      ctx.strokeStyle = isFlash ? "#ffffff" : "#000000";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 6, 6, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else if (prop.type === "ancient_urn") {
+      ctx.fillStyle = isFlash ? "#ffffff" : "#1e293b";
+      ctx.strokeStyle = isFlash ? "#ffffff" : "#000000";
+      ctx.lineWidth = 1.8;
+
+      // Sculpted Urn Body
+      ctx.beginPath();
+      ctx.moveTo(cx - 5, cy - 8);
+      ctx.quadraticCurveTo(cx - 11, cy - 2, cx - 8, cy + 8);
+      ctx.lineTo(cx + 8, cy + 8);
+      ctx.quadraticCurveTo(cx + 11, cy - 2, cx + 5, cy - 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      if (!isFlash) {
+        // Gold Runic Middle Band
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(cx - 9, cy - 2, 18, 3.5);
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(cx - 9, cy - 2, 18, 3.5);
+
+        // Bronze Handles
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.arc(cx - 9, cy - 3, 4, Math.PI / 2, (Math.PI * 3) / 2);
+        ctx.arc(cx + 9, cy - 3, 4, -Math.PI / 2, Math.PI / 2);
+        ctx.stroke();
+      }
+
+      // Rim Collar
+      ctx.fillStyle = isFlash ? "#ffffff" : "#334155";
+      ctx.strokeStyle = isFlash ? "#ffffff" : "#000000";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 9, 6.5, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else if (prop.type === "wooden_barrel") {
+      ctx.fillStyle = isFlash ? "#ffffff" : "#5c3a21";
+      ctx.strokeStyle = isFlash ? "#ffffff" : "#000000";
+      ctx.lineWidth = 2.0;
+
+      // Curved Stave Body
+      ctx.beginPath();
+      ctx.moveTo(cx - 8, cy - 10);
+      ctx.quadraticCurveTo(cx - 12, cy, cx - 8, cy + 10);
+      ctx.lineTo(cx + 8, cy + 10);
+      ctx.quadraticCurveTo(cx + 12, cy, cx + 8, cy - 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      if (!isFlash) {
+        // Vertical Stave Dividers
+        ctx.strokeStyle = "#3d1d0b";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(cx - 3, cy - 10);
+        ctx.lineTo(cx - 3, cy + 10);
+        ctx.moveTo(cx + 3, cy - 10);
+        ctx.lineTo(cx + 3, cy + 10);
+        ctx.stroke();
+
+        // Iron Hoops
+        ctx.fillStyle = "#334155";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.0;
+
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 5, 10, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 5, 10, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Top Cap
+      ctx.fillStyle = isFlash ? "#ffffff" : "#78350f";
+      ctx.strokeStyle = isFlash ? "#ffffff" : "#000000";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 10, 8, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  };
+
   window.DungeonMapGenerator = DungeonMapGenerator;
-    window.DungeonCamera = new Camera();
-    window.activeDungeonMap = new DungeonMapGenerator();
+  window.DungeonCamera = new Camera();
+  window.activeDungeonMap = new DungeonMapGenerator();
 
-    window.preRenderStaticMap = function (map) {
-      if (!map || !map.grid || map.grid.length === 0) return;
-      let tileSize = map.tileSize;
+  window.preRenderStaticMap = function (map) {
+    if (!map || !map.grid || map.grid.length === 0) return;
+    let tileSize = map.tileSize;
 
-      map.preRenderCanvas = document.createElement("canvas");
-      map.preRenderCanvas.width = map.width * tileSize;
-      map.preRenderCanvas.height = map.height * tileSize;
-      let pCtx = map.preRenderCanvas.getContext("2d");
+    map.preRenderCanvas = document.createElement("canvas");
+    map.preRenderCanvas.width = map.width * tileSize;
+    map.preRenderCanvas.height = map.height * tileSize;
+    let pCtx = map.preRenderCanvas.getContext("2d");
 
-      let isHub = window.currentGameState === window.GAME_STATES.HUB;
-      let depth = window.player ? window.player.depth || 1 : 1;
-      let sector = Math.floor((depth - 1) / 12);
+    let isHub = window.currentGameState === window.GAME_STATES.HUB;
+    let depth = window.player ? window.player.depth || 1 : 1;
+    let sector = Math.floor((depth - 1) / 12);
 
-      const BIOME_PALETTES = [
-        {
-          stone1: "#223326",
-          stone2: "#1d2e21",
-          stone3: "#17261b",
-          stoneHighlight: "rgba(163, 253, 131, 0.05)",
-          stoneShadow: "rgba(0, 0, 0, 0.25)",
-          mortar: "#14241a",
-          seamGlow: "rgba(46, 204, 113, 0.08)",
-          wallCap: "#22382a",
-          wallTop: "#2e4a37",
-          wallFace: "#14241a",
-          wallShadow: "#080f0c",
-          wallMortar: "rgba(10, 20, 14, 0.8)",
-          accent: "#2ecc71",
-        },
-        {
-          stone1: "#222a38",
-          stone2: "#1d2532",
-          stone3: "#161c28",
-          stoneHighlight: "rgba(224, 242, 254, 0.06)",
-          stoneShadow: "rgba(0, 0, 0, 0.25)",
-          mortar: "#121822",
-          seamGlow: "rgba(56, 189, 248, 0.08)",
-          wallCap: "#2a3548",
-          wallTop: "#3a475c",
-          wallFace: "#161e2b",
-          wallShadow: "#0a0e17",
-          wallMortar: "rgba(12, 18, 28, 0.8)",
-          accent: "#38bdf8",
-        },
-        {
-          stone1: "#241612",
-          stone2: "#1f110c",
-          stone3: "#170a07",
-          stoneHighlight: "rgba(254, 215, 170, 0.05)",
-          stoneShadow: "rgba(0, 0, 0, 0.30)",
-          mortar: "#140a07",
-          seamGlow: "rgba(249, 115, 22, 0.10)",
-          wallCap: "#331a14",
-          wallTop: "#47231c",
-          wallFace: "#1a0b07",
-          wallShadow: "#080201",
-          wallMortar: "rgba(22, 8, 6, 0.85)",
-          accent: "#f97316",
-        },
-        {
-          stone1: "#16281e",
-          stone2: "#122117",
-          stone3: "#0d1a11",
-          stoneHighlight: "rgba(167, 243, 208, 0.06)",
-          stoneShadow: "rgba(0, 0, 0, 0.28)",
-          mortar: "#0c1b12",
-          seamGlow: "rgba(52, 211, 153, 0.09)",
-          wallCap: "#1d3827",
-          wallTop: "#284d32",
-          wallFace: "#102116",
-          wallShadow: "#050e08",
-          wallMortar: "rgba(8, 22, 14, 0.85)",
-          accent: "#34d399",
-        },
-        {
-          stone1: "#180d2b",
-          stone2: "#130923",
-          stone3: "#0e051b",
-          stoneHighlight: "rgba(245, 208, 254, 0.06)",
-          stoneShadow: "rgba(0, 0, 0, 0.32)",
-          mortar: "#0d041c",
-          seamGlow: "rgba(232, 121, 249, 0.10)",
-          wallCap: "#22113b",
-          wallTop: "#33184f",
-          wallFace: "#130726",
-          wallShadow: "#04010d",
-          wallMortar: "rgba(16, 4, 30, 0.85)",
-          accent: "#e879f9",
-        },
-      ];
+    const BIOME_PALETTES = [
+      {
+        stone1: "#223326",
+        stone2: "#1d2e21",
+        stone3: "#17261b",
+        stoneHighlight: "rgba(163, 253, 131, 0.05)",
+        stoneShadow: "rgba(0, 0, 0, 0.25)",
+        mortar: "#14241a",
+        seamGlow: "rgba(46, 204, 113, 0.08)",
+        wallCap: "#22382a",
+        wallTop: "#2e4a37",
+        wallFace: "#14241a",
+        wallShadow: "#080f0c",
+        wallMortar: "rgba(10, 20, 14, 0.8)",
+        accent: "#2ecc71",
+      },
+      {
+        stone1: "#222a38",
+        stone2: "#1d2532",
+        stone3: "#161c28",
+        stoneHighlight: "rgba(224, 242, 254, 0.06)",
+        stoneShadow: "rgba(0, 0, 0, 0.25)",
+        mortar: "#121822",
+        seamGlow: "rgba(56, 189, 248, 0.08)",
+        wallCap: "#2a3548",
+        wallTop: "#3a475c",
+        wallFace: "#161e2b",
+        wallShadow: "#0a0e17",
+        wallMortar: "rgba(12, 18, 28, 0.8)",
+        accent: "#38bdf8",
+      },
+      {
+        stone1: "#241612",
+        stone2: "#1f110c",
+        stone3: "#170a07",
+        stoneHighlight: "rgba(254, 215, 170, 0.05)",
+        stoneShadow: "rgba(0, 0, 0, 0.30)",
+        mortar: "#140a07",
+        seamGlow: "rgba(249, 115, 22, 0.10)",
+        wallCap: "#331a14",
+        wallTop: "#47231c",
+        wallFace: "#1a0b07",
+        wallShadow: "#080201",
+        wallMortar: "rgba(22, 8, 6, 0.85)",
+        accent: "#f97316",
+      },
+      {
+        stone1: "#16281e",
+        stone2: "#122117",
+        stone3: "#0d1a11",
+        stoneHighlight: "rgba(167, 243, 208, 0.06)",
+        stoneShadow: "rgba(0, 0, 0, 0.28)",
+        mortar: "#0c1b12",
+        seamGlow: "rgba(52, 211, 153, 0.09)",
+        wallCap: "#1d3827",
+        wallTop: "#284d32",
+        wallFace: "#102116",
+        wallShadow: "#050e08",
+        wallMortar: "rgba(8, 22, 14, 0.85)",
+        accent: "#34d399",
+      },
+      {
+        stone1: "#180d2b",
+        stone2: "#130923",
+        stone3: "#0e051b",
+        stoneHighlight: "rgba(245, 208, 254, 0.06)",
+        stoneShadow: "rgba(0, 0, 0, 0.32)",
+        mortar: "#0d041c",
+        seamGlow: "rgba(232, 121, 249, 0.10)",
+        wallCap: "#22113b",
+        wallTop: "#33184f",
+        wallFace: "#130726",
+        wallShadow: "#04010d",
+        wallMortar: "rgba(16, 4, 30, 0.85)",
+        accent: "#e879f9",
+      },
+    ];
 
-      let biomeIndex = Math.min(sector, BIOME_PALETTES.length - 1);
-      let biome = BIOME_PALETTES[biomeIndex];
+    let biomeIndex = Math.min(sector, BIOME_PALETTES.length - 1);
+    let biome = BIOME_PALETTES[biomeIndex];
 
-      for (let r = 0; r < map.height; r++) {
-        for (let c = 0; c < map.width; c++) {
-          let tile = map.grid[r][c];
-          let px = c * tileSize;
-          let py = r * tileSize;
+    for (let r = 0; r < map.height; r++) {
+      for (let c = 0; c < map.width; c++) {
+        let tile = map.grid[r][c];
+        let px = c * tileSize;
+        let py = r * tileSize;
 
-          let tileHash =
-            Math.abs(Math.sin(c * 12.9898 + r * 78.233) * 43758.5453) % 1.0;
+        let tileHash =
+          Math.abs(Math.sin(c * 12.9898 + r * 78.233) * 43758.5453) % 1.0;
 
-          if (tile === window.TILE_TYPES.VOID) {
-            pCtx.fillStyle = "#05030a";
-            pCtx.fillRect(px, py, tileSize, tileSize);
-          } else if (tile === window.TILE_TYPES.WALL) {
-            if (isHub) {
-              let isSouthFloor =
-                r + 1 < map.height &&
-                map.grid[r + 1][c] !== window.TILE_TYPES.WALL &&
-                map.grid[r + 1][c] !== window.TILE_TYPES.VOID;
-              let isNorthFloor =
-                r - 1 >= 0 &&
-                map.grid[r - 1][c] !== window.TILE_TYPES.WALL &&
-                map.grid[r - 1][c] !== window.TILE_TYPES.VOID;
+        if (tile === window.TILE_TYPES.VOID) {
+          pCtx.fillStyle = "#05030a";
+          pCtx.fillRect(px, py, tileSize, tileSize);
+        } else if (tile === window.TILE_TYPES.WALL) {
+          if (isHub) {
+            let isSouthFloor =
+              r + 1 < map.height &&
+              map.grid[r + 1][c] !== window.TILE_TYPES.WALL &&
+              map.grid[r + 1][c] !== window.TILE_TYPES.VOID;
+            let isNorthFloor =
+              r - 1 >= 0 &&
+              map.grid[r - 1][c] !== window.TILE_TYPES.WALL &&
+              map.grid[r - 1][c] !== window.TILE_TYPES.VOID;
 
-              if (isSouthFloor) {
-                pCtx.fillStyle = "#252b38";
-                pCtx.fillRect(px, py, tileSize, tileSize - 8);
+            if (isSouthFloor) {
+              pCtx.fillStyle = "#252b38";
+              pCtx.fillRect(px, py, tileSize, tileSize - 8);
 
+              pCtx.fillStyle = "#3b4356";
+              pCtx.fillRect(px, py, tileSize, 2);
+
+              pCtx.fillStyle = "#d4af37";
+              pCtx.fillRect(px, py + tileSize - 10, tileSize, 2);
+
+              pCtx.fillStyle = "#131722";
+              pCtx.fillRect(px, py + tileSize - 8, tileSize, 8);
+            } else {
+              pCtx.fillStyle = "#1a1f2c";
+              pCtx.fillRect(px, py, tileSize, tileSize);
+
+              pCtx.strokeStyle = "#0e111a";
+              pCtx.lineWidth = 1;
+              pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+              if (isNorthFloor) {
                 pCtx.fillStyle = "#3b4356";
                 pCtx.fillRect(px, py, tileSize, 2);
-
-                pCtx.fillStyle = "#d4af37";
-                pCtx.fillRect(px, py + tileSize - 10, tileSize, 2);
-
-                pCtx.fillStyle = "#131722";
-                pCtx.fillRect(px, py + tileSize - 8, tileSize, 8);
-              } else {
-                pCtx.fillStyle = "#1a1f2c";
-                pCtx.fillRect(px, py, tileSize, tileSize);
-
-                pCtx.strokeStyle = "#0e111a";
-                pCtx.lineWidth = 1;
-                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-
-                if (isNorthFloor) {
-                  pCtx.fillStyle = "#3b4356";
-                  pCtx.fillRect(px, py, tileSize, 2);
-                }
               }
+            }
 
-              pCtx.strokeStyle = "rgba(212, 175, 55, 0.15)";
-              pCtx.lineWidth = 1;
-              let midY = py + Math.floor(tileSize / 2);
-              pCtx.beginPath();
-              pCtx.moveTo(px, midY);
-              pCtx.lineTo(px + tileSize, midY);
-              if ((c + r) % 2 === 0) {
-                pCtx.moveTo(px + 16, py);
-                pCtx.lineTo(px + 16, midY);
-              } else {
-                pCtx.moveTo(px + 16, midY);
-                pCtx.lineTo(px + 16, py + tileSize);
-              }
-              pCtx.stroke();
+            pCtx.strokeStyle = "rgba(212, 175, 55, 0.15)";
+            pCtx.lineWidth = 1;
+            let midY = py + Math.floor(tileSize / 2);
+            pCtx.beginPath();
+            pCtx.moveTo(px, midY);
+            pCtx.lineTo(px + tileSize, midY);
+            if ((c + r) % 2 === 0) {
+              pCtx.moveTo(px + 16, py);
+              pCtx.lineTo(px + 16, midY);
             } else {
-              let isSouthFloor =
-                r + 1 < map.height &&
-                map.grid[r + 1][c] !== window.TILE_TYPES.WALL &&
-                map.grid[r + 1][c] !== window.TILE_TYPES.VOID;
-              let isNorthFloor =
-                r - 1 >= 0 &&
-                map.grid[r - 1][c] !== window.TILE_TYPES.WALL &&
-                map.grid[r - 1][c] !== window.TILE_TYPES.VOID;
+              pCtx.moveTo(px + 16, midY);
+              pCtx.lineTo(px + 16, py + tileSize);
+            }
+            pCtx.stroke();
+          } else {
+            let isSouthFloor =
+              r + 1 < map.height &&
+              map.grid[r + 1][c] !== window.TILE_TYPES.WALL &&
+              map.grid[r + 1][c] !== window.TILE_TYPES.VOID;
+            let isNorthFloor =
+              r - 1 >= 0 &&
+              map.grid[r - 1][c] !== window.TILE_TYPES.WALL &&
+              map.grid[r - 1][c] !== window.TILE_TYPES.VOID;
 
-              if (isSouthFloor) {
-                pCtx.fillStyle = biome.wallCap;
-                pCtx.fillRect(px, py, tileSize, tileSize - 8);
+            if (isSouthFloor) {
+              pCtx.fillStyle = biome.wallCap;
+              pCtx.fillRect(px, py, tileSize, tileSize - 8);
 
-                pCtx.fillStyle = biome.wallTop;
-                pCtx.fillRect(px, py, tileSize, 2);
+              pCtx.fillStyle = biome.wallTop;
+              pCtx.fillRect(px, py, tileSize, 2);
 
-                pCtx.fillStyle = biome.wallFace;
-                pCtx.fillRect(px, py + tileSize - 8, tileSize, 8);
+              pCtx.fillStyle = biome.wallFace;
+              pCtx.fillRect(px, py + tileSize - 8, tileSize, 8);
 
-                pCtx.fillStyle = biome.wallShadow;
-                pCtx.fillRect(px, py + tileSize - 2, tileSize, 2);
-
-                pCtx.strokeStyle = biome.wallMortar;
-                pCtx.lineWidth = 1;
-                pCtx.beginPath();
-                pCtx.moveTo(px, py + tileSize - 8);
-                pCtx.lineTo(px + tileSize, py + tileSize - 8);
-                pCtx.stroke();
-              } else {
-                pCtx.fillStyle = biome.wallCap;
-                pCtx.fillRect(px, py, tileSize, tileSize);
-
-                pCtx.strokeStyle = biome.wallShadow;
-                pCtx.lineWidth = 1;
-                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-
-                if (isNorthFloor) {
-                  pCtx.fillStyle = biome.wallTop;
-                  pCtx.fillRect(px, py, tileSize, 2);
-                }
-              }
+              pCtx.fillStyle = biome.wallShadow;
+              pCtx.fillRect(px, py + tileSize - 2, tileSize, 2);
 
               pCtx.strokeStyle = biome.wallMortar;
               pCtx.lineWidth = 1;
-              let midY = py + Math.floor((tileSize - (isSouthFloor ? 8 : 0)) / 2);
               pCtx.beginPath();
-              pCtx.moveTo(px, midY);
-              pCtx.lineTo(px + tileSize, midY);
-              if ((c + r) % 2 === 0) {
-                pCtx.moveTo(px + 16, py);
-                pCtx.lineTo(px + 16, midY);
-              } else {
-                pCtx.moveTo(px + 16, midY);
-                pCtx.lineTo(
-                  px + 16,
-                  py + (isSouthFloor ? tileSize - 8 : tileSize),
-                );
-              }
+              pCtx.moveTo(px, py + tileSize - 8);
+              pCtx.lineTo(px + tileSize, py + tileSize - 8);
               pCtx.stroke();
+            } else {
+              pCtx.fillStyle = biome.wallCap;
+              pCtx.fillRect(px, py, tileSize, tileSize);
 
-              if (tileHash > 0.65) {
-                pCtx.fillStyle = biome.accent;
-                let ax = px + 6 + ((tileHash * 17) % 18);
-                let ay = py + 3 + ((tileHash * 23) % 10);
-                pCtx.fillRect(ax, ay, 2.5, 2.5);
-                pCtx.fillRect(ax - 2, ay + 3, 2, 2);
-                if (isSouthFloor) {
-                  pCtx.fillRect(ax, py + tileSize - 8, 2, 4);
+              pCtx.strokeStyle = biome.wallShadow;
+              pCtx.lineWidth = 1;
+              pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+              if (isNorthFloor) {
+                pCtx.fillStyle = biome.wallTop;
+                pCtx.fillRect(px, py, tileSize, 2);
+              }
+            }
+
+            pCtx.strokeStyle = biome.wallMortar;
+            pCtx.lineWidth = 1;
+            let midY = py + Math.floor((tileSize - (isSouthFloor ? 8 : 0)) / 2);
+            pCtx.beginPath();
+            pCtx.moveTo(px, midY);
+            pCtx.lineTo(px + tileSize, midY);
+            if ((c + r) % 2 === 0) {
+              pCtx.moveTo(px + 16, py);
+              pCtx.lineTo(px + 16, midY);
+            } else {
+              pCtx.moveTo(px + 16, midY);
+              pCtx.lineTo(
+                px + 16,
+                py + (isSouthFloor ? tileSize - 8 : tileSize),
+              );
+            }
+            pCtx.stroke();
+
+            if (tileHash > 0.65) {
+              pCtx.fillStyle = biome.accent;
+              let ax = px + 6 + ((tileHash * 17) % 18);
+              let ay = py + 3 + ((tileHash * 23) % 10);
+              pCtx.fillRect(ax, ay, 2.5, 2.5);
+              pCtx.fillRect(ax - 2, ay + 3, 2, 2);
+              if (isSouthFloor) {
+                pCtx.fillRect(ax, py + tileSize - 8, 2, 4);
+              }
+            }
+          }
+        } else {
+          if (isHub) {
+            let spX = map.spawnTile.x;
+            let spY = map.spawnTile.y;
+
+            let isPathway =
+              (c === spX && r >= 4 && r <= map.height - 5) ||
+              (r === spY && c >= 5 && c <= map.width - 6);
+
+            let stationTile = null;
+            if (map.stations) {
+              for (let st of map.stations) {
+                if (Math.abs(c - st.x) <= 1 && Math.abs(r - st.y) <= 1) {
+                  stationTile = st;
+                  break;
                 }
               }
             }
-          } else {
-            if (isHub) {
-              let spX = map.spawnTile.x;
-              let spY = map.spawnTile.y;
 
-              let isPathway =
-                (c === spX && r >= 4 && r <= map.height - 5) ||
-                (r === spY && c >= 5 && c <= map.width - 6);
+            if (stationTile) {
+              let dx = c - stationTile.x;
+              let dy = r - stationTile.y;
+              let isAlt = (c + r) % 2 === 0;
 
-              let stationTile = null;
-              if (map.stations) {
-                for (let st of map.stations) {
-                  if (Math.abs(c - st.x) <= 1 && Math.abs(r - st.y) <= 1) {
-                    stationTile = st;
-                    break;
-                  }
+              if (stationTile.type === window.TILE_TYPES.STATION_FORGE) {
+                pCtx.fillStyle = isAlt ? "#1a1210" : "#140e0c";
+                pCtx.fillRect(px, py, tileSize, tileSize);
+
+                pCtx.strokeStyle = "rgba(120, 53, 15, 0.4)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+                pCtx.beginPath();
+                pCtx.moveTo(px + 8, py);
+                pCtx.lineTo(px + 8, py + tileSize);
+                pCtx.moveTo(px + 16, py);
+                pCtx.lineTo(px + 16, py + tileSize);
+                pCtx.moveTo(px + 24, py);
+                pCtx.lineTo(px + 24, py + tileSize);
+                pCtx.stroke();
+
+                pCtx.fillStyle = "#b45309";
+                pCtx.fillRect(px + 2, py + 2, 3, 3);
+                pCtx.fillRect(px + tileSize - 5, py + 2, 3, 3);
+                pCtx.fillRect(px + 2, py + tileSize - 5, 3, 3);
+                pCtx.fillRect(px + tileSize - 5, py + tileSize - 5, 3, 3);
+              } else if (
+                stationTile.type === window.TILE_TYPES.STATION_PORTAL
+              ) {
+                pCtx.fillStyle = isAlt ? "#1e0b2e" : "#160724";
+                pCtx.fillRect(px, py, tileSize, tileSize);
+
+                pCtx.strokeStyle = "rgba(168, 85, 247, 0.25)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+                if (Math.abs(dx) === 1 && Math.abs(dy) === 1) {
+                  pCtx.fillStyle = "#d4af37";
+                  let cornerX = dx < 0 ? px + 2 : px + tileSize - 6;
+                  let cornerY = dy < 0 ? py + 2 : py + tileSize - 6;
+                  pCtx.fillRect(cornerX, cornerY, 4, 4);
                 }
+              } else if (
+                stationTile.type === window.TILE_TYPES.STATION_ENCHANT
+              ) {
+                pCtx.fillStyle = isAlt ? "#0f0d22" : "#090817";
+                pCtx.fillRect(px, py, tileSize, tileSize);
+
+                pCtx.strokeStyle = "rgba(0, 210, 255, 0.25)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+                if (Math.abs(dx) === 1 && Math.abs(dy) === 1) {
+                  pCtx.fillStyle = "#00d2ff";
+                  let cornerX = dx < 0 ? px + 2 : px + tileSize - 4;
+                  let cornerY = dy < 0 ? py + 2 : py + tileSize - 4;
+                  pCtx.fillRect(cornerX, cornerY, 2, 2);
+                }
+              } else if (stationTile.type === window.TILE_TYPES.STATION_STASH) {
+                pCtx.fillStyle = isAlt ? "#0c1b2d" : "#081322";
+                pCtx.fillRect(px, py, tileSize, tileSize);
+
+                pCtx.strokeStyle = "rgba(2, 132, 199, 0.35)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+                pCtx.fillStyle = "#38bdf8";
+                pCtx.fillRect(px + 2, py + 2, 2, 2);
+                pCtx.fillRect(px + tileSize - 4, py + 2, 2, 2);
+                pCtx.fillRect(px + 2, py + tileSize - 4, 2, 2);
+                pCtx.fillRect(px + tileSize - 4, py + tileSize - 4, 2, 2);
+              } else if (stationTile.type === window.TILE_TYPES.STATION_INN) {
+                pCtx.fillStyle = isAlt ? "#0a3328" : "#06241a";
+                pCtx.fillRect(px, py, tileSize, tileSize);
+
+                pCtx.strokeStyle = "rgba(16, 185, 129, 0.35)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+                if (tileHash > 0.4) {
+                  pCtx.fillStyle = "rgba(16, 185, 129, 0.25)";
+                  pCtx.beginPath();
+                  pCtx.arc(px + 4, py + 4, 3, 0, Math.PI * 2);
+                  pCtx.arc(
+                    px + tileSize - 4,
+                    py + tileSize - 4,
+                    2.5,
+                    0,
+                    Math.PI * 2,
+                  );
+                  pCtx.fill();
+                }
+              } else if (
+                stationTile.type === window.TILE_TYPES.STATION_GACHAPON
+              ) {
+                pCtx.fillStyle = isAlt ? "#1f1d15" : "#191710";
+                pCtx.fillRect(px, py, tileSize, tileSize);
+
+                pCtx.strokeStyle = "rgba(241, 196, 15, 0.25)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
               }
 
-              if (stationTile) {
-                let dx = c - stationTile.x;
-                let dy = r - stationTile.y;
-                let isAlt = (c + r) % 2 === 0;
+              pCtx.strokeStyle =
+                stationTile.type === window.TILE_TYPES.STATION_FORGE
+                  ? "#ea580c"
+                  : stationTile.type === window.TILE_TYPES.STATION_PORTAL
+                    ? "#9333ea"
+                    : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
+                      ? "#00d2ff"
+                      : stationTile.type === window.TILE_TYPES.STATION_STASH
+                        ? "#0284c7"
+                        : stationTile.type ===
+                            window.TILE_TYPES.STATION_GACHAPON
+                          ? "#f1c40f"
+                          : "#059669";
+              pCtx.lineWidth = 1.5;
 
-                if (stationTile.type === window.TILE_TYPES.STATION_FORGE) {
-                  pCtx.fillStyle = isAlt ? "#1a1210" : "#140e0c";
-                  pCtx.fillRect(px, py, tileSize, tileSize);
+              if (dx === -1) {
+                pCtx.beginPath();
+                pCtx.moveTo(px, py);
+                pCtx.lineTo(px, py + tileSize);
+                pCtx.stroke();
+              }
+              if (dx === 1) {
+                pCtx.beginPath();
+                pCtx.moveTo(px + tileSize, py);
+                pCtx.lineTo(px + tileSize, py + tileSize);
+                pCtx.stroke();
+              }
+              if (dy === -1) {
+                pCtx.beginPath();
+                pCtx.moveTo(px, py);
+                pCtx.lineTo(px + tileSize, py);
+                pCtx.stroke();
+              }
+              if (dy === 1) {
+                pCtx.beginPath();
+                pCtx.moveTo(px, py + tileSize);
+                pCtx.lineTo(px + tileSize, py + tileSize);
+                pCtx.stroke();
+              }
+            } else {
+              let baseColor = isPathway
+                ? (c + r) % 2 === 0
+                  ? "#1e2433"
+                  : "#191e2b"
+                : (c + r) % 2 === 0
+                  ? "#151822"
+                  : "#11131c";
 
-                  pCtx.strokeStyle = "rgba(120, 53, 15, 0.4)";
-                  pCtx.lineWidth = 1;
-                  pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+              pCtx.fillStyle = baseColor;
+              pCtx.fillRect(px, py, tileSize, tileSize);
 
-                  pCtx.beginPath();
-                  pCtx.moveTo(px + 8, py);
-                  pCtx.lineTo(px + 8, py + tileSize);
-                  pCtx.moveTo(px + 16, py);
-                  pCtx.lineTo(px + 16, py + tileSize);
-                  pCtx.moveTo(px + 24, py);
-                  pCtx.lineTo(px + 24, py + tileSize);
-                  pCtx.stroke();
+              pCtx.strokeStyle = isPathway
+                ? "rgba(255, 255, 255, 0.07)"
+                : "rgba(255, 255, 255, 0.03)";
+              pCtx.lineWidth = 1;
+              pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
 
-                  pCtx.fillStyle = "#b45309";
-                  pCtx.fillRect(px + 2, py + 2, 3, 3);
-                  pCtx.fillRect(px + tileSize - 5, py + 2, 3, 3);
-                  pCtx.fillRect(px + 2, py + tileSize - 5, 3, 3);
-                  pCtx.fillRect(px + tileSize - 5, py + tileSize - 5, 3, 3);
-                } else if (
-                  stationTile.type === window.TILE_TYPES.STATION_PORTAL
-                ) {
-                  pCtx.fillStyle = isAlt ? "#1e0b2e" : "#160724";
-                  pCtx.fillRect(px, py, tileSize, tileSize);
-
-                  pCtx.strokeStyle = "rgba(168, 85, 247, 0.25)";
-                  pCtx.lineWidth = 1;
-                  pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-
-                  if (Math.abs(dx) === 1 && Math.abs(dy) === 1) {
-                    pCtx.fillStyle = "#d4af37";
-                    let cornerX = dx < 0 ? px + 2 : px + tileSize - 6;
-                    let cornerY = dy < 0 ? py + 2 : py + tileSize - 6;
-                    pCtx.fillRect(cornerX, cornerY, 4, 4);
-                  }
-                } else if (
-                  stationTile.type === window.TILE_TYPES.STATION_ENCHANT
-                ) {
-                  pCtx.fillStyle = isAlt ? "#0f0d22" : "#090817";
-                  pCtx.fillRect(px, py, tileSize, tileSize);
-
-                  pCtx.strokeStyle = "rgba(0, 210, 255, 0.25)";
-                  pCtx.lineWidth = 1;
-                  pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-
-                  if (Math.abs(dx) === 1 && Math.abs(dy) === 1) {
-                    pCtx.fillStyle = "#00d2ff";
-                    let cornerX = dx < 0 ? px + 2 : px + tileSize - 4;
-                    let cornerY = dy < 0 ? py + 2 : py + tileSize - 4;
-                    pCtx.fillRect(cornerX, cornerY, 2, 2);
-                  }
-                } else if (stationTile.type === window.TILE_TYPES.STATION_STASH) {
-                  pCtx.fillStyle = isAlt ? "#0c1b2d" : "#081322";
-                  pCtx.fillRect(px, py, tileSize, tileSize);
-
-                  pCtx.strokeStyle = "rgba(2, 132, 199, 0.35)";
-                  pCtx.lineWidth = 1;
-                  pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-
-                  pCtx.fillStyle = "#38bdf8";
-                  pCtx.fillRect(px + 2, py + 2, 2, 2);
-                  pCtx.fillRect(px + tileSize - 4, py + 2, 2, 2);
-                  pCtx.fillRect(px + 2, py + tileSize - 4, 2, 2);
-                  pCtx.fillRect(px + tileSize - 4, py + tileSize - 4, 2, 2);
-                } else if (stationTile.type === window.TILE_TYPES.STATION_INN) {
-                                          pCtx.fillStyle = isAlt ? "#0a3328" : "#06241a";
-                                          pCtx.fillRect(px, py, tileSize, tileSize);
-
-                                          pCtx.strokeStyle = "rgba(16, 185, 129, 0.35)";
-                                          pCtx.lineWidth = 1;
-                                          pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-
-                                          if (tileHash > 0.4) {
-                                            pCtx.fillStyle = "rgba(16, 185, 129, 0.25)";
-                                            pCtx.beginPath();
-                                            pCtx.arc(px + 4, py + 4, 3, 0, Math.PI * 2);
-                                            pCtx.arc(
-                                              px + tileSize - 4,
-                                              py + tileSize - 4,
-                                              2.5,
-                                              0,
-                                              Math.PI * 2,
-                                            );
-                                            pCtx.fill();
-                                          }
-                                        } else if (stationTile.type === window.TILE_TYPES.STATION_GACHAPON) {
-                                          pCtx.fillStyle = isAlt ? "#1f1d15" : "#191710";
-                                          pCtx.fillRect(px, py, tileSize, tileSize);
-
-                                          pCtx.strokeStyle = "rgba(241, 196, 15, 0.25)";
-                                          pCtx.lineWidth = 1;
-                                          pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-                                        }
-
-                pCtx.strokeStyle =
-                                  stationTile.type === window.TILE_TYPES.STATION_FORGE
-                                    ? "#ea580c"
-                                    : stationTile.type === window.TILE_TYPES.STATION_PORTAL
-                                      ? "#9333ea"
-                                      : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
-                                        ? "#00d2ff"
-                                        : stationTile.type === window.TILE_TYPES.STATION_STASH
-                                          ? "#0284c7"
-                                          : stationTile.type === window.TILE_TYPES.STATION_GACHAPON
-                                            ? "#f1c40f"
-                                            : "#059669";
-                pCtx.lineWidth = 1.5;
-
-                if (dx === -1) {
-                  pCtx.beginPath();
-                  pCtx.moveTo(px, py);
-                  pCtx.lineTo(px, py + tileSize);
-                  pCtx.stroke();
-                }
-                if (dx === 1) {
+              if (isPathway) {
+                pCtx.strokeStyle = "rgba(212, 175, 55, 0.15)";
+                pCtx.lineWidth = 1;
+                if (c === spX - 1) {
                   pCtx.beginPath();
                   pCtx.moveTo(px + tileSize, py);
                   pCtx.lineTo(px + tileSize, py + tileSize);
                   pCtx.stroke();
                 }
-                if (dy === -1) {
+                if (c === spX + 1) {
                   pCtx.beginPath();
                   pCtx.moveTo(px, py);
-                  pCtx.lineTo(px + tileSize, py);
+                  pCtx.lineTo(px + tileSize, py + tileSize);
                   pCtx.stroke();
                 }
-                if (dy === 1) {
+                if (r === spY - 1) {
                   pCtx.beginPath();
                   pCtx.moveTo(px, py + tileSize);
                   pCtx.lineTo(px + tileSize, py + tileSize);
                   pCtx.stroke();
                 }
-              } else {
-                let baseColor = isPathway
-                  ? (c + r) % 2 === 0
-                    ? "#1e2433"
-                    : "#191e2b"
-                  : (c + r) % 2 === 0
-                    ? "#151822"
-                    : "#11131c";
-
-                pCtx.fillStyle = baseColor;
-                pCtx.fillRect(px, py, tileSize, tileSize);
-
-                pCtx.strokeStyle = isPathway
-                  ? "rgba(255, 255, 255, 0.07)"
-                  : "rgba(255, 255, 255, 0.03)";
-                pCtx.lineWidth = 1;
-                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-
-                if (isPathway) {
-                  pCtx.strokeStyle = "rgba(212, 175, 55, 0.15)";
-                  pCtx.lineWidth = 1;
-                  if (c === spX - 1) {
-                    pCtx.beginPath();
-                    pCtx.moveTo(px + tileSize, py);
-                    pCtx.lineTo(px + tileSize, py + tileSize);
-                    pCtx.stroke();
-                  }
-                  if (c === spX + 1) {
-                    pCtx.beginPath();
-                    pCtx.moveTo(px, py);
-                    pCtx.lineTo(px + tileSize, py + tileSize);
-                    pCtx.stroke();
-                  }
-                  if (r === spY - 1) {
-                    pCtx.beginPath();
-                    pCtx.moveTo(px, py + tileSize);
-                    pCtx.lineTo(px + tileSize, py + tileSize);
-                    pCtx.stroke();
-                  }
-                  if (r === spY + 1) {
-                    pCtx.beginPath();
-                    pCtx.moveTo(px, py);
-                    pCtx.lineTo(px + tileSize, py);
-                    pCtx.stroke();
-                  }
-                }
-
-                if (c === spX && r === spY) {
-                  let spCx = px + tileSize / 2;
-                  let spCy = py + tileSize / 2;
-
-                  pCtx.save();
-                  pCtx.strokeStyle = "#f1c40f";
-                  pCtx.lineWidth = 2;
+                if (r === spY + 1) {
                   pCtx.beginPath();
-                  pCtx.arc(spCx, spCy, 14, 0, Math.PI * 2);
+                  pCtx.moveTo(px, py);
+                  pCtx.lineTo(px + tileSize, py);
                   pCtx.stroke();
-
-                  pCtx.fillStyle = "rgba(241, 196, 15, 0.15)";
-                  pCtx.beginPath();
-                  pCtx.arc(spCx, spCy, 14, 0, Math.PI * 2);
-                  pCtx.fill();
-
-                  pCtx.fillStyle = "#ffd700";
-                  pCtx.beginPath();
-                  pCtx.moveTo(spCx, spCy - 12);
-                  pCtx.lineTo(spCx + 2.5, spCy - 2.5);
-                  pCtx.lineTo(spCx + 12, spCy);
-                  pCtx.lineTo(spCx + 2.5, spCy + 2.5);
-                  pCtx.lineTo(spCx, spCy + 12);
-                  pCtx.lineTo(spCx - 2.5, spCy + 2.5);
-                  pCtx.lineTo(spCx - 12, spCy);
-                  pCtx.lineTo(spCx - 2.5, spCy - 2.5);
-                  pCtx.closePath();
-                  pCtx.fill();
-
-                  pCtx.fillStyle = "#ffffff";
-                  pCtx.beginPath();
-                  pCtx.arc(spCx, spCy, 2.5, 0, Math.PI * 2);
-                  pCtx.fill();
-                  pCtx.restore();
                 }
               }
-            } else {
-              let worldNoise = Math.sin(c * 0.45 + r * 0.35) * 0.5 + 0.5;
-              let baseColor =
-                worldNoise > 0.65
+
+              if (c === spX && r === spY) {
+                let spCx = px + tileSize / 2;
+                let spCy = py + tileSize / 2;
+
+                pCtx.save();
+                pCtx.strokeStyle = "#f1c40f";
+                pCtx.lineWidth = 2;
+                pCtx.beginPath();
+                pCtx.arc(spCx, spCy, 14, 0, Math.PI * 2);
+                pCtx.stroke();
+
+                pCtx.fillStyle = "rgba(241, 196, 15, 0.15)";
+                pCtx.beginPath();
+                pCtx.arc(spCx, spCy, 14, 0, Math.PI * 2);
+                pCtx.fill();
+
+                pCtx.fillStyle = "#ffd700";
+                pCtx.beginPath();
+                pCtx.moveTo(spCx, spCy - 12);
+                pCtx.lineTo(spCx + 2.5, spCy - 2.5);
+                pCtx.lineTo(spCx + 12, spCy);
+                pCtx.lineTo(spCx + 2.5, spCy + 2.5);
+                pCtx.lineTo(spCx, spCy + 12);
+                pCtx.lineTo(spCx - 2.5, spCy + 2.5);
+                pCtx.lineTo(spCx - 12, spCy);
+                pCtx.lineTo(spCx - 2.5, spCy - 2.5);
+                pCtx.closePath();
+                pCtx.fill();
+
+                pCtx.fillStyle = "#ffffff";
+                pCtx.beginPath();
+                pCtx.arc(spCx, spCy, 2.5, 0, Math.PI * 2);
+                pCtx.fill();
+                pCtx.restore();
+              }
+            }
+          } else {
+            let worldNoise = Math.sin(c * 0.45 + r * 0.35) * 0.5 + 0.5;
+            let baseColor =
+              worldNoise > 0.65
+                ? biome.stone1
+                : worldNoise > 0.3
+                  ? biome.stone2
+                  : biome.stone3;
+
+            pCtx.fillStyle = baseColor;
+            pCtx.fillRect(px, py, tileSize, tileSize);
+
+            let layoutType = (c * 7 + r * 13) % 4;
+
+            let drawFlagstone = (sx, sy, sw, sh, colorIdx) => {
+              let stoneCol =
+                colorIdx === 0
                   ? biome.stone1
-                  : worldNoise > 0.3
+                  : colorIdx === 1
                     ? biome.stone2
                     : biome.stone3;
 
-              pCtx.fillStyle = baseColor;
-              pCtx.fillRect(px, py, tileSize, tileSize);
+              pCtx.fillStyle = stoneCol;
+              pCtx.fillRect(sx, sy, sw, sh);
 
-              let layoutType = (c * 7 + r * 13) % 4;
+              pCtx.fillStyle = biome.stoneHighlight;
+              pCtx.fillRect(sx, sy, sw, 1);
+              pCtx.fillRect(sx, sy, 1, sh);
 
-              let drawFlagstone = (sx, sy, sw, sh, colorIdx) => {
-                let stoneCol =
-                  colorIdx === 0
-                    ? biome.stone1
-                    : colorIdx === 1
-                      ? biome.stone2
-                      : biome.stone3;
+              pCtx.fillStyle = biome.stoneShadow;
+              pCtx.fillRect(sx, sy + sh - 1, sw, 1);
+              pCtx.fillRect(sx + sw - 1, sy, 1, sh);
+            };
 
-                pCtx.fillStyle = stoneCol;
-                pCtx.fillRect(sx, sy, sw, sh);
+            if (layoutType === 0) {
+              drawFlagstone(px, py, tileSize, 18, (c + r) % 3);
+              drawFlagstone(px, py + 18, 15, tileSize - 18, (c * 2 + r) % 3);
+              drawFlagstone(
+                px + 15,
+                py + 18,
+                tileSize - 15,
+                tileSize - 18,
+                (c + r * 2) % 3,
+              );
+            } else if (layoutType === 1) {
+              drawFlagstone(px, py, 14, tileSize, (c + r * 3) % 3);
+              drawFlagstone(px + 14, py, tileSize - 14, 15, (c * 3 + r) % 3);
+              drawFlagstone(
+                px + 14,
+                py + 15,
+                tileSize - 14,
+                tileSize - 15,
+                (c + r) % 3,
+              );
+            } else if (layoutType === 2) {
+              drawFlagstone(px, py, 16, 14, (c + r) % 3);
+              drawFlagstone(
+                px + 16,
+                py,
+                tileSize - 16,
+                14,
+                (c * 2 + r * 2) % 3,
+              );
+              drawFlagstone(
+                px,
+                py + 14,
+                tileSize,
+                tileSize - 14,
+                (c + r * 3) % 3,
+              );
+            } else {
+              drawFlagstone(px, py, 17, 16, (c * 2 + r) % 3);
+              drawFlagstone(px, py + 16, 17, tileSize - 16, (c + r * 2) % 3);
+              drawFlagstone(px + 17, py, tileSize - 17, tileSize, (c + r) % 3);
+            }
 
-                pCtx.fillStyle = biome.stoneHighlight;
-                pCtx.fillRect(sx, sy, sw, 1);
-                pCtx.fillRect(sx, sy, 1, sh);
+            pCtx.strokeStyle = biome.seamGlow;
+            pCtx.lineWidth = 0.8;
+            pCtx.beginPath();
+            if (layoutType === 0) {
+              pCtx.moveTo(px, py + 18);
+              pCtx.lineTo(px + tileSize, py + 18);
+              pCtx.moveTo(px + 15, py + 18);
+              pCtx.lineTo(px + 15, py + tileSize);
+            } else if (layoutType === 1) {
+              pCtx.moveTo(px + 14, py);
+              pCtx.lineTo(px + 14, py + tileSize);
+              pCtx.moveTo(px + 14, py + 15);
+              pCtx.lineTo(px + tileSize, py + 15);
+            } else if (layoutType === 2) {
+              pCtx.moveTo(px, py + 14);
+              pCtx.lineTo(px + tileSize, py + 14);
+              pCtx.moveTo(px + 16, py);
+              pCtx.lineTo(px + 16, py + 14);
+            } else {
+              pCtx.moveTo(px + 17, py);
+              pCtx.lineTo(px + 17, py + tileSize);
+              pCtx.moveTo(px, py + 16);
+              pCtx.lineTo(px + 17, py + 16);
+            }
+            pCtx.stroke();
 
-                pCtx.fillStyle = biome.stoneShadow;
-                pCtx.fillRect(sx, sy + sh - 1, sw, 1);
-                pCtx.fillRect(sx + sw - 1, sy, 1, sh);
-              };
+            if (r > 0 && map.grid[r - 1][c] === window.TILE_TYPES.WALL) {
+              let northShadow = pCtx.createLinearGradient(px, py, px, py + 12);
+              northShadow.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+              northShadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+              pCtx.fillStyle = northShadow;
+              pCtx.fillRect(px, py, tileSize, 12);
+            }
+            if (c > 0 && map.grid[r][c - 1] === window.TILE_TYPES.WALL) {
+              let westShadow = pCtx.createLinearGradient(px, py, px + 8, py);
+              westShadow.addColorStop(0, "rgba(0, 0, 0, 0.45)");
+              westShadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+              pCtx.fillStyle = westShadow;
+              pCtx.fillRect(px, py, 8, tileSize);
+            }
 
-              if (layoutType === 0) {
-                drawFlagstone(px, py, tileSize, 18, (c + r) % 3);
-                drawFlagstone(px, py + 18, 15, tileSize - 18, (c * 2 + r) % 3);
-                drawFlagstone(
-                  px + 15,
-                  py + 18,
-                  tileSize - 15,
-                  tileSize - 18,
-                  (c + r * 2) % 3,
-                );
-              } else if (layoutType === 1) {
-                drawFlagstone(px, py, 14, tileSize, (c + r * 3) % 3);
-                drawFlagstone(px + 14, py, tileSize - 14, 15, (c * 3 + r) % 3);
-                drawFlagstone(
-                  px + 14,
-                  py + 15,
-                  tileSize - 14,
-                  tileSize - 15,
-                  (c + r) % 3,
-                );
-              } else if (layoutType === 2) {
-                drawFlagstone(px, py, 16, 14, (c + r) % 3);
-                drawFlagstone(
-                  px + 16,
-                  py,
-                  tileSize - 16,
-                  14,
-                  (c * 2 + r * 2) % 3,
-                );
-                drawFlagstone(
-                  px,
-                  py + 14,
-                  tileSize,
-                  tileSize - 14,
-                  (c + r * 3) % 3,
-                );
-              } else {
-                drawFlagstone(px, py, 17, 16, (c * 2 + r) % 3);
-                drawFlagstone(px, py + 16, 17, tileSize - 16, (c + r * 2) % 3);
-                drawFlagstone(px + 17, py, tileSize - 17, tileSize, (c + r) % 3);
-              }
-
-              pCtx.strokeStyle = biome.seamGlow;
-              pCtx.lineWidth = 0.8;
+            if (tileHash > 0.82) {
+              pCtx.fillStyle = biome.accent;
+              let ax = px + 4 + ((tileHash * 19) % 22);
+              let ay = py + 4 + ((tileHash * 29) % 22);
+              pCtx.fillRect(ax, ay, 2.5, 2.5);
+              pCtx.fillRect(ax + 3, ay - 2, 1.8, 1.8);
+            } else if (tileHash > 0.62) {
+              pCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
+              pCtx.lineWidth = 1.0;
               pCtx.beginPath();
-              if (layoutType === 0) {
-                pCtx.moveTo(px, py + 18);
-                pCtx.lineTo(px + tileSize, py + 18);
-                pCtx.moveTo(px + 15, py + 18);
-                pCtx.lineTo(px + 15, py + tileSize);
-              } else if (layoutType === 1) {
-                pCtx.moveTo(px + 14, py);
-                pCtx.lineTo(px + 14, py + tileSize);
-                pCtx.moveTo(px + 14, py + 15);
-                pCtx.lineTo(px + tileSize, py + 15);
-              } else if (layoutType === 2) {
-                pCtx.moveTo(px, py + 14);
-                pCtx.lineTo(px + tileSize, py + 14);
-                pCtx.moveTo(px + 16, py);
-                pCtx.lineTo(px + 16, py + 14);
-              } else {
-                pCtx.moveTo(px + 17, py);
-                pCtx.lineTo(px + 17, py + tileSize);
-                pCtx.moveTo(px, py + 16);
-                pCtx.lineTo(px + 17, py + 16);
-              }
+              let cx1 = px + 5 + ((tileHash * 11) % 12);
+              let cy1 = py + 4 + ((tileHash * 13) % 8);
+              pCtx.moveTo(cx1, cy1);
+              pCtx.lineTo(cx1 + 6, cy1 + 8);
+              pCtx.lineTo(cx1 + 2, cy1 + 17);
               pCtx.stroke();
-
-              if (r > 0 && map.grid[r - 1][c] === window.TILE_TYPES.WALL) {
-                let northShadow = pCtx.createLinearGradient(px, py, px, py + 12);
-                northShadow.addColorStop(0, "rgba(0, 0, 0, 0.65)");
-                northShadow.addColorStop(1, "rgba(0, 0, 0, 0)");
-                pCtx.fillStyle = northShadow;
-                pCtx.fillRect(px, py, tileSize, 12);
-              }
-              if (c > 0 && map.grid[r][c - 1] === window.TILE_TYPES.WALL) {
-                let westShadow = pCtx.createLinearGradient(px, py, px + 8, py);
-                westShadow.addColorStop(0, "rgba(0, 0, 0, 0.45)");
-                westShadow.addColorStop(1, "rgba(0, 0, 0, 0)");
-                pCtx.fillStyle = westShadow;
-                pCtx.fillRect(px, py, 8, tileSize);
-              }
-
-              if (tileHash > 0.82) {
-                pCtx.fillStyle = biome.accent;
-                let ax = px + 4 + ((tileHash * 19) % 22);
-                let ay = py + 4 + ((tileHash * 29) % 22);
-                pCtx.fillRect(ax, ay, 2.5, 2.5);
-                pCtx.fillRect(ax + 3, ay - 2, 1.8, 1.8);
-              } else if (tileHash > 0.62) {
-                pCtx.strokeStyle = "rgba(0, 0, 0, 0.55)";
-                pCtx.lineWidth = 1.0;
-                pCtx.beginPath();
-                let cx1 = px + 5 + ((tileHash * 11) % 12);
-                let cy1 = py + 4 + ((tileHash * 13) % 8);
-                pCtx.moveTo(cx1, cy1);
-                pCtx.lineTo(cx1 + 6, cy1 + 8);
-                pCtx.lineTo(cx1 + 2, cy1 + 17);
-                pCtx.stroke();
-              }
             }
           }
         }
       }
-      map.needsPreRender = false;
-    };
+    }
+    map.needsPreRender = false;
+  };
 
-    window.drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
+  window.drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
     let time = Date.now();
 
     let primaryColor, secondaryColor, coreColor, bgGradColor;
@@ -1402,33 +1636,35 @@
     ctx.translate(-Math.floor(camera.x), -Math.floor(camera.y));
 
     // PASS 1: Base Terrain & Floor Grid Rendering
-        if (map.needsPreRender || !map.preRenderCanvas) {
-          window.preRenderStaticMap(map);
-        }
+    if (map.needsPreRender || !map.preRenderCanvas) {
+      window.preRenderStaticMap(map);
+    }
 
-        let isHub = window.currentGameState === window.GAME_STATES.HUB;
+    let isHub = window.currentGameState === window.GAME_STATES.HUB;
 
-        for (let r = startRow; r <= endRow; r++) {
-          for (let c = startCol; c <= endCol; c++) {
-            let isExplored = isHub || (map.exploredGrid && map.exploredGrid[r] && map.exploredGrid[r][c]);
-            if (!isExplored) continue;
+    for (let r = startRow; r <= endRow; r++) {
+      for (let c = startCol; c <= endCol; c++) {
+        let isExplored =
+          isHub ||
+          (map.exploredGrid && map.exploredGrid[r] && map.exploredGrid[r][c]);
+        if (!isExplored) continue;
 
-            let px = c * tileSize;
-            let py = r * tileSize;
+        let px = c * tileSize;
+        let py = r * tileSize;
 
-            ctx.drawImage(
-              map.preRenderCanvas,
-              px,
-              py,
-              tileSize,
-              tileSize,
-              px,
-              py,
-              tileSize,
-              tileSize
-            );
-          }
-        }
+        ctx.drawImage(
+          map.preRenderCanvas,
+          px,
+          py,
+          tileSize,
+          tileSize,
+          px,
+          py,
+          tileSize,
+          tileSize,
+        );
+      }
+    }
 
     // PASS 2: Object & Station Overlay Pass (Renders cleanly over floor grid without clipping)
     for (let r = startRow; r <= endRow; r++) {
@@ -1517,7 +1753,69 @@
       py,
       tileSize,
     ) {
-      if (tileType === window.TILE_TYPES.CHEST_SPAWN) {
+      if (tileType === window.TILE_TYPES.RECOVERY_CHEST) {
+        let cx = px + tileSize / 2;
+        let cy = py + tileSize / 2;
+        let time = Date.now();
+
+        ctx.save();
+
+        // 1. Pulsing Golden-Cyan Floor Aura
+        let pulse = Math.sin(time / 150) * 2;
+        let auraRad = 16 + pulse;
+        let auraGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, auraRad);
+        auraGrad.addColorStop(0, "rgba(241, 196, 15, 0.6)");
+        auraGrad.addColorStop(0.5, "rgba(0, 210, 255, 0.3)");
+        auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, auraRad, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. Base Drop Shadow
+        ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 8, 14, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. Ornate Soul-Bound Chest Body
+        ctx.fillStyle = "#1e132b";
+        ctx.strokeStyle = "#f1c40f";
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.roundRect(cx - 12, cy - 8, 24, 18, [3]);
+        ctx.fill();
+        ctx.stroke();
+
+        // 4. Cyan Steel Corner Brackets
+        ctx.fillStyle = "#00d2ff";
+        ctx.fillRect(cx - 12, cy - 8, 4, 18);
+        ctx.strokeRect(cx - 12, cy - 8, 4, 18);
+        ctx.fillRect(cx + 8, cy - 8, 4, 18);
+        ctx.strokeRect(cx + 8, cy - 8, 4, 18);
+
+        // 5. Glowing Central Skull Lock
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#f1c40f";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#00d2ff";
+        ctx.fillRect(cx - 1, cy - 1, 2, 2);
+
+        // 6. Floating Runic Star Emblem
+        let floatY = Math.sin(time / 200) * 2.5;
+        ctx.fillStyle = "#f1c40f";
+        ctx.font = "900 10px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("!", cx, cy - 15 + floatY);
+
+        ctx.restore();
+      } else if (tileType === window.TILE_TYPES.CHEST_SPAWN) {
         let cx = px + tileSize / 2;
         let cy = py + tileSize / 2;
 
@@ -1745,6 +2043,38 @@
           ctx.beginPath();
           ctx.arc(wx, wy, wSize, 0, Math.PI * 2);
           ctx.fill();
+        }
+
+        // Recovery Chest Warning Beacon Indicator
+        let rec = window.playerStats && window.playerStats.recoveryLoot;
+        if (rec && rec.items && rec.items.length > 0) {
+          let warnPulse = Math.sin(time / 140) * 3;
+          let warnY = centerPortalY - 32 + warnPulse;
+
+          ctx.strokeStyle = "#e74c3c";
+          ctx.lineWidth = 2.0;
+          ctx.beginPath();
+          ctx.arc(cx, warnY, 11, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(231, 76, 60, 0.3)";
+          ctx.beginPath();
+          ctx.arc(cx, warnY, 11, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#f1c40f";
+          ctx.font = "900 12px monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("!", cx, warnY);
+
+          ctx.font = "bold 9px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2.5;
+          let labelText = `[LOOT AT RISK: FL.${rec.floor}]`;
+          ctx.strokeText(labelText, cx, warnY - 15);
+          ctx.fillStyle = "#ff7675";
+          ctx.fillText(labelText, cx, warnY - 15);
         }
 
         ctx.restore();
@@ -2410,96 +2740,156 @@
         ctx.stroke();
 
         for (let i = 0; i < 6; i++) {
-                  let seed = i * 71.4;
-                  let progress = (time / 650 + seed) % 1.0;
-                  let sporeX = cx + Math.sin(time / 140 + seed) * 14;
-                  let sporeY = cy + 4 - progress * 28;
-                  let sporeAlpha = (1.0 - progress) * 0.85;
-                  let sporeSize = 1.8 * (1.0 - progress * 0.3);
+          let seed = i * 71.4;
+          let progress = (time / 650 + seed) % 1.0;
+          let sporeX = cx + Math.sin(time / 140 + seed) * 14;
+          let sporeY = cy + 4 - progress * 28;
+          let sporeAlpha = (1.0 - progress) * 0.85;
+          let sporeSize = 1.8 * (1.0 - progress * 0.3);
 
-                  ctx.fillStyle =
-                    i % 2 === 0
-                      ? `rgba(167, 243, 208, ${sporeAlpha})`
-                      : `rgba(52, 211, 153, ${sporeAlpha})`;
-                  ctx.beginPath();
-                  ctx.arc(sporeX, sporeY, sporeSize, 0, Math.PI * 2);
-                  ctx.fill();
-                }
+          ctx.fillStyle =
+            i % 2 === 0
+              ? `rgba(167, 243, 208, ${sporeAlpha})`
+              : `rgba(52, 211, 153, ${sporeAlpha})`;
+          ctx.beginPath();
+          ctx.arc(sporeX, sporeY, sporeSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
-                ctx.restore();
-              } else if (tileType === window.TILE_TYPES.STATION_GACHAPON) {
-                let cx = px + tileSize / 2;
-                let cy = py + tileSize / 2;
-                let time = Date.now();
+        ctx.restore();
+      } else if (tileType === window.TILE_TYPES.STATION_SHOP) {
+        let cx = px + tileSize / 2;
+        let cy = py + tileSize / 2;
+        let time = Date.now();
 
-                ctx.save();
+        ctx.save();
 
-                // 1. Shadow Base
-                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-                ctx.beginPath();
-                ctx.ellipse(cx, cy + 10, 14, 5, 0, 0, Math.PI * 2);
-                ctx.fill();
+        // Base Shadow
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 10, 16, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-                // 2. Red Metal Body (Vending Base)
-                ctx.fillStyle = "#c0392b";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.roundRect(cx - 10, cy - 2, 20, 14, [2]);
-                ctx.fill();
-                ctx.stroke();
+        // Counter Wooden Table
+        ctx.fillStyle = "#5c3a21";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(cx - 14, cy, 28, 12, [2]);
+        ctx.fill();
+        ctx.stroke();
 
-                // Dispenser hatch slot
-                ctx.fillStyle = "#1e272e";
-                ctx.fillRect(cx - 4, cy + 6, 8, 5);
-                ctx.strokeRect(cx - 4, cy + 6, 8, 5);
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(cx - 13, cy + 1, 26, 3);
 
-                // Turn dial
-                let dialAngle = (time / 1000) % (Math.PI * 2);
-                ctx.save();
-                ctx.translate(cx, cy + 2);
-                ctx.rotate(dialAngle);
-                ctx.fillStyle = "#ffd700";
-                ctx.fillRect(-4, -1, 8, 2);
-                ctx.strokeRect(-4, -1, 8, 2);
-                ctx.restore();
+        // Canopy Awning Posts
+        ctx.fillStyle = "#3d1d0b";
+        ctx.fillRect(cx - 12, cy - 16, 3, 16);
+        ctx.fillRect(cx + 9, cy - 16, 3, 16);
 
-                // 3. Glass Dome (Sphere holding capsules)
-                ctx.fillStyle = "rgba(224, 242, 254, 0.35)";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(cx, cy - 8, 9, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
+        // Striped Canopy Top
+        let canopyY = cy - 20;
+        ctx.fillStyle = "#d35400";
+        ctx.beginPath();
+        ctx.roundRect(cx - 16, canopyY, 32, 7, [2]);
+        ctx.fill();
+        ctx.stroke();
 
-                // Cap on top of dome
-                ctx.fillStyle = "#c0392b";
-                ctx.fillRect(cx - 5, cy - 19, 10, 3);
-                ctx.strokeRect(cx - 5, cy - 19, 10, 3);
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(cx - 10, canopyY, 5, 7);
+        ctx.fillRect(cx, canopyY, 5, 7);
+        ctx.fillRect(cx + 10, canopyY, 5, 7);
 
-                // 4. Colorful capsules inside dome
-                let capsuleColors = ["#ffd700", "#38bdf8", "#ec4899", "#2ecc71", "#a855f7"];
-                for (let i = 0; i < 6; i++) {
-                  let seed = i * 45.6;
-                  let capX = cx + Math.sin(seed) * 5;
-                  let capY = cy - 8 + Math.cos(seed * 1.5) * 4;
-                  ctx.fillStyle = capsuleColors[i % capsuleColors.length];
-                  ctx.beginPath();
-                  ctx.arc(capX, capY, 2, 0, Math.PI * 2);
-                  ctx.fill();
-                }
+        // Hanging Brass Lantern
+        let lanternSway = Math.sin(time / 220) * 2;
+        ctx.fillStyle = "#ffd700";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx - 8 + lanternSway, cy - 8, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
-                // Glass shine curve
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.arc(cx, cy - 8, 7, -Math.PI / 3, -Math.PI * 0.8, true);
-                ctx.stroke();
+        ctx.restore();
+      } else if (tileType === window.TILE_TYPES.STATION_GACHAPON) {
+        let cx = px + tileSize / 2;
+        let cy = py + tileSize / 2;
+        let time = Date.now();
 
-                ctx.restore();
-              }
-            };
+        ctx.save();
+
+        // 1. Shadow Base
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 10, 14, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. Red Metal Body (Vending Base)
+        ctx.fillStyle = "#c0392b";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(cx - 10, cy - 2, 20, 14, [2]);
+        ctx.fill();
+        ctx.stroke();
+
+        // Dispenser hatch slot
+        ctx.fillStyle = "#1e272e";
+        ctx.fillRect(cx - 4, cy + 6, 8, 5);
+        ctx.strokeRect(cx - 4, cy + 6, 8, 5);
+
+        // Turn dial
+        let dialAngle = (time / 1000) % (Math.PI * 2);
+        ctx.save();
+        ctx.translate(cx, cy + 2);
+        ctx.rotate(dialAngle);
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(-4, -1, 8, 2);
+        ctx.strokeRect(-4, -1, 8, 2);
+        ctx.restore();
+
+        // 3. Glass Dome (Sphere holding capsules)
+        ctx.fillStyle = "rgba(224, 242, 254, 0.35)";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy - 8, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Cap on top of dome
+        ctx.fillStyle = "#c0392b";
+        ctx.fillRect(cx - 5, cy - 19, 10, 3);
+        ctx.strokeRect(cx - 5, cy - 19, 10, 3);
+
+        // 4. Colorful capsules inside dome
+        let capsuleColors = [
+          "#ffd700",
+          "#38bdf8",
+          "#ec4899",
+          "#2ecc71",
+          "#a855f7",
+        ];
+        for (let i = 0; i < 6; i++) {
+          let seed = i * 45.6;
+          let capX = cx + Math.sin(seed) * 5;
+          let capY = cy - 8 + Math.cos(seed * 1.5) * 4;
+          ctx.fillStyle = capsuleColors[i % capsuleColors.length];
+          ctx.beginPath();
+          ctx.arc(capX, capY, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Glass shine curve
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy - 8, 7, -Math.PI / 3, -Math.PI * 0.8, true);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    };
 
     // PASS 2.5: Environmental Props (Wall Torches, Guild Banners & Bioluminescent Mushrooms)
     let time = Date.now();

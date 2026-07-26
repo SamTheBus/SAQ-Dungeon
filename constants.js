@@ -12,13 +12,6 @@ window.MYSTICAL_STOCK = [
     desc: "Refunds spent Skill Points from the Attribute Matrix.",
   },
   {
-    name: "PP Reset Scroll",
-    cost: 5000,
-    currency: "Gold",
-    color: "#e67e22",
-    desc: "Refunds spent Prestige Points from the Ascension Altar.",
-  },
-  {
     name: "Gacha Key",
     cost: 15,
     currency: "Luminous Soul",
@@ -31,13 +24,6 @@ window.MYSTICAL_STOCK = [
     currency: "Luminous Soul",
     color: "#9b59b6",
     desc: "Trade 10 rare Luminous Souls for 1 Astral Essence.",
-  },
-  {
-    name: "Monster Card Sack",
-    cost: 25,
-    currency: "Luminous Soul",
-    color: "#a855f7",
-    desc: "Trade 25 Luminous Souls for 1 rare Monster Card Sack (5 cards inside).",
   },
 ];
 
@@ -2895,16 +2881,16 @@ window.AchievementsData = [
     stats: { qly: 0.05, drop: 0.05 },
   },
   {
-      id: "sing_weekend_warrior",
-      name: "Weekend Warrior",
-      icon: "🗓️",
-      desc: "Active in Dungeons or Crucible on Saturday or Sunday",
-      isSingleTier: true,
-      stats: { drop: 0.1, gold: 0.05 },
-    },
-    {
-      id: "sing_long_run",
-      name: "The Long Run",
+    id: "sing_weekend_warrior",
+    name: "Weekend Warrior",
+    icon: "🗓️",
+    desc: "Active in Dungeons or Crucible on Saturday or Sunday",
+    isSingleTier: true,
+    stats: { drop: 0.1, gold: 0.05 },
+  },
+  {
+    id: "sing_long_run",
+    name: "The Long Run",
     icon: "♾️",
     desc: "Keep the game running continuously in an active tab for 1 hour",
     isSingleTier: true,
@@ -3142,22 +3128,22 @@ window.CAVERN_BUFFS = [
   {
     id: "perfect_strike",
     name: "Perfect Strike",
-    desc: "Concentric reticles appear over monsters. Tapping in alignment deals 5x defense-bypassing damage and inflicts bleed.",
+    desc: "Concentric reticles appear over monsters. Walk close and strike them in alignment for 5x damage.",
   },
   {
     id: "aetheric_conduit",
     name: "Aetheric Conduit",
-    desc: "Aetheric Conduits appear on the battlefield. Swipe between them to trigger instant triple-elemental spells.",
+    desc: "Aetheric Conduits appear on the ground. Walk into them to discharge a massive elemental storm.",
   },
   {
     id: "aetheric_spark",
     name: "Aetheric Spark",
-    desc: "Pulsing sparks spawn in sequence. Chain tap 5 in a row to trigger Astral Awakening (+100% Damage, +15% Speed).",
+    desc: "Pulsing sparks appear on the ground. Step on 5 in a row to trigger Astral Awakening.",
   },
   {
     id: "glimmering_pixie",
     name: "Glimmering Pixie",
-    desc: "Glimmering Pixies dart across the battlefield. Capture them for a +50% duration Elixir or risk a sting!",
+    desc: "Glimmering Pixies flit around. Walk into them to capture a random Supernal Elixir!",
   },
 ];
 
@@ -3215,12 +3201,12 @@ window.CAVERN_DEBUFFS = [
   {
     id: "anomalous_shards",
     name: "Anomalous Shards",
-    desc: "Anomalous Shards occasionally erupt from the ground, causing attack speed penalties and health drain unless shattered.",
+    desc: "Anomalous Shards erupt from the ground, slowing you down. Walk over and smash them to lift the penalty.",
   },
   {
     id: "void_rupture",
     name: "Void Rupture",
-    desc: "Aetheric ruptures open up. Click all 3 Void Suppression Orbs before they collapse to cleanse yourself and gain Purified Aegis!",
+    desc: "A void rupture opens with 3 surrounding orbs. Slay the 3 orbs quickly to gain a Purified Aegis shield!",
   },
 ];
 
@@ -3584,6 +3570,9 @@ window.TILE_TYPES = {
   STATION_ENCHANT: 12,
   STATION_INN: 13,
   STATION_GACHAPON: 14,
+  RECOVERY_CHEST: 15,
+  POTTERY_SPAWN: 16,
+  STATION_SHOP: 17,
 };
 
 window.DUNGEON_CONFIG = {
