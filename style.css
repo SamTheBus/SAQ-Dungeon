@@ -12,35 +12,98 @@ html,
 body {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: #05030a !important;
-  color: #f1f5f9;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  background-color: #05030a;
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
 }
 
 #game-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background: #05030a;
-}
-
-#gameCanvas {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  display: block;
+  overflow: hidden;
   touch-action: none;
-  background-color: #05030a !important;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* --- MOBILE RESPONSIVE ADAPTATIONS --- */
+@media (max-width: 900px), (max-height: 600px), (orientation: portrait) {
+  .satchel-tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+
+  .satchel-tab-btn {
+    flex: 1;
+    background: rgba(15, 23, 42, 0.8);
+    color: #94a3b8;
+    border: 1px solid rgba(51, 65, 85, 0.7);
+    border-radius: 4px;
+    padding: 5px 2px;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+
+  .satchel-tab-btn.active {
+    background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    border-color: #38bdf8;
+    box-shadow: 0 0 8px rgba(0, 210, 255, 0.25);
+  }
+
+  .material-card,
+  .consumable-card {
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .profile-tab-bar {
+    display: flex !important;
+  }
+
+  .profile-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    height: calc(100% - 40px) !important;
+    overflow: hidden !important;
+  }
+
+  .profile-section {
+    display: none !important;
+    height: 100 !important;
+    width: 100% !important;
+  }
+
+  .profile-section.active-mobile-section {
+    display: flex !important;
+    flex-direction: column !important;
+  }
 }
 
 /* --- MODULAR CENTERED HUD OVERLAY --- */
@@ -248,7 +311,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .attr-card.staged-active {
@@ -323,7 +388,9 @@ body {
   font-family: monospace;
   cursor: pointer;
   touch-action: manipulation;
-  transition: transform 0.1s ease, background 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    background 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -653,24 +720,28 @@ body {
 }
 
 /* --- MOBILE RESPONSIVE ADAPTATIONS --- */
-@media (max-width: 768px), (orientation: portrait) {
+@media (max-width: 900px), (max-height: 600px), (orientation: portrait) {
   .profile-tab-bar {
-    display: flex;
+    display: flex !important;
   }
 
   .profile-layout {
-    grid-template-columns: 1fr;
-    height: calc(100% - 75px);
-    overflow: hidden;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    height: calc(100% - 40px) !important;
+    overflow: hidden !important;
   }
 
   .profile-section {
-    display: none;
-    height: 100%;
+    display: none !important;
+    height: 100% !important;
+    width: 100% !important;
   }
 
   .profile-section.active-mobile-section {
-    display: flex;
+    display: flex !important;
+    flex-direction: column !important;
   }
 }
 
@@ -713,7 +784,25 @@ body {
   z-index: 60000;
 }
 
-.item-toast,
+.item-toast {
+  pointer-events: auto;
+  background: rgba(15, 17, 26, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(71, 85, 105, 0.5);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.85);
+  animation: toastSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  min-width: 200px;
+  max-width: 320px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .header-toast {
   pointer-events: auto;
   background: rgba(10, 14, 23, 0.94);
@@ -786,7 +875,9 @@ body {
   font-size: 11px;
   line-height: 1.4;
   z-index: 99999;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.92), inset 0 0 15px rgba(255, 255, 255, 0.02);
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.92),
+    inset 0 0 15px rgba(255, 255, 255, 0.02);
   pointer-events: auto;
   overflow: hidden;
   user-select: none;
@@ -804,7 +895,11 @@ body {
   width: 245px;
   box-sizing: border-box;
   position: relative;
-  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  background: radial-gradient(
+    circle at top,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 70%
+  );
 }
 
 .tooltip-card.compare-border {
@@ -850,7 +945,10 @@ summary {
 
 /* --- ATTUNEMENT STAT TOGGLE SWITCH --- */
 .attune-label {
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .attune-label:active {
@@ -874,7 +972,9 @@ summary {
   word-wrap: break-word;
   overflow: hidden;
   touch-action: manipulation;
-  transition: transform 0.15s ease-out, border-color 0.15s ease-out;
+  transition:
+    transform 0.15s ease-out,
+    border-color 0.15s ease-out;
 }
 
 .slots-card.equipped {
@@ -896,13 +996,18 @@ summary {
 
 /* --- SINGULARITY UBER UNIQUE SHIMMER --- */
 @keyframes voidSingularityShimmer {
-  0%, 100% {
+  0%,
+  100% {
     border-color: #8e44ad !important;
-    box-shadow: inset 0 0 12px #510a74, 0 0 10px rgba(142, 68, 173, 0.45);
+    box-shadow:
+      inset 0 0 12px #510a74,
+      0 0 10px rgba(142, 68, 173, 0.45);
   }
   50% {
     border-color: #ff007f !important;
-    box-shadow: inset 0 0 18px #a8135a, 0 0 18px rgba(255, 0, 127, 0.75);
+    box-shadow:
+      inset 0 0 18px #a8135a,
+      0 0 18px rgba(255, 0, 127, 0.75);
   }
 }
 
@@ -1255,7 +1360,9 @@ summary {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1.5px solid rgba(0, 210, 255, 0.4);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(0, 210, 255, 0.05);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.9),
+    inset 0 0 15px rgba(0, 210, 255, 0.05);
   border-radius: 10px;
   padding: 14px;
 }
@@ -1329,7 +1436,9 @@ summary {
   max-height: 90vh;
   padding: 12px 14px;
   border-color: #00d2ff;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(0, 210, 255, 0.08);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.9),
+    inset 0 0 15px rgba(0, 210, 255, 0.08);
 }
 
 .enchant-layout {
@@ -1486,7 +1595,9 @@ summary {
   letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.1s ease, filter 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    filter 0.15s ease;
 }
 
 .forge-anvil-button:active:not(:disabled) {

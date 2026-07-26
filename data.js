@@ -533,22 +533,22 @@ window.getDepthQualityMultiplier = function (stage) {
 // Initialize transaction-safe GameState manager
 window.GameState = window.GameState || {};
 Object.assign(window.GameState, {
-  gainXp(amount, isOffline = false) {
-    let amt = BigNum.from(amount);
-    if (amt.lte(0)) return;
+  gainXp(amount) {
+      let amt = BigNum.from(amount);
+      if (amt.lte(0)) return;
 
-    let p = window.resolvePlayerStats();
-    let finalAmount = amt.mul(p.xpRate || 1.0);
-    window.playerStats.xp = BigNum.from(window.playerStats.xp || 0).add(
-      finalAmount,
-    );
-    let leveledUp = false;
+      let p = window.resolvePlayerStats();
+      let finalAmount = amt.mul(p.xpRate || 1.0);
+      window.playerStats.xp = BigNum.from(window.playerStats.xp || 0).add(
+        finalAmount,
+      );
+      let leveledUp = false;
 
-    let xp = BigNum.from(window.playerStats.xp);
-    let xpReq = BigNum.from(window.playerStats.xpReq || 100);
+      let xp = BigNum.from(window.playerStats.xp);
+      let xpReq = BigNum.from(window.playerStats.xpReq || 100);
 
-    // Process potential consecutive level-ups via a loop (important for offline catch-up)
-    while (xp.gte(xpReq)) {
+      // Process potential consecutive level-ups via a loop
+      while (xp.gte(xpReq)) {
       xp = xp.sub(xpReq);
       window.playerStats.level++;
 
@@ -568,9 +568,9 @@ Object.assign(window.GameState, {
       }
 
       // Calculate next xpReq safely using BigNum exponential power scaling
-            xpReq = BigNum.from(600).mul(
-              BigNum.from(1.55).pow(window.playerStats.level - 1),
-            );
+      xpReq = BigNum.from(600).mul(
+        BigNum.from(1.55).pow(window.playerStats.level - 1),
+      );
       leveledUp = true;
     }
 
@@ -580,23 +580,47 @@ Object.assign(window.GameState, {
     }
 
     window.triggerLevelUpEffect = function () {
-          let p = window.player;
-          if (!p) return;
+      let p = window.player;
+      if (!p) return;
 
-          p.levelUpTimer = 90; // Lasts 90 frames (~1.5s) and tracks player position
+      p.levelUpTimer = 90; // Lasts 90 frames (~1.5s) and tracks player position
 
-          if (window.combatVisuals) {
-            window.combatVisuals.spawnBeam(p.x, "#ffd700", 90, true, 0);
-            window.combatVisuals.spawnBeam(p.x, "rgba(0, 210, 255, 0.7)", 75, true, -14);
-            window.combatVisuals.spawnBeam(p.x, "rgba(0, 210, 255, 0.7)", 75, true, 14);
-            window.combatVisuals.spawnBeam(p.x, "rgba(232, 121, 249, 0.6)", 60, true, -24);
-            window.combatVisuals.spawnBeam(p.x, "rgba(232, 121, 249, 0.6)", 60, true, 24);
-            window.combatVisuals.triggerScreenShake(4, 14);
-          }
-        };
+      if (window.combatVisuals) {
+        window.combatVisuals.spawnBeam(p.x, "#ffd700", 90, true, 0);
+        window.combatVisuals.spawnBeam(
+          p.x,
+          "rgba(0, 210, 255, 0.7)",
+          75,
+          true,
+          -14,
+        );
+        window.combatVisuals.spawnBeam(
+          p.x,
+          "rgba(0, 210, 255, 0.7)",
+          75,
+          true,
+          14,
+        );
+        window.combatVisuals.spawnBeam(
+          p.x,
+          "rgba(232, 121, 249, 0.6)",
+          60,
+          true,
+          -24,
+        );
+        window.combatVisuals.spawnBeam(
+          p.x,
+          "rgba(232, 121, 249, 0.6)",
+          60,
+          true,
+          24,
+        );
+        window.combatVisuals.triggerScreenShake(4, 14);
+      }
+    };
 
-              if (leveledUp) {
-                window.triggerLevelUpEffect();
+    if (leveledUp) {
+      window.triggerLevelUpEffect();
 
       // Check if they reached Level 13 for the first time to trigger Clan Hall Unlock
       if (
@@ -637,50 +661,66 @@ Object.assign(window.GameState, {
       }
 
       window.invalidatePlayerStats();
-            let p = window.resolvePlayerStats();
+      let p = window.resolvePlayerStats();
 
-            if (window.player) {
-              let newMaxHp =
-                p.maxHp && p.maxHp.valueOf
-                  ? p.maxHp.valueOf()
-                  : Number(p.maxHp || 100);
-              window.player.maxHp = Math.round(newMaxHp);
+      if (window.player) {
+        let newMaxHp =
+          p.maxHp && p.maxHp.valueOf
+            ? p.maxHp.valueOf()
+            : Number(p.maxHp || 100);
+        window.player.maxHp = Math.round(newMaxHp);
 
-              // Restore 25% Max HP burst on level up instead of full 100% refill
-              let healBurst = Math.round(newMaxHp * 0.25);
-              window.player.hp = Math.min(newMaxHp, window.player.hp + healBurst);
-              window.playerStats.currentHp = BigNum.from(window.player.hp);
+        // Restore 25% Max HP burst on level up instead of full 100% refill
+        let healBurst = Math.round(newMaxHp * 0.25);
+        window.player.hp = Math.min(newMaxHp, window.player.hp + healBurst);
+        window.playerStats.currentHp = BigNum.from(window.player.hp);
 
-              window.player.atk =
-                p.atk && p.atk.valueOf ? p.atk.valueOf() : Number(p.atk || 15);
-              window.player.def =
-                p.def && p.def.valueOf ? p.def.valueOf() : Number(p.def || 5);
-            }
-
-      if (!isOffline) {
-              if (window.SoundManager) window.SoundManager.play("revive");
-              if (typeof window.pushLog === "function") {
-                window.pushLog(
-                  `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 SP)</strong>`,
-                );
-              }
-              if (typeof window.pushHeaderToast === "function") {
-                window.pushHeaderToast(
-                  `Level Up! Reached Level ${window.playerStats.level}! (+3 SP)`,
-                  "#d946ef",
-                );
-              }
-              if (typeof window.spawnFloatingText === "function" && window.player) {
-                        let px = window.player.x;
-                        let py = window.player.y;
-                        window.spawnFloatingText(px, py - 20, `LEVEL UP! (LV.${window.playerStats.level})`, "#d946ef", true);
-                        window.spawnFloatingText(px, py - 32, "+15 HP  +3 ATK  +1.5 DEF", "#2ecc71", true);
-                        window.spawnFloatingText(px, py - 44, "+3 SP AVAILABLE", "#00d2ff", true);
-                      }
-            }
-      if (typeof window.checkAchievements === "function") {
-        window.checkAchievements();
+        window.player.atk =
+          p.atk && p.atk.valueOf ? p.atk.valueOf() : Number(p.atk || 15);
+        window.player.def =
+          p.def && p.def.valueOf ? p.def.valueOf() : Number(p.def || 5);
       }
+
+      if (window.SoundManager) window.SoundManager.play("revive");
+            if (typeof window.pushLog === "function") {
+              window.pushLog(
+                `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 SP)</strong>`,
+              );
+            }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                `Level Up! Reached Level ${window.playerStats.level}! (+3 SP)`,
+                "#d946ef",
+              );
+            }
+            if (typeof window.spawnFloatingText === "function" && window.player) {
+              let px = window.player.x;
+              let py = window.player.y;
+              window.spawnFloatingText(
+                px,
+                py - 20,
+                `LEVEL UP! (LV.${window.playerStats.level})`,
+                "#d946ef",
+                true,
+              );
+              window.spawnFloatingText(
+                px,
+                py - 32,
+                "+15 HP  +3 ATK  +1.5 DEF",
+                "#2ecc71",
+                true,
+              );
+              window.spawnFloatingText(
+                px,
+                py - 44,
+                "+3 SP AVAILABLE",
+                "#00d2ff",
+                true,
+              );
+            }
+            if (typeof window.checkAchievements === "function") {
+              window.checkAchievements();
+            }
       // Evaluate tutorial triggers immediately after level-up animations/sounds settle
       setTimeout(() => {
         if (window.HoorTutorial) {
@@ -925,10 +965,8 @@ window.getAchievementProgress = function (ach) {
         : 0;
     }
     if (ach.id === "sing_weekend_warrior")
-      return window.playerStats.hasTriggeredWeekendWarrior ? 1 : 0;
-    if (ach.id === "sing_time_capsule")
-      return window.playerStats.hasTriggeredTimeCapsule ? 1 : 0;
-    if (ach.id === "sing_long_run")
+          return window.playerStats.hasTriggeredWeekendWarrior ? 1 : 0;
+        if (ach.id === "sing_long_run")
       return window.playerStats.sessionPlaytime >= 3600000 ? 1 : 0;
     if (ach.id === "sing_clicking_tempest")
       return window.playerStats.maxCanvasClicksInWindow >= 100 ? 1 : 0;
@@ -1375,8 +1413,8 @@ window.resolvePlayerStats = function (useDraft = false) {
       ? window.draftSPAllocations
       : { spStr: 0, spDex: 0, spInt: 0 };
   p.str += ((committed.spStr || 0) + (draft.spStr || 0)) * 1;
-    p.dex += ((committed.spDex || 0) + (draft.spDex || 0)) * 1;
-    p.int += ((committed.spInt || 0) + (draft.spInt || 0)) * 1;
+  p.dex += ((committed.spDex || 0) + (draft.spDex || 0)) * 1;
+  p.int += ((committed.spInt || 0) + (draft.spInt || 0)) * 1;
 
   let paragonLevel = window.playerStats.paragonLevel || 0;
   let paragonMult = 1.0 + paragonLevel * 0.005; // Compounding +0.5% attributes per Paragon Level
@@ -1566,17 +1604,17 @@ window.resolvePlayerStats = function (useDraft = false) {
   achDefPct += setCtx.defPctBonus;
 
   p.str = Math.floor(p.str * achStrPct);
-    p.dex = Math.floor(p.dex * achDexPct);
-    p.int = Math.floor(p.int * achIntPct);
+  p.dex = Math.floor(p.dex * achDexPct);
+  p.int = Math.floor(p.int * achIntPct);
 
-    let effectiveStr = Math.max(0, p.str - 5);
-    let effectiveDex = Math.max(0, p.dex - 5);
-    let effectiveInt = Math.max(0, p.int - 5);
+  let effectiveStr = Math.max(0, p.str - 5);
+  let effectiveDex = Math.max(0, p.dex - 5);
+  let effectiveInt = Math.max(0, p.int - 5);
 
-    // Apply Dexterity Attribute Matrix points to Move Speed, Crit Chance, and Crit Multiplier
-    p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
-    p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
-    p.moveSpeed += effectiveDex * 1.0;    // +1 Move Speed per point
+  // Apply Dexterity Attribute Matrix points to Move Speed, Crit Chance, and Crit Multiplier
+  p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
+  p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
+  p.moveSpeed += effectiveDex * 1.0; // +1 Move Speed per point
 
   // Dynamically adjust offensive percentage scaling based on equipped subweapon archetype
   let activeSubForPct = window.equippedSlots
@@ -1623,14 +1661,14 @@ window.resolvePlayerStats = function (useDraft = false) {
   let allocInt = p.int - 5;
 
   let baseCharAtk = BigNum.from(10 + (window.playerStats.level - 1) * 3)
-      .mul(levelScale)
-      .add(Math.max(0, allocStr) * 2.5 + Math.max(0, allocDex) * 1);
-    let baseCharHp = BigNum.from(100 + (window.playerStats.level - 1) * 15)
-      .mul(levelScale)
-      .add(Math.max(0, allocStr) * 10);
-    let baseCharDef = BigNum.from((window.playerStats.level - 1) * 1.5)
-      .mul(levelScale)
-      .add(Math.max(0, allocInt) * 1);
+    .mul(levelScale)
+    .add(Math.max(0, allocStr) * 2.5 + Math.max(0, allocDex) * 1);
+  let baseCharHp = BigNum.from(100 + (window.playerStats.level - 1) * 15)
+    .mul(levelScale)
+    .add(Math.max(0, allocStr) * 10);
+  let baseCharDef = BigNum.from((window.playerStats.level - 1) * 1.5)
+    .mul(levelScale)
+    .add(Math.max(0, allocInt) * 1);
 
   p.atk = baseCharAtk.add(flatGearAtk);
   p.maxHp = baseCharHp.add(flatGearHp);
@@ -1743,15 +1781,15 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   let potStrengthMultiplier = 1.0 + effectiveInt * 0.005; // +0.5% Potion Potency per INT point
-    if (window.playerStats.unlockedAchievements && window.AchievementsData) {
-      window.playerStats.unlockedAchievements.forEach((id) => {
-        let ach = window.AchievementsData.find((a) => a.id === id);
-        if (ach && ach.stats && ach.stats.potStrengthPct)
-          potStrengthMultiplier += ach.stats.potStrengthPct;
-      });
-    }
-    if (window.checkArtifactTrait("alchemist_alembic"))
-      potStrengthMultiplier += 0.3;
+  if (window.playerStats.unlockedAchievements && window.AchievementsData) {
+    window.playerStats.unlockedAchievements.forEach((id) => {
+      let ach = window.AchievementsData.find((a) => a.id === id);
+      if (ach && ach.stats && ach.stats.potStrengthPct)
+        potStrengthMultiplier += ach.stats.potStrengthPct;
+    });
+  }
+  if (window.checkArtifactTrait("alchemist_alembic"))
+    potStrengthMultiplier += 0.3;
 
   if (window.playerStats.astralAwakeningTimer > 0) {
     p.atk = p.atk.mul(2.0);
@@ -2196,36 +2234,36 @@ window.resolvePlayerStats = function (useDraft = false) {
   window.playerStats.crucibleSelfDmgReduction = p.crucibleSelfDmgReduction;
 
   subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
-    if (subItem) {
-      p.subType = subItem.subType || subItem.type;
-      p.subArchetype = subItem.subArchetype || null;
-      if (
-          p.subType === "tome" ||
-          subItem.type === "tome" ||
-          subItem.isUniqueWatch ||
-          subItem.isUniqueChronicle ||
-          subItem.isUniqueConduit
-        ) {
-          p.subType = "tome";
-          p.spellType = subItem.spellType || "tri";
-          p.spellChance =
-            subItem.spellChance !== undefined ? subItem.spellChance : 0.33;
-          p.spellPower = subItem.spellPower || 1.5;
-        } else {
-        p.spellType = subItem.spellType || null;
-        p.spellChance = subItem.spellChance || 0;
-        p.spellPower = subItem.spellPower || 1.0;
-      }
-      p.riposteDamage = subItem.riposteDamage || 0.8;
-      p.bleedChance = subItem.bleedChance || 0;
-      p.offhandChance = subItem.offhandChance || 0;
-      p.offhandDmg = subItem.offhandDmg || 0.35;
-      p.reflectDamage = subItem.reflectDamage || 1.0;
-      p.bashAtkBonus = subItem.bashAtkBonus || 0;
-      p.parryMitigation = subItem.parryMitigation || 0.60;
-      p.blockCapBonus = subItem.blockCapBonus || 0;
-      p.parryCapBonus = subItem.parryCapBonus || 0;
+  if (subItem) {
+    p.subType = subItem.subType || subItem.type;
+    p.subArchetype = subItem.subArchetype || null;
+    if (
+      p.subType === "tome" ||
+      subItem.type === "tome" ||
+      subItem.isUniqueWatch ||
+      subItem.isUniqueChronicle ||
+      subItem.isUniqueConduit
+    ) {
+      p.subType = "tome";
+      p.spellType = subItem.spellType || "tri";
+      p.spellChance =
+        subItem.spellChance !== undefined ? subItem.spellChance : 0.33;
+      p.spellPower = subItem.spellPower || 1.5;
     } else {
+      p.spellType = subItem.spellType || null;
+      p.spellChance = subItem.spellChance || 0;
+      p.spellPower = subItem.spellPower || 1.0;
+    }
+    p.riposteDamage = subItem.riposteDamage || 0.8;
+    p.bleedChance = subItem.bleedChance || 0;
+    p.offhandChance = subItem.offhandChance || 0;
+    p.offhandDmg = subItem.offhandDmg || 0.35;
+    p.reflectDamage = subItem.reflectDamage || 1.0;
+    p.bashAtkBonus = subItem.bashAtkBonus || 0;
+    p.parryMitigation = subItem.parryMitigation || 0.6;
+    p.blockCapBonus = subItem.blockCapBonus || 0;
+    p.parryCapBonus = subItem.parryCapBonus || 0;
+  } else {
     p.subType = null;
     p.spellType = null;
     p.spellChance = 0;
@@ -2276,120 +2314,122 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   let netDmg = Math.max(1, remainingDmg - (pStats.def || 0));
 
   // Step 2: Parry Check (Daggers)
-    if (pStats.parry && Math.random() < pStats.parry) {
-      let parryMitigation = pStats.parryMitigation || 0.60;
-      let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
-      p.hp = Math.max(0, p.hp - parriedDmg);
-      p.lastDamageTimer = 180;
+  if (pStats.parry && Math.random() < pStats.parry) {
+    let parryMitigation = pStats.parryMitigation || 0.6;
+    let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
+    p.hp = Math.max(0, p.hp - parriedDmg);
+    p.lastDamageTimer = 180;
 
-      if (window.SoundManager) window.SoundManager.play("parry");
-      if (window.combatVisuals)
+    if (window.SoundManager) window.SoundManager.play("parry");
+    if (window.combatVisuals)
+      window.combatVisuals.spawnDamageEffect(
+        p.x,
+        p.y - 15,
+        parriedDmg,
+        "parry",
+        false,
+        p,
+      );
+
+    if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+      let riposteDmg = BigNum.from(pStats.atk || 15).mul(
+        pStats.riposteDamage || 0.8,
+      );
+      sourceMob.hp = sourceMob.hp.sub(riposteDmg);
+      sourceMob.flashTimer = 6;
+      let mobCx = sourceMob.x + sourceMob.w / 2;
+      let mobCy = sourceMob.y + sourceMob.h / 2;
+      if (window.combatVisuals) {
         window.combatVisuals.spawnDamageEffect(
-          p.x,
-          p.y - 15,
-          parriedDmg,
-          "parry",
+          mobCx,
+          mobCy,
+          riposteDmg,
+          "parry_counter",
           false,
-          p,
+          sourceMob,
         );
+      }
+      if (sourceMob.hp.lte(0)) {
+        let rewardGold = Math.floor(
+          15 * (1 + (window.player ? window.player.depth : 1) * 0.5),
+        );
+        let rewardXp = Math.floor(
+          15 + (window.player ? window.player.depth : 1) * 4,
+        );
+        window.spawnHomingGold(mobCx, mobCy, rewardGold);
+        window.spawnHomingXp(mobCx, mobCy, rewardXp);
+      }
+    }
+    if (typeof window.updateHUD === "function") window.updateHUD();
+    return parriedDmg;
+  }
 
-      if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-        let riposteDmg = BigNum.from(pStats.atk || 15).mul(
-          pStats.riposteDamage || 0.8,
-        );
-        sourceMob.hp = sourceMob.hp.sub(riposteDmg);
+  // Step 3: Block Check (Shields)
+  if (pStats.block && Math.random() < pStats.block) {
+    p.lastDamageTimer = 180;
+
+    if (window.SoundManager) window.SoundManager.play("block");
+    if (window.combatVisuals)
+      window.combatVisuals.spawnDamageEffect(
+        p.x,
+        p.y - 15,
+        0,
+        "block",
+        false,
+        p,
+      );
+
+    if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+      let defBash = BigNum.from(pStats.def || 5).mul(
+        pStats.reflectDamage || 1.0,
+      );
+      let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
+      let reflectDmg = defBash.add(atkBash);
+
+      if (reflectDmg.gt(0)) {
+        sourceMob.hp = sourceMob.hp.sub(reflectDmg);
         sourceMob.flashTimer = 6;
-        let mobCx = sourceMob.x + sourceMob.w / 2;
-        let mobCy = sourceMob.y + sourceMob.h / 2;
         if (window.combatVisuals) {
           window.combatVisuals.spawnDamageEffect(
-            mobCx,
-            mobCy,
-            riposteDmg,
-            "parry_counter",
+            sourceMob.x + sourceMob.w / 2,
+            sourceMob.y + sourceMob.h / 2,
+            reflectDmg,
+            "counter",
             false,
             sourceMob,
           );
         }
-        if (sourceMob.hp.lte(0)) {
-                  let rewardGold = Math.floor(
-                    15 * (1 + (window.player ? window.player.depth : 1) * 0.5),
-                  );
-                  let rewardXp = Math.floor(
-                    15 + (window.player ? window.player.depth : 1) * 4,
-                  );
-                  window.spawnHomingGold(mobCx, mobCy, rewardGold);
-                  window.spawnHomingXp(mobCx, mobCy, rewardXp);
-                }
       }
-      if (typeof window.updateHUD === "function") window.updateHUD();
-      return parriedDmg;
     }
 
-    // Step 3: Block Check (Shields)
-    if (pStats.block && Math.random() < pStats.block) {
-      p.lastDamageTimer = 180;
-
-      if (window.SoundManager) window.SoundManager.play("block");
-      if (window.combatVisuals)
-        window.combatVisuals.spawnDamageEffect(
-          p.x,
-          p.y - 15,
-          0,
-          "block",
-          false,
-          p,
-        );
-
-      if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-        let defBash = BigNum.from(pStats.def || 5).mul(pStats.reflectDamage || 1.0);
-        let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
-        let reflectDmg = defBash.add(atkBash);
-
-        if (reflectDmg.gt(0)) {
-          sourceMob.hp = sourceMob.hp.sub(reflectDmg);
-          sourceMob.flashTimer = 6;
-          if (window.combatVisuals) {
-            window.combatVisuals.spawnDamageEffect(
-              sourceMob.x + sourceMob.w / 2,
-              sourceMob.y + sourceMob.h / 2,
-              reflectDmg,
-              "counter",
-              false,
-              sourceMob,
-            );
-          }
-        }
-      }
-
-      if (typeof window.updateHUD === "function") window.updateHUD();
-      return 0;
-    }
+    if (typeof window.updateHUD === "function") window.updateHUD();
+    return 0;
+  }
 
   // Step 4: Unmitigated Damage Hit
-    let finalDmg = Math.max(1, Math.round(netDmg));
-    p.hp = Math.max(0, p.hp - finalDmg);
-    p.lastDamageTimer = 180;
-    window.spawnFloatingText(p.x, p.y - 15, `-${finalDmg}`, "#e74c3c");
+  let finalDmg = Math.max(1, Math.round(netDmg));
+  p.hp = Math.max(0, p.hp - finalDmg);
+  p.lastDamageTimer = 180;
+  window.spawnFloatingText(p.x, p.y - 15, `-${finalDmg}`, "#e74c3c");
 
-    if (p.hp <= 0) {
-      if (sourceMob) {
-        window.playerStats.killedByMob = { ...sourceMob };
-        window.playerStats.killedBy = sourceMob.name || "Dungeon Monster";
-      } else {
-        window.playerStats.killedByMob = null;
-        window.playerStats.killedBy = "Environmental Hazard";
-      }
-      window.playerStats.deathCount = (window.playerStats.deathCount || 0) + 1;
-      if (typeof window.startDeathSequence === "function") {
-        window.startDeathSequence();
-      }
+  if (p.hp <= 0) {
+    if (sourceMob) {
+      window.playerStats.killedByMob = { ...sourceMob };
+      window.playerStats.killedBy = sourceMob.name || "Dungeon Monster";
+    } else {
+      window.playerStats.killedByMob = null;
+      window.playerStats.killedBy = "Environmental Hazard";
     }
+    window.playerStats.deathCount = (window.playerStats.deathCount || 0) + 1;
+    if (typeof window.startDeathSequence === "function") {
+      window.startDeathSequence();
+    }
+  }
 
-    if (window.SoundManager) window.SoundManager.play("hit");
-    if (typeof window.updateHUD === "function") window.updateHUD();
+  if (window.SoundManager) window.SoundManager.play("hit");
+  if (typeof window.updateHUD === "function") window.updateHUD();
 
-    return finalDmg;
+  return finalDmg;
 };
 
 // --- INITIAL GLOBAL STATE ---
@@ -2733,8 +2773,7 @@ window.playerStats = {
   hasTriggeredPerfectDeflection: false,
   hasTriggeredWitchingHour: false,
   hasTriggeredHighNoon: false,
-  hasTriggeredTimeCapsule: false,
-  hasTriggeredAethericRecharge: false,
+    hasTriggeredAethericRecharge: false,
   hasTriggeredNightOwl: false,
   hasTriggeredEarlyBird: false,
   hasTriggeredCoffeeRun: false,
@@ -3126,6 +3165,8 @@ window.activeFairies = [];
 window.damageHistory = [];
 window.projectiles = [];
 window.goldParticles = [];
+window.groundLoot = [];
+window.groundMaterials = [];
 window.groundScroll = 0;
 window.logicClock = 0;
 window.spacePressed = false;
@@ -3183,6 +3224,10 @@ window.saveGame = function () {
       },
       stash: window.player && window.player.stash ? window.player.stash : [],
       bag: window.player && window.player.bag ? window.player.bag : [],
+      pendingScraps:
+        window.player && window.player.pendingScraps
+          ? window.player.pendingScraps
+          : {},
       version: window.GAME_VERSION || 1.0,
     };
 
@@ -3277,30 +3322,31 @@ window.loadGame = function () {
       if (parsed.bag && Array.isArray(parsed.bag)) {
         window.player.bag = parsed.bag;
       }
+      window.player.pendingScraps = parsed.pendingScraps || {};
     }
 
     if (typeof window.recalculateItemStats === "function") {
-          let allItems = [
-            ...Object.values(window.equippedSlots || {}),
-            ...(window.inventory?.EQUIP || []),
-            ...(window.inventory?.ARTIFACT || []),
-            ...(window.player?.stash || []),
-            ...(window.player?.bag || []),
-          ];
-          allItems.forEach((item) => {
-            if (item && typeof item === "object" && item.type) {
-              window.recalculateItemStats(item);
-            }
-          });
+      let allItems = [
+        ...Object.values(window.equippedSlots || {}),
+        ...(window.inventory?.EQUIP || []),
+        ...(window.inventory?.ARTIFACT || []),
+        ...(window.player?.stash || []),
+        ...(window.player?.bag || []),
+      ];
+      allItems.forEach((item) => {
+        if (item && typeof item === "object" && item.type) {
+          window.recalculateItemStats(item);
         }
+      });
+    }
 
-        if (typeof window.invalidatePlayerStats === "function") {
-          window.invalidatePlayerStats();
-        }
-        if (typeof window.updateUI === "function") {
-          window.updateUI();
-        }
-      } catch (err) {
+    if (typeof window.invalidatePlayerStats === "function") {
+      window.invalidatePlayerStats();
+    }
+    if (typeof window.updateUI === "function") {
+      window.updateUI();
+    }
+  } catch (err) {
     console.warn("Failed to load game from localStorage:", err);
   }
 };

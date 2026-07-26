@@ -1789,64 +1789,252 @@ window.getAchievementBadgeHtml = function (ach, unlocked, size = 32) {
     `;
 };
 
-window.getEquipIconHtml = function (item, size = 32) {
-  if (!item) return "";
-  let color = window.getTierColor
-    ? window.getTierColor(item.statsRolled)
-    : "#00d2ff";
-  let uid = item.id || Math.floor(Math.random() * 10000);
+window.getIconSvgData = function (itemOrName) {
   let innerSvg = "";
+  let color = "#00d2ff";
+  let viewBox = "0 0 32 32";
+  let uid = 999;
 
-  // 1. Check Uniques & Artifacts
-  if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
-    innerSvg = window.AssetCatalog.uniques.staff(uid);
-  else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
-    innerSvg = window.AssetCatalog.uniques.sword(uid);
-  else if (item.isUniqueSingularity && window.AssetCatalog.uniques.singularity)
-    innerSvg = window.AssetCatalog.uniques.singularity(uid);
-  else if (item.isUniqueMaelstrom && window.AssetCatalog.uniques.maelstrom)
-    innerSvg = window.AssetCatalog.uniques.maelstrom(uid);
-  else if (item.isUniqueAegis && window.AssetCatalog.uniques.aegis)
-    innerSvg = window.AssetCatalog.uniques.aegis(uid);
-  else if (item.isUniqueWatch && window.AssetCatalog.uniques.watch)
-    innerSvg = window.AssetCatalog.uniques.watch(uid);
-  else if (item.isUniqueChronicle && window.AssetCatalog.uniques.chronicle)
-    innerSvg = window.AssetCatalog.uniques.chronicle(uid);
-  else if (item.isUniqueWarpCore && window.AssetCatalog.uniques.warpcore)
-    innerSvg = window.AssetCatalog.uniques.warpcore(uid);
-  else if (item.isUniqueTempest && window.AssetCatalog.uniques.tempest)
-    innerSvg = window.AssetCatalog.uniques.tempest(uid);
-  else if (
-    item.type === "artifact" &&
-    item.trait &&
-    window.AssetCatalog.artifacts[item.trait]
-  ) {
-    innerSvg = window.AssetCatalog.artifacts[item.trait](uid);
-  }
+  if (!itemOrName) return null;
 
-  // 2. Generic Equipment Matching (by Noun, SubType, or Type)
-  if (!innerSvg && window.AssetCatalog.genericEquipment) {
-    let nounKey = (item.noun || "").toLowerCase().replace(/[\s-]/g, "_");
-    let subKey = (item.subType || "").toLowerCase().replace(/[\s-]/g, "_");
-    let typeKey = (item.type || "").toLowerCase().replace(/[\s-]/g, "_");
+  if (typeof itemOrName === "string") {
+    let name = itemOrName;
+    const matColors = {
+      "Monster Soul": "#a0aec0",
+      "Luminous Soul": "#ffb6c1",
+      "Rare Scrap": "#3498db",
+      "Magic Scrap": "#9b59b6",
+      "Epic Scrap": "#e67e22",
+      "Legendary Scrap": "#f1c40f",
+      "Mythic Scrap": "#e74c3c",
+      "Eridium Shard": "#8e44ad",
+      "Gacha Key": "#f1c40f",
+      "Glimmering Gachapon Key": "#00d2ff",
+      "Ancient Core": "#e74c3c",
+      "Overlord's Sigil": "#1abc9c",
+      "Astral Essence": "#9b59b6",
+      "Catalyst Core": "#2ecc71",
+    };
 
-    if (nounKey && window.AssetCatalog.genericEquipment[nounKey]) {
-      innerSvg = window.AssetCatalog.genericEquipment[nounKey](uid, color);
-    } else if (subKey && window.AssetCatalog.genericEquipment[subKey]) {
-      innerSvg = window.AssetCatalog.genericEquipment[subKey](uid, color);
-    } else if (typeKey && window.AssetCatalog.genericEquipment[typeKey]) {
-      innerSvg = window.AssetCatalog.genericEquipment[typeKey](uid, color);
+    if (matColors[name]) {
+      color = matColors[name];
+    } else if (window.useDex && window.useDex[name]) {
+      color = window.useDex[name].color || "#2ecc71";
+    }
+
+    if (window.AssetCatalog.materials && window.AssetCatalog.materials[name]) {
+      innerSvg = window.AssetCatalog.materials[name](uid);
     } else if (
-      item.type === "subweapon" &&
-      window.AssetCatalog.genericEquipment.shield
+      name &&
+      name.includes("Scrap") &&
+      window.AssetCatalog.materials.Scrap
     ) {
-      innerSvg = window.AssetCatalog.genericEquipment.shield(uid, color);
-    } else {
-      innerSvg = `<rect x="6" y="6" width="20" height="20" rx="3" fill="${color}" stroke="#000" stroke-width="1.8" />`;
+      let stop1 = "#7f8c8d",
+        stop2 = "#2c3e50";
+      if (name === "Rare Scrap") {
+        stop1 = "#5fa7e8";
+        stop2 = "#3498db";
+      } else if (name === "Magic Scrap") {
+        stop1 = "#c397eb";
+        stop2 = "#9b59b6";
+      } else if (name === "Epic Scrap") {
+        stop1 = "#f3b05a";
+        stop2 = "#e67e22";
+      } else if (name === "Legendary Scrap") {
+        stop1 = "#fbe374";
+        stop2 = "#f1c40f";
+      } else if (name === "Mythic Scrap") {
+        stop1 = "#f19086";
+        stop2 = "#e74c3c";
+      }
+      innerSvg = window.AssetCatalog.materials.Scrap(uid, stop1, stop2);
+    } else if (window.AssetCatalog.consumables) {
+      if (
+        name === "Cavern Sigil Sack" &&
+        window.AssetCatalog.consumables.cavern_sigil_sack
+      ) {
+        innerSvg = window.AssetCatalog.consumables.cavern_sigil_sack(uid);
+        viewBox = "0 0 64 64";
+      } else if (
+        name === "Monster Card Sack" &&
+        window.AssetCatalog.consumables.monster_card_sack
+      ) {
+        innerSvg = window.AssetCatalog.consumables.monster_card_sack(uid);
+        viewBox = "0 0 64 64";
+      } else if (
+        name &&
+        (name.includes("Sack") || name.includes("Pouch")) &&
+        window.AssetCatalog.consumables.sack
+      ) {
+        innerSvg = window.AssetCatalog.consumables.sack(uid, color);
+        viewBox = "0 0 64 64";
+      } else if (
+        name &&
+        (name.includes("Crate") || name.includes("Chest")) &&
+        window.AssetCatalog.consumables.crate
+      ) {
+        innerSvg = window.AssetCatalog.consumables.crate(uid);
+        viewBox = "0 0 64 64";
+      } else if (
+        name &&
+        name.includes("Scroll") &&
+        window.AssetCatalog.consumables.scroll
+      ) {
+        innerSvg = window.AssetCatalog.consumables.scroll(uid, color);
+      } else if (
+        name &&
+        (name.includes("Elixir") || name.includes("Potion")) &&
+        window.AssetCatalog.consumables.potion
+      ) {
+        innerSvg = window.AssetCatalog.consumables.potion(uid, color);
+      }
+    }
+  } else {
+    let item = itemOrName;
+    uid = item.id || 999;
+    color = window.getTierColor
+      ? window.getTierColor(item.statsRolled)
+      : "#00d2ff";
+
+    if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
+      innerSvg = window.AssetCatalog.uniques.staff(uid);
+    else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
+      innerSvg = window.AssetCatalog.uniques.sword(uid);
+    else if (
+      item.isUniqueSingularity &&
+      window.AssetCatalog.uniques.singularity
+    )
+      innerSvg = window.AssetCatalog.uniques.singularity(uid);
+    else if (item.isUniqueMaelstrom && window.AssetCatalog.uniques.maelstrom)
+      innerSvg = window.AssetCatalog.uniques.maelstrom(uid);
+    else if (item.isUniqueAegis && window.AssetCatalog.uniques.aegis)
+      innerSvg = window.AssetCatalog.uniques.aegis(uid);
+    else if (item.isUniqueWatch && window.AssetCatalog.uniques.watch)
+      innerSvg = window.AssetCatalog.uniques.watch(uid);
+    else if (item.isUniqueChronicle && window.AssetCatalog.uniques.chronicle)
+      innerSvg = window.AssetCatalog.uniques.chronicle(uid);
+    else if (item.isUniqueWarpCore && window.AssetCatalog.uniques.warpcore)
+      innerSvg = window.AssetCatalog.uniques.warpcore(uid);
+    else if (item.isUniqueTempest && window.AssetCatalog.uniques.tempest)
+      innerSvg = window.AssetCatalog.uniques.tempest(uid);
+    else if (
+      item.type === "artifact" &&
+      item.trait &&
+      window.AssetCatalog.artifacts[item.trait]
+    ) {
+      innerSvg = window.AssetCatalog.artifacts[item.trait](uid);
+    }
+
+    if (!innerSvg && window.AssetCatalog.genericEquipment) {
+      let nounKey = (item.noun || "").toLowerCase().replace(/[\s-]/g, "_");
+      let subKey = (item.subType || "").toLowerCase().replace(/[\s-]/g, "_");
+      let typeKey = (item.type || "").toLowerCase().replace(/[\s-]/g, "_");
+
+      if (nounKey && window.AssetCatalog.genericEquipment[nounKey]) {
+        innerSvg = window.AssetCatalog.genericEquipment[nounKey](uid, color);
+      } else if (subKey && window.AssetCatalog.genericEquipment[subKey]) {
+        innerSvg = window.AssetCatalog.genericEquipment[subKey](uid, color);
+      } else if (typeKey && window.AssetCatalog.genericEquipment[typeKey]) {
+        innerSvg = window.AssetCatalog.genericEquipment[typeKey](uid, color);
+      } else if (
+        item.type === "subweapon" &&
+        window.AssetCatalog.genericEquipment.shield
+      ) {
+        innerSvg = window.AssetCatalog.genericEquipment.shield(uid, color);
+      } else {
+        innerSvg = `<rect x="6" y="6" width="20" height="20" rx="3" fill="${color}" stroke="#000" stroke-width="1.8" />`;
+      }
     }
   }
 
-  let rgb = window.hexToRgbValues ? window.hexToRgbValues(color) : "50, 50, 50";
+  if (!innerSvg) return null;
+  return { innerSvg, color, viewBox };
+};
+
+window.canvasIconImageCache = window.canvasIconImageCache || {};
+
+window.getCanvasIconImage = function (itemOrName) {
+  if (!itemOrName) return null;
+  let key =
+    typeof itemOrName === "string"
+      ? itemOrName
+      : `${itemOrName.type}_${itemOrName.statsRolled || 0}_${itemOrName.name}_${itemOrName.isUniqueStaff ? "staff" : ""}_${itemOrName.isUniqueSword ? "sword" : ""}_${itemOrName.isUniqueSingularity ? "sing" : ""}_${itemOrName.isUniqueMaelstrom ? "mael" : ""}_${itemOrName.isUniqueAegis ? "aegis" : ""}_${itemOrName.isUniqueWatch ? "watch" : ""}_${itemOrName.isUniqueChronicle ? "chron" : ""}_${itemOrName.isUniqueWarpCore ? "warp" : ""}_${itemOrName.isUniqueTempest ? "temp" : ""}`;
+
+  if (window.canvasIconImageCache[key]) {
+    return window.canvasIconImageCache[key];
+  }
+
+  let data = window.getIconSvgData(itemOrName);
+  if (!data) return null;
+
+  let rgb = window.hexToRgbValues
+    ? window.hexToRgbValues(data.color)
+    : "170, 170, 170";
   let bg = `rgba(${rgb}, 0.15)`;
-  return window.AssetCatalog.compile("0 0 32 32", innerSvg, size, bg, color);
+
+  let is64 = data.viewBox === "0 0 64 64";
+  let boxSize = is64 ? 64 : 32;
+  let rx = is64 ? 6 : 4;
+  let strokeW = is64 ? 2.5 : 1.5;
+
+  let svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="${data.viewBox}" width="${boxSize}" height="${boxSize}">
+      <rect width="${boxSize}" height="${boxSize}" rx="${rx}" fill="${bg}" stroke="${data.color}" stroke-width="${strokeW}" />
+      ${data.innerSvg}
+    </svg>
+  `;
+
+  let img = new Image();
+  img.src = "data:image/svg+xml;utf8," + encodeURIComponent(svgString);
+
+  window.canvasIconImageCache[key] = img;
+  return img;
+};
+
+window.getEquipIconHtml = function (item, size = 32) {
+  let data = window.getIconSvgData(item);
+  if (!data) return "";
+  let rgb = window.hexToRgbValues
+    ? window.hexToRgbValues(data.color)
+    : "50, 50, 50";
+  let bg = `rgba(${rgb}, 0.15)`;
+  return window.AssetCatalog.compile(
+    data.viewBox,
+    data.innerSvg,
+    size,
+    bg,
+    data.color,
+  );
+};
+
+window.getEtcIconHtml = function (name, size = 32) {
+  let data = window.getIconSvgData(name);
+  if (!data) return "";
+  let rgb = window.hexToRgbValues
+    ? window.hexToRgbValues(data.color)
+    : "170, 170, 170";
+  let bg = `rgba(${rgb}, 0.15)`;
+  return window.AssetCatalog.compile(
+    data.viewBox,
+    data.innerSvg,
+    size,
+    bg,
+    data.color,
+  );
+};
+
+window.getUseIconHtml = function (name, size = 32) {
+  let data = window.getIconSvgData(name);
+  if (!data) return "";
+  let rgb = window.hexToRgbValues
+    ? window.hexToRgbValues(data.color)
+    : "46, 204, 113";
+  let bg = `rgba(${rgb}, 0.15)`;
+  return window.AssetCatalog.compile(
+    data.viewBox,
+    data.innerSvg,
+    size,
+    bg,
+    data.color,
+  );
 };

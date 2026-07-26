@@ -62,7 +62,8 @@ window.getEquippedItemForComparison = function (type) {
     slotKey = type;
   }
   if (type === "ring") {
-    slotKey = (window.state && window.state.preferredRingComparisonSlot) || "ring1";
+    slotKey =
+      (window.state && window.state.preferredRingComparisonSlot) || "ring1";
   }
   let item = window.equippedSlots ? window.equippedSlots[slotKey] : null;
   if (item) {
@@ -78,7 +79,11 @@ window.getCombinedEquippedTorso = function () {
   if (!chest && !leggings) return null;
   let maxStars = Math.max(
     chest ? (chest.statsRolled === "UNIQUE" ? 5 : chest.statsRolled || 0) : 0,
-    leggings ? (leggings.statsRolled === "UNIQUE" ? 5 : leggings.statsRolled || 0) : 0
+    leggings
+      ? leggings.statsRolled === "UNIQUE"
+        ? 5
+        : leggings.statsRolled || 0
+      : 0,
   );
   return {
     id: "virtual_combined",
@@ -107,7 +112,8 @@ window.getCombinedEquippedTorso = function () {
 window.getComparisonDeltaBadge = function (item) {
   if (item.type === "artifact") return "";
   let eq = window.getEquippedItemForComparison(item.type);
-  if (!eq) return ` <span style="color:#2ecc71; font-weight:bold; font-size:9px;">[▲ NEW]</span>`;
+  if (!eq)
+    return ` <span style="color:#2ecc71; font-weight:bold; font-size:9px;">[▲ NEW]</span>`;
   return "";
 };
 
@@ -128,7 +134,11 @@ window.buildGeneralTooltipHtml = function (item, isBagItem = false) {
   }
 
   if (isBagItem && item.type === "ring") {
-    let otherSlot = ((window.state && window.state.preferredRingComparisonSlot) || "ring1") === "ring1" ? "ring2" : "ring1";
+    let otherSlot =
+      ((window.state && window.state.preferredRingComparisonSlot) ||
+        "ring1") === "ring1"
+        ? "ring2"
+        : "ring1";
     let otherLabel = otherSlot === "ring1" ? "Ring Slot 1" : "Ring Slot 2";
     html += `
       <div style="width: 100%; text-align: center; margin-top: 8px; border-top: 1px dashed #333; padding-top: 8px; z-index: 50100; position: relative;">
@@ -143,7 +153,11 @@ window.buildGeneralTooltipHtml = function (item, isBagItem = false) {
 };
 
 // --- ITEM CARD TEMPLATE HTML GENERATOR ---
-window.generateItemCardHtml = function (item, compareItem = null, isEquipped = false) {
+window.generateItemCardHtml = function (
+  item,
+  compareItem = null,
+  isEquipped = false,
+) {
   if (!item) return "";
   let toggleId = `${item.id}_${isEquipped ? "eq" : "bag"}_${Math.floor(Math.random() * 100000)}`;
   let html = `
@@ -159,11 +173,18 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
 
   let slotMult = 1.0;
   if (item.isEquippedSlot) {
-    let slotLvl = (window.playerStats && window.playerStats.slotUpgrades && window.playerStats.slotUpgrades[item.isEquippedSlot]) || 0;
+    let slotLvl =
+      (window.playerStats &&
+        window.playerStats.slotUpgrades &&
+        window.playerStats.slotUpgrades[item.isEquippedSlot]) ||
+      0;
     slotMult = 1.0 + slotLvl * 0.01;
   }
 
-  let temperTag = item.temperLevel > 0 ? ` <span style="color:#2ecc71;">[+${item.temperLevel}]</span>` : "";
+  let temperTag =
+    item.temperLevel > 0
+      ? ` <span style="color:#2ecc71;">[+${item.temperLevel}]</span>`
+      : "";
   let lockTag = item.locked ? " [LOCKED]" : "";
 
   if (isEquipped) {
@@ -176,8 +197,18 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
 
   if (item.type === "sigil") {
     let color = window.getTierColor(item.statsRolled);
-    let buffDescs = (item.buffs || []).map((b) => `<div style="color:#2ecc71; font-size:10px; margin-bottom:2px;">• ✦ <strong>${b.name}</strong>: ${b.desc}</div>`).join("");
-    let debuffDescs = (item.debuffs || []).map((d) => `<div style="color:#e74c3c; font-size:10px; margin-bottom:2px;">• ◈ <strong>${d.name}</strong>: ${d.desc}</div>`).join("");
+    let buffDescs = (item.buffs || [])
+      .map(
+        (b) =>
+          `<div style="color:#2ecc71; font-size:10px; margin-bottom:2px;">• ✦ <strong>${b.name}</strong>: ${b.desc}</div>`,
+      )
+      .join("");
+    let debuffDescs = (item.debuffs || [])
+      .map(
+        (d) =>
+          `<div style="color:#e74c3c; font-size:10px; margin-bottom:2px;">• ◈ <strong>${d.name}</strong>: ${d.desc}</div>`,
+      )
+      .join("");
 
     return `
       <div class="tt-title" style="color:${color}; white-space:normal;">${item.name}${lockTag}</div>
@@ -195,7 +226,9 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
   }
 
   let isUnique = window.isItemUnique(item);
-  let uniqueStyle = window.getUniqueItemStyle ? window.getUniqueItemStyle(item) : null;
+  let uniqueStyle = window.getUniqueItemStyle
+    ? window.getUniqueItemStyle(item)
+    : null;
   let runicBadge = isUnique
     ? `<div style="color: #f1c40f; font-family: monospace; font-weight: 800; font-size: 10px; margin-bottom: 6px; letter-spacing: 2px; text-transform: uppercase;">✦ UBER UNIQUE ✦</div>`
     : ``;
@@ -214,8 +247,14 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
     labelDisplay = `SUBWEAPON (${item.subType.toUpperCase()})`;
   }
 
-  let tierStrDisplay = item.statsRolled === "UNIQUE" ? "UNIQUE" : `${item.statsRolled}★ ${window.getTierName(item.statsRolled)}`;
-  let subtitle = item.type === "artifact" ? "Unique Artifact" : `${labelDisplay} | <span style="color:${tierColor}; font-weight:bold;">${tierStrDisplay}</span>`;
+  let tierStrDisplay =
+    item.statsRolled === "UNIQUE"
+      ? "UNIQUE"
+      : `${item.statsRolled}★ ${window.getTierName(item.statsRolled)}`;
+  let subtitle =
+    item.type === "artifact"
+      ? "Unique Artifact"
+      : `${labelDisplay} | <span style="color:${tierColor}; font-weight:bold;">${tierStrDisplay}</span>`;
 
   html += `<div class="tt-title" style="color:${isUnique ? "#1abc9c" : titleColor}; white-space:normal;">${item.name}${temperTag}${lockTag}</div>`;
   html += runicBadge;
@@ -232,17 +271,19 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
   }
 
   // --- SUBWEAPON SPECIALTIES ---
-      if (item.type === "subweapon") {
-        let rgbVals = window.hexToRgbValues ? window.hexToRgbValues(tierColor) : "127, 140, 141";
-        if (item.subType === "shield") {
-                  let reflectDmg = Math.round((item.reflectDamage || 1.0) * 100);
-                  let blockCapBonus = Math.round((item.blockCapBonus || 0.02) * 100);
-                  let bashFormulaStr = `${reflectDmg}% Defense`;
-                  if (item.bashAtkBonus > 0) {
-                    bashFormulaStr = `${reflectDmg}% Def + ${Math.round(item.bashAtkBonus * 100)}% Atk`;
-                  }
+  if (item.type === "subweapon") {
+    let rgbVals = window.hexToRgbValues
+      ? window.hexToRgbValues(tierColor)
+      : "127, 140, 141";
+    if (item.subType === "shield") {
+      let reflectDmg = Math.round((item.reflectDamage || 1.0) * 100);
+      let blockCapBonus = Math.round((item.blockCapBonus || 0.02) * 100);
+      let bashFormulaStr = `${reflectDmg}% Defense`;
+      if (item.bashAtkBonus > 0) {
+        bashFormulaStr = `${reflectDmg}% Def + ${Math.round(item.bashAtkBonus * 100)}% Atk`;
+      }
 
-                  specialtyHtml = `
+      specialtyHtml = `
                     <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
                       <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                         ${window.getUiIconSvg ? window.getUiIconSvg("block", 12) : "✦"} <span>BULWARK & BASH METRICS</span>
@@ -256,25 +297,29 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
                       </div>
                     </div>
                   `;
-                } else if (item.subType === "dagger") {
-                  let riposteDmg = Math.round((item.riposteDamage || 0.8) * 100);
-                  let bleedChance = Math.round((item.bleedChance || 0) * 100);
-                  let offhandChance = Math.round((item.offhandChance || 0) * 100);
-                  let offhandDmg = Math.round((item.offhandDmg || 0.35) * 100);
-                  let mitigationPct = Math.round((item.parryMitigation || 0.60) * 100);
+    } else if (item.subType === "dagger") {
+      let riposteDmg = Math.round((item.riposteDamage || 0.8) * 100);
+      let bleedChance = Math.round((item.bleedChance || 0) * 100);
+      let offhandChance = Math.round((item.offhandChance || 0) * 100);
+      let offhandDmg = Math.round((item.offhandDmg || 0.35) * 100);
+      let mitigationPct = Math.round((item.parryMitigation || 0.6) * 100);
 
-                  let metricLines = [
-                    `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Parry Mitigation:</span> <strong style="color:#3498db;">${mitigationPct}% Damage</strong></div>`,
-                    `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Riposte Counter:</span> <strong style="color:#a855f7;">${riposteDmg}% Attack</strong></div>`,
-                  ];
-                  if (bleedChance > 0) {
-                    metricLines.push(`<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Bleed Chance:</span> <strong style="color:#e74c3c;">${bleedChance}% per swing</strong></div>`);
-                  }
-                  if (offhandChance > 0) {
-                    metricLines.push(`<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Offhand Double-Strike:</span> <strong style="color:#2ecc71;">${offhandChance}% (${offhandDmg}% Dmg)</strong></div>`);
-                  }
+      let metricLines = [
+        `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Parry Mitigation:</span> <strong style="color:#3498db;">${mitigationPct}% Damage</strong></div>`,
+        `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Riposte Counter:</span> <strong style="color:#a855f7;">${riposteDmg}% Attack</strong></div>`,
+      ];
+      if (bleedChance > 0) {
+        metricLines.push(
+          `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Bleed Chance:</span> <strong style="color:#e74c3c;">${bleedChance}% per swing</strong></div>`,
+        );
+      }
+      if (offhandChance > 0) {
+        metricLines.push(
+          `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Offhand Double-Strike:</span> <strong style="color:#2ecc71;">${offhandChance}% (${offhandDmg}% Dmg)</strong></div>`,
+        );
+      }
 
-                  specialtyHtml = `
+      specialtyHtml = `
                     <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
                       <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                         ${window.getUiIconSvg ? window.getUiIconSvg("parry", 12) : "✦"} <span>RIPOSTE & COMBAT METRICS</span>
@@ -287,13 +332,20 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
                       </div>
                     </div>
                   `;
-                } else if (item.subType === "tome") {
-                  let nameMap = { fire: "Fireball", lightning: "Chain Zap", frost: "Frost Nova", tri: "Tri-Element Burst" };
-                  let spellName = nameMap[item.spellType || "tri"] || "Arcane Burst";
-                  let spellChance = Math.round((item.spellChance !== undefined ? item.spellChance : 0.33) * 100);
-                  let spellPower = Math.round((item.spellPower || 1.5) * 100);
+    } else if (item.subType === "tome") {
+      let nameMap = {
+        fire: "Fireball",
+        lightning: "Chain Zap",
+        frost: "Frost Nova",
+        tri: "Tri-Element Burst",
+      };
+      let spellName = nameMap[item.spellType || "tri"] || "Arcane Burst";
+      let spellChance = Math.round(
+        (item.spellChance !== undefined ? item.spellChance : 0.33) * 100,
+      );
+      let spellPower = Math.round((item.spellPower || 1.5) * 100);
 
-                  specialtyHtml = `
+      specialtyHtml = `
                     <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
                       <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                         ${window.getUiIconSvg ? window.getUiIconSvg("barrier", 12) : "✦"} <span>ARCANE BARRIER & SPELL METRICS</span>
@@ -308,116 +360,249 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
                       </div>
                     </div>
                   `;
-                }
-      }
+    }
+  }
 
   // --- PREMIUM BASE STATS & CORE METRICS GRID ---
-    if (item.id !== "dummy" && item.type !== "artifact" && item.type !== "sigil") {
-      let gridBadges = [];
+  if (
+    item.id !== "dummy" &&
+    item.type !== "artifact" &&
+    item.type !== "sigil"
+  ) {
+    let gridBadges = [];
 
-      if (item.type === "subweapon") {
-              if (item.subType === "tome") {
-                let spellChance = Math.round((item.spellChance !== undefined ? item.spellChance : 0.33) * 100);
-                let spellPower = Math.round((item.spellPower || 1.5) * 100);
-                gridBadges.push({ label: "Damage", raw: window.formatNumber(item.baseAtk), attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)), icon: window.getUiIconSvg("atk", 13) });
-                gridBadges.push({ label: "INT", raw: `+${item.baseInt || 0}`, attuned: `+${Math.ceil((item.baseInt || 0) * slotMult)}`, icon: window.getUiIconSvg("int", 13) });
-                gridBadges.push({ label: "Spell %", raw: `${spellChance}%`, attuned: `${spellChance}%`, icon: window.getUiIconSvg("activeAttackSpeed", 13) });
-                gridBadges.push({ label: "Spell Dmg", raw: `${spellPower}% Atk`, attuned: `${spellPower}% Atk`, icon: window.getUiIconSvg("critDamage", 13) });
+    if (item.type === "subweapon") {
+      if (item.subType === "tome") {
+        let spellChance = Math.round(
+          (item.spellChance !== undefined ? item.spellChance : 0.33) * 100,
+        );
+        let spellPower = Math.round((item.spellPower || 1.5) * 100);
+        gridBadges.push({
+          label: "Damage",
+          raw: window.formatNumber(item.baseAtk),
+          attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)),
+          icon: window.getUiIconSvg("atk", 13),
+        });
+        gridBadges.push({
+          label: "INT",
+          raw: `+${item.baseInt || 0}`,
+          attuned: `+${Math.ceil((item.baseInt || 0) * slotMult)}`,
+          icon: window.getUiIconSvg("int", 13),
+        });
+        gridBadges.push({
+          label: "Spell %",
+          raw: `${spellChance}%`,
+          attuned: `${spellChance}%`,
+          icon: window.getUiIconSvg("activeAttackSpeed", 13),
+        });
+        gridBadges.push({
+          label: "Spell Dmg",
+          raw: `${spellPower}% Atk`,
+          attuned: `${spellPower}% Atk`,
+          icon: window.getUiIconSvg("critDamage", 13),
+        });
 
-                let tomeDesc = "Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Absorbs 20%-35% of incoming damage before Defense.";
-                let tomeTitle = "✦ Arcane Triad Array & Barrier:";
-                let tomeTitleColor = "#9b59b6";
-                if (item.spellType === "fire") {
-                  tomeTitle = "✦ Fireball Burst & Barrier:";
-                  tomeTitleColor = "#e67e22";
-                  tomeDesc = "Launches concentrated Fireball bursts dealing heavy burst damage. Absorbs 20%-35% of incoming damage before Defense.";
-                } else if (item.spellType === "lightning") {
-                  tomeTitle = "✦ Chain Zap Arcs & Barrier:";
-                  tomeTitleColor = "#f1c40f";
-                  tomeDesc = "Triggers rapid Chain Zap electrical arcs with high proc frequency. Absorbs 20%-35% of incoming damage before Defense.";
-                } else if (item.spellType === "frost") {
-                  tomeTitle = "✦ Glacial Frost Nova & Barrier:";
-                  tomeTitleColor = "#3498db";
-                  tomeDesc = "Emits Glacial Frost Novas dealing area frost damage. Absorbs 20%-35% of incoming damage before Defense.";
-                }
+        let tomeDesc =
+          "Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Absorbs 20%-35% of incoming damage before Defense.";
+        let tomeTitle = "✦ Arcane Triad Array & Barrier:";
+        let tomeTitleColor = "#9b59b6";
+        if (item.spellType === "fire") {
+          tomeTitle = "✦ Fireball Burst & Barrier:";
+          tomeTitleColor = "#e67e22";
+          tomeDesc =
+            "Launches concentrated Fireball bursts dealing heavy burst damage. Absorbs 20%-35% of incoming damage before Defense.";
+        } else if (item.spellType === "lightning") {
+          tomeTitle = "✦ Chain Zap Arcs & Barrier:";
+          tomeTitleColor = "#f1c40f";
+          tomeDesc =
+            "Triggers rapid Chain Zap electrical arcs with high proc frequency. Absorbs 20%-35% of incoming damage before Defense.";
+        } else if (item.spellType === "frost") {
+          tomeTitle = "✦ Glacial Frost Nova & Barrier:";
+          tomeTitleColor = "#3498db";
+          tomeDesc =
+            "Emits Glacial Frost Novas dealing area frost damage. Absorbs 20%-35% of incoming damage before Defense.";
+        }
 
-                specialtyHtml = `
+        specialtyHtml = `
                   <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
                     <strong style="color: ${tomeTitleColor}; display: block; margin-bottom: 2px;">${tomeTitle}</strong>
                     ${tomeDesc}
                   </div>
                 `;
-              } else if (item.subType === "shield") {
-                        let reflectDmg = Math.round((item.reflectDamage ?? 1.0) * 100);
-                        let blockPct = Math.round((item.baseBlock ?? 0.08) * 100);
-                        gridBadges.push({ label: "Armor", raw: window.formatNumber(item.baseDef), attuned: window.formatNumber(Math.ceil(item.baseDef * slotMult)), icon: window.getUiIconSvg("def", 13) });
-                        gridBadges.push({ label: "STR", raw: `+${item.baseStr || 0}`, attuned: `+${Math.ceil((item.baseStr || 0) * slotMult)}`, icon: window.getUiIconSvg("str", 13) });
-                        gridBadges.push({ label: "Block %", raw: `${blockPct}%`, attuned: `${Math.round(blockPct * slotMult)}%`, icon: window.getUiIconSvg("block", 13) });
-                        gridBadges.push({ label: "Bash Dmg", raw: `${reflectDmg}% Def`, attuned: `${reflectDmg}% Def`, icon: window.getUiIconSvg("atk", 13) });
+      } else if (item.subType === "shield") {
+        let reflectDmg = Math.round((item.reflectDamage ?? 1.0) * 100);
+        let blockPct = Math.round((item.baseBlock ?? 0.08) * 100);
+        gridBadges.push({
+          label: "Armor",
+          raw: window.formatNumber(item.baseDef),
+          attuned: window.formatNumber(Math.ceil(item.baseDef * slotMult)),
+          icon: window.getUiIconSvg("def", 13),
+        });
+        gridBadges.push({
+          label: "STR",
+          raw: `+${item.baseStr || 0}`,
+          attuned: `+${Math.ceil((item.baseStr || 0) * slotMult)}`,
+          icon: window.getUiIconSvg("str", 13),
+        });
+        gridBadges.push({
+          label: "Block %",
+          raw: `${blockPct}%`,
+          attuned: `${Math.round(blockPct * slotMult)}%`,
+          icon: window.getUiIconSvg("block", 13),
+        });
+        gridBadges.push({
+          label: "Bash Dmg",
+          raw: `${reflectDmg}% Def`,
+          attuned: `${reflectDmg}% Def`,
+          icon: window.getUiIconSvg("atk", 13),
+        });
 
-                        let shieldTitle = "✦ Bulwark Specialty:";
-                        let shieldDesc = "Blocks completely negate damage (20%-28% cap). Every block triggers a Shield Bash counter scaling with Defense.";
-                        if (item.subArchetype === "tower") {
-                          shieldTitle = "✦ Fortress Tower Bulwark:";
-                          shieldDesc = "Heavy defensive tower shield. Expands Block Cap up to 28% and triggers massive Defense-scaling Shield Bashes (120%-200% Def).";
-                        } else if (item.subArchetype === "buckler") {
-                          shieldTitle = "✦ Deflective Buckler Counter:";
-                          shieldDesc = "Agile reactive shield with elevated base Block Rate. Shield Bashes deal hybrid damage scaling with 60% Defense + 50% Attack.";
-                        }
+        let shieldTitle = "✦ Bulwark Specialty:";
+        let shieldDesc =
+          "Blocks completely negate damage (20%-28% cap). Every block triggers a Shield Bash counter scaling with Defense.";
+        if (item.subArchetype === "tower") {
+          shieldTitle = "✦ Fortress Tower Bulwark:";
+          shieldDesc =
+            "Heavy defensive tower shield. Expands Block Cap up to 28% and triggers massive Defense-scaling Shield Bashes (120%-200% Def).";
+        } else if (item.subArchetype === "buckler") {
+          shieldTitle = "✦ Deflective Buckler Counter:";
+          shieldDesc =
+            "Agile reactive shield with elevated base Block Rate. Shield Bashes deal hybrid damage scaling with 60% Defense + 50% Attack.";
+        }
 
-                        specialtyHtml = `
+        specialtyHtml = `
                           <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
                             <strong style="color: #3498db; display: block; margin-bottom: 2px;">${shieldTitle}</strong>
                             ${shieldDesc}
                           </div>
                         `;
-                      } else if (item.subType === "dagger") {
-                        let riposteDmg = Math.round((item.riposteDamage ?? 0.8) * 100);
-                        let parryPct = Math.round((item.baseParry ?? 0.06) * 100);
-                        gridBadges.push({ label: "Damage", raw: window.formatNumber(item.baseAtk), attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)), icon: window.getUiIconSvg("atk", 13) });
-                        gridBadges.push({ label: "DEX", raw: `+${item.baseDex || 0}`, attuned: `+${Math.ceil((item.baseDex || 0) * slotMult)}`, icon: window.getUiIconSvg("dex", 13) });
-                        gridBadges.push({ label: "Parry %", raw: `${parryPct}%`, attuned: `${Math.round(parryPct * slotMult)}%`, icon: window.getUiIconSvg("parry", 13) });
-                        gridBadges.push({ label: "Riposte", raw: `${riposteDmg}% Atk`, attuned: `${riposteDmg}% Atk`, icon: window.getUiIconSvg("critDamage", 13) });
+      } else if (item.subType === "dagger") {
+        let riposteDmg = Math.round((item.riposteDamage ?? 0.8) * 100);
+        let parryPct = Math.round((item.baseParry ?? 0.06) * 100);
+        gridBadges.push({
+          label: "Damage",
+          raw: window.formatNumber(item.baseAtk),
+          attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)),
+          icon: window.getUiIconSvg("atk", 13),
+        });
+        gridBadges.push({
+          label: "DEX",
+          raw: `+${item.baseDex || 0}`,
+          attuned: `+${Math.ceil((item.baseDex || 0) * slotMult)}`,
+          icon: window.getUiIconSvg("dex", 13),
+        });
+        gridBadges.push({
+          label: "Parry %",
+          raw: `${parryPct}%`,
+          attuned: `${Math.round(parryPct * slotMult)}%`,
+          icon: window.getUiIconSvg("parry", 13),
+        });
+        gridBadges.push({
+          label: "Riposte",
+          raw: `${riposteDmg}% Atk`,
+          attuned: `${riposteDmg}% Atk`,
+          icon: window.getUiIconSvg("critDamage", 13),
+        });
 
-                        let daggerTitle = "✦ Riposte & Bleed Specialty:";
-                        let daggerDesc = "Parries mitigate 60% of damage (15%-35% cap) and trigger an automatic Riposte counter strike + Bleed DoT.";
-                        if (item.subArchetype === "main_gauche") {
-                          daggerTitle = "✦ Main-Gauche Parry Mastery:";
-                          daggerDesc = "Defensive parrying dagger. Mitigates 75% of incoming damage on parry and expands maximum Parry Cap up to 35%.";
-                        } else if (item.subArchetype === "stiletto") {
-                          daggerTitle = "✦ Stiletto Lethal Piercing & Bleed:";
-                          daggerDesc = "Precision piercing dagger. Strikes apply defense-bypassing Bleed DoTs (35%-55% chance) and deal heavy Riposte counters (100% Atk).";
-                        } else if (item.subArchetype === "flurry") {
-                          daggerTitle = "✦ Dual-Strike Flurry Dagger:";
-                          daggerDesc = "High-speed offhand blade. Swings trigger 50%-75% Offhand Double-Strikes (45% Atk) with bonus bleed chances.";
-                        }
+        let daggerTitle = "✦ Riposte & Bleed Specialty:";
+        let daggerDesc =
+          "Parries mitigate 60% of damage (15%-35% cap) and trigger an automatic Riposte counter strike + Bleed DoT.";
+        if (item.subArchetype === "main_gauche") {
+          daggerTitle = "✦ Main-Gauche Parry Mastery:";
+          daggerDesc =
+            "Defensive parrying dagger. Mitigates 75% of incoming damage on parry and expands maximum Parry Cap up to 35%.";
+        } else if (item.subArchetype === "stiletto") {
+          daggerTitle = "✦ Stiletto Lethal Piercing & Bleed:";
+          daggerDesc =
+            "Precision piercing dagger. Strikes apply defense-bypassing Bleed DoTs (35%-55% chance) and deal heavy Riposte counters (100% Atk).";
+        } else if (item.subArchetype === "flurry") {
+          daggerTitle = "✦ Dual-Strike Flurry Dagger:";
+          daggerDesc =
+            "High-speed offhand blade. Swings trigger 50%-75% Offhand Double-Strikes (45% Atk) with bonus bleed chances.";
+        }
 
-                        specialtyHtml = `
+        specialtyHtml = `
                           <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
                             <strong style="color: #a855f7; display: block; margin-bottom: 2px;">${daggerTitle}</strong>
                             ${daggerDesc}
                           </div>
                         `;
-                      }
-      } else {
-        if (item.baseAtk > 0) gridBadges.push({ label: "Damage", raw: window.formatNumber(item.baseAtk), attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)), icon: window.getUiIconSvg("atk", 13) });
-        if (item.baseDef > 0) gridBadges.push({ label: "Armor", raw: window.formatNumber(item.baseDef), attuned: window.formatNumber(Math.ceil(item.baseDef * slotMult)), icon: window.getUiIconSvg("def", 13) });
-        if (item.baseMaxHp > 0) gridBadges.push({ label: "Max HP", raw: window.formatNumber(item.baseMaxHp), attuned: window.formatNumber(Math.ceil(item.baseMaxHp * slotMult)), icon: window.getUiIconSvg("maxHp", 13) });
-        if (item.baseMoveSpeed > 0) gridBadges.push({ label: "Speed", raw: window.formatNumber(item.baseMoveSpeed), attuned: window.formatNumber(Math.ceil(item.baseMoveSpeed * slotMult)), icon: window.getUiIconSvg("moveSpeed", 13) });
-        if (item.baseBlock > 0) gridBadges.push({ label: "Block", raw: Math.round(item.baseBlock * 100) + "%", attuned: Math.round(item.baseBlock * slotMult * 100) + "%", icon: window.getUiIconSvg("block", 13) });
-        if (item.baseParry > 0) gridBadges.push({ label: "Parry", raw: Math.round(item.baseParry * 100) + "%", attuned: Math.round(item.baseParry * slotMult * 100) + "%", icon: window.getUiIconSvg("parry", 13) });
-        if (item.baseStr > 0) gridBadges.push({ label: "STR", raw: `+${item.baseStr}`, attuned: `+${Math.ceil(item.baseStr * slotMult)}`, icon: window.getUiIconSvg("str", 13) });
-        if (item.baseDex > 0) gridBadges.push({ label: "DEX", raw: `+${item.baseDex}`, attuned: `+${Math.ceil(item.baseDex * slotMult)}`, icon: window.getUiIconSvg("dex", 13) });
-        if (item.baseInt > 0) gridBadges.push({ label: "INT", raw: `+${item.baseInt}`, attuned: `+${Math.ceil(item.baseInt * slotMult)}`, icon: window.getUiIconSvg("int", 13) });
       }
+    } else {
+      if (item.baseAtk > 0)
+        gridBadges.push({
+          label: "Damage",
+          raw: window.formatNumber(item.baseAtk),
+          attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)),
+          icon: window.getUiIconSvg("atk", 13),
+        });
+      if (item.baseDef > 0)
+        gridBadges.push({
+          label: "Armor",
+          raw: window.formatNumber(item.baseDef),
+          attuned: window.formatNumber(Math.ceil(item.baseDef * slotMult)),
+          icon: window.getUiIconSvg("def", 13),
+        });
+      if (item.baseMaxHp > 0)
+        gridBadges.push({
+          label: "Max HP",
+          raw: window.formatNumber(item.baseMaxHp),
+          attuned: window.formatNumber(Math.ceil(item.baseMaxHp * slotMult)),
+          icon: window.getUiIconSvg("maxHp", 13),
+        });
+      if (item.baseMoveSpeed > 0)
+        gridBadges.push({
+          label: "Speed",
+          raw: window.formatNumber(item.baseMoveSpeed),
+          attuned: window.formatNumber(
+            Math.ceil(item.baseMoveSpeed * slotMult),
+          ),
+          icon: window.getUiIconSvg("moveSpeed", 13),
+        });
+      if (item.baseBlock > 0)
+        gridBadges.push({
+          label: "Block",
+          raw: Math.round(item.baseBlock * 100) + "%",
+          attuned: Math.round(item.baseBlock * slotMult * 100) + "%",
+          icon: window.getUiIconSvg("block", 13),
+        });
+      if (item.baseParry > 0)
+        gridBadges.push({
+          label: "Parry",
+          raw: Math.round(item.baseParry * 100) + "%",
+          attuned: Math.round(item.baseParry * slotMult * 100) + "%",
+          icon: window.getUiIconSvg("parry", 13),
+        });
+      if (item.baseStr > 0)
+        gridBadges.push({
+          label: "STR",
+          raw: `+${item.baseStr}`,
+          attuned: `+${Math.ceil(item.baseStr * slotMult)}`,
+          icon: window.getUiIconSvg("str", 13),
+        });
+      if (item.baseDex > 0)
+        gridBadges.push({
+          label: "DEX",
+          raw: `+${item.baseDex}`,
+          attuned: `+${Math.ceil(item.baseDex * slotMult)}`,
+          icon: window.getUiIconSvg("dex", 13),
+        });
+      if (item.baseInt > 0)
+        gridBadges.push({
+          label: "INT",
+          raw: `+${item.baseInt}`,
+          attuned: `+${Math.ceil(item.baseInt * slotMult)}`,
+          icon: window.getUiIconSvg("int", 13),
+        });
+    }
 
-      if (gridBadges.length > 0) {
-        let cols = Math.min(gridBadges.length, 4);
-        html += `<div class="base-stats-grid" style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 6px; margin: 8px 0; display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">`;
-        gridBadges.forEach((b) => {
-          let isChanged = b.raw !== b.attuned;
-          let attunedColor = isChanged ? "#2ecc71" : "#f5f6fa";
-          html += `
+    if (gridBadges.length > 0) {
+      let cols = Math.min(gridBadges.length, 4);
+      html += `<div class="base-stats-grid" style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 6px; margin: 8px 0; display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">`;
+      gridBadges.forEach((b) => {
+        let isChanged = b.raw !== b.attuned;
+        let attunedColor = isChanged ? "#2ecc71" : "#f5f6fa";
+        html += `
             <div style="display: flex; flex-direction: column; align-items: center; text-align: center; background: rgba(255, 255, 255, 0.02); padding: 4px 2px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.04);">
               <span style="font-size: 7.5px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">${b.label}</span>
               <div style="font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 3px; line-height: 1;">
@@ -427,12 +612,12 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
               </div>
             </div>
           `;
-        });
-        html += `</div>`;
-      }
+      });
+      html += `</div>`;
     }
+  }
 
-          if (item.type === "artifact") {
+  if (item.type === "artifact") {
     html += `<div class="tt-trait">${item.breakdown || item.desc}</div>`;
   } else {
     if (isUnique && item.desc) {
@@ -456,8 +641,18 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
       { key: "str", label: "STR", baseKey: "baseStr" },
       { key: "dex", label: "DEX", baseKey: "baseDex" },
       { key: "int", label: "INT", baseKey: "baseInt" },
-      { key: "critChance", label: "Crit Chance", isPct: true, baseKey: "baseCritChance" },
-      { key: "critDamage", label: "Crit Multi", isPct: true, baseKey: "baseCritDamage" },
+      {
+        key: "critChance",
+        label: "Crit Chance",
+        isPct: true,
+        baseKey: "baseCritChance",
+      },
+      {
+        key: "critDamage",
+        label: "Crit Multi",
+        isPct: true,
+        baseKey: "baseCritDamage",
+      },
       { key: "block", label: "Block Rate", isPct: true, baseKey: "baseBlock" },
       { key: "parry", label: "Parry Rate", isPct: true, baseKey: "baseParry" },
       { key: "dropRate", label: "Drop Rate", isPct: true },
@@ -467,19 +662,28 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
 
     statsKeys.forEach((s) => {
       let totalVal = item[s.key] || 0;
-      let baseVal = item.type !== "artifact" && s.baseKey ? item[s.baseKey] || 0 : 0;
+      let baseVal =
+        item.type !== "artifact" && s.baseKey ? item[s.baseKey] || 0 : 0;
       let affixVal = totalVal - baseVal;
 
       if (affixVal > 0.0001) {
-        let displayVal = s.isPct ? `+${Math.floor(affixVal * 100)}%` : `+${window.formatNumber(affixVal)}`;
+        let displayVal = s.isPct
+          ? `+${Math.floor(affixVal * 100)}%`
+          : `+${window.formatNumber(affixVal)}`;
         if (slotMult > 1.0) {
           let scaledVal = affixVal * slotMult;
-          let scaledStr = s.isPct ? `+${Math.floor(scaledVal * 100)}%` : `+${window.formatNumber(scaledVal)}`;
+          let scaledStr = s.isPct
+            ? `+${Math.floor(scaledVal * 100)}%`
+            : `+${window.formatNumber(scaledVal)}`;
           displayVal += ` <span style="color:#2ecc71; font-size:10px; font-weight:bold;">(➔ ${scaledStr})</span>`;
         }
 
-        let iconSvg = window.getUiIconSvg ? window.getUiIconSvg(s.key, 11) : "✦";
-        let rangeStr = window.formatStatRangeStr ? window.formatStatRangeStr(item, s.key, s.isPct) : "";
+        let iconSvg = window.getUiIconSvg
+          ? window.getUiIconSvg(s.key, 11)
+          : "✦";
+        let rangeStr = window.formatStatRangeStr
+          ? window.formatStatRangeStr(item, s.key, s.isPct)
+          : "";
 
         if (rangeStr) {
           rangeLines.push(`
@@ -491,7 +695,7 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
         }
 
         affixes.push(
-          `<div class="tt-stat-line" style="color:${s.key === "critChance" || s.key === "critDamage" ? "#e67e22" : "#ecf0f1"}; font-weight: bold;">• ${iconSvg} ${s.label}: ${displayVal}</div>`
+          `<div class="tt-stat-line" style="color:${s.key === "critChance" || s.key === "critDamage" ? "#e67e22" : "#ecf0f1"}; font-weight: bold;">• ${iconSvg} ${s.label}: ${displayVal}</div>`,
         );
       }
     });
@@ -519,10 +723,17 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
     html += `<div style="font-weight:bold; color:#3498db; margin-top:8px; margin-bottom:4px; border-bottom: 1px solid #333; padding-bottom: 2px;">Net Change:</div>`;
     let hasDiffs = false;
     let statsList = [
-      { key: "atk" }, { key: "maxHp" }, { key: "def" }, { key: "moveSpeed" },
-      { key: "str" }, { key: "dex" }, { key: "int" },
-      { key: "critChance", isPct: true }, { key: "critDamage", isPct: true },
-      { key: "block", isPct: true }, { key: "parry", isPct: true }
+      { key: "atk" },
+      { key: "maxHp" },
+      { key: "def" },
+      { key: "moveSpeed" },
+      { key: "str" },
+      { key: "dex" },
+      { key: "int" },
+      { key: "critChance", isPct: true },
+      { key: "critDamage", isPct: true },
+      { key: "block", isPct: true },
+      { key: "parry", isPct: true },
     ];
 
     statsList.forEach((s) => {
@@ -534,29 +745,40 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
         let isPositive = diff > 0;
         let color = isPositive ? "#2ecc71" : "#e74c3c";
         let sign = diff > 0 ? "+" : "";
-        let diffStr = s.isPct ? sign + Math.round(diff * 100) + "%" : sign + window.formatNumber(diff);
+        let diffStr = s.isPct
+          ? sign + Math.round(diff * 100) + "%"
+          : sign + window.formatNumber(diff);
         let sLabel = window.getStatLabel ? window.getStatLabel(s.key) : s.key;
-        let iconSvg = window.getUiIconSvg ? window.getUiIconSvg(s.key, 11) : "✦";
+        let iconSvg = window.getUiIconSvg
+          ? window.getUiIconSvg(s.key, 11)
+          : "✦";
 
         html += `<div class="tt-stat-line" style="color:${color}; font-weight:bold; white-space:nowrap;">• ${iconSvg} ${sLabel}: ${diffStr}</div>`;
       }
     });
-    if (!hasDiffs) html += `<div class="tt-stat-line" style="color:#7f8c8d; font-style:italic;">No net difference.</div>`;
+    if (!hasDiffs)
+      html += `<div class="tt-stat-line" style="color:#7f8c8d; font-style:italic;">No net difference.</div>`;
   }
 
   // --- COLLAPSIBLE ADVANCED DETAILS DRAWER ---
-      if (specialtyHtml || (typeof rangeLines !== "undefined" && rangeLines.length > 0)) {
-        let specialtySecHtml = specialtyHtml ? `<div style="margin-bottom: 8px;">${specialtyHtml}</div>` : "";
-        let rangeSecHtml = (typeof rangeLines !== "undefined" && rangeLines.length > 0)
-          ? `<div>
+  if (
+    specialtyHtml ||
+    (typeof rangeLines !== "undefined" && rangeLines.length > 0)
+  ) {
+    let specialtySecHtml = specialtyHtml
+      ? `<div style="margin-bottom: 8px;">${specialtyHtml}</div>`
+      : "";
+    let rangeSecHtml =
+      typeof rangeLines !== "undefined" && rangeLines.length > 0
+        ? `<div>
                <strong style="color: #a855f7; display: block; font-size: 9.5px; margin-bottom: 4px; text-transform: uppercase;">Affix Roll Ranges:</strong>
                <div style="display: flex; flex-direction: column; gap: 4px;">
                  ${rangeLines.join("")}
                </div>
              </div>`
-          : "";
+        : "";
 
-        html += `
+    html += `
           <details class="tooltip-advanced-details" style="margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 8px;" onclick="event.stopPropagation();">
             <summary style="font-size: 9.5px; color: #a855f7; cursor: pointer; user-select: none; font-weight: bold; text-align: center; list-style: none; display: flex; align-items: center; justify-content: center; gap: 4px; outline: none;">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:translateY(1px);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -568,13 +790,15 @@ window.generateItemCardHtml = function (item, compareItem = null, isEquipped = f
             </div>
           </details>
         `;
-      }
+  }
 
   if (uniqueStyle) {
     if (uniqueStyle.lore) {
       html += `<div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #555; color: #ffb6c1; font-size: 9.5px; line-line-height: 1.35; font-style: italic;"><i>${uniqueStyle.lore}</i></div>`;
     }
-    let animationStyle = item.isUniqueSingularity ? " animation: voidSingularityShimmer 4s infinite ease-in-out;" : "";
+    let animationStyle = item.isUniqueSingularity
+      ? " animation: voidSingularityShimmer 4s infinite ease-in-out;"
+      : "";
     html = `<div style="position: relative; background: ${uniqueStyle.bg}; border: 2px solid ${uniqueStyle.border}; box-shadow: inset 0 0 20px ${uniqueStyle.shadow}, 0 0 15px ${uniqueStyle.glow}; padding: 16px 12px 12px 12px; border-radius: 4px; box-sizing: border-box; width: 100%;${animationStyle}">
       ${runicBadge}
       ${html}
@@ -794,10 +1018,12 @@ window.setEnchantMode = function (mode) {
   let activeEl = document.getElementById("btn-enchant-mode-" + mode);
   if (activeEl) {
     activeEl.className = "forge-mode-btn active";
-    if (mode === "enchant") activeEl.style.background = "rgba(168, 85, 247, 0.35)";
+    if (mode === "enchant")
+      activeEl.style.background = "rgba(168, 85, 247, 0.35)";
     if (mode === "purge") activeEl.style.background = "rgba(192, 57, 43, 0.35)";
     if (mode === "set") activeEl.style.background = "rgba(46, 204, 113, 0.35)";
-    if (mode === "shatter") activeEl.style.background = "rgba(230, 126, 34, 0.35)";
+    if (mode === "shatter")
+      activeEl.style.background = "rgba(230, 126, 34, 0.35)";
   }
 
   if (typeof window.renderEnchantmentTab === "function") {
@@ -820,8 +1046,10 @@ window.toggleEnchantmentModal = function () {
 
 window.selectEnchantItem = function (id) {
   let item =
-    (window.inventory.EQUIP && window.inventory.EQUIP.find((i) => i.id === id)) ||
-    (window.inventory.ARTIFACT && window.inventory.ARTIFACT.find((i) => i.id === id));
+    (window.inventory.EQUIP &&
+      window.inventory.EQUIP.find((i) => i.id === id)) ||
+    (window.inventory.ARTIFACT &&
+      window.inventory.ARTIFACT.find((i) => i.id === id));
 
   if (!item && window.equippedSlots) {
     for (let k in window.equippedSlots) {
@@ -846,26 +1074,26 @@ window.renderEnchantInstructionPane = function (detailEl, mode) {
       title: "Celestial Enchantment",
       desc: "Infuse powerful celestial magic into high-tier attuned gear. Enchanting picks a random active stat line and boosts its value by +25%!",
       color: "#9b59b6",
-      tip: "Magic (2*) holds 1, Epic (3*) holds 2, Legendary (4*) holds 3, and Mythic (5*) holds 4 maximum enchantments."
+      tip: "Magic (2*) holds 1, Epic (3*) holds 2, Legendary (4*) holds 3, and Mythic (5*) holds 4 maximum enchantments.",
     },
     purge: {
       title: "Arcane Purge",
       desc: "Dispel and clear active enchantments from an item, restoring its stats to their original pre-enchanted baseline so you can re-enchant.",
       color: "#c0392b",
-      tip: "Resetting enchantments frees up all slots, but spent materials are non-refundable."
+      tip: "Resetting enchantments frees up all slots, but spent materials are non-refundable.",
     },
     set: {
       title: "Set Resonance Matrix",
       desc: "Shift the named set affiliation (e.g. Vanguard, Colossus, Midas) on your gear to complete matching 2-piece and 3-piece set bonuses.",
       color: "#2ecc71",
-      tip: "Equipping matching sets provides massive multipliers to Attack, Health, Defense, and Crit stats!"
+      tip: "Equipping matching sets provides massive multipliers to Attack, Health, Defense, and Crit stats!",
     },
     shatter: {
       title: "Spectral Shatter",
       desc: "Sacrifice unequipped Unique weapons, armor, or relics to permanently unlock their active passive effects inside your Spectral Codex!",
       color: "#e74c3c",
-      tip: "Unlocking a passive inside the Codex allows you to activate its unique modifiers without needing to equip the item!"
-    }
+      tip: "Unlocking a passive inside the Codex allows you to activate its unique modifiers without needing to equip the item!",
+    },
   };
 
   let info = modeInfo[mode] || modeInfo.enchant;
@@ -898,13 +1126,21 @@ window.renderEnchantmentTab = function () {
   if (mode === "enchant") {
     for (let key in window.equippedSlots) {
       let eq = window.equippedSlots[key];
-      if (eq && eq.type !== "sigil" && (eq.statsRolled >= 2 || window.isItemUnique(eq))) {
+      if (
+        eq &&
+        eq.type !== "sigil" &&
+        (eq.statsRolled >= 2 || window.isItemUnique(eq))
+      ) {
         eligibleItems.push({ ...eq, isEquippedSlot: key });
       }
     }
     if (window.inventory && window.inventory.EQUIP) {
       window.inventory.EQUIP.forEach((item) => {
-        if (item && item.type !== "sigil" && (item.statsRolled >= 2 || window.isItemUnique(item))) {
+        if (
+          item &&
+          item.type !== "sigil" &&
+          (item.statsRolled >= 2 || window.isItemUnique(item))
+        ) {
           eligibleItems.push(item);
         }
       });
@@ -926,13 +1162,23 @@ window.renderEnchantmentTab = function () {
   } else if (mode === "set") {
     for (let key in window.equippedSlots) {
       let eq = window.equippedSlots[key];
-      if (eq && eq.type !== "artifact" && eq.statsRolled !== "UNIQUE" && eq.type !== "sigil") {
+      if (
+        eq &&
+        eq.type !== "artifact" &&
+        eq.statsRolled !== "UNIQUE" &&
+        eq.type !== "sigil"
+      ) {
         eligibleItems.push({ ...eq, isEquippedSlot: key });
       }
     }
     if (window.inventory && window.inventory.EQUIP) {
       window.inventory.EQUIP.forEach((item) => {
-        if (item && item.type !== "artifact" && item.statsRolled !== "UNIQUE" && item.type !== "sigil") {
+        if (
+          item &&
+          item.type !== "artifact" &&
+          item.statsRolled !== "UNIQUE" &&
+          item.type !== "sigil"
+        ) {
           eligibleItems.push(item);
         }
       });
@@ -957,13 +1203,16 @@ window.renderEnchantmentTab = function () {
   if (eligibleItems.length === 0) {
     let emptyMsg = "No eligible gear found.";
     if (mode === "enchant") {
-      emptyMsg = "No eligible gear found.<br><br>Only Magic (2*), Epic (3*), Legendary (4*), Mythic (5*), and Unique gear can be enchanted.";
+      emptyMsg =
+        "No eligible gear found.<br><br>Only Magic (2*), Epic (3*), Legendary (4*), Mythic (5*), and Unique gear can be enchanted.";
     } else if (mode === "purge") {
-      emptyMsg = "No enchanted gear found.<br><br>Infuse celestial enchantments on eligible items in Enchantment mode first.";
+      emptyMsg =
+        "No enchanted gear found.<br><br>Infuse celestial enchantments on eligible items in Enchantment mode first.";
     } else if (mode === "set") {
       emptyMsg = "No set-compatible gear found in equipment or inventory.";
     } else if (mode === "shatter") {
-      emptyMsg = "No unequipped Unique items found.<br><br>Only unequipped Unique weapons, armor, or relics can be shattered into the Spectral Codex.";
+      emptyMsg =
+        "No unequipped Unique items found.<br><br>Only unequipped Unique weapons, armor, or relics can be shattered into the Spectral Codex.";
     }
 
     listEl.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">${emptyMsg}</div>`;
@@ -971,14 +1220,18 @@ window.renderEnchantmentTab = function () {
     return;
   }
 
-  if (!window.enchantSelectedItem || !eligibleItems.some((i) => i.id === window.enchantSelectedItem.id)) {
+  if (
+    !window.enchantSelectedItem ||
+    !eligibleItems.some((i) => i.id === window.enchantSelectedItem.id)
+  ) {
     window.enchantSelectedItem = eligibleItems[0];
     window.forgeSelectedItem = eligibleItems[0];
   }
 
   listEl.innerHTML = eligibleItems
     .map((item) => {
-      let isSelected = window.enchantSelectedItem && window.enchantSelectedItem.id === item.id;
+      let isSelected =
+        window.enchantSelectedItem && window.enchantSelectedItem.id === item.id;
       let nameColor = window.getTierColor(item.statsRolled);
       let maxEnc = window.getMaxEnchants ? window.getMaxEnchants(item) : 0;
       let curEnc = item.totalEnchants || 0;
@@ -986,13 +1239,20 @@ window.renderEnchantmentTab = function () {
       let slotsBadges = "";
       if (maxEnc > 0) {
         for (let s = 0; s < maxEnc; s++) {
-          slotsBadges += s < curEnc ? `<span style="color:#00d2ff; font-weight:bold;">+</span>` : `<span style="color:#334155;">.</span>`;
+          slotsBadges +=
+            s < curEnc
+              ? `<span style="color:#00d2ff; font-weight:bold;">+</span>`
+              : `<span style="color:#334155;">.</span>`;
         }
       }
 
-      let bgStyle = isSelected ? "background: rgba(0, 210, 255, 0.15);" : "background: rgba(15, 23, 42, 0.65);";
+      let bgStyle = isSelected
+        ? "background: rgba(0, 210, 255, 0.15);"
+        : "background: rgba(15, 23, 42, 0.65);";
       let borderCol = isSelected ? "#00d2ff" : "#202632";
-      let eqBadge = item.isEquippedSlot ? `<span style="background:#c0392b; color:#fff; padding:1px 3px; border-radius:2px; font-size:8px; font-weight:bold; margin-right:4px;">EQ</span>` : "";
+      let eqBadge = item.isEquippedSlot
+        ? `<span style="background:#c0392b; color:#fff; padding:1px 3px; border-radius:2px; font-size:8px; font-weight:bold; margin-right:4px;">EQ</span>`
+        : "";
 
       let subLabel = `LV.${item.stageLevel || 1}`;
       if (mode === "enchant" || mode === "purge") {
@@ -1001,7 +1261,9 @@ window.renderEnchantmentTab = function () {
         subLabel += ` • ${item.setName || "No Set"}`;
       } else if (mode === "shatter") {
         let uniqueKey = window.getUniqueKey(item);
-        let isUnlocked = window.playerStats.spectralCodex && window.playerStats.spectralCodex.includes(uniqueKey);
+        let isUnlocked =
+          window.playerStats.spectralCodex &&
+          window.playerStats.spectralCodex.includes(uniqueKey);
         subLabel += ` • Codex: ${isUnlocked ? "UNLOCKED" : "LOCKED"}`;
       }
 
@@ -1027,8 +1289,13 @@ window.renderEnchantmentTab = function () {
   if (mode === "enchant") {
     let maxEnc = window.getMaxEnchants ? window.getMaxEnchants(item) : 0;
     let curEnc = item.totalEnchants || 0;
-    let slotKey = item.isEquippedSlot || (item.type === "subweapon" ? "subweapon" : item.type);
-    let slotLevel = (window.playerStats.slotUpgrades && window.playerStats.slotUpgrades[slotKey]) || 0;
+    let slotKey =
+      item.isEquippedSlot ||
+      (item.type === "subweapon" ? "subweapon" : item.type);
+    let slotLevel =
+      (window.playerStats.slotUpgrades &&
+        window.playerStats.slotUpgrades[slotKey]) ||
+      0;
     let isFullyTempered = slotLevel >= 50;
     let essenceOwned = window.inventory.ETC["Astral Essence"] || 0;
 
@@ -1115,7 +1382,9 @@ window.renderEnchantmentTab = function () {
     `;
   } else if (mode === "shatter") {
     let uniqueKey = window.getUniqueKey(item);
-    let isUnlocked = window.playerStats.spectralCodex && window.playerStats.spectralCodex.includes(uniqueKey);
+    let isUnlocked =
+      window.playerStats.spectralCodex &&
+      window.playerStats.spectralCodex.includes(uniqueKey);
 
     let costGold = 1000000000;
     let costShards = 250;
@@ -1577,25 +1846,28 @@ window.renderForgeTab = function () {
 
   // Draw displays for the remaining modes
   let allValidItems = [
-      ...window.inventory.EQUIP.filter((item) => item.type !== "sigil"),
-      ...(window.inventory.ARTIFACT || []),
-    ];
-    for (let key in window.equippedSlots) {
-      if (window.equippedSlots[key]) {
-        let eqClone = { ...window.equippedSlots[key], isEquippedSlot: key };
-        allValidItems.push(eqClone);
-      }
+    ...window.inventory.EQUIP.filter((item) => item.type !== "sigil"),
+    ...(window.inventory.ARTIFACT || []),
+  ];
+  for (let key in window.equippedSlots) {
+    if (window.equippedSlots[key]) {
+      let eqClone = { ...window.equippedSlots[key], isEquippedSlot: key };
+      allValidItems.push(eqClone);
     }
+  }
 
-    if (allValidItems.length === 0) {
-      listEl.innerHTML =
-        "<div style='color:#666;text-align:center;padding-top:40px;'>No gear.</div>";
-    } else {
-      listEl.innerHTML = allValidItems
-        .map((item) => {
-          let isArt = item.type === "artifact";
-          if ((window.forgeMode === "reforge" || window.forgeMode === "tier") && isArt)
-            return "";
+  if (allValidItems.length === 0) {
+    listEl.innerHTML =
+      "<div style='color:#666;text-align:center;padding-top:40px;'>No gear.</div>";
+  } else {
+    listEl.innerHTML = allValidItems
+      .map((item) => {
+        let isArt = item.type === "artifact";
+        if (
+          (window.forgeMode === "reforge" || window.forgeMode === "tier") &&
+          isArt
+        )
+          return "";
 
         let nameColor = window.getTierColor(item.statsRolled);
         let temperTag = item.temperLevel > 0 ? ` [+${item.temperLevel}]` : "";
@@ -2598,7 +2870,7 @@ Object.assign(window.ItemFactory, {
       rarityMult *= 1.8;
       pctRarityMult *= 1.8;
     }
-    let actualStatLines = chosenType === "artifact" ? 3 : statLinesCount + 1;
+    let actualStatLines = chosenType === "artifact" ? 3 : statLinesCount;
 
     for (let i = 0; i < actualStatLines; i++) {
       if (pool.length === 0) break;
@@ -3494,98 +3766,102 @@ Object.assign(window.ItemFactory, {
         if (item.intPct > 0)
           item.intPct = parseFloat((0.04 * scaleFactor).toFixed(4));
       } else if (
-              item.type === "subweapon" &&
-              !item.isUniqueAegis &&
-              !item.isUniqueWatch &&
-              !item.isUniqueChronicle &&
-              !item.isUniqueConduit &&
-              !item.isUniqueViper
-            ) {
-              if (item.subType === "shield") {
-                              item.baseDef = Math.ceil(1.0 * repScale * baseRarityMult);
-                              item.baseStr = Math.ceil(1.5 * stageScale * baseRarityMult);
-                              let noun = item.noun ? item.noun.toLowerCase() : "";
-                              let stars = typeof item.statsRolled === "number" ? item.statsRolled : 0;
+        item.type === "subweapon" &&
+        !item.isUniqueAegis &&
+        !item.isUniqueWatch &&
+        !item.isUniqueChronicle &&
+        !item.isUniqueConduit &&
+        !item.isUniqueViper
+      ) {
+        if (item.subType === "shield") {
+          item.baseDef = Math.ceil(1.0 * repScale * baseRarityMult);
+          item.baseStr = Math.ceil(1.5 * stageScale * baseRarityMult);
+          let noun = item.noun ? item.noun.toLowerCase() : "";
+          let stars =
+            typeof item.statsRolled === "number" ? item.statsRolled : 0;
 
-                              if (noun.includes("tower")) {
-                                item.subArchetype = "tower";
-                                item.baseBlock = 0.08 + stars * 0.01;
-                                item.blockCapBonus = 0.04 + stars * 0.008;
-                                item.reflectDamage = 1.20 + stars * 0.16; // 120% - 200% Def
-                                item.bashAtkBonus = 0;
-                              } else if (noun.includes("buckler")) {
-                                item.subArchetype = "buckler";
-                                item.baseBlock = 0.12 + stars * 0.015;
-                                item.blockCapBonus = 0.02 + stars * 0.005;
-                                item.reflectDamage = 0.60 + stars * 0.08; // 60% Def
-                                item.bashAtkBonus = 0.50; // +50% Atk
-                              } else {
-                                item.subArchetype = "vanguard";
-                                item.baseBlock = 0.08 + stars * 0.01;
-                                item.blockCapBonus = 0.02 + stars * 0.006;
-                                item.reflectDamage = 1.00 + stars * 0.12; // 100% Def
-                                item.bashAtkBonus = 0;
-                              }
-                            } else if (item.subType === "dagger") {
-                              item.baseAtk = Math.ceil(0.8 * repScale * baseRarityMult);
-                              item.baseDex = Math.ceil(1.5 * stageScale * baseRarityMult);
-                              let noun = item.noun ? item.noun.toLowerCase() : "";
-                              let stars = typeof item.statsRolled === "number" ? item.statsRolled : 0;
+          if (noun.includes("tower")) {
+            item.subArchetype = "tower";
+            item.baseBlock = 0.08 + stars * 0.01;
+            item.blockCapBonus = 0.04 + stars * 0.008;
+            item.reflectDamage = 1.2 + stars * 0.16; // 120% - 200% Def
+            item.bashAtkBonus = 0;
+          } else if (noun.includes("buckler")) {
+            item.subArchetype = "buckler";
+            item.baseBlock = 0.12 + stars * 0.015;
+            item.blockCapBonus = 0.02 + stars * 0.005;
+            item.reflectDamage = 0.6 + stars * 0.08; // 60% Def
+            item.bashAtkBonus = 0.5; // +50% Atk
+          } else {
+            item.subArchetype = "vanguard";
+            item.baseBlock = 0.08 + stars * 0.01;
+            item.blockCapBonus = 0.02 + stars * 0.006;
+            item.reflectDamage = 1.0 + stars * 0.12; // 100% Def
+            item.bashAtkBonus = 0;
+          }
+        } else if (item.subType === "dagger") {
+          item.baseAtk = Math.ceil(0.8 * repScale * baseRarityMult);
+          item.baseDex = Math.ceil(1.5 * stageScale * baseRarityMult);
+          let noun = item.noun ? item.noun.toLowerCase() : "";
+          let stars =
+            typeof item.statsRolled === "number" ? item.statsRolled : 0;
 
-                              if (noun.includes("main")) {
-                                item.subArchetype = "main_gauche";
-                                item.baseParry = 0.10 + stars * 0.012;
-                                item.parryCapBonus = 0.10 + stars * 0.01; // 10% - 15% bonus parry cap
-                                item.parryMitigation = 0.75; // 75% damage mitigation on parry
-                                item.riposteDamage = 0.80 + stars * 0.08;
-                                item.bleedChance = 0;
-                                item.offhandChance = 0;
-                                item.offhandDmg = 0.35;
-                              } else if (noun.includes("stiletto")) {
-                                item.subArchetype = "stiletto";
-                                item.baseParry = 0.06 + stars * 0.008;
-                                item.parryCapBonus = 0.02;
-                                item.parryMitigation = 0.60;
-                                item.riposteDamage = 1.00 + stars * 0.12; // 100% Atk
-                                item.bleedChance = 0.35 + stars * 0.04; // 35% - 55% Bleed
-                                item.offhandChance = 0;
-                                item.offhandDmg = 0.35;
-                              } else {
-                                item.subArchetype = "flurry";
-                                item.baseParry = 0.06 + stars * 0.008;
-                                item.parryCapBonus = 0.02;
-                                item.parryMitigation = 0.60;
-                                item.riposteDamage = 0.80 + stars * 0.08;
-                                item.offhandChance = 0.50 + stars * 0.05; // 50% - 75% Offhand Chance
-                                item.offhandDmg = 0.45; // 45% Atk
-                                item.bleedChance = 0.15;
-                              }
-                            } else if (item.subType === "tome") {
-                              item.baseInt = Math.ceil(1.5 * stageScale * baseRarityMult);
-                              item.baseAtk = Math.ceil(0.4 * repScale * baseRarityMult);
-                              let noun = item.noun ? item.noun.toLowerCase() : "";
-                              let stars = typeof item.statsRolled === "number" ? item.statsRolled : 0;
-                              if (noun.includes("grimoire")) item.spellType = "fire";
-                              else if (noun.includes("codex")) item.spellType = "lightning";
-                              else if (noun.includes("lexicon")) item.spellType = "frost";
-                              else if (noun.includes("spellbook") || noun.includes("chronicle")) item.spellType = "tri";
-                              else if (!item.spellType) item.spellType = "tri";
+          if (noun.includes("main")) {
+            item.subArchetype = "main_gauche";
+            item.baseParry = 0.1 + stars * 0.012;
+            item.parryCapBonus = 0.1 + stars * 0.01; // 10% - 15% bonus parry cap
+            item.parryMitigation = 0.75; // 75% damage mitigation on parry
+            item.riposteDamage = 0.8 + stars * 0.08;
+            item.bleedChance = 0;
+            item.offhandChance = 0;
+            item.offhandDmg = 0.35;
+          } else if (noun.includes("stiletto")) {
+            item.subArchetype = "stiletto";
+            item.baseParry = 0.06 + stars * 0.008;
+            item.parryCapBonus = 0.02;
+            item.parryMitigation = 0.6;
+            item.riposteDamage = 1.0 + stars * 0.12; // 100% Atk
+            item.bleedChance = 0.35 + stars * 0.04; // 35% - 55% Bleed
+            item.offhandChance = 0;
+            item.offhandDmg = 0.35;
+          } else {
+            item.subArchetype = "flurry";
+            item.baseParry = 0.06 + stars * 0.008;
+            item.parryCapBonus = 0.02;
+            item.parryMitigation = 0.6;
+            item.riposteDamage = 0.8 + stars * 0.08;
+            item.offhandChance = 0.5 + stars * 0.05; // 50% - 75% Offhand Chance
+            item.offhandDmg = 0.45; // 45% Atk
+            item.bleedChance = 0.15;
+          }
+        } else if (item.subType === "tome") {
+          item.baseInt = Math.ceil(1.5 * stageScale * baseRarityMult);
+          item.baseAtk = Math.ceil(0.4 * repScale * baseRarityMult);
+          let noun = item.noun ? item.noun.toLowerCase() : "";
+          let stars =
+            typeof item.statsRolled === "number" ? item.statsRolled : 0;
+          if (noun.includes("grimoire")) item.spellType = "fire";
+          else if (noun.includes("codex")) item.spellType = "lightning";
+          else if (noun.includes("lexicon")) item.spellType = "frost";
+          else if (noun.includes("spellbook") || noun.includes("chronicle"))
+            item.spellType = "tri";
+          else if (!item.spellType) item.spellType = "tri";
 
-                              if (item.spellType === "fire") {
-                                item.spellChance = Math.min(0.50, 0.25 + stars * 0.02);
-                                item.spellPower = 1.80 + stars * 0.20;
-                              } else if (item.spellType === "lightning") {
-                                item.spellChance = Math.min(0.60, 0.38 + stars * 0.03);
-                                item.spellPower = 1.20 + stars * 0.15;
-                              } else if (item.spellType === "frost") {
-                                item.spellChance = Math.min(0.50, 0.30 + stars * 0.025);
-                                item.spellPower = 1.45 + stars * 0.15;
-                              } else {
-                                item.spellChance = Math.min(0.50, 0.33 + stars * 0.02);
-                                item.spellPower = 1.50 + stars * 0.18;
-                              }
-                            }
-            }
+          if (item.spellType === "fire") {
+            item.spellChance = Math.min(0.5, 0.25 + stars * 0.02);
+            item.spellPower = 1.8 + stars * 0.2;
+          } else if (item.spellType === "lightning") {
+            item.spellChance = Math.min(0.6, 0.38 + stars * 0.03);
+            item.spellPower = 1.2 + stars * 0.15;
+          } else if (item.spellType === "frost") {
+            item.spellChance = Math.min(0.5, 0.3 + stars * 0.025);
+            item.spellPower = 1.45 + stars * 0.15;
+          } else {
+            item.spellChance = Math.min(0.5, 0.33 + stars * 0.02);
+            item.spellPower = 1.5 + stars * 0.18;
+          }
+        }
+      }
     } else if (item.type === "artifact") {
       // Artifact parameters are managed statically on drop; preserve them as is
     } else {
@@ -4339,8 +4615,15 @@ window.executeSalvageItemLogic = function (
     ? Math.floor(Math.random() * 2) + 1
     : Math.floor(Math.random() * 3) + 1;
 
-  if (typeof window.addEtcDrop === "function")
+  let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
+
+  if (inDungeonRun) {
+    if (!window.player.pendingScraps) window.player.pendingScraps = {};
+    window.player.pendingScraps[scrapName] =
+      (window.player.pendingScraps[scrapName] || 0) + yieldAmount;
+  } else if (typeof window.addEtcDrop === "function") {
     window.addEtcDrop(scrapName, yieldAmount, true);
+  }
   scrapsGained.push(`x${yieldAmount} ${scrapName}`);
 
   if (!isArt) {
@@ -4348,8 +4631,13 @@ window.executeSalvageItemLogic = function (
       if (Math.random() < 0.6) {
         let lowerYield = Math.floor(Math.random() * 2) + 1;
         let lowerName = window.getScrapYieldName(t);
-        if (typeof window.addEtcDrop === "function")
+        if (inDungeonRun) {
+          if (!window.player.pendingScraps) window.player.pendingScraps = {};
+          window.player.pendingScraps[lowerName] =
+            (window.player.pendingScraps[lowerName] || 0) + lowerYield;
+        } else if (typeof window.addEtcDrop === "function") {
           window.addEtcDrop(lowerName, lowerYield, true);
+        }
         scrapsGained.push(`x${lowerYield} ${lowerName}`);
       }
     }
@@ -4359,29 +4647,42 @@ window.executeSalvageItemLogic = function (
   let w = cvs ? cvs.width : 750;
   let h = cvs ? cvs.height : 250;
   for (let i = 0; i < 30; i++) {
-    if (window.particles) {
-      window.particles.push({
-        x: w / 2,
-        y: h / 2,
-        vx: (Math.random() - 0.5) * 12,
-        vy: (Math.random() - 0.5) * 12,
-        radius: Math.random() * 3 + 1.5,
-        color: isArt ? "#9b59b6" : Math.random() > 0.5 ? "#bdc3c7" : "#e74c3c",
-        alpha: 1,
-        life: 35,
-      });
+      if (window.particles && window.ParticlePool) {
+        window.particles.push(
+          window.ParticlePool.get(
+            w / 2,
+            h / 2,
+            (Math.random() - 0.5) * 12,
+            (Math.random() - 0.5) * 12,
+            Math.random() * 3 + 1.5,
+            isArt ? "#9b59b6" : Math.random() > 0.5 ? "#bdc3c7" : "#e74c3c",
+            1,
+            35,
+            0.25,
+            true
+          )
+        );
+      }
     }
-  }
 
-  if (typeof window.pushLog === "function")
-    window.pushLog(
-      `<span style='color:#e74c3c;'>[SALVAGE]</span> Dismantled ${item.name} yielding: ${scrapsGained.join(", ")}`,
-    );
-  if (typeof window.pushHeaderToast === "function")
-    window.pushHeaderToast(
-      `♻️ Salvaged: ${scrapsGained.join(", ")}`,
-      "#e74c3c",
-    );
+  if (inDungeonRun) {
+    if (typeof window.pushLog === "function")
+      window.pushLog(
+        `<span style='color:#e74c3c;'>[RUN SALVAGE]</span> Salvaged ${item.name} into run satchel: ${scrapsGained.join(", ")} (Secured upon Extraction)`,
+      );
+    if (typeof window.pushHeaderToast === "function")
+      window.pushHeaderToast(
+        `Salvaged to Run Satchel: ${scrapsGained.join(", ")}`,
+        "#e67e22",
+      );
+  } else {
+    if (typeof window.pushLog === "function")
+      window.pushLog(
+        `<span style='color:#e74c3c;'>[SALVAGE]</span> Dismantled ${item.name} yielding: ${scrapsGained.join(", ")}`,
+      );
+    if (typeof window.pushHeaderToast === "function")
+      window.pushHeaderToast(`Salvaged: ${scrapsGained.join(", ")}`, "#e74c3c");
+  }
   if (window.forgeSelectedItem && window.forgeSelectedItem.id === id) {
     window.forgeSelectedItem = null;
     if (typeof window.renderForgeTab === "function") window.renderForgeTab();
@@ -4747,9 +5048,12 @@ Object.assign(window.ForgeManager, {
     let activeEl = document.getElementById("btn-mode-" + mode);
     if (activeEl) {
       activeEl.className = "forge-mode-btn active";
-      if (mode === "temper") activeEl.style.background = "rgba(41, 128, 185, 0.35)";
-      if (mode === "reforge") activeEl.style.background = "rgba(142, 68, 173, 0.35)";
-      if (mode === "tier") activeEl.style.background = "rgba(230, 126, 34, 0.35)";
+      if (mode === "temper")
+        activeEl.style.background = "rgba(41, 128, 185, 0.35)";
+      if (mode === "reforge")
+        activeEl.style.background = "rgba(142, 68, 173, 0.35)";
+      if (mode === "tier")
+        activeEl.style.background = "rgba(230, 126, 34, 0.35)";
     }
 
     // Register visited sub-tab
@@ -4939,19 +5243,24 @@ Object.assign(window.ForgeManager, {
           let w = cvs ? cvs.width : 750;
           let h = cvs ? cvs.height : 250;
           for (let i = 0; i < 45; i++) {
-            if (window.particles) {
-              window.particles.push({
-                x: w / 2 + (Math.random() - 0.5) * 120,
-                y: h / 2 + (Math.random() - 0.5) * 40,
-                vx: (Math.random() - 0.5) * 12,
-                vy: (Math.random() - 0.7) * 9,
-                radius: Math.random() * 3.5 + 1.5,
-                color: Math.random() > 0.5 ? "#7f8c8d" : "#e74c3c",
-                alpha: 1,
-                life: Math.random() * 30 + 15,
-              });
-            }
-          }
+                      if (window.particles && window.ParticlePool) {
+                        let partLife = Math.floor(Math.random() * 30 + 15);
+                        window.particles.push(
+                          window.ParticlePool.get(
+                            w / 2 + (Math.random() - 0.5) * 120,
+                            h / 2 + (Math.random() - 0.5) * 40,
+                            (Math.random() - 0.5) * 12,
+                            (Math.random() - 0.7) * 9,
+                            Math.random() * 3.5 + 1.5,
+                            Math.random() > 0.5 ? "#7f8c8d" : "#e74c3c",
+                            1,
+                            partLife,
+                            0.25,
+                            true
+                          )
+                        );
+                      }
+                    }
 
           let outputReport = Object.keys(bulkScrapsHarvested)
             .map((k) => `x${bulkScrapsHarvested[k]} ${k}`)
@@ -5317,19 +5626,23 @@ Object.assign(window.ForgeManager, {
     let w = cvs ? cvs.width : 750;
     let h = cvs ? cvs.height : 250;
     for (let i = 0; i < 35; i++) {
-      if (window.particles) {
-        window.particles.push({
-          x: w / 2,
-          y: h / 2,
-          vx: (Math.random() - 0.5) * 10,
-          vy: (Math.random() - 0.5) * 10,
-          radius: Math.random() * 3 + 1,
-          color: "#9b59b6",
-          alpha: 1,
-          life: 40,
-        });
-      }
-    }
+          if (window.particles && window.ParticlePool) {
+            window.particles.push(
+              window.ParticlePool.get(
+                w / 2,
+                h / 2,
+                (Math.random() - 0.5) * 10,
+                (Math.random() - 0.5) * 10,
+                Math.random() * 3 + 1,
+                "#9b59b6",
+                1,
+                40,
+                0.25,
+                true
+              )
+            );
+          }
+        }
 
     if (typeof window.resolvePlayerStats === "function") {
       let newMaxHp = window.resolvePlayerStats().maxHp;
@@ -5390,19 +5703,23 @@ Object.assign(window.ForgeManager, {
     let w = cvs ? cvs.width : 750;
     let h = cvs ? cvs.height : 250;
     for (let i = 0; i < 35; i++) {
-      if (window.particles) {
-        window.particles.push({
-          x: w / 2,
-          y: h / 2,
-          vx: (Math.random() - 0.5) * 8,
-          vy: (Math.random() - 0.5) * 8,
-          radius: Math.random() * 2 + 1,
-          color: "#7f8c8d",
-          alpha: 1,
-          life: 30,
-        });
-      }
-    }
+          if (window.particles && window.ParticlePool) {
+            window.particles.push(
+              window.ParticlePool.get(
+                w / 2,
+                h / 2,
+                (Math.random() - 0.5) * 8,
+                (Math.random() - 0.5) * 8,
+                Math.random() * 2 + 1,
+                "#7f8c8d",
+                1,
+                30,
+                0.25,
+                true
+              )
+            );
+          }
+        }
 
     if (typeof window.resolvePlayerStats === "function") {
       let newMaxHp = window.resolvePlayerStats().maxHp;
