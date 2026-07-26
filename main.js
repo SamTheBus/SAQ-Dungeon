@@ -392,10 +392,11 @@
     }
 
     canvas.addEventListener("pointerdown", function (e) {
-      if (window.player.hp <= 0) return;
-      isPointerHolding = true;
+          if (window.player.hp <= 0) return;
+          window.scrollTo(0, 0); // Lock scroll to 0 to prevent landscape viewport shifts
+          isPointerHolding = true;
 
-      let { clickX, clickY } = handlePointerPosition(e);
+          let { clickX, clickY } = handlePointerPosition(e);
 
       // Check Station Prompt Interaction
       if (
@@ -533,19 +534,13 @@
   };
 
   window.resizeCanvas = function () {
-    if (!canvas) return;
-    let w =
-      window.innerWidth ||
-      document.documentElement.clientWidth ||
-      document.body.clientWidth;
-    let h =
-      window.innerHeight ||
-      document.documentElement.clientHeight ||
-      document.body.clientHeight;
-    canvas.width = w;
-    canvas.height = h;
-    window.checkOrientation();
-  };
+      if (!canvas) return;
+      window.scrollTo(0, 0); // Lock scroll offset to absolute 0 on resize
+      let rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width || window.innerWidth;
+      canvas.height = rect.height || window.innerHeight;
+      window.checkOrientation();
+    };
 
   // Attempt screen orientation lock on first touch interaction
   document.addEventListener(
@@ -676,32 +671,161 @@
         `;
 
       window.showCustomConfirm(
-        "DUNGEON PORTAL",
-        `Choose your starting floor checkpoint:${selectHtml}`,
-        "ENTER DUNGEON",
-        "CANCEL",
-        "#a855f7",
-        function () {
-          let selectEl = document.getElementById("hub-checkpoint-select");
-          let chosenFloor = selectEl ? parseInt(selectEl.value, 10) : 1;
-          window.enterDungeonRun(chosenFloor);
-        },
-      );
-    } else {
-      window.enterDungeonRun(checkpoints[checkpoints.length - 1]);
-    }
-  };
+                       "DUNGEON PORTAL",
+                       `Choose your starting floor checkpoint:${selectHtml}`,
+                       "ENTER DUNGEON",
+                       "CANCEL",
+                       "#a855f7",
+                       function () {
+                         let selectEl = document.getElementById("hub-checkpoint-select");
+                         let chosenFloor = selectEl ? parseInt(selectEl.value, 10) : 1;
+                         window.openDeploymentModal(chosenFloor);
+                       },
+                     );
+                   } else {
+                     window.openDeploymentModal(checkpoints[checkpoints.length - 1]);
+                   }
+                 };
+
+                 window.openDeploymentModal = function (startFloor) {
+                   let modal = document.getElementById("deployment-modal");
+                   if (!modal) return;
+                   window.state.deploymentFloor = startFloor || 1;
+                   modal.style.display = "flex";
+                   window.renderDeploymentModal();
+                 };
+
+                 window.renderDeploymentModal = function () {
+                   let container = document.getElementById("deployment-gear-list");
+                   if (!container) return;
+
+                   let primarySlots = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
+                   let itemsHtml = "";
+
+                   primarySlots.forEach((slotKey) => {
+                     let item = window.equippedSlots[slotKey];
+                     if (item) {
+                       let col = window.getTierColor(item.statsRolled);
+                       let isLocked = !!item.locked;
+                       let rawPremium = window.calculateInsurancePremium(item);
+
+                       itemsHtml += `
+                         <div class="deployment-gear-item" style="border-left: 3px solid ${col}; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; margin-bottom: 5px;">
+                           <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                             ${window.getEquipIconHtml(item, 28)}
+                             <div style="display: flex; flex-direction: column; min-width: 0;">
+                               <span style="color:${col}; font-weight: bold; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+                               <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">LV.${item.stageLevel || 1} • Premium: ${window.formatNumber(rawPremium)} Gold</span>
+                             </div>
+                           </div>
+                           <div style="display: flex; align-items: center; gap: 8px;">
+                             <label class="insurance-switch-container" style="position: relative; display: inline-block; width: 40px; height: 20px;">
+                               <input type="checkbox" style="opacity: 0; width: 0; height: 0;" ${isLocked ? "checked" : ""} onchange="window.toggleDeploymentInsurance('${slotKey}')">
+                               <span class="insurance-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .2s; border-radius: 20px; border: 1px solid #475569;"></span>
+                             </label>
+                           </div>
+                         </div>
+                       `;
+                     }
+                   });
+
+                   if (!itemsHtml) {
+                     itemsHtml = `<div style="font-size: 10px; color: #64748b; font-style: italic; text-align: center; padding: 15px;">No gear currently equipped. Risking nothing!</div>`;
+                   }
+
+                   container.innerHTML = itemsHtml;
+
+                   let totals = window.calculateRunInsuranceTotals();
+                   let statsContainer = document.getElementById("deployment-stats-panel");
+                   if (statsContainer) {
+                     let premiumText = window.formatNumber(totals.totalPremium);
+                     let waivedText = totals.waivedItem ? `[Free: ${totals.waivedItem.name}]` : "";
+                     let wallet = BigNum.from(window.playerStats.coins);
+                     let canAfford = wallet.gte(totals.totalPremium);
+                     let premiumColor = canAfford ? "#f1c40f" : "#e74c3c";
+
+                     statsContainer.innerHTML = `
+                       <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid #1e293b; border-radius: 6px; padding: 10px; font-size: 10.5px; line-height: 1.45; display: flex; flex-direction: column; gap: 4px; text-align: left; font-family: monospace;">
+                         <strong style="color: #00d2ff; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase;">[ DEPLOYMENT STATS FORECAST ]</strong>
+                         <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Risk Factor (Uninsured Value):</span> <strong style="color:#e67e22;">${totals.v_risk}</strong></div>
+                         <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Protection Factor (Insured Value):</span> <strong style="color:#2ecc71;">${totals.v_protection}</strong></div>
+                         <div style="border-top: 1px dashed #1e293b; margin: 4px 0; padding-top: 4px;"></div>
+                         <div style="display: flex; justify-content: space-between;"><span style="color:#34d399;">Drop Rate Bonus:</span> <strong style="color:#2ecc71;">+${(totals.delta_drop * 100).toFixed(1)}%</strong></div>
+                         <div style="display: flex; justify-content: space-between;"><span style="color:#c084fc;">Drop Quality Bonus:</span> <strong style="color:#a855f7;">+${(totals.delta_quality * 100).toFixed(1)}%</strong></div>
+                         <div style="display: flex; justify-content: space-between;"><span style="color:#f1c40f;">Gold Multiplier Bonus:</span> <strong style="color:#ffd700;">+${(totals.delta_gold * 100).toFixed(1)}%</strong></div>
+                         <div style="display: flex; justify-content: space-between;"><span style="color:#ef4444;">Enemy Strength Multiplier:</span> <strong style="color:#e74c3c;">+${((totals.m_enemy - 1.0) * 100).toFixed(1)}%</strong></div>
+                         <div style="border-top: 1px dashed #1e293b; margin: 4px 0; padding-top: 4px;"></div>
+                         <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Total Insurance Premium:</span> <strong style="color:${premiumColor};">${premiumText} Gold</strong></div>
+                         ${totals.waivedItem ? `<div style="font-size: 8px; color: #34d399; text-align: right; font-style: italic;">[Free: ${totals.waivedItem.name}]</div>` : ""}
+                       </div>
+                     `;
+
+                     let btnDeploySecure = document.getElementById("btn-deploy-secure");
+                     if (btnDeploySecure) {
+                       btnDeploySecure.disabled = !canAfford;
+                     }
+                   }
+                 };
+
+                 window.toggleDeploymentInsurance = function (slotKey) {
+                   let item = window.equippedSlots[slotKey];
+                   if (!item) return;
+                   item.locked = !item.locked;
+                   window.renderDeploymentModal();
+                 };
+
+                 window.executeDeployment = function (secure = true) {
+                   let totals = window.calculateRunInsuranceTotals();
+
+                   if (secure) {
+                     let wallet = BigNum.from(window.playerStats.coins);
+                     if (wallet.lt(totals.totalPremium)) {
+                       window.pushHeaderToast("❌ Insufficient Gold to secure insurance!", "#e74c3c");
+                       return;
+                     }
+                     window.playerStats.coins = wallet.sub(totals.totalPremium);
+                     if (window.playerStats.coins.eq(0)) {
+                       window.playerStats.hasTriggeredExactChange = true;
+                     }
+                   } else {
+                     let primarySlots = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
+                     primarySlots.forEach((slotKey) => {
+                       if (window.equippedSlots[slotKey]) {
+                         window.equippedSlots[slotKey].locked = false;
+                       }
+                     });
+                     totals = window.calculateRunInsuranceTotals();
+                   }
+
+                   if (typeof window.saveGame === "function") window.saveGame();
+
+                   let modal = document.getElementById("deployment-modal");
+                   if (modal) modal.style.display = "none";
+
+                   window.playerStats.currentRunEnemyStrength = totals.m_enemy;
+                   window.playerStats.currentRunDropRateBonus = totals.delta_drop;
+                   window.playerStats.currentRunDropQualityBonus = totals.delta_quality;
+                   window.playerStats.currentRunGoldBonus = totals.delta_gold;
+
+                   let floor = window.state.deploymentFloor || 1;
+                   window.enterDungeonRun(floor);
+                 };
 
   window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
-    let map = window.activeDungeonMap;
-    let tileSize = map ? map.tileSize : 32;
+        let map = window.activeDungeonMap;
+        let tileSize = map ? map.tileSize : 32;
 
-    let depth = window.player.depth || 1;
-    let isMini = bossTier === "mini";
+        let depth = window.player.depth || 1;
+        let isMini = bossTier === "mini";
 
-    let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
-    let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
-    let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
+        let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+        let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
+        let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
+
+        bossHp = Math.round(bossHp * enemyScale);
+        bossAtk = Math.round(bossAtk * enemyScale);
+
+        let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
 
     window.mob = {
       type: isMini ? "dungeon_miniboss" : "dungeon_boss",
@@ -807,29 +931,30 @@
       let cy = Math.floor(map.height / 2);
       window.spawnBossEncounter(cx, cy, "mini");
     } else if (map.mobSpawns) {
-      let mobHpVal = Math.floor(40 + depth * 18 + Math.pow(depth, 1.3) * 5);
-      let mobAtkVal = Math.floor(8 + depth * 3.5);
+            let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+            let mobHpVal = Math.floor((40 + depth * 18 + Math.pow(depth, 1.3) * 5) * enemyScale);
+            let mobAtkVal = Math.floor((8 + depth * 3.5) * enemyScale);
 
-      map.mobSpawns.forEach((sp) => {
-        let mobInfo = window.getMobPoolForDepth(depth);
-        window.activeDungeonMobs.push({
-          id: window.idCounter++,
-          type: "mob",
-          visualTier: mobInfo.tier,
-          visualType: mobInfo.type,
-          x: sp.x * tileSize,
-          y: sp.y * tileSize,
-          w: 24,
-          h: 24,
-          hp: BigNum.from(mobHpVal),
-          maxHp: BigNum.from(mobHpVal),
-          atk: mobAtkVal,
-          flashTimer: 0,
-          attackCooldown: 0,
-          facing: -1,
-        });
-      });
-    }
+            map.mobSpawns.forEach((sp) => {
+              let mobInfo = window.getMobPoolForDepth(depth);
+              window.activeDungeonMobs.push({
+                id: window.idCounter++,
+                type: "mob",
+                visualTier: mobInfo.tier,
+                visualType: mobInfo.type,
+                x: sp.x * tileSize,
+                y: sp.y * tileSize,
+                w: 24,
+                h: 24,
+                hp: BigNum.from(mobHpVal),
+                maxHp: BigNum.from(mobHpVal),
+                atk: mobAtkVal,
+                flashTimer: 0,
+                attackCooldown: 0,
+                facing: -1,
+              });
+            });
+          }
 
     window.updateHUD();
     let floorTitle = isMajorBoss
@@ -1079,33 +1204,35 @@
       if (window.inventory) window.inventory.EQUIP = window.player.stash;
       if (typeof window.saveGame === "function") window.saveGame();
     } else {
-      window.player.pendingScraps = {};
-      titleEl.innerText = isAbandon ? "RUN ABANDONED" : "CRITICAL DEFEAT";
-      titleEl.style.color = isAbandon ? "#e67e22" : "#e74c3c";
+            window.player.pendingScraps = {};
+            titleEl.innerText = isAbandon ? "RUN ABANDONED" : "CRITICAL DEFEAT";
+            titleEl.style.color = isAbandon ? "#e67e22" : "#e74c3c";
 
-      // Process Carried Bag Items (Locked items survive in Stash)
-      extractedLoot.forEach((item) => {
-        if (item.locked) {
-          savedInsuredItems.push(item);
-          window.player.stash.push(item);
-        } else {
-          lostItems.push(item);
-        }
-      });
-      window.player.bag = [];
+            // Process Carried Bag Items (Locked items survive in Stash)
+            extractedLoot.forEach((item) => {
+              if (item.locked) {
+                item.locked = false; // Reset used policy
+                savedInsuredItems.push(item);
+                window.player.stash.push(item);
+              } else {
+                lostItems.push(item);
+              }
+            });
+            window.player.bag = [];
 
-      // Process Equipped Gear (Unlocked gear is lost on defeat!)
-      for (let slotKey in window.equippedSlots) {
-        let eqItem = window.equippedSlots[slotKey];
-        if (eqItem) {
-          if (eqItem.locked) {
-            savedInsuredItems.push(eqItem);
-          } else {
-            lostItems.push(eqItem);
-            window.equippedSlots[slotKey] = null;
-          }
-        }
-      }
+            // Process Equipped Gear (Unlocked gear is lost on defeat!)
+            for (let slotKey in window.equippedSlots) {
+              let eqItem = window.equippedSlots[slotKey];
+              if (eqItem) {
+                if (eqItem.locked) {
+                  eqItem.locked = false; // Reset used policy
+                  savedInsuredItems.push(eqItem);
+                } else {
+                  lostItems.push(eqItem);
+                  window.equippedSlots[slotKey] = null;
+                }
+              }
+            }
 
       // Safety Net: Ensure player is never left without a weapon option
       let hasWeapon =
@@ -1284,26 +1411,30 @@
     let tileSize = map.tileSize;
 
     let mode = window.playerStats
-      ? window.playerStats.controlMode || "joystick"
-      : "joystick";
-    let vx = 0;
-    let vy = 0;
+        ? window.playerStats.controlMode || "joystick"
+        : "joystick";
+      let vx = 0;
+      let vy = 0;
 
-    if (mode === "joystick" && window.joystick.active) {
-      let joy = window.joystick;
-      vx = joy.vx;
-      vy = joy.vy;
-    } else {
-      let dx = p.targetX - p.x;
-      let dy = p.targetY - p.y;
-      let dist = Math.hypot(dx, dy);
+      // Consume and reset speed multiplier
+      let speedMult = p.speedMultiplier || 1.0;
+      p.speedMultiplier = 1.0;
 
-      if (dist > 2) {
-        let moveStep = Math.min(p.speed, dist);
-        vx = (dx / dist) * moveStep;
-        vy = (dy / dist) * moveStep;
+      if (mode === "joystick" && window.joystick.active) {
+        let joy = window.joystick;
+        vx = joy.vx * speedMult;
+        vy = joy.vy * speedMult;
+      } else {
+        let dx = p.targetX - p.x;
+        let dy = p.targetY - p.y;
+        let dist = Math.hypot(dx, dy);
+
+        if (dist > 2) {
+          let moveStep = Math.min(p.speed * speedMult, dist);
+          vx = (dx / dist) * moveStep;
+          vy = (dy / dist) * moveStep;
+        }
       }
-    }
 
     if (vx !== 0 || vy !== 0) {
       if (vx < -0.1) p.facing = -1;
@@ -2170,33 +2301,38 @@
           m.facing = 1;
         }
 
-        // Soft Entity Body-Blocking (Prevents walking through mobs with elastic push-back)
-        let mobRadius = (m.w || 24) * 0.45;
-        let pRadius = p.radius || 9;
-        let minDist = pRadius + mobRadius;
+        // Soft Entity Body-Blocking (Allows passing through with speed resistance and gentle push)
+                let mobRadius = (m.w || 24) * 0.45;
+                let pRadius = p.radius || 9;
+                let minDist = pRadius + mobRadius;
 
-        if (dist < minDist) {
-          let overlap = minDist - dist;
-          let nx = dist > 0 ? dx / dist : 1;
-          let ny = dist > 0 ? dy / dist : 0;
-          let pushX = nx * overlap * 0.65;
-          let pushY = ny * overlap * 0.65;
+                if (dist < minDist) {
+                  let overlap = minDist - dist;
+                  let nx = dist > 0 ? dx / dist : 1;
+                  let ny = dist > 0 ? dy / dist : 0;
 
-          let map = window.activeDungeonMap;
-          if (map && map.grid) {
-            if (!checkCollisionAt(map, p.x + pushX, p.y, pRadius)) {
-              p.x += pushX;
-            }
-            if (!checkCollisionAt(map, p.x, p.y + pushY, pRadius)) {
-              p.y += pushY;
-            }
-          } else {
-            p.x += pushX;
-            p.y += pushY;
-          }
-          p.targetX = p.x;
-          p.targetY = p.y;
-        }
+                  // Apply speed resistance to player
+                  p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.45);
+
+                  // Push the mob away gently instead of blocking the player
+                  let mobPushX = -nx * overlap * 0.25;
+                  let mobPushY = -ny * overlap * 0.25;
+
+                  let map = window.activeDungeonMap;
+                  if (map && map.grid) {
+                    let mCenterX = m.x + m.w / 2;
+                    let mCenterY = m.y + m.h / 2;
+                    if (!checkCollisionAt(map, mCenterX + mobPushX, mCenterY, mobRadius)) {
+                      m.x += mobPushX;
+                    }
+                    if (!checkCollisionAt(map, mCenterX, mCenterY + mobPushY, mobRadius)) {
+                      m.y += mobPushY;
+                    }
+                  } else {
+                    m.x += mobPushX;
+                    m.y += mobPushY;
+                  }
+                }
 
         // Persistent Aggro & Pursuit Movement
         if (dist < 220 || m.hasTakenDamage) {
@@ -2482,33 +2618,38 @@
         bm.facing = 1;
       }
 
-      // Soft Boss Body-Blocking (Prevents walking through large boss hitboxes)
-      let bossRadius = (bm.w || 48) * 0.48;
-      let pRadius = p.radius || 9;
-      let bossMinDist = pRadius + bossRadius;
+      // Soft Boss Body-Blocking (Allows passing through with speed resistance and gentle push)
+            let bossRadius = (bm.w || 48) * 0.48;
+            let pRadius = p.radius || 9;
+            let bossMinDist = pRadius + bossRadius;
 
-      if (dist < bossMinDist) {
-        let overlap = bossMinDist - dist;
-        let nx = dist > 0 ? dx / dist : 1;
-        let ny = dist > 0 ? dy / dist : 0;
-        let pushX = nx * overlap * 0.7;
-        let pushY = ny * overlap * 0.7;
+            if (dist < bossMinDist) {
+              let overlap = bossMinDist - dist;
+              let nx = dist > 0 ? dx / dist : 1;
+              let ny = dist > 0 ? dy / dist : 0;
 
-        let map = window.activeDungeonMap;
-        if (map && map.grid) {
-          if (!checkCollisionAt(map, p.x + pushX, p.y, pRadius)) {
-            p.x += pushX;
-          }
-          if (!checkCollisionAt(map, p.x, p.y + pushY, pRadius)) {
-            p.y += pushY;
-          }
-        } else {
-          p.x += pushX;
-          p.y += pushY;
-        }
-        p.targetX = p.x;
-        p.targetY = p.y;
-      }
+              // Apply heavy speed resistance to player
+              p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.35);
+
+              // Push the boss away gently instead of blocking the player
+              let bossPushX = -nx * overlap * 0.15;
+              let bossPushY = -ny * overlap * 0.15;
+
+              let map = window.activeDungeonMap;
+              if (map && map.grid) {
+                let bCenterX = bm.x + bm.w / 2;
+                let bCenterY = bm.y + bm.h / 2;
+                if (!checkCollisionAt(map, bCenterX + bossPushX, bCenterY, bossRadius)) {
+                  bm.x += bossPushX;
+                }
+                if (!checkCollisionAt(map, bCenterX, bCenterY + bossPushY, bossRadius)) {
+                  bm.y += bossPushY;
+                }
+              } else {
+                bm.x += bossPushX;
+                bm.y += bossPushY;
+              }
+            }
 
       if (dist < 48 && p.attackTimer >= 20) {
               p.attackTimer = 0;
@@ -5007,6 +5148,64 @@
     window.renderProfileModal();
   };
 
+  window.calculateInsurancePremium = function (item) {
+    if (!item) return BigNum.from(0);
+    let stars = item.statsRolled === "UNIQUE" ? 5 : (item.statsRolled || 0);
+    let W_R = 1 + stars;
+    let stageLvl = item.stageLevel || 1;
+    return BigNum.from(100).mul(W_R).mul(BigNum.from(1.05).pow(stageLvl));
+  };
+
+  window.calculateRunInsuranceTotals = function () {
+    let primarySlots = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
+    let premiums = [];
+    let v_risk = 0;
+    let v_protection = 0;
+
+    primarySlots.forEach((slotKey) => {
+      let item = window.equippedSlots[slotKey];
+      if (item) {
+        let stars = item.statsRolled === "UNIQUE" ? 5 : (item.statsRolled || 0);
+        let W_R = 1 + stars;
+        if (item.locked) {
+          v_protection += W_R;
+          premiums.push({
+            item: item,
+            cost: window.calculateInsurancePremium(item)
+          });
+        } else {
+          v_risk += W_R;
+        }
+      }
+    });
+
+    // Sort descending to waive the highest cost premium first
+    premiums.sort((a, b) => b.cost.compareTo(a.cost));
+
+    let totalPremium = BigNum.from(0);
+    for (let i = 1; i < premiums.length; i++) {
+      totalPremium = totalPremium.add(premiums[i].cost);
+    }
+
+    let delta_drop = v_risk * 0.015;
+    let delta_quality = v_risk * 0.01;
+    let delta_gold = v_risk * 0.02;
+
+    // Asymptotic Soft Cap calculation
+    let m_enemy = 1.0 + (v_protection * 0.0125) / (1.0 + v_protection * 0.005);
+
+    return {
+      totalPremium,
+      v_risk,
+      v_protection,
+      delta_drop,
+      delta_quality,
+      delta_gold,
+      m_enemy,
+      waivedItem: premiums[0] ? premiums[0].item : null
+    };
+  };
+
   window.toggleInsurance = function (itemId) {
     window.hideTooltip();
 
@@ -5026,26 +5225,13 @@
     let targetItem = allItems.find((i) => i.id == itemId);
     if (!targetItem) return;
 
-    let currentlyLocked = !!targetItem.locked;
+    targetItem.locked = !targetItem.locked;
 
-    if (currentlyLocked) {
-      targetItem.locked = false;
-      if (typeof window.pushHeaderToast === "function") {
+    if (typeof window.pushHeaderToast === "function") {
+      if (targetItem.locked) {
+        window.pushHeaderToast(`[INSURED] Protected ${targetItem.name}!`, "#2ecc71");
+      } else {
         window.pushHeaderToast("[UNINSURED] Item At Risk on Death!", "#e74c3c");
-      }
-    } else {
-      // Strictly enforce single-item insurance limit: un-insure all other items first
-      allItems.forEach((item) => {
-        if (item.id != itemId) {
-          item.locked = false;
-        }
-      });
-      targetItem.locked = true;
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast(
-          `[INSURED] Protected ${targetItem.name}!`,
-          "#2ecc71",
-        );
       }
     }
 

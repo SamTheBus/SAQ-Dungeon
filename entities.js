@@ -6428,8 +6428,8 @@
                 let sway = Math.sin(Date.now() / 240) * 0.08;
 
                 ctx.save();
-                ctx.translate(14, 6 + bounce); // Extended forward to match sword reach
-                ctx.rotate(-Math.PI / 4 - sway);
+                                ctx.translate(14, 6 + bounce); // Extended forward to match sword reach
+                                ctx.rotate(Math.PI * 3/4 - sway); // Rotate 180 degrees so the blade points out/forward (away from face)
 
         // 1. Draw Hilt Grip & Core Pommel
         ctx.fillStyle = "#1c1c1f"; // Dark metallic hilt core
@@ -6683,14 +6683,14 @@
         ctx.restore();
 
         // 4. Quality-Scaled Active Spark Trails (Spirals off the moving blade tip)
-        if (!window.isGamePaused && options.isMainHero && stars > 0) {
-          let spawnChance = window.playerStats.ecoMode ? 0.08 : 0.25;
-          if (Math.random() < spawnChance * stars) {
-            let theta = -Math.PI / 4 - sway;
-            let worldTipX = x + (-7 + 14 * Math.sin(theta)) * scale;
-            let worldTipY = y + (8 + bounce - 14 * Math.cos(theta)) * scale;
+                if (!window.isGamePaused && options.isMainHero && stars > 0) {
+                  let spawnChance = window.playerStats.ecoMode ? 0.08 : 0.25;
+                  if (Math.random() < spawnChance * stars) {
+                    let theta = Math.PI * 3/4 - sway; // Align particle emission angle with updated blade direction
+                    let worldTipX = x + (14 + 14 * Math.sin(theta)) * scale; // Align tip spawn origin with hand translation
+                    let worldTipY = y + (6 + bounce - 14 * Math.cos(theta)) * scale;
 
-            window.particles.push(
+                    window.particles.push(
               window.ParticlePool.get(
                 worldTipX,
                 worldTipY,

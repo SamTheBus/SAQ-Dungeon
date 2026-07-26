@@ -2575,6 +2575,11 @@ window.CRUCIBLE_DRAFT_POOL = [
 ];
 
 window.playerStats = {
+  currentRunEnemyStrength: 1.0,
+  currentRunDropRateBonus: 0.0,
+  currentRunDropQualityBonus: 0.0,
+  currentRunGoldBonus: 0.0,
+  hasUsedFreeInsurance: false,
   maxLevel: 1,
   lastDailyLoginDayStr: "",
   loginStreak: 0,

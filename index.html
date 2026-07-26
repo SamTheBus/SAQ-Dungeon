@@ -2,10 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+      <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+      />
     <title>Top-Down Extraction Crawler</title>
     <link rel="stylesheet" href="style.css?v=1.000" />
   </head>
@@ -676,8 +676,40 @@
         </div>
       </div>
 
-      <!-- Extraction Victory / Defeat Overlay -->
-      <div id="summary-modal" class="modal-overlay" style="display: none">
+        <!-- Tactical Deployment Preparation Modal -->
+        <div id="deployment-modal" class="modal-overlay" style="display: none;" onpointerdown="event.stopPropagation()">
+            <div class="modal-card" style="max-width: 520px; width: 92vw; border-color: #00d2ff; background: #0b0f19;">
+                <div class="modal-header" style="border-bottom: 1.5px solid #1e293b; padding-bottom: 8px; margin-bottom: 10px;">
+                    <span>TACTICAL RUN DEPLOYMENT</span>
+                    <button class="close-btn" onpointerdown="event.stopPropagation(); document.getElementById('deployment-modal').style.display='none';">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.45; text-align: left; margin-bottom: 10px; font-family: monospace;">
+                    Uninsured items are lost upon defeat but grant massive loot find multipliers. The first (most expensive) insured item has its Gold premium completely waived!
+                </div>
+                <div id="deployment-gear-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 2px;">
+                    <!-- Rendered dynamically -->
+                </div>
+                <div id="deployment-stats-panel" style="margin-top: 10px; margin-bottom: 10px;">
+                    <!-- Updated dynamically -->
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <button id="btn-deploy-secure" class="action-btn" style="flex: 1; margin-top: 0; padding: 10px; font-size: 11px; background: linear-gradient(180deg, #10b981 0%, #047857 100%); border-color: #34d399;" onclick="window.executeDeployment(true)">
+                        DEPLOY SECURE
+                    </button>
+                    <button class="action-btn" style="flex: 1; margin-top: 0; padding: 10px; font-size: 11px; background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); border-color: #f87171;" onclick="window.executeDeployment(false)">
+                        DEPLOY UNINSURED
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Extraction Victory / Defeat Overlay -->
+        <div id="summary-modal" class="modal-overlay" style="display: none">
         <div
           class="modal-card summary-card"
           onpointerdown="event.stopPropagation()"
