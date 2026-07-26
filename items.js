@@ -1083,6 +1083,7 @@ window.toggleEnchantmentModal = function () {
     window.setEnchantMode(window.enchantMode || "enchant");
   } else {
     modal.style.display = "none";
+    window.lastModalCloseTime = Date.now();
   }
 };
 
@@ -1549,6 +1550,90 @@ window.getSetRerollGoldCost = function (item) {
     .mul(BigNum.from(1.5).pow(item.statsRolled));
 };
 
+window.generateForgePreviewHtml = function (item, currentLvl, nextLvl) {
+  if (!item) {
+    return `
+      <div style="margin-top:12px; padding:10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; font-size:10.5px; color:#94a3b8; text-align:center;">
+        No item currently equipped in this slot.<br>Attunement multiplier (+${currentLvl}%) will apply automatically upon equipping!
+      </div>
+    `;
+  }
+
+  let curMult = 1.0 + currentLvl * 0.01;
+  let nextMult = 1.0 + nextLvl * 0.01;
+  let tierColor = window.getTierColor(item.statsRolled);
+
+  let statsList = [
+    {
+      key: "baseAtk",
+      label: "Base Weapon Damage",
+      icon: window.getUiIconSvg("atk", 11),
+    },
+    {
+      key: "baseDef",
+      label: "Base Defense",
+      icon: window.getUiIconSvg("def", 11),
+    },
+    {
+      key: "baseMaxHp",
+      label: "Base Max Life",
+      icon: window.getUiIconSvg("maxHp", 11),
+    },
+    {
+      key: "baseInt",
+      label: "Base Intelligence",
+      icon: window.getUiIconSvg("int", 11),
+    },
+    {
+      key: "baseStr",
+      label: "Base Strength",
+      icon: window.getUiIconSvg("str", 11),
+    },
+    {
+      key: "baseDex",
+      label: "Base Dexterity",
+      icon: window.getUiIconSvg("dex", 11),
+    },
+    {
+      key: "baseMoveSpeed",
+      label: "Base Speed",
+      icon: window.getUiIconSvg("moveSpeed", 11),
+    },
+  ];
+
+  let lines = "";
+  statsList.forEach((s) => {
+    let rawVal = item[s.key] || 0;
+    if (rawVal > 0) {
+      let curVal = Math.ceil(rawVal * curMult);
+      let newVal = Math.ceil(rawVal * nextMult);
+      let diff = newVal - curVal;
+      lines += `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:10.5px; background:rgba(0,0,0,0.35); padding:5px 8px; border-radius:4px; margin-bottom:3px; border:1px solid #1e293b;">
+          <span style="color:#94a3b8; font-weight:600; display:flex; align-items:center; gap:4px;">${s.icon} ${s.label}</span>
+          <span style="font-family:monospace;">
+            <span style="color:#cbd5e1;">${window.formatNumber(curVal)}</span> ➔
+            <strong style="color:#ffffff;">${window.formatNumber(newVal)}</strong>
+            <span style="color:#2ecc71; font-weight:bold; margin-left:4px;">(+${window.formatNumber(diff)})</span>
+          </span>
+        </div>
+      `;
+    }
+  });
+
+  return `
+    <div style="margin-top:10px; padding:10px; background:rgba(15, 23, 42, 0.7); border:1px solid ${tierColor}55; border-radius:6px;">
+      <div style="color:${tierColor}; font-weight:bold; font-size:11px; margin-bottom:6px; border-bottom:1px solid #1e293b; padding-bottom:4px; text-transform:uppercase; letter-spacing:0.5px; display:flex; justify-content:space-between;">
+        <span>Equipped: ${item.name}</span>
+        <span style="font-family:monospace; font-size:9.5px;">+${currentLvl}% ➔ +${nextLvl}%</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        ${lines || '<div style="color:#64748b; font-style:italic; text-align:center; padding:6px; font-size:10px;">No base parameters scaled by attunement.</div>'}
+      </div>
+    </div>
+  `;
+};
+
 // Generates highly detailed comparison layouts for Temper and Tier Up forge previews
 window.getForgeDiffLines = function (item, previewItem) {
   let diffLines = "";
@@ -1794,38 +1879,52 @@ window.renderForgeTab = function () {
         let lvl = window.playerStats.slotUpgrades[key] || 0;
         let isSelected = window.state.selectedForgeSlot === key;
         let equippedItem = window.equippedSlots[key];
+        let tierColor = equippedItem
+          ? window.getTierColor(equippedItem.statsRolled)
+          : "#475569";
         let itemNameHtml = equippedItem
-          ? `<span style="color:${window.getTierColor(equippedItem.statsRolled)}; font-weight:bold;">${equippedItem.name}</span>`
-          : `<span style="color:#666; font-style:italic;">[Empty Slot]</span>`;
+          ? `<span style="color:${tierColor}; font-weight:bold;">${equippedItem.name}</span>`
+          : `<span style="color:#64748b; font-style:italic;">[Empty Slot]</span>`;
 
-        let borderCol = isSelected ? "#a855f7" : "#202632";
+        let iconSvg = window.getItemIconSvg
+          ? window.getItemIconSvg(equippedItem, 28)
+          : "";
+        let borderCol = isSelected ? tierColor : "#202632";
+        let rgbVals = window.hexToRgbValues
+          ? window.hexToRgbValues(tierColor)
+          : "71, 85, 105";
         let bg = isSelected
-          ? "background: rgba(168, 85, 247, 0.15);"
-          : "background: rgba(15, 17, 26, 0.65);";
+          ? `background: rgba(${rgbVals}, 0.18); box-shadow: inset 0 0 10px rgba(${rgbVals}, 0.25);`
+          : "background: rgba(15, 23, 42, 0.75);";
 
         return `
-        <div class="bag-item-forge" style="border: 1.5px solid ${borderCol}; border-left: 4.5px solid #a855f7 !important; ${bg} display: flex; align-items: center; padding: 8px 10px; margin-bottom: 6px; border-radius: 6px; cursor: pointer; transition: all 0.15s;" onclick="window.selectForgeSlot('${key}')">
-          <div style="flex:1; text-align:left;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="color:#df9ffb; font-size:12px;">${slotsLabels[key]}</strong>
-              <span style="font-family:monospace; font-size:10px; color:#fff; font-weight:bold;">Lv. ${lvl} / 100</span>
-            </div>
-            <div style="font-size:9.5px; color:#aaa; margin-top:2px;">Equipped: ${itemNameHtml}</div>
-          </div>
-        </div>
-      `;
+                <div class="forge-slot-card" style="border: 1.5px solid ${borderCol}; border-left: 4.5px solid ${tierColor} !important; ${bg}" onclick="window.selectForgeSlot('${key}')">
+                  <div style="margin-right:8px; display:inline-flex; align-items:center; flex-shrink:0;">${iconSvg || `<div class="empty-slot-icon">--</div>`}</div>
+                  <div style="flex:1; text-align:left; min-width:0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong style="color:${equippedItem ? tierColor : "#94a3b8"}; font-size:11.5px;">${slotsLabels[key]}</strong>
+                      <span style="font-family:monospace; font-size:9.5px; color:#fff; font-weight:bold; background:rgba(0,0,0,0.4); padding:1px 5px; border-radius:3px; border:1px solid rgba(255,255,255,0.1);">Lv. ${lvl}/100</span>
+                    </div>
+                    <div style="font-size:9.5px; color:#94a3b8; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${itemNameHtml}</div>
+                  </div>
+                </div>
+              `;
       })
       .join("");
 
     let slotKey = window.state.selectedForgeSlot || "weapon";
     let lvl = window.playerStats.slotUpgrades[slotKey] || 0;
     let displayLabel = slotsLabels[slotKey];
+    let selectedEqItem = window.equippedSlots[slotKey];
+    let selectedTierColor = selectedEqItem
+      ? window.getTierColor(selectedEqItem.statsRolled)
+      : "#f97316";
 
     if (lvl >= 100) {
       detailEl.innerHTML = `
-        <div style="font-weight:bold; font-size:13px; color:#f1c40f; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:10px;">${displayLabel}</div>
-        <div style="color:#2ecc71; font-weight:bold; text-align:center; padding: 25px 0; font-size:12px;">🏆 MAXIMUM ATTUNEMENT REACHED (Lv. 100)<br><br><span style="color:#aaa; font-weight:normal;">This slot's equipped items now receive an absolute +100% (2.0x) stat multiplier!</span></div>
-      `;
+                <div style="font-weight:bold; font-size:13px; color:${selectedTierColor}; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:10px;">${displayLabel}</div>
+                <div style="color:#2ecc71; font-weight:bold; text-align:center; padding: 25px 0; font-size:12px;">MAXIMUM ATTUNEMENT REACHED (Lv. 100)<br><br><span style="color:#aaa; font-weight:normal;">This slot's equipped items now receive an absolute +100% (2.0x) stat multiplier!</span></div>
+              `;
       return;
     }
 
@@ -1839,8 +1938,8 @@ window.renderForgeTab = function () {
         let owned =
           window.inventory.ETC[mat.name] || window.inventory.USE[mat.name] || 0;
         let isAfford = owned >= mat.qty;
-        let color = isAfford ? "#bdc3c7" : "#e74c3c";
-        return `<div style="font-size:11px; color:${color}; margin-bottom:3px;">• ${mat.qty}x ${mat.name} (Owned: ${owned.toLocaleString()})</div>`;
+        let color = isAfford ? "#34d399" : "#f87171";
+        return `<div style="font-size:10.5px; color:${color}; margin-bottom:3px; font-family:monospace;">• ${mat.qty}x ${mat.name} (Owned: ${owned.toLocaleString()})</div>`;
       })
       .join("");
 
@@ -1853,36 +1952,27 @@ window.renderForgeTab = function () {
           m.qty,
       );
 
-    let eqItem = window.equippedSlots[slotKey];
-    let liveComparisonHtml = "";
-    if (typeof window.generateForgePreviewHtml === "function") {
-      liveComparisonHtml = window.generateForgePreviewHtml(
-        eqItem,
-        lvl,
-        lvl + 1,
-      );
-    } else {
-      liveComparisonHtml = `
-            <div style="margin-top:12px; padding:10px; background:#111; border:1px dashed #444; border-radius:6px; font-size:10.5px; color:#aaa; text-align:center;">
-              No item currently equipped in this slot.<br>Attunement multiplier (+${lvl}%) is fully prepared and waiting.
-            </div>
-          `;
-    }
+    let liveComparisonHtml = window.generateForgePreviewHtml(
+      selectedEqItem,
+      lvl,
+      lvl + 1,
+    );
 
     detailEl.innerHTML = `
-      <div style="font-weight:bold; font-size:13px; color:#df9ffb; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:10px; text-align:left;">${displayLabel}</div>
-      <div style="font-size:11px; margin-bottom:10px; color:#aaa; text-align:left;">Attunement multiplier: <span style="color:#fff; font-weight:bold;">+${lvl}% ➔ <span style="color:#2ecc71;">+${lvl + 1}%</span></span></div>
-      <div class="forge-progress-bg"><div class="forge-progress-fill" style="width:${lvl}%; background:linear-gradient(90deg, #9b59b6, #e84393);"></div></div>
+              <div style="font-weight:bold; font-size:13px; color:${selectedTierColor}; border-bottom:1px solid #334155; padding-bottom:4px; margin-bottom:10px; text-align:left; letter-spacing:0.5px;">${displayLabel.toUpperCase()}</div>
+              <div style="font-size:11px; margin-bottom:8px; color:#cbd5e1; text-align:left; font-family:monospace;">Slot Attunement Multiplier: <span style="color:#fff; font-weight:bold;">+${lvl}% ➔ <span style="color:#2ecc71;">+${lvl + 1}%</span></span></div>
+              <div class="forge-progress-bg"><div class="forge-progress-fill" style="width:${lvl}%; background:linear-gradient(90deg, #ea580c, #f59e0b);"></div></div>
 
-      <div style="margin-top:10px; text-align:left;">
-        <div style="font-size:11px; color:${goldColor}; margin-bottom:3px;">• ${window.formatNumber(goldCost)} Gold Required (Owned: ${window.formatNumber(goldOwned)})</div>
-        ${materialsHtml}
-      </div>
+              <div style="margin-top:10px; text-align:left; background:rgba(0,0,0,0.35); border:1px solid #1e293b; padding:10px; border-radius:6px; margin-bottom:12px;">
+                <strong style="color:#f1c40f; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:9.5px; letter-spacing:0.5px;">ATTUNEMENT REQUIREMENTS:</strong>
+                <div style="font-size:10.5px; color:${goldColor}; margin-bottom:3px; font-family:monospace;">• ${window.formatNumber(goldCost)} Gold Required (Owned: ${window.formatNumber(goldOwned)})</div>
+                ${materialsHtml}
+              </div>
 
-      ${liveComparisonHtml}
+              ${liveComparisonHtml}
 
-      <button class="forge-anvil-button" style="width:100%; margin-top:15px; border-color:#9b59b6; background:linear-gradient(135deg, #4a154b, #0c0812);" ${canAfford ? "" : "disabled"} onclick="window.temperItem()" onpointerdown="window.temperItem()">Attune Slot</button>
-          `;
+              <button class="forge-anvil-button" style="width:100%; margin-top:14px; border-color:#ea580c; background:linear-gradient(135deg, #c2410c, #451a03);" ${canAfford ? "" : "disabled"} onclick="window.temperItem()" onpointerdown="window.temperItem()">Harness Heat & Attune Slot</button>
+            `;
     return;
   }
 
@@ -2378,77 +2468,147 @@ window.renderForgeTab = function () {
     let activeBonuses = bonusKeys.filter((k) => item[k] !== 0);
 
     if (activeBonuses.length === 0) {
-      html += `<div style="color:#7f8c8d; font-size:11px; text-align:center; padding:15px 0;">This item has no stat modifiers to reforge!</div>`;
+      html += `<div style="color:#94a3b8; font-size:11px; text-align:center; padding:25px 10px; font-style:italic;">This item has no extra affix lines to reforge!</div>`;
     } else {
       let costGold = Math.floor(
         150 * item.stageLevel * Math.pow(2, item.statsRolled),
       );
-      let ownedSigils = window.inventory.ETC["Overlord's Sigil"] || 0;
+      let ownedSigils =
+        window.inventory && window.inventory.ETC
+          ? window.inventory.ETC["Overlord's Sigil"] || 0
+          : 0;
 
-      let goldColor = BigNum.from(window.playerStats.coins).gte(costGold)
-        ? "#f1c40f"
-        : "#e74c3c";
-      let sigilColor = ownedSigils >= 1 ? "#2ecc71" : "#e74c3c";
+      let canAffordGold = BigNum.from(window.playerStats.coins).gte(costGold);
+      let canAffordSigil = ownedSigils >= 1;
+
+      let goldColor = canAffordGold ? "#34d399" : "#f87171";
+      let sigilColor = canAffordSigil ? "#34d399" : "#f87171";
 
       if (!item.reforgedProperty) {
-        html += `<div style="font-size:11px; color:#aaa; margin-bottom:8px;">Select a modifier line below to prepare for reforging:</div>`;
-        activeBonuses.forEach((bKey) => {
-          let valText = item[bKey] > 0 ? `+${item[bKey]}` : `${item[bKey]}`;
-          let isSelected = item.tempReforgeProp === bKey;
-          let borderStyle = isSelected
-            ? "border-color:#2ecc71; background:#1b2a1e;"
-            : "border-color:#555; background:#111;";
-          let icon = isSelected ? "🟢" : "⚫";
-          html += `<button class="forge-anvil-button" style="width:100%; margin-bottom:5px; text-transform:none; padding:6px; ${borderStyle}" onclick="window.selectReforgeStat('${bKey}')">${icon} ${window.getStatLabel(bKey)} (${valText})</button>`;
-        });
+        html += `<div style="font-size:10.5px; color:#cbd5e1; margin-bottom:10px; text-align:left; line-height:1.4;">Select a modifier line below to prepare for reforging. <i>(Executing reforge will permanently lock all other lines!)</i></div>`;
+
+        let affixButtonsHtml = activeBonuses
+          .map((bKey) => {
+            let isPct = [
+              "bonusCritChance",
+              "bonusCritDamage",
+              "bonusBlock",
+              "bonusParry",
+              "bonusActiveSpeed",
+              "bonusIdleSpeed",
+            ].includes(bKey);
+            let valText = isPct
+              ? `${Math.round(item[bKey] * 100)}%`
+              : item[bKey] > 0
+                ? `+${item[bKey]}`
+                : `${item[bKey]}`;
+
+            let isSelected = item.tempReforgeProp === bKey;
+            let borderCol = isSelected ? "#a855f7" : "#334155";
+            let bgStyle = isSelected
+              ? "background: rgba(168, 85, 247, 0.2);"
+              : "background: rgba(15, 23, 42, 0.75);";
+
+            let iconKey = bKey.replace("bonus", "");
+            iconKey = iconKey.charAt(0).toLowerCase() + iconKey.slice(1);
+            let iconSvg = window.getUiIconSvg
+              ? window.getUiIconSvg(iconKey, 12)
+              : "";
+
+            let radioDot = isSelected
+              ? `<span style="width:8px; height:8px; border-radius:50%; background:#a855f7; display:inline-block;"></span>`
+              : `<span style="width:8px; height:8px; border-radius:50%; border:1px solid #64748b; display:inline-block;"></span>`;
+
+            return `
+              <div class="reforge-affix-option" style="border:1.5px solid ${borderCol}; ${bgStyle}" onclick="window.selectReforgeStat('${bKey}')">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  ${radioDot}
+                  ${iconSvg}
+                  <span style="font-weight:bold; color:#f1f5f9; font-size:11px;">${window.getStatLabel(bKey)}</span>
+                </div>
+                <strong style="color:#a855f7; font-family:monospace; font-size:11px;">${valText}</strong>
+              </div>
+            `;
+          })
+          .join("");
+
+        html += `<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">${affixButtonsHtml}</div>`;
 
         if (item.tempReforgeProp) {
           let rProp = item.tempReforgeProp;
-          let valText = item[rProp] > 0 ? `+${item[rProp]}` : `${item[rProp]}`;
-          html += `<div style="margin-top:10px; background:#111; padding:8px; border-radius:4px; border:1px dashed #2ecc71; font-size:11px; margin-bottom:12px; text-align:center;">
-                                      <span style="color:#2ecc71; font-weight:bold;">SELECTED TO RE-ROLL:</span><br>
-                                      <strong>${window.getStatLabel(rProp)} (${valText})</strong><br>
-                                      <span style="font-size:9px; color:#aaa;">(Clicking Execute Reforge will lock this as the only reforgible line!)</span>
-                                  </div>`;
 
-          html += `<div style="font-size:11px; color:${goldColor}; margin-bottom:3px;">• ${window.formatNumber(costGold)} Gold Required</div>`;
-          html += `<div style="font-size:11px; color:${sigilColor}; margin-bottom:12px;">• 1x Overlord's Sigil (Owned: ${ownedSigils.toLocaleString()})</div>`;
-          html += `<button class="forge-anvil-button" style="width:100%; border-color:#2ecc71; background: linear-gradient(135deg, #1b2a1e, #111);" ${BigNum.from(window.playerStats.coins).gte(costGold) && ownedSigils >= 1 ? "" : "disabled"} onclick="window.reforgeItemStat()">Execute Reforge</button>`;
+          html += `
+              <div class="reforge-req-box">
+                <strong style="color:#a855f7; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:9.5px; letter-spacing:0.5px;">REFORGE REQUIREMENTS:</strong>
+                <div style="font-size:10.5px; color:${goldColor}; margin-bottom:3px; font-family:monospace;">• ${window.formatNumber(costGold)} Gold Required</div>
+                <div style="font-size:10.5px; color:${sigilColor}; margin-bottom:6px; font-family:monospace;">• 1x Overlord's Sigil (Owned: ${ownedSigils.toLocaleString()})</div>
+              </div>
+              <button class="forge-anvil-button" style="width:100%; border-color:#a855f7; background:linear-gradient(135deg, #6b21a8, #3b0764);" ${canAffordGold && canAffordSigil ? "" : "disabled"} onclick="window.reforgeItemStat()">Execute Reforge on ${window.getStatLabel(rProp)}</button>
+            `;
         }
       } else {
         let rProp = item.reforgedProperty;
-        let valText = item[rProp] > 0 ? `+${item[rProp]}` : `${item[rProp]}`;
+        let isPct = [
+          "bonusCritChance",
+          "bonusCritDamage",
+          "bonusBlock",
+          "bonusParry",
+          "bonusActiveSpeed",
+          "bonusIdleSpeed",
+        ].includes(rProp);
+        let valText = isPct
+          ? `${Math.round(item[rProp] * 100)}%`
+          : item[rProp] > 0
+            ? `+${item[rProp]}`
+            : `${item[rProp]}`;
 
-        html += `<div style="background:#111; padding:8px; border-radius:4px; border:1px solid #9b59b6; font-size:11px; margin-bottom:12px; text-align:center;">
-                                            <span style="color:#9b59b6; font-weight:bold;">REFORGIBLE SLOT (LOCKED):</span><br>
-                                            <strong style="color:#2ecc71; font-size:12px;">${window.getStatLabel(rProp)} (${valText})</strong><br>
-                                            <span style="font-size:9px; color:#aaa;">(All other stat lines on this item are permanently locked!)</span>
-                                        </div>`;
+        html += `
+            <div class="reforge-locked-banner">
+              <span style="color:#a855f7; font-weight:900; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; display:block; margin-bottom:4px;">REFORGIBLE SLOT (LOCKED):</span>
+              <strong style="color:#34d399; font-size:12px; font-family:monospace;">${window.getStatLabel(rProp)} (${valText})</strong>
+              <span style="font-size:8.5px; color:#94a3b8; display:block; margin-top:4px;">(All other affix lines on this item are permanently locked!)</span>
+            </div>
 
-        html += `<div style="font-size:11px; color:${goldColor}; margin-bottom:3px;">• ${window.formatNumber(costGold)} Gold Required</div>`;
-        html += `<div style="font-size:11px; color:${sigilColor}; margin-bottom:12px;">• 1x Overlord's Sigil (Owned: ${ownedSigils.toLocaleString()})</div>`;
-        html += `<button class="forge-anvil-button" style="width:100%; border-color:#9b59b6; background: linear-gradient(135deg, #4a154b, #111);" ${BigNum.from(window.playerStats.coins).gte(costGold) && ownedSigils >= 1 ? "" : "disabled"} onclick="window.reforgeItemStat()">Re-Roll Locked Modifier</button>`;
+            <div class="reforge-req-box">
+              <strong style="color:#f1c40f; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:9.5px; letter-spacing:0.5px;">RE-ROLL REQUIREMENTS:</strong>
+              <div style="font-size:10.5px; color:${goldColor}; margin-bottom:3px; font-family:monospace;">• ${window.formatNumber(costGold)} Gold Required</div>
+              <div style="font-size:10.5px; color:${sigilColor}; margin-bottom:6px; font-family:monospace;">• 1x Overlord's Sigil (Owned: ${ownedSigils.toLocaleString()})</div>
+            </div>
+
+            <button class="forge-anvil-button" style="width:100%; margin-top:10px; border-color:#a855f7; background:linear-gradient(135deg, #6b21a8, #3b0764);" ${canAffordGold && canAffordSigil ? "" : "disabled"} onclick="window.reforgeItemStat()">Re-Roll Locked Modifier</button>
+          `;
       }
     }
   } else if (window.forgeMode === "tier") {
     if (item.statsRolled >= 5) {
-      html += `<div style="color:#e74c3c; font-weight:bold; text-align:center; padding: 20px 0;">MAXIMUM RARITY REACHED</div>`;
+      html += `<div style="color:#f87171; font-weight:900; text-align:center; padding:25px 10px; border:1px dashed #ef4444; background:rgba(239,68,68,0.1); border-radius:8px;">MAXIMUM STAR RARITY REACHED (5★ MYTHIC)</div>`;
     } else {
       let currentStars = item.statsRolled;
       let targetStars = currentStars + 1;
       let costGold = targetStars * 2500;
       let shardReq = targetStars;
-      let scrapReqAmount = targetStars * 5; // e.g. 5 for Rare, 10 for Magic, 15 for Epic, 20 for Leg, 25 for Mythic
+      let scrapReqAmount = targetStars * 5;
       let targetScrapName = window.getScrapYieldName(targetStars);
 
-      let playerShards = window.inventory.ETC["Eridium Shard"] || 0;
-      let playerScraps = window.inventory.ETC[targetScrapName] || 0;
+      let playerShards =
+        window.inventory && window.inventory.ETC
+          ? window.inventory.ETC["Eridium Shard"] || 0
+          : 0;
+      let playerScraps =
+        window.inventory && window.inventory.ETC
+          ? window.inventory.ETC[targetScrapName] || 0
+          : 0;
 
-      let goldColor = BigNum.from(window.playerStats.coins).gte(costGold)
-        ? "#f1c40f"
-        : "#e74c3c";
-      let shardColor = playerShards >= shardReq ? "#8e44ad" : "#e74c3c";
-      let scrapColor = playerScraps >= scrapReqAmount ? "#3498db" : "#e74c3c";
+      let canAffordGold = BigNum.from(window.playerStats.coins).gte(costGold);
+      let canAffordShards = playerShards >= shardReq;
+      let canAffordScraps = playerScraps >= scrapReqAmount;
+
+      let goldColor = canAffordGold ? "#34d399" : "#f87171";
+      let shardColor = canAffordShards ? "#34d399" : "#f87171";
+      let scrapColor = canAffordScraps ? "#34d399" : "#f87171";
+
+      let curColor = window.getTierColor(currentStars);
+      let nextColor = window.getTierColor(targetStars);
 
       previewItem.statsRolled++;
       window.scaleItemBonusStats(
@@ -2458,27 +2618,41 @@ window.renderForgeTab = function () {
       );
       window.recalculateItemStats(previewItem);
 
-      // Fetch correctly generated item property comparative differences for Tier Up
       let diffLines = window.getForgeDiffLines(item, previewItem);
 
-      html += `<div style="font-size:11px; margin-bottom:15px; color:#aaa;">Rarity Transition: <span style="color:#fff;">${currentStars}★</span> ➔ <span style="color:#f1c40f;">${targetStars}★</span></div>`;
-      html += `<div style="font-size:11px; color:${goldColor}; margin-bottom:3px;">• ${window.formatNumber(costGold)} Gold Required</div>`;
-      html += `<div style="font-size:11px; color:${shardColor}; margin-bottom:3px;">• ${shardReq}x Eridium Shard (Owned: ${playerShards})</div>`;
-      html += `<div style="font-size:11px; color:${scrapColor}; margin-bottom:10px;">• ${scrapReqAmount}x ${targetScrapName} (Owned: ${playerScraps})</div>`;
-      html += `<div style="font-size:11px; color:#2ecc71; font-weight:bold; margin-bottom:15px;">✨ 100% Awakening Guaranteed</div>`;
-      html += `<button class="forge-anvil-button" style="width:100%; border-color:#e67e22;" ${BigNum.from(window.playerStats.coins).gte(costGold) && playerShards >= shardReq && playerScraps >= scrapReqAmount ? "" : "disabled"} onclick="window.temperItem()">Awaken Rarity</button>`;
+      html += `
+            <div class="awaken-transition-card">
+              <span class="awaken-star-badge" style="color:${curColor}; border-color:${curColor}; background:${curColor}15;">${currentStars}★ ${window.getTierName(currentStars)}</span>
+              <span style="color:#f1c40f; font-weight:bold; font-size:12px;">➔</span>
+              <span class="awaken-star-badge" style="color:${nextColor}; border-color:${nextColor}; background:${nextColor}15;">${targetStars}★ ${window.getTierName(targetStars)}</span>
+            </div>
+
+            <div style="margin-top:10px; text-align:left; background:rgba(0,0,0,0.35); border:1px solid #1e293b; padding:10px; border-radius:6px; margin-bottom:12px;">
+              <strong style="color:#f97316; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:9.5px; letter-spacing:0.5px;">AWAKENING REQUIREMENTS:</strong>
+              <div style="font-size:10.5px; color:${goldColor}; margin-bottom:3px; font-family:monospace;">• ${window.formatNumber(costGold)} Gold Required</div>
+              <div style="font-size:10.5px; color:${shardColor}; margin-bottom:3px; font-family:monospace;">• ${shardReq}x Eridium Shard (Owned: ${playerShards})</div>
+              <div style="font-size:10.5px; color:${scrapColor}; margin-bottom:6px; font-family:monospace;">• ${scrapReqAmount}x ${targetScrapName} (Owned: ${playerScraps})</div>
+              <div style="font-size:9.5px; color:#34d399; font-weight:bold; font-family:monospace; border-top:1px dashed #334155; padding-top:4px;">✦ 100% Awakening Success Guaranteed</div>
+            </div>
+
+            <button class="forge-anvil-button" style="width:100%; border-color:#ea580c; background:linear-gradient(135deg, #ea580c, #7c2d12);" ${canAffordGold && canAffordShards && canAffordScraps ? "" : "disabled"} onclick="window.temperItem()">Awaken Rarity & Unlock Modifier</button>
+          `;
 
       previewHtml = `
-                    <div style="margin-top:15px; padding:12px; background:#111; border:1px solid #e67e22; border-radius:6px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                        <div style="color:#e67e22; font-weight:bold; font-size:11.5px; margin-bottom:8px; border-bottom:1px solid #222; padding-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">⭐ Awakening Preview (${currentStars}★ ➔ ${previewItem.statsRolled}★)</div>
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                            ${diffLines || '<div style="color:#7f8c8d; font-style:italic; text-align:center; padding:10px;">No stat modifications.</div>'}
-                            <div style="margin-top:8px; padding:8px; background:rgba(230,126,34,0.1); border:1px dashed #e67e22; border-radius:4px; font-size:10px; color:#ccc; text-align:center;">
-                                * This awakening will permanently increase base parameters by 10% and immediately unlock <b>one new random affix modifier</b>!
-                            </div>
-                        </div>
-                    </div>
-                `;
+            <div class="awaken-preview-card">
+              <div style="color:#f97316; font-weight:900; font-size:11px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.5"><polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"/></svg>
+                <span>AWAKENING PREVIEW (${currentStars}★ ➔ ${targetStars}★)</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                ${diffLines || '<div style="color:#94a3b8; font-style:italic; text-align:center; padding:10px;">Base parameters scaling up.</div>'}
+                <div style="margin-top:6px; padding:8px; background:rgba(234,88,12,0.12); border:1px dashed #f97316; border-radius:6px; font-size:9.5px; color:#f1f5f9; text-align:left; line-height:1.35;">
+                  <strong style="color:#f97316; display:block; margin-bottom:2px;">✦ UNLOCKED PERK:</strong>
+                  Permanently increases item base stats by +10% and immediately unlocks 1 new random affix modifier!
+                </div>
+              </div>
+            </div>
+          `;
     }
   } else if (window.forgeMode === "enchant") {
     let maxEnchants = window.getMaxEnchants(item);
@@ -4698,7 +4872,7 @@ window.executeSalvageItemLogic = function (
   } else if (typeof window.addEtcDrop === "function") {
     window.addEtcDrop(scrapName, yieldAmount, true);
   }
-  scrapsGained.push(`x${yieldAmount} ${scrapName}`);
+  scrapsGained.push({ name: scrapName, qty: yieldAmount });
 
   if (!isArt) {
     for (let t = rolledTier - 1; t >= 0; t--) {
@@ -4712,10 +4886,16 @@ window.executeSalvageItemLogic = function (
         } else if (typeof window.addEtcDrop === "function") {
           window.addEtcDrop(lowerName, lowerYield, true);
         }
-        scrapsGained.push(`x${lowerYield} ${lowerName}`);
+        scrapsGained.push({ name: lowerName, qty: lowerYield });
       }
     }
   }
+
+  scrapsGained.forEach((s) => {
+    if (typeof window.pushMaterialToast === "function") {
+      window.pushMaterialToast(s.name, s.qty);
+    }
+  });
 
   let cvs = document.getElementById("gameCanvas");
   let w = cvs ? cvs.width : 750;
@@ -4739,23 +4919,17 @@ window.executeSalvageItemLogic = function (
     }
   }
 
+  let logReport = scrapsGained.map((s) => `x${s.qty} ${s.name}`).join(", ");
   if (inDungeonRun) {
     if (typeof window.pushLog === "function")
       window.pushLog(
-        `<span style='color:#e74c3c;'>[RUN SALVAGE]</span> Salvaged ${item.name} into run satchel: ${scrapsGained.join(", ")} (Secured upon Extraction)`,
-      );
-    if (typeof window.pushHeaderToast === "function")
-      window.pushHeaderToast(
-        `Salvaged to Run Satchel: ${scrapsGained.join(", ")}`,
-        "#e67e22",
+        `<span style='color:#e74c3c;'>[RUN SALVAGE]</span> Salvaged ${item.name} into run satchel: ${logReport} (Secured upon Extraction)`,
       );
   } else {
     if (typeof window.pushLog === "function")
       window.pushLog(
-        `<span style='color:#e74c3c;'>[SALVAGE]</span> Dismantled ${item.name} yielding: ${scrapsGained.join(", ")}`,
+        `<span style='color:#e74c3c;'>[SALVAGE]</span> Dismantled ${item.name} yielding: ${logReport}`,
       );
-    if (typeof window.pushHeaderToast === "function")
-      window.pushHeaderToast(`Salvaged: ${scrapsGained.join(", ")}`, "#e74c3c");
   }
   if (window.forgeSelectedItem && window.forgeSelectedItem.id === id) {
     window.forgeSelectedItem = null;
@@ -4764,10 +4938,9 @@ window.executeSalvageItemLogic = function (
 
   if (typeof window.resolvePlayerStats === "function") {
     let newMaxHp = window.resolvePlayerStats().maxHp;
-    window.playerStats.currentHp = window.BigNumMin(
-      window.playerStats.currentHp,
-      newMaxHp,
-    );
+    let ba = BigNum.from(window.playerStats.currentHp);
+    let bb = BigNum.from(newMaxHp);
+    window.playerStats.currentHp = ba.gt(bb) ? bb : ba;
   }
   if (typeof window.checkAchievements === "function")
     window.checkAchievements();
@@ -5103,6 +5276,7 @@ window.toggleForgeModal = function () {
     if (typeof window.renderForgeTab === "function") window.renderForgeTab();
   } else {
     modal.style.display = "none";
+    window.lastModalCloseTime = Date.now();
   }
 };
 
@@ -6279,6 +6453,7 @@ window.toggleShopModal = function () {
     window.switchShopTab(window.activeShopTab || "gear");
   } else {
     modal.style.display = "none";
+    window.lastModalCloseTime = Date.now();
   }
 };
 
@@ -6383,10 +6558,10 @@ window.executeManualShopRefresh = function () {
   }
 
   window.refreshShopStock(true);
-    window.updateShopHeaderWallet();
-    window.pushHeaderToast("✦ Merchant Inventory Refreshed!", "#2ecc71");
-    if (window.SoundManager) window.SoundManager.play("swing");
-    window.renderMarketShop();
+  window.updateShopHeaderWallet();
+  window.pushHeaderToast("✦ Merchant Inventory Refreshed!", "#2ecc71");
+  if (window.SoundManager) window.SoundManager.play("swing");
+  window.renderMarketShop();
 };
 
 window.renderMarketShop = function () {
@@ -6644,7 +6819,11 @@ window.renderMysticalShop = function () {
       ? window.resolvePlayerStats()
       : {};
   let intVal = pStats.int || 5;
-  let potDurationMult = (1.0 + (intVal - 5) * 0.005).toFixed(2);
+  let effectiveInt = Math.max(0, intVal - 5);
+  let preservationPct = Math.round(
+    ((effectiveInt * 0.5) / (effectiveInt + 95)) * 100,
+  );
+  let potencyPct = (effectiveInt * 0.5).toFixed(1);
 
   content.innerHTML = `
     <!-- Section 1: Mystical Trades -->
@@ -6660,7 +6839,7 @@ window.renderMysticalShop = function () {
     <div class="alchemy-section-header" style="margin-top: 14px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2.5"><path d="M10 2v5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 7V2"/><path d="M8.5 2h7"/></svg>
       <span>ALCHEMICAL TRANSMUTATION WORKBENCH</span>
-      <span class="alchemy-int-note">(INT: ${intVal} • Potion Duration: ${potDurationMult}x)</span>
+      <span class="alchemy-int-note">(INT: ${intVal} • Preservation: ${preservationPct}% • Potency: +${potencyPct}%)</span>
     </div>
     <div class="alchemy-workbench-list">
       ${transmutationsHtml}
@@ -6794,8 +6973,8 @@ window.buyShopItem = function (index) {
   }
 
   window.updateUI();
-    window.updateShopHeaderWallet();
-    window.renderMarketShop();
+  window.updateShopHeaderWallet();
+  window.renderMarketShop();
   if (typeof window.renderInventory === "function") window.renderInventory();
   window.saveGame();
 };
@@ -6846,8 +7025,8 @@ window.buyMysticalItem = function (index) {
   }
 
   window.updateUI();
-    window.updateShopHeaderWallet();
-    window.renderMysticalShop();
+  window.updateShopHeaderWallet();
+  window.renderMysticalShop();
   if (typeof window.renderInventory === "function") window.renderInventory();
   window.saveGame();
 };
@@ -6884,8 +7063,8 @@ window.buyGoldUpgrade = function (type) {
   }
 
   window.updateUI();
-    window.updateShopHeaderWallet();
-    window.renderGoldUpgrades();
+  window.updateShopHeaderWallet();
+  window.renderGoldUpgrades();
 
   let cardEl = document.getElementById(`sink-card-${type}`);
   if (cardEl) {
@@ -6927,9 +7106,9 @@ window.transmutePotion = function (index) {
   }
 
   window.updateUI();
-    window.updateShopHeaderWallet();
-    window.renderInventory();
-    window.renderMysticalShop();
+  window.updateShopHeaderWallet();
+  window.renderInventory();
+  window.renderMysticalShop();
   window.saveGame();
 };
 
@@ -7197,6 +7376,7 @@ window.toggleGachaModal = function () {
     window.initGachaPhysics();
   } else {
     modal.style.display = "none";
+    window.lastModalCloseTime = Date.now();
     if (window.gachaState.animationFrameId) {
       cancelAnimationFrame(window.gachaState.animationFrameId);
       window.gachaState.animationFrameId = null;
@@ -7270,21 +7450,28 @@ window.updateGachaBalances = function () {
   if (panelStd) panelStd.innerText = stdCount;
   if (panelGlim) panelGlim.innerText = glimCount;
 
-  // Update Pity UI stats
   let pityText = document.getElementById("gacha-pity-text");
   let pityTarget = document.getElementById("gacha-pity-target");
   let pityFill = document.getElementById("gacha-pity-fill");
 
   if (window.gachaState.activeMachine === "standard") {
     let current = window.playerStats.vendingPity || 0;
+    let pct = Math.min(100, (current / 50) * 100);
     if (pityText) pityText.innerText = `${current} / 50`;
     if (pityTarget) pityTarget.innerText = "50";
-    if (pityFill) pityFill.style.width = `${(current / 50) * 100}%`;
+    if (pityFill) {
+      pityFill.style.width = `${pct}%`;
+      pityFill.style.background = "linear-gradient(90deg, #f1c40f, #e74c3c)";
+    }
   } else {
     let current = window.playerStats.glimmeringPity || 0;
+    let pct = Math.min(100, (current / 25) * 100);
     if (pityText) pityText.innerText = `${current} / 25`;
     if (pityTarget) pityTarget.innerText = "25";
-    if (pityFill) pityFill.style.width = `${(current / 25) * 100}%`;
+    if (pityFill) {
+      pityFill.style.width = `${pct}%`;
+      pityFill.style.background = "linear-gradient(90deg, #00d2ff, #e84393)";
+    }
   }
 };
 
@@ -7511,35 +7698,36 @@ window.triggerGachaSpin = function () {
   if (window.gachaState.isSpinning) return;
 
   let machine = window.gachaState.activeMachine;
+  let keyName =
+    machine === "standard" ? "Gacha Key" : "Glimmering Gachapon Key";
   let count =
     window.inventory && window.inventory.ETC
-      ? window.inventory.ETC[
-          machine === "standard" ? "Gacha Key" : "Glimmering Gachapon Key"
-        ] || 0
+      ? window.inventory.ETC[keyName] || 0
       : 0;
+
   if (count < 1) {
     if (typeof window.pushHeaderToast === "function") {
-      window.pushHeaderToast("No keys remaining for this machine!", "#e74c3c");
+      window.pushHeaderToast(
+        `[!] Requires 1x ${keyName} to spin terminal!`,
+        "#e74c3c",
+      );
     }
     return;
   }
 
   window.gachaState.isSpinning = true;
-  window.gachaState.spinTimer = 70; // 70 frames (~1.2s of violent shakes)
+  window.gachaState.spinTimer = 70;
 
-  // Play turning sound immediately
   if (window.SoundManager && typeof window.SoundManager.play === "function") {
     window.SoundManager.play("swing");
   }
 
-  // Spin the Crank Dial visual
   let dial = document.getElementById("gacha-crank-dial");
   if (dial) {
     window.gachaState.crankAngle += 360;
     dial.style.transform = `rotate(${window.gachaState.crankAngle}deg)`;
   }
 
-  // Trigger drop-exit capsule visual
   setTimeout(() => {
     let colorsList =
       window.gachaState.activeMachine === "standard"
@@ -7547,7 +7735,6 @@ window.triggerGachaSpin = function () {
         : ["#ffffff", "#e84393", "#00d2ff", "#a855f7"];
     let randomColor = colorsList[Math.floor(Math.random() * colorsList.length)];
 
-    // Play unboxing/drop vortex animations
     let dropCap = document.getElementById("gacha-falling-capsule");
     if (dropCap) {
       dropCap.style.background = `linear-gradient(135deg, ${randomColor} 50%, #ffffff 50%)`;
@@ -7557,7 +7744,6 @@ window.triggerGachaSpin = function () {
       }, 400);
     }
 
-    // Drop down into dispenser bin slot
     setTimeout(() => {
       let binBall = document.getElementById("gacha-dropped-ball");
       if (binBall) {
@@ -7565,7 +7751,12 @@ window.triggerGachaSpin = function () {
         binBall.style.display = "block";
       }
 
-      // Fire actual unbox roll logic after landing settles
+      let binBox = document.querySelector(".gacha-dispenser-bin");
+      if (binBox) {
+        binBox.classList.add("bin-active-flash");
+        setTimeout(() => binBox.classList.remove("bin-active-flash"), 600);
+      }
+
       setTimeout(() => {
         let isGlim = window.gachaState.activeMachine === "glimmering";
         window.triggerGachaPull(isGlim, false);
@@ -7586,7 +7777,7 @@ window.triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
   );
   if (result.error) {
     if (typeof window.pushHeaderToast === "function") {
-      window.pushHeaderToast(result.error, "#e74c3c");
+      window.pushHeaderToast(`[!] ${result.error}`, "#e74c3c");
     }
     return;
   }
@@ -7607,22 +7798,48 @@ window.triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
   }
 
   let resultsPanel = document.getElementById("gacha-results-panel");
-  let resultsRender = document.getElementById("gacha-results-render");
-  let resultsItemName = document.getElementById("gacha-results-item-name");
-
-  if (resultsPanel && resultsRender && resultsItemName) {
+  if (resultsPanel) {
     resultsPanel.style.display = "block";
-    if (typeof window.getEquipIconHtml === "function") {
-      resultsRender.innerHTML = window.getEquipIconHtml(item, 44);
-    } else {
-      resultsRender.innerHTML = "";
-    }
-    resultsItemName.innerText = item.name;
-    resultsItemName.style.color = color;
+
+    let starsLabel =
+      item.statsRolled === "UNIQUE"
+        ? "UNIQUE ARTIFACT"
+        : `${item.statsRolled || 0}★ ${window.getTierName(item.statsRolled)}`;
+    let iconHtml = window.getEquipIconHtml
+      ? window.getEquipIconHtml(item, 52)
+      : "";
+
+    let statSummary = [];
+    if (item.atk > 0)
+      statSummary.push(
+        `${window.getUiIconSvg("atk", 10)} +${window.formatNumber(item.atk)}`,
+      );
+    if (item.def > 0)
+      statSummary.push(
+        `${window.getUiIconSvg("def", 10)} +${window.formatNumber(item.def)}`,
+      );
+    if (item.maxHp > 0)
+      statSummary.push(
+        `${window.getUiIconSvg("maxHp", 10)} +${window.formatNumber(item.maxHp)}`,
+      );
+    if (item.critChance > 0)
+      statSummary.push(
+        `${window.getUiIconSvg("critChance", 10)} +${Math.round(item.critChance * 100)}%`,
+      );
+
+    resultsPanel.innerHTML = `
+      <div class="gacha-results-card" style="border-color:${color}; box-shadow: 0 0 20px ${color}44;">
+        <span class="results-header-tag" style="color:${color};">✦ CAPSULE UNBOXED ✦</span>
+        <div style="margin: 4px 0;">${iconHtml}</div>
+        <span class="results-item-title" style="color:${color};">${item.name}</span>
+        <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${starsLabel} • LV.${item.stageLevel || 1}</span>
+        ${statSummary.length > 0 ? `<div style="font-size: 9px; color: #e2e8f0; font-family: monospace; display: flex; gap: 8px; margin-top: 2px;">${statSummary.join("  ")}</div>` : ""}
+      </div>
+    `;
   }
 
   if (typeof window.pushHeaderToast === "function") {
-    window.pushHeaderToast(`Received: ${item.name}!`, color);
+    window.pushHeaderToast(`✦ Unboxed: ${item.name}!`, color);
   }
 };
 

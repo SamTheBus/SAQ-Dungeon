@@ -6,6 +6,12 @@
 window.GAME_VERSION = 1.0; // Release Version 1.0.00
 window.MIN_COMPATIBLE_VERSION = 1.0; // Hard reset epoch threshold
 
+window.BigNumMin = function (a, b) {
+  let ba = BigNum.from(a);
+  let bb = BigNum.from(b);
+  return ba.gt(bb) ? bb : ba;
+};
+
 // Core Security: HTML Sanitizer to prevent XSS injection in user lists
 window.escapeHTML = function (str) {
   if (!str) return "";
@@ -1095,10 +1101,26 @@ window.checkAchievements = function () {
     window.playerStats.achievementTimestamps = {};
 
   let activeBuffs = 0;
-  if (window.playerStats.atkPotionTimer > 0) activeBuffs++;
-  if (window.playerStats.hpPotionTimer > 0) activeBuffs++;
-  if (window.playerStats.defPotionTimer > 0) activeBuffs++;
-  if (window.playerStats.hastePotionTimer > 0) activeBuffs++;
+  if (
+    (window.playerStats.atkPotionRuns || 0) > 0 ||
+    (window.playerStats.atkPotionTimer || 0) > 0
+  )
+    activeBuffs++;
+  if (
+    (window.playerStats.hpPotionRuns || 0) > 0 ||
+    (window.playerStats.hpPotionTimer || 0) > 0
+  )
+    activeBuffs++;
+  if (
+    (window.playerStats.defPotionRuns || 0) > 0 ||
+    (window.playerStats.defPotionTimer || 0) > 0
+  )
+    activeBuffs++;
+  if (
+    (window.playerStats.hastePotionRuns || 0) > 0 ||
+    (window.playerStats.hastePotionTimer || 0) > 0
+  )
+    activeBuffs++;
   if (window.playerStats.frenzyTimer > 0) activeBuffs++;
   if (window.playerStats.adrenalineTimer > 0) activeBuffs++;
   window.playerStats.peakSimultaneousBuffs = Math.max(
@@ -1867,30 +1889,49 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.atk = p.atk.mul(1.0 + window.playerStats.sparkChainCount * 0.1);
   }
 
-  if (window.playerStats.atkPotionTimer > 0)
+  let hasAtkPot =
+    (window.playerStats.atkPotionRuns || 0) > 0 ||
+    (window.playerStats.atkPotionTimer || 0) > 0;
+  let hasHpPot =
+    (window.playerStats.hpPotionRuns || 0) > 0 ||
+    (window.playerStats.hpPotionTimer || 0) > 0;
+  let hasDefPot =
+    (window.playerStats.defPotionRuns || 0) > 0 ||
+    (window.playerStats.defPotionTimer || 0) > 0;
+  let hasHastePot =
+    (window.playerStats.hastePotionRuns || 0) > 0 ||
+    (window.playerStats.hastePotionTimer || 0) > 0;
+  let hasDropPot =
+    (window.playerStats.dropPotionRuns || 0) > 0 ||
+    (window.playerStats.dropPotionTimer || 0) > 0;
+  let hasQlyPot =
+    (window.playerStats.qlyPotionRuns || 0) > 0 ||
+    (window.playerStats.qlyPotionTimer || 0) > 0;
+
+  if (hasAtkPot)
     p.atk = p.atk.mul(
       1 + (window.playerStats.atkPotionStrength || 0.1) * potStrengthMultiplier,
     );
-  if (window.playerStats.hpPotionTimer > 0)
+  if (hasHpPot)
     p.maxHp = p.maxHp.mul(
       1 + (window.playerStats.hpPotionStrength || 0.1) * potStrengthMultiplier,
     );
-  if (window.playerStats.defPotionTimer > 0)
+  if (hasDefPot)
     p.def = p.def.mul(
       1 + (window.playerStats.defPotionStrength || 0.1) * potStrengthMultiplier,
     );
 
-  if (window.playerStats.hastePotionTimer > 0) {
+  if (hasHastePot) {
     let tier = window.playerStats.hastePotionStrength || 1;
     p.moveSpeed += Math.ceil(3 * tier * potStrengthMultiplier);
     activeSpeedPct += 0.1 * tier * potStrengthMultiplier;
     idleSpeedPct += 0.1 * tier * potStrengthMultiplier;
   }
 
-  if (window.playerStats.dropPotionTimer > 0) {
+  if (hasDropPot) {
     p.drop += 1.0 * potStrengthMultiplier;
   }
-  if (window.playerStats.qlyPotionTimer > 0) {
+  if (hasQlyPot) {
     p.qly += 0.5 * potStrengthMultiplier;
   }
 
@@ -1908,10 +1949,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
   if (
     window.checkArtifactTrait("cauldron_eternity") &&
-    (window.playerStats.atkPotionTimer > 0 ||
-      window.playerStats.hpPotionTimer > 0 ||
-      window.playerStats.defPotionTimer > 0 ||
-      window.playerStats.hastePotionTimer > 0)
+    (hasAtkPot || hasHpPot || hasDefPot || hasHastePot)
   ) {
     idleSpeedPct += 0.08;
   }
@@ -2105,7 +2143,10 @@ window.resolvePlayerStats = function (useDraft = false) {
       }
     });
   }
-  if (window.playerStats.xpPotionTimer > 0) {
+  let hasXpPot =
+    (window.playerStats.xpPotionRuns || 0) > 0 ||
+    (window.playerStats.xpPotionTimer || 0) > 0;
+  if (hasXpPot) {
     let potStrengthMultiplier = 1.0;
     if (window.playerStats.unlockedAchievements && window.AchievementsData) {
       window.playerStats.unlockedAchievements.forEach((id) => {
@@ -2740,18 +2781,25 @@ window.playerStats = {
   nextDungeonKeyTime: 0,
   shopRefreshTime: 0,
   shopItems: [],
+  atkPotionRuns: 0,
   atkPotionTimer: 0,
   atkPotionStrength: 0.1,
+  hpPotionRuns: 0,
   hpPotionTimer: 0,
   hpPotionStrength: 0.1,
+  defPotionRuns: 0,
   defPotionTimer: 0,
   defPotionStrength: 0.1,
+  hastePotionRuns: 0,
   hastePotionTimer: 0,
   hastePotionStrength: 1,
+  xpPotionRuns: 0,
   xpPotionTimer: 0,
   xpPotionStrength: 1.0,
+  dropPotionRuns: 0,
   dropPotionTimer: 0,
   dropPotionStrength: 1.0,
+  qlyPotionRuns: 0,
   qlyPotionTimer: 0,
   qlyPotionStrength: 0.5,
   autoSalvageThreshold: -1,
@@ -2759,10 +2807,7 @@ window.playerStats = {
   volumeSFX: 0.8,
   volumeMusic: 0.5,
   mute: false,
-  ecoMode:
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent,
-    ),
+  ecoMode: false,
   fairiesClicked: 0,
   deathCount: 0,
   lootPityCounter: 0,
@@ -3348,6 +3393,22 @@ window.loadGame = function () {
     if (parsed.playerStats) {
       Object.assign(window.playerStats, parsed.playerStats);
       window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
+
+      // Backward Compatibility Migration: convert real-time timers to run charges
+      const potKeys = ["atk", "hp", "def", "haste", "xp", "drop", "qly"];
+      potKeys.forEach((key) => {
+        let timerKey = key + "PotionTimer";
+        let runKey = key + "PotionRuns";
+        if (
+          window.playerStats[runKey] === undefined ||
+          window.playerStats[runKey] === null
+        ) {
+          let timerVal = window.playerStats[timerKey] || 0;
+          window.playerStats[runKey] =
+            timerVal > 0 ? Math.max(1, Math.ceil(timerVal / 18000)) : 0;
+        }
+        window.playerStats[timerKey] = 0;
+      });
 
       window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
       window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);

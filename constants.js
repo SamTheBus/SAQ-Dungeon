@@ -150,63 +150,63 @@ window.useDex = {
     color: "#e67e22",
   },
   "Attack Elixir": {
-    desc: "Increases Attack Power by +10% for 5 minutes (scales with INT).",
+    desc: "Increases Attack Power by +10% for 1 Run.",
     color: "#2ecc71",
   },
   "Greater Attack Elixir": {
-    desc: "Increases Attack Power by +20% for 5 minutes (scales with INT).",
+    desc: "Increases Attack Power by +20% for 2 Runs.",
     color: "#27ae60",
   },
   "Supernal Attack Elixir": {
-    desc: "Increases Attack Power by +35% for 5 minutes (scales with INT).",
+    desc: "Increases Attack Power by +35% for 3 Runs.",
     color: "#1e824c",
   },
   "Vitality Elixir": {
-    desc: "Increases Max HP by +10% for 5 minutes (scales with INT).",
+    desc: "Increases Max HP by +10% for 1 Run.",
     color: "#e74c3c",
   },
   "Greater Vitality Elixir": {
-    desc: "Increases Max HP by +20% for 5 minutes (scales with INT).",
+    desc: "Increases Max HP by +20% for 2 Runs.",
     color: "#c0392b",
   },
   "Supernal Vitality Elixir": {
-    desc: "Increases Max HP by +35% for 5 minutes (scales with INT).",
+    desc: "Increases Max HP by +35% for 3 Runs.",
     color: "#962d22",
   },
   "Armored Elixir": {
-    desc: "Increases Defense by +10% for 5 minutes (scales with INT).",
+    desc: "Increases Defense by +10% for 1 Run.",
     color: "#3498db",
   },
   "Greater Armored Elixir": {
-    desc: "Increases Defense by +20% for 5 minutes (scales with INT).",
+    desc: "Increases Defense by +20% for 2 Runs.",
     color: "#2980b9",
   },
   "Supernal Armored Elixir": {
-    desc: "Increases Defense by +35% for 5 minutes (scales with INT).",
+    desc: "Increases Defense by +35% for 3 Runs.",
     color: "#1f3a52",
   },
   "Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +10% for 5 minutes (scales with INT).",
+    desc: "Increases movement speed and attack recovery by +10% for 1 Run.",
     color: "#f1c40f",
   },
   "Greater Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +20% for 5 minutes (scales with INT).",
+    desc: "Increases movement speed and attack recovery by +20% for 2 Runs.",
     color: "#f39c12",
   },
   "Supernal Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +35% for 5 minutes (scales with INT).",
+    desc: "Increases movement speed and attack recovery by +35% for 3 Runs.",
     color: "#d35400",
   },
   "Double XP Elixir": {
-    desc: "Doubles all acquired experience gains (+100% EXP) for 5 minutes (scales with INT).",
+    desc: "Doubles all acquired experience gains (+100% EXP) for 1 Run.",
     color: "#a855f7",
   },
   "Double Drop Elixir": {
-    desc: "Doubles current drop rate multiplier (+100%) for 5 minutes (scales with INT).",
+    desc: "Doubles current drop rate multiplier (+100%) for 1 Run.",
     color: "#22c55e",
   },
   "Drop Quality Elixir": {
-    desc: "Boosts item drop quality checks by +50% for 5 minutes (scales with INT).",
+    desc: "Boosts item drop quality checks by +50% for 1 Run.",
     color: "#3b82f6",
   },
 };
@@ -3251,13 +3251,13 @@ window.ASTRAL_SHOP_STOCK = [
     name: "Double Drop Elixir",
     cost: 250,
     color: "#22c55e",
-    desc: "Doubles global drop rate multiplier (+100%) for 5 minutes (scales with INT).",
+    desc: "Doubles global drop rate multiplier (+100%) for 1 Run.",
   },
   {
     name: "Drop Quality Elixir",
     cost: 350,
     color: "#ec4899",
-    desc: "Boosts drop quality checks (+50% Qly) for 5 minutes (scales with INT).",
+    desc: "Boosts drop quality checks (+50% Qly) for 1 Run.",
   },
   {
     name: "Monster Card Sack",
@@ -3608,3 +3608,69 @@ window.player = {
   facing: 1,
 };
 window.topDownPlayer = window.player;
+
+window.BOSS_BAR_THEMES = {
+  aegis_goliath: {
+    title: "AEGIS GOLIATH",
+    subtitle: "COSMIC SHIELD WARDEN",
+    primaryColor: "#00d2ff",
+    secondaryColor: "#3498db",
+    coreColor: "#e0f2fe",
+    bgDark: "#050c18",
+    borderColor: "#00d2ff",
+  },
+  chronos_arbitrator: {
+    title: "CHRONOS ARBITRATOR",
+    subtitle: "THE CLOCKWORK GOD",
+    primaryColor: "#f1c40f",
+    secondaryColor: "#d35400",
+    coreColor: "#ffeaa7",
+    bgDark: "#1c120c",
+    borderColor: "#d4af37",
+  },
+  nexus_overseer: {
+    title: "NEXUS OVERSEER",
+    subtitle: "CYBERSPACE SINGULARITY",
+    primaryColor: "#ff007f",
+    secondaryColor: "#00f0ff",
+    coreColor: "#ffffff",
+    bgDark: "#09090e",
+    borderColor: "#ff007f",
+  },
+  gilded_vault_keeper: {
+    title: "GILDED VAULT KEEPER",
+    subtitle: "MIDAS TREASURY OVERSEER",
+    primaryColor: "#ffd700",
+    secondaryColor: "#b58700",
+    coreColor: "#fff1a8",
+    bgDark: "#1e1107",
+    borderColor: "#ffd700",
+  },
+  corrosive_abomination: {
+    title: "CORROSIVE ABOMINATION",
+    subtitle: "TOXIC SLUDGE OVERSEER",
+    primaryColor: "#2ecc71",
+    secondaryColor: "#00ff88",
+    coreColor: "#a3fd83",
+    bgDark: "#091a10",
+    borderColor: "#2ecc71",
+  },
+  hooktail: {
+    title: "HOOKTAIL",
+    subtitle: "THE SCARLET DRAGON CALAMITY",
+    primaryColor: "#ff3300",
+    secondaryColor: "#e74c3c",
+    coreColor: "#ffeaa7",
+    bgDark: "#1c0404",
+    borderColor: "#ff3300",
+  },
+  overlord_iron_vault: {
+    title: "OVERLORD IRON VAULT",
+    subtitle: "THE UNBREAKABLE STEEL OVERLORD",
+    primaryColor: "#e67e22",
+    secondaryColor: "#7f8c8d",
+    coreColor: "#ffeaa7",
+    bgDark: "#151922",
+    borderColor: "#bdc3c7",
+  },
+};

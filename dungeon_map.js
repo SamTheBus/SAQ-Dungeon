@@ -137,10 +137,10 @@
     }
 
     generateBossArena() {
-      this.reset();
-      this.depth = 4;
-      this.width = 16;
-      this.height = 16;
+          this.reset();
+          this.depth = 4;
+          this.width = 24;
+          this.height = 18;
 
       this.grid = Array.from({ length: this.height }, () =>
         Array(this.width).fill(window.TILE_TYPES.WALL),
@@ -510,7 +510,7 @@
         }
 
         // Populate Breakable Pottery, Urns & Barrels along walls/corners
-        let propCount = window.randInt(2, 5);
+        let propCount = window.randInt(0, 4);
         let propTypes = ["clay_pot", "ancient_urn", "wooden_barrel"];
         for (let pIdx = 0; pIdx < propCount; pIdx++) {
           let side = Math.floor(Math.random() * 4);
@@ -669,17 +669,10 @@
     }
 
     update(targetX, targetY, mapWidthPx, mapHeightPx) {
-      let baseZoom = 1.6;
-      if (this.viewportW > 0 && this.viewportH > 0) {
-        let fitZoomW = this.viewportW / Math.max(1, mapWidthPx);
-        let fitZoomH = this.viewportH / Math.max(1, mapHeightPx);
-        let fitZoom = Math.max(fitZoomW, fitZoomH);
-        baseZoom = Math.max(baseZoom, fitZoom);
-      }
-      this.zoom = Math.max(1.0, Math.min(2.2, baseZoom));
+          this.zoom = 1.6;
 
-      let effW = this.viewportW / this.zoom;
-      let effH = this.viewportH / this.zoom;
+          let effW = this.viewportW / this.zoom;
+          let effH = this.viewportH / this.zoom;
 
       // Offset camera target Y slightly for HUD clearance in landscape mode
       let hudOffset = 20;
@@ -1439,7 +1432,7 @@
             }
 
             if (tileHash > 0.82) {
-              pCtx.fillStyle = biome.accent;
+              pCtx.fillStyle = "rgba(255, 255, 255, 0.04)";
               let ax = px + 4 + ((tileHash * 19) % 22);
               let ay = py + 4 + ((tileHash * 29) % 22);
               pCtx.fillRect(ax, ay, 2.5, 2.5);
@@ -2085,142 +2078,154 @@
 
         ctx.save();
 
-        let glowPulse = 1.0 + Math.sin(time / 180) * 0.12;
+        // 1. Charred Stone Hearth Base Pad
+        let hearthW = 76;
+        let hearthH = 30;
+        let hearthX = cx - hearthW / 2;
+        let hearthY = cy - 6;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.beginPath();
+        ctx.roundRect(hearthX - 2, hearthY - 2, hearthW + 4, hearthH + 4, [4]);
+        ctx.fill();
+
+        ctx.fillStyle = "#1c1917";
+        ctx.strokeStyle = "#0c0a09";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.roundRect(hearthX, hearthY, hearthW, hearthH, [3]);
+        ctx.fill();
+        ctx.stroke();
+
+        // Glowing Magma Seams in the Hearth
+        ctx.strokeStyle = "rgba(249, 115, 22, 0.35)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(hearthX + 12, hearthY + 8);
+        ctx.lineTo(hearthX + 28, hearthY + 16);
+        ctx.lineTo(hearthX + 48, hearthY + 10);
+        ctx.moveTo(hearthX + 32, hearthY + 20);
+        ctx.lineTo(hearthX + 60, hearthY + 22);
+        ctx.stroke();
+
+        // 2. Heat Aura Radial Glow
+        let glowPulse = 1.0 + Math.sin(time / 160) * 0.15;
         let heatGrad = ctx.createRadialGradient(
-          cx - 2,
+          cx - 6,
           cy - 4,
           6,
-          cx - 2,
+          cx - 6,
           cy - 4,
-          48 * glowPulse,
+          52 * glowPulse,
         );
-        heatGrad.addColorStop(0, "rgba(255, 90, 0, 0.58)");
-        heatGrad.addColorStop(0.5, "rgba(245, 158, 11, 0.22)");
+        heatGrad.addColorStop(0, "rgba(255, 90, 0, 0.6)");
+        heatGrad.addColorStop(0.5, "rgba(245, 158, 11, 0.25)");
         heatGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = heatGrad;
         ctx.beginPath();
-        ctx.arc(cx - 2, cy - 4, 48 * glowPulse, 0, Math.PI * 2);
+        ctx.arc(cx - 6, cy - 4, 52 * glowPulse, 0, Math.PI * 2);
         ctx.fill();
 
+        // 3. Chimney Smoke Plumes
         for (let s = 0; s < 4; s++) {
           let seed = s * 73.1;
-          let progress = (time / 900 + seed) % 1.0;
-          let smkX = cx - 4 + Math.sin(time / 200 + seed) * 10;
-          let smkY = cy - 38 - progress * 24;
+          let progress = (time / 850 + seed) % 1.0;
+          let smkX = cx - 8 + Math.sin(time / 180 + seed) * 8;
+          let smkY = cy - 42 - progress * 26;
           let smkAlpha = (1.0 - progress) * 0.35;
-          let smkSize = 3.5 + progress * 6.0;
+          let smkSize = 4.0 + progress * 7.0;
 
-          ctx.fillStyle = `rgba(100, 100, 110, ${smkAlpha})`;
+          ctx.fillStyle = `rgba(120, 113, 108, ${smkAlpha})`;
           ctx.beginPath();
           ctx.arc(smkX, smkY, smkSize, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        ctx.fillStyle = "#151922";
+        // 4. Chimney Stack & Iron Bands
+        ctx.fillStyle = "#292524";
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 2.0;
         ctx.beginPath();
-        ctx.roundRect(cx - 16, cy - 38, 24, 18, [3, 3, 0, 0]);
+        ctx.roundRect(cx - 20, cy - 40, 24, 20, [3, 3, 0, 0]);
         ctx.fill();
         ctx.stroke();
-
-        ctx.fillStyle = "#b45309";
-        ctx.fillRect(cx - 17, cy - 36, 26, 3);
-        ctx.strokeRect(cx - 17, cy - 36, 26, 3);
-        ctx.fillRect(cx - 17, cy - 24, 26, 3);
-        ctx.strokeRect(cx - 17, cy - 24, 26, 3);
-
-        let bellowsPump = Math.sin(time / 160) * 3;
-        ctx.save();
-        ctx.translate(cx - 30, cy - 2);
 
         ctx.fillStyle = "#78350f";
+        ctx.fillRect(cx - 21, cy - 38, 26, 3);
+        ctx.strokeRect(cx - 21, cy - 38, 26, 3);
+        ctx.fillRect(cx - 21, cy - 25, 26, 3);
+        ctx.strokeRect(cx - 21, cy - 25, 26, 3);
+
+        // 5. Main Blast Furnace Body
+        ctx.fillStyle = "#1c1917";
         ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.8;
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-12 - bellowsPump, -8);
-        ctx.lineTo(-12 - bellowsPump, 8);
-        ctx.closePath();
+        ctx.roundRect(cx - 30, cy - 22, 48, 38, [5]);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#d4af37";
-        ctx.fillRect(0, -2, 6, 4);
-        ctx.strokeRect(0, -2, 6, 4);
-        ctx.restore();
-
-        ctx.fillStyle = "#1c1816";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2.4;
-        ctx.beginPath();
-        ctx.roundRect(cx - 28, cy - 22, 52, 38, [5]);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.strokeStyle = "#080605";
+        ctx.strokeStyle = "#0c0a09";
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(cx - 28, cy - 12);
-        ctx.lineTo(cx + 24, cy - 12);
-        ctx.moveTo(cx - 28, cy - 2);
-        ctx.lineTo(cx + 24, cy - 2);
-        ctx.moveTo(cx - 28, cy + 8);
-        ctx.lineTo(cx + 24, cy + 8);
+        ctx.moveTo(cx - 30, cy - 12);
+        ctx.lineTo(cx + 18, cy - 12);
+        ctx.moveTo(cx - 30, cy - 2);
+        ctx.lineTo(cx + 18, cy - 2);
+        ctx.moveTo(cx - 30, cy + 8);
+        ctx.lineTo(cx + 18, cy + 8);
         ctx.stroke();
 
-        ctx.fillStyle = "#2d2623";
-        ctx.beginPath();
-        ctx.roundRect(cx - 30, cy + 12, 56, 5, [2]);
-        ctx.fill();
-        ctx.stroke();
+        // Arched Firebox Hearth
+        let flick1 = Math.sin(time / 80) * 2.5;
+        let flick2 = Math.cos(time / 100) * 2.0;
 
-        let flick1 = Math.sin(time / 90) * 2.5;
-        let flick2 = Math.cos(time / 110) * 2.0;
-
-        ctx.fillStyle = "#0a0200";
+        ctx.fillStyle = "#0c0a09";
         ctx.strokeStyle = "#451a03";
         ctx.lineWidth = 2.0;
         ctx.beginPath();
-        ctx.roundRect(cx - 18, cy - 8, 32, 22, [8, 8, 2, 2]);
+        ctx.roundRect(cx - 20, cy - 8, 28, 22, [8, 8, 2, 2]);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#dc2626";
-        ctx.fillRect(cx - 16, cy + 8, 28, 4);
-
         let fireGrad = ctx.createRadialGradient(
-          cx - 2,
+          cx - 6,
           cy + 4,
           2,
-          cx - 2,
+          cx - 6,
           cy + 4,
           14 + flick1,
         );
         fireGrad.addColorStop(0, "#ffffff");
-        fireGrad.addColorStop(0.35, "#fef08a");
-        fireGrad.addColorStop(0.7, "#f97316");
+        fireGrad.addColorStop(0.3, "#fef08a");
+        fireGrad.addColorStop(0.65, "#f97316");
         fireGrad.addColorStop(1, "#dc2626");
 
         ctx.fillStyle = fireGrad;
         ctx.beginPath();
-        ctx.arc(cx - 2, cy + 4, 13 + Math.abs(flick1), 0, Math.PI * 2);
+        ctx.arc(cx - 6, cy + 4, 13 + Math.abs(flick1), 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#ea580c";
         ctx.beginPath();
-        ctx.moveTo(cx - 15, cy + 12);
-        ctx.quadraticCurveTo(cx - 9 + flick1, cy - 12 + flick2, cx - 4, cy + 4);
-        ctx.quadraticCurveTo(cx - 2 + flick2, cy - 14 + flick1, cx + 2, cy + 4);
+        ctx.moveTo(cx - 18, cy + 12);
         ctx.quadraticCurveTo(
-          cx + 7 - flick1,
+          cx - 12 + flick1,
+          cy - 12 + flick2,
+          cx - 8,
+          cy + 4,
+        );
+        ctx.quadraticCurveTo(cx - 6 + flick2, cy - 14 + flick1, cx - 2, cy + 4);
+        ctx.quadraticCurveTo(
+          cx + 3 - flick1,
           cy - 10 + flick2,
-          cx + 11,
+          cx + 6,
           cy + 12,
         );
         ctx.closePath();
         ctx.fill();
 
+        // 6. Quenching Trough (Left)
         ctx.fillStyle = "#451a03";
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 1.8;
@@ -2228,10 +2233,6 @@
         ctx.roundRect(cx - 36, cy + 6, 12, 16, [2]);
         ctx.fill();
         ctx.stroke();
-
-        ctx.fillStyle = "#262626";
-        ctx.fillRect(cx - 36, cy + 8, 12, 2);
-        ctx.fillRect(cx - 36, cy + 18, 12, 2);
 
         ctx.fillStyle = "#0284c7";
         ctx.fillRect(cx - 34, cy + 8, 8, 12);
@@ -2248,63 +2249,125 @@
           ctx.fill();
         }
 
-        let anvilX = cx + 18;
-        let anvilY = cy + 12;
+        // 7. Mechanical Bellows (Far Left)
+        let bellowsPump = Math.sin(time / 150) * 3;
+        ctx.save();
+        ctx.translate(cx - 30, cy - 2);
+
+        ctx.fillStyle = "#78350f";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-10 - bellowsPump, -7);
+        ctx.lineTo(-10 - bellowsPump, 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(0, -2, 5, 4);
+        ctx.strokeRect(0, -2, 5, 4);
+        ctx.restore();
+
+        // 8. Anvil & Red-Hot Workpiece (Right)
+        let anvilX = cx + 22;
+        let anvilY = cy + 10;
 
         ctx.fillStyle = "#5c2e16";
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 2.0;
         ctx.beginPath();
-        ctx.roundRect(anvilX - 10, anvilY, 20, 14, [3]);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.strokeStyle = "#3d1d0b";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(anvilX - 6, anvilY + 2);
-        ctx.lineTo(anvilX - 6, anvilY + 12);
-        ctx.moveTo(anvilX + 4, anvilY + 2);
-        ctx.lineTo(anvilX + 4, anvilY + 12);
-        ctx.stroke();
-
-        ctx.fillStyle = "#334155";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.8;
-
-        ctx.beginPath();
-        ctx.moveTo(anvilX - 8, anvilY + 2);
-        ctx.lineTo(anvilX + 8, anvilY + 2);
-        ctx.lineTo(anvilX + 5, anvilY - 3);
-        ctx.lineTo(anvilX - 5, anvilY - 3);
-        ctx.closePath();
+        ctx.roundRect(anvilX - 9, anvilY + 2, 18, 12, [2]);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = "#475569";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.8;
+
         ctx.beginPath();
-        ctx.moveTo(anvilX - 13, anvilY - 3);
-        ctx.lineTo(anvilX + 9, anvilY - 3);
-        ctx.lineTo(anvilX + 9, anvilY - 8);
-        ctx.lineTo(anvilX - 7, anvilY - 8);
+        ctx.moveTo(anvilX - 12, anvilY - 4);
+        ctx.lineTo(anvilX + 8, anvilY - 4);
+        ctx.lineTo(anvilX + 8, anvilY - 9);
+        ctx.lineTo(anvilX - 6, anvilY - 9);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = "#cbd5e1";
-        ctx.fillRect(anvilX - 6, anvilY - 8, 14, 1.5);
+        ctx.fillRect(anvilX - 5, anvilY - 9, 12, 1.5);
 
+        // Red-Hot Glowing Sword Blade on Anvil
         ctx.fillStyle = "#facc15";
         ctx.shadowBlur = 8;
         ctx.shadowColor = "#f97316";
-        ctx.fillRect(anvilX - 3, anvilY - 10, 10, 2.5);
+        ctx.fillRect(anvilX - 2, anvilY - 11, 10, 2.5);
         ctx.shadowBlur = 0;
 
-        let sparkStrike = Math.sin(time / 200) > 0.85;
-        if (sparkStrike) {
-          for (let k = 0; k < 5; k++) {
+        // 9. Master Blacksmith NPC Sprite
+        let smithX = cx + 28;
+        let smithY = cy - 2;
+        let hammerCycle = (time / 400) % (Math.PI * 2);
+        let hammerAngle = Math.sin(hammerCycle) * 0.4 - 0.2;
+
+        ctx.save();
+        ctx.translate(smithX, smithY);
+
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.beginPath();
+        ctx.ellipse(0, 16, 7, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#451a03";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(-5, 0, 10, 15, [2]);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(-4, 2, 8, 11);
+
+        ctx.fillStyle = "#d4a373";
+        ctx.beginPath();
+        ctx.arc(0, -5, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#78350f";
+        ctx.beginPath();
+        ctx.arc(0, -3, 3.5, 0, Math.PI);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(-2, 2);
+        ctx.rotate(hammerAngle);
+
+        ctx.strokeStyle = "#5c3a21";
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-8, -10);
+        ctx.stroke();
+
+        ctx.fillStyle = "#334155";
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 1.2;
+        ctx.fillRect(-11, -13, 6, 5);
+        ctx.strokeRect(-11, -13, 6, 5);
+        ctx.restore();
+
+        ctx.restore();
+
+        let isStrike = Math.sin(hammerCycle) < -0.85;
+        if (isStrike) {
+          for (let k = 0; k < 6; k++) {
             let spkAngle = -Math.PI / 4 - (k * Math.PI) / 8;
-            let spkDist = 4 + Math.random() * 8;
+            let spkDist = 5 + Math.random() * 10;
             let spkX = anvilX + 2 + Math.cos(spkAngle) * spkDist;
             let spkY = anvilY - 10 + Math.sin(spkAngle) * spkDist;
 
@@ -2316,8 +2379,8 @@
         for (let i = 0; i < 7; i++) {
           let seed = i * 61.8;
           let progress = (time / 800 + seed) % 1.0;
-          let sparkX = cx - 2 + Math.sin(time / 130 + seed) * 12;
-          let sparkY = cy - 8 - progress * 32;
+          let sparkX = cx - 6 + Math.sin(time / 130 + seed) * 14;
+          let sparkY = cy - 8 - progress * 34;
           let sparkAlpha = 1.0 - progress;
           let sparkSize = 2.0 * (1.0 - progress * 0.5);
 
@@ -2341,6 +2404,7 @@
 
         ctx.save();
 
+        // 1. Ambient Altar Pulsing Glow
         let auraPulse = 1.0 + Math.sin(time / 200) * 0.12;
         let auraGrad = ctx.createRadialGradient(
           cx,
@@ -2348,16 +2412,68 @@
           4,
           cx,
           cy - 6,
-          46 * auraPulse,
+          48 * auraPulse,
         );
         auraGrad.addColorStop(0, "rgba(0, 210, 255, 0.45)");
-        auraGrad.addColorStop(0.45, "rgba(168, 85, 247, 0.22)");
+        auraGrad.addColorStop(0.45, "rgba(168, 85, 247, 0.2)");
         auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = auraGrad;
         ctx.beginPath();
-        ctx.arc(cx, cy - 6, 46 * auraPulse, 0, Math.PI * 2);
+        ctx.arc(cx, cy - 6, 48 * auraPulse, 0, Math.PI * 2);
         ctx.fill();
 
+        // 2. Multi-Layer Rotating Floor Runic Circle
+        ctx.save();
+        ctx.translate(cx, cy + 4);
+        let runeAngle1 = time / 600;
+        let runeAngle2 = -time / 400;
+
+        // Outer Runic Circle Ring
+        ctx.save();
+        ctx.rotate(runeAngle1);
+        ctx.strokeStyle = "rgba(0, 210, 255, 0.65)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 32, 16, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Cardinal Runic Studs
+        for (let i = 0; i < 8; i++) {
+          let ang = (i * Math.PI) / 4;
+          let rx = Math.cos(ang) * 32;
+          let ry = Math.sin(ang) * 16;
+          ctx.fillStyle = i % 2 === 0 ? "#00d2ff" : "#e879f9";
+          ctx.beginPath();
+          ctx.arc(rx, ry, 2.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // Inner Counter-Rotating Ring with Radial Spokes
+        ctx.save();
+        ctx.rotate(runeAngle2);
+        ctx.strokeStyle = "rgba(232, 121, 249, 0.75)";
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 22, 11, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
+        ctx.lineWidth = 1.0;
+        for (let i = 0; i < 4; i++) {
+          let ang = (i * Math.PI) / 2;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(ang) * 8, Math.sin(ang) * 4);
+          ctx.lineTo(Math.cos(ang) * 22, Math.sin(ang) * 11);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.restore();
+
+        // 3. Altar Dais Platform
         ctx.fillStyle = "#090d16";
         ctx.strokeStyle = "#3b0764";
         ctx.lineWidth = 2.2;
@@ -2391,6 +2507,7 @@
           ctx.strokeRect(cx + ox - 3, cy + 10, 6, 12);
         });
 
+        // 4. Side Spires with Floating Energy Crystals
         let spireW = 12;
         let spireH = 40;
         let spireTopY = cy - 32;
@@ -2436,6 +2553,7 @@
           ctx.stroke();
         });
 
+        // 5. Lectern & Floating Spectral Codex
         let lecternX = cx - 16;
         let lecternY = cy + 2;
 
@@ -2498,6 +2616,7 @@
         ctx.lineWidth = 1.0;
         ctx.strokeRect(lecternX - 2, glyphY - 2, 4, 4);
 
+        // 6. Mana Basin
         let basinX = cx + 16;
         let basinY = cy + 4;
 
@@ -2532,90 +2651,130 @@
         ctx.ellipse(basinX, basinY, ripRad, ripRad * 0.6, 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        let centerY = cy - 10;
+        // 7. Central Arcane Enchanting Table & Levitating Crystal Matrix
+        let altarY = cy - 2;
 
-        let beamAlpha = 0.25 + Math.sin(time / 110) * 0.15;
-        let beamGrad = ctx.createLinearGradient(cx, cy + 4, cx, centerY - 16);
-        beamGrad.addColorStop(0, "rgba(0, 210, 255, 0)");
-        beamGrad.addColorStop(0.5, `rgba(0, 210, 255, ${beamAlpha})`);
+        // Stone Pedestal Base
+        ctx.fillStyle = "#161b2e";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.roundRect(cx - 14, altarY - 2, 28, 20, [3]);
+        ctx.fill();
+        ctx.stroke();
+
+        // Gold Runic Trim on Pedestal
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(cx - 12, altarY, 24, 16);
+
+        // Table Surface Platter
+        ctx.fillStyle = "#1e293b";
+        ctx.strokeStyle = "#00d2ff";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, altarY - 2, 16, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Concentric Glowing Rune Ring on Table
+        ctx.strokeStyle = "rgba(232, 121, 249, 0.8)";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.ellipse(cx, altarY - 2, 11, 5.5, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Floating Vertical Light Beam from Altar
+        let beamAlpha = 0.35 + Math.sin(time / 110) * 0.15;
+        let beamGrad = ctx.createLinearGradient(
+          cx,
+          altarY - 2,
+          cx,
+          altarY - 28,
+        );
+        beamGrad.addColorStop(0, `rgba(0, 210, 255, ${beamAlpha})`);
+        beamGrad.addColorStop(0.6, `rgba(168, 85, 247, ${beamAlpha * 0.8})`);
         beamGrad.addColorStop(1, "rgba(232, 121, 249, 0)");
         ctx.fillStyle = beamGrad;
-        ctx.fillRect(cx - 8, centerY - 16, 16, cy + 20 - centerY);
+        ctx.fillRect(cx - 8, altarY - 28, 16, 26);
 
-        let rot1 = time / 500;
-        let rot2 = -time / 320 + Math.PI / 3;
+        // Levitating Levitational Celestial Crystal Octahedron
+        let crystalFloat = Math.sin(time / 180) * 3;
+        let crystalY = altarY - 18 + crystalFloat;
+        let spinAngle = time / 350;
 
         ctx.save();
-        ctx.translate(cx, centerY);
+        ctx.translate(cx, crystalY);
 
+        // Orbiting Runic Magic Rings around Crystal
         ctx.save();
-        ctx.rotate(rot1);
-        ctx.strokeStyle = "rgba(0, 210, 255, 0.6)";
-        ctx.lineWidth = 1.5;
+        ctx.rotate(spinAngle);
+        ctx.strokeStyle = "rgba(0, 210, 255, 0.85)";
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
         ctx.beginPath();
-        ctx.ellipse(0, 0, 24, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 16, 6, 0, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
 
         ctx.save();
-        ctx.rotate(rot2);
-        ctx.strokeStyle = "rgba(232, 121, 249, 0.7)";
-        ctx.lineWidth = 1.5;
+        ctx.rotate(-spinAngle * 1.4 + Math.PI / 4);
+        ctx.strokeStyle = "rgba(232, 121, 249, 0.85)";
+        ctx.lineWidth = 1.0;
+        ctx.setLineDash([2, 2]);
         ctx.beginPath();
-        ctx.ellipse(0, 0, 18, 7, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 13, 5, 0, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
 
-        ctx.restore();
+        // Faceted Levitating Crystal Core
+        let cW = 8 + Math.sin(time / 120) * 1.0;
+        let cH = 14;
 
-        let floatY = Math.sin(time / 200) * 4;
-        let crystalY = centerY + floatY;
-        let spin = Math.sin(time / 160) * 6;
-
-        let crystalGlow = ctx.createRadialGradient(
-          cx,
-          crystalY,
-          2,
-          cx,
-          crystalY,
-          22,
-        );
-        crystalGlow.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-        crystalGlow.addColorStop(0.4, "rgba(0, 210, 255, 0.6)");
-        crystalGlow.addColorStop(0.8, "rgba(168, 85, 247, 0.3)");
-        crystalGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-
-        ctx.fillStyle = crystalGlow;
-        ctx.beginPath();
-        ctx.arc(cx, crystalY, 22, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#00d2ff";
+        ctx.fillStyle = "#00ffff";
         ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.8;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+
+        // Upper Top Pyramid
         ctx.beginPath();
-        ctx.moveTo(cx, crystalY - 16);
-        ctx.lineTo(cx + 9 + spin * 0.15, crystalY);
-        ctx.lineTo(cx, crystalY + 12);
-        ctx.lineTo(cx - 9 - spin * 0.15, crystalY);
+        ctx.moveTo(0, -cH / 2);
+        ctx.lineTo(cW / 2, 0);
+        ctx.lineTo(0, cH * 0.1);
+        ctx.lineTo(-cW / 2, 0);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.lineWidth = 1.5;
+        // Lower Bottom Pyramid
+        ctx.fillStyle = "#9333ea";
         ctx.beginPath();
-        ctx.moveTo(cx, crystalY - 16);
-        ctx.lineTo(cx + spin * 0.4, crystalY);
-        ctx.lineTo(cx, crystalY + 12);
+        ctx.moveTo(0, cH / 2);
+        ctx.lineTo(cW / 2, 0);
+        ctx.lineTo(0, cH * 0.1);
+        ctx.lineTo(-cW / 2, 0);
+        ctx.closePath();
+        ctx.fill();
         ctx.stroke();
 
+        // Facet Shading Highlight
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.beginPath();
+        ctx.moveTo(0, -cH / 2);
+        ctx.lineTo(cW / 2, 0);
+        ctx.lineTo(0, cH * 0.1);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+
+        // 8. Upward Drifting Cosmic Star Dust Sparks
         for (let i = 0; i < 8; i++) {
           let seed = i * 47.3;
-          let progress = (time / 750 + seed) % 1.0;
-          let sparkX = cx + Math.sin(time / 160 + seed) * 22;
-          let sparkY = cy + 4 - progress * 38;
-          let alpha = (1.0 - progress) * 0.85;
+          let progress = (time / 700 + seed) % 1.0;
+          let sparkX = cx + Math.sin(time / 140 + seed) * 18;
+          let sparkY = altarY - progress * 36;
+          let alpha = (1.0 - progress) * 0.9;
           let size = 2.0 * (1.0 - progress * 0.3);
 
           ctx.fillStyle =
@@ -2758,297 +2917,472 @@
 
         ctx.restore();
       } else if (tileType === window.TILE_TYPES.STATION_SHOP) {
-              let cx = px + tileSize / 2;
-              let cy = py + tileSize / 2;
-              let time = Date.now();
-
-              ctx.save();
-
-              // 1. Woven Ornamental Rug Base Pad (Underneath the stall)
-              let rugW = 72;
-              let rugH = 28;
-              let rugX = cx - rugW / 2;
-              let rugY = cy - 6;
-
-              ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-              ctx.beginPath();
-              ctx.roundRect(rugX - 2, rugY - 2, rugW + 4, rugH + 4, [4]);
-              ctx.fill();
-
-              ctx.fillStyle = "#6b1111";
-              ctx.strokeStyle = "#4a0b0b";
-              ctx.lineWidth = 1.5;
-              ctx.beginPath();
-              ctx.roundRect(rugX, rugY, rugW, rugH, [3]);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.strokeStyle = "#d4af37";
-              ctx.lineWidth = 1.0;
-              ctx.strokeRect(rugX + 3, rugY + 3, rugW - 6, rugH - 6);
-
-              ctx.fillStyle = "#f1c40f";
-              for (let tX = rugX + 4; tX <= rugX + rugW - 4; tX += 6) {
-                ctx.fillRect(tX - 1, rugY - 3, 2, 3);
-                ctx.fillRect(tX - 1, rugY + rugH, 2, 3);
-              }
-
-              // 2. Oak Trade Counter Structure
-              let tableW = 60;
-              let tableH = 18;
-              let tableX = cx - tableW / 2;
-              let tableY = cy - 2;
-
-              ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-              ctx.beginPath();
-              ctx.ellipse(cx, tableY + tableH + 2, tableW / 2 + 4, 4, 0, 0, Math.PI * 2);
-              ctx.fill();
-
-              ctx.fillStyle = "#4a2d18";
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 2.0;
-              ctx.beginPath();
-              ctx.roundRect(tableX, tableY, tableW, tableH, [2]);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.fillStyle = "#331c0e";
-              ctx.fillRect(tableX + 4, tableY + 3, 14, tableH - 6);
-              ctx.strokeRect(tableX + 4, tableY + 3, 14, tableH - 6);
-              ctx.fillRect(tableX + 23, tableY + 3, 14, tableH - 6);
-              ctx.strokeRect(tableX + 23, tableY + 3, 14, tableH - 6);
-              ctx.fillRect(tableX + 42, tableY + 3, 14, tableH - 6);
-              ctx.strokeRect(tableX + 42, tableY + 3, 14, tableH - 6);
-
-              ctx.fillStyle = "#78350f";
-              ctx.fillRect(tableX - 2, tableY - 3, tableW + 4, 5);
-              ctx.strokeRect(tableX - 2, tableY - 3, tableW + 4, 5);
-
-              ctx.fillStyle = "#800020";
-              ctx.fillRect(cx - 16, tableY - 3, 32, 5);
-              ctx.strokeStyle = "#f1c40f";
-              ctx.lineWidth = 0.8;
-              ctx.strokeRect(cx - 16, tableY - 3, 32, 5);
-
-              // Wares Displayed on Counter
-              ctx.fillStyle = "#2ecc71";
-              ctx.beginPath();
-              ctx.arc(cx - 10, tableY - 5, 2.5, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.fillStyle = "#ffffff";
-              ctx.fillRect(cx - 11, tableY - 8, 2, 2);
-
-              ctx.fillStyle = "#d4af37";
-              ctx.beginPath();
-              ctx.ellipse(cx, tableY - 4, 4, 3, 0, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.strokeStyle = "#000";
-              ctx.lineWidth = 0.8;
-              ctx.stroke();
-
-              ctx.fillStyle = "#bdc3c7";
-              ctx.beginPath();
-              ctx.moveTo(cx + 8, tableY - 7);
-              ctx.lineTo(cx + 12, tableY - 3);
-              ctx.lineTo(cx + 10, tableY - 2);
-              ctx.closePath();
-              ctx.fill();
-
-              // 3. Canopy Support Posts
-              let postLeftX = tableX - 2;
-              let postRightX = tableX + tableW - 2;
-              let postTopY = cy - 32;
-
-              ctx.fillStyle = "#3d1d0b";
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1.8;
-
-              ctx.fillRect(postLeftX, postTopY, 4, 30);
-              ctx.strokeRect(postLeftX, postTopY, 4, 30);
-              ctx.fillRect(postRightX, postTopY, 4, 30);
-              ctx.strokeRect(postRightX, postTopY, 4, 30);
-
-              ctx.fillStyle = "#f1c40f";
-              ctx.fillRect(postLeftX - 1, postTopY - 1, 6, 3);
-              ctx.fillRect(postRightX - 1, postTopY - 1, 6, 3);
-
-              // 4. Striped Velvet Canopy Awning
-              let awningW = 68;
-              let awningH = 14;
-              let awningX = cx - awningW / 2;
-              let awningY = postTopY - 8;
-
-              ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-              ctx.beginPath();
-              ctx.roundRect(awningX - 1, awningY + 2, awningW + 2, awningH, [3]);
-              ctx.fill();
-
-              ctx.fillStyle = "#8b0000";
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 2.0;
-              ctx.beginPath();
-              ctx.roundRect(awningX, awningY, awningW, awningH, [4, 4, 0, 0]);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.fillStyle = "#f1c40f";
-              let stripeW = 8;
-              for (let sX = awningX + 6; sX < awningX + awningW - 4; sX += stripeW * 2) {
-                ctx.fillRect(sX, awningY, stripeW, awningH);
-              }
-
-              ctx.fillStyle = "#8b0000";
-              ctx.strokeStyle = "#d4af37";
-              ctx.lineWidth = 1.2;
-
-              let scallopCount = 7;
-              let scallopW = awningW / scallopCount;
-              for (let i = 0; i < scallopCount; i++) {
-                let scX = awningX + i * scallopW + scallopW / 2;
-                let scY = awningY + awningH;
-                ctx.beginPath();
-                ctx.arc(scX, scY, scallopW / 2, 0, Math.PI);
-                ctx.fill();
-                ctx.stroke();
-              }
-
-              // 5. Dual Hanging Brass Lanterns
-              let lanternSway1 = Math.sin(time / 180) * 2;
-              let lanternSway2 = Math.cos(time / 210) * 2;
-
-              let l1X = postLeftX + 2 + lanternSway1;
-              let l1Y = postTopY + 10;
-              ctx.strokeStyle = "#f1c40f";
-              ctx.lineWidth = 1.0;
-              ctx.beginPath();
-              ctx.moveTo(postLeftX + 2, postTopY + 4);
-              ctx.lineTo(l1X, l1Y);
-              ctx.stroke();
-
-              ctx.fillStyle = "#ffd700";
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1.2;
-              ctx.beginPath();
-              ctx.arc(l1X, l1Y + 3, 3.5, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.fillStyle = "#ffffff";
-              ctx.beginPath();
-              ctx.arc(l1X, l1Y + 3, 1.2, 0, Math.PI * 2);
-              ctx.fill();
-
-              let l2X = postRightX + 2 + lanternSway2;
-              let l2Y = postTopY + 10;
-              ctx.strokeStyle = "#f1c40f";
-              ctx.lineWidth = 1.0;
-              ctx.beginPath();
-              ctx.moveTo(postRightX + 2, postTopY + 4);
-              ctx.lineTo(l2X, l2Y);
-              ctx.stroke();
-
-              ctx.fillStyle = "#ffd700";
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1.2;
-              ctx.beginPath();
-              ctx.arc(l2X, l2Y + 3, 3.5, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.fillStyle = "#ffffff";
-              ctx.beginPath();
-              ctx.arc(l2X, l2Y + 3, 1.2, 0, Math.PI * 2);
-              ctx.fill();
-
-              // 6. Ambient Drifting Gold Spark Particles
-              for (let i = 0; i < 4; i++) {
-                let seed = i * 53.7;
-                let progress = (time / 700 + seed) % 1.0;
-                let sparkX = cx + Math.sin(time / 140 + seed) * 24;
-                let sparkY = tableY - progress * 20;
-                let alpha = (1.0 - progress) * 0.8;
-                let size = 1.5 * (1.0 - progress * 0.3);
-
-                ctx.fillStyle = `rgba(241, 196, 15, ${alpha})`;
-                ctx.fillRect(sparkX - size / 2, sparkY - size / 2, size, size);
-              }
-
-              ctx.restore();
-            } else if (tileType === window.TILE_TYPES.STATION_GACHAPON) {
         let cx = px + tileSize / 2;
         let cy = py + tileSize / 2;
         let time = Date.now();
 
         ctx.save();
 
-        // 1. Shadow Base
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        // 1. Woven Ornamental Rug Base Pad (Underneath the stall)
+        let rugW = 72;
+        let rugH = 28;
+        let rugX = cx - rugW / 2;
+        let rugY = cy - 6;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
         ctx.beginPath();
-        ctx.ellipse(cx, cy + 10, 14, 5, 0, 0, Math.PI * 2);
+        ctx.roundRect(rugX - 2, rugY - 2, rugW + 4, rugH + 4, [4]);
         ctx.fill();
 
-        // 2. Red Metal Body (Vending Base)
-        ctx.fillStyle = "#c0392b";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
+        ctx.fillStyle = "#6b1111";
+        ctx.strokeStyle = "#4a0b0b";
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.roundRect(cx - 10, cy - 2, 20, 14, [2]);
-        ctx.fill();
-        ctx.stroke();
-
-        // Dispenser hatch slot
-        ctx.fillStyle = "#1e272e";
-        ctx.fillRect(cx - 4, cy + 6, 8, 5);
-        ctx.strokeRect(cx - 4, cy + 6, 8, 5);
-
-        // Turn dial
-        let dialAngle = (time / 1000) % (Math.PI * 2);
-        ctx.save();
-        ctx.translate(cx, cy + 2);
-        ctx.rotate(dialAngle);
-        ctx.fillStyle = "#ffd700";
-        ctx.fillRect(-4, -1, 8, 2);
-        ctx.strokeRect(-4, -1, 8, 2);
-        ctx.restore();
-
-        // 3. Glass Dome (Sphere holding capsules)
-        ctx.fillStyle = "rgba(224, 242, 254, 0.35)";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(cx, cy - 8, 9, 0, Math.PI * 2);
+        ctx.roundRect(rugX, rugY, rugW, rugH, [3]);
         ctx.fill();
         ctx.stroke();
 
-        // Cap on top of dome
-        ctx.fillStyle = "#c0392b";
-        ctx.fillRect(cx - 5, cy - 19, 10, 3);
-        ctx.strokeRect(cx - 5, cy - 19, 10, 3);
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 1.0;
+        ctx.strokeRect(rugX + 3, rugY + 3, rugW - 6, rugH - 6);
 
-        // 4. Colorful capsules inside dome
-        let capsuleColors = [
-          "#ffd700",
-          "#38bdf8",
-          "#ec4899",
-          "#2ecc71",
-          "#a855f7",
-        ];
-        for (let i = 0; i < 6; i++) {
-          let seed = i * 45.6;
-          let capX = cx + Math.sin(seed) * 5;
-          let capY = cy - 8 + Math.cos(seed * 1.5) * 4;
-          ctx.fillStyle = capsuleColors[i % capsuleColors.length];
-          ctx.beginPath();
-          ctx.arc(capX, capY, 2, 0, Math.PI * 2);
-          ctx.fill();
+        ctx.fillStyle = "#f1c40f";
+        for (let tX = rugX + 4; tX <= rugX + rugW - 4; tX += 6) {
+          ctx.fillRect(tX - 1, rugY - 3, 2, 3);
+          ctx.fillRect(tX - 1, rugY + rugH, 2, 3);
         }
 
-        // Glass shine curve
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-        ctx.lineWidth = 1;
+        // 2. Oak Trade Counter Structure
+        let tableW = 60;
+        let tableH = 18;
+        let tableX = cx - tableW / 2;
+        let tableY = cy - 2;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
         ctx.beginPath();
-        ctx.arc(cx, cy - 8, 7, -Math.PI / 3, -Math.PI * 0.8, true);
+        ctx.ellipse(
+          cx,
+          tableY + tableH + 2,
+          tableW / 2 + 4,
+          4,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+
+        ctx.fillStyle = "#4a2d18";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.roundRect(tableX, tableY, tableW, tableH, [2]);
+        ctx.fill();
         ctx.stroke();
+
+        ctx.fillStyle = "#331c0e";
+        ctx.fillRect(tableX + 4, tableY + 3, 14, tableH - 6);
+        ctx.strokeRect(tableX + 4, tableY + 3, 14, tableH - 6);
+        ctx.fillRect(tableX + 23, tableY + 3, 14, tableH - 6);
+        ctx.strokeRect(tableX + 23, tableY + 3, 14, tableH - 6);
+        ctx.fillRect(tableX + 42, tableY + 3, 14, tableH - 6);
+        ctx.strokeRect(tableX + 42, tableY + 3, 14, tableH - 6);
+
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(tableX - 2, tableY - 3, tableW + 4, 5);
+        ctx.strokeRect(tableX - 2, tableY - 3, tableW + 4, 5);
+
+        ctx.fillStyle = "#800020";
+        ctx.fillRect(cx - 16, tableY - 3, 32, 5);
+        ctx.strokeStyle = "#f1c40f";
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(cx - 16, tableY - 3, 32, 5);
+
+        // Wares Displayed on Counter
+        ctx.fillStyle = "#2ecc71";
+        ctx.beginPath();
+        ctx.arc(cx - 10, tableY - 5, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(cx - 11, tableY - 8, 2, 2);
+
+        ctx.fillStyle = "#d4af37";
+        ctx.beginPath();
+        ctx.ellipse(cx, tableY - 4, 4, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = "#bdc3c7";
+        ctx.beginPath();
+        ctx.moveTo(cx + 8, tableY - 7);
+        ctx.lineTo(cx + 12, tableY - 3);
+        ctx.lineTo(cx + 10, tableY - 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // 3. Canopy Support Posts
+        let postLeftX = tableX - 2;
+        let postRightX = tableX + tableW - 2;
+        let postTopY = cy - 32;
+
+        ctx.fillStyle = "#3d1d0b";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.8;
+
+        ctx.fillRect(postLeftX, postTopY, 4, 30);
+        ctx.strokeRect(postLeftX, postTopY, 4, 30);
+        ctx.fillRect(postRightX, postTopY, 4, 30);
+        ctx.strokeRect(postRightX, postTopY, 4, 30);
+
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(postLeftX - 1, postTopY - 1, 6, 3);
+        ctx.fillRect(postRightX - 1, postTopY - 1, 6, 3);
+
+        // 4. Striped Velvet Canopy Awning
+        let awningW = 68;
+        let awningH = 14;
+        let awningX = cx - awningW / 2;
+        let awningY = postTopY - 8;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.beginPath();
+        ctx.roundRect(awningX - 1, awningY + 2, awningW + 2, awningH, [3]);
+        ctx.fill();
+
+        ctx.fillStyle = "#8b0000";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.roundRect(awningX, awningY, awningW, awningH, [4, 4, 0, 0]);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#f1c40f";
+        let stripeW = 8;
+        for (
+          let sX = awningX + 6;
+          sX < awningX + awningW - 4;
+          sX += stripeW * 2
+        ) {
+          ctx.fillRect(sX, awningY, stripeW, awningH);
+        }
+
+        ctx.fillStyle = "#8b0000";
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 1.2;
+
+        let scallopCount = 7;
+        let scallopW = awningW / scallopCount;
+        for (let i = 0; i < scallopCount; i++) {
+          let scX = awningX + i * scallopW + scallopW / 2;
+          let scY = awningY + awningH;
+          ctx.beginPath();
+          ctx.arc(scX, scY, scallopW / 2, 0, Math.PI);
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        // 5. Dual Hanging Brass Lanterns
+        let lanternSway1 = Math.sin(time / 180) * 2;
+        let lanternSway2 = Math.cos(time / 210) * 2;
+
+        let l1X = postLeftX + 2 + lanternSway1;
+        let l1Y = postTopY + 10;
+        ctx.strokeStyle = "#f1c40f";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(postLeftX + 2, postTopY + 4);
+        ctx.lineTo(l1X, l1Y);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffd700";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(l1X, l1Y + 3, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(l1X, l1Y + 3, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        let l2X = postRightX + 2 + lanternSway2;
+        let l2Y = postTopY + 10;
+        ctx.strokeStyle = "#f1c40f";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(postRightX + 2, postTopY + 4);
+        ctx.lineTo(l2X, l2Y);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffd700";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(l2X, l2Y + 3, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(l2X, l2Y + 3, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 6. Ambient Drifting Gold Spark Particles
+        for (let i = 0; i < 4; i++) {
+          let seed = i * 53.7;
+          let progress = (time / 700 + seed) % 1.0;
+          let sparkX = cx + Math.sin(time / 140 + seed) * 24;
+          let sparkY = tableY - progress * 20;
+          let alpha = (1.0 - progress) * 0.8;
+          let size = 1.5 * (1.0 - progress * 0.3);
+
+          ctx.fillStyle = `rgba(241, 196, 15, ${alpha})`;
+          ctx.fillRect(sparkX - size / 2, sparkY - size / 2, size, size);
+        }
+
+        ctx.restore();
+      } else if (tileType === window.TILE_TYPES.STATION_GACHAPON) {
+        let cx = px + tileSize / 2;
+        let cy = py + tileSize / 2;
+        let time = Date.now();
+
+        ctx.save();
+
+        // 1. Neon Grid Base Pad
+        let padW = 72;
+        let padH = 28;
+        let padX = cx - padW / 2;
+        let padY = cy - 6;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.beginPath();
+        ctx.roundRect(padX - 2, padY - 2, padW + 4, padH + 4, [4]);
+        ctx.fill();
+
+        ctx.fillStyle = "#090d16";
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(padX, padY, padW, padH, [3]);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(232, 121, 249, 0.35)";
+        ctx.lineWidth = 1.0;
+        ctx.strokeRect(padX + 3, padY + 3, padW - 6, padH - 6);
+
+        // Corner LED Studs
+        ctx.fillStyle = "#00d2ff";
+        ctx.beginPath();
+        ctx.arc(padX + 4, padY + 4, 2, 0, Math.PI * 2);
+        ctx.arc(padX + padW - 4, padY + 4, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#e879f9";
+        ctx.beginPath();
+        ctx.arc(padX + 4, padY + padH - 4, 2, 0, Math.PI * 2);
+        ctx.arc(padX + padW - 4, padY + padH - 4, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. Main Arcade Cabinet Chassis
+        let cabW = 44;
+        let cabH = 42;
+        let cabX = cx - cabW / 2;
+        let cabY = cy - 24;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cabY + cabH + 2, cabW / 2 + 4, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#1e1b4b";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.roundRect(cabX, cabY, cabW, cabH, [4]);
+        ctx.fill();
+        ctx.stroke();
+
+        // Neon Side Strips
+        let sidePulse = Math.sin(time / 150) * 0.2 + 0.8;
+        ctx.fillStyle = `rgba(232, 121, 249, ${sidePulse})`;
+        ctx.fillRect(cabX + 2, cabY + 4, 3, cabH - 8);
+        ctx.fillRect(cabX + cabW - 5, cabY + 4, 3, cabH - 8);
+
+        // Top Marquee Banner Header
+        ctx.fillStyle = "#312e81";
+        ctx.strokeStyle = "#ffd700";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(cabX + 4, cabY - 12, cabW - 8, 12, [3, 3, 0, 0]);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = "900 8px monospace";
+        ctx.fillStyle = "#ffd700";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("GACHA", cx, cabY - 6);
+
+        // 3. Glass Dome & Capsules
+        let domeCx = cx;
+        let domeCy = cabY + 12;
+        let domeR = 15;
+
+        // Background Dome Interior
+        ctx.fillStyle = "#020617";
+        ctx.beginPath();
+        ctx.arc(domeCx, domeCy, domeR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Colorful Capsule Spheres
+        let capsuleColors = [
+          { c1: "#f1c40f", c2: "#ffffff" },
+          { c1: "#00d2ff", c2: "#ffffff" },
+          { c1: "#e84393", c2: "#ffffff" },
+          { c1: "#2ecc71", c2: "#ffffff" },
+          { c1: "#a855f7", c2: "#ffffff" },
+          { c1: "#e67e22", c2: "#ffffff" },
+          { c1: "#ff4757", c2: "#ffffff" },
+          { c1: "#00ffff", c2: "#ffffff" },
+        ];
+
+        for (let i = 0; i < 8; i++) {
+          let seed = i * 48.2;
+          let jitter = Math.sin(time / 200 + seed) * 0.8;
+          let capX = domeCx + Math.sin(seed * 1.3) * 9 + jitter;
+          let capY = domeCy + Math.cos(seed * 0.9) * 7;
+
+          let col = capsuleColors[i % capsuleColors.length];
+
+          ctx.save();
+          ctx.translate(capX, capY);
+          ctx.rotate(seed);
+
+          ctx.fillStyle = col.c1;
+          ctx.beginPath();
+          ctx.arc(0, 0, 3.2, Math.PI / 2, -Math.PI / 2);
+          ctx.fill();
+
+          ctx.fillStyle = col.c2;
+          ctx.beginPath();
+          ctx.arc(0, 0, 3.2, -Math.PI / 2, Math.PI / 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.arc(0, 0, 3.2, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        // Glass Shell Overlay & Glare
+        let glassGrad = ctx.createRadialGradient(
+          domeCx - 4,
+          domeCy - 4,
+          2,
+          domeCx,
+          domeCy,
+          domeR,
+        );
+        glassGrad.addColorStop(0, "rgba(255, 255, 255, 0.45)");
+        glassGrad.addColorStop(0.5, "rgba(224, 242, 254, 0.15)");
+        glassGrad.addColorStop(1, "rgba(15, 23, 42, 0.65)");
+
+        ctx.fillStyle = glassGrad;
+        ctx.strokeStyle = "#00d2ff";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(domeCx, domeCy, domeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(
+          domeCx,
+          domeCy,
+          domeR - 2,
+          -Math.PI * 0.7,
+          -Math.PI * 0.25,
+          false,
+        );
+        ctx.stroke();
+
+        // 4. Control Deck & Crank Handle
+        let deckY = cabY + 28;
+
+        ctx.fillStyle = "#312e81";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.roundRect(cabX + 6, deckY, cabW - 12, 12, [2]);
+        ctx.fill();
+        ctx.stroke();
+
+        // Coin Slot
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(cabX + 10, deckY + 4, 3, 5);
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(cabX + 10, deckY + 4, 3, 5);
+
+        // Rotary Crank Handle
+        let crankAngle = (time / 800) % (Math.PI * 2);
+        let crankX = cx + 8;
+        let crankY = deckY + 6;
+
+        ctx.save();
+        ctx.translate(crankX, crankY);
+        ctx.rotate(crankAngle);
+
+        ctx.fillStyle = "#cbd5e1";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.0;
+        ctx.fillRect(-5, -1.5, 10, 3);
+        ctx.strokeRect(-5, -1.5, 10, 3);
+
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath();
+        ctx.arc(4, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // Dispenser Hatch Bin
+        ctx.fillStyle = "#020617";
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(cx - 7, deckY + 3, 11, 7, [2]);
+        ctx.fill();
+        ctx.stroke();
+
+        // 5. Floating Ambient Neon Spark Particles
+        for (let i = 0; i < 5; i++) {
+          let seed = i * 53.4;
+          let progress = (time / 750 + seed) % 1.0;
+          let sparkX = cx + Math.sin(time / 150 + seed) * 20;
+          let sparkY = cabY + cabH - progress * 32;
+          let alpha = (1.0 - progress) * 0.85;
+          let size = 1.8 * (1.0 - progress * 0.3);
+
+          ctx.fillStyle =
+            i % 2 === 0
+              ? `rgba(0, 210, 255, ${alpha})`
+              : `rgba(232, 121, 249, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(sparkX, sparkY, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         ctx.restore();
       }
@@ -3215,6 +3549,149 @@
         });
         ctx.restore();
       });
+    }
+
+    // PASS 2.6: Sector-Specific Biome Hazards, Animated Particle Fog, and Environmental Effects
+    if (!isHub) {
+      let depth = window.player ? window.player.depth || 1 : 1;
+      let sector = Math.floor((depth - 1) / 12);
+      let isEco = window.playerStats && window.playerStats.ecoMode;
+
+      let viewMinX = camera.x;
+      let viewMaxX = camera.x + effW;
+      let viewMinY = camera.y;
+      let viewMaxY = camera.y + effH;
+
+      ctx.save();
+
+      // Sector 0: Whispering Woods - Drifting Pollen Spore Mist
+      if (sector === 0) {
+        let sporeCount = isEco ? 4 : 14;
+        for (let i = 0; i < sporeCount; i++) {
+          let seed = i * 31.7;
+          let progressX = (time / 3200 + seed) % 1.0;
+          let progressY = (time / 2200 + seed * 1.3) % 1.0;
+          let spX = viewMinX + progressX * effW;
+          let spY =
+            viewMinY + Math.sin(time / 500 + seed) * 16 + progressY * effH;
+          let alpha = Math.sin(progressX * Math.PI) * 0.55;
+
+          ctx.fillStyle = `rgba(163, 253, 131, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(spX, spY, 1.8 + (i % 2) * 0.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // Sector 1: Mountain Peaks - Frost Shimmer & Snow Wisps
+      else if (sector === 1) {
+        let wispCount = isEco ? 5 : 16;
+        for (let i = 0; i < wispCount; i++) {
+          let seed = i * 47.1;
+          let progressX = (time / 1800 + seed) % 1.0;
+          let wx = viewMinX + progressX * effW;
+          let wy =
+            viewMinY + ((seed * 19.3) % effH) + Math.sin(time / 350 + i) * 8;
+          let alpha = Math.sin(progressX * Math.PI) * 0.5;
+
+          ctx.fillStyle = `rgba(224, 242, 254, ${alpha})`;
+          ctx.beginPath();
+          ctx.ellipse(
+            wx,
+            wy,
+            4.5 + (i % 3) * 2,
+            1.2,
+            -Math.PI / 12,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+      }
+      // Sector 2: Inferno Depths - Lava Vents & Rising Embers
+      else if (sector === 2) {
+        for (let r = startRow; r <= endRow; r++) {
+          for (let c = startCol; c <= endCol; c++) {
+            if (map.grid[r][c] === window.TILE_TYPES.FLOOR) {
+              let tileHash =
+                Math.abs(Math.sin(c * 17.123 + r * 43.51) * 43758.5453) % 1.0;
+              if (tileHash > 0.88) {
+                let vx = c * tileSize + tileSize / 2;
+                let vy = r * tileSize + tileSize / 2;
+                let vPulse = Math.sin(time / 150 + tileHash * 10) * 0.5 + 0.5;
+
+                ctx.fillStyle = `rgba(249, 115, 22, ${0.2 + vPulse * 0.25})`;
+                ctx.beginPath();
+                ctx.ellipse(
+                  vx,
+                  vy,
+                  10 + vPulse * 3,
+                  5 + vPulse * 1.5,
+                  0,
+                  0,
+                  Math.PI * 2,
+                );
+                ctx.fill();
+
+                if (!isEco && vPulse > 0.7) {
+                  let sparkY = vy - (vPulse - 0.7) * 20;
+                  ctx.fillStyle = "#fef08a";
+                  ctx.fillRect(vx + (tileHash * 8 - 4), sparkY, 1.5, 1.5);
+                }
+              }
+            }
+          }
+        }
+      }
+      // Sector 3: Fungal Swamp - Toxic Spore Bubbles & Puddle Ripples
+      else if (sector === 3) {
+        for (let r = startRow; r <= endRow; r++) {
+          for (let c = startCol; c <= endCol; c++) {
+            if (map.grid[r][c] === window.TILE_TYPES.FLOOR) {
+              let tileHash =
+                Math.abs(Math.sin(c * 23.45 + r * 81.12) * 43758.5453) % 1.0;
+              if (tileHash > 0.85) {
+                let px = c * tileSize + tileSize / 2;
+                let py = r * tileSize + tileSize / 2;
+                let ripRad = ((time / 40 + tileHash * 20) % 12) + 1;
+                let ripAlpha = (1.0 - ripRad / 13) * 0.4;
+
+                ctx.strokeStyle = `rgba(52, 211, 153, ${ripAlpha})`;
+                ctx.lineWidth = 1.0;
+                ctx.beginPath();
+                ctx.ellipse(px, py, ripRad, ripRad * 0.5, 0, 0, Math.PI * 2);
+                ctx.stroke();
+              }
+            }
+          }
+        }
+      }
+      // Sector 4+: Void Singularity - Dimensional Rift Tears & Cosmic Star Drift
+      else {
+        let starCount = isEco ? 6 : 20;
+        for (let i = 0; i < starCount; i++) {
+          let seed = i * 59.2;
+          let progress = (time / 2500 + seed) % 1.0;
+          let stX =
+            viewMinX +
+            ((seed * 31.1) % effW) +
+            Math.cos(time / 500 + seed) * 12;
+          let stY =
+            viewMinY +
+            ((seed * 17.7) % effH) +
+            Math.sin(time / 500 + seed) * 12;
+          let stAlpha = Math.sin(progress * Math.PI) * 0.75;
+
+          ctx.fillStyle =
+            i % 2 === 0
+              ? `rgba(232, 121, 249, ${stAlpha})`
+              : `rgba(56, 189, 248, ${stAlpha})`;
+          ctx.beginPath();
+          ctx.arc(stX, stY, 1.2 + (i % 2) * 0.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
     }
 
     // PASS 3: Map Perimeter Border Frame

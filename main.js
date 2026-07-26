@@ -130,13 +130,13 @@
         if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
           if (st.type === window.TILE_TYPES.STATION_FORGE) {
             let forgeFlicker =
-              Math.sin(time / 70) * 10 + Math.cos(time / 110) * 6;
+              Math.sin(time / 70) * 12 + Math.cos(time / 110) * 8;
             lights.push({
-              x: sx,
-              y: sy,
-              r: 180 + forgeFlicker,
-              innerColor: "rgba(255, 200, 120, 1.0)",
-              outerColor: "rgba(255, 80, 0, 0.60)",
+              x: sx - 6,
+              y: sy - 4,
+              r: 200 + forgeFlicker,
+              innerColor: "rgba(255, 210, 130, 1.0)",
+              outerColor: "rgba(249, 115, 22, 0.65)",
             });
           } else if (st.type === window.TILE_TYPES.STATION_PORTAL) {
             lights.push({
@@ -163,25 +163,26 @@
               outerColor: "rgba(46, 204, 113, 0.45)",
             });
           } else if (st.type === window.TILE_TYPES.STATION_GACHAPON) {
-            let gachaFlicker = Math.sin(time / 150) * 8;
+            let gachaFlicker =
+              Math.sin(time / 120) * 10 + Math.cos(time / 80) * 5;
             lights.push({
               x: sx,
-              y: sy,
-              r: 130 + gachaFlicker,
-              innerColor: "rgba(255, 240, 180, 0.95)",
-              outerColor: "rgba(241, 196, 15, 0.45)",
+              y: sy - 8,
+              r: 180 + gachaFlicker,
+              innerColor: "rgba(0, 210, 255, 0.95)",
+              outerColor: "rgba(232, 121, 249, 0.55)",
             });
           } else if (st.type === window.TILE_TYPES.STATION_SHOP) {
-                      let shopFlicker =
-                        Math.sin(time / 140) * 8 + Math.cos(time / 90) * 4;
-                      lights.push({
-                        x: sx,
-                        y: sy - 6,
-                        r: 175 + shopFlicker,
-                        innerColor: "rgba(255, 220, 130, 0.98)",
-                        outerColor: "rgba(230, 126, 34, 0.50)",
-                      });
-                    }
+            let shopFlicker =
+              Math.sin(time / 140) * 8 + Math.cos(time / 90) * 4;
+            lights.push({
+              x: sx,
+              y: sy - 6,
+              r: 175 + shopFlicker,
+              innerColor: "rgba(255, 220, 130, 0.98)",
+              outerColor: "rgba(230, 126, 34, 0.50)",
+            });
+          }
         }
       });
     }
@@ -286,6 +287,61 @@
           });
         }
       });
+    }
+
+    // Biome Ambient Ground Hazards Light
+    if (!isHub && map.grid) {
+      let depth = window.player ? window.player.depth || 1 : 1;
+      let sector = Math.floor((depth - 1) / 12);
+      let tileSize = map.tileSize;
+      let time = Date.now();
+
+      let startCol = Math.max(0, Math.floor(minCamX / tileSize));
+      let endCol = Math.min(map.width - 1, Math.ceil(maxCamX / tileSize));
+      let startRow = Math.max(0, Math.floor(minCamY / tileSize));
+      let endRow = Math.min(map.height - 1, Math.ceil(maxCamY / tileSize));
+
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          if (map.grid[r][c] === window.TILE_TYPES.FLOOR) {
+            let tileHash =
+              Math.abs(Math.sin(c * 17.123 + r * 43.51) * 43758.5453) % 1.0;
+            let sx = c * tileSize + tileSize / 2;
+            let sy = r * tileSize + tileSize / 2;
+
+            if (sector === 2 && tileHash > 0.88) {
+              // Lava Vent Light
+              let pulse = Math.sin(time / 150 + tileHash * 10) * 10;
+              lights.push({
+                x: sx,
+                y: sy,
+                r: 65 + pulse,
+                innerColor: "rgba(254, 240, 138, 0.9)",
+                outerColor: "rgba(249, 115, 22, 0.45)",
+              });
+            } else if (sector === 3 && tileHash > 0.85) {
+              // Toxic Spore Puddle Light
+              lights.push({
+                x: sx,
+                y: sy,
+                r: 50,
+                innerColor: "rgba(167, 243, 208, 0.8)",
+                outerColor: "rgba(52, 211, 153, 0.35)",
+              });
+            } else if (sector >= 4 && tileHash > 0.85) {
+              // Void Tear Singularity Light
+              let pulse = Math.cos(time / 180 + tileHash * 5) * 8;
+              lights.push({
+                x: sx,
+                y: sy,
+                r: 60 + pulse,
+                innerColor: "rgba(245, 208, 254, 0.85)",
+                outerColor: "rgba(232, 121, 249, 0.4)",
+              });
+            }
+          }
+        }
+      }
     }
 
     // Active Mobs & Boss Lights
@@ -427,6 +483,12 @@
 
     canvas.addEventListener("pointerdown", function (e) {
       if (window.player.hp <= 0) return;
+      if (window.isAnyMenuOpen()) return;
+      if (Date.now() - (window.lastModalCloseTime || 0) < 200) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       window.scrollTo(0, 0); // Lock scroll to 0 to prevent landscape viewport shifts
       isPointerHolding = true;
 
@@ -580,6 +642,8 @@
 
     canvas.addEventListener("pointermove", function (e) {
       if (window.player.hp <= 0) return;
+      if (window.isAnyMenuOpen()) return;
+      if (Date.now() - (window.lastModalCloseTime || 0) < 200) return;
 
       let { clickX, clickY } = handlePointerPosition(e);
       let mode = window.playerStats
@@ -631,15 +695,23 @@
     document.querySelectorAll(".modal-overlay").forEach((overlay) => {
       overlay.addEventListener("pointerdown", function (e) {
         if (e.target === overlay) {
+          e.stopPropagation();
           if (overlay.id === "summary-modal") {
+            window.lastModalCloseTime = Date.now();
             window.loadHub();
           } else if (overlay.id === "portal-modal") {
             // Require explicit user action (Descend or Extract)
             return;
           } else {
             overlay.style.display = "none";
+            window.lastModalCloseTime = Date.now();
           }
           if (typeof window.hideTooltip === "function") window.hideTooltip();
+        }
+      });
+      overlay.addEventListener("click", function (e) {
+        if (e.target === overlay) {
+          e.stopPropagation();
         }
       });
     });
@@ -691,9 +763,10 @@
     window.deathAnimationTimer = 0;
 
     // Clear active dungeon combat entities and gold particles
-    window.activeDungeonMobs = [];
-    window.mob = null;
-    window.goldParticles = [];
+        window.activeDungeonMobs = [];
+        window.mob = null;
+        window.goldParticles = [];
+        window.projectiles = [];
 
     // Vacuum uncollected ground loot and materials on hub load
     if (window.groundLoot && window.groundLoot.length > 0) {
@@ -1171,26 +1244,33 @@
   window.activeDungeonMobs = [];
 
   window.loadDungeonFloor = function (depth) {
-    if (!window.activeDungeonMap) return;
+      if (!window.activeDungeonMap) return;
 
-    let map;
-    let isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
-    let isMajorBoss = depth % 12 === 0;
+      // Strict Extraction Rules: Discard and reset uncollected floor state
+      window.groundLoot = [];
+      window.groundMaterials = [];
+      window.goldParticles = [];
+      window.xpOrbs = [];
+      window.cavernInteractives = [];
+      window.activeDungeonMobs = [];
+      window.mob = null;
+      window.projectiles = [];
 
-    if (isMiniBoss || isMajorBoss) {
-      map = window.activeDungeonMap.generateBossArena();
-    } else {
-      map = window.activeDungeonMap.generate(depth);
-    }
-    let tileSize = map.tileSize;
+      let map;
+      let isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
+      let isMajorBoss = depth % 12 === 0;
 
-    window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
-    window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
-    window.player.targetX = window.player.x;
-    window.player.targetY = window.player.y;
+      if (isMiniBoss || isMajorBoss) {
+        map = window.activeDungeonMap.generateBossArena();
+      } else {
+        map = window.activeDungeonMap.generate(depth);
+      }
+      let tileSize = map.tileSize;
 
-    window.activeDungeonMobs = [];
-    window.mob = null;
+      window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
+      window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
+      window.player.targetX = window.player.x;
+      window.player.targetY = window.player.y;
 
     if (isMajorBoss) {
       let cx = Math.floor(map.width / 2);
@@ -1239,13 +1319,18 @@
                   ? "maelstrom"
                   : "void";
 
+        let spawnX = sp.x * tileSize;
+        let spawnY = sp.y * tileSize;
+
         window.activeDungeonMobs.push({
           id: window.idCounter++,
           type: "mob",
           visualTier: mobInfo.tier,
           visualType: mobInfo.type,
-          x: sp.x * tileSize,
-          y: sp.y * tileSize,
+          x: spawnX,
+          y: spawnY,
+          homeX: spawnX,
+          homeY: spawnY,
           w: 24,
           h: 24,
           hp: BigNum.from(finalHp),
@@ -1258,6 +1343,10 @@
           projectileType: projType,
           facing: -1,
           isRare: isRare,
+          wanderTimer: window.randInt(40, 120),
+          wanderVx: 0,
+          wanderVy: 0,
+          isWandering: false,
         });
       });
     }
@@ -1415,7 +1504,84 @@
     window.triggerExtraction(true);
   };
 
+  window.decrementPotionRunCharges = function () {
+    let p = window.playerStats;
+    if (!p) return;
+
+    let pStats =
+      typeof window.resolvePlayerStats === "function"
+        ? window.resolvePlayerStats()
+        : {};
+    let effectiveInt = Math.max(0, (pStats.int || 5) - 5);
+    let preservationChance = (effectiveInt * 0.5) / (effectiveInt + 95);
+
+    const potTypes = [
+      {
+        runKey: "atkPotionRuns",
+        timerKey: "atkPotionTimer",
+        name: "Attack Elixir",
+      },
+      {
+        runKey: "hpPotionRuns",
+        timerKey: "hpPotionTimer",
+        name: "Vitality Elixir",
+      },
+      {
+        runKey: "defPotionRuns",
+        timerKey: "defPotionTimer",
+        name: "Armored Elixir",
+      },
+      {
+        runKey: "hastePotionRuns",
+        timerKey: "hastePotionTimer",
+        name: "Haste Elixir",
+      },
+      {
+        runKey: "xpPotionRuns",
+        timerKey: "xpPotionTimer",
+        name: "Double XP Elixir",
+      },
+      {
+        runKey: "dropPotionRuns",
+        timerKey: "dropPotionTimer",
+        name: "Double Drop Elixir",
+      },
+      {
+        runKey: "qlyPotionRuns",
+        timerKey: "qlyPotionTimer",
+        name: "Drop Quality Elixir",
+      },
+    ];
+
+    let preservedList = [];
+    potTypes.forEach((pot) => {
+      let currentRuns = p[pot.runKey] || (p[pot.timerKey] > 0 ? 1 : 0);
+      p[pot.timerKey] = 0;
+
+      if (currentRuns > 0) {
+        if (Math.random() < preservationChance) {
+          preservedList.push(pot.name);
+          p[pot.runKey] = currentRuns;
+        } else {
+          p[pot.runKey] = Math.max(0, currentRuns - 1);
+        }
+      }
+    });
+
+    if (
+      preservedList.length > 0 &&
+      typeof window.pushHeaderToast === "function"
+    ) {
+      let pctStr = Math.round(preservationChance * 100);
+      window.pushHeaderToast(
+        `[Alchemical Preservation ${pctStr}%] Preserved charge on: ${preservedList.join(", ")}!`,
+        "#34d399",
+      );
+    }
+  };
+
   window.triggerExtraction = function (success = true, isAbandon = false) {
+    window.decrementPotionRunCharges();
     // Vacuum any remaining ground items and materials into satchel before extraction processing
     if (window.groundLoot && window.groundLoot.length > 0) {
       window.groundLoot.forEach((gl) => {
@@ -2351,14 +2517,11 @@
     if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
 
     let p = window.playerStats;
-    let pStats =
-      typeof window.resolvePlayerStats === "function"
-        ? window.resolvePlayerStats()
-        : {};
-    let intVal = pStats.int || 5;
-    let baseDurationSec = 300;
-    let potDurationMult = 1.0 + (intVal - 5) * 0.005;
-    let totalFrames = Math.round(baseDurationSec * 60 * potDurationMult);
+    let runsGranted = name.includes("Supernal")
+      ? 3
+      : name.includes("Greater")
+        ? 2
+        : 1;
 
     if (name.includes("Attack Elixir")) {
       let str = name.includes("Supernal")
@@ -2366,10 +2529,11 @@
         : name.includes("Greater")
           ? 0.2
           : 0.1;
-      p.atkPotionTimer = totalFrames;
+      p.atkPotionRuns = (p.atkPotionRuns || 0) + runsGranted;
       p.atkPotionStrength = str;
+      p.atkPotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed ${name}! (+${Math.round(str * 100)}% Atk for ${Math.round(baseDurationSec * potDurationMult)}s)`,
+        `Consumed ${name}! (+${Math.round(str * 100)}% Atk for ${p.atkPotionRuns} Run(s))`,
         "#2ecc71",
       );
     } else if (name.includes("Vitality Elixir")) {
@@ -2378,10 +2542,11 @@
         : name.includes("Greater")
           ? 0.2
           : 0.1;
-      p.hpPotionTimer = totalFrames;
+      p.hpPotionRuns = (p.hpPotionRuns || 0) + runsGranted;
       p.hpPotionStrength = str;
+      p.hpPotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed ${name}! (+${Math.round(str * 100)}% Max HP for ${Math.round(baseDurationSec * potDurationMult)}s)`,
+        `Consumed ${name}! (+${Math.round(str * 100)}% Max HP for ${p.hpPotionRuns} Run(s))`,
         "#e74c3c",
       );
     } else if (name.includes("Armored Elixir")) {
@@ -2390,10 +2555,11 @@
         : name.includes("Greater")
           ? 0.2
           : 0.1;
-      p.defPotionTimer = totalFrames;
+      p.defPotionRuns = (p.defPotionRuns || 0) + runsGranted;
       p.defPotionStrength = str;
+      p.defPotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed ${name}! (+${Math.round(str * 100)}% Def for ${Math.round(baseDurationSec * potDurationMult)}s)`,
+        `Consumed ${name}! (+${Math.round(str * 100)}% Def for ${p.defPotionRuns} Run(s))`,
         "#3498db",
       );
     } else if (name.includes("Haste Elixir")) {
@@ -2402,31 +2568,35 @@
         : name.includes("Greater")
           ? 2
           : 1;
-      p.hastePotionTimer = totalFrames;
+      p.hastePotionRuns = (p.hastePotionRuns || 0) + runsGranted;
       p.hastePotionStrength = str;
+      p.hastePotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed ${name}! (+Speed for ${Math.round(baseDurationSec * potDurationMult)}s)`,
+        `Consumed ${name}! (+Speed for ${p.hastePotionRuns} Run(s))`,
         "#f1c40f",
       );
     } else if (name.includes("Double XP Elixir")) {
-      p.xpPotionTimer = totalFrames;
+      p.xpPotionRuns = (p.xpPotionRuns || 0) + runsGranted;
       p.xpPotionStrength = 1.0;
+      p.xpPotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed Double XP Elixir! (+100% XP for ${Math.round(baseDurationSec * potDurationMult)}s)`,
+        `Consumed Double XP Elixir! (+100% XP for ${p.xpPotionRuns} Run(s))`,
         "#a855f7",
       );
     } else if (name.includes("Double Drop Elixir")) {
-      p.dropPotionTimer = totalFrames;
+      p.dropPotionRuns = (p.dropPotionRuns || 0) + runsGranted;
       p.dropPotionStrength = 1.0;
+      p.dropPotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed Double Drop Elixir! (+100% Drop Rate for ${Math.round(baseDurationSec * potDurationMult)}s)`,
+        `Consumed Double Drop Elixir! (+100% Drop Rate for ${p.dropPotionRuns} Run(s))`,
         "#22c55e",
       );
     } else if (name.includes("Drop Quality Elixir")) {
-      p.qlyPotionTimer = totalFrames;
+      p.qlyPotionRuns = (p.qlyPotionRuns || 0) + runsGranted;
       p.qlyPotionStrength = 0.5;
+      p.qlyPotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed Drop Quality Elixir! (+50% Drop Quality for ${Math.round(baseDurationSec * potDurationMult)}s)`,
+        `Consumed Drop Quality Elixir! (+50% Drop Quality for ${p.qlyPotionRuns} Run(s))`,
         "#3b82f6",
       );
     } else if (name.includes("SP Reset Scroll")) {
@@ -3378,478 +3548,915 @@
   };
 
   window.updateDungeonCombat = function () {
-    let p = window.player;
-    let pStats =
-      typeof window.resolvePlayerStats === "function"
-        ? window.resolvePlayerStats()
-        : { atk: BigNum.from(15) };
-    p.attackTimer = (p.attackTimer || 0) + 1;
+      let p = window.player;
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : { atk: BigNum.from(15) };
+      p.attackTimer = (p.attackTimer || 0) + 1;
 
-    if (window.hero.slashTimer > 0) {
-      window.hero.slashTimer--;
-      window.hero.slashFrame = true;
-    } else {
-      window.hero.slashFrame = false;
-    }
+      if (window.hero.slashTimer > 0) {
+        window.hero.slashTimer--;
+        window.hero.slashFrame = true;
+      } else {
+        window.hero.slashFrame = false;
+      }
 
-    // Build unified target list (including breakable debuff/hazard entities and room props)
-    let targetables = [];
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      window.activeDungeonMobs.forEach((m) => {
-        targetables.push({
-          obj: m,
-          type: "mob",
-          x: m.x + m.w / 2,
-          y: m.y + m.h / 2,
-          radius: (m.w || 24) * 0.45,
+      // Build unified target list (including breakable debuff/hazard entities and room props)
+      let targetables = [];
+      if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+        window.activeDungeonMobs.forEach((m) => {
+          targetables.push({
+            obj: m,
+            type: "mob",
+            x: m.x + m.w / 2,
+            y: m.y + m.h / 2,
+            radius: (m.w || 24) * 0.45,
+          });
         });
-      });
-    }
-    if (window.cavernInteractives && window.cavernInteractives.length > 0) {
-      window.cavernInteractives.forEach((item) => {
-        if (item.hp !== undefined && item.hp > 0) {
-          targetables.push({
-            obj: item,
-            type: "cavern",
-            x: item.x,
-            y: item.y,
-            radius: item.w / 2,
-          });
-        }
-      });
-    }
-    let mapInst = window.activeDungeonMap;
-    if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
-      let tSize = mapInst.tileSize || 32;
-      mapInst.breakables.forEach((b) => {
-        if (b.flashTimer > 0) b.flashTimer--;
-        if (b.hp > 0) {
-          targetables.push({
-            obj: b,
-            type: "breakable",
-            x: b.x * tSize + tSize / 2,
-            y: b.y * tSize + tSize / 2,
-            radius: 12,
-          });
-        }
-      });
-    }
+      }
+      if (window.cavernInteractives && window.cavernInteractives.length > 0) {
+        window.cavernInteractives.forEach((item) => {
+          if (item.hp !== undefined && item.hp > 0) {
+            targetables.push({
+              obj: item,
+              type: "cavern",
+              x: item.x,
+              y: item.y,
+              radius: item.w / 2,
+            });
+          }
+        });
+      }
+      let mapInst = window.activeDungeonMap;
+      if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
+        let tSize = mapInst.tileSize || 32;
+        mapInst.breakables.forEach((b) => {
+          if (b.flashTimer > 0) b.flashTimer--;
+          if (b.hp > 0) {
+            targetables.push({
+              obj: b,
+              type: "breakable",
+              x: b.x * tSize + tSize / 2,
+              y: b.y * tSize + tSize / 2,
+              radius: 12,
+            });
+          }
+        });
+      }
 
-    // Process targets in view
-    targetables.forEach((t) => {
-      if (t.type === "mob") {
-        let m = t.obj;
-        if (m.flashTimer > 0) m.flashTimer--;
-        if (m.attackCooldown > 0) m.attackCooldown--;
-        if (m.rangedCooldown > 0) m.rangedCooldown--;
+      // Process targets in view
+      targetables.forEach((t) => {
+        if (t.type === "mob") {
+          let m = t.obj;
+          if (m.flashTimer > 0) m.flashTimer--;
+          if (m.attackCooldown > 0) m.attackCooldown--;
+          if (m.rangedCooldown > 0) m.rangedCooldown--;
 
-        if (m.recoilX) {
-          m.recoilX *= 0.65;
-          if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
-        }
-        if (m.recoilY) {
-          m.recoilY *= 0.65;
-          if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
-        }
+          if (m.recoilX) {
+            m.recoilX *= 0.65;
+            if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
+          }
+          if (m.recoilY) {
+            m.recoilY *= 0.65;
+            if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
+          }
 
-        let dx = p.x - t.x;
-        let dy = p.y - t.y;
-        let dist = Math.hypot(dx, dy);
+          let dx = p.x - t.x;
+          let dy = p.y - t.y;
+          let dist = Math.hypot(dx, dy);
 
-        if (dx < -1) {
-          m.facing = -1;
-        } else if (dx > 1) {
-          m.facing = 1;
-        }
+          if (dx < -1) {
+            m.facing = -1;
+          } else if (dx > 1) {
+            m.facing = 1;
+          }
 
-        // Soft Entity Body-Blocking (Allows passing through with speed resistance and gentle push)
-        let pRadius = p.radius || 9;
-        let minDist = pRadius + t.radius;
+          // Soft Entity Body-Blocking (Allows passing through with speed resistance and gentle push)
+          let pRadius = p.radius || 9;
+          let minDist = pRadius + t.radius;
 
-        if (dist < minDist) {
-          let overlap = minDist - dist;
-          let nx = dist > 0 ? dx / dist : 1;
-          let ny = dist > 0 ? dy / dist : 0;
+          if (dist < minDist) {
+            let overlap = minDist - dist;
+            let nx = dist > 0 ? dx / dist : 1;
+            let ny = dist > 0 ? dy / dist : 0;
 
-          // Apply speed resistance to player
-          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.45);
+            // Apply speed resistance to player
+            p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.45);
 
-          // Push the mob away gently instead of blocking the player
-          let mobPushX = -nx * overlap * 0.25;
-          let mobPushY = -ny * overlap * 0.25;
+            // Push the mob away gently instead of blocking the player
+            let mobPushX = -nx * overlap * 0.25;
+            let mobPushY = -ny * overlap * 0.25;
 
-          let map = window.activeDungeonMap;
-          if (map && map.grid) {
-            let mCenterX = m.x + m.w / 2;
-            let mCenterY = m.y + m.h / 2;
-            if (
-              !checkCollisionAt(map, mCenterX + mobPushX, mCenterY, t.radius)
-            ) {
+            let map = window.activeDungeonMap;
+            if (map && map.grid) {
+              let mCenterX = m.x + m.w / 2;
+              let mCenterY = m.y + m.h / 2;
+              if (
+                !checkCollisionAt(map, mCenterX + mobPushX, mCenterY, t.radius)
+              ) {
+                m.x += mobPushX;
+              }
+              if (
+                !checkCollisionAt(map, mCenterX, mCenterY + mobPushY, t.radius)
+              ) {
+                m.y += mobPushY;
+              }
+            } else {
               m.x += mobPushX;
-            }
-            if (
-              !checkCollisionAt(map, mCenterX, mCenterY + mobPushY, t.radius)
-            ) {
               m.y += mobPushY;
             }
-          } else {
-            m.x += mobPushX;
-            m.y += mobPushY;
+          }
+
+          // Persistent Aggro & Pursuit Movement
+          if (dist < 220 || m.hasTakenDamage) {
+            m.isAggroed = true;
+          }
+
+          // Mob Ranged Attack Execution with Windup & Recoil
+          if (m.isRanged && m.isAggroed && dist < 260) {
+            if (m.castTimer > 0) {
+              m.castTimer--;
+
+              // Windup Charge Particles
+              if (window.combatVisuals && Math.random() < 0.6) {
+                let mCx = m.x + m.w / 2;
+                let mCy = m.y + m.h / 2;
+                let pColor =
+                  m.projectileType === "thorn"
+                    ? "#2ecc71"
+                    : m.projectileType === "frost"
+                      ? "#38bdf8"
+                      : m.projectileType === "fireball"
+                        ? "#e67e22"
+                        : m.projectileType === "maelstrom"
+                          ? "#a3fd83"
+                          : "#e84393";
+                window.combatVisuals.particlePool.get(
+                  mCx + (Math.random() - 0.5) * 20,
+                  mCy + (Math.random() - 0.5) * 20,
+                  (Math.random() - 0.5) * 0.5,
+                  (Math.random() - 0.5) * 0.5,
+                  window.randFloat(1.0, 2.2),
+                  pColor,
+                  0.8,
+                  12,
+                  0,
+                  true,
+                  0,
+                );
+              }
+
+              if (m.castTimer === 0) {
+                m.rangedCooldown = m.isRare ? 65 : 95;
+                let pCx = p.x;
+                let pCy = p.y - 8;
+                let mCx = m.x + m.w / 2;
+                let mCy = m.y + m.h / 2;
+                let pDx = pCx - mCx;
+                let pDy = pCy - mCy;
+                let pDist = Math.hypot(pDx, pDy);
+
+                if (pDist > 0) {
+                  let normX = pDx / pDist;
+                  let normY = pDy / pDist;
+                  let pSpeed = 3.6;
+
+                  window.projectiles.push({
+                    x: mCx + normX * 10,
+                    y: mCy + normY * 10,
+                    vx: normX * pSpeed,
+                    vy: normY * pSpeed,
+                    r: 5,
+                    type: m.projectileType || "standard",
+                    damage: Math.round(m.atk * 0.85),
+                    life: 140,
+                    pulseOffset: Math.random() * 10,
+                  });
+
+                  // Apply Recoil Impulse
+                  m.recoilX = -normX * 6;
+                  m.recoilY = -normY * 6;
+
+                  if (
+                    window.SoundManager &&
+                    typeof window.SoundManager.play === "function"
+                  ) {
+                    let sfx =
+                      m.projectileType === "frost"
+                        ? "spell_frost"
+                        : m.projectileType === "fireball"
+                          ? "spell_fire"
+                          : m.projectileType === "void"
+                            ? "spell"
+                            : "swing";
+                    window.SoundManager.play(sfx);
+                  }
+                }
+              }
+            } else if (m.rangedCooldown <= 0 && dist > 20) {
+              m.castTimer = 14; // 14 frames anticipation wind-up
+            }
+          }
+
+          if (!m.isAggroed) {
+            m.wanderTimer = (m.wanderTimer || 0) - 1;
+            if (m.wanderTimer <= 0) {
+              m.wanderTimer = window.randInt(90, 200);
+              m.isWandering = Math.random() < 0.45;
+
+              if (m.isWandering) {
+                let angle = Math.random() * Math.PI * 2;
+                let wanderSpeed = 0.8;
+                m.wanderVx = Math.cos(angle) * wanderSpeed;
+                m.wanderVy = Math.sin(angle) * wanderSpeed;
+              } else {
+                m.wanderVx = 0;
+                m.wanderVy = 0;
+              }
+            }
+
+            if (m.isWandering && (m.wanderVx !== 0 || m.wanderVy !== 0)) {
+              let mRadius = 6;
+              let mCenterX = m.x + m.w / 2;
+              let mCenterY = m.y + m.h / 2;
+              let nextX = mCenterX + m.wanderVx;
+              let nextY = mCenterY + m.wanderVy;
+              let hX = (m.homeX !== undefined ? m.homeX : m.x) + m.w / 2;
+              let hY = (m.homeY !== undefined ? m.homeY : m.y) + m.h / 2;
+              let distFromHome = Math.hypot(nextX - hX, nextY - hY);
+
+              let mapInst = window.activeDungeonMap;
+              if (distFromHome < 128 && mapInst && mapInst.grid) {
+                let canMoveX = !checkCollisionAt(
+                  mapInst,
+                  nextX,
+                  mCenterY,
+                  mRadius,
+                );
+                let canMoveY = !checkCollisionAt(
+                  mapInst,
+                  mCenterX,
+                  nextY,
+                  mRadius,
+                );
+
+                if (canMoveX) m.x += m.wanderVx;
+                if (canMoveY) m.y += m.wanderVy;
+
+                if (!canMoveX && !canMoveY) {
+                  m.isWandering = false;
+                  m.wanderVx = 0;
+                  m.wanderVy = 0;
+                }
+
+                if (m.wanderVx < -0.1) m.facing = -1;
+                else if (m.wanderVx > 0.1) m.facing = 1;
+
+                m.hopTimer = (m.hopTimer || 0) + 0.5;
+              } else {
+                m.isWandering = false;
+                m.wanderVx = 0;
+                m.wanderVy = 0;
+              }
+            }
+          }
+
+          if (m.isAggroed && dist < 800 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            let cycle = m.hopTimer % 30; // 15 frames jumping, 15 frames resting
+            if (cycle < 15) {
+              let speed = m.isRare ? 2.2 : 1.8;
+              let mRadius = 6;
+              let mCenterX = m.x + m.w / 2;
+              let mCenterY = m.y + m.h / 2;
+              let mapInst = window.activeDungeonMap;
+
+              if (mapInst && mapInst.grid) {
+                let probeAngles = [
+                  0,
+                  Math.PI / 4,
+                  -Math.PI / 4,
+                  Math.PI / 2,
+                  -Math.PI / 2,
+                  (Math.PI * 3) / 4,
+                  -(Math.PI * 3) / 4,
+                ];
+                let baseAngle = Math.atan2(p.y - mCenterY, p.x - mCenterX);
+
+                for (let a = 0; a < probeAngles.length; a++) {
+                  let testAngle = baseAngle + probeAngles[a];
+                  let vx = Math.cos(testAngle) * speed;
+                  let vy = Math.sin(testAngle) * speed;
+
+                  if (
+                    !checkCollisionAt(
+                      mapInst,
+                      mCenterX + vx,
+                      mCenterY + vy,
+                      mRadius,
+                    )
+                  ) {
+                    m.x += vx;
+                    m.y += vy;
+                    if (vx < -0.1) m.facing = -1;
+                    else if (vx > 0.1) m.facing = 1;
+                    break;
+                  }
+                }
+              }
+            }
           }
         }
+      });
 
-        // Persistent Aggro & Pursuit Movement
-        if (dist < 220 || m.hasTakenDamage) {
-          m.isAggroed = true;
+      // Find the closest overall target (mob or breakable cavern entity)
+      let closestTarget = null;
+      let closestDist = Infinity;
+      targetables.forEach((t) => {
+        let dist = Math.hypot(p.x - t.x, p.y - t.y);
+        let maxDist = t.type === "breakable" ? 25 : 38;
+        if (dist < maxDist && dist < closestDist) {
+          closestDist = dist;
+          closestTarget = t;
+        }
+      });
+
+      if (closestTarget && p.attackTimer >= 20) {
+        p.attackTimer = 0;
+        window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("swing");
         }
 
-        // Mob Ranged Attack Execution
-        if (
-          m.isRanged &&
-          m.isAggroed &&
-          dist < 240 &&
-          dist > 25 &&
-          m.rangedCooldown <= 0
-        ) {
-          m.rangedCooldown = m.isRare ? 70 : 105;
-          let pCx = p.x;
-          let pCy = p.y - 8;
-          let mCx = m.x + m.w / 2;
-          let mCy = m.y + m.h / 2;
-          let pDx = pCx - mCx;
-          let pDy = pCy - mCy;
-          let pDist = Math.hypot(pDx, pDy);
+        // Face the target being attacked!
+        let dxToTarget = closestTarget.x - p.x;
+        if (dxToTarget < -0.1) p.facing = -1;
+        else if (dxToTarget > 0.1) p.facing = 1;
 
-          if (pDist > 0) {
-            let pSpeed = 3.2;
-            window.projectiles.push({
-              x: mCx,
-              y: mCy,
-              vx: (pDx / pDist) * pSpeed,
-              vy: (pDy / pDist) * pSpeed,
-              r: 5,
-              type: m.projectileType || "standard",
-              damage: Math.round(m.atk * 0.85),
-              life: 130,
-              pulseOffset: Math.random() * 10,
-            });
+        if (closestTarget.type === "mob") {
+          let m = closestTarget.obj;
+          let isCrit = Math.random() < (pStats.critChance || 0.05);
+          let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+          let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+
+          m.hp = m.hp.sub(pAtk);
+          m.hasTakenDamage = true;
+          m.flashTimer = 6;
+
+          let mobCenterX = closestTarget.x;
+          let mobCenterY = closestTarget.y;
+          let dx = closestTarget.x - p.x;
+          let dy = closestTarget.y - p.y;
+          let dist = Math.hypot(dx, dy);
+
+          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+            window.RenderEngine.spawnDamageEffect(
+              mobCenterX,
+              mobCenterY,
+              pAtk,
+              "slash",
+              isCrit,
+            );
+          }
+
+          // Dagger Offhand Multi-Strike & Bleed DoT Triggers
+          if (pStats.subType === "dagger") {
+            if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
+              let offhandHit = BigNum.from(pStats.atk || 15).mul(
+                pStats.offhandDmg || 0.45,
+              );
+              m.hp = m.hp.sub(offhandHit);
+              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                window.RenderEngine.spawnDamageEffect(
+                  mobCenterX,
+                  mobCenterY - 6,
+                  offhandHit,
+                  "dagger",
+                  false,
+                );
+              }
+            }
+
+            if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
+              let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
+              m.hp = m.hp.sub(bleedTick);
+              m.flashTimer = 6;
+              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                window.RenderEngine.spawnDamageEffect(
+                  mobCenterX,
+                  mobCenterY - 10,
+                  bleedTick,
+                  "bleed",
+                  false,
+                );
+              }
+            }
+          }
+
+          // Tome Spell Cast Trigger
+          let isTomeEquipped =
+            pStats.subType === "tome" ||
+            (window.equippedSlots &&
+              window.equippedSlots.subweapon &&
+              (window.equippedSlots.subweapon.subType === "tome" ||
+                window.equippedSlots.subweapon.type === "tome"));
+          let activeSpellChance =
+            pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+          let activeSpellType = pStats.spellType || "tri";
+
+          if (isTomeEquipped && Math.random() < activeSpellChance) {
+            let spellDmg = BigNum.from(pStats.atk || 15).mul(
+              pStats.spellPower || 1.5,
+            );
+            m.hp = m.hp.sub(spellDmg);
+            m.flashTimer = 8;
+
+            let spellEffectType = activeSpellType;
+            if (activeSpellType === "tri") {
+              const triElements = ["fire", "lightning", "frost"];
+              spellEffectType =
+                triElements[Math.floor(Math.random() * triElements.length)];
+            }
+
             if (
               window.SoundManager &&
               typeof window.SoundManager.play === "function"
             ) {
-              window.SoundManager.play("swing");
+              window.SoundManager.play("spell_" + spellEffectType);
+            }
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY - 12,
+                spellDmg,
+                spellEffectType,
+                false,
+              );
+            }
+          }
+
+          // Directional knockback impulse vector
+          let dirX = dist > 0 ? dx / dist : 1;
+          let dirY = dist > 0 ? dy / dist : 0;
+          m.recoilX = -dirX * (isCrit ? 8 : 5);
+          m.recoilY = -dirY * (isCrit ? 8 : 5);
+
+          // Spawn directional hit sparks
+          if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+            window.RenderEngine.spawnHitSparks(
+              m.x + m.w / 2,
+              m.y + m.h / 2,
+              isCrit,
+              -dirX,
+              -dirY,
+            );
+          }
+
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.playHitImpact === "function"
+          ) {
+            window.SoundManager.playHitImpact(isCrit);
+          }
+        }
+      } else if (closestTarget && closestTarget.type === "cavern") {
+        let item = closestTarget.obj;
+        item.hp--;
+        item.flashTimer = 5;
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("hit");
+        }
+        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+          window.RenderEngine.spawnHitSparks(item.x, item.y, false);
+        }
+        if (item.hp <= 0) {
+          window.triggerCavernShatter(item);
+          let idx = window.cavernInteractives.indexOf(item);
+          if (idx !== -1) window.cavernInteractives.splice(idx, 1);
+        }
+      } else if (closestTarget && closestTarget.type === "breakable") {
+        let prop = closestTarget.obj;
+        prop.hp--;
+        prop.flashTimer = 5;
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("hit");
+        }
+        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+          window.RenderEngine.spawnHitSparks(
+            closestTarget.x,
+            closestTarget.y,
+            false,
+          );
+        }
+
+        if (prop.hp <= 0) {
+          window.destroyBreakableProp(prop, closestTarget.x, closestTarget.y);
+        }
+      }
+
+      // Process active room mobs (Standard logic loop)
+      if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+        for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
+          let m = window.activeDungeonMobs[i];
+          let dx = p.x - (m.x + m.w / 2);
+          let dy = p.y - (m.y + m.h / 2);
+          let dist = Math.hypot(dx, dy);
+
+          // Check death state after any potential hit (main slash, dagger offhand, or tome spell)
+          if (m.hp.lte(0)) {
+            let mobCenterX = m.x + m.w / 2;
+            let mobCenterY = m.y + m.h / 2;
+
+            if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
+              window.RenderEngine.spawnDeathParticles(
+                mobCenterX,
+                mobCenterY,
+                m.type,
+              );
+            }
+            let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
+            let rewardXp = Math.floor(15 + window.player.depth * 4);
+            window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
+            window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
+
+            // Monster Souls & Scraps Mob Drop Logic
+            let dropMult = pStats.drop || 1.0;
+            if (Math.random() < 0.45 * dropMult) {
+              let soulCount = Math.floor(Math.random() * 2) + 1;
+              window.addDungeonRunScrap(
+                "Monster Soul",
+                soulCount,
+                mobCenterX,
+                mobCenterY,
+              );
+            }
+
+            if (m.isRare) {
+              window.addDungeonRunScrap(
+                "Luminous Soul",
+                1,
+                mobCenterX,
+                mobCenterY,
+              );
+              let depth = window.player.depth || 1;
+              let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
+              let scrapName = window.getScrapYieldName(scrapTier);
+              window.addDungeonRunScrap(
+                scrapName,
+                Math.floor(Math.random() * 3) + 2,
+                mobCenterX,
+                mobCenterY,
+              );
+            }
+
+            // Cavern Sigil Drop Logic
+            let sigilBaseRate = m.isRare ? 0.025 : 0.0015;
+            let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
+            if (Math.random() < sigilRollRate) {
+              let maxSigilStars = 0;
+              let cleared = window.playerStats.maxFloorCleared || 0;
+              if (cleared >= 120) maxSigilStars = 5;
+              else if (cleared >= 72) maxSigilStars = 4;
+              else if (cleared >= 48) maxSigilStars = 3;
+              else if (cleared >= 24) maxSigilStars = 2;
+              else if (cleared >= 12) maxSigilStars = 1;
+
+              let rolledSigilRarity = window.rollSigilRarity(
+                maxSigilStars,
+                pStats.qly || 1.0,
+              );
+              let stageScale = window.player.depth || 1;
+              let sigilItem = window.createItemObject(
+                "sigil",
+                rolledSigilRarity,
+                stageScale,
+                0,
+              );
+              window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
+            }
+
+            // 5% Chance Mob Equipment Drop
+            if (Math.random() < 0.05) {
+              let stageScale = window.player.depth || 1;
+              let rolledRarity = window.rollItemRarity(
+                window.playerStats.maxFloorCleared || 0,
+                pStats.qly || 1.0,
+                false,
+              );
+              let types = [
+                "weapon",
+                "subweapon",
+                "helmet",
+                "chest",
+                "boots",
+                "ring",
+              ];
+              let chosenType = types[Math.floor(Math.random() * types.length)];
+              let droppedItem = window.createItemObject(
+                chosenType,
+                rolledRarity,
+                stageScale,
+                0,
+              );
+
+              window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
+            }
+
+            window.activeDungeonMobs.splice(i, 1);
+            continue;
+          }
+
+          // Mob Contact Melee Attack on Player
+          if (dist < 20 && m.attackCooldown <= 0) {
+            m.attackCooldown = 60; // 1s attack cooldown
+            window.damagePlayer(m.atk, m);
+            if (p.hp <= 0) {
+              window.triggerExtraction(false, false);
             }
           }
         }
+      }
 
-        if (m.isAggroed && dist < 800 && dist > 14) {
-          m.hopTimer = (m.hopTimer || 0) + 1;
-          let cycle = m.hopTimer % 30; // 15 frames jumping, 15 frames resting
-          if (cycle < 15) {
-            let speed = 1.8;
-            let mRadius = 6;
-            let moveX = (dx / dist) * speed;
-            let moveY = (dy / dist) * speed;
+      // Process Boss Warden Combat
+      if (window.mob && window.mob.hp) {
+        let bm = window.mob;
+        if (bm.flashTimer > 0) bm.flashTimer--;
+        if (bm.attackCooldown > 0) bm.attackCooldown--;
 
-            let map = window.activeDungeonMap;
-            if (map && map.grid) {
-              let centerX = m.x + m.w / 2;
-              let centerY = m.y + m.h / 2;
-              if (!checkCollisionAt(map, centerX + moveX, centerY, mRadius)) {
-                m.x += moveX;
-              }
-              if (!checkCollisionAt(map, centerX, centerY + moveY, mRadius)) {
-                m.y += moveY;
-              }
-            }
-          }
+        if (bm.recoilX) {
+          bm.recoilX *= 0.65;
+          if (Math.abs(bm.recoilX) < 0.2) bm.recoilX = 0;
         }
-      }
-    });
+        if (bm.recoilY) {
+          bm.recoilY *= 0.65;
+          if (Math.abs(bm.recoilY) < 0.2) bm.recoilY = 0;
+        }
 
-    // Find the closest overall target (mob or breakable cavern entity)
-    let closestTarget = null;
-    let closestDist = Infinity;
-    targetables.forEach((t) => {
-      let dist = Math.hypot(p.x - t.x, p.y - t.y);
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestTarget = t;
-      }
-    });
-
-    if (closestTarget && closestDist < 38 && p.attackTimer >= 20) {
-      p.attackTimer = 0;
-      window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
-
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.play === "function"
-      ) {
-        window.SoundManager.play("swing");
-      }
-
-      // Face the target being attacked!
-      let dxToTarget = closestTarget.x - p.x;
-      if (dxToTarget < -0.1) p.facing = -1;
-      else if (dxToTarget > 0.1) p.facing = 1;
-
-      if (closestTarget.type === "mob") {
-        let m = closestTarget.obj;
-        let isCrit = Math.random() < (pStats.critChance || 0.05);
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
-
-        m.hp = m.hp.sub(pAtk);
-        m.hasTakenDamage = true;
-        m.flashTimer = 6;
-
-        let mobCenterX = closestTarget.x;
-        let mobCenterY = closestTarget.y;
-        let dx = closestTarget.x - p.x;
-        let dy = closestTarget.y - p.y;
+        let dx = p.x - (bm.x + bm.w / 2);
+        let dy = p.y - (bm.y + bm.h / 2);
         let dist = Math.hypot(dx, dy);
 
-        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-          window.RenderEngine.spawnDamageEffect(
-            mobCenterX,
-            mobCenterY,
-            pAtk,
-            "slash",
-            isCrit,
-          );
+        if (dx < -1) {
+          bm.facing = -1;
+        } else if (dx > 1) {
+          bm.facing = 1;
         }
 
-        // Dagger Offhand Multi-Strike & Bleed DoT Triggers
-        if (pStats.subType === "dagger") {
-          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-            let offhandHit = BigNum.from(pStats.atk || 15).mul(
-              pStats.offhandDmg || 0.45,
-            );
-            m.hp = m.hp.sub(offhandHit);
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 6,
-                offhandHit,
-                "dagger",
-                false,
-              );
-            }
-          }
+        // Soft Boss Body-Blocking (Allows passing through with speed resistance and gentle push)
+        let bossRadius = (bm.w || 48) * 0.48;
+        let pRadius = p.radius || 9;
+        let bossMinDist = pRadius + bossRadius;
 
-          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-            m.hp = m.hp.sub(bleedTick);
-            m.flashTimer = 6;
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 10,
-                bleedTick,
-                "bleed",
-                false,
-              );
+        if (dist < bossMinDist) {
+          let overlap = bossMinDist - dist;
+          let nx = dist > 0 ? dx / dist : 1;
+          let ny = dist > 0 ? dy / dist : 0;
+
+          // Apply heavy speed resistance to player
+          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.35);
+
+          // Push the boss away gently instead of blocking the player
+          let bossPushX = -nx * overlap * 0.15;
+          let bossPushY = -ny * overlap * 0.15;
+
+          let map = window.activeDungeonMap;
+          if (map && map.grid) {
+            let bCenterX = bm.x + bm.w / 2;
+            let bCenterY = bm.y + bm.h / 2;
+            if (
+              !checkCollisionAt(map, bCenterX + bossPushX, bCenterY, bossRadius)
+            ) {
+              bm.x += bossPushX;
             }
+            if (
+              !checkCollisionAt(map, bCenterX, bCenterY + bossPushY, bossRadius)
+            ) {
+              bm.y += bossPushY;
+            }
+          } else {
+            bm.x += bossPushX;
+            bm.y += bossPushY;
           }
         }
 
-        // Tome Spell Cast Trigger
-        let isTomeEquipped =
-          pStats.subType === "tome" ||
-          (window.equippedSlots &&
-            window.equippedSlots.subweapon &&
-            (window.equippedSlots.subweapon.subType === "tome" ||
-              window.equippedSlots.subweapon.type === "tome"));
-        let activeSpellChance =
-          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-        let activeSpellType = pStats.spellType || "tri";
-
-        if (isTomeEquipped && Math.random() < activeSpellChance) {
-          let spellDmg = BigNum.from(pStats.atk || 15).mul(
-            pStats.spellPower || 1.5,
-          );
-          m.hp = m.hp.sub(spellDmg);
-          m.flashTimer = 8;
-
-          let spellEffectType = activeSpellType;
-          if (activeSpellType === "tri") {
-            const triElements = ["fire", "lightning", "frost"];
-            spellEffectType =
-              triElements[Math.floor(Math.random() * triElements.length)];
-          }
+        if (dist < 48 && p.attackTimer >= 20) {
+          p.attackTimer = 0;
 
           if (
             window.SoundManager &&
             typeof window.SoundManager.play === "function"
           ) {
-            window.SoundManager.play("spell_" + spellEffectType);
+            window.SoundManager.play("swing");
           }
+
+          let bossCenterX = bm.x + bm.w / 2;
+          // Face the boss being attacked!
+          let dxToBoss = bossCenterX - p.x;
+          if (dxToBoss < -0.1) p.facing = -1;
+          else if (dxToBoss > 0.1) p.facing = 1;
+
+          let isCrit = Math.random() < (pStats.critChance || 0.05);
+          let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+          let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+
+          bm.hp = bm.hp.sub(pAtk);
+          bm.hasTakenDamage = true;
+          bm.flashTimer = 6;
+
+          let dirX = dist > 0 ? dx / dist : 1;
+          let dirY = dist > 0 ? dy / dist : 0;
+          bm.recoilX = -dirX * (isCrit ? 10 : 6);
+          bm.recoilY = -dirY * (isCrit ? 10 : 6);
+
+          if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+            window.RenderEngine.spawnHitSparks(
+              bm.x + bm.w / 2,
+              bm.y + bm.h / 2,
+              isCrit,
+              -dirX,
+              -dirY,
+            );
+          }
+
           if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
             window.RenderEngine.spawnDamageEffect(
-              mobCenterX,
-              mobCenterY - 12,
-              spellDmg,
-              spellEffectType,
-              false,
+              bm.x + bm.w / 2,
+              bm.y + bm.h / 2,
+              pAtk,
+              "slash",
+              isCrit,
             );
           }
-        }
 
-        // Directional knockback impulse vector
-        let dirX = dist > 0 ? dx / dist : 1;
-        let dirY = dist > 0 ? dy / dist : 0;
-        m.recoilX = -dirX * (isCrit ? 8 : 5);
-        m.recoilY = -dirY * (isCrit ? 8 : 5);
-
-        // Spawn directional hit sparks
-        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-          window.RenderEngine.spawnHitSparks(
-            m.x + m.w / 2,
-            m.y + m.h / 2,
-            isCrit,
-            -dirX,
-            -dirY,
-          );
-        }
-
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.playHitImpact === "function"
-        ) {
-          window.SoundManager.playHitImpact(isCrit);
-        }
-      }
-    } else if (closestTarget && closestTarget.type === "cavern") {
-      let item = closestTarget.obj;
-      item.hp--;
-      item.flashTimer = 5;
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.play === "function"
-      ) {
-        window.SoundManager.play("hit");
-      }
-      if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-        window.RenderEngine.spawnHitSparks(item.x, item.y, false);
-      }
-      if (item.hp <= 0) {
-        window.triggerCavernShatter(item);
-        let idx = window.cavernInteractives.indexOf(item);
-        if (idx !== -1) window.cavernInteractives.splice(idx, 1);
-      }
-    } else if (closestTarget && closestTarget.type === "breakable") {
-      let prop = closestTarget.obj;
-      prop.hp--;
-      prop.flashTimer = 5;
-
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.play === "function"
-      ) {
-        window.SoundManager.play("hit");
-      }
-      if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-        window.RenderEngine.spawnHitSparks(
-          closestTarget.x,
-          closestTarget.y,
-          false,
-        );
-      }
-
-      if (prop.hp <= 0) {
-        window.destroyBreakableProp(prop, closestTarget.x, closestTarget.y);
-      }
-    }
-
-    // Process active room mobs (Standard logic loop)
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
-        let m = window.activeDungeonMobs[i];
-        let dx = p.x - (m.x + m.w / 2);
-        let dy = p.y - (m.y + m.h / 2);
-        let dist = Math.hypot(dx, dy);
-
-        // Check death state after any potential hit (main slash, dagger offhand, or tome spell)
-        if (m.hp.lte(0)) {
-          let mobCenterX = m.x + m.w / 2;
-          let mobCenterY = m.y + m.h / 2;
-
-          if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
-            window.RenderEngine.spawnDeathParticles(
-              mobCenterX,
-              mobCenterY,
-              m.type,
-            );
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.playHitImpact === "function"
+          ) {
+            window.SoundManager.playHitImpact(isCrit);
           }
-          let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
-          let rewardXp = Math.floor(15 + window.player.depth * 4);
-          window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
-          window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
 
-          // Monster Souls & Scraps Mob Drop Logic
-          let dropMult = pStats.drop || 1.0;
-          if (Math.random() < 0.45 * dropMult) {
-            let soulCount = Math.floor(Math.random() * 2) + 1;
+          // Define vertical center for boss offhand procs
+          let bossCenterY = bm.y + bm.h / 2;
+
+          // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
+          if (pStats.subType === "dagger") {
+            if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
+              let offhandHit = BigNum.from(pStats.atk || 15).mul(
+                pStats.offhandDmg || 0.45,
+              );
+              bm.hp = bm.hp.sub(offhandHit);
+              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                window.RenderEngine.spawnDamageEffect(
+                  bossCenterX,
+                  bossCenterY - 6,
+                  offhandHit,
+                  "dagger",
+                  false,
+                );
+              }
+            }
+
+            if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
+              let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
+              bm.hp = bm.hp.sub(bleedTick);
+              bm.flashTimer = 6;
+              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                window.RenderEngine.spawnDamageEffect(
+                  bossCenterX,
+                  bossCenterY - 10,
+                  bleedTick,
+                  "bleed",
+                  false,
+                );
+              }
+            }
+          }
+
+          // Tome Spell Cast Trigger on Boss
+          let isTomeEquipped =
+            pStats.subType === "tome" ||
+            (window.equippedSlots &&
+              window.equippedSlots.subweapon &&
+              (window.equippedSlots.subweapon.subType === "tome" ||
+                window.equippedSlots.subweapon.type === "tome"));
+          let activeSpellChance =
+            pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+          let activeSpellType = pStats.spellType || "tri";
+
+          if (isTomeEquipped && Math.random() < activeSpellChance) {
+            let spellDmg = BigNum.from(pStats.atk || 15).mul(
+              pStats.spellPower || 1.5,
+            );
+            bm.hp = bm.hp.sub(spellDmg);
+            bm.flashTimer = 8;
+
+            let spellEffectType = activeSpellType;
+            if (activeSpellType === "tri") {
+              const triElements = ["fire", "lightning", "frost"];
+              spellEffectType =
+                triElements[Math.floor(Math.random() * triElements.length)];
+            }
+
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_" + spellEffectType);
+            }
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bossCenterX,
+                bossCenterY - 12,
+                spellDmg,
+                spellEffectType,
+                false,
+              );
+            }
+          }
+
+          if (bm.hp.lte(0)) {
+            if (window.spawnDeathParticles) {
+              window.spawnDeathParticles(
+                bm.x + bm.w / 2,
+                bm.y + bm.h / 2,
+                "boss",
+              );
+            }
+            let rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
+            let rewardXp = Math.floor(120 + window.player.depth * 25);
+            window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
+            window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
+
+            // Boss Material Payload
+            let bossCenterY = bm.y + bm.h / 2;
+            let soulCount = Math.floor(Math.random() * 4) + 3;
             window.addDungeonRunScrap(
               "Monster Soul",
               soulCount,
-              mobCenterX,
-              mobCenterY,
+              bossCenterX,
+              bossCenterY,
             );
-          }
 
-          if (m.isRare) {
-            window.addDungeonRunScrap(
-              "Luminous Soul",
-              1,
-              mobCenterX,
-              mobCenterY,
-            );
             let depth = window.player.depth || 1;
             let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
             let scrapName = window.getScrapYieldName(scrapTier);
             window.addDungeonRunScrap(
               scrapName,
               Math.floor(Math.random() * 3) + 2,
-              mobCenterX,
-              mobCenterY,
+              bossCenterX,
+              bossCenterY,
             );
-          }
 
-          // Cavern Sigil Drop Logic
-          let sigilBaseRate = m.isRare ? 0.025 : 0.0015;
-          let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
-          if (Math.random() < sigilRollRate) {
-            let maxSigilStars = 0;
-            let cleared = window.playerStats.maxFloorCleared || 0;
-            if (cleared >= 120) maxSigilStars = 5;
-            else if (cleared >= 72) maxSigilStars = 4;
-            else if (cleared >= 48) maxSigilStars = 3;
-            else if (cleared >= 24) maxSigilStars = 2;
-            else if (cleared >= 12) maxSigilStars = 1;
+            if (depth >= 12 && Math.random() < 0.6) {
+              window.addDungeonRunScrap(
+                "Eridium Shard",
+                1,
+                bossCenterX,
+                bossCenterY,
+              );
+            }
 
-            let rolledSigilRarity = window.rollSigilRarity(
-              maxSigilStars,
-              pStats.qly || 1.0,
-            );
-            let stageScale = window.player.depth || 1;
-            let sigilItem = window.createItemObject(
-              "sigil",
-              rolledSigilRarity,
-              stageScale,
-              0,
-            );
-            window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
-          }
+            // Cavern Sigil Drop Logic for Bosses
+            let isMini = bm.type === "dungeon_miniboss";
+            let sigilBaseRate = isMini ? 0.08 : 0.3;
+            let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
+            if (Math.random() < sigilRollRate) {
+              let maxSigilStars = 0;
+              let cleared = window.playerStats.maxFloorCleared || 0;
+              if (cleared >= 120) maxSigilStars = 5;
+              else if (cleared >= 72) maxSigilStars = 4;
+              else if (cleared >= 48) maxSigilStars = 3;
+              else if (cleared >= 24) maxSigilStars = 2;
+              else if (cleared >= 12) maxSigilStars = 1;
 
-          // 5% Chance Mob Equipment Drop
-          if (Math.random() < 0.05) {
-            let stageScale = window.player.depth || 1;
-            let pStats =
-              typeof window.resolvePlayerStats === "function"
-                ? window.resolvePlayerStats()
-                : {};
+              let rolledSigilRarity = window.rollSigilRarity(
+                maxSigilStars,
+                pStats.qly || 1.0,
+              );
+              let stageScale = window.player.depth || 1;
+              let sigilItem = window.createItemObject(
+                "sigil",
+                rolledSigilRarity,
+                stageScale,
+                0,
+              );
+              window.spawnGroundLoot(sigilItem, bm.x + bm.w / 2, bm.y + bm.h / 2);
+            }
+
+            // Standard On-Stage Boss Equipment Drop (Normal Quality Roll)
+            let stageScale = depth;
             let rolledRarity = window.rollItemRarity(
               window.playerStats.maxFloorCleared || 0,
               pStats.qly || 1.0,
@@ -3864,464 +4471,207 @@
               "ring",
             ];
             let chosenType = types[Math.floor(Math.random() * types.length)];
-            let droppedItem = window.createItemObject(
+            let bossEquip = window.createItemObject(
               chosenType,
               rolledRarity,
               stageScale,
               0,
             );
+            window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
 
-            window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
-          }
+            // First-Time Boss Clear Key Reward Logic
+            if (!window.playerStats.firstClearBosses)
+              window.playerStats.firstClearBosses = [];
+            if (!window.playerStats.firstClearBosses.includes(depth)) {
+              window.playerStats.firstClearBosses.push(depth);
+              let isMajorBoss = depth % 12 === 0;
 
-          window.activeDungeonMobs.splice(i, 1);
-          continue;
-        }
+              // Direct to Vault
+              window.addEtcDrop("Gacha Key", 1, false);
+              if (isMajorBoss) {
+                window.addEtcDrop("Glimmering Gachapon Key", 1, false);
+              }
 
-        // Mob Contact Melee Attack on Player
-        if (dist < 20 && m.attackCooldown <= 0) {
-          m.attackCooldown = 60; // 1s attack cooldown
-          window.damagePlayer(m.atk, m);
-          if (p.hp <= 0) {
-            window.triggerExtraction(false, false);
-          }
-        }
-      }
-    }
-
-    // Process Boss Warden Combat
-    if (window.mob && window.mob.hp) {
-      let bm = window.mob;
-      if (bm.flashTimer > 0) bm.flashTimer--;
-      if (bm.attackCooldown > 0) bm.attackCooldown--;
-
-      if (bm.recoilX) {
-        bm.recoilX *= 0.65;
-        if (Math.abs(bm.recoilX) < 0.2) bm.recoilX = 0;
-      }
-      if (bm.recoilY) {
-        bm.recoilY *= 0.65;
-        if (Math.abs(bm.recoilY) < 0.2) bm.recoilY = 0;
-      }
-
-      let dx = p.x - (bm.x + bm.w / 2);
-      let dy = p.y - (bm.y + bm.h / 2);
-      let dist = Math.hypot(dx, dy);
-
-      if (dx < -1) {
-        bm.facing = -1;
-      } else if (dx > 1) {
-        bm.facing = 1;
-      }
-
-      // Soft Boss Body-Blocking (Allows passing through with speed resistance and gentle push)
-      let bossRadius = (bm.w || 48) * 0.48;
-      let pRadius = p.radius || 9;
-      let bossMinDist = pRadius + bossRadius;
-
-      if (dist < bossMinDist) {
-        let overlap = bossMinDist - dist;
-        let nx = dist > 0 ? dx / dist : 1;
-        let ny = dist > 0 ? dy / dist : 0;
-
-        // Apply heavy speed resistance to player
-        p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.35);
-
-        // Push the boss away gently instead of blocking the player
-        let bossPushX = -nx * overlap * 0.15;
-        let bossPushY = -ny * overlap * 0.15;
-
-        let map = window.activeDungeonMap;
-        if (map && map.grid) {
-          let bCenterX = bm.x + bm.w / 2;
-          let bCenterY = bm.y + bm.h / 2;
-          if (
-            !checkCollisionAt(map, bCenterX + bossPushX, bCenterY, bossRadius)
-          ) {
-            bm.x += bossPushX;
-          }
-          if (
-            !checkCollisionAt(map, bCenterX, bCenterY + bossPushY, bossRadius)
-          ) {
-            bm.y += bossPushY;
-          }
-        } else {
-          bm.x += bossPushX;
-          bm.y += bossPushY;
-        }
-      }
-
-      if (dist < 48 && p.attackTimer >= 20) {
-        p.attackTimer = 0;
-
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("swing");
-        }
-
-        let bossCenterX = bm.x + bm.w / 2;
-        // Face the boss being attacked!
-        let dxToBoss = bossCenterX - p.x;
-        if (dxToBoss < -0.1) p.facing = -1;
-        else if (dxToBoss > 0.1) p.facing = 1;
-
-        let isCrit = Math.random() < (pStats.critChance || 0.05);
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
-
-        bm.hp = bm.hp.sub(pAtk);
-        bm.hasTakenDamage = true;
-        bm.flashTimer = 6;
-
-        let dirX = dist > 0 ? dx / dist : 1;
-        let dirY = dist > 0 ? dy / dist : 0;
-        bm.recoilX = -dirX * (isCrit ? 10 : 6);
-        bm.recoilY = -dirY * (isCrit ? 10 : 6);
-
-        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-          window.RenderEngine.spawnHitSparks(
-            bm.x + bm.w / 2,
-            bm.y + bm.h / 2,
-            isCrit,
-            -dirX,
-            -dirY,
-          );
-        }
-
-        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-          window.RenderEngine.spawnDamageEffect(
-            bm.x + bm.w / 2,
-            bm.y + bm.h / 2,
-            pAtk,
-            "slash",
-            isCrit,
-          );
-        }
-
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.playHitImpact === "function"
-        ) {
-          window.SoundManager.playHitImpact(isCrit);
-        }
-
-        // Define vertical center for boss offhand procs
-        let bossCenterY = bm.y + bm.h / 2;
-
-        // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
-        if (pStats.subType === "dagger") {
-          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-            let offhandHit = BigNum.from(pStats.atk || 15).mul(
-              pStats.offhandDmg || 0.45,
-            );
-            bm.hp = bm.hp.sub(offhandHit);
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 6,
-                offhandHit,
-                "dagger",
-                false,
-              );
+              if (typeof window.pushHeaderToast === "function") {
+                let toastMsg = isMajorBoss
+                  ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
+                  : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
+                window.pushHeaderToast(toastMsg, "#f1c40f");
+              }
             }
-          }
 
-          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-            bm.hp = bm.hp.sub(bleedTick);
-            bm.flashTimer = 6;
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 10,
-                bleedTick,
-                "bleed",
-                false,
-              );
-            }
+            let tileX = bm.bossTileX || Math.floor(bm.x / 32);
+            let tileY = bm.bossTileY || Math.floor(bm.y / 32);
+            window.mob = null;
+            window.onBossDefeated(tileX, tileY);
           }
         }
 
-        // Tome Spell Cast Trigger on Boss
-        let isTomeEquipped =
-          pStats.subType === "tome" ||
-          (window.equippedSlots &&
-            window.equippedSlots.subweapon &&
-            (window.equippedSlots.subweapon.subType === "tome" ||
-              window.equippedSlots.subweapon.type === "tome"));
-        let activeSpellChance =
-          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-        let activeSpellType = pStats.spellType || "tri";
-
-        if (isTomeEquipped && Math.random() < activeSpellChance) {
-          let spellDmg = BigNum.from(pStats.atk || 15).mul(
-            pStats.spellPower || 1.5,
-          );
-          bm.hp = bm.hp.sub(spellDmg);
-          bm.flashTimer = 8;
-
-          let spellEffectType = activeSpellType;
-          if (activeSpellType === "tri") {
-            const triElements = ["fire", "lightning", "frost"];
-            spellEffectType =
-              triElements[Math.floor(Math.random() * triElements.length)];
-          }
-
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("spell_" + spellEffectType);
-          }
-          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-            window.RenderEngine.spawnDamageEffect(
-              bossCenterX,
-              bossCenterY - 12,
-              spellDmg,
-              spellEffectType,
-              false,
-            );
-          }
-        }
-
-        if (bm.hp.lte(0)) {
-          if (window.spawnDeathParticles) {
-            window.spawnDeathParticles(
-              bm.x + bm.w / 2,
-              bm.y + bm.h / 2,
-              "boss",
-            );
-          }
-          let rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
-          let rewardXp = Math.floor(120 + window.player.depth * 25);
-          window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
-          window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
-
-          // Boss Material Payload
+        // Telegraphed Boss Ability AI Engine
+        if (bm && bm.hp.gt(0)) {
           let bossCenterX = bm.x + bm.w / 2;
           let bossCenterY = bm.y + bm.h / 2;
-          let soulCount = Math.floor(Math.random() * 4) + 3;
-          window.addDungeonRunScrap(
-            "Monster Soul",
-            soulCount,
-            bossCenterX,
-            bossCenterY,
-          );
 
-          let depth = window.player.depth || 1;
-          let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
-          let scrapName = window.getScrapYieldName(scrapTier);
-          window.addDungeonRunScrap(
-            scrapName,
-            Math.floor(Math.random() * 3) + 2,
-            bossCenterX,
-            bossCenterY,
-          );
+          if (bm.state === "telegraphing") {
+            bm.telegraphTimer--;
+            if (bm.telegraphTimer <= 0) {
+              // Detonate Telegraphed Attack
+              bm.state = "idle";
+              bm.attackCooldown = 110;
 
-          if (depth >= 12 && Math.random() < 0.6) {
-            window.addDungeonRunScrap(
-              "Eridium Shard",
-              1,
-              bossCenterX,
-              bossCenterY,
-            );
-          }
-
-          // Cavern Sigil Drop Logic for Bosses
-          let isMini = bm.type === "dungeon_miniboss";
-          let sigilBaseRate = isMini ? 0.08 : 0.3;
-          let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
-          if (Math.random() < sigilRollRate) {
-            let maxSigilStars = 0;
-            let cleared = window.playerStats.maxFloorCleared || 0;
-            if (cleared >= 120) maxSigilStars = 5;
-            else if (cleared >= 72) maxSigilStars = 4;
-            else if (cleared >= 48) maxSigilStars = 3;
-            else if (cleared >= 24) maxSigilStars = 2;
-            else if (cleared >= 12) maxSigilStars = 1;
-
-            let rolledSigilRarity = window.rollSigilRarity(
-              maxSigilStars,
-              pStats.qly || 1.0,
-            );
-            let stageScale = window.player.depth || 1;
-            let sigilItem = window.createItemObject(
-              "sigil",
-              rolledSigilRarity,
-              stageScale,
-              0,
-            );
-            window.spawnGroundLoot(sigilItem, bm.x + bm.w / 2, bm.y + bm.h / 2);
-          }
-
-          // Standard On-Stage Boss Equipment Drop (Normal Quality Roll)
-          let stageScale = depth;
-          let pStats =
-            typeof window.resolvePlayerStats === "function"
-              ? window.resolvePlayerStats()
-              : {};
-          let rolledRarity = window.rollItemRarity(
-            window.playerStats.maxFloorCleared || 0,
-            pStats.qly || 1.0,
-            false,
-          );
-          let types = [
-            "weapon",
-            "subweapon",
-            "helmet",
-            "chest",
-            "boots",
-            "ring",
-          ];
-          let chosenType = types[Math.floor(Math.random() * types.length)];
-          let bossEquip = window.createItemObject(
-            chosenType,
-            rolledRarity,
-            stageScale,
-            0,
-          );
-          window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
-
-          // First-Time Boss Clear Key Reward Logic
-          if (!window.playerStats.firstClearBosses)
-            window.playerStats.firstClearBosses = [];
-          if (!window.playerStats.firstClearBosses.includes(depth)) {
-            window.playerStats.firstClearBosses.push(depth);
-            let isMajorBoss = depth % 12 === 0;
-
-            // Direct to Vault
-            window.addEtcDrop("Gacha Key", 1, false);
-            if (isMajorBoss) {
-              window.addEtcDrop("Glimmering Gachapon Key", 1, false);
+              let ability = bm.activeAbility;
+              if (ability === "slam") {
+                let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
+                if (hitDist <= 64) {
+                  let slamDmg = Math.round(bm.atk * 1.8);
+                  window.damagePlayer(slamDmg, bm);
+                  if (p.hp <= 0) window.triggerExtraction(false, false);
+                }
+              } else if (ability === "nova") {
+                for (let i = 0; i < 8; i++) {
+                  let angle = (i * Math.PI * 2) / 8;
+                  let speed = 3.8;
+                  window.projectiles.push({
+                    x: bossCenterX,
+                    y: bossCenterY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    r: 6,
+                    pulseOffset: i,
+                    type: "boss_nova",
+                    damage: Math.round(bm.atk * 1.1),
+                    life: 120,
+                  });
+                }
+                if (
+                  window.SoundManager &&
+                  typeof window.SoundManager.play === "function"
+                ) {
+                  window.SoundManager.play("spell_fire");
+                }
+              } else if (ability === "charge") {
+                let dashDx = bm.targetX - bossCenterX;
+                let dashDy = bm.targetY - bossCenterY;
+                let dashDist = Math.hypot(dashDx, dashDy);
+                if (dashDist > 0) {
+                  bm.x += (dashDx / dashDist) * 75;
+                  bm.y += (dashDy / dashDist) * 75;
+                }
+                let hitDist = Math.hypot(
+                  p.x - (bm.x + bm.w / 2),
+                  p.y - (bm.y + bm.h / 2),
+                );
+                if (hitDist <= 42) {
+                  let chargeDmg = Math.round(bm.atk * 1.5);
+                  window.damagePlayer(chargeDmg, bm);
+                  if (p.hp <= 0) window.triggerExtraction(false, false);
+                }
+              }
+              bm.activeAbility = null;
             }
+          } else if (bm.attackCooldown <= 0 && dist < 220) {
+            // Roll new telegraphed ability
+            let moves = bm.moveset || ["slam", "nova", "charge"];
+            let chosen = moves[Math.floor(Math.random() * moves.length)];
 
-            if (typeof window.pushHeaderToast === "function") {
-              let toastMsg = isMajorBoss
-                ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
-                : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
-              window.pushHeaderToast(toastMsg, "#f1c40f");
+            bm.state = "telegraphing";
+            bm.activeAbility = chosen;
+            bm.maxTelegraphTimer = 65;
+            bm.telegraphTimer = bm.maxTelegraphTimer;
+            bm.targetX = p.x;
+            bm.targetY = p.y;
+          } else if (dist < 30 && bm.attackCooldown <= 0) {
+            bm.attackCooldown = 60;
+            p.hp = Math.max(0, p.hp - bm.atk);
+            window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("block");
             }
+            window.updateHUD();
+            if (p.hp <= 0) window.triggerExtraction(false, false);
           }
-
-          let tileX = bm.bossTileX || Math.floor(bm.x / 32);
-          let tileY = bm.bossTileY || Math.floor(bm.y / 32);
-          window.mob = null;
-          window.onBossDefeated(tileX, tileY);
         }
       }
 
-      // Telegraphed Boss Ability AI Engine
-      if (bm && bm.hp.gt(0)) {
-        let bossCenterX = bm.x + bm.w / 2;
-        let bossCenterY = bm.y + bm.h / 2;
-
-        if (bm.state === "telegraphing") {
-          bm.telegraphTimer--;
-          if (bm.telegraphTimer <= 0) {
-            // Detonate Telegraphed Attack
-            bm.state = "idle";
-            bm.attackCooldown = 110;
-
-            let ability = bm.activeAbility;
-            if (ability === "slam") {
-              let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
-              if (hitDist <= 64) {
-                let slamDmg = Math.round(bm.atk * 1.8);
-                window.damagePlayer(slamDmg, bm);
-                if (p.hp <= 0) window.triggerExtraction(false, false);
-              }
-            } else if (ability === "nova") {
-              for (let i = 0; i < 8; i++) {
-                let angle = (i * Math.PI * 2) / 8;
-                let speed = 3.8;
-                window.projectiles.push({
-                  x: bossCenterX,
-                  y: bossCenterY,
-                  vx: Math.cos(angle) * speed,
-                  vy: Math.sin(angle) * speed,
-                  r: 6,
-                  pulseOffset: i,
-                  damage: Math.round(bm.atk * 1.1),
-                  life: 120,
-                });
-              }
-              if (
-                window.SoundManager &&
-                typeof window.SoundManager.play === "function"
-              ) {
-                window.SoundManager.play("spell_fire");
-              }
-            } else if (ability === "charge") {
-              let dashDx = bm.targetX - bossCenterX;
-              let dashDy = bm.targetY - bossCenterY;
-              let dashDist = Math.hypot(dashDx, dashDy);
-              if (dashDist > 0) {
-                bm.x += (dashDx / dashDist) * 75;
-                bm.y += (dashDy / dashDist) * 75;
-              }
-              let hitDist = Math.hypot(
-                p.x - (bm.x + bm.w / 2),
-                p.y - (bm.y + bm.h / 2),
-              );
-              if (hitDist <= 42) {
-                let chargeDmg = Math.round(bm.atk * 1.5);
-                window.damagePlayer(chargeDmg, bm);
-                if (p.hp <= 0) window.triggerExtraction(false, false);
-              }
-            }
-            bm.activeAbility = null;
-          }
-        } else if (bm.attackCooldown <= 0 && dist < 220) {
-          // Roll new telegraphed ability
-          let moves = bm.moveset || ["slam", "nova", "charge"];
-          let chosen = moves[Math.floor(Math.random() * moves.length)];
-
-          bm.state = "telegraphing";
-          bm.activeAbility = chosen;
-          bm.maxTelegraphTimer = 65;
-          bm.telegraphTimer = bm.maxTelegraphTimer;
-          bm.targetX = p.x;
-          bm.targetY = p.y;
-        } else if (dist < 30 && bm.attackCooldown <= 0) {
-          bm.attackCooldown = 60;
-          p.hp = Math.max(0, p.hp - bm.atk);
-          window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("block");
-          }
-          window.updateHUD();
-          if (p.hp <= 0) window.triggerExtraction(false, false);
-        }
-      }
-
-      // Update Boss Projectiles and Test Player Hitbox
+      // Update Active Projectiles and Test Player & Wall Hitboxes
       for (let i = window.projectiles.length - 1; i >= 0; i--) {
         let proj = window.projectiles[i];
         proj.life--;
         proj.x += proj.vx;
         proj.y += proj.vy;
 
+        let map = window.activeDungeonMap;
+        if (map && map.grid && checkCollisionAt(map, proj.x, proj.y, proj.r)) {
+          if (window.combatVisuals) {
+            if (
+              typeof window.combatVisuals.spawnProjectileImpact === "function"
+            ) {
+              window.combatVisuals.spawnProjectileImpact(
+                proj.x,
+                proj.y,
+                proj.type || "standard",
+              );
+            } else {
+              window.combatVisuals.spawnParticles(
+                proj.x,
+                proj.y,
+                6,
+                "default",
+                3,
+              );
+            }
+          }
+          window.projectiles.splice(i, 1);
+          continue;
+        }
+
         let projDist = Math.hypot(p.x - proj.x, p.y - proj.y);
         if (projDist < proj.r + (p.radius || 9)) {
           window.damagePlayer(proj.damage, null);
+          if (window.combatVisuals) {
+            if (
+              typeof window.combatVisuals.spawnProjectileImpact === "function"
+            ) {
+              window.combatVisuals.spawnProjectileImpact(
+                proj.x,
+                proj.y,
+                proj.type || "standard",
+              );
+            } else {
+              window.combatVisuals.spawnParticles(
+                proj.x,
+                proj.y,
+                8,
+                "default",
+                4,
+              );
+            }
+          }
           window.projectiles.splice(i, 1);
           if (p.hp <= 0) window.triggerExtraction(false, false);
           continue;
         }
 
         if (proj.life <= 0) {
-          window.projectiles.splice(i, 1);
-        }
-      }
-    }
-  };
-  function render() {
-    if (!ctx || !canvas) return;
+                  if (
+                    window.combatVisuals &&
+                    typeof window.combatVisuals.spawnProjectileImpact === "function"
+                  ) {
+                    window.combatVisuals.spawnProjectileImpact(
+                      proj.x,
+                      proj.y,
+                      proj.type || "standard",
+                    );
+                  }
+                  window.projectiles.splice(i, 1);
+                }
+              }
+            };
+
+          function render() {
 
     // Fill entire canvas with dark abyssal void background to eliminate white border bleed
     ctx.fillStyle = "#05030a";
@@ -4581,87 +4931,254 @@
     }
 
     // B4. Ground Equipment Loot Pickups (Fog-of-War Culled)
-    if (window.groundLoot && window.groundLoot.length > 0) {
-      let time = Date.now();
-      window.groundLoot.forEach((gl) => {
-        let tileC = Math.floor(gl.x / tSize);
-        let tileR = Math.floor(gl.y / tSize);
-        let isExplored =
-          isHub ||
-          (mapInst &&
-            mapInst.exploredGrid &&
-            mapInst.exploredGrid[tileR] &&
-            mapInst.exploredGrid[tileR][tileC]);
-        if (!isExplored) return; // Hide ground equipment if in unexplored Fog of War!
+        if (window.groundLoot && window.groundLoot.length > 0) {
+          let time = Date.now();
+          window.groundLoot.forEach((gl) => {
+            let tileC = Math.floor(gl.x / tSize);
+            let tileR = Math.floor(gl.y / tSize);
+            let isExplored =
+              isHub ||
+              (mapInst &&
+                mapInst.exploredGrid &&
+                mapInst.exploredGrid[tileR] &&
+                mapInst.exploredGrid[tileR][tileC]);
+            if (!isExplored) return; // Hide ground equipment if in unexplored Fog of War!
 
-        depthQueue.push({
-          yBase: gl.y,
-          draw: () => {
-            let drawX = gl.x;
-            let drawY = gl.y + gl.z;
-            let color = gl.color || "#00d2ff";
-            let isEco = window.playerStats && window.playerStats.ecoMode;
+            depthQueue.push({
+              yBase: gl.y,
+              draw: () => {
+                let drawX = gl.x;
+                let drawY = gl.y + gl.z;
+                let color = gl.color || "#00d2ff";
+                let isEco = window.playerStats && window.playerStats.ecoMode;
 
-            ctx.save();
+                ctx.save();
 
-            // 1. Ground Drop Shadow
-            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-            ctx.beginPath();
-            ctx.ellipse(gl.x, gl.y + 2, 8, 3, 0, 0, Math.PI * 2);
-            ctx.fill();
+                // 1. Ground Drop Shadow
+                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                ctx.beginPath();
+                ctx.ellipse(gl.x, gl.y + 2, 8, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
 
-            // 2. Radial Floor Glow Aura
-            if (!isEco) {
-              let auraPulse = Math.sin(time / 130) * 1.5;
-              let floorGrad = ctx.createRadialGradient(
-                gl.x,
-                gl.y + 2,
-                1,
-                gl.x,
-                gl.y + 2,
-                14 + auraPulse,
-              );
-              floorGrad.addColorStop(0, color);
-              floorGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-              ctx.fillStyle = floorGrad;
-              ctx.beginPath();
-              ctx.arc(gl.x, gl.y + 2, 14 + auraPulse, 0, Math.PI * 2);
-              ctx.fill();
-            }
+                // 2. Borderlands-Style Procedural Multi-Tier Rarity Loot Beam
+                                                let isUnique = gl.item && ((window.isItemUnique && window.isItemUnique(gl.item)) || gl.item.statsRolled === "UNIQUE");
+                                                let stars = gl.item ? (gl.item.statsRolled === "UNIQUE" ? 5 : (gl.item.statsRolled ?? 0)) : 0;
+                                                let dRgb = window.hexToRgbValues ? window.hexToRgbValues(color) : "255, 255, 255";
 
-            // 3. Floating Equipment Symbol
-            let bob = Math.sin(time / 150) * 2.5;
-            let lootY = drawY - 10 + bob;
+                                let beamH = 110 + stars * 22;
+                                let beamW = 4 + stars * 2.2;
+                                if (isUnique) {
+                                  beamH = 230;
+                                  beamW = 16;
+                                }
 
-            let img = window.getCanvasIconImage
-              ? window.getCanvasIconImage(gl.item)
-              : null;
-            if (img && img.complete) {
-              ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
-            } else {
-              ctx.fillStyle = color;
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1.2;
-              ctx.beginPath();
-              ctx.moveTo(drawX, lootY + 4 - 5);
-              ctx.lineTo(drawX + 5, lootY + 4);
-              ctx.lineTo(drawX, lootY + 4 + 5);
-              ctx.lineTo(drawX - 5, lootY + 4);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
+                                let pulseSpeed = 160 - stars * 18;
+                                let beamPulse = Math.sin(time / pulseSpeed) * (1.0 + stars * 0.35);
+                                let currentWidth = Math.max(2, beamW + beamPulse);
+                                let alpha = 0.25 + stars * 0.08 + (isUnique ? 0.2 : 0);
+                                let topY = gl.y + 2 - beamH;
+                                let groundY = gl.y + 2;
 
-              ctx.fillStyle = "#ffffff";
-              ctx.beginPath();
-              ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
-              ctx.fill();
-            }
+                                // A. Outer Atmospheric Glow (2★+)
+                                if (stars >= 2 || isUnique) {
+                                  let outerW = currentWidth * (isUnique ? 2.8 : 2.0);
+                                  let outerGrad = ctx.createLinearGradient(drawX, groundY, drawX, topY);
+                                  outerGrad.addColorStop(0, `rgba(${dRgb}, ${alpha * 0.35})`);
+                                  outerGrad.addColorStop(0.6, `rgba(${dRgb}, ${alpha * 0.12})`);
+                                  outerGrad.addColorStop(1, `rgba(${dRgb}, 0)`);
+                                  ctx.fillStyle = outerGrad;
+                                  ctx.fillRect(drawX - outerW / 2, topY, outerW, beamH);
+                                }
 
-            ctx.restore();
-          },
-        });
-      });
-    }
+                                // B. Primary Shaft Gradient Beam (0★+)
+                                let shaftGrad = ctx.createLinearGradient(drawX, groundY, drawX, topY);
+                                if (isUnique) {
+                                  shaftGrad.addColorStop(0, `rgba(232, 67, 147, ${alpha})`);
+                                  shaftGrad.addColorStop(0.4, `rgba(142, 68, 173, ${alpha * 0.85})`);
+                                  shaftGrad.addColorStop(0.8, `rgba(0, 210, 255, ${alpha * 0.5})`);
+                                  shaftGrad.addColorStop(1, "rgba(0, 210, 255, 0)");
+                                } else {
+                                  shaftGrad.addColorStop(0, `rgba(${dRgb}, ${alpha})`);
+                                  shaftGrad.addColorStop(0.5, `rgba(${dRgb}, ${alpha * 0.45})`);
+                                  shaftGrad.addColorStop(1, `rgba(${dRgb}, 0)`);
+                                }
+                                ctx.fillStyle = shaftGrad;
+                                ctx.fillRect(drawX - currentWidth / 2, topY, currentWidth, beamH);
+
+                                // C. White-Hot Inner Core Laser (1★+)
+                                if (stars >= 1 || isUnique) {
+                                  let coreW = Math.max(1, currentWidth * 0.3);
+                                  let coreGrad = ctx.createLinearGradient(drawX, groundY, drawX, topY);
+                                  coreGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+                                  coreGrad.addColorStop(0.7, `rgba(255, 255, 255, ${alpha * 0.8})`);
+                                  coreGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+                                  ctx.fillStyle = coreGrad;
+                                  ctx.fillRect(drawX - coreW / 2, topY, coreW, beamH);
+                                } else {
+                                  // 0★ Core Line
+                                  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+                                  ctx.lineWidth = 1.0;
+                                  ctx.beginPath();
+                                  ctx.moveTo(drawX, groundY);
+                                  ctx.lineTo(drawX, topY);
+                                  ctx.stroke();
+                                }
+
+                                // D. Ground Base Disc / Runic Ring (1★+)
+                                if (stars >= 1 || isUnique) {
+                                  let baseRx = currentWidth * (stars >= 4 ? 2.2 : 1.5);
+                                  let baseRy = baseRx * 0.35;
+                                  ctx.strokeStyle = `rgba(${dRgb}, ${alpha * 0.9})`;
+                                  ctx.lineWidth = stars >= 3 ? 1.8 : 1.0;
+                                  ctx.beginPath();
+                                  ctx.ellipse(drawX, groundY, baseRx, baseRy, 0, 0, Math.PI * 2);
+                                  ctx.stroke();
+
+                                  if (stars >= 4 || isUnique) {
+                                    ctx.save();
+                                    ctx.strokeStyle = isUnique ? "#00ffff" : "#ffd700";
+                                    ctx.lineWidth = 1.2;
+                                    ctx.setLineDash([4, 3]);
+                                    ctx.beginPath();
+                                    ctx.ellipse(drawX, groundY, baseRx * 1.35, baseRy * 1.35, 0, 0, Math.PI * 2);
+                                    ctx.stroke();
+                                    ctx.restore();
+                                  }
+                                }
+
+                                // E. Animated Helix Energy Strands (4★, 5★, UNIQUE)
+                                if ((stars >= 4 || isUnique) && !isEco) {
+                                  let helixSteps = 16;
+                                  let numHelixes = (stars >= 5 || isUnique) ? 2 : 1;
+                                  for (let h = 0; h < numHelixes; h++) {
+                                    let isReverse = h === 1;
+                                    ctx.strokeStyle = isUnique
+                                      ? (h === 0 ? "rgba(0, 255, 255, 0.75)" : "rgba(255, 0, 127, 0.75)")
+                                      : `rgba(255, 255, 255, ${0.6 + h * 0.2})`;
+                                    ctx.lineWidth = 1.2;
+                                    ctx.beginPath();
+                                    for (let s = 0; s <= helixSteps; s++) {
+                                      let ratio = s / helixSteps;
+                                      let hY = groundY - ratio * beamH;
+                                      let phase = ratio * Math.PI * 4 + (time / 140) * (isReverse ? -1.2 : 1.2);
+                                      let hX = drawX + Math.sin(phase) * (currentWidth * 0.9);
+                                      if (s === 0) ctx.moveTo(hX, hY);
+                                      else ctx.lineTo(hX, hY);
+                                    }
+                                    ctx.stroke();
+                                  }
+                                }
+
+                                // F. Upward Drifting Motes / Sparks along Beam (3★+)
+                                if (stars >= 3 || isUnique) {
+                                  let numSparks = isEco ? 2 : (stars >= 5 || isUnique ? 6 : 3);
+                                  for (let i = 0; i < numSparks; i++) {
+                                    let sparkSpeed = 900 + i * 150;
+                                    let sparkProgress = ((time / sparkSpeed) + i / numSparks) % 1.0;
+                                    let sparkY = groundY - sparkProgress * beamH;
+                                    let sparkX = drawX + Math.sin(time / 120 + i * 2.1) * (currentWidth * 0.45);
+                                    let sparkAlpha = (1.0 - sparkProgress) * 0.85;
+                                    let sparkRad = 1.0 + (i % 2) * 0.8 + (isUnique ? 0.6 : 0);
+
+                                    ctx.fillStyle = isUnique
+                                      ? (i % 2 === 0 ? `rgba(0, 210, 255, ${sparkAlpha})` : `rgba(232, 121, 249, ${sparkAlpha})`)
+                                      : `rgba(255, 255, 255, ${sparkAlpha})`;
+                                    ctx.beginPath();
+                                    ctx.arc(sparkX, sparkY, sparkRad, 0, Math.PI * 2);
+                                    ctx.fill();
+                                  }
+                                }
+
+                                // G. Top Ray & Lens Flare Burst (3★+)
+                                if (stars >= 3 || isUnique) {
+                                  ctx.save();
+                                  let flarePulse = 1.0 + Math.sin(time / 100) * 0.25;
+                                  let flareRad = (4 + stars * 2) * flarePulse;
+
+                                  let flareGrad = ctx.createRadialGradient(drawX, topY, 0, drawX, topY, flareRad * 2);
+                                  flareGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+                                  flareGrad.addColorStop(0.4, `rgba(${dRgb}, 0.7)`);
+                                  flareGrad.addColorStop(1, "rgba(0,0,0,0)");
+
+                                  ctx.fillStyle = flareGrad;
+                                  ctx.beginPath();
+                                  ctx.arc(drawX, topY, flareRad * 2, 0, Math.PI * 2);
+                                  ctx.fill();
+
+                                  // Horizontal Lens Flare Cross
+                                  ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 * flarePulse})`;
+                                  ctx.lineWidth = 1.2;
+                                  ctx.beginPath();
+                                  ctx.moveTo(drawX - flareRad * 2.5, topY);
+                                  ctx.lineTo(drawX + flareRad * 2.5, topY);
+                                  ctx.moveTo(drawX, topY - flareRad * 1.5);
+                                  ctx.lineTo(drawX, topY + flareRad * 1.5);
+                                  ctx.stroke();
+
+                                  if (isUnique || stars >= 5) {
+                                    ctx.strokeStyle = isUnique ? "#00ffff" : "#ffd700";
+                                    ctx.beginPath();
+                                    ctx.moveTo(drawX - flareRad * 1.8, topY - flareRad * 0.8);
+                                    ctx.lineTo(drawX + flareRad * 1.8, topY + flareRad * 0.8);
+                                    ctx.moveTo(drawX - flareRad * 1.8, topY + flareRad * 0.8);
+                                    ctx.lineTo(drawX + flareRad * 1.8, topY - flareRad * 0.8);
+                                    ctx.stroke();
+                                  }
+                                  ctx.restore();
+                                }
+
+                // 3. Radial Floor Glow Aura
+                if (!isEco) {
+                  let auraPulse = Math.sin(time / 130) * 1.5;
+                  let floorGrad = ctx.createRadialGradient(
+                    gl.x,
+                    gl.y + 2,
+                    1,
+                    gl.x,
+                    gl.y + 2,
+                    14 + auraPulse,
+                  );
+                  floorGrad.addColorStop(0, color);
+                  floorGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                  ctx.fillStyle = floorGrad;
+                  ctx.beginPath();
+                  ctx.arc(gl.x, gl.y + 2, 14 + auraPulse, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+
+                // 4. Floating Equipment Symbol
+                let bob = Math.sin(time / 150) * 2.5;
+                let lootY = drawY - 10 + bob;
+
+                let img = window.getCanvasIconImage
+                  ? window.getCanvasIconImage(gl.item)
+                  : null;
+                if (img && img.complete) {
+                  ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
+                } else {
+                  ctx.fillStyle = color;
+                  ctx.strokeStyle = "#000000";
+                  ctx.lineWidth = 1.2;
+                  ctx.beginPath();
+                  ctx.moveTo(drawX, lootY + 4 - 5);
+                  ctx.lineTo(drawX + 5, lootY + 4);
+                  ctx.lineTo(drawX, lootY + 4 + 5);
+                  ctx.lineTo(drawX - 5, lootY + 4);
+                  ctx.closePath();
+                  ctx.fill();
+                  ctx.stroke();
+
+                  ctx.fillStyle = "#ffffff";
+                  ctx.beginPath();
+                  ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+
+                ctx.restore();
+              },
+            });
+          });
+        }
 
     // C. Active Dungeon Mobs (Fog-of-War Culled)
     if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
@@ -4799,7 +5316,6 @@
           }
 
           window.drawSingleMob(ctx, window.mob);
-          drawMobOverheadBar(ctx, window.mob);
         },
       });
     }
@@ -5114,6 +5630,11 @@
     // Render Minimap in Screen Space
     if (typeof window.renderMinimap === "function") {
       window.renderMinimap(ctx, canvas);
+    }
+
+    // Render Boss Health Bar in Screen Space
+    if (window.mob && window.combatVisuals) {
+      window.combatVisuals.drawTargetHealthBar(ctx, window.mob);
     }
 
     // 3. Render Floating Virtual Joystick Overlay (Screen Space)
@@ -5874,6 +6395,7 @@
       window.renderProfileModal();
     } else {
       modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
     }
   };
 
@@ -6024,7 +6546,7 @@
       matrixGridEl.innerHTML = `
                   ${renderAttrCard("STRENGTH", "+10 Max HP, +2.5 Attack Power", "Str", committedAlloc.spStr || 0, draftAlloc.spStr || 0, "str")}
                   ${renderAttrCard("DEXTERITY", "+0.1% Crit, +0.5% Crit Multi, +1 Move Speed", "Dex", committedAlloc.spDex || 0, draftAlloc.spDex || 0, "dex")}
-                  ${renderAttrCard("INTELLIGENCE", "+1 Defense, +0.5% Potion Power, Arcane Barrier", "Int", committedAlloc.spInt || 0, draftAlloc.spInt || 0, "int")}
+                  ${renderAttrCard("INTELLIGENCE", "+1 Defense, +0.5% Potion Power, Arcane Barrier, & Alchemical Preservation", "Int", committedAlloc.spInt || 0, draftAlloc.spInt || 0, "int")}
                   ${confirmBarHtml}
                 `;
     }
@@ -6811,6 +7333,7 @@
       window.updateHUD();
     } else {
       modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
     }
   };
 
@@ -7039,7 +7562,16 @@
       window.switchBagTab(window.activeBagTab || "EQUIP");
     } else {
       modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
       if (typeof window.hideTooltip === "function") window.hideTooltip();
+    }
+  };
+
+  window.closeDeploymentModal = function () {
+    let modal = document.getElementById("deployment-modal");
+    if (modal) {
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
     }
   };
 

@@ -129,7 +129,7 @@
             <span id="profile-header-title">HERO PROFILE & EQUIPMENT</span>
             <button
               class="close-btn"
-              onpointerdown="event.stopPropagation(); window.toggleProfileModal();"
+              onpointerdown="event.stopPropagation();"
               onclick="
                 event.stopPropagation();
                 window.toggleProfileModal();
@@ -267,7 +267,7 @@
             <span>GAME SETTINGS</span>
             <button
               class="close-btn"
-              onpointerdown="event.stopPropagation(); window.toggleSettingsModal();"
+              onpointerdown="event.stopPropagation();"
               onclick="
                 event.stopPropagation();
                 window.toggleSettingsModal();
@@ -424,7 +424,7 @@
             <span>EXTRACTED LOOT SATCHEL</span>
             <button
               class="close-btn"
-              onpointerdown="event.stopPropagation(); window.toggleLootBag();"
+              onpointerdown="event.stopPropagation();"
               onclick="
                 event.stopPropagation();
                 window.toggleLootBag();
@@ -475,107 +475,184 @@
         </div>
       </div>
 
-        <!-- Dedicated Merchant Market Modal -->
-        <div
-                id="shop-modal"
-                class="modal-overlay"
-                style="display: none"
-                onpointerdown="event.stopPropagation()"
-        >
-            <div class="modal-card shop-modal-card">
-                <!-- Merchant Banner Header -->
-                <div class="shop-header-banner">
-                    <div class="shop-merchant-title">
-                        <div class="shop-merchant-badge">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f1c40f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" />
-                                <path d="M12 22V12" />
-                                <path d="M12 12L3 7" />
-                                <path d="M12 12l9-7" />
-                                <circle cx="12" cy="7" r="2" fill="#f1c40f" />
-                            </svg>
-                        </div>
-                        <div class="shop-title-group">
-                            <span class="shop-main-title">MERCHANT BAZAAR</span>
-                            <span class="shop-sub-title">GRAND TRADE POST & ALCHEMY EXCHANGE</span>
-                        </div>
-                    </div>
-
-                    <!-- Live Wallet Display -->
-                    <div class="shop-wallet-bar">
-                        <div class="shop-wallet-badge gold-badge" title="Vault Gold Balance">
-                            <svg width="12" height="12" viewBox="0 0 12 12">
-                                <circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8" />
-                                <circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6" />
-                            </svg>
-                            <span id="shop-wallet-gold" class="shop-wallet-val">0</span>
-                        </div>
-                        <div class="shop-wallet-badge souls-badge" title="Monster Souls Owned">
-                            <svg width="12" height="12" viewBox="0 0 12 12">
-                                <path d="M6 1.5 C6 1.5, 2 6, 2 9 C2 11, 3.8 11.5, 6 11.5 C8.2 11.5, 10 11, 10 9 C10 6, 6 1.5, 6 1.5 Z" fill="#a0aec0" stroke="#000" stroke-width="0.8" />
-                            </svg>
-                            <span id="shop-wallet-souls" class="shop-wallet-val">0</span>
-                        </div>
-                    </div>
-
-                    <button
-                            class="close-btn"
-                            onpointerdown="event.stopPropagation(); window.toggleShopModal();"
-                            onclick="event.stopPropagation(); window.toggleShopModal();"
-                            title="Close Marketplace"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Merchant Tab Selector Bar -->
-                <div class="shop-tab-bar">
-                    <button
-                            id="shop-tab-gear"
-                            class="shop-tab-btn active"
-                            onclick="window.switchShopTab('gear')"
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14.5 17.5L3 6V3h3l11.5 11.5 M13 19l6-6 M16 16l4 4 M19 21l2-2" />
-                        </svg>
-                        <span>EQUIPMENT MARKET</span>
-                    </button>
-                    <button
-                            id="shop-tab-alchemy"
-                            class="shop-tab-btn"
-                            onclick="window.switchShopTab('alchemy')"
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10 2v5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 7V2" />
-                            <path d="M8.5 2h7" />
-                            <path d="M7 14h10" />
-                        </svg>
-                        <span>MYSTICAL & ALCHEMY</span>
-                    </button>
-                    <button
-                            id="shop-tab-sinks"
-                            class="shop-tab-btn"
-                            onclick="window.switchShopTab('sinks')"
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 6v12M6 12h12" />
-                        </svg>
-                        <span>COMMERCE UPGRADES</span>
-                    </button>
-                </div>
-
-                <div
-                        id="shop-content-panel"
-                        class="modal-body shop-content-panel"
+      <!-- Dedicated Merchant Market Modal -->
+      <div
+        id="shop-modal"
+        class="modal-overlay"
+        style="display: none"
+        onpointerdown="event.stopPropagation()"
+      >
+        <div class="modal-card shop-modal-card">
+          <!-- Merchant Banner Header -->
+          <div class="shop-header-banner">
+            <div class="shop-merchant-title">
+              <div class="shop-merchant-badge">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#f1c40f"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                 >
-                    <!-- Rendered dynamically -->
-                </div>
+                  <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" />
+                  <path d="M12 22V12" />
+                  <path d="M12 12L3 7" />
+                  <path d="M12 12l9-7" />
+                  <circle cx="12" cy="7" r="2" fill="#f1c40f" />
+                </svg>
+              </div>
+              <div class="shop-title-group">
+                <span class="shop-main-title">MERCHANT BAZAAR</span>
+                <span class="shop-sub-title"
+                  >GRAND TRADE POST & ALCHEMY EXCHANGE</span
+                >
+              </div>
             </div>
+
+            <!-- Live Wallet Display -->
+            <div class="shop-wallet-bar">
+              <div
+                class="shop-wallet-badge gold-badge"
+                title="Vault Gold Balance"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                  <circle
+                    cx="6"
+                    cy="6"
+                    r="5"
+                    fill="#f1c40f"
+                    stroke="#000"
+                    stroke-width="0.8"
+                  />
+                  <circle
+                    cx="6"
+                    cy="6"
+                    r="2.5"
+                    fill="none"
+                    stroke="#b7950b"
+                    stroke-width="0.6"
+                  />
+                </svg>
+                <span id="shop-wallet-gold" class="shop-wallet-val">0</span>
+              </div>
+              <div
+                class="shop-wallet-badge souls-badge"
+                title="Monster Souls Owned"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                  <path
+                    d="M6 1.5 C6 1.5, 2 6, 2 9 C2 11, 3.8 11.5, 6 11.5 C8.2 11.5, 10 11, 10 9 C10 6, 6 1.5, 6 1.5 Z"
+                    fill="#a0aec0"
+                    stroke="#000"
+                    stroke-width="0.8"
+                  />
+                </svg>
+                <span id="shop-wallet-souls" class="shop-wallet-val">0</span>
+              </div>
+            </div>
+
+            <button
+              class="close-btn"
+              onpointerdown="event.stopPropagation();"
+              onclick="
+                event.stopPropagation();
+                window.toggleShopModal();
+              "
+              title="Close Marketplace"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Merchant Tab Selector Bar -->
+          <div class="shop-tab-bar">
+            <button
+              id="shop-tab-gear"
+              class="shop-tab-btn active"
+              onclick="window.switchShopTab('gear')"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M14.5 17.5L3 6V3h3l11.5 11.5 M13 19l6-6 M16 16l4 4 M19 21l2-2"
+                />
+              </svg>
+              <span>EQUIPMENT MARKET</span>
+            </button>
+            <button
+              id="shop-tab-alchemy"
+              class="shop-tab-btn"
+              onclick="window.switchShopTab('alchemy')"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M10 2v5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 7V2"
+                />
+                <path d="M8.5 2h7" />
+                <path d="M7 14h10" />
+              </svg>
+              <span>MYSTICAL & ALCHEMY</span>
+            </button>
+            <button
+              id="shop-tab-sinks"
+              class="shop-tab-btn"
+              onclick="window.switchShopTab('sinks')"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v12M6 12h12" />
+              </svg>
+              <span>COMMERCE UPGRADES</span>
+            </button>
+          </div>
+
+          <div id="shop-content-panel" class="modal-body shop-content-panel">
+            <!-- Rendered dynamically -->
+          </div>
         </div>
+      </div>
+      <!-- Dedicated Arcade Gachapon Modal -->
       <div
         id="gacha-modal"
         class="modal-overlay gacha-theme-standard"
@@ -584,11 +661,78 @@
       >
         <div
           id="gacha-machine-card"
-          class="modal-card gacha-card"
+          class="modal-card gacha-card gacha-arcade-frame"
           onpointerdown="event.stopPropagation()"
         >
-          <div class="modal-header">
-            <span style="display: flex; align-items: center; gap: 4px">
+          <!-- Marquee Header Banner -->
+          <div class="gacha-marquee-banner">
+            <div class="gacha-title-group">
+              <div class="gacha-marquee-badge">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffd700"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="3" />
+                  <line x1="12" y1="3" x2="12" y2="9" />
+                </svg>
+              </div>
+              <div class="gacha-text-group">
+                <span class="gacha-main-title">ARCADE GACHAPON</span>
+                <span class="gacha-sub-title"
+                  >CAPSULE DISPENSER & ITEM REVEAL</span
+                >
+              </div>
+            </div>
+
+            <!-- Key Balances Badge -->
+            <div class="gacha-key-bar">
+              <div class="gacha-key-badge std-key" title="Standard Keys">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffd700"
+                  stroke-width="2.5"
+                >
+                  <circle cx="11" cy="19" r="5" />
+                  <path d="M15 15L23 7L26 10" />
+                </svg>
+                <span id="gacha-panel-standard-keys">0</span>
+              </div>
+              <div class="gacha-key-badge glim-key" title="Glimmering Keys">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#00d2ff"
+                  stroke-width="2.5"
+                >
+                  <polygon
+                    points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"
+                  />
+                </svg>
+                <span id="gacha-panel-glimmering-keys">0</span>
+              </div>
+            </div>
+
+            <button
+              class="close-btn"
+              onpointerdown="event.stopPropagation();"
+              onclick="
+                event.stopPropagation();
+                window.toggleGachaModal();
+              "
+              title="Close Arcade Terminal"
+            >
               <svg
                 width="14"
                 height="14"
@@ -596,52 +740,57 @@
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-                <rect x="5" y="2" width="14" height="20" rx="2" />
-                <circle cx="12" cy="8" r="4" />
-                <line x1="9" y1="16" x2="15" y2="16" />
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-              ARCADE GACHAPON
-            </span>
-            <button
-              class="close-btn"
-              onpointerdown="event.stopPropagation(); window.toggleGachaModal();"
-              onclick="
-                event.stopPropagation();
-                window.toggleGachaModal();
-              "
-              title="Close Modal"
-            >
-              <span
-                style="
-                  font-size: 10px;
-                  font-weight: bold;
-                  font-family: monospace;
-                "
-                >Close</span
-              >
             </button>
           </div>
 
           <!-- Machine Tab Selectors -->
-          <div style="display: flex; gap: 6px; margin-bottom: 12px">
+          <div class="gacha-tab-bar">
             <button
               id="gacha-tab-standard"
               class="gacha-tab-btn active"
               onclick="window.switchGachaMachine('standard')"
             >
-              STANDARD MACHINE
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span>STANDARD VENDING</span>
             </button>
             <button
               id="gacha-tab-glimmering"
               class="gacha-tab-btn"
               onclick="window.switchGachaMachine('glimmering')"
             >
-              GLIMMERING MACHINE
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polygon
+                  points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"
+                />
+              </svg>
+              <span>GLIMMERING BOOSTER</span>
             </button>
           </div>
 
-          <!-- Physical Arcade Dome -->
+          <!-- Physical Arcade Dome Housing -->
           <div class="gacha-dome-housing">
             <div class="gacha-dome-glass">
               <canvas
@@ -664,28 +813,22 @@
               STANDARD VENDING TERMINAL
             </div>
             <div id="gacha-rates-percentages" class="gacha-rates-body">
-              <!-- Rendered dynamically depending on machine -->
+              <!-- Rendered dynamically -->
             </div>
           </div>
 
           <!-- Pity Progress bar -->
           <div class="gacha-pity-container">
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                font-size: 9px;
-                font-family: monospace;
-                font-weight: bold;
-                margin-bottom: 3px;
-              "
-            >
+            <div class="gacha-pity-label-row">
               <span style="color: #cbd5e1"
-                >Pity progress: <span id="gacha-pity-text">0 / 50</span></span
+                >Pity progress:
+                <strong id="gacha-pity-text" style="color: #00d2ff"
+                  >0 / 50</strong
+                ></span
               >
               <span style="color: #ef4444"
                 >Guaranteed 5-Star on
-                <span id="gacha-pity-target">50</span></span
+                <strong id="gacha-pity-target">50</strong></span
               >
             </div>
             <div class="gacha-pity-bg">
@@ -697,54 +840,15 @@
             </div>
           </div>
 
-          <!-- Crank Controls & Key Inventory -->
+          <!-- Crank Controls Panel -->
           <div class="gacha-crank-panel">
-            <div
-              style="
-                display: flex;
-                flex-direction: column;
-                gap: 2px;
-                text-align: left;
-                font-family: monospace;
-                font-size: 9.5px;
-                color: #94a3b8;
-              "
-            >
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  width: 130px;
-                "
-              >
-                <span>STANDARD KEYS:</span>
-                <strong id="gacha-panel-standard-keys" style="color: #ffd700"
-                  >0</strong
-                >
-              </div>
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  width: 130px;
-                "
-              >
-                <span>GLIMMERING KEYS:</span>
-                <strong id="gacha-panel-glimmering-keys" style="color: #00d2ff"
-                  >0</strong
-                >
-              </div>
+            <div class="gacha-crank-info">
+              <span class="crank-status-tag">STATUS: READY TO SPIN</span>
+              <span class="crank-instruction">Insert Key & Crank Handle</span>
             </div>
 
             <!-- Big Rotating Crank Node -->
-            <div
-              style="
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 4px;
-              "
-            >
+            <div class="gacha-crank-node">
               <div
                 id="gacha-crank-dial"
                 class="gacha-dial"
@@ -755,7 +859,7 @@
                   height="22"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#94a3b8"
+                  stroke="#38bdf8"
                   stroke-width="3"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -779,40 +883,15 @@
 
           <!-- Unboxed Pull Results Overlay Panel -->
           <div id="gacha-results-panel" style="margin-top: 10px; display: none">
-            <div
-              style="
-                background: rgba(0, 0, 0, 0.7);
-                border: 1.5px dashed #f1c40f;
-                border-radius: 6px;
-                padding: 10px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 6px;
-                text-align: center;
-              "
-            >
-              <span
-                style="
-                  color: #ffd700;
-                  font-family: monospace;
-                  font-size: 10px;
-                  font-weight: 800;
-                  letter-spacing: 1px;
-                "
-                >[ UNBOXED REWARD CODE ]</span
-              >
+            <div class="gacha-results-card">
+              <span class="results-header-tag">[ UNBOXED REWARD CODE ]</span>
               <div
                 id="gacha-results-render"
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                "
+                class="results-icon-container"
               ></div>
               <span
                 id="gacha-results-item-name"
-                style="font-weight: bold; font-size: 12px"
+                class="results-item-title"
               ></span>
             </div>
           </div>
@@ -827,19 +906,45 @@
         onpointerdown="event.stopPropagation()"
       >
         <div
-          class="modal-card forge-card"
+          class="modal-card forge-modal-card"
           onpointerdown="event.stopPropagation()"
         >
-          <div class="modal-header">
-            <span>BLACKSMITH FORGE</span>
+          <!-- Forge Header Banner -->
+          <div class="forge-header-banner">
+            <div class="forge-title-group">
+              <div class="forge-badge-icon">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#f97316"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M14.5 17.5L3 6V3h3l11.5 11.5 M13 19l6-6 M16 16l4 4 M19 21l2-2"
+                  />
+                </svg>
+              </div>
+              <div class="forge-text-group">
+                <span class="forge-main-title"
+                  >BLACKSMITH FORGE & SMELTERY</span
+                >
+                <span class="forge-sub-title"
+                  >SLOT ATTUNEMENT, REFORGING & STAR AWAKENING</span
+                >
+              </div>
+            </div>
             <button
               class="close-btn"
-              onpointerdown="event.stopPropagation(); window.toggleForgeModal();"
+              onpointerdown="event.stopPropagation();"
               onclick="
                 event.stopPropagation();
                 window.toggleForgeModal();
               "
-              title="Close Modal"
+              title="Close Forge"
             >
               <svg
                 width="14"
@@ -856,29 +961,92 @@
               </svg>
             </button>
           </div>
+
+          <!-- Master Smith Quote Banner -->
+          <div class="forge-smith-quote">
+            <div class="smith-avatar">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ea580c"
+                stroke-width="2"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div class="smith-quote-text">
+              <span class="smith-name">IGNIS THE ROYAL BLADESMITH</span>
+              <span class="smith-line"
+                >"The heat of the hearth never lies. Bring me your scraps, and
+                I'll temper your gear for war."</span
+              >
+            </div>
+          </div>
+
+          <!-- Mode Selector Bar -->
           <div class="forge-mode-bar">
             <button
               id="btn-mode-temper"
               class="forge-mode-btn active"
               onclick="window.setForgeMode('temper')"
             >
-              ATTUNEMENT
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="M12 2v20M17 5l-5-5-5 5" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+              <span>ATTUNEMENT</span>
             </button>
             <button
               id="btn-mode-reforge"
               class="forge-mode-btn"
               onclick="window.setForgeMode('reforge')"
             >
-              REFORGE
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                />
+              </svg>
+              <span>REFORGE</span>
             </button>
             <button
               id="btn-mode-tier"
               class="forge-mode-btn"
               onclick="window.setForgeMode('tier')"
             >
-              AWAKEN
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polygon
+                  points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"
+                />
+              </svg>
+              <span>AWAKEN</span>
             </button>
           </div>
+
           <div class="forge-layout">
             <div id="forge-list" class="forge-pane forge-left-pane">
               <!-- Item/Slot selector rendered dynamically -->
@@ -905,7 +1073,7 @@
             <span>CELESTIAL ENCHANTMENT ALTAR</span>
             <button
               class="close-btn"
-              onpointerdown="event.stopPropagation(); window.toggleEnchantmentModal();"
+              onpointerdown="event.stopPropagation();"
               onclick="
                 event.stopPropagation();
                 window.toggleEnchantmentModal();
@@ -1048,7 +1216,11 @@
             <span>TACTICAL RUN DEPLOYMENT</span>
             <button
               class="close-btn"
-              onpointerdown="event.stopPropagation(); document.getElementById('deployment-modal').style.display='none';"
+              onpointerdown="event.stopPropagation();"
+              onclick="
+                event.stopPropagation();
+                window.closeDeploymentModal();
+              "
             >
               <svg
                 width="14"
