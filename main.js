@@ -6529,38 +6529,46 @@
       };
 
       window.switchProfileTab = function (tabKey) {
-              window.activeProfileMobileTab = tabKey;
-              const tabs = ["stats", "gear", "satchel", "skills"];
-              tabs.forEach((t) => {
-                let btn = document.getElementById(`profile-tab-${t}`);
-                let sec = document.getElementById(`profile-sec-${t}`);
-                if (btn) btn.classList.toggle("active", t === tabKey);
-                if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
-              });
-              if (tabKey === "skills" && window.SkillTreeManager) {
-                window.SkillTreeManager.renderSkillTreeUI();
-              } else if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
-                window.SkillTreeManager.stopAnimationLoop();
-              }
-            };
+                    window.activeProfileMobileTab = tabKey;
+                    const tabs = ["stats", "gear", "satchel", "skills"];
+                    tabs.forEach((t) => {
+                      let btn = document.getElementById(`profile-tab-${t}`);
+                      let sec = document.getElementById(`profile-sec-${t}`);
+                      if (btn) btn.classList.toggle("active", t === tabKey);
+                      if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
+                    });
+                    let profileCard = document.querySelector(".profile-card");
+                    if (profileCard) {
+                      profileCard.classList.toggle("skills-fullscreen-mode", tabKey === "skills");
+                    }
+                    if (tabKey === "skills" && window.SkillTreeManager) {
+                      window.SkillTreeManager.renderSkillTreeUI();
+                    } else if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
+                      window.SkillTreeManager.stopAnimationLoop();
+                    }
+                  };
 
-        window.toggleProfileModal = function () {
-          window.hideTooltip();
-          let modal = document.getElementById("profile-modal");
-          if (!modal) return;
+              window.toggleProfileModal = function () {
+                window.hideTooltip();
+                let modal = document.getElementById("profile-modal");
+                if (!modal) return;
 
-          if (modal.style.display === "none" || modal.style.display === "") {
-            modal.style.display = "flex";
-            window.switchProfileTab(window.activeProfileMobileTab || "stats");
-            window.renderProfileModal();
-          } else {
-            modal.style.display = "none";
-            window.lastModalCloseTime = Date.now();
-            if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
-              window.SkillTreeManager.stopAnimationLoop();
-            }
-          }
-        };
+                if (modal.style.display === "none" || modal.style.display === "") {
+                  modal.style.display = "flex";
+                  window.switchProfileTab(window.activeProfileMobileTab || "stats");
+                  window.renderProfileModal();
+                } else {
+                  modal.style.display = "none";
+                  window.lastModalCloseTime = Date.now();
+                  let profileCard = document.querySelector(".profile-card");
+                  if (profileCard) {
+                    profileCard.classList.remove("skills-fullscreen-mode");
+                  }
+                  if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
+                    window.SkillTreeManager.stopAnimationLoop();
+                  }
+                }
+              };
 
   window.renderProfileModal = function () {
     let statsListEl = document.getElementById("profile-stats-list");
