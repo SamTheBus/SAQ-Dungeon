@@ -86,31 +86,38 @@
           </div>
         </div>
 
-        <!-- Pod 4: Tactical Actions -->
-        <div class="hud-pod hud-right-pod">
-          <button
-            id="btn-bag-toggle"
-            class="hud-btn"
-            onclick="window.toggleLootBag()"
-          >
-            BAG (<span id="hud-bag-count">0</span>)
-          </button>
-          <button
-            id="btn-settings-toggle"
-            class="hud-btn"
-            onclick="window.toggleSettingsModal()"
-          >
-            SETTINGS
-          </button>
-          <button
-            id="btn-abandon-run"
-            class="hud-btn abandon-btn"
-            onclick="window.requestAbandonRun()"
-            style="display: none"
-          >
-            ABANDON
-          </button>
-        </div>
+          <!-- Pod 4: Tactical Actions -->
+          <div class="hud-pod hud-right-pod">
+              <button
+                      id="btn-skills-toggle"
+                      class="hud-btn"
+                      onclick="window.openSkillTree()"
+              >
+                  SKILLS
+              </button>
+              <button
+                      id="btn-bag-toggle"
+                      class="hud-btn"
+                      onclick="window.toggleLootBag()"
+              >
+                  BAG (<span id="hud-bag-count">0</span>)
+              </button>
+              <button
+                      id="btn-settings-toggle"
+                      class="hud-btn"
+                      onclick="window.toggleSettingsModal()"
+              >
+                  SETTINGS
+              </button>
+              <button
+                      id="btn-abandon-run"
+                      class="hud-btn abandon-btn"
+                      onclick="window.requestAbandonRun()"
+                      style="display: none"
+              >
+                  ABANDON
+              </button>
+          </div>
       </div>
 
       <!-- Toast Notification Overlay Container -->
@@ -151,30 +158,37 @@
               </svg>
             </button>
           </div>
-          <!-- Mobile Tab Selector Bar -->
-          <div class="profile-tab-bar">
-            <button
-              id="profile-tab-stats"
-              class="profile-tab-btn active"
-              onclick="window.switchProfileTab('stats')"
-            >
-              STATS & MATRIX
-            </button>
-            <button
-              id="profile-tab-gear"
-              class="profile-tab-btn"
-              onclick="window.switchProfileTab('gear')"
-            >
-              EQUIPPED GEAR
-            </button>
-            <button
-              id="profile-tab-satchel"
-              class="profile-tab-btn"
-              onclick="window.switchProfileTab('satchel')"
-            >
-              SATCHEL
-            </button>
-          </div>
+            <!-- Mobile Tab Selector Bar -->
+            <div class="profile-tab-bar">
+                <button
+                        id="profile-tab-stats"
+                        class="profile-tab-btn active"
+                        onclick="window.switchProfileTab('stats')"
+                >
+                    STATS & MATRIX
+                </button>
+                <button
+                        id="profile-tab-gear"
+                        class="profile-tab-btn"
+                        onclick="window.switchProfileTab('gear')"
+                >
+                    EQUIPPED GEAR
+                </button>
+                <button
+                        id="profile-tab-satchel"
+                        class="profile-tab-btn"
+                        onclick="window.switchProfileTab('satchel')"
+                >
+                    SATCHEL
+                </button>
+                <button
+                        id="profile-tab-skills"
+                        class="profile-tab-btn"
+                        onclick="window.switchProfileTab('skills')"
+                >
+                    SKILL TREES
+                </button>
+            </div>
 
           <div class="profile-layout">
             <!-- Left Panel: Character Stats & Attribute Matrix -->
@@ -219,40 +233,47 @@
               </div>
             </div>
 
-            <!-- Right Panel: Equipment Satchel & Vault -->
-            <div id="profile-sec-satchel" class="profile-section">
-              <div class="section-title" id="profile-satchel-title">
-                VAULT SATCHEL (<span id="profile-stash-count">0</span>)
+              <!-- Right Panel: Equipment Satchel & Vault -->
+              <div id="profile-sec-satchel" class="profile-section">
+                  <div class="section-title" id="profile-satchel-title">
+                      VAULT SATCHEL (<span id="profile-stash-count">0</span>)
+                  </div>
+                  <div class="satchel-tab-bar">
+                      <button
+                              id="stash-tab-equip"
+                              class="satchel-tab-btn active"
+                              onclick="window.switchStashTab('EQUIP')"
+                      >
+                          GEAR
+                      </button>
+                      <button
+                              id="stash-tab-use"
+                              class="satchel-tab-btn"
+                              onclick="window.switchStashTab('USE')"
+                      >
+                          CONSUMABLES
+                      </button>
+                      <button
+                              id="stash-tab-etc"
+                              class="satchel-tab-btn"
+                              onclick="window.switchStashTab('ETC')"
+                      >
+                          MATERIALS
+                      </button>
+                  </div>
+                  <div class="profile-section-body">
+                      <div id="profile-stash-list" class="stash-grid">
+                          <!-- Dynamic satchel items -->
+                      </div>
+                  </div>
               </div>
-              <div class="satchel-tab-bar">
-                <button
-                  id="stash-tab-equip"
-                  class="satchel-tab-btn active"
-                  onclick="window.switchStashTab('EQUIP')"
-                >
-                  GEAR
-                </button>
-                <button
-                  id="stash-tab-use"
-                  class="satchel-tab-btn"
-                  onclick="window.switchStashTab('USE')"
-                >
-                  CONSUMABLES
-                </button>
-                <button
-                  id="stash-tab-etc"
-                  class="satchel-tab-btn"
-                  onclick="window.switchStashTab('ETC')"
-                >
-                  MATERIALS
-                </button>
+
+              <!-- Skill Trees Panel -->
+              <div id="profile-sec-skills" class="profile-section">
+                  <div id="skill-tree-content-panel" class="profile-section-body">
+                      <!-- Skill Tree UI rendered dynamically -->
+                  </div>
               </div>
-              <div class="profile-section-body">
-                <div id="profile-stash-list" class="stash-grid">
-                  <!-- Dynamic satchel items -->
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -1340,6 +1361,7 @@
     <script src="audio.js?v=1.000"></script>
     <script src="items.js?v=1.000"></script>
     <script src="entities.js?v=1.000"></script>
+    <script src="skills.js?v=1.000"></script>
     <script src="dungeon_map.js?v=1.000"></script>
     <script src="main.js?v=1.000"></script>
   </body>

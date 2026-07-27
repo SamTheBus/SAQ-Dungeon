@@ -841,11 +841,125 @@
   };
 
   window.enterDungeonRun = function (startFloor = 1) {
-    window.currentGameState = window.GAME_STATES.DUNGEON;
-    window.player.depth = Math.max(1, Number(startFloor) || 1);
-    window.player.bag = [];
-    window.loadDungeonFloor(window.player.depth);
-  };
+        window.currentGameState = window.GAME_STATES.DUNGEON;
+        window.player.depth = Math.max(1, Number(startFloor) || 1);
+        window.player.bag = [];
+
+        let st = window.SkillTreeManager;
+
+        // 1. Offhand Starter Provisioning
+        let activeStarter = window.playerStats ? window.playerStats.activeStarterSubweapon : "none";
+        if (activeStarter && activeStarter !== "none" && window.equippedSlots && !window.equippedSlots.subweapon) {
+          let starterItem = window.createItemObject(activeStarter, 0, 1, 0);
+          starterItem.name = `Starter ${activeStarter.charAt(0).toUpperCase() + activeStarter.slice(1)}`;
+          starterItem.isStarterItem = true;
+          window.equippedSlots.subweapon = starterItem;
+          starterItem.isEquippedSlot = "subweapon";
+        }
+
+        // 2. Main Hand Weapon Provisioning (utility_start_weapon: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
+        if (st && window.equippedSlots && !window.equippedSlots.weapon) {
+          let weapRank = st.getSkillLevel("utility_start_weapon");
+          if (weapRank > 0) {
+            let stars = Math.min(2, weapRank - 1);
+            let item = window.createItemObject("weapon", stars, 1, 0);
+            item.name = `Provisioned ${window.getTierName(stars)} Blade`;
+            item.isStarterItem = true;
+            window.equippedSlots.weapon = item;
+            item.isEquippedSlot = "weapon";
+          }
+        }
+
+        // 3. Chest Armor Provisioning (utility_start_armor: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
+        if (st && window.equippedSlots && !window.equippedSlots.chest && !window.equippedSlots.overall) {
+          let armorRank = st.getSkillLevel("utility_start_armor");
+          if (armorRank > 0) {
+            let stars = Math.min(2, armorRank - 1);
+            let item = window.createItemObject("chest", stars, 1, 0);
+            item.name = `Provisioned ${window.getTierName(stars)} Cuirass`;
+            item.isStarterItem = true;
+            window.equippedSlots.chest = item;
+            item.isEquippedSlot = "chest";
+          }
+        }
+
+        // 4. Helmet & Boots Provisioning (utility_start_head_feet)
+        if (st && window.equippedSlots) {
+          let hfRank = st.getSkillLevel("utility_start_head_feet");
+          if (hfRank > 0) {
+            let stars = Math.min(2, hfRank - 1);
+            if (!window.equippedSlots.helmet) {
+              let helm = window.createItemObject("helmet", stars, 1, 0);
+              helm.name = `Provisioned ${window.getTierName(stars)} Helm`;
+              helm.isStarterItem = true;
+              window.equippedSlots.helmet = helm;
+              helm.isEquippedSlot = "helmet";
+            }
+            if (!window.equippedSlots.boots) {
+              let boots = window.createItemObject("boots", stars, 1, 0);
+              boots.name = `Provisioned ${window.getTierName(stars)} Boots`;
+              boots.isStarterItem = true;
+              window.equippedSlots.boots = boots;
+              boots.isEquippedSlot = "boots";
+            }
+          }
+        }
+
+        // 5. Ring Provisioning (utility_start_ring)
+        if (st && window.equippedSlots) {
+          let ringRank = st.getSkillLevel("utility_start_ring");
+          if (ringRank > 0) {
+            let stars = Math.min(2, ringRank - 1);
+            if (!window.equippedSlots.ring1) {
+              let ring1 = window.createItemObject("ring", stars, 1, 0);
+              ring1.name = `Provisioned ${window.getTierName(stars)} Band`;
+              ring1.isStarterItem = true;
+              window.equippedSlots.ring1 = ring1;
+              ring1.isEquippedSlot = "ring1";
+            }
+            if (!window.equippedSlots.ring2) {
+              let ring2 = window.createItemObject("ring", stars, 1, 0);
+              ring2.name = `Provisioned ${window.getTierName(stars)} Signet`;
+              ring2.isStarterItem = true;
+              window.equippedSlots.ring2 = ring2;
+              ring2.isEquippedSlot = "ring2";
+            }
+          }
+        }
+
+      // Hook 2: Field Medic Run-Long Basic Elixir Effects
+      if (window.SkillTreeManager) {
+        let medicRank = window.SkillTreeManager.getSkillLevel("utility_elixir");
+        if (medicRank > 0) {
+          const basicElixirs = [
+            { key: "atkPotionRuns", name: "Attack Elixir (+10% Atk)", strKey: "atkPotionStrength", val: 0.1, color: "#2ecc71" },
+            { key: "hpPotionRuns", name: "Vitality Elixir (+10% Max HP)", strKey: "hpPotionStrength", val: 0.1, color: "#e74c3c" },
+            { key: "defPotionRuns", name: "Armored Elixir (+10% Def)", strKey: "defPotionStrength", val: 0.1, color: "#3498db" },
+            { key: "hastePotionRuns", name: "Haste Elixir (+10% Speed)", strKey: "hastePotionStrength", val: 1, color: "#f1c40f" }
+          ];
+
+          let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
+          let picked = shuffled.slice(0, Math.min(medicRank, basicElixirs.length));
+
+          let appliedNames = [];
+          picked.forEach((pot) => {
+            window.playerStats[pot.key] = Math.max(window.playerStats[pot.key] || 0, 1);
+            window.playerStats[pot.strKey] = pot.val;
+            appliedNames.push(pot.name);
+          });
+
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(`✦ Field Medic Active: ${appliedNames.join(", ")}!`, "#34d399");
+          }
+        }
+      }
+
+      if (typeof window.invalidatePlayerStats === "function") {
+        window.invalidatePlayerStats();
+      }
+
+      window.loadDungeonFloor(window.player.depth);
+    };
 
   window.openHubPortalModal = function () {
     let modal = document.getElementById("deployment-modal");
@@ -1707,19 +1821,22 @@
       });
       window.player.bag = [];
 
-      // Process Equipped Gear (Unlocked gear is lost on defeat!)
-      for (let slotKey in window.equippedSlots) {
-        let eqItem = window.equippedSlots[slotKey];
-        if (eqItem) {
-          if (eqItem.locked) {
-            eqItem.locked = false; // Reset used policy
-            savedInsuredItems.push(eqItem);
-          } else {
-            lostItems.push(eqItem);
-            window.equippedSlots[slotKey] = null;
-          }
-        }
-      }
+      // Process Equipped Gear (Unlocked gear is lost on defeat, untempered starter items vanish silently)
+            for (let slotKey in window.equippedSlots) {
+              let eqItem = window.equippedSlots[slotKey];
+              if (eqItem) {
+                if (eqItem.locked) {
+                  eqItem.locked = false; // Reset used policy
+                  savedInsuredItems.push(eqItem);
+                } else if (eqItem.isStarterItem && (eqItem.temperLevel || 0) === 0 && !eqItem.reforgedProperty) {
+                  // Untempered starter item vanishes on death without cluttering recovery loot
+                  window.equippedSlots[slotKey] = null;
+                } else {
+                  lostItems.push(eqItem);
+                  window.equippedSlots[slotKey] = null;
+                }
+              }
+            }
 
       // Safety Net: Ensure player is never left without a weapon option
       let hasWeapon =
@@ -3983,21 +4100,43 @@
                 triElements[Math.floor(Math.random() * triElements.length)];
             }
 
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_" + spellEffectType);
-            }
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 12,
-                spellDmg,
-                spellEffectType,
-                false,
-              );
-            }
+            // Check Aetheric Overload Keystone (15% chance for Triple-Element Burst)
+                        let isOverload = window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 && Math.random() < 0.15;
+
+                        if (isOverload) {
+                          const triElements = ["fire", "lightning", "frost"];
+                          triElements.forEach((elem, eIdx) => {
+                            m.hp = m.hp.sub(spellDmg);
+                            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                              window.RenderEngine.spawnDamageEffect(
+                                mobCenterX + (eIdx - 1) * 12,
+                                mobCenterY - 12 - eIdx * 6,
+                                spellDmg,
+                                elem,
+                                false
+                              );
+                            }
+                          });
+                          if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                            window.SoundManager.play("spell_fire");
+                          }
+                        } else {
+                          if (
+                            window.SoundManager &&
+                            typeof window.SoundManager.play === "function"
+                          ) {
+                            window.SoundManager.play("spell_" + spellEffectType);
+                          }
+                          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                            window.RenderEngine.spawnDamageEffect(
+                              mobCenterX,
+                              mobCenterY - 12,
+                              spellDmg,
+                              spellEffectType,
+                              false,
+                            );
+                          }
+                        }
           }
 
           // Directional knockback impulse vector
@@ -4104,12 +4243,20 @@
             }
 
             if (m.isRare) {
-              window.addDungeonRunScrap(
-                "Luminous Soul",
-                1,
-                mobCenterX,
-                mobCenterY,
-              );
+                          // Utility Keystone: Fortune's Favor (+50% Gold Multiplier for 15s)
+                          if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("utility_keystone") > 0) {
+                            window.playerStats.fortunesFavorTimer = 900; // 15 seconds
+                            if (typeof window.spawnFloatingText === "function") {
+                              window.spawnFloatingText(p.x, p.y - 30, "FORTUNE'S FAVOR (+50% GOLD)", "#ffd700");
+                            }
+                          }
+
+                          window.addDungeonRunScrap(
+                            "Luminous Soul",
+                            1,
+                            mobCenterX,
+                            mobCenterY,
+                          );
               let depth = window.player.depth || 1;
               let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
               let scrapName = window.getScrapYieldName(scrapTier);
@@ -6373,31 +6520,47 @@
 
   window.activeProfileMobileTab = "stats";
 
-  window.switchProfileTab = function (tabKey) {
-    window.activeProfileMobileTab = tabKey;
-    const tabs = ["stats", "gear", "satchel"];
-    tabs.forEach((t) => {
-      let btn = document.getElementById(`profile-tab-${t}`);
-      let sec = document.getElementById(`profile-sec-${t}`);
-      if (btn) btn.classList.toggle("active", t === tabKey);
-      if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
-    });
-  };
+    window.openSkillTree = function () {
+        if (typeof window.hideTooltip === "function") window.hideTooltip();
+        let modal = document.getElementById("profile-modal");
+        if (!modal) return;
+        modal.style.display = "flex";
+        window.switchProfileTab("skills");
+      };
 
-  window.toggleProfileModal = function () {
-    window.hideTooltip();
-    let modal = document.getElementById("profile-modal");
-    if (!modal) return;
+      window.switchProfileTab = function (tabKey) {
+              window.activeProfileMobileTab = tabKey;
+              const tabs = ["stats", "gear", "satchel", "skills"];
+              tabs.forEach((t) => {
+                let btn = document.getElementById(`profile-tab-${t}`);
+                let sec = document.getElementById(`profile-sec-${t}`);
+                if (btn) btn.classList.toggle("active", t === tabKey);
+                if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
+              });
+              if (tabKey === "skills" && window.SkillTreeManager) {
+                window.SkillTreeManager.renderSkillTreeUI();
+              } else if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
+                window.SkillTreeManager.stopAnimationLoop();
+              }
+            };
 
-    if (modal.style.display === "none" || modal.style.display === "") {
-      modal.style.display = "flex";
-      window.switchProfileTab(window.activeProfileMobileTab || "stats");
-      window.renderProfileModal();
-    } else {
-      modal.style.display = "none";
-      window.lastModalCloseTime = Date.now();
-    }
-  };
+        window.toggleProfileModal = function () {
+          window.hideTooltip();
+          let modal = document.getElementById("profile-modal");
+          if (!modal) return;
+
+          if (modal.style.display === "none" || modal.style.display === "") {
+            modal.style.display = "flex";
+            window.switchProfileTab(window.activeProfileMobileTab || "stats");
+            window.renderProfileModal();
+          } else {
+            modal.style.display = "none";
+            window.lastModalCloseTime = Date.now();
+            if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
+              window.SkillTreeManager.stopAnimationLoop();
+            }
+          }
+        };
 
   window.renderProfileModal = function () {
     let statsListEl = document.getElementById("profile-stats-list");
@@ -6866,21 +7029,25 @@
               : `<span style="color:#ffffff; font-weight:bold;">${vaultCount}</span>`;
 
           return `
-                        <div class="material-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px;">
-                          ${iconHtml}
-                          <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                              <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
-                              <span style="font-family:monospace; font-size:9.5px; margin-left:4px;">${countLabel}</span>
-                            </div>
-                            <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${desc}</div>
-                          </div>
-                        </div>
-                      `;
-        })
-        .join("");
-    }
-  };
+                                  <div class="material-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px;">
+                                    ${iconHtml}
+                                    <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
+                                        <span style="font-family:monospace; font-size:9.5px; margin-left:4px;">${countLabel}</span>
+                                      </div>
+                                      <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${desc}</div>
+                                    </div>
+                                  </div>
+                                `;
+                  })
+                  .join("");
+              }
+
+              if (window.activeProfileMobileTab === "skills" && window.SkillTreeManager) {
+                window.SkillTreeManager.renderSkillTreeUI();
+              }
+            };
 
   window.tryAutoEquip = function (item) {
     if (!item || !window.equippedSlots) return false;
@@ -7225,16 +7392,25 @@
       totalSoulsCost += 100;
     }
 
-    return {
-      totalPremium,
-      totalSoulsCost,
-      delta_drop: 0,
-      delta_quality: 0,
-      delta_gold: 0,
-      m_enemy: 1.0,
-      waivedItem: premiums[0] ? premiums[0].item : null,
-      insuredCount: premiums.length,
-    };
+    // Insurance Underwriter Skill Tree Discount
+        if (window.SkillTreeManager) {
+          let insuranceRank = window.SkillTreeManager.getSkillLevel("utility_insurance");
+          if (insuranceRank > 0 && totalPremium.gt(0)) {
+            let discountMult = 1.0 - insuranceRank * 0.1;
+            totalPremium = totalPremium.mul(discountMult);
+          }
+        }
+
+        return {
+          totalPremium,
+          totalSoulsCost,
+          delta_drop: 0,
+          delta_quality: 0,
+          delta_gold: 0,
+          m_enemy: 1.0,
+          waivedItem: premiums[0] ? premiums[0].item : null,
+          insuredCount: premiums.length,
+        };
   };
 
   window.toggleInsurance = function (itemId) {

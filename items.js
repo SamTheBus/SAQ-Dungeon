@@ -4981,7 +4981,15 @@ window.salvageItem = function (id) {
 
   if (item.locked) {
     if (typeof window.pushHeaderToast === "function")
-      window.pushHeaderToast("🔒 Cannot salvage a Locked item!", "#e74c3c");
+      window.pushHeaderToast("Cannot salvage a Locked item!", "#e74c3c");
+    return;
+  }
+
+  // Anti-Exploit: Untempered starter gear cannot be salvaged for free materials
+  if (item.isStarterItem && (item.temperLevel || 0) === 0 && !item.reforgedProperty && !item.totalEnchants) {
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast("[SYSTEM] Untempered starter gear cannot be salvaged.", "#e74c3c");
+    }
     return;
   }
 
@@ -5028,8 +5036,10 @@ window.salvageItem = function (id) {
 window.GameState = window.GameState || {};
 Object.assign(window.GameState, {
   checkAutoSalvage(item, silent = false) {
-    if (!item || item.type === "artifact" || item.statsRolled === "UNIQUE")
-      return false;
+      if (!item || item.type === "artifact" || item.statsRolled === "UNIQUE")
+        return false;
+      if (item.isStarterItem && (item.temperLevel || 0) === 0 && !item.reforgedProperty)
+        return false;
     if (
       window.playerStats.autoSalvageThreshold === undefined ||
       window.playerStats.autoSalvageThreshold < 0
@@ -5624,11 +5634,14 @@ Object.assign(window.ForgeManager, {
 
       window.playerStats.slotUpgrades[slotKey]++;
 
-      // Recalculate statistics for the equipped item on the fly and trigger redraw flags
-      let eqItem = window.equippedSlots[slotKey];
-      if (eqItem) {
-        window.recalculateItemStats(eqItem);
-      }
+            // Recalculate statistics for the equipped item on the fly and trigger redraw flags
+            let eqItem = window.equippedSlots[slotKey];
+            if (eqItem) {
+              if (eqItem.isStarterItem) {
+                delete eqItem.isStarterItem; // Permanently promote starter item into standard gear
+              }
+              window.recalculateItemStats(eqItem);
+            }
       window.state.paperDollDirty = true;
       window.invalidatePlayerStats();
 
@@ -6241,7 +6254,10 @@ Object.assign(window.ForgeManager, {
       rolledValue = Math.ceil(window.randInt(1, 3) * stageScale * rarityMult);
 
     item[newProp] = rolledValue;
-    item.reforgedProperty = newProp;
+        item.reforgedProperty = newProp;
+        if (item.isStarterItem) {
+          delete item.isStarterItem; // Permanently promote starter item into standard gear
+        }
 
     window.recalculateItemStats(item);
     item.name = window.buildProceduralName(item);

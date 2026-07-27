@@ -531,7 +531,7 @@ body {
 }
 
 .profile-tab-bar {
-  display: none;
+  display: flex;
   gap: 6px;
   margin-bottom: 8px;
   flex-shrink: 0;
@@ -548,17 +548,19 @@ body {
   font-weight: 800;
   cursor: pointer;
   text-align: center;
+  transition: all 0.15s ease;
 }
 
 .profile-tab-btn.active {
   background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff;
   border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(0, 210, 255, 0.25);
 }
 
 .profile-layout {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   flex: 1;
   min-height: 0;
@@ -571,12 +573,17 @@ body {
   border: 1px solid rgba(51, 65, 85, 0.6);
   border-radius: 6px;
   padding: 8px;
-  display: flex;
+  display: none;
   flex-direction: column;
   height: 100%;
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.profile-section.active-mobile-section {
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .profile-section-body {
@@ -3117,4 +3124,292 @@ summary {
   font-weight: 900;
   font-size: 12.5px;
   letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   CONSTELLATION SKILL TREE UI
+   ========================================================================= */
+
+.skill-tree-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.skill-tree-mp-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.mp-info-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  font-family: monospace;
+}
+
+.mp-label {
+  font-size: 8px;
+  color: #94a3b8;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.mp-balance {
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.tree-selector-bar {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tree-tab-btn {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  color: #94a3b8;
+  padding: 6px 2px;
+  border-radius: 5px;
+  font-size: 8.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.15s ease;
+}
+
+.tree-tab-btn.active {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.tree-tab-spent {
+  font-family: monospace;
+  font-size: 7.5px;
+}
+
+/* Constellation Interactive Viewport */
+.constellation-viewport {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  max-height: 52vh;
+  background: #070913;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  touch-action: none;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+  cursor: grab;
+}
+
+.constellation-viewport:active {
+  cursor: grabbing;
+}
+
+#skill-constellation-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.constellation-nodes-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Node Socket Icons */
+.constellation-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.15s ease;
+}
+
+.constellation-node:active {
+  transform: translate(-50%, -50%) scale(0.92);
+}
+
+.node-icon-socket {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.constellation-node.selected .node-icon-socket {
+  transform: scale(1.12);
+}
+
+.constellation-node.keystone .node-icon-socket {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.constellation-node.keystone .node-icon-socket > * {
+  transform: rotate(-45deg);
+}
+
+.node-rank-tag {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-family: monospace;
+  font-size: 7.5px;
+  font-weight: 900;
+  padding: 1px 3.5px;
+  border-radius: 3px;
+  border: 1px solid #000000;
+  line-height: 1;
+}
+
+.node-label-title {
+  font-size: 8.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+/* Selected Floating Dock Panel */
+.selected-node-dock {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(10, 14, 23, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 10;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.8);
+}
+
+.dock-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.dock-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dock-title {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.dock-rank {
+  font-family: monospace;
+  font-size: 8.5px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.dock-desc {
+  font-size: 8.5px;
+  color: #cbd5e1;
+  font-family: monospace;
+  line-height: 1.25;
+}
+
+.dock-stat-active {
+  font-size: 8.5px;
+  color: #2ecc71;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.dock-stat-next {
+  font-size: 8px;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.dock-action {
+  flex-shrink: 0;
+}
+
+.skill-buy-btn {
+  background: linear-gradient(180deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  border: 1px solid #34d399;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 8.5px;
+  font-weight: 900;
+  font-family: monospace;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.skill-buy-btn:disabled {
+  background: #1e293b !important;
+  color: #64748b !important;
+  border-color: #334155 !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.skill-toggle-btn {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 8.5px;
+  font-weight: 900;
+  font-family: monospace;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.skill-toggle-btn.active-toggle {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border-color: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
 }

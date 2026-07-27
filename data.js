@@ -1798,11 +1798,95 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
   p.def = flatTotalDef.mul(defMultiplier + itemDefPct).mul(achDefPct);
 
-  // Apply Cavern Sigil Active Modifiers (Dungeon Mode)
-  if (
-    window.playerStats.isDungeonMode &&
-    window.playerStats.activeDungeonSigil
-  ) {
+  // Apply Active Skill Tree Passive Modifiers
+      if (window.SkillTreeManager && window.playerStats.skillTree) {
+        let st = window.SkillTreeManager;
+
+        // Shield Tree
+        let shieldHpRank = st.getSkillLevel("shield_hp");
+        if (shieldHpRank > 0) p.maxHpPct = (p.maxHpPct || 0) + shieldHpRank * 0.04;
+
+        let shieldBlockRank = st.getSkillLevel("shield_block");
+        if (shieldBlockRank > 0) p.block += shieldBlockRank * 0.01;
+
+        let shieldDefRank = st.getSkillLevel("shield_def");
+        if (shieldDefRank > 0) p.defPctBonus = (p.defPctBonus || 0) + shieldDefRank * 0.03;
+
+        // Dagger Tree
+        let daggerCritRank = st.getSkillLevel("dagger_crit");
+        if (daggerCritRank > 0) p.critChance += daggerCritRank * 0.015;
+
+        let daggerParryRank = st.getSkillLevel("dagger_parry");
+        if (daggerParryRank > 0) p.parry += daggerParryRank * 0.01;
+
+        let daggerCritDmgRank = st.getSkillLevel("dagger_crit_dmg");
+        if (daggerCritDmgRank > 0) p.critDamage += daggerCritDmgRank * 0.06;
+
+        let daggerBleedRank = st.getSkillLevel("dagger_bleed");
+        if (daggerBleedRank > 0) p.bleedChance = (p.bleedChance || 0) + daggerBleedRank * 0.05;
+
+        let daggerRiposteRank = st.getSkillLevel("dagger_riposte");
+        if (daggerRiposteRank > 0) p.riposteDamage = (p.riposteDamage || 0.8) + daggerRiposteRank * 0.2;
+
+        // Tome Tree
+        let tomeAtkRank = st.getSkillLevel("tome_atk");
+        if (tomeAtkRank > 0) p.atkPct = (p.atkPct || 0) + tomeAtkRank * 0.035;
+
+        let tomeBarrierRank = st.getSkillLevel("tome_barrier");
+        if (tomeBarrierRank > 0 && p.arcaneBarrier > 0) {
+          p.arcaneBarrier = Math.min(0.5, p.arcaneBarrier + tomeBarrierRank * 0.02);
+        }
+
+        let tomeExpRank = st.getSkillLevel("tome_exp");
+        if (tomeExpRank > 0) p.xpRate += tomeExpRank * 0.03;
+
+        let tomeProcRank = st.getSkillLevel("tome_proc");
+        if (tomeProcRank > 0) p.spellChance = (p.spellChance || 0) + tomeProcRank * 0.03;
+
+        let tomePowerRank = st.getSkillLevel("tome_power");
+        if (tomePowerRank > 0) p.spellPower = (p.spellPower || 1.5) + tomePowerRank * 0.12;
+
+        // Utility Tree
+        let pioneerRank = st.getSkillLevel("utility_pioneer");
+        if (pioneerRank > 0) {
+          p.gold += 0.05;
+          p.drop += 0.05;
+        }
+
+        let utilityGoldRank = st.getSkillLevel("utility_gold");
+        if (utilityGoldRank > 0) p.gold += utilityGoldRank * 0.05;
+
+        let qualityRank = st.getSkillLevel("utility_quality");
+        if (qualityRank > 0) p.qly += qualityRank * 0.02;
+
+        let utilityVitalityRank = st.getSkillLevel("utility_vitality");
+        if (utilityVitalityRank > 0) {
+          p.maxHpPct = (p.maxHpPct || 0) + utilityVitalityRank * 0.03;
+          p.moveSpeed += utilityVitalityRank * 2.0;
+        }
+
+        let bagRank = st.getSkillLevel("utility_bag");
+        if (bagRank > 0) {
+          p.bonusBagSpace = (p.bonusBagSpace || 0) + bagRank * 5;
+        }
+      }
+
+        // Fortune's Favor Keystone Gold Multiplier Timer
+        if (window.playerStats.fortunesFavorTimer > 0) {
+          window.playerStats.fortunesFavorTimer--;
+          p.gold += 0.5; // +50% Gold Multiplier
+        }
+
+        // Viper's Shadow Dance Keystone 100% Crit Chance Charges
+        if (window.playerStats.viperShadowDanceCharges > 0) {
+          p.critChance = 1.0;
+        }
+
+    // Apply Cavern Sigil Active Modifiers (Dungeon Mode)
+    if (
+      window.playerStats.isDungeonMode &&
+      window.playerStats.activeDungeonSigil
+    ) {
     let activeSig = window.playerStats.activeDungeonSigil;
     p.qly += activeSig.qualityBoost || 0;
     p.gold += activeSig.rewardMultiplier || 0;
@@ -2449,15 +2533,29 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       let mobCx = sourceMob.x + sourceMob.w / 2;
       let mobCy = sourceMob.y + sourceMob.h / 2;
       if (window.combatVisuals) {
-        window.combatVisuals.spawnDamageEffect(
-          mobCx,
-          mobCy,
-          riposteDmg,
-          "parry_counter",
-          false,
-          sourceMob,
-        );
-      }
+              window.combatVisuals.spawnDamageEffect(
+                mobCx,
+                mobCy,
+                riposteDmg,
+                "parry_counter",
+                false,
+                sourceMob,
+              );
+            }
+
+            // Dagger Keystone: Viper's Shadow Dance (100% Crit Charges & Bleed Stacks on Parry)
+            if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("dagger_keystone") > 0) {
+              window.playerStats.viperShadowDanceCharges = 2;
+              let bleedTick = BigNum.from(pStats.atk || 15).mul(0.5);
+              sourceMob.hp = sourceMob.hp.sub(bleedTick);
+              sourceMob.flashTimer = 8;
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnDamageEffect(mobCx, mobCy - 10, bleedTick, "bleed", false);
+              }
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(p.x, p.y - 25, "VIPER'S SHADOW DANCE (100% CRIT)", "#a855f7");
+              }
+            }
       if (sourceMob.hp.lte(0)) {
         let rewardGold = Math.floor(
           15 * (1 + (window.player ? window.player.depth : 1) * 0.5),
@@ -2489,27 +2587,54 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       );
 
     if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-      let defBash = BigNum.from(pStats.def || 5).mul(
-        pStats.reflectDamage || 1.0,
-      );
-      let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
-      let reflectDmg = defBash.add(atkBash);
-
-      if (reflectDmg.gt(0)) {
-        sourceMob.hp = sourceMob.hp.sub(reflectDmg);
-        sourceMob.flashTimer = 6;
-        if (window.combatVisuals) {
-          window.combatVisuals.spawnDamageEffect(
-            sourceMob.x + sourceMob.w / 2,
-            sourceMob.y + sourceMob.h / 2,
-            reflectDmg,
-            "counter",
-            false,
-            sourceMob,
+          let defBash = BigNum.from(pStats.def || 5).mul(
+            pStats.reflectDamage || 1.0,
           );
+          let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
+          let reflectDmg = defBash.add(atkBash);
+
+          if (reflectDmg.gt(0)) {
+            sourceMob.hp = sourceMob.hp.sub(reflectDmg);
+            sourceMob.flashTimer = 6;
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnDamageEffect(
+                sourceMob.x + sourceMob.w / 2,
+                sourceMob.y + sourceMob.h / 2,
+                reflectDmg,
+                "counter",
+                false,
+                sourceMob,
+              );
+            }
+          }
         }
-      }
-    }
+
+        // Shield Keystone: Unbreakable Bulwark AoE Shockwave on Block
+        if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("shield_keystone") > 0) {
+          let shockwaveDmg = BigNum.from(pStats.def || 5).mul(1.5);
+          if (window.activeDungeonMobs) {
+            window.activeDungeonMobs.forEach((m) => {
+              let dist = Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2));
+              if (dist <= 64) {
+                m.hp = m.hp.sub(shockwaveDmg);
+                m.flashTimer = 8;
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnDamageEffect(
+                    m.x + m.w / 2,
+                    m.y + m.h / 2,
+                    shockwaveDmg,
+                    "counter",
+                    false
+                  );
+                }
+              }
+            });
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(p.x, p.y, 18, "animated_armor", 4);
+            window.combatVisuals.triggerScreenShake(6, 10);
+          }
+        }
 
     if (typeof window.updateHUD === "function") window.updateHUD();
     return 0;
@@ -2684,6 +2809,9 @@ window.CRUCIBLE_DRAFT_POOL = [
 ];
 
 window.playerStats = {
+  masteryPoints: 0,
+  activeStarterSubweapon: "none",
+  skillTree: {},
   recoveryLoot: null,
   currentRunEnemyStrength: 1.0,
   currentRunDropRateBonus: 0.0,
@@ -3422,8 +3550,16 @@ window.loadGame = function () {
     }
 
     if (parsed.equippedSlots) {
-      window.equippedSlots = parsed.equippedSlots;
-    }
+            window.equippedSlots = parsed.equippedSlots;
+          }
+
+          // Safe Skill Tree Migration & Fallback Initialization
+          if (window.playerStats.activeStarterSubweapon === undefined) {
+            window.playerStats.activeStarterSubweapon = "none";
+          }
+          if (!window.playerStats.skillTree) {
+            window.playerStats.skillTree = {};
+          }
 
     if (parsed.inventory) {
       window.inventory = parsed.inventory;
