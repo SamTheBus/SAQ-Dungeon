@@ -32,17 +32,22 @@
     }
 
     getGridDimensions(depth) {
-      let d = Math.max(1, Number(depth) || 1);
-      let width = Math.min(
-        100,
-        Math.floor(window.DUNGEON_CONFIG.BASE_WIDTH + 1.5 * Math.sqrt(d)),
-      );
-      let height = Math.min(
-        60,
-        Math.floor(window.DUNGEON_CONFIG.BASE_HEIGHT + 1.0 * Math.sqrt(d)),
-      );
-      return { width, height };
-    }
+          let d = Math.max(1, Number(depth) || 1);
+          let cycle = Math.floor((d - 1) / 84);
+          let width = Math.min(
+            110,
+            Math.floor(
+              window.DUNGEON_CONFIG.BASE_WIDTH + 1.5 * Math.sqrt(d) + cycle * 6,
+            ),
+          );
+          let height = Math.min(
+            70,
+            Math.floor(
+              window.DUNGEON_CONFIG.BASE_HEIGHT + 1.0 * Math.sqrt(d) + cycle * 4,
+            ),
+          );
+          return { width, height };
+        }
 
     generateHub() {
       this.reset();
@@ -276,11 +281,21 @@
       }
 
       this.buildWalls();
-      this.placeSpawnAndExtraction();
-      this.populateEntities();
+            this.placeSpawnAndExtraction();
+            this.populateEntities();
 
-      return this;
-    }
+            if (window.checkArtifactTrait && window.checkArtifactTrait("magic_find")) {
+              for (let r = 0; r < this.height; r++) {
+                for (let c = 0; c < this.width; c++) {
+                  if (this.grid[r][c] !== window.TILE_TYPES.VOID) {
+                    this.exploredGrid[r][c] = true;
+                  }
+                }
+              }
+            }
+
+            return this;
+          }
 
     splitBSP(node, leaves, currentDepth, maxDepth) {
       if (currentDepth >= maxDepth || (node.w < 12 && node.h < 12)) {
@@ -394,33 +409,38 @@
     }
 
     placeSpawnAndExtraction() {
-      if (this.rooms.length === 0) return;
+          if (this.rooms.length === 0) return;
 
-      let startRoomIndex = Math.floor(Math.random() * this.rooms.length);
-      let startRoom = this.rooms[startRoomIndex];
-      this.spawnRoomId = startRoom.id;
-      this.spawnTile = { x: startRoom.cx, y: startRoom.cy };
-      this.grid[startRoom.cy][startRoom.cx] = window.TILE_TYPES.SPAWN_PLAYER;
+          let startRoomIndex = Math.floor(Math.random() * this.rooms.length);
+          let startRoom = this.rooms[startRoomIndex];
+          this.spawnRoomId = startRoom.id;
+          this.spawnTile = { x: startRoom.cx, y: startRoom.cy };
+          this.grid[startRoom.cy][startRoom.cx] = window.TILE_TYPES.SPAWN_PLAYER;
 
-      let candidateRooms = this.rooms
-        .filter((r) => r.id !== startRoom.id)
-        .map((r) => ({
-          room: r,
-          dist: Math.hypot(r.cx - startRoom.cx, r.cy - startRoom.cy),
-        }))
-        .sort((a, b) => b.dist - a.dist);
+          let roomDists = this.rooms
+            .filter((r) => r.id !== startRoom.id)
+            .map((r) => ({
+              room: r,
+              dist: Math.hypot(r.cx - startRoom.cx, r.cy - startRoom.cy),
+            }));
 
-      if (candidateRooms.length === 0) return;
+          if (roomDists.length === 0) return;
 
-      let topCandidates = candidateRooms.slice(
-        0,
-        Math.min(3, candidateRooms.length),
-      );
-      let chosen =
-        topCandidates[Math.floor(Math.random() * topCandidates.length)].room;
+          let maxDist = Math.max(...roomDists.map((rd) => rd.dist));
+          let minDistThreshold = maxDist * 0.5;
 
-      this.extractionTile = { x: chosen.cx, y: chosen.cy };
-      this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
+          let eligibleCandidates = roomDists.filter(
+            (rd) => rd.dist >= minDistThreshold,
+          );
+          if (eligibleCandidates.length === 0) eligibleCandidates = roomDists;
+
+          let chosen =
+            eligibleCandidates[
+              Math.floor(Math.random() * eligibleCandidates.length)
+            ].room;
+
+          this.extractionTile = { x: chosen.cx, y: chosen.cy };
+          this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
 
       // Spawn Recovery Chest in exit room if lost loot matches current floor depth
       let rec = window.playerStats && window.playerStats.recoveryLoot;

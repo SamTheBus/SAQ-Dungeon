@@ -3116,7 +3116,29 @@
       }
     };
 
-    window.spawnHomingGold = function (x, y, amount) {
+    window.triggerGravitationalVacuum = function (p) {
+        if (!p) return;
+        if (window.groundLoot) {
+          window.groundLoot.forEach((gl) => {
+            gl.settled = true;
+            gl.magnetSpeed = Math.max(gl.magnetSpeed || 1.0, 10.0);
+          });
+        }
+        if (window.groundMaterials) {
+          window.groundMaterials.forEach((gm) => {
+            gm.settled = true;
+            gm.magnetSpeed = Math.max(gm.magnetSpeed || 1.0, 10.0);
+          });
+        }
+        if (window.goldParticles) {
+          window.goldParticles.forEach((gp) => {
+            gp.scatterTimer = 0;
+            gp.speed = Math.max(gp.speed || 5.0, 12.0);
+          });
+        }
+      };
+
+      window.spawnHomingGold = function (x, y, amount) {
       if (window.goldParticles.length > 40) return;
       let particleCount = window.randInt(4, 7);
       let totalAmt = BigNum.from(amount);
@@ -4576,13 +4598,55 @@
                 }
 
                 // Unique: Viper's Perfect Stiletto (Reticle Trigger)
-                if (isCrit && window.hasUniquePassive("dagger_viper") && Math.random() < 0.25) {
-                  m.perfectStrikeTimer = 120;
-                  m.perfectStrikeMax = 120;
-                  if (typeof window.pushHeaderToast === "function") {
-                    window.pushHeaderToast("[!] Viper's Reticle active! Tap target to execute!", "#a855f7");
-                  }
-                }
+                        if (isCrit && window.hasUniquePassive("dagger_viper") && Math.random() < 0.25) {
+                          m.perfectStrikeTimer = 120;
+                          m.perfectStrikeMax = 120;
+                          if (typeof window.pushHeaderToast === "function") {
+                            window.pushHeaderToast("[!] Viper's Reticle active! Tap target to execute!", "#a855f7");
+                          }
+                        }
+
+                        // Unique: Void-Sovereign Greatsword (Gravitational Room Vacuum)
+                                if (window.hasUniquePassive("weapon_singularity")) {
+                                  window.triggerGravitationalVacuum(p);
+                                }
+
+                                // Artifact: Dread Presence (25% Chance to execute non-boss mobs under 20% HP)
+                                let isBossTarget = m.type === "dungeon_boss" || m.type === "dungeon_miniboss";
+                                if (!isBossTarget && m.hp.gt(0)) {
+                                  let mobHpRatio = m.hp.div(m.maxHp).valueOf();
+                                  if (mobHpRatio <= 0.20 && Math.random() < 0.25) {
+                                    let remHp = m.hp;
+                                    m.hp = BigNum.from(0);
+                                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                                      window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY, remHp, "crit", true);
+                                    }
+                                    if (typeof window.spawnFloatingText === "function") {
+                                      window.spawnFloatingText(mobCenterX, mobCenterY - 15, "EXECUTE!", "#e74c3c");
+                                    }
+                                    if (window.combatVisuals) {
+                                      window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 15, "magma_elemental", 4);
+                                      window.combatVisuals.triggerScreenShake(5, 10);
+                                    }
+                                  }
+                                }
+
+                                // Artifact: Midas Touch (3% Chance on hit against non-boss mobs for Gold Transmutation)
+                                if (!isBossTarget && m.hp.gt(0) && window.checkArtifactTrait("gold_hoard") && Math.random() < 0.03) {
+                                  let remHp = m.hp;
+                                  m.hp = BigNum.from(0);
+                                  if (typeof window.spawnFloatingText === "function") {
+                                    window.spawnFloatingText(mobCenterX, mobCenterY - 18, "GOLD TRANSMUTATION!", "#ffd700");
+                                  }
+                                  let bonusGold = Math.floor(75 * (1 + window.player.depth * 0.5));
+                                  window.spawnHomingGold(mobCenterX, mobCenterY, bonusGold);
+                                  if (window.combatVisuals) {
+                                    window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 25, "gold_dungeon", 5);
+                                  }
+                                  if (window.SoundManager && typeof window.SoundManager.playCoinCollect === "function") {
+                                    window.SoundManager.playCoinCollect();
+                                  }
+                                }
 
         // Dagger Offhand Multi-Strike & Bleed DoT Triggers
         if (pStats.subType === "dagger") {
@@ -4879,13 +4943,33 @@
                       }
 
                       // Artifact: Void Pull (Heal 15% Max HP on Rare kill)
-                      if (window.checkArtifactTrait("void_pull")) {
-                        let healAmt = Math.round(p.maxHp * 0.15);
-                        p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                        if (typeof window.spawnFloatingText === "function") {
-                          window.spawnFloatingText(p.x, p.y - 20, `+${healAmt} HP (VOID PULL)`, "#a855f7");
-                        }
-                      }
+                                  if (window.checkArtifactTrait("void_pull")) {
+                                    let healAmt = Math.round(p.maxHp * 0.15);
+                                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                                    if (typeof window.spawnFloatingText === "function") {
+                                      window.spawnFloatingText(p.x, p.y - 20, `+${healAmt} HP (VOID PULL)`, "#a855f7");
+                                    }
+                                  }
+
+                                  // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Rare Kill)
+                                  if (window.hasUniquePassive("boots_warpcore") && Math.random() < 0.20) {
+                                    let map = window.activeDungeonMap;
+                                    let tSize = map ? map.tileSize : 32;
+                                    let tileX = Math.floor(mobCenterX / tSize);
+                                    let tileY = Math.floor(mobCenterY / tSize);
+                                    if (map && map.grid && map.grid[tileY] && map.grid[tileY][tileX] !== undefined) {
+                                      map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
+                                      if (typeof window.pushHeaderToast === "function") {
+                                        window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
+                                      }
+                                      if (typeof window.spawnFloatingText === "function") {
+                                        window.spawnFloatingText(mobCenterX, mobCenterY - 15, "SPATIAL RIFT", "#1abc9c");
+                                      }
+                                      if (window.combatVisuals) {
+                                        window.combatVisuals.spawnBeam(mobCenterX, "#1abc9c", 45, false);
+                                      }
+                                    }
+                                  }
 
             window.addDungeonRunScrap(
               "Luminous Soul",
@@ -5302,6 +5386,20 @@
                       window.playerStats.warpCoreSprintTimer = 240; // 4 seconds of Maximum Haste
                       if (typeof window.spawnFloatingText === "function") {
                         window.spawnFloatingText(p.x, p.y - 25, "WARP-CORE MAX HASTE!", "#1abc9c");
+                      }
+
+                      // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Boss Defeat)
+                      if (Math.random() < 0.20) {
+                        let map = window.activeDungeonMap;
+                        let tSize = map ? map.tileSize : 32;
+                        let tileX = Math.floor(bossCenterX / tSize);
+                        let tileY = Math.floor(bossCenterY / tSize);
+                        if (map && map.grid && map.grid[tileY] && map.grid[tileY][tileX] !== undefined) {
+                          map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
+                          if (typeof window.pushHeaderToast === "function") {
+                            window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
+                          }
+                        }
                       }
                     }
 
