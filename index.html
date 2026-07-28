@@ -288,37 +288,44 @@
               </svg>
             </button>
           </div>
-          <!-- Gothic Leather Tab Bar -->
-          <div class="profile-tab-bar">
-            <button
-              id="profile-tab-stats"
-              class="profile-tab-btn active"
-              onclick="window.switchProfileTab('stats')"
-            >
-              ATTRIBUTES
-            </button>
-            <button
-              id="profile-tab-gear"
-              class="profile-tab-btn"
-              onclick="window.switchProfileTab('gear')"
-            >
-              ARMORY
-            </button>
-            <button
-              id="profile-tab-satchel"
-              class="profile-tab-btn"
-              onclick="window.switchProfileTab('satchel')"
-            >
-              VAULT SATCHEL
-            </button>
-            <button
-              id="profile-tab-skills"
-              class="profile-tab-btn"
-              onclick="window.switchProfileTab('skills')"
-            >
-              MASTERY TREES
-            </button>
-          </div>
+            <!-- Gothic Leather Tab Bar -->
+            <div class="profile-tab-bar">
+                <button
+                        id="profile-tab-stats"
+                        class="profile-tab-btn active"
+                        onclick="window.switchProfileTab('stats')"
+                >
+                    ATTRIBUTES
+                </button>
+                <button
+                        id="profile-tab-gear"
+                        class="profile-tab-btn"
+                        onclick="window.switchProfileTab('gear')"
+                >
+                    ARMORY
+                </button>
+                <button
+                        id="profile-tab-satchel"
+                        class="profile-tab-btn"
+                        onclick="window.switchProfileTab('satchel')"
+                >
+                    VAULT SATCHEL
+                </button>
+                <button
+                        id="profile-tab-skills"
+                        class="profile-tab-btn"
+                        onclick="window.switchProfileTab('skills')"
+                >
+                    MASTERY TREES
+                </button>
+                <button
+                        id="profile-tab-achievements"
+                        class="profile-tab-btn"
+                        onclick="window.switchProfileTab('achievements')"
+                >
+                    ACHIEVEMENTS
+                </button>
+            </div>
 
           <div class="profile-layout">
             <!-- Left Panel: Character Stats & Attribute Matrix -->
@@ -398,12 +405,19 @@
               </div>
             </div>
 
-            <!-- Skill Trees Panel -->
-            <div id="profile-sec-skills" class="profile-section">
-              <div id="skill-tree-content-panel" class="profile-section-body">
-                <!-- Skill Tree UI rendered dynamically -->
+              <!-- Skill Trees Panel -->
+              <div id="profile-sec-skills" class="profile-section">
+                  <div id="skill-tree-content-panel" class="profile-section-body">
+                      <!-- Skill Tree UI rendered dynamically -->
+                  </div>
               </div>
-            </div>
+
+              <!-- Achievements Panel -->
+              <div id="profile-sec-achievements" class="profile-section">
+                  <div id="achievements-content-panel" class="profile-section-body">
+                      <!-- Achievements UI rendered dynamically -->
+                  </div>
+              </div>
           </div>
         </div>
       </div>

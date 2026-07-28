@@ -867,181 +867,81 @@ window.absorbGoldParticle = function (amount, isDungeon, isCrucible) {
 };
 
 window.getAchievementProgress = function (ach) {
-  if (ach.reqType === "kills")
-    return window.playerStats.totalLifetimeKills || 0;
-  if (ach.reqType === "gold") return window.playerStats.coins || 0;
-  if (ach.reqType === "stage") return window.playerStats.maxStage || 1;
-  if (ach.reqType === "temper") return window.playerStats.totalTempers || 0;
-  if (ach.reqType === "enchant") return window.playerStats.totalEnchants || 0;
-  if (ach.reqType === "rift") return window.playerStats.riftGuardiansSlain || 0;
-  if (ach.reqType === "level") return window.playerStats.level || 1;
-  if (ach.reqType === "elixirs") return window.playerStats.elixirsConsumed || 0;
-  if (ach.reqType === "bag_count") return window.inventory.EQUIP.length || 0;
+  if (!window.playerStats) return 0;
+  if (ach.reqType === "kills") return window.playerStats.totalLifetimeKills || 0;
+  if (ach.reqType === "floor") return window.playerStats.maxFloorCleared || 0;
+  if (ach.reqType === "gold") return window.playerStats.totalGoldEarned || 0;
+  if (ach.reqType === "extract") return window.playerStats.successfulExtractions || 0;
   if (ach.reqType === "salvage") return window.playerStats.itemsSalvaged || 0;
-  if (ach.reqType === "prestige") return window.playerStats.prestigeCount || 0;
-  if (ach.reqType === "crucible") return window.playerStats.cruciblePeak || 1;
-  if (ach.reqType === "dungeon_equip")
-    return (
-      (window.playerStats.dungeonPeaks &&
-        window.playerStats.dungeonPeaks.equip) ||
-      1
-    );
-  if (ach.reqType === "dungeon_gold")
-    return (
-      (window.playerStats.dungeonPeaks &&
-        window.playerStats.dungeonPeaks.gold) ||
-      1
-    );
-  if (ach.reqType === "dungeon_mat")
-    return (
-      (window.playerStats.dungeonPeaks &&
-        window.playerStats.dungeonPeaks.mat) ||
-      1
-    );
-  if (ach.reqType === "artifacts_held")
-    return (window.inventory.ARTIFACT && window.inventory.ARTIFACT.length) || 0;
-  if (ach.reqType === "fairies_clicked")
-    return window.playerStats.fairiesClicked || 0;
-  if (ach.reqType === "death_count") return window.playerStats.deathCount || 0;
-  if (ach.reqType === "single_hit")
-    return window.playerStats.peakSingleHit || 0;
-  if (ach.reqType === "fairy_speed")
-    return window.playerStats.maxFairyClicksInWindow || 0;
-  if (ach.reqType === "deflections")
-    return window.playerStats.totalDeflections || 0;
-  if (ach.reqType === "buff_stack")
-    return window.playerStats.peakSimultaneousBuffs || 0;
+  if (ach.reqType === "temper") return window.playerStats.totalTempers || 0;
   if (ach.reqType === "reforges") return window.playerStats.totalReforges || 0;
-  if (ach.reqType === "gold_upgrades")
+  if (ach.reqType === "enchant") return window.playerStats.totalEnchants || 0;
+  if (ach.reqType === "deflections") return window.playerStats.totalDeflections || 0;
+  if (ach.reqType === "rare_spawns") return window.playerStats.rareSpawnsSlain || 0;
+  if (ach.reqType === "single_hit") return window.playerStats.peakSingleHit || 0;
+  if (ach.reqType === "gold_upgrades") {
     return (
       (window.playerStats.vendingQLevel || 0) +
       (window.playerStats.shopQLevel || 0) +
-      (window.playerStats.globalQLevel || 0)
+      (window.playerStats.globalQLevel || 0) +
+      ((window.playerStats.maxFlaskCharges || 1) - 1) +
+      (window.playerStats.flaskPotencyLevel || 0)
     );
-  if (ach.reqType === "single_gold_drop")
-    return window.playerStats.peakSingleGoldDrop || 0;
-  if (ach.reqType === "rare_spawns")
-    return window.playerStats.rareSpawnsSlain || 0;
-  if (ach.reqType === "materials_held") {
-    let maxHeld = 0;
-    for (let k in window.inventory.ETC) {
-      maxHeld = Math.max(maxHeld, window.inventory.ETC[k] || 0);
-    }
-    return maxHeld;
   }
+
   if (ach.isSingleTier) {
     if (ach.id === "sing_murphys_law") {
       let slots = Object.values(window.playerStats.slotUpgrades || {});
       return slots.some((lvl) => lvl >= 50) ? 1 : 0;
     }
-    if (ach.id === "sing_against_odds")
-      return window.playerStats.hasTriggeredAgainstOdds ? 1 : 0;
-    if (ach.id === "sing_lucky_seven")
-      return window.playerStats.hasTriggeredLuckySeven ? 1 : 0;
-    if (ach.id === "sing_back_brink")
-      return window.playerStats.hasTriggeredBackFromBrink ? 1 : 0;
-    if (ach.id === "sing_elemental_conv")
-      return window.playerStats.hasTriggeredElementalConvergence ? 1 : 0;
-    if (ach.id === "sing_no_hands")
-      return window.playerStats.hasTriggeredLookMaNoHands ? 1 : 0;
-    if (ach.id === "sing_phoenix_rising")
-      return window.playerStats.hasTriggeredPhoenixRising ? 1 : 0;
-    if (ach.id === "sing_hoarder")
-      return window.inventory.EQUIP.length >= window.getMaxBagSlots() &&
-        window.inventory.EQUIP.every((i) => i.locked)
-        ? 1
-        : 0;
+    if (ach.id === "sing_recovery") {
+      return window.playerStats.hasTriggeredRecovery ? 1 : 0;
+    }
+    if (ach.id === "sing_soul_bound") {
+      return window.playerStats.hasTriggeredSoulBound ? 1 : 0;
+    }
     if (ach.id === "sing_unified_set") {
-      let slots = [
-        "weapon",
-        "subweapon",
-        "helmet",
-        "chest",
-        "leggings",
-        "boots",
-      ];
-      let setsEquipped = slots.map((s) =>
-        window.equippedSlots[s]
-          ? window.getItemSetName(window.equippedSlots[s])
-          : null,
-      );
-      let validSets = setsEquipped.filter((s) => s !== null);
-      if (validSets.length === 6 && validSets.every((s) => s === validSets[0]))
-        return 1;
-      return 0;
+      if (!window.equippedSlots) return 0;
+      let setCounts = {};
+      const slots = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
+      slots.forEach((s) => {
+        let item = window.equippedSlots[s];
+        if (item && window.getItemSetName) {
+          let setName = window.getItemSetName(item);
+          if (setName) {
+            setCounts[setName] = (setCounts[setName] || 0) + (s === "overall" ? 2 : 1);
+          }
+        }
+      });
+      return Object.values(setCounts).some((count) => count >= 3) ? 1 : 0;
     }
     if (ach.id === "sing_golden_touch") {
-      let arts = [
-        window.equippedSlots.art1,
-        window.equippedSlots.art2,
-        window.equippedSlots.art3,
-      ];
-      let count = arts.filter((a) => a && a.goldMulti > 0).length;
+      if (!window.equippedSlots) return 0;
+      let arts = [window.equippedSlots.art1, window.equippedSlots.art2, window.equippedSlots.art3];
+      let count = arts.filter((a) => a && (a.goldMulti || 0) > 0).length;
       return count >= 3 ? 1 : 0;
     }
-    if (ach.id === "sing_untouchable")
-      return window.playerStats.hasTriggeredUntouchable ? 1 : 0;
-    if (ach.id === "sing_overkill")
+    if (ach.id === "sing_full_bag") {
+      return window.playerStats.hasTriggeredFullBag ? 1 : 0;
+    }
+    if (ach.id === "sing_overkill") {
       return window.playerStats.hasTriggeredOverkill ? 1 : 0;
-    if (ach.id === "sing_speedrun")
-      return window.playerStats.hasTriggeredSpeedrun ? 1 : 0;
-    if (ach.id === "sing_exact_change")
+    }
+    if (ach.id === "sing_exact_change") {
       return window.playerStats.hasTriggeredExactChange ? 1 : 0;
-    if (ach.id === "sing_unfortunate_soul") {
-      let slots = Object.values(window.playerStats.slotUpgrades || {});
-      return slots.length >= 10 && slots.every((lvl) => lvl >= 15) ? 1 : 0;
     }
-    if (ach.id === "sing_alchemical_synth")
-      return window.playerStats.hasTriggeredAlchemicalSynthesis ? 1 : 0;
-    if (ach.id === "sing_patient_shepherd")
-      return window.playerStats.hasTriggeredPatientShepherd ? 1 : 0;
-    if (ach.id === "sing_battlemage") {
-      let isHeavy = ["helmet", "chest", "leggings", "boots"].every(
-        (s) =>
-          window.equippedSlots[s] &&
-          (window.equippedSlots[s].name.includes("Vanguard") ||
-            window.equippedSlots[s].name.includes("Colossus") ||
-            window.equippedSlots[s].name.includes("Bastion") ||
-            window.equippedSlots[s].name.includes("Dreadnought")),
-      );
-      let isStaff =
-        window.equippedSlots.weapon &&
-        window.equippedSlots.weapon.isUniqueStaff;
-      return isHeavy && isStaff ? 1 : 0;
-    }
-    if (ach.id === "sing_bare_fists")
-      return !window.equippedSlots.weapon &&
-        window.playerStats.hasTriggeredBareFists
-        ? 1
-        : 0;
-    if (ach.id === "sing_perfect_deflection")
-      return window.playerStats.hasTriggeredPerfectDeflection ? 1 : 0;
-    if (ach.id === "sing_night_owl")
-      return window.playerStats.hasTriggeredNightOwl ? 1 : 0;
-    if (ach.id === "sing_early_bird")
-      return window.playerStats.hasTriggeredEarlyBird ? 1 : 0;
-    if (ach.id === "sing_coffee_run")
-      return window.playerStats.hasTriggeredCoffeeRun ? 1 : 0;
-    if (ach.id === "sing_high_noon") {
+    if (ach.id === "sing_night_owl") {
       let hr = new Date().getHours();
-      return hr >= 12 && hr < 13 && window.playerStats.hasTriggeredHighNoon
-        ? 1
-        : 0;
+      return (hr >= 0 && hr < 4) && window.playerStats.hasTriggeredNightOwl ? 1 : 0;
     }
-    if (ach.id === "sing_witching_hour") {
+    if (ach.id === "sing_early_bird") {
       let hr = new Date().getHours();
-      return hr >= 3 && hr < 4 && window.playerStats.hasTriggeredWitchingHour
-        ? 1
-        : 0;
+      return (hr >= 5 && hr < 8) && window.playerStats.hasTriggeredEarlyBird ? 1 : 0;
     }
-    if (ach.id === "sing_weekend_warrior")
-      return window.playerStats.hasTriggeredWeekendWarrior ? 1 : 0;
-    if (ach.id === "sing_long_run")
-      return window.playerStats.sessionPlaytime >= 3600000 ? 1 : 0;
-    if (ach.id === "sing_clicking_tempest")
-      return window.playerStats.maxCanvasClicksInWindow >= 100 ? 1 : 0;
-    if (ach.id === "sing_aetheric_recharge")
-      return window.playerStats.hasTriggeredAethericRecharge ? 1 : 0;
+    if (ach.id === "sing_weekend_warrior") {
+      let day = new Date().getDay();
+      return (day === 0 || day === 6) && window.playerStats.hasTriggeredWeekendWarrior ? 1 : 0;
+    }
   }
   return 0;
 };
@@ -2514,9 +2414,10 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       }
 
       let parryMitigation = pStats.parryMitigation || 0.6;
-      let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
-      p.hp = Math.max(0, p.hp - parriedDmg);
-      p.lastDamageTimer = 180;
+            let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
+            p.hp = Math.max(0, p.hp - parriedDmg);
+            p.lastDamageTimer = 180;
+            window.playerStats.totalDeflections = (window.playerStats.totalDeflections || 0) + 1;
 
       if (window.SoundManager) window.SoundManager.play("parry");
       if (window.combatVisuals)
@@ -2591,12 +2492,13 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   // Step 3: Block Check (Shields)
-    if (pStats.block && Math.random() < pStats.block) {
-      if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-        window.playerStats.adrenalineTimer = 360;
-      }
+      if (pStats.block && Math.random() < pStats.block) {
+        if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
+          window.playerStats.adrenalineTimer = 360;
+        }
 
-      p.lastDamageTimer = 180;
+        p.lastDamageTimer = 180;
+        window.playerStats.totalDeflections = (window.playerStats.totalDeflections || 0) + 1;
 
       if (window.SoundManager) window.SoundManager.play("block");
     if (window.combatVisuals)
@@ -2954,6 +2856,13 @@ window.playerStats = {
   maxStage: 1,
   killCount: 0,
   totalLifetimeKills: 0,
+    successfulExtractions: 0,
+    rareSpawnsSlain: 0,
+    totalDeflections: 0,
+    peakSingleHit: 0,
+    hasTriggeredRecovery: false,
+    hasTriggeredFullBag: false,
+    hasTriggeredSoulBound: false,
   targetsRequired: 3, // Reduced from 5 to 3 for snappier stage runs
   isBossMode: false,
   isFarmingLoop: false,

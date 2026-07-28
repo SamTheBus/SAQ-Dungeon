@@ -1359,13 +1359,17 @@
     }
 
     if (totals.totalPremium.gt(0)) {
-      window.playerStats.coins = wallet.sub(totals.totalPremium);
-      if (window.playerStats.coins.eq(0)) {
-        window.playerStats.hasTriggeredExactChange = true;
-      }
-    }
+          window.playerStats.coins = wallet.sub(totals.totalPremium);
+          if (window.playerStats.coins.eq(0)) {
+            window.playerStats.hasTriggeredExactChange = true;
+          }
+        }
 
-    if (totals.totalSoulsCost > 0) {
+        if (totals.insuredCount >= 3) {
+          window.playerStats.hasTriggeredSoulBound = true;
+        }
+
+        if (totals.totalSoulsCost > 0) {
       window.inventory.ETC["Monster Soul"] -= totals.totalSoulsCost;
       if (window.inventory.ETC["Monster Soul"] === 0) {
         delete window.inventory.ETC["Monster Soul"];
@@ -1925,10 +1929,16 @@
     }
 
     if (success) {
-      titleEl.innerText = "EXTRACTION SUCCESSFUL";
-      titleEl.style.color = "#2ecc71";
+          titleEl.innerText = "EXTRACTION SUCCESSFUL";
+          titleEl.style.color = "#2ecc71";
 
-      // Deposit pending run scraps into permanent inventory
+          window.playerStats.successfulExtractions = (window.playerStats.successfulExtractions || 0) + 1;
+          let maxBag = typeof window.getMaxBagSlots === "function" ? window.getMaxBagSlots() : 20;
+          if (extractedLoot.length >= maxBag) {
+            window.playerStats.hasTriggeredFullBag = true;
+          }
+
+          // Deposit pending run scraps into permanent inventory
       pendingScrapsList.forEach((s) => {
         if (typeof window.addEtcDrop === "function") {
           window.addEtcDrop(s.name, s.count, true);
@@ -2431,9 +2441,10 @@
         }
 
         if (tile === window.TILE_TYPES.RECOVERY_CHEST) {
-          map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
+                  map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
+                  window.playerStats.hasTriggeredRecovery = true;
 
-          let rec = window.playerStats && window.playerStats.recoveryLoot;
+                  let rec = window.playerStats && window.playerStats.recoveryLoot;
           if (rec && rec.items && rec.items.length > 0) {
             let itemsToRecover = rec.items;
             let recoveredCount = itemsToRecover.length;
@@ -4503,10 +4514,24 @@
         let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
         m.hp = m.hp.sub(pAtk);
-        m.hasTakenDamage = true;
-        m.flashTimer = 6;
+                m.hasTakenDamage = true;
+                m.flashTimer = 6;
 
-        let mobCenterX = closestTarget.x;
+                let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
+                window.playerStats.peakSingleHit = Math.max(window.playerStats.peakSingleHit || 0, rawHitNum);
+
+                let mMaxHpNum = m.maxHp.valueOf ? m.maxHp.valueOf() : Number(m.maxHp || 1);
+                if (isCrit && mMaxHpNum > 0 && (rawHitNum / mMaxHpNum) >= 10) {
+                  window.playerStats.hasTriggeredOverkill = true;
+                }
+
+                let curHr = new Date().getHours();
+                if (curHr >= 0 && curHr < 4) window.playerStats.hasTriggeredNightOwl = true;
+                if (curHr >= 5 && curHr < 8) window.playerStats.hasTriggeredEarlyBird = true;
+                let curDay = new Date().getDay();
+                if (curDay === 0 || curDay === 6) window.playerStats.hasTriggeredWeekendWarrior = true;
+
+                let mobCenterX = closestTarget.x;
         let mobCenterY = closestTarget.y;
         let dx = closestTarget.x - p.x;
         let dy = closestTarget.y - p.y;
@@ -4882,8 +4907,13 @@
                 }
 
                 // Check death state after any potential hit
-                if (m.hp.lte(0)) {
-                  // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
+                                if (m.hp.lte(0)) {
+                                  window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
+                                  if (m.isRare) {
+                                    window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
+                                  }
+
+                                  // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
                   if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
                     m.isDetonating = true;
                     m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
@@ -5154,10 +5184,24 @@
         let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
         bm.hp = bm.hp.sub(pAtk);
-        bm.hasTakenDamage = true;
-        bm.flashTimer = 6;
+                bm.hasTakenDamage = true;
+                bm.flashTimer = 6;
 
-        let dirX = dist > 0 ? dx / dist : 1;
+                let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
+                window.playerStats.peakSingleHit = Math.max(window.playerStats.peakSingleHit || 0, rawHitNum);
+
+                let bmMaxHpNum = bm.maxHp.valueOf ? bm.maxHp.valueOf() : Number(bm.maxHp || 1);
+                if (isCrit && bmMaxHpNum > 0 && (rawHitNum / bmMaxHpNum) >= 10) {
+                  window.playerStats.hasTriggeredOverkill = true;
+                }
+
+                let curHr = new Date().getHours();
+                if (curHr >= 0 && curHr < 4) window.playerStats.hasTriggeredNightOwl = true;
+                if (curHr >= 5 && curHr < 8) window.playerStats.hasTriggeredEarlyBird = true;
+                let curDay = new Date().getDay();
+                if (curDay === 0 || curDay === 6) window.playerStats.hasTriggeredWeekendWarrior = true;
+
+                let dirX = dist > 0 ? dx / dist : 1;
         let dirY = dist > 0 ? dy / dist : 0;
         bm.recoilX = -dirX * (isCrit ? 10 : 6);
         bm.recoilY = -dirY * (isCrit ? 10 : 6);
@@ -5269,7 +5313,10 @@
         }
 
         if (bm.hp.lte(0)) {
-          if (window.spawnDeathParticles) {
+                  window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
+                  window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
+
+                  if (window.spawnDeathParticles) {
             window.spawnDeathParticles(
               bm.x + bm.w / 2,
               bm.y + bm.h / 2,
@@ -7573,7 +7620,7 @@
 
   window.switchProfileTab = function (tabKey) {
     window.activeProfileMobileTab = tabKey;
-    const tabs = ["stats", "gear", "satchel", "skills"];
+    const tabs = ["stats", "gear", "satchel", "skills", "achievements"];
     tabs.forEach((t) => {
       let btn = document.getElementById(`profile-tab-${t}`);
       let sec = document.getElementById(`profile-sec-${t}`);
@@ -7584,7 +7631,7 @@
     if (profileCard) {
       profileCard.classList.toggle(
         "skills-fullscreen-mode",
-        tabKey === "skills",
+        tabKey === "skills" || tabKey === "achievements",
       );
     }
     if (tabKey === "skills" && window.SkillTreeManager) {
@@ -7595,8 +7642,231 @@
     ) {
       window.SkillTreeManager.stopAnimationLoop();
     }
+    if (tabKey === "achievements") {
+      window.renderAchievementsTab();
+    }
     window.renderProfileModal();
   };
+
+window.state.achievementFilter = "all";
+
+window.switchAchievementFilter = function (filterKey) {
+  window.state.achievementFilter = filterKey;
+  window.renderAchievementsTab();
+};
+
+window.renderAchievementsTab = function () {
+  let container = document.getElementById("achievements-content-panel");
+  if (!container) return;
+
+  let unlocked = window.playerStats.unlockedAchievements || [];
+  let timestamps = window.playerStats.achievementTimestamps || {};
+  let totals = window.playerStats.cachedAchievementBonusTotals || {};
+
+  let totalCount = window.AchievementsData.length;
+  let unlockedCount = unlocked.length;
+  let progressPct = Math.round((unlockedCount / totalCount) * 100) || 0;
+
+  // Compile active passive stats
+  let activeBonusTexts = [];
+  for (let sKey in totals) {
+    let val = totals[sKey];
+    if (val > 0) {
+      let isPct = [
+        "drop", "qly", "critChance", "critDamage", "block", "parry", "gold",
+        "fairySpawn", "rareSpawn", "expPct", "potDurationPct", "potStrengthPct",
+        "atkPct", "maxHpPct", "defPct", "moveSpeedPct", "strPct", "dexPct",
+        "intPct", "idleSpeedPct", "activeSpeedPct"
+      ].includes(sKey);
+      let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
+      let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey;
+      activeBonusTexts.push(`${label} ${valStr}`);
+    }
+  }
+  let activeBonusStr = activeBonusTexts.length > 0
+    ? activeBonusTexts.join(" • ")
+    : "No active milestone bonuses yet.";
+
+  // Achievements Category Filter Options
+  let activeFilter = window.state.achievementFilter || "all";
+  let filters = [
+    { key: "all", label: "ALL" },
+    { key: "slayer", label: "SLAYER" },
+    { key: "floor", label: "EXPLORER" },
+    { key: "hoarder", label: "WEALTH" },
+    { key: "extract", label: "SURVIVOR" },
+    { key: "salvage", label: "SALVAGER" },
+    { key: "forge", label: "CRAFTING" },
+    { key: "misc", label: "TACTICAL" },
+    { key: "sing", label: "VALOR FEATS" }
+  ];
+
+  let filterBarHtml = `
+    <div class="ach-filter-bar">
+      ${filters.map(f => {
+        let isActive = f.key === activeFilter;
+        return `
+          <button class="ach-filter-btn ${isActive ? 'active' : ''}" onclick="window.switchAchievementFilter('${f.key}')">
+            ${f.label}
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  // Filter the achievements list
+  let filteredAchs = window.AchievementsData.filter(ach => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "sing") return !!ach.isSingleTier;
+
+    let cat = "";
+    if (ach.reqType === "kills") cat = "slayer";
+    else if (ach.reqType === "floor") cat = "floor";
+    else if (ach.reqType === "gold") cat = "hoarder";
+    else if (ach.reqType === "extract") cat = "extract";
+    else if (ach.reqType === "salvage") cat = "salvage";
+    else if (["temper", "reforges", "enchant"].includes(ach.reqType)) cat = "forge";
+    else if (["deflections", "rare_spawns", "single_hit", "gold_upgrades"].includes(ach.reqType)) cat = "misc";
+
+    return cat === activeFilter;
+  });
+
+  // Render cards
+  let cardsHtml = filteredAchs.map(ach => {
+    let isUnlocked = unlocked.includes(ach.id);
+    let timeStr = "";
+    if (isUnlocked && timestamps[ach.id]) {
+      timeStr = new Date(timestamps[ach.id]).toLocaleDateString("en-US", {
+        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+    }
+
+    // Process Rewards Text
+    let rewardsList = [];
+    if (ach.stats) {
+      for (let sKey in ach.stats) {
+        let val = ach.stats[sKey];
+        let isPct = [
+          "drop", "qly", "critChance", "critDamage", "block", "parry", "gold",
+          "fairySpawn", "rareSpawn", "expPct", "potDurationPct", "potStrengthPct",
+          "atkPct", "maxHpPct", "defPct", "moveSpeedPct", "strPct", "dexPct",
+          "intPct", "idleSpeedPct", "activeSpeedPct"
+        ].includes(sKey);
+        let valStr = isPct ? `+${(val * 100).toFixed(0)}%` : `+${val}`;
+        let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey;
+        rewardsList.push(`${label} ${valStr}`);
+      }
+    }
+    let rewardsStr = rewardsList.length > 0 ? `Reward: ${rewardsList.join(", ")}` : "Cosmetic Award";
+
+    // Progress bar for locked achievements
+    let progressHtml = "";
+    if (!isUnlocked) {
+      let progress = window.getAchievementProgress(ach);
+      let progressNum = progress instanceof BigNum ? progress.valueOf() : Number(progress || 0);
+      let targetNum = ach.isSingleTier ? 1 : Number(ach.reqValue || 1);
+
+      let pct = Math.max(0, Math.min(100, (progressNum / targetNum) * 100)) || 0;
+      let displayProgress = progress instanceof BigNum ? window.formatNumber(progress) : progressNum.toLocaleString();
+      let displayTarget = ach.isSingleTier ? "1" : ach.reqValue.toLocaleString();
+
+      progressHtml = `
+        <div class="ach-progress-box">
+          <div class="ach-progress-bar-bg">
+            <div class="ach-progress-bar-fill" style="width:${pct}%;"></div>
+          </div>
+          <div class="ach-progress-text">${displayProgress} / ${displayTarget}</div>
+        </div>
+      `;
+    }
+
+    let badgeHtml = window.getAchievementBadgeHtml ? window.getAchievementBadgeHtml(ach, isUnlocked, 34) : "";
+
+    return `
+      <div id="ach-card-${ach.id}" class="ach-card ${isUnlocked ? 'unlocked' : 'locked'}">
+        <div class="ach-badge-box">
+          ${badgeHtml}
+        </div>
+        <div class="ach-info">
+          <div class="ach-title-row">
+            <span class="ach-title">${ach.name}</span>
+            <span class="ach-status-tag ${isUnlocked ? 'tag-unlocked' : 'tag-locked'}">
+              ${isUnlocked ? `UNLOCKED • ${timeStr}` : 'LOCKED'}
+            </span>
+          </div>
+          <span class="ach-desc">${ach.desc}</span>
+          <span class="ach-reward-badge" style="color: ${isUnlocked ? '#34d399' : '#64748b'};">
+            ${rewardsStr}
+          </span>
+          ${progressHtml}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="ach-wrapper">
+      <!-- Unlocked Count & Summary Banner -->
+      <div class="ach-summary-banner">
+        <div class="ach-summary-header">
+          <span class="ach-summary-title">EXTRACTION CHALLENGES</span>
+          <span class="ach-summary-count">${unlockedCount} / ${totalCount} Cleared (${progressPct}%)</span>
+        </div>
+        <div class="ach-total-bar">
+          <div class="ach-total-fill" style="width: ${progressPct}%;"></div>
+        </div>
+        <div class="ach-active-bonuses">
+          <strong>COMBINED MILESTONE PASSIVES:</strong> ${activeBonusStr}
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      ${filterBarHtml}
+
+      <!-- Unlocked/Locked Cards List -->
+      <div class="ach-list">
+        ${cardsHtml || '<div style="color:#64748b; font-style:italic; text-align:center; padding:30px;">No challenges match this filter category.</div>'}
+      </div>
+    </div>
+  `;
+};
+
+window.navigateToAchievement = function (id) {
+  if (typeof window.hideTooltip === "function") window.hideTooltip();
+  let modal = document.getElementById("profile-modal");
+  if (modal) {
+    modal.style.display = "flex";
+  }
+
+  // Auto-switch to correct category filter before loading tab
+  let ach = window.AchievementsData.find(a => a.id === id);
+  if (ach) {
+    let cat = "all";
+    if (ach.isSingleTier) cat = "sing";
+    else if (ach.reqType === "kills") cat = "slayer";
+    else if (ach.reqType === "floor") cat = "floor";
+    else if (ach.reqType === "gold") cat = "hoarder";
+    else if (ach.reqType === "extract") cat = "extract";
+    else if (ach.reqType === "salvage") cat = "salvage";
+    else if (["temper", "reforges", "enchant"].includes(ach.reqType)) cat = "forge";
+    else if (["deflections", "rare_spawns", "single_hit", "gold_upgrades"].includes(ach.reqType)) cat = "misc";
+
+    window.state.achievementFilter = cat;
+  }
+
+  window.switchProfileTab("achievements");
+
+  // Smooth scroll and pulse high-contrast highlight on the targeted card
+  setTimeout(() => {
+    let card = document.getElementById(`ach-card-${id}`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.classList.remove("ach-highlight-pulse");
+      void card.offsetWidth; // trigger reflow
+      card.classList.add("ach-highlight-pulse");
+    }
+  }, 250);
+};
 
   window.toggleProfileModal = function () {
     window.hideTooltip();
