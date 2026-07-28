@@ -2137,19 +2137,19 @@ summary {
 
 @media (orientation: portrait), (max-width: 600px) {
   #hud-overlay {
-    order: 1 !important;
-    width: 100% !important; /* Take full width on Row 1 */
-    flex: none !important;
-    min-width: 0 !important;
-    padding: 6px 12px !important;
-    gap: 8px !important;
-    border-radius: 8px !important;
-    background: rgba(10, 14, 23, 0.96) !important;
-    border: 1.5px solid rgba(0, 210, 255, 0.4) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-  }
+      display: flex !important;
+      flex-direction: column !important; /* Stack columns vertically on portrait screen */
+      align-items: stretch !important;
+      gap: 8px !important;
+      background: none !important;
+      border: none !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      width: calc(100% - 16px) !important;
+      left: 8px !important;
+      right: 8px !important;
+      top: env(safe-area-inset-top, 8px) !important;
+    }
 
   .hero-badge-info {
     margin-right: 0 !important;
@@ -2322,13 +2322,51 @@ summary {
   }
 
   .forge-left-pane,
-  .forge-right-pane,
-  .enchant-left-pane,
-  .enchant-right-pane {
-    max-height: none !important;
-    flex: 1 !important;
+    .forge-right-pane,
+    .enchant-left-pane,
+    .enchant-right-pane {
+      max-height: none !important;
+      flex: 1 !important;
+    }
+
+    /* --- LOCK ALL HORIZONTAL BAR FLOWS & ENABLE TOUCH SWIPE FOR TRUNCATED TABS --- */
+    .profile-tab-bar,
+    .satchel-tab-bar,
+    .shop-tab-bar,
+    .gacha-tab-bar,
+    .forge-mode-bar,
+    .ach-filter-bar {
+      display: flex !important;
+      overflow-x: auto !important;
+      white-space: nowrap !important;
+      flex-wrap: nowrap !important;
+      flex-shrink: 0 !important;
+      touch-action: pan-x !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding-bottom: 4px !important;
+    }
+
+    /* Custom subtle indicator line to guide horizontal swipes */
+    .profile-tab-bar::-webkit-scrollbar,
+    .satchel-tab-bar::-webkit-scrollbar,
+    .shop-tab-bar::-webkit-scrollbar,
+    .gacha-tab-bar::-webkit-scrollbar,
+    .forge-mode-bar::-webkit-scrollbar,
+    .ach-filter-bar::-webkit-scrollbar {
+      height: 3px !important;
+      display: block !important;
+    }
+
+    .profile-tab-bar::-webkit-scrollbar-thumb,
+    .satchel-tab-bar::-webkit-scrollbar-thumb,
+    .shop-tab-bar::-webkit-scrollbar-thumb,
+    .gacha-tab-bar::-webkit-scrollbar-thumb,
+    .forge-mode-bar::-webkit-scrollbar-thumb,
+    .ach-filter-bar::-webkit-scrollbar-thumb {
+      background: var(--border-aged-bronze) !important;
+      border-radius: 2px !important;
+    }
   }
-}
 
 /* --- ARCADE GACHAPON STYLES --- */
 .gacha-card {

@@ -476,12 +476,47 @@
       }
 
       // Prevent document-level elastic bouncing unless the touch originates inside a scrollable container
-      document.addEventListener("touchmove", function (e) {
-        let isScrollable = e.target.closest(".modal-body, .paperdoll-grid, .stash-grid, .deploy-gear-list, .sigil-picker-list, .forge-pane, .enchant-pane, .ach-list");
-        if (!isScrollable && e.cancelable) {
-          e.preventDefault();
-        }
-      }, { passive: false });
+          document.addEventListener("touchmove", function (e) {
+            let isScrollable = false;
+            let el = e.target;
+            while (el && el !== document) {
+              if (
+                el.classList.contains("modal-body") ||
+                el.classList.contains("profile-section-body") ||
+                el.classList.contains("paperdoll-grid") ||
+                el.classList.contains("stash-grid") ||
+                el.classList.contains("deploy-gear-list") ||
+                el.classList.contains("sigil-picker-list") ||
+                el.classList.contains("forge-pane") ||
+                el.classList.contains("enchant-pane") ||
+                el.classList.contains("ach-list") ||
+                el.classList.contains("ach-filter-bar") ||
+                el.classList.contains("forge-mode-bar") ||
+                el.classList.contains("shop-tab-bar") ||
+                el.classList.contains("gacha-tab-bar") ||
+                el.classList.contains("satchel-tab-bar") ||
+                el.classList.contains("shop-content-panel") ||
+                el.classList.contains("settings-body")
+              ) {
+                isScrollable = true;
+                break;
+              }
+              let style = window.getComputedStyle(el);
+              if (
+                style.overflow === "auto" || style.overflow === "scroll" ||
+                style.overflowY === "auto" || style.overflowY === "scroll" ||
+                style.overflowX === "auto" || style.overflowX === "scroll"
+              ) {
+                isScrollable = true;
+                break;
+              }
+              el = el.parentNode;
+            }
+
+            if (!isScrollable && e.cancelable) {
+              e.preventDefault();
+            }
+          }, { passive: false });
 
       // Intercept touchstart & touchmove on the canvas with non-passive listeners
       // to block iOS back/forward edge swipes and prevent elastic window scrolling during gameplay.
@@ -1019,21 +1054,31 @@
           },
         ];
 
-        let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
-        let picked = shuffled.slice(
-          0,
-          Math.min(medicRank, basicElixirs.length),
-        );
+        // Clear any lingering Field Medic elixirs from previous runs to enforce exactly 1 active elixir limit
+                    const basicElixirKeys = ["atkPotionRuns", "hpPotionRuns", "defPotionRuns", "hastePotionRuns"];
+                    basicElixirKeys.forEach(k => {
+                      window.playerStats[k] = 0;
+                    });
 
-        let appliedNames = [];
-        picked.forEach((pot) => {
-          window.playerStats[pot.key] = Math.max(
-            window.playerStats[pot.key] || 0,
-            1,
-          );
-          window.playerStats[pot.strKey] = pot.val;
-          appliedNames.push(pot.name);
-        });
+                    let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
+                    let pot = shuffled[0]; // Select exactly 1 random elixir effect
+
+                    // Set the runs duration to exactly 1 run
+                    window.playerStats[pot.key] = 1;
+
+                    // Scale the potion's potency linearly based on the purchased rank (Rank 1: +10%, Rank 2: +15%, Rank 3: +20%)
+                    let strength = pot.key === "hastePotionRuns"
+                      ? 1 + (medicRank - 1) * 0.5
+                      : 0.1 + (medicRank - 1) * 0.05;
+
+                    window.playerStats[pot.strKey] = strength;
+
+                    let pctText = pot.key === "hastePotionRuns"
+                      ? `+${Math.round(strength * 10)}% Speed`
+                      : `+${Math.round(strength * 100)}% ${pot.key === "atkPotionRuns" ? "Atk" : pot.key === "hpPotionRuns" ? "Max HP" : "Def"}`;
+                    let potName = `${pot.key === "atkPotionRuns" ? "Attack" : pot.key === "hpPotionRuns" ? "Vitality" : pot.key === "defPotionRuns" ? "Armored" : "Haste"} Elixir (${pctText})`;
+
+                    let appliedNames = [potName];
 
         if (typeof window.pushHeaderToast === "function") {
           window.pushHeaderToast(
@@ -1104,17 +1149,14 @@
         .join("");
 
       let recBannerHtml = "";
-      if (rec && rec.items && rec.items.length > 0) {
-        recBannerHtml = `
-            <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;">
-              <div>
-                <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
-                <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Retrieve them before dying again!</span>
-              </div>
-              <button style="background: #e74c3c; color: #ffffff; border: none; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 8.5px; font-weight: bold; cursor: pointer; flex-shrink: 0; margin-left: 6px;" onclick="window.changeDeploymentFloor(${rec.floor})">SELECT FL.${rec.floor}</button>
-            </div>
-          `;
-      }
+                if (rec && rec.items && rec.items.length > 0) {
+                  recBannerHtml = `
+                      <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
+                        <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
+                        <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
+                      </div>
+                    `;
+                }
 
       let selectedSigilId = window.state.selectedDeploymentSigilId;
       let activeSigil = selectedSigilId
@@ -4687,24 +4729,24 @@
                                 }
 
                                 // Artifact: Dread Presence (25% Chance to execute non-boss mobs under 20% HP)
-                                let isBossTarget = m.type === "dungeon_boss" || m.type === "dungeon_miniboss";
-                                if (!isBossTarget && m.hp.gt(0)) {
-                                  let mobHpRatio = m.hp.div(m.maxHp).valueOf();
-                                  if (mobHpRatio <= 0.20 && Math.random() < 0.25) {
-                                    let remHp = m.hp;
-                                    m.hp = BigNum.from(0);
-                                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                                      window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY, remHp, "crit", true);
-                                    }
-                                    if (typeof window.spawnFloatingText === "function") {
-                                      window.spawnFloatingText(mobCenterX, mobCenterY - 15, "EXECUTE!", "#e74c3c");
-                                    }
-                                    if (window.combatVisuals) {
-                                      window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 15, "magma_elemental", 4);
-                                      window.combatVisuals.triggerScreenShake(5, 10);
-                                    }
-                                  }
-                                }
+                                                            let isBossTarget = m.type === "dungeon_boss" || m.type === "dungeon_miniboss";
+                                                            if (window.checkArtifactTrait("dread_presence") && !isBossTarget && m.hp.gt(0)) {
+                                                              let mobHpRatio = m.hp.div(m.maxHp).valueOf();
+                                                              if (mobHpRatio <= 0.20 && Math.random() < 0.25) {
+                                                                let remHp = m.hp;
+                                                                m.hp = BigNum.from(0);
+                                                                if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                                                                  window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY, remHp, "crit", true);
+                                                                }
+                                                                if (typeof window.spawnFloatingText === "function") {
+                                                                  window.spawnFloatingText(mobCenterX, mobCenterY - 15, "EXECUTE!", "#e74c3c");
+                                                                }
+                                                                if (window.combatVisuals) {
+                                                                  window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 15, "magma_elemental", 4);
+                                                                  window.combatVisuals.triggerScreenShake(5, 10);
+                                                                }
+                                                              }
+                                                            }
 
                                 // Artifact: Midas Touch (3% Chance on hit against non-boss mobs for Gold Transmutation)
                                 if (!isBossTarget && m.hp.gt(0) && window.checkArtifactTrait("gold_hoard") && Math.random() < 0.03) {
