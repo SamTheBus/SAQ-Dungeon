@@ -7226,10 +7226,21 @@
                                       flaskBtn.style.left = stats.flaskX + "px";
                                       flaskBtn.style.top = stats.flaskY + "px";
                                       flaskBtn.style.bottom = "auto";
+                                      flaskBtn.style.right = "auto";
                                     } else if (!flaskBtn.isDragging) {
-                                      flaskBtn.style.left = "20px";
-                                      flaskBtn.style.bottom = "24px";
-                                      flaskBtn.style.top = "auto";
+                                      const isLandscapeMobile = window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
+                                      const isMobile = window.innerWidth <= 600 || isLandscapeMobile;
+                                      if (isMobile) {
+                                        flaskBtn.style.right = "20px";
+                                        flaskBtn.style.left = "auto";
+                                        flaskBtn.style.bottom = "24px";
+                                        flaskBtn.style.top = "auto";
+                                      } else {
+                                        flaskBtn.style.left = "20px";
+                                        flaskBtn.style.right = "auto";
+                                        flaskBtn.style.bottom = "24px";
+                                        flaskBtn.style.top = "auto";
+                                      }
                                     }
                 }
 

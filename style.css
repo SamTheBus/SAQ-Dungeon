@@ -2140,92 +2140,108 @@ summary {
     right: 8px !important;
     width: calc(100% - 16px) !important;
     display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    gap: 6px !important;
+    flex-direction: column !important; /* Stack rows vertically */
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 8px !important;
   }
 
   .hud-hero-pod {
     order: 1 !important;
-    flex: 1.25 !important;
+    width: 100% !important; /* Take full width on Row 1 */
+    flex: none !important;
     min-width: 0 !important;
-    padding: 4px 8px !important;
-    gap: 6px !important;
+    padding: 6px 12px !important;
+    gap: 8px !important;
     border-radius: 8px !important;
     background: rgba(10, 14, 23, 0.96) !important;
-    border: 1px solid rgba(0, 210, 255, 0.3) !important;
+    border: 1.5px solid rgba(0, 210, 255, 0.4) !important;
     display: flex !important;
     align-items: center !important;
+    justify-content: space-between !important;
   }
 
   .hero-badge-info {
-    margin-right: 2px !important;
+    margin-right: 0 !important;
     flex-shrink: 0 !important;
   }
 
   .hero-name {
-    font-size: 8px !important;
-    font-weight: 800 !important;
+    font-size: 9.5px !important;
+    font-weight: 900 !important;
   }
 
   .hero-lvl {
-    font-size: 7px !important;
+    font-size: 8px !important;
   }
 
   .bars-column {
-    gap: 2px !important;
+    flex-grow: 1 !important;
+    max-width: 180px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    margin: 0 8px !important;
   }
 
   .hud-bar-container {
     gap: 4px !important;
+    justify-content: space-between !important;
   }
 
   .hud-label {
-    font-size: 7.5px !important;
-    width: 12px !important;
+    font-size: 8px !important;
+    width: 14px !important;
   }
 
   .bar-track {
-    width: 55px !important;
-    height: 6px !important;
+    width: 100% !important; /* Span available space inside column */
+    height: 8px !important;
+    min-width: 70px !important;
   }
 
   .bar-val {
-    font-size: 7.5px !important;
+    font-size: 8.5px !important;
     font-weight: 800 !important;
-    margin-left: 2px !important;
+    margin-left: 4px !important;
     display: inline-block !important;
+    min-width: 48px !important;
+    text-align: right !important;
   }
 
   .hud-gold-badge {
-    padding: 2px 4px !important;
-    gap: 2px !important;
-    margin-left: auto !important;
+    padding: 3px 6px !important;
+    gap: 4px !important;
+    margin-left: 0 !important;
     border-radius: 4px !important;
     flex-shrink: 0 !important;
   }
 
   .gold-val {
-    font-size: 8.5px !important;
+    font-size: 10px !important;
     display: inline-block !important;
   }
 
   .hud-right-pod {
     order: 2 !important;
-    gap: 3px !important;
+    width: 100% !important; /* Take full width on Row 2 */
+    flex: none !important;
+    gap: 6px !important;
     background: rgba(10, 14, 23, 0.96) !important;
-    padding: 4px 6px !important;
-    border: 1px solid rgba(51, 65, 85, 0.8) !important;
+    padding: 6px 10px !important;
+    border: 1.5px solid rgba(51, 65, 85, 0.8) !important;
     border-radius: 8px !important;
     display: flex !important;
     align-items: center !important;
+    justify-content: space-between !important; /* Space buttons evenly */
   }
 
   .hud-btn {
-    padding: 4px 6px !important;
-    font-size: 8px !important;
+    flex: 1 !important; /* Equal sizing */
+    padding: 6px 8px !important;
+    font-size: 9px !important;
     border-radius: 4px !important;
+    text-align: center !important;
   }
 
   .hud-center-pod {
