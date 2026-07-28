@@ -697,26 +697,29 @@
     }
 
     canvas.addEventListener("pointerup", stopJoystick);
-    canvas.addEventListener("pointercancel", stopJoystick);
+        canvas.addEventListener("pointercancel", stopJoystick);
 
-    // Allow tapping backdrop overlays to dismiss open modal windows
-    document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-      overlay.addEventListener("pointerdown", function (e) {
-        if (e.target === overlay) {
-          e.stopPropagation();
-          if (overlay.id === "summary-modal") {
-            window.lastModalCloseTime = Date.now();
-            window.loadHub();
-          } else if (overlay.id === "portal-modal") {
-            // Require explicit user action (Descend or Extract)
-            return;
-          } else {
-            overlay.style.display = "none";
-            window.lastModalCloseTime = Date.now();
-          }
-          if (typeof window.hideTooltip === "function") window.hideTooltip();
-        }
-      });
+        // Allow tapping backdrop overlays to dismiss open modal windows
+        document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+          overlay.addEventListener("pointerdown", function (e) {
+            if (e.target === overlay) {
+              e.stopPropagation();
+              if (overlay.id === "summary-modal") {
+                window.lastModalCloseTime = Date.now();
+                window.loadHub();
+              } else if (overlay.id === "portal-modal") {
+                // Require explicit user action (Descend or Extract)
+                return;
+              } else {
+                overlay.style.display = "none";
+                window.lastModalCloseTime = Date.now();
+                if (overlay.id === "mastery-modal" && window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
+                  window.SkillTreeManager.stopAnimationLoop();
+                }
+              }
+              if (typeof window.hideTooltip === "function") window.hideTooltip();
+            }
+          });
       overlay.addEventListener("click", function (e) {
         if (e.target === overlay) {
           e.stopPropagation();
@@ -2228,11 +2231,20 @@
     let speedMult = p.speedMultiplier || 1.0;
     p.speedMultiplier = 1.0;
 
-    if (mode === "joystick" && window.joystick.active) {
-          let joy = window.joystick;
-          vx = joy.vx * speedMult;
-          vy = joy.vy * speedMult;
+    if (mode === "joystick") {
+          if (window.joystick.active) {
+            let joy = window.joystick;
+            vx = joy.vx * speedMult;
+            vy = joy.vy * speedMult;
+          } else {
+            vx = 0;
+            vy = 0;
+          }
+          // Keep target coordinates synced with the player's position while in joystick mode
+          p.targetX = p.x;
+          p.targetY = p.y;
         } else {
+          // Cursor pathfinding logic
           if (isPointerHolding && window.cursorPointer) {
             let zoom = window.DungeonCamera ? window.DungeonCamera.zoom : 1.0;
             let camX = window.DungeonCamera ? window.DungeonCamera.x : 0;
@@ -4708,77 +4720,210 @@
         }
 
         // Tome Spell Cast Trigger
-        let isTomeEquipped =
-          pStats.subType === "tome" ||
-          (window.equippedSlots &&
-            window.equippedSlots.subweapon &&
-            (window.equippedSlots.subweapon.subType === "tome" ||
-              window.equippedSlots.subweapon.type === "tome"));
-        let activeSpellChance =
-          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-        let activeSpellType = pStats.spellType || "tri";
+                let isTomeEquipped =
+                  pStats.subType === "tome" ||
+                  (window.equippedSlots &&
+                    window.equippedSlots.subweapon &&
+                    (window.equippedSlots.subweapon.subType === "tome" ||
+                      window.equippedSlots.subweapon.type === "tome"));
+                let activeSpellChance =
+                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+                let activeSpellType = pStats.spellType || "tri";
 
-        if (isTomeEquipped && Math.random() < activeSpellChance) {
-          let spellDmg = BigNum.from(pStats.atk || 15).mul(
-            pStats.spellPower || 1.5,
-          );
-          m.hp = m.hp.sub(spellDmg);
-          m.flashTimer = 8;
+                if (isTomeEquipped && Math.random() < activeSpellChance) {
+                  // Gain +15 Tome Mastery XP on Spell Proc
+                  if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 15);
 
-          let spellEffectType = activeSpellType;
-          if (activeSpellType === "tri") {
-            const triElements = ["fire", "lightning", "frost"];
-            spellEffectType =
-              triElements[Math.floor(Math.random() * triElements.length)];
-          }
+                  let spellDmg = BigNum.from(pStats.atk || 15).mul(
+                    pStats.spellPower || 1.5,
+                  );
+                  m.hp = m.hp.sub(spellDmg);
+                  m.flashTimer = 8;
 
-          // Check Aetheric Overload Keystone (15% chance for Triple-Element Burst)
-          let isOverload =
-            window.SkillTreeManager &&
-            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-            Math.random() < 0.15;
+                  let spellEffectType = activeSpellType;
+                  if (activeSpellType === "tri") {
+                    const triElements = ["fire", "lightning", "frost"];
+                    spellEffectType =
+                      triElements[Math.floor(Math.random() * triElements.length)];
+                  }
 
-          if (isOverload) {
-            const triElements = ["fire", "lightning", "frost"];
-            triElements.forEach((elem, eIdx) => {
-              m.hp = m.hp.sub(spellDmg);
-              if (
-                window.RenderEngine &&
-                window.RenderEngine.spawnDamageEffect
-              ) {
-                window.RenderEngine.spawnDamageEffect(
-                  mobCenterX + (eIdx - 1) * 12,
-                  mobCenterY - 12 - eIdx * 6,
-                  spellDmg,
-                  elem,
-                  false,
-                );
-              }
-            });
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_fire");
-            }
-          } else {
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_" + spellEffectType);
-            }
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 12,
-                spellDmg,
-                spellEffectType,
-                false,
-              );
-            }
-          }
-        }
+                  // Spell Weaving: Shifting between different element casts boosts Spell Power
+                  if (pStats.hasSpellWeaving) {
+                    if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
+                      window.playerStats.spellWeavingStacks = Math.min(4, (window.playerStats.spellWeavingStacks || 0) + 1);
+                      window.playerStats.spellWeavingTimer = 240; // 4 seconds
+                    }
+                    window.playerStats.lastSpellCastType = spellEffectType;
+                  }
+
+                  // Arcane Syphon: Spell procs restore 1%/2%/3% HP, grant +4%/+8%/+12% INT
+                  if (pStats.hasArcaneSyphon) {
+                    let healAmt = Math.round(p.maxHp * (pStats.arcaneSyphonLevel * 0.01));
+                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                    window.playerStats.syphonIntStacks = Math.min(3, (window.playerStats.syphonIntStacks || 0) + 1);
+                    window.playerStats.syphonIntTimer = 360; // 6s at 60 FPS
+                    if (typeof window.spawnFloatingText === "function") {
+                      window.spawnFloatingText(p.x, p.y - 12, `+${healAmt} HP (SYPHON)`, "#2ecc71", true);
+                    }
+                  }
+
+                  // Mana Shielding (Restored original Tome heal on spell proc)
+                  if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
+                    let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
+                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                    if (typeof window.spawnFloatingText === "function") {
+                      window.spawnFloatingText(p.x, p.y - 15, `+${healAmt} HP (MANA SHIELD)`, "#2ecc71", true);
+                    }
+                  }
+
+                  // Triad Convergence / Aetheric Overload Check
+                  let isOverload =
+                    window.SkillTreeManager &&
+                    window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+                    Math.random() < 0.15;
+
+                  if (pStats.hasTriadConvergence || isOverload) {
+                    const triElements = ["fire", "lightning", "frost"];
+                    triElements.forEach((elem, eIdx) => {
+                      m.hp = m.hp.sub(spellDmg);
+                      if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                        window.RenderEngine.spawnDamageEffect(
+                          mobCenterX + (eIdx - 1) * 12,
+                          mobCenterY - 12 - eIdx * 6,
+                          spellDmg,
+                          elem,
+                          false,
+                        );
+                      }
+
+                      // Apply Elemental Overload on each part of the Triad Convergence
+                      if (pStats.hasElementalOverload) {
+                        if (elem === "fire") {
+                          let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
+                          if (window.activeDungeonMobs) {
+                            window.activeDungeonMobs.forEach((otherMob) => {
+                              if (otherMob.id !== m.id) {
+                                let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
+                                if (dist <= 80) {
+                                  otherMob.hp = otherMob.hp.sub(splashDmg);
+                                  otherMob.flashTimer = 6;
+                                  if (window.combatVisuals) {
+                                    window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
+                                  }
+                                }
+                              }
+                            });
+                          }
+                        } else if (elem === "lightning") {
+                          let bouncesLeft = pStats.overloadLevel;
+                          let hitIds = new Set([m.id]);
+                          let currentTarget = m;
+                          while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                            let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
+                            if (nextTarget) {
+                              nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                              nextTarget.flashTimer = 6;
+                              hitIds.add(nextTarget.id);
+                              if (window.combatVisuals) {
+                                window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
+                              }
+                              currentTarget = nextTarget;
+                              bouncesLeft--;
+                            } else {
+                              break;
+                            }
+                          }
+                        } else if (elem === "frost") {
+                          let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
+                          if (window.activeDungeonMobs) {
+                            window.activeDungeonMobs.forEach((otherMob) => {
+                              if (Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= 80) {
+                                otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
+                                }
+                              }
+                            });
+                          }
+                        }
+                      }
+                    });
+                    if (
+                      window.SoundManager &&
+                      typeof window.SoundManager.play === "function"
+                    ) {
+                      window.SoundManager.play("spell_fire");
+                    }
+                  } else {
+                    // Apply single-spell Overload logic
+                    if (pStats.hasElementalOverload) {
+                      if (spellEffectType === "fire") {
+                        let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
+                        if (window.activeDungeonMobs) {
+                          window.activeDungeonMobs.forEach((otherMob) => {
+                            if (otherMob.id !== m.id) {
+                              let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
+                              if (dist <= 80) {
+                                otherMob.hp = otherMob.hp.sub(splashDmg);
+                                otherMob.flashTimer = 6;
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
+                                }
+                              }
+                            }
+                          });
+                        }
+                      } else if (spellEffectType === "lightning") {
+                        let bouncesLeft = pStats.overloadLevel;
+                        let hitIds = new Set([m.id]);
+                        let currentTarget = m;
+                        while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                          let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
+                          if (nextTarget) {
+                            nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                            nextTarget.flashTimer = 6;
+                            hitIds.add(nextTarget.id);
+                            if (window.combatVisuals) {
+                              window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
+                            }
+                            currentTarget = nextTarget;
+                            bouncesLeft--;
+                          } else {
+                            break;
+                          }
+                        }
+                      } else if (spellEffectType === "frost") {
+                        let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
+                        if (window.activeDungeonMobs) {
+                          window.activeDungeonMobs.forEach((otherMob) => {
+                            if (Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= 80) {
+                              otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
+                              if (window.combatVisuals) {
+                                window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
+                              }
+                            }
+                          });
+                        }
+                      }
+                    }
+
+                    if (
+                      window.SoundManager &&
+                      typeof window.SoundManager.play === "function"
+                    ) {
+                      window.SoundManager.play("spell_" + spellEffectType);
+                    }
+                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                      window.RenderEngine.spawnDamageEffect(
+                        mobCenterX,
+                        mobCenterY - 12,
+                        spellDmg,
+                        spellEffectType,
+                        false,
+                      );
+                    }
+                  }
+                }
 
         // Directional knockback impulse vector
         let dirX = dist > 0 ? dx / dist : 1;
@@ -5271,48 +5416,212 @@
         }
 
         // Tome Spell Cast Trigger on Boss
-        let isTomeEquipped =
-          pStats.subType === "tome" ||
-          (window.equippedSlots &&
-            window.equippedSlots.subweapon &&
-            (window.equippedSlots.subweapon.subType === "tome" ||
-              window.equippedSlots.subweapon.type === "tome"));
-        let activeSpellChance =
-          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-        let activeSpellType = pStats.spellType || "tri";
+                let isTomeEquipped =
+                  pStats.subType === "tome" ||
+                  (window.equippedSlots &&
+                    window.equippedSlots.subweapon &&
+                    (window.equippedSlots.subweapon.subType === "tome" ||
+                      window.equippedSlots.subweapon.type === "tome"));
+                let activeSpellChance =
+                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+                let activeSpellType = pStats.spellType || "tri";
 
-        if (isTomeEquipped && Math.random() < activeSpellChance) {
-          let spellDmg = BigNum.from(pStats.atk || 15).mul(
-            pStats.spellPower || 1.5,
-          );
-          bm.hp = bm.hp.sub(spellDmg);
-          bm.flashTimer = 8;
+                if (isTomeEquipped && Math.random() < activeSpellChance) {
+                  // Gain +15 Tome Mastery XP on Spell Proc (Boss)
+                  if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 15);
 
-          let spellEffectType = activeSpellType;
-          if (activeSpellType === "tri") {
-            const triElements = ["fire", "lightning", "frost"];
-            spellEffectType =
-              triElements[Math.floor(Math.random() * triElements.length)];
-          }
+                  let spellDmg = BigNum.from(pStats.atk || 15).mul(
+                    pStats.spellPower || 1.5,
+                  );
+                  bm.hp = bm.hp.sub(spellDmg);
+                  bm.flashTimer = 8;
 
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("spell_" + spellEffectType);
-          }
-          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-            window.RenderEngine.spawnDamageEffect(
-              bossCenterX,
-              bossCenterY - 12,
-              spellDmg,
-              spellEffectType,
-              false,
-            );
-          }
-        }
+                  let spellEffectType = activeSpellType;
+                  if (activeSpellType === "tri") {
+                    const triElements = ["fire", "lightning", "frost"];
+                    spellEffectType =
+                      triElements[Math.floor(Math.random() * triElements.length)];
+                  }
 
-        if (bm.hp.lte(0)) {
+                  // Spell Weaving (Boss)
+                  if (pStats.hasSpellWeaving) {
+                    if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
+                      window.playerStats.spellWeavingStacks = Math.min(4, (window.playerStats.spellWeavingStacks || 0) + 1);
+                      window.playerStats.spellWeavingTimer = 240;
+                    }
+                    window.playerStats.lastSpellCastType = spellEffectType;
+                  }
+
+                  // Arcane Syphon (Boss)
+                  if (pStats.hasArcaneSyphon) {
+                    let healAmt = Math.round(p.maxHp * (pStats.arcaneSyphonLevel * 0.01));
+                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                    window.playerStats.syphonIntStacks = Math.min(3, (window.playerStats.syphonIntStacks || 0) + 1);
+                    window.playerStats.syphonIntTimer = 360;
+                    if (typeof window.spawnFloatingText === "function") {
+                      window.spawnFloatingText(p.x, p.y - 12, `+${healAmt} HP (SYPHON)`, "#2ecc71", true);
+                    }
+                  }
+
+                  // Mana Shielding (Restored original Tome heal on spell proc - Boss)
+                  if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
+                    let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
+                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                    if (typeof window.spawnFloatingText === "function") {
+                      window.spawnFloatingText(p.x, p.y - 15, `+${healAmt} HP (MANA SHIELD)`, "#2ecc71", true);
+                    }
+                  }
+
+                  // Triad Convergence / Aetheric Overload Check (Boss)
+                  let isOverload =
+                    window.SkillTreeManager &&
+                    window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+                    Math.random() < 0.15;
+
+                  if (pStats.hasTriadConvergence || isOverload) {
+                    const triElements = ["fire", "lightning", "frost"];
+                    triElements.forEach((elem, eIdx) => {
+                      bm.hp = bm.hp.sub(spellDmg);
+                      if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                        window.RenderEngine.spawnDamageEffect(
+                          bossCenterX + (eIdx - 1) * 12,
+                          bossCenterY - 12 - eIdx * 6,
+                          spellDmg,
+                          elem,
+                          false,
+                        );
+                      }
+
+                      if (pStats.hasElementalOverload) {
+                        if (elem === "fire") {
+                          let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
+                          if (window.activeDungeonMobs) {
+                            window.activeDungeonMobs.forEach((otherMob) => {
+                              let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
+                              if (dist <= 100) {
+                                otherMob.hp = otherMob.hp.sub(splashDmg);
+                                otherMob.flashTimer = 6;
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
+                                }
+                              }
+                            });
+                          }
+                        } else if (elem === "lightning") {
+                          let bouncesLeft = pStats.overloadLevel;
+                          let hitIds = new Set();
+                          let currentTarget = bm;
+                          while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                            let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
+                            if (nextTarget) {
+                              nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                              nextTarget.flashTimer = 6;
+                              hitIds.add(nextTarget.id);
+                              if (window.combatVisuals) {
+                                window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
+                              }
+                              currentTarget = nextTarget;
+                              bouncesLeft--;
+                            } else {
+                              break;
+                            }
+                          }
+                        } else if (elem === "frost") {
+                          let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
+                          if (window.activeDungeonMobs) {
+                            window.activeDungeonMobs.forEach((otherMob) => {
+                              if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
+                                otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
+                                }
+                              }
+                            });
+                          }
+                        }
+                      }
+                    });
+                    if (
+                      window.SoundManager &&
+                      typeof window.SoundManager.play === "function"
+                    ) {
+                      window.SoundManager.play("spell_fire");
+                    }
+                  } else {
+                    if (pStats.hasElementalOverload) {
+                      if (spellEffectType === "fire") {
+                        let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
+                        if (window.activeDungeonMobs) {
+                          window.activeDungeonMobs.forEach((otherMob) => {
+                            let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
+                            if (dist <= 100) {
+                              otherMob.hp = otherMob.hp.sub(splashDmg);
+                              otherMob.flashTimer = 6;
+                              if (window.combatVisuals) {
+                                window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
+                              }
+                            }
+                          });
+                        }
+                      } else if (spellEffectType === "lightning") {
+                        let bouncesLeft = pStats.overloadLevel;
+                        let hitIds = new Set();
+                        let currentTarget = bm;
+                        while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                          let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
+                          if (nextTarget) {
+                                                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                                                      nextTarget.flashTimer = 6;
+                                                      hitIds.add(nextTarget.id);
+                                                      if (window.combatVisuals) {
+                                                        window.combatVisuals.spawnDamageEffect(
+                                                          nextTarget.x + nextTarget.w / 2,
+                                                          nextTarget.y + nextTarget.h / 2,
+                                                          spellDmg,
+                                                          "lightning",
+                                                          false
+                                                        );
+                                                      }
+                                                      currentTarget = nextTarget;
+                                                      bouncesLeft--;
+                                                    } else {
+                                                      break;
+                                                    }
+                                                  }
+                                                } else if (spellEffectType === "frost") {
+                                                  let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
+                                                  if (window.activeDungeonMobs) {
+                                                    window.activeDungeonMobs.forEach((otherMob) => {
+                                                      if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
+                                                        otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
+                                                        if (window.combatVisuals) {
+                                                          window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
+                                                        }
+                                                      }
+                                                    });
+                                                  }
+                                                }
+                                              }
+
+                                              if (
+                                                window.SoundManager &&
+                                                typeof window.SoundManager.play === "function"
+                                              ) {
+                                                window.SoundManager.play("spell_" + spellEffectType);
+                                              }
+                                              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                                                window.RenderEngine.spawnDamageEffect(
+                                                  bossCenterX,
+                                                  bossCenterY - 12,
+                                                  spellDmg,
+                                                  spellEffectType,
+                                                  false,
+                                                );
+                                              }
+                                            }
+                                          }
+
+                                  if (bm.hp.lte(0)) {
                   window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
                   window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
 
@@ -6913,23 +7222,57 @@
                   }
 
                   // Apply saved position coordinates
-                  if (stats.flaskX !== null && stats.flaskY !== null && !flaskBtn.isDragging) {
-                    flaskBtn.style.left = stats.flaskX + "px";
-                    flaskBtn.style.top = stats.flaskY + "px";
-                    flaskBtn.style.bottom = "auto";
-                  } else if (!flaskBtn.isDragging) {
-                    flaskBtn.style.left = "20px";
-                    flaskBtn.style.bottom = "24px";
-                    flaskBtn.style.top = "auto";
-                  }
+                                    if (typeof stats.flaskX === "number" && typeof stats.flaskY === "number" && !flaskBtn.isDragging) {
+                                      flaskBtn.style.left = stats.flaskX + "px";
+                                      flaskBtn.style.top = stats.flaskY + "px";
+                                      flaskBtn.style.bottom = "auto";
+                                    } else if (!flaskBtn.isDragging) {
+                                      flaskBtn.style.left = "20px";
+                                      flaskBtn.style.bottom = "24px";
+                                      flaskBtn.style.top = "auto";
+                                    }
                 }
 
                   if (typeof window.updateHudBuffTray === "function") {
-                    window.updateHudBuffTray();
-                  }
-                };
+                                      window.updateHudBuffTray();
+                                    }
 
-            window.updateHudBuffTray = function () {
+                                    // Mastery/MP Alert Badge
+                                    let masteryBtn = document.getElementById("btn-skills-toggle");
+                                    if (masteryBtn) {
+                                      let unspentMP = window.SkillTreeManager ? window.SkillTreeManager.getUnspentMP() : 0;
+                                      let existingMpBadge = masteryBtn.querySelector(".hud-alert-badge");
+                                      if (unspentMP > 0) {
+                                        if (!existingMpBadge) {
+                                          existingMpBadge = document.createElement("span");
+                                          existingMpBadge.className = "hud-alert-badge";
+                                          masteryBtn.appendChild(existingMpBadge);
+                                        }
+                                        existingMpBadge.innerText = unspentMP;
+                                      } else if (existingMpBadge) {
+                                        existingMpBadge.remove();
+                                      }
+                                    }
+
+                                    // Hero Pod/SP Alert Badge
+                                    let heroPod = document.querySelector(".hud-hero-pod");
+                                    if (heroPod) {
+                                      let unspentSP = stats.sp || 0;
+                                      let existingSpBadge = heroPod.querySelector(".hud-alert-badge");
+                                      if (unspentSP > 0) {
+                                        if (!existingSpBadge) {
+                                          existingSpBadge = document.createElement("span");
+                                          existingSpBadge.className = "hud-alert-badge";
+                                          heroPod.appendChild(existingSpBadge);
+                                        }
+                                        existingSpBadge.innerText = unspentSP;
+                                      } else if (existingSpBadge) {
+                                        existingSpBadge.remove();
+                                      }
+                                    }
+                                  };
+
+                              window.updateHudBuffTray = function () {
               let tray = document.getElementById("hud-buff-tray");
               if (!tray) return;
 
@@ -7611,42 +7954,54 @@
   window.activeProfileMobileTab = "stats";
 
   window.openSkillTree = function () {
-    if (typeof window.hideTooltip === "function") window.hideTooltip();
-    let modal = document.getElementById("profile-modal");
-    if (!modal) return;
-    modal.style.display = "flex";
-    window.switchProfileTab("skills");
-  };
+      if (typeof window.hideTooltip === "function") window.hideTooltip();
+      let modal = document.getElementById("mastery-modal");
+      if (!modal) return;
+      modal.style.display = "flex";
+      if (window.SkillTreeManager) {
+        window.SkillTreeManager.renderSkillTreeUI();
+      }
+    };
+
+    window.toggleMasteryModal = function () {
+      if (typeof window.hideTooltip === "function") window.hideTooltip();
+      let modal = document.getElementById("mastery-modal");
+      if (!modal) return;
+      if (modal.style.display === "none" || modal.style.display === "") {
+        modal.style.display = "flex";
+        if (window.SkillTreeManager) {
+          window.SkillTreeManager.renderSkillTreeUI();
+        }
+      } else {
+        modal.style.display = "none";
+        window.lastModalCloseTime = Date.now();
+        if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
+          window.SkillTreeManager.stopAnimationLoop();
+        }
+      }
+    };
 
   window.switchProfileTab = function (tabKey) {
-    window.activeProfileMobileTab = tabKey;
-    const tabs = ["stats", "gear", "satchel", "skills", "achievements"];
-    tabs.forEach((t) => {
-      let btn = document.getElementById(`profile-tab-${t}`);
-      let sec = document.getElementById(`profile-sec-${t}`);
-      if (btn) btn.classList.toggle("active", t === tabKey);
-      if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
-    });
-    let profileCard = document.querySelector(".profile-card");
-    if (profileCard) {
-      profileCard.classList.toggle(
-        "skills-fullscreen-mode",
-        tabKey === "skills" || tabKey === "achievements",
-      );
-    }
-    if (tabKey === "skills" && window.SkillTreeManager) {
-      window.SkillTreeManager.renderSkillTreeUI();
-    } else if (
-      window.SkillTreeManager &&
-      typeof window.SkillTreeManager.stopAnimationLoop === "function"
-    ) {
-      window.SkillTreeManager.stopAnimationLoop();
-    }
-    if (tabKey === "achievements") {
-      window.renderAchievementsTab();
-    }
-    window.renderProfileModal();
-  };
+      window.activeProfileMobileTab = tabKey;
+      const tabs = ["stats", "gear", "satchel", "achievements"];
+      tabs.forEach((t) => {
+        let btn = document.getElementById(`profile-tab-${t}`);
+        let sec = document.getElementById(`profile-sec-${t}`);
+        if (btn) btn.classList.toggle("active", t === tabKey);
+        if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
+      });
+      let profileCard = document.querySelector(".profile-card");
+      if (profileCard) {
+        profileCard.classList.toggle(
+          "skills-fullscreen-mode",
+          tabKey === "achievements",
+        );
+      }
+      if (tabKey === "achievements") {
+        window.renderAchievementsTab();
+      }
+      window.renderProfileModal();
+    };
 
 window.state.achievementFilter = "all";
 

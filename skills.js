@@ -4,7 +4,77 @@
    ========================================================================= */
 
 (function () {
-  window.SKILL_TREE_DATA = {
+  // Global defensive fallback to prevent TypeError crashes during destructive confirmations
+  if (typeof window.showCustomConfirm !== "function") {
+    window.showCustomConfirm = function (title, message, confirmText, cancelText, color, onConfirm) {
+      // Strip HTML tags for clean fallback presentation
+      let plainText = message.replace(/<[^>]*>/g, "");
+      if (confirm(`${title}\n\n${plainText}`)) {
+        if (typeof onConfirm === "function") onConfirm();
+      }
+    };
+  }
+
+  window.getSubweaponXpRequired = function(level) {
+          return Math.round(100 * Math.pow(1.35, level - 1));
+        };
+
+        window.gainSubweaponXp = function (subType, amount) {
+          if (!window.playerStats || !window.playerStats.subweaponMastery) return;
+          let mast = window.playerStats.subweaponMastery[subType];
+          if (!mast) return;
+
+          if (mast.level >= 40) {
+            mast.xp = 0;
+            return;
+          }
+
+          mast.xp += amount;
+          let req = window.getSubweaponXpRequired(mast.level);
+          let leveledUp = false;
+
+          while (mast.xp >= req && mast.level < 40) {
+            mast.xp -= req;
+            mast.level++;
+            mast.sp++;
+            leveledUp = true;
+            req = window.getSubweaponXpRequired(mast.level);
+          }
+
+          if (leveledUp) {
+            if (mast.level >= 40) {
+              mast.xp = 0;
+            }
+
+            let label = subType.charAt(0).toUpperCase() + subType.slice(1);
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                `✦ ${label} Mastery Level Up! Reached Level ${mast.level}! (+1 SP)`,
+                window.SKILL_TREE_DATA[subType]?.color || "#ffd700"
+              );
+            }
+            if (window.SoundManager && typeof window.SoundManager.play === "function") {
+              window.SoundManager.play("revive");
+            }
+            if (typeof window.spawnFloatingText === "function" && window.player) {
+              window.spawnFloatingText(
+                window.player.x,
+                window.player.y - 30,
+                `${label} Mastery LV. ${mast.level}!`,
+                window.SKILL_TREE_DATA[subType]?.color || "#ffd700",
+                true
+              );
+            }
+            if (typeof window.updateUI === "function") {
+              window.updateUI();
+            }
+            if (typeof window.saveGame === "function") {
+              window.saveGame();
+            }
+          }
+        };
+
+        window.SKILL_TREE_DATA = {
     shield: {
       id: "shield",
       name: "Shield Mastery",
@@ -15,8 +85,8 @@
           id: "shield_starter",
           name: "Vanguard Provision",
           iconKey: "shield_starter",
-          x: 50,
-          y: 88,
+          x: 50, y: 88,
+          tier: 1,
           maxRank: 1,
           costPerRank: 1,
           isStarterToggle: true,
@@ -28,86 +98,135 @@
           id: "shield_hp",
           name: "Ironclad Resilience",
           iconKey: "shield_hp",
-          x: 28,
-          y: 68,
-          maxRank: 5,
+          x: 25, y: 70,
+          tier: 1,
+          maxRank: 3,
           costPerRank: 1,
           prereqs: ["shield_starter"],
           desc: "Increases Maximum HP by +4% per rank.",
           getStatText: (rank) => `+${rank * 4}% Max HP`,
         },
         {
-          id: "shield_block",
-          name: "Iron Wall",
-          iconKey: "shield_block",
-          x: 50,
-          y: 68,
-          maxRank: 5,
-          costPerRank: 1,
-          prereqs: ["shield_starter"],
-          desc: "Increases base Block Rate by +1% per rank.",
-          getStatText: (rank) => `+${rank}% Block Rate`,
-        },
-        {
           id: "shield_def",
           name: "Heavy Plating",
           iconKey: "shield_def",
-          x: 72,
-          y: 68,
-          maxRank: 5,
+          x: 75, y: 70,
+          tier: 1,
+          maxRank: 3,
           costPerRank: 1,
           prereqs: ["shield_starter"],
           desc: "Increases Defense by +3% per rank.",
           getStatText: (rank) => `+${rank * 3}% Defense`,
         },
         {
-          id: "shield_bash",
-          name: "Shield Bash",
-          iconKey: "shield_bash",
-          x: 32,
-          y: 45,
-          maxRank: 5,
+          id: "shield_iron_wall",
+          name: "Iron Wall",
+          iconKey: "shield_block",
+          x: 15, y: 48,
+          tier: 2,
+          maxRank: 3,
           costPerRank: 1,
-          prereqs: ["shield_hp", "shield_block"],
-          desc: "Increases Shield Bash counter attack damage by +15% per rank.",
-          getStatText: (rank) => `+${rank * 15}% Shield Bash Damage`,
+          prereqs: ["shield_hp"],
+          desc: "Increases base Block Rate by +1% and maximum Block Cap by +2% per rank.",
+          getStatText: (rank) => `+${rank}% Block Rate & +${rank * 2}% Block Cap`,
+        },
+        {
+          id: "shield_fortified_guard",
+          name: "Fortified Guard",
+          iconKey: "shield_def",
+          x: 38, y: 48,
+          tier: 2,
+          maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["shield_hp"],
+          desc: "Taking damage builds Fortitude (+4%/+8%/+12% Defense per stack, max 5 stacks, 6s duration).",
+          getStatText: (rank) => `+${rank * 4}% Def per stack (max 5)`,
+        },
+        {
+          id: "shield_impact_tremor",
+          name: "Impact Tremor",
+          iconKey: "shield_starter",
+          x: 62, y: 48,
+          tier: 2,
+          maxRank: 2,
+          costPerRank: 1,
+          prereqs: ["shield_def"],
+          desc: "Blocking has 20%/40% chance to trigger a shockwave dealing 120% Defense as AoE physical damage and pushing enemies back.",
+          getStatText: (rank) => `${rank * 20}% Shockwave Chance`,
         },
         {
           id: "shield_fortitude",
           name: "Fortified Stance",
           iconKey: "shield_fortitude",
-          x: 50,
-          y: 45,
+          x: 85, y: 48,
+          tier: 2,
           maxRank: 3,
-          costPerRank: 2,
-          prereqs: ["shield_block"],
+          costPerRank: 1,
+          prereqs: ["shield_def"],
           desc: "Reduces incoming damage taken when Blocking by +10% per rank.",
           getStatText: (rank) => `-${rank * 10}% Damage Taken on Block`,
+        },
+        {
+          id: "shield_retaliatory_strike",
+          name: "Retaliatory Strike",
+          iconKey: "shield_fortitude",
+          x: 20, y: 28,
+          tier: 3,
+          maxRank: 1,
+          costPerRank: 2,
+          prereqs: ["shield_fortified_guard"],
+          desc: "Successful blocks guarantee a Critical Strike on your next main-hand attack.",
+          getStatText: () => "Guaranteed Crit after blocking",
+        },
+        {
+          id: "shield_aegis_pulse",
+          name: "Aegis Pulse",
+          iconKey: "shield_hp",
+          x: 50, y: 28,
+          tier: 3,
+          maxRank: 2,
+          costPerRank: 2,
+          prereqs: ["shield_impact_tremor"],
+          desc: "Every 5th successful block emits a wave restoring 3%/6% Max HP.",
+          getStatText: (rank) => `Heal ${rank * 3}% Max HP on 5th Block`,
         },
         {
           id: "shield_retaliation",
           name: "Spike Retaliation",
           iconKey: "shield_bash",
-          x: 68,
-          y: 45,
+          x: 80, y: 28,
+          tier: 3,
           maxRank: 3,
           costPerRank: 2,
-          prereqs: ["shield_def", "shield_block"],
-          desc: "Shield Bashes deal additional Defense-scaling counter damage.",
-          getStatText: (rank) => `+${rank * 12}% Extra Def-scaling Bash Damage`,
+          prereqs: ["shield_fortitude"],
+          desc: "Shield Bashes deal +15% base damage and additional +12% Defense-scaling counter damage per rank.",
+          getStatText: (rank) => `+${rank * 15}% Bash Dmg & +${rank * 12}% Def-scaling`,
         },
         {
-          id: "shield_keystone",
-          name: "Unbreakable Bulwark",
+          id: "shield_keystone_colossus",
+          name: "Bulwark Colossus",
           iconKey: "shield_keystone",
-          x: 50,
-          y: 18,
+          x: 35, y: 12,
+          tier: 4,
           maxRank: 1,
-          costPerRank: 5,
+          costPerRank: 3,
           isKeystone: true,
-          prereqs: ["shield_fortitude", "shield_retaliation"],
-          desc: "Blocking an attack triggers an AoE shockwave dealing 150% Defense damage to nearby enemies.",
-          getStatText: () => "AoE Shockwave on Block",
+          prereqs: ["shield_retaliatory_strike"],
+          desc: "Blocking mitigates 100% of damage (instead of 70%). Converts 10% of blocked damage into bonus Attack Power for 10s.",
+          getStatText: () => "100% Block Mitigation & 10% Atk Conversion",
+        },
+        {
+          id: "shield_keystone_reflect",
+          name: "Reflective Singularity",
+          iconKey: "shield_keystone",
+          x: 65, y: 12,
+          tier: 4,
+          maxRank: 1,
+          costPerRank: 3,
+          isKeystone: true,
+          prereqs: ["shield_aegis_pulse"],
+          desc: "Adds 40% of total Defense directly to main weapon Attack Power, and Shield Bash reflects 180% Defense on block.",
+          getStatText: () => "+40% Def to Attack & 180% Bash Reflect",
         },
       ],
     },
@@ -121,8 +240,8 @@
           id: "dagger_starter",
           name: "Shadow Blade Provision",
           iconKey: "dagger_starter",
-          x: 50,
-          y: 88,
+          x: 50, y: 88,
+          tier: 1,
           maxRank: 1,
           costPerRank: 1,
           isStarterToggle: true,
@@ -134,86 +253,135 @@
           id: "dagger_crit",
           name: "Lethal Precision",
           iconKey: "dagger_crit",
-          x: 28,
-          y: 68,
-          maxRank: 5,
+          x: 25, y: 70,
+          tier: 1,
+          maxRank: 3,
           costPerRank: 1,
           prereqs: ["dagger_starter"],
           desc: "Increases Critical Strike Chance by +1.5% per rank.",
           getStatText: (rank) => `+${(rank * 1.5).toFixed(1)}% Crit Chance`,
         },
         {
-          id: "dagger_parry",
-          name: "Nimble Reflexes",
-          iconKey: "dagger_parry",
-          x: 50,
-          y: 68,
-          maxRank: 5,
-          costPerRank: 1,
-          prereqs: ["dagger_starter"],
-          desc: "Increases base Parry Rate by +1% per rank.",
-          getStatText: (rank) => `+${rank}% Parry Rate`,
-        },
-        {
           id: "dagger_crit_dmg",
           name: "Savage Ferocity",
           iconKey: "dagger_crit_dmg",
-          x: 72,
-          y: 68,
-          maxRank: 5,
+          x: 75, y: 70,
+          tier: 1,
+          maxRank: 3,
           costPerRank: 1,
           prereqs: ["dagger_starter"],
           desc: "Increases Critical Strike Damage multiplier by +6% per rank.",
           getStatText: (rank) => `+${rank * 6}% Crit Damage`,
         },
         {
-          id: "dagger_bleed",
-          name: "Sanguine Edge",
-          iconKey: "dagger_bleed",
-          x: 32,
-          y: 45,
-          maxRank: 5,
+          id: "dagger_lethal_precision",
+          name: "Offhand Precision",
+          iconKey: "dagger_starter",
+          x: 15, y: 48,
+          tier: 2,
+          maxRank: 3,
           costPerRank: 1,
-          prereqs: ["dagger_crit", "dagger_parry"],
-          desc: "Increases Bleed DoT chance on dagger strikes by +5% per rank.",
-          getStatText: (rank) => `+${rank * 5}% Bleed Chance`,
+          prereqs: ["dagger_crit"],
+          desc: "Offhand strikes deal +8% damage, and increase offhand flurry double-strike damage by +10% per rank.",
+          getStatText: (rank) => `+${rank * 8}% Offhand Strike Dmg & +${rank * 10}% Flurry`,
         },
         {
-          id: "dagger_riposte",
-          name: "Lethal Riposte",
-          iconKey: "dagger_riposte",
-          x: 50,
-          y: 45,
+          id: "dagger_vipers_coating",
+          name: "Viper's Coating",
+          iconKey: "dagger_bleed",
+          x: 38, y: 48,
+          tier: 2,
           maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["dagger_crit"],
+          desc: "Offhand Strikes apply stacking Poison (10%/20%/30% Atk/sec) and have a +5% chance per rank to cause Sanguine Bleeding.",
+          getStatText: (rank) => `Poison: ${rank * 10}% Atk/sec & +${rank * 5}% Bleed`,
+        },
+        {
+          id: "dagger_parry",
+          name: "Nimble Reflexes",
+          iconKey: "dagger_parry",
+          x: 62, y: 48,
+          tier: 2,
+          maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["dagger_crit_dmg"],
+          desc: "Increases base Parry Rate by +1% and maximum Parry Cap by +2% per rank.",
+          getStatText: (rank) => `+${rank}% Parry Rate & +${rank * 2}% Parry Cap`,
+        },
+        {
+          id: "dagger_expose_weakness",
+          name: "Expose Weakness",
+          iconKey: "dagger_crit",
+          x: 85, y: 48,
+          tier: 2,
+          maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["dagger_crit_dmg"],
+          desc: "Offhand strikes shred 4%/8%/12% of enemy Defense for 5s.",
+          getStatText: (rank) => `Shred ${rank * 4}% Enemy Armor`,
+        },
+        {
+          id: "dagger_shadow_flurry",
+          name: "Shadow Flurry",
+          iconKey: "dagger_riposte",
+          x: 20, y: 28,
+          tier: 3,
+          maxRank: 1,
+          costPerRank: 2,
+          prereqs: ["dagger_lethal_precision"],
+          desc: "Main weapon Critical Strikes trigger a guaranteed Offhand Strike with +50% Critical Damage.",
+          getStatText: () => "Offhand Strike on Crit with +50% Crit Dmg",
+        },
+        {
+          id: "dagger_shadow_step",
+          name: "Shadow Step",
+          iconKey: "dagger_parry",
+          x: 50, y: 28,
+          tier: 3,
+          maxRank: 2,
           costPerRank: 2,
           prereqs: ["dagger_parry"],
-          desc: "Increases Riposte counter strike Critical Damage by +20% per rank.",
-          getStatText: (rank) => `+${rank * 20}% Riposte Crit Damage`,
+          desc: "Parrying increases Movement Speed by +15%/+30% and Attack Speed by +10%/+20% for 4s. Boosts Riposte damage by +20% per rank.",
+          getStatText: (rank) => `+${rank * 15}% Spd, +${rank * 10}% Atk Spd & +${rank * 20}% Riposte`,
         },
         {
-          id: "dagger_flurry",
-          name: "Offhand Flurry",
+          id: "dagger_sanguine_rupture",
+          name: "Sanguine Rupture",
           iconKey: "dagger_bleed",
-          x: 68,
-          y: 45,
-          maxRank: 3,
+          x: 80, y: 28,
+          tier: 3,
+          maxRank: 2,
           costPerRank: 2,
-          prereqs: ["dagger_crit_dmg", "dagger_parry"],
-          desc: "Increases offhand double-strike chance and damage.",
-          getStatText: (rank) => `+${rank * 10}% Offhand Double-Strike Dmg`,
+          prereqs: ["dagger_expose_weakness"],
+          desc: "Parrying a poisoned or bleeding target detonates DoTs for 150%/300% remaining damage instantly.",
+          getStatText: (rank) => `Detonate DoTs for ${rank * 150}% remaining Dmg`,
         },
         {
-          id: "dagger_keystone",
-          name: "Viper's Shadow Dance",
+          id: "dagger_keystone_assassin",
+          name: "Shadow Assassin",
           iconKey: "dagger_keystone",
-          x: 50,
-          y: 18,
+          x: 35, y: 12,
+          tier: 4,
           maxRank: 1,
-          costPerRank: 5,
+          costPerRank: 3,
           isKeystone: true,
-          prereqs: ["dagger_riposte", "dagger_flurry"],
-          desc: "Parrying an attack grants 100% Crit Chance on your next 2 strikes and applies 2 stacks of Sanguine Bleed.",
-          getStatText: () => "Guaranteed Crits & Bleed on Parry",
+          prereqs: ["dagger_shadow_flurry"],
+          desc: "Reaching 5 Poison stacks triggers a 3-strike Shadow Flurry (100% Attack Power per strike, bypassing 50% Defense).",
+          getStatText: () => "Flurry Detonation at 5 Poison Stacks",
+        },
+        {
+          id: "dagger_keystone_duellist",
+          name: "Master Duellist",
+          iconKey: "dagger_keystone",
+          x: 65, y: 12,
+          tier: 4,
+          maxRank: 1,
+          costPerRank: 3,
+          isKeystone: true,
+          prereqs: ["dagger_shadow_step"],
+          desc: "Raises Parry Cap to 40%. Parries negate 100% damage AND spawn a Shadow Decoy that attacks alongside you for 4 seconds.",
+          getStatText: () => "40% Parry Cap, 100% Negation & Shadow Decoy",
         },
       ],
     },
@@ -227,8 +395,8 @@
           id: "tome_starter",
           name: "Codex Apprentice Provision",
           iconKey: "tome_starter",
-          x: 50,
-          y: 88,
+          x: 50, y: 88,
+          tier: 1,
           maxRank: 1,
           costPerRank: 1,
           isStarterToggle: true,
@@ -240,87 +408,135 @@
           id: "tome_atk",
           name: "Arcane Focus",
           iconKey: "tome_atk",
-          x: 28,
-          y: 68,
-          maxRank: 5,
+          x: 25, y: 70,
+          tier: 1,
+          maxRank: 3,
           costPerRank: 1,
           prereqs: ["tome_starter"],
           desc: "Increases All Attack and Spell Power by +3.5% per rank.",
-          getStatText: (rank) =>
-            `+${(rank * 3.5).toFixed(1)}% Attack & Spell Power`,
-        },
-        {
-          id: "tome_barrier",
-          name: "Aetheric Shielding",
-          iconKey: "tome_barrier",
-          x: 50,
-          y: 68,
-          maxRank: 5,
-          costPerRank: 1,
-          prereqs: ["tome_starter"],
-          desc: "Increases Arcane Barrier damage absorption by +2% per rank.",
-          getStatText: (rank) => `+${rank * 2}% Arcane Barrier Absorption`,
+          getStatText: (rank) => `+${(rank * 3.5).toFixed(1)}% Attack & Spell Power`,
         },
         {
           id: "tome_exp",
           name: "Mind Expansion",
           iconKey: "tome_exp",
-          x: 72,
-          y: 68,
-          maxRank: 5,
+          x: 75, y: 70,
+          tier: 1,
+          maxRank: 3,
           costPerRank: 1,
           prereqs: ["tome_starter"],
           desc: "Increases experience gained from defeated monsters by +3% per rank.",
           getStatText: (rank) => `+${rank * 3}% XP Gain Multiplier`,
         },
         {
-          id: "tome_proc",
-          name: "Spell Weaver",
-          iconKey: "tome_proc",
-          x: 32,
-          y: 45,
-          maxRank: 5,
+          id: "tome_empowered_catalysts",
+          name: "Empowered Catalysts",
+          iconKey: "tome_starter",
+          x: 15, y: 48,
+          tier: 2,
+          maxRank: 3,
           costPerRank: 1,
-          prereqs: ["tome_atk", "tome_barrier"],
-          desc: "Increases Tome spell cast proc chance by +3% per rank.",
-          getStatText: (rank) => `+${rank * 3}% Spell Proc Chance`,
+          prereqs: ["tome_atk"],
+          desc: "Increases Tome Spell Proc Chance to 40%/45%/50% and Spell Power to 175%/200%/225% Attack.",
+          getStatText: (rank) => `Proc: ${35 + rank * 5}%, Power: ${150 + rank * 25}% Atk`,
         },
         {
-          id: "tome_power",
-          name: "Elemental Resonance",
-          iconKey: "tome_power",
-          x: 50,
-          y: 45,
+          id: "tome_runic_barrier",
+          name: "Runic Shielding",
+          iconKey: "tome_barrier",
+          x: 38, y: 48,
+          tier: 2,
           maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["tome_atk"],
+          desc: "Increases Arcane Barrier base absorption to 24%/28%/32% (up to 40% cap).",
+          getStatText: (rank) => `Absorb: ${20 + rank * 4}%, Cap: 40%`,
+        },
+        {
+          id: "tome_elemental_overload",
+          name: "Elemental Overload",
+          iconKey: "tome_proc",
+          x: 62, y: 48,
+          tier: 2,
+          maxRank: 2,
+          costPerRank: 1,
+          prereqs: ["tome_exp"],
+          desc: "Fireball deals 35%/70% splash; Chain Zap bounces +1/+2 times; Frost Nova slows by 20%/40%.",
+          getStatText: (rank) => `Overload Level ${rank} Spell Effects`,
+        },
+        {
+          id: "tome_arcane_syphon",
+          name: "Arcane Syphon",
+          iconKey: "tome_power",
+          x: 85, y: 48,
+          tier: 2,
+          maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["tome_exp"],
+          desc: "Spell procs restore 1%/2%/3% Max HP and grant +4%/+8%/+12% INT for 6s (stacks 3x).",
+          getStatText: (rank) => `Restore ${rank}% HP & +${rank * 4}% INT on Spell Proc`,
+        },
+        {
+          id: "tome_barrier_shatter",
+          name: "Barrier Shatter",
+          iconKey: "tome_keystone",
+          x: 20, y: 28,
+          tier: 3,
+          maxRank: 1,
           costPerRank: 2,
-          prereqs: ["tome_barrier"],
-          desc: "Increases Spell Power for Fireball, Chain Zap, and Frost Nova by +12% per rank.",
-          getStatText: (rank) => `+${rank * 12}% Spell Power`,
+          prereqs: ["tome_runic_barrier"],
+          desc: "Storing 100% absorbed damage in Arcane Barrier detonates an explosion dealing 250% INT as Magic Damage.",
+          getStatText: () => "Explosive Shield Shatter at 100% Absorbed",
+        },
+        {
+          id: "tome_spell_weaving",
+          name: "Spell Weaving",
+          iconKey: "tome_proc",
+          x: 50, y: 28,
+          tier: 3,
+          maxRank: 2,
+          costPerRank: 2,
+          prereqs: ["tome_elemental_overload"],
+          desc: "Shifting between different elemental spell casts boosts Spell Power by +15%/+30% per shift.",
+          getStatText: (rank) => `+${rank * 15}% Spell Power on element shift`,
         },
         {
           id: "tome_resilience",
           name: "Mana Shielding",
           iconKey: "tome_power",
-          x: 68,
-          y: 45,
+          x: 80, y: 28,
+          tier: 3,
           maxRank: 3,
           costPerRank: 2,
-          prereqs: ["tome_exp", "tome_barrier"],
-          desc: "Casting spells restores 2% of Max Health per rank.",
+          prereqs: ["tome_arcane_syphon"],
+          desc: "Casting spells restores an additional 2% of Max Health per rank.",
           getStatText: (rank) => `Heals +${rank * 2}% Max HP on Spell Cast`,
         },
         {
-          id: "tome_keystone",
-          name: "Aetheric Overload",
+          id: "tome_keystone_triad",
+          name: "Triad Convergence",
           iconKey: "tome_keystone",
-          x: 50,
-          y: 18,
+          x: 35, y: 12,
+          tier: 4,
           maxRank: 1,
-          costPerRank: 5,
+          costPerRank: 3,
           isKeystone: true,
-          prereqs: ["tome_power", "tome_resilience"],
-          desc: "Tome spell casts have a 15% chance to cast Fireball, Chain Zap, and Frost Nova simultaneously.",
-          getStatText: () => "15% Triple-Element Burst Chance",
+          prereqs: ["tome_spell_weaving"],
+          desc: "Tome Spells cast Fireball, Chain Zap, and Frost Nova simultaneously on every spell proc!",
+          getStatText: () => "Simultaneous Triple Element Casts",
+        },
+        {
+          id: "tome_keystone_singularity",
+          name: "Aetheric Singularity",
+          iconKey: "tome_keystone",
+          x: 65, y: 12,
+          tier: 4,
+          maxRank: 1,
+          costPerRank: 3,
+          isKeystone: true,
+          prereqs: ["tome_barrier_shatter"],
+          desc: "Arcane Barrier absorbs an absolute 45% of damage. While active, 80% of total INT is added directly to Attack Power.",
+          getStatText: () => "45% Fixed Barrier & +80% INT to Atk",
         },
       ],
     },
@@ -336,6 +552,7 @@
           iconKey: "utility_pioneer",
           x: 50,
           y: 88,
+          currency: "global",
           maxRank: 1,
           costPerRank: 1,
           prereqs: [],
@@ -348,8 +565,9 @@
           iconKey: "utility_start_weapon",
           x: 18,
           y: 68,
+          currency: "global",
           maxRank: 3,
-          getCostForRank: (rank) => rank * 2,
+          getCostForRank: (rank) => rank + 2,
           prereqs: ["utility_pioneer"],
           desc: "Start dungeon runs with a Main Hand Weapon if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
           getStatText: (rank) => `Provision ${rank - 1}★ Starter Weapon`,
@@ -360,8 +578,9 @@
           iconKey: "utility_start_armor",
           x: 36,
           y: 68,
+          currency: "global",
           maxRank: 3,
-          getCostForRank: (rank) => rank * 2,
+          getCostForRank: (rank) => rank + 2,
           prereqs: ["utility_pioneer"],
           desc: "Start dungeon runs with Chest/Overall Armor if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
           getStatText: (rank) => `Provision ${rank - 1}★ Starter Armor`,
@@ -372,8 +591,9 @@
           iconKey: "utility_start_head_feet",
           x: 64,
           y: 68,
+          currency: "global",
           maxRank: 3,
-          getCostForRank: (rank) => rank * 2,
+          getCostForRank: (rank) => rank + 2,
           prereqs: ["utility_pioneer"],
           desc: "Start dungeon runs with Helmet and Boots if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
           getStatText: (rank) => `Provision ${rank - 1}★ Starter Helm/Boots`,
@@ -384,8 +604,9 @@
           iconKey: "utility_start_ring",
           x: 82,
           y: 68,
+          currency: "global",
           maxRank: 3,
-          getCostForRank: (rank) => rank * 2,
+          getCostForRank: (rank) => rank + 2,
           prereqs: ["utility_pioneer"],
           desc: "Start dungeon runs with Ring(s) if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
           getStatText: (rank) => `Provision ${rank - 1}★ Starter Rings`,
@@ -396,6 +617,7 @@
           iconKey: "utility_gold",
           x: 22,
           y: 46,
+          currency: "global",
           maxRank: 5,
           costPerRank: 1,
           prereqs: ["utility_start_weapon", "utility_start_armor"],
@@ -408,6 +630,7 @@
           iconKey: "utility_quality",
           x: 40,
           y: 46,
+          currency: "global",
           maxRank: 5,
           costPerRank: 1,
           prereqs: ["utility_start_armor"],
@@ -420,6 +643,7 @@
           iconKey: "utility_vitality",
           x: 60,
           y: 46,
+          currency: "global",
           maxRank: 5,
           costPerRank: 1,
           prereqs: ["utility_start_head_feet"],
@@ -432,6 +656,7 @@
           iconKey: "utility_elixir",
           x: 78,
           y: 46,
+          currency: "global",
           maxRank: 3,
           costPerRank: 2,
           prereqs: ["utility_start_head_feet", "utility_start_ring"],
@@ -444,6 +669,7 @@
           iconKey: "utility_bag",
           x: 32,
           y: 28,
+          currency: "global",
           maxRank: 3,
           costPerRank: 2,
           prereqs: ["utility_quality"],
@@ -456,6 +682,7 @@
           iconKey: "utility_insurance",
           x: 68,
           y: 28,
+          currency: "global",
           maxRank: 3,
           costPerRank: 2,
           prereqs: ["utility_vitality", "utility_elixir"],
@@ -468,6 +695,7 @@
           iconKey: "utility_keystone",
           x: 50,
           y: 12,
+          currency: "global",
           maxRank: 1,
           costPerRank: 5,
           isKeystone: true,
@@ -490,7 +718,38 @@
     hasPanned: false,
 
     getSkillLevel(nodeId) {
-      if (!window.playerStats || !window.playerStats.skillTree) return 0;
+      if (!window.playerStats) return 0;
+
+      const isSubweaponNode = [
+        "shield_starter", "shield_hp", "shield_def", "shield_iron_wall", "shield_fortified_guard",
+        "shield_impact_tremor", "shield_fortitude", "shield_retaliatory_strike", "shield_aegis_pulse",
+        "shield_retaliation", "shield_keystone_colossus", "shield_keystone_reflect",
+
+        "dagger_starter", "dagger_crit", "dagger_crit_dmg", "dagger_lethal_precision", "dagger_vipers_coating",
+        "dagger_parry", "dagger_expose_weakness", "dagger_shadow_flurry", "dagger_shadow_step",
+        "dagger_sanguine_rupture", "dagger_keystone_assassin", "dagger_keystone_duellist",
+
+        "tome_starter", "tome_atk", "tome_exp", "tome_empowered_catalysts", "tome_runic_barrier",
+        "tome_elemental_overload", "tome_arcane_syphon", "tome_barrier_shatter", "tome_spell_weaving",
+        "tome_resilience", "tome_keystone_triad", "tome_keystone_singularity"
+      ].includes(nodeId);
+
+      if (isSubweaponNode) {
+        if (!window.playerStats.subweaponMastery) {
+          window.playerStats.subweaponMastery = {
+            shield: { xp: 0, level: 1, sp: 0, spentSp: 0 },
+            dagger: { xp: 0, level: 1, sp: 0, spentSp: 0 },
+            tome:   { xp: 0, level: 1, sp: 0, spentSp: 0 },
+            nodes: {}
+          };
+        }
+        if (!window.playerStats.subweaponMastery.nodes) {
+          window.playerStats.subweaponMastery.nodes = {};
+        }
+        return window.playerStats.subweaponMastery.nodes[nodeId] || 0;
+      }
+
+      if (!window.playerStats.skillTree) return 0;
       let val = window.playerStats.skillTree[nodeId];
       if (typeof val === "boolean") return val ? 1 : 0;
       return typeof val === "number" ? val : 0;
@@ -501,13 +760,12 @@
       if (typeof node.getCostForRank === "function") {
         return node.getCostForRank(rank);
       }
-      return node.costPerRank || 1;
+      return node.costPerRank !== undefined ? node.costPerRank : 1;
     },
 
-    getSpentMPInTree(treeId) {
+    getSpentPointsInTree(treeId) {
       let tree = window.SKILL_TREE_DATA[treeId];
-      if (!tree || !window.playerStats || !window.playerStats.skillTree)
-        return 0;
+      if (!tree || !window.playerStats) return 0;
       let total = 0;
       tree.nodes.forEach((node) => {
         let level = this.getSkillLevel(node.id);
@@ -519,18 +777,14 @@
     },
 
     getTotalEarnedMP() {
-      if (!window.playerStats) return 0;
-      let levelMP = Math.max(0, (window.playerStats.level || 1) - 1);
-      let bossMP = Math.floor((window.playerStats.maxFloorCleared || 0) / 12);
-      return levelMP + bossMP;
-    },
+          if (!window.playerStats) return 0;
+          let levelMP = Math.floor((window.playerStats.level || 1) / 3);
+          let floorMP = Math.floor((window.playerStats.maxFloorCleared || 0) / 4);
+          return levelMP + floorMP;
+        },
 
     getTotalSpentMP() {
-      let total = 0;
-      for (let treeId in window.SKILL_TREE_DATA) {
-        total += this.getSpentMPInTree(treeId);
-      }
-      return total;
+      return this.getSpentPointsInTree("utility");
     },
 
     getUnspentMP() {
@@ -539,9 +793,41 @@
       return Math.max(0, earned - spent);
     },
 
+    getUnspentPointsForTree(treeId) {
+      if (treeId === "utility") {
+        return this.getUnspentMP();
+      }
+      if (!window.playerStats.subweaponMastery) return 0;
+      return window.playerStats.subweaponMastery[treeId]?.sp || 0;
+    },
+
     isNodeUnlocked(treeId, node) {
-      if (!node.prereqs || node.prereqs.length === 0) return true;
-      return node.prereqs.some((pId) => this.getSkillLevel(pId) > 0);
+      if (treeId === "utility") {
+        if (!node.prereqs || node.prereqs.length === 0) return true;
+        return node.prereqs.some((pId) => this.getSkillLevel(pId) > 0);
+      }
+
+      // Mastery SP spend threshold validation
+      let spent = this.getSpentPointsInTree(treeId);
+      let reqSpend = 0;
+      if (node.tier === 2) reqSpend = 3;
+      else if (node.tier === 3) reqSpend = 7;
+      else if (node.tier === 4) reqSpend = 12;
+
+      if (spent < reqSpend) return false;
+
+      // Keystone Mutually Exclusive Check (Tier 4)
+      if (node.tier === 4) {
+        let sibling = window.SKILL_TREE_DATA[treeId].nodes.find(n => n.tier === 4 && n.id !== node.id);
+        if (sibling && this.getSkillLevel(sibling.id) > 0) {
+          return false;
+        }
+      }
+
+      if (node.prereqs && node.prereqs.length > 0) {
+        return node.prereqs.some((pId) => this.getSkillLevel(pId) > 0);
+      }
+      return true;
     },
 
     upgradeSkill(nodeId) {
@@ -572,27 +858,31 @@
 
       if (!this.isNodeUnlocked(targetTreeId, targetNode)) {
         if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("Prerequisite node(s) required!", "#e74c3c");
+          window.pushHeaderToast("Spend requirement or prerequisite node(s) required!", "#e74c3c");
         }
         return false;
       }
 
       let nextRankCost = this.getNodeCostForRank(targetNode, currentRank + 1);
-      let unspent = this.getUnspentMP();
+      let unspent = this.getUnspentPointsForTree(targetTreeId);
       if (unspent < nextRankCost) {
         if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("Insufficient Mastery Points!", "#e74c3c");
+          window.pushHeaderToast("Insufficient Skill Points!", "#e74c3c");
         }
         return false;
       }
 
-      window.playerStats.skillTree = window.playerStats.skillTree || {};
-
-      if (targetNode.isStarterToggle) {
-        window.playerStats.skillTree[nodeId] = 1;
-        window.playerStats.activeStarterSubweapon = targetNode.starterType;
-      } else {
+      if (targetTreeId === "utility") {
+        window.playerStats.sp -= nextRankCost;
+        if (window.draftSP !== undefined && window.draftSP !== null) {
+          window.draftSP = window.playerStats.sp;
+        }
         window.playerStats.skillTree[nodeId] = currentRank + 1;
+      } else {
+        let mast = window.playerStats.subweaponMastery[targetTreeId];
+        mast.sp -= nextRankCost;
+        mast.spentSp += nextRankCost;
+        window.playerStats.subweaponMastery.nodes[nodeId] = currentRank + 1;
       }
 
       if (typeof window.invalidatePlayerStats === "function") {
@@ -633,28 +923,45 @@
       this.renderSkillTreeUI();
     },
 
-    resetSkillTree() {
+    resetSkillTree(treeId) {
       if (!window.playerStats) return;
-      let spent = this.getTotalSpentMP();
+      let spent = this.getSpentPointsInTree(treeId);
       if (spent <= 0) {
         if (typeof window.pushHeaderToast === "function") {
           window.pushHeaderToast(
-            "No Mastery Points spent to refund!",
+            "No points spent in this tree to refund!",
             "#e74c3c",
           );
         }
         return;
       }
 
+      let treeName = window.SKILL_TREE_DATA[treeId].name;
       window.showCustomConfirm(
-        "Reset Skill Trees",
-        `Are you sure you want to refund all spent Mastery Points (${spent} MP)? This action is free.`,
-        "Reset Skills",
+        `Reset ${treeName}`,
+        `Are you sure you want to refund spent points (${spent} SP) in ${treeName}? This action is free.`,
+        "Reset Tree",
         "Cancel",
         "#a855f7",
         () => {
-          window.playerStats.skillTree = {};
-          window.playerStats.activeStarterSubweapon = "none";
+          if (treeId === "utility") {
+            let tree = window.SKILL_TREE_DATA.utility;
+            tree.nodes.forEach((node) => {
+              window.playerStats.skillTree[node.id] = 0;
+            });
+            window.playerStats.sp += spent;
+            if (window.draftSP !== undefined && window.draftSP !== null) {
+              window.draftSP = window.playerStats.sp;
+            }
+          } else {
+            let mast = window.playerStats.subweaponMastery[treeId];
+            let tree = window.SKILL_TREE_DATA[treeId];
+            tree.nodes.forEach((node) => {
+              window.playerStats.subweaponMastery.nodes[node.id] = 0;
+            });
+            mast.sp += spent;
+            mast.spentSp = 0;
+          }
 
           if (typeof window.invalidatePlayerStats === "function") {
             window.invalidatePlayerStats();
@@ -670,7 +977,7 @@
           }
           if (typeof window.pushHeaderToast === "function") {
             window.pushHeaderToast(
-              `Refunded ${spent} Mastery Points!`,
+              `Refunded ${spent} Skill Points!`,
               "#2ecc71",
             );
           }
@@ -773,7 +1080,7 @@
     },
 
     renderSkillTreeUI() {
-      let container = document.getElementById("skill-tree-content-panel");
+      let container = document.getElementById("mastery-content-panel");
       if (!container) return;
 
       let activeTreeId = window.activeSkillTreeTab || "shield";
@@ -784,16 +1091,14 @@
         this.selectedNodeId = activeTree.nodes[0].id;
       }
 
-      let earnedMP = this.getTotalEarnedMP();
-      let spentMP = this.getTotalSpentMP();
-      let unspentMP = this.getUnspentMP();
+      let unspentPoints = this.getUnspentPointsForTree(activeTreeId);
 
       // Tree Selector Sub-Tabs
-      let treeTabsHtml = Object.values(window.SKILL_TREE_DATA)
-        .map((tree) => {
-          let isActive = tree.id === activeTreeId;
-          let treeSpent = this.getSpentMPInTree(tree.id);
-          let activeClass = isActive ? "active" : "";
+            let treeTabsHtml = Object.values(window.SKILL_TREE_DATA)
+              .map((tree) => {
+                let isActive = tree.id === activeTreeId;
+                let treeSpent = this.getSpentPointsInTree(tree.id);
+                let activeClass = isActive ? "active" : "";
           let rgb = window.hexToRgbValues
             ? window.hexToRgbValues(tree.color)
             : "56, 189, 248";
@@ -801,22 +1106,48 @@
           return `
               <button class="tree-tab-btn ${activeClass}" style="${isActive ? `border-color:${tree.color}; background:rgba(${rgb},0.2); color:#fff;` : ""}" onclick="window.SkillTreeManager.switchSkillTreeTab('${tree.id}')">
                 <span>${tree.name}</span>
-                <span class="tree-tab-spent" style="color:${tree.color};">(${treeSpent} MP)</span>
+                <span class="tree-tab-spent" style="color:${tree.color};">(${treeSpent} SP)</span>
               </button>
             `;
         })
         .join("");
 
-      // Header MP Balance Banner
-      let headerHtml = `
-          <div class="skill-tree-mp-banner">
+      // Header Banner with separate progress parameters
+            let headerHtml = "";
+            if (activeTreeId === "utility") {
+              let earnedMP = this.getTotalEarnedMP();
+              let spentMP = this.getSpentPointsInTree("utility");
+              headerHtml = `
+                <div class="skill-tree-mp-banner">
             <div class="mp-info-group">
-              <span class="mp-label">MASTERY POINTS BALANCE</span>
-              <span class="mp-balance"><strong style="color:#00d2ff;">${unspentMP} MP</strong> AVAILABLE <span style="color:#94a3b8; font-size:9px;">(${spentMP} / ${earnedMP} Spent)</span></span>
+              <span class="mp-label">UTILITY SKILL POINTS BALANCE</span>
+              <span class="mp-balance"><strong style="color:#2ecc71;">${unspentPoints} SP</strong> AVAILABLE <span style="color:#94a3b8; font-size:9px;">(${spentMP} / ${earnedMP} Spent)</span></span>
             </div>
-            <button class="action-btn-sm action-btn-salvage" onclick="window.SkillTreeManager.resetSkillTree()">RESET TREES</button>
+            <button class="action-btn-sm action-btn-salvage" onclick="window.SkillTreeManager.resetSkillTree('utility')">RESET UTILITY</button>
           </div>
         `;
+      } else {
+              let mast = window.playerStats.subweaponMastery[activeTreeId];
+              let requiredXp = window.getSubweaponXpRequired(mast.level);
+              let percent = mast.level >= 40 ? 100 : (mast.xp / requiredXp) * 100;
+              let progressText = mast.level >= 40 ? "MAX MASTERY" : `${mast.xp} / ${requiredXp} XP (${Math.round(percent)}%)`;
+              headerHtml = `
+          <div class="skill-tree-mp-banner">
+            <div class="mp-info-group" style="flex:1; margin-right:16px;">
+              <span class="mp-label" style="color:${activeTree.color}; text-transform:uppercase;">${activeTree.name} LEVEL ${mast.level}</span>
+              <div class="gacha-pity-bg" style="width: 100%; height: 6px; margin: 3px 0 2px 0; background:#06040a;">
+                <div class="gacha-pity-fill" style="width:${percent}%; height:100%; background:${activeTree.color};"></div>
+              </div>
+              <span style="font-size:8.5px; color:#94a3b8; font-family:monospace;">${progressText}</span>
+            </div>
+            <div class="mp-info-group" style="text-align:right; margin-right:12px; flex-shrink:0;">
+              <span class="mp-label">AVAILABLE SKILL POINTS</span>
+              <span class="mp-balance" style="color:#ffffff;"><strong style="color:${activeTree.color};">${mast.sp} SP</strong></span>
+            </div>
+            <button class="action-btn-sm action-btn-salvage" style="flex-shrink:0;" onclick="window.SkillTreeManager.resetSkillTree('${activeTreeId}')">RESET TREE</button>
+          </div>
+        `;
+      }
 
       // Render Nodes HTML Overlay Sockets
       let nodesHtml = activeTree.nodes
@@ -846,11 +1177,7 @@
               : "rgba(15, 23, 42, 0.95)"
             : "rgba(10, 14, 23, 0.85)";
 
-          let rankBadge = node.isStarterToggle
-            ? currentRank > 0
-              ? "[ON]"
-              : "[OFF]"
-            : `${currentRank}/${node.maxRank}`;
+          let rankBadge = `${currentRank}/${node.maxRank}`;
 
           return `
               <div class="constellation-node ${isSelected ? "selected" : ""} ${node.isKeystone ? "keystone" : ""}" style="left:${node.x}%; top:${node.y}%;" onclick="window.SkillTreeManager.selectNode('${node.id}')">
@@ -872,14 +1199,14 @@
       let selUnlocked = this.isNodeUnlocked(activeTreeId, selectedNode);
       let selMax = selRank >= selectedNode.maxRank;
       let nextCost = this.getNodeCostForRank(selectedNode, selRank + 1);
-      let selCanAfford = unspentMP >= nextCost;
+      let selCanAfford = unspentPoints >= nextCost;
 
       let actionBtnHtml = "";
       if (selectedNode.isStarterToggle) {
         if (selRank === 0) {
           actionBtnHtml = `
                       <button class="skill-buy-btn" ${selUnlocked && selCanAfford ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
-                        UNLOCK STARTER (${nextCost} MP)
+                        UNLOCK STARTER (${nextCost} SP)
                       </button>
                     `;
         } else {
@@ -898,8 +1225,8 @@
           actionBtnHtml = `<button class="skill-buy-btn maxed" disabled>MAX RANK REACHED</button>`;
         } else {
           let reqText = !selUnlocked
-            ? `LOCKED (REQ PARENT NODE)`
-            : `UPGRADE (+1 RANK / ${nextCost} MP)`;
+            ? `LOCKED (T${selectedNode.tier} REQ)`
+            : `UPGRADE (+1 RANK / ${nextCost} SP)`;
           actionBtnHtml = `
                       <button class="skill-buy-btn" ${selUnlocked && selCanAfford ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
                         ${reqText}
@@ -959,13 +1286,11 @@
     startAnimationLoop() {
       this.stopAnimationLoop();
       const loop = () => {
-        let modal = document.getElementById("profile-modal");
-        let sec = document.getElementById("profile-sec-skills");
+        let modal = document.getElementById("mastery-modal");
         if (
           !modal ||
           modal.style.display === "none" ||
-          !sec ||
-          !sec.classList.contains("active-mobile-section")
+          modal.style.display === ""
         ) {
           this.stopAnimationLoop();
           return;

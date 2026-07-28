@@ -235,6 +235,7 @@ body {
 }
 
 .hud-hero-pod {
+  position: relative;
   gap: 8px;
   flex-shrink: 0;
   border-left: 3.5px solid var(--border-gold-filigree);
@@ -384,6 +385,7 @@ body {
 }
 
 .hud-btn {
+  position: relative;
   background: linear-gradient(180deg, #2e2340 0%, #161024 60%, #0c0817 100%);
   color: var(--text-parchment);
   border: 1.5px solid var(--border-aged-bronze);
@@ -5005,4 +5007,63 @@ summary {
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.7);
     transform: scale(1);
   }
+}
+
+/* --- HUD ALERT NOTIFICATION BADGES (SP & MP) --- */
+.hud-alert-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: radial-gradient(circle, #ef4444 0%, #960018 100%);
+  color: #ffffff;
+  border: 1.2px solid #ffd700;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  font-family: monospace;
+  font-size: 8px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), inset 0 0 4px rgba(255, 215, 0, 0.3);
+  animation: badgePulse 1.5s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 15;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.6), inset 0 0 4px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 14px rgba(239, 68, 68, 1), inset 0 0 6px rgba(255, 215, 0, 0.5);
+  }
+}
+
+/* --- DEDICATED COSMIC MASTERY WINDOW --- */
+.modal-card.mastery-card {
+  max-width: 980px;
+  width: 95vw;
+  max-height: 94dvh;
+  height: 92dvh;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #0e0a1f 0%, #030207 100%);
+  border: 3px solid #38bdf8;
+  outline: 2px solid #00d2ff;
+  outline-offset: -6px;
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.98),
+    0 0 45px rgba(0, 210, 255, 0.35),
+    inset 0 0 30px rgba(0, 0, 0, 0.85);
+  border-radius: 10px;
+}
+
+.mastery-card .constellation-viewport {
+  height: calc(100% - 90px) !important;
+  max-height: none !important;
+  flex: 1;
 }
