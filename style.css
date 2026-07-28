@@ -1568,8 +1568,8 @@ summary {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
   background: radial-gradient(
     circle at center,
     rgba(28, 18, 40, 0.94) 0%,
@@ -1587,6 +1587,7 @@ summary {
 .modal-card {
   width: 90%;
   max-width: 480px;
+  max-height: calc(100dvh - max(20px, env(safe-area-inset-top, 12px)) - max(20px, env(safe-area-inset-bottom, 12px)));
   background: linear-gradient(180deg, #181226 0%, #0c0814 100%);
   border: 3px solid #d4af37;
   outline: 2px solid #5a4325;
@@ -1647,7 +1648,8 @@ summary {
 }
 
 .modal-body {
-  max-height: 220px;
+  max-height: 55dvh; /* Safe height allotment to prevent header/padding overlaps */
+  flex-shrink: 1; /* Allow content container to shrink inside card boundaries */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -2135,18 +2137,6 @@ summary {
 
 @media (orientation: portrait), (max-width: 600px) {
   #hud-overlay {
-    top: env(safe-area-inset-top, 8px) !important;
-    left: 8px !important;
-    right: 8px !important;
-    width: calc(100% - 16px) !important;
-    display: flex !important;
-    flex-direction: column !important; /* Stack rows vertically */
-    justify-content: flex-start !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-  }
-
-  .hud-hero-pod {
     order: 1 !important;
     width: 100% !important; /* Take full width on Row 1 */
     flex: none !important;
@@ -2275,6 +2265,68 @@ summary {
 
   .hud-sub {
     font-size: 8px !important;
+  }
+
+  /* --- ALIGN MAIN PANELS TO THE TOP TO REMOVE LARGE VACANT GAPS --- */
+  .modal-overlay {
+    align-items: flex-start !important;
+    padding-top: max(8px, env(safe-area-inset-top, 12px)) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 12px)) !important;
+    overflow-y: auto !important;
+  }
+
+  /* Compact alerts & action confirmations stay centered for balance */
+  #confirm-modal.modal-overlay,
+  #portal-modal.modal-overlay,
+  #summary-modal.modal-overlay {
+    align-items: center !important;
+  }
+
+  /* Expand large panels to fill maximum vertical screen estate cleanly */
+  .profile-card,
+  .mastery-card,
+  .shop-modal-card,
+  .gacha-card,
+  .forge-modal-card,
+  .enchant-card,
+  .deploy-modal-card,
+  #bag-modal .modal-card,
+  .sigil-picker-modal-card,
+  #settings-modal .modal-card {
+    width: 96% !important;
+    margin: 0 auto !important;
+    height: calc(100dvh - max(8px, env(safe-area-inset-top, 12px)) - max(8px, env(safe-area-inset-bottom, 12px)) - 10px) !important;
+    max-height: none !important;
+  }
+
+  /* Retain full content scrolling inside full-height panels */
+  .shop-content-panel,
+  #bag-modal .modal-body,
+  .settings-body,
+  .deploy-gear-list {
+    max-height: none !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+  }
+
+  .deploy-terminal-layout {
+    flex: 1 !important;
+    overflow-y: auto !important;
+  }
+
+  .forge-layout,
+  .enchant-layout {
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 !important;
+  }
+
+  .forge-left-pane,
+  .forge-right-pane,
+  .enchant-left-pane,
+  .enchant-right-pane {
+    max-height: none !important;
+    flex: 1 !important;
   }
 }
 
