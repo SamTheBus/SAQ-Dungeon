@@ -460,23 +460,45 @@
   };
 
   // --- ENGINE INITIALIZATION ---
-  window.addEventListener("load", function () {
-    canvas = document.getElementById("gameCanvas");
-    if (!canvas) return;
-    ctx = canvas.getContext("2d");
+    window.addEventListener("load", function () {
+      canvas = document.getElementById("gameCanvas");
+      if (!canvas) return;
+      ctx = canvas.getContext("2d");
 
-    window.canvas = canvas;
-    window.ctx = ctx;
+      window.canvas = canvas;
+      window.ctx = ctx;
 
-    window.resizeCanvas();
-    window.addEventListener("resize", window.resizeCanvas);
+      window.resizeCanvas();
+      window.addEventListener("resize", window.resizeCanvas);
 
-    if (window.SoundManager && typeof window.SoundManager.init === "function") {
-      window.SoundManager.init();
-    }
+      if (window.SoundManager && typeof window.SoundManager.init === "function") {
+        window.SoundManager.init();
+      }
 
-    // Pointer Input Handling (Joystick & Follow Cursor Modes)
-        function handlePointerPosition(e) {
+      // Prevent document-level elastic bouncing unless the touch originates inside a scrollable container
+      document.addEventListener("touchmove", function (e) {
+        let isScrollable = e.target.closest(".modal-body, .paperdoll-grid, .stash-grid, .deploy-gear-list, .sigil-picker-list, .forge-pane, .enchant-pane, .ach-list");
+        if (!isScrollable && e.cancelable) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Intercept touchstart & touchmove on the canvas with non-passive listeners
+      // to block iOS back/forward edge swipes and prevent elastic window scrolling during gameplay.
+      canvas.addEventListener("touchstart", function (e) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      canvas.addEventListener("touchmove", function (e) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Pointer Input Handling (Joystick & Follow Cursor Modes)
+          function handlePointerPosition(e) {
       let rect = canvas.getBoundingClientRect();
       let scaleX = canvas.width / rect.width;
       let scaleY = canvas.height / rect.height;
@@ -1673,9 +1695,25 @@
   };
 
   window.requestAbandonRun = function () {
-    if (window.currentGameState === window.GAME_STATES.HUB) return;
-    window.triggerExtraction(false, true);
-  };
+      if (window.currentGameState === window.GAME_STATES.HUB) return;
+
+      if (typeof window.showCustomConfirm === "function") {
+        window.showCustomConfirm(
+          "Retreat to Hub",
+          "Are you sure you want to abandon the current run?<br><br><span style='color: #e74c3c;'><strong>WARNING:</strong> All uninsured equipped gear and items in your carried satchel will be permanently lost!</span>",
+          "RETREAT",
+          "CANCEL",
+          "#e74c3c",
+          function () {
+            window.triggerExtraction(false, true);
+          }
+        );
+      } else {
+        if (confirm("Are you sure you want to retreat? All uninsured equipped gear and items in your carried satchel will be permanently lost!")) {
+          window.triggerExtraction(false, true);
+        }
+      }
+    };
 
   window.openPortalChoiceModal = function () {
     let modal = document.getElementById("portal-modal");
@@ -7216,12 +7254,12 @@
                                     }
 
                   if (charges <= 0) {
-                    flaskBtn.classList.add("flask-empty");
-                  } else {
-                    flaskBtn.classList.remove("flask-empty");
-                  }
+                                      flaskBtn.classList.add("flask-empty");
+                                    } else {
+                                      flaskBtn.classList.remove("flask-empty");
+                                    }
 
-                  // Apply saved position coordinates
+                                    // Apply saved position coordinates
                                     if (typeof stats.flaskX === "number" && typeof stats.flaskY === "number" && !flaskBtn.isDragging) {
                                       flaskBtn.style.left = stats.flaskX + "px";
                                       flaskBtn.style.top = stats.flaskY + "px";
@@ -7231,14 +7269,14 @@
                                       const isLandscapeMobile = window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
                                       const isMobile = window.innerWidth <= 600 || isLandscapeMobile;
                                       if (isMobile) {
-                                        flaskBtn.style.right = "20px";
-                                        flaskBtn.style.left = "auto";
-                                        flaskBtn.style.bottom = "24px";
+                                        flaskBtn.style.left = "env(safe-area-inset-left, 24px)";
+                                        flaskBtn.style.right = "auto";
+                                        flaskBtn.style.bottom = "env(safe-area-inset-bottom, 36px)";
                                         flaskBtn.style.top = "auto";
                                       } else {
-                                        flaskBtn.style.left = "20px";
+                                        flaskBtn.style.left = "24px";
                                         flaskBtn.style.right = "auto";
-                                        flaskBtn.style.bottom = "24px";
+                                        flaskBtn.style.bottom = "36px";
                                         flaskBtn.style.top = "auto";
                                       }
                                     }
@@ -10103,16 +10141,29 @@ window.refillFlaskCharges = function (silent = false) {
     };
 
   window.initFlaskButtonDrag = function () {
-        let btn = document.getElementById("hud-flask-button");
-        let gameContainer = document.getElementById("game-container");
-        if (!btn || !gameContainer) return;
+          let btn = document.getElementById("hud-flask-button");
+          let gameContainer = document.getElementById("game-container");
+          if (!btn || !gameContainer) return;
 
-        let isDragging = false;
-        let hasMoved = false;
-        let startX = 0, startY = 0;
-        let initialLeft = 0, initialTop = 0;
+          let isDragging = false;
+          let hasMoved = false;
+          let startX = 0, startY = 0;
+          let initialLeft = 0, initialTop = 0;
 
-        btn.addEventListener("pointerdown", function (e) {
+          // Prevent dragging the button from scrolling the screen or triggering OS gestures
+          btn.addEventListener("touchstart", function (e) {
+            if (window.playerStats && window.playerStats.editHudMode && e.cancelable) {
+              e.preventDefault();
+            }
+          }, { passive: false });
+
+          btn.addEventListener("touchmove", function (e) {
+            if (window.playerStats && window.playerStats.editHudMode && e.cancelable) {
+              e.preventDefault();
+            }
+          }, { passive: false });
+
+          btn.addEventListener("pointerdown", function (e) {
           if (e.pointerType === "mouse" && e.button !== 0) return;
           if (!window.playerStats || !window.playerStats.editHudMode) return;
 
@@ -10191,17 +10242,18 @@ window.refillFlaskCharges = function (silent = false) {
       };
 
       window.resetFlaskButtonPosition = function () {
-          if (window.playerStats) {
-            window.playerStats.flaskX = null;
-            window.playerStats.flaskY = null;
-          }
+                if (window.playerStats) {
+                  window.playerStats.flaskX = null;
+                  window.playerStats.flaskY = null;
+                }
 
-          let btn = document.getElementById("hud-flask-button");
-          if (btn) {
-            btn.style.left = "20px";
-            btn.style.bottom = "24px";
-            btn.style.top = "auto";
-          }
+                let btn = document.getElementById("hud-flask-button");
+                if (btn) {
+                  btn.style.left = "env(safe-area-inset-left, 24px)";
+                  btn.style.right = "auto";
+                  btn.style.bottom = "env(safe-area-inset-bottom, 36px)";
+                  btn.style.top = "auto";
+                }
 
           if (typeof window.pushHeaderToast === "function") {
             window.pushHeaderToast("[HUD] Flask button reset to default position!", "#34d399");
