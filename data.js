@@ -3,7 +3,7 @@
    initial global state, and system utility functions.
    ========================================================================= */
 
-window.GAME_VERSION = 1.0; // Release Version 1.0.00
+window.GAME_VERSION = 1.01; // Release Version 1.0.01
 window.MIN_COMPATIBLE_VERSION = 1.0; // Hard reset epoch threshold
 
 window.BigNumMin = function (a, b) {
@@ -2689,13 +2689,13 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   let netDmg = Math.max(1, remainingDmg - (pStats.def || 0));
 
   // Step 2: Parry Check (Daggers)
-     if (pStats.parry && Math.random() < pStats.parry) {
-       if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-         window.playerStats.adrenalineTimer = 360;
-       }
+       if (pStats.parry && Math.random() < pStats.parry) {
+         if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
+           window.playerStats.adrenalineTimer = 360;
+         }
 
-       // Gain +25 Dagger Mastery XP on Parry
-       if (window.gainSubweaponXp) window.gainSubweaponXp("dagger", 25);
+         // Gain +10 Dagger Mastery XP on Parry
+                if (window.gainSubweaponXp) window.gainSubweaponXp("dagger", 10);
 
        let parryMitigation = pStats.hasMasterDuellist ? 1.0 : (pStats.parryMitigation || 0.6);
        let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
@@ -2813,13 +2813,13 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
      }
 
   // Step 3: Block Check (Shields)
-        if (pStats.block && Math.random() < pStats.block) {
-          if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-            window.playerStats.adrenalineTimer = 360;
-          }
+          if (pStats.block && Math.random() < pStats.block) {
+            if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
+              window.playerStats.adrenalineTimer = 360;
+            }
 
-          // Gain +15 Shield Mastery XP on Block
-          if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 15);
+            // Gain +8 Shield Mastery XP on Block
+                      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 8);
 
           // Fortitude stack acquisition on block / damage
           if (pStats.fortifiedGuardMultiplier > 0) {
@@ -2900,8 +2900,8 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
         );
 
       if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-        // Gain +10 Shield Mastery XP on Shield Bash reflect
-        if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
+              // Gain +5 Shield Mastery XP on Shield Bash reflect
+              if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 5);
 
         let defBash = BigNum.from(pStats.def || 5).mul(
           pStats.reflectDamage || 1.0,

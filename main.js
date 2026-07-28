@@ -4801,18 +4801,18 @@
 
         // Tome Spell Cast Trigger
                 let isTomeEquipped =
-                  pStats.subType === "tome" ||
-                  (window.equippedSlots &&
-                    window.equippedSlots.subweapon &&
-                    (window.equippedSlots.subweapon.subType === "tome" ||
-                      window.equippedSlots.subweapon.type === "tome"));
-                let activeSpellChance =
-                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-                let activeSpellType = pStats.spellType || "tri";
+                                  pStats.subType === "tome" ||
+                                  (window.equippedSlots &&
+                                    window.equippedSlots.subweapon &&
+                                    (window.equippedSlots.subweapon.subType === "tome" ||
+                                      window.equippedSlots.subweapon.type === "tome"));
+                                let activeSpellChance =
+                                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+                                let activeSpellType = pStats.spellType || "tri";
 
-                if (isTomeEquipped && Math.random() < activeSpellChance) {
-                  // Gain +15 Tome Mastery XP on Spell Proc
-                  if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 15);
+                                if (isTomeEquipped && Math.random() < activeSpellChance) {
+                                  // Gain +1 Tome Mastery XP on Spell Proc
+                                                    if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
 
                   let spellDmg = BigNum.from(pStats.atk || 15).mul(
                     pStats.spellPower || 1.5,
@@ -5497,18 +5497,18 @@
 
         // Tome Spell Cast Trigger on Boss
                 let isTomeEquipped =
-                  pStats.subType === "tome" ||
-                  (window.equippedSlots &&
-                    window.equippedSlots.subweapon &&
-                    (window.equippedSlots.subweapon.subType === "tome" ||
-                      window.equippedSlots.subweapon.type === "tome"));
-                let activeSpellChance =
-                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-                let activeSpellType = pStats.spellType || "tri";
+                                  pStats.subType === "tome" ||
+                                  (window.equippedSlots &&
+                                    window.equippedSlots.subweapon &&
+                                    (window.equippedSlots.subweapon.subType === "tome" ||
+                                      window.equippedSlots.subweapon.type === "tome"));
+                                let activeSpellChance =
+                                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+                                let activeSpellType = pStats.spellType || "tri";
 
-                if (isTomeEquipped && Math.random() < activeSpellChance) {
-                  // Gain +15 Tome Mastery XP on Spell Proc (Boss)
-                  if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 15);
+                                if (isTomeEquipped && Math.random() < activeSpellChance) {
+                                  // Gain +1 Tome Mastery XP on Spell Proc (Boss)
+                                                    if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
 
                   let spellDmg = BigNum.from(pStats.atk || 15).mul(
                     pStats.spellPower || 1.5,

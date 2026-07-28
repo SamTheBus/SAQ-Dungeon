@@ -3733,13 +3733,16 @@
   };
 
   window.renderMinimap = function (ctx, canvas) {
-    let map = window.activeDungeonMap;
-    if (!map || !map.grid || map.grid.length === 0) return;
+      let map = window.activeDungeonMap;
+      if (!map || !map.grid || map.grid.length === 0) return;
 
-    let mw = 90;
-    let mh = 50;
-    let mx = canvas.width - mw - 10;
-    let my = 58;
+      let mw = 90;
+      let mh = 50;
+      let mx = canvas.width - mw - 10;
+
+      let isLandscapeMobile = window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
+      let isMobile = window.innerWidth <= 600 || isLandscapeMobile;
+      let my = isMobile ? 120 : 58;
 
     ctx.save();
     ctx.fillStyle = "rgba(5, 3, 10, 0.88)";

@@ -16,8 +16,8 @@
   }
 
   window.getSubweaponXpRequired = function(level) {
-          return Math.round(100 * Math.pow(1.35, level - 1));
-        };
+            return Math.round(250 * Math.pow(1.5, level - 1));
+          };
 
         window.gainSubweaponXp = function (subType, amount) {
           if (!window.playerStats || !window.playerStats.subweaponMastery) return;
