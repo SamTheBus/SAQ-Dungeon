@@ -9064,26 +9064,10 @@ window.navigateToAchievement = function (id) {
   };
 
   window.unequipToStash = function (slotKey) {
-    window.hideTooltip();
-    if (!window.equippedSlots || !window.equippedSlots[slotKey]) return;
-
-    let item = window.equippedSlots[slotKey];
-    delete item.isEquippedSlot;
-    if (!window.player.stash) window.player.stash = [];
-
-    window.player.stash.push(item);
-    window.equippedSlots[slotKey] = null;
-
-    if (typeof window.invalidatePlayerStats === "function")
-      window.invalidatePlayerStats();
-    if (typeof window.updateUI === "function") window.updateUI();
-
-    if (window.SoundManager && typeof window.SoundManager.play === "function") {
-      window.SoundManager.play("swing");
-    }
-
-    if (typeof window.saveGame === "function") window.saveGame();
-  };
+      if (typeof window.unequipItem === "function") {
+        window.unequipItem(slotKey);
+      }
+    };
 
   window.salvageFromStash = function (itemId) {
     window.hideTooltip();

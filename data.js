@@ -1712,8 +1712,8 @@ window.resolvePlayerStats = function (useDraft = false) {
     .mul(levelScale)
     .add(Math.max(0, allocStr) * 10);
   let baseCharDef = BigNum.from((window.playerStats.level - 1) * 1.5)
-    .mul(levelScale)
-    .add(Math.max(0, allocInt) * 1);
+                .mul(levelScale)
+                .add(Math.max(0, allocInt) * 0.2);
 
   p.atk = baseCharAtk.add(flatGearAtk);
   p.maxHp = baseCharHp.add(flatGearHp);

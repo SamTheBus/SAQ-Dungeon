@@ -4787,22 +4787,24 @@ Object.assign(window.GameState, {
       oldMaxHp = window.resolvePlayerStats().maxHp;
 
     if (item.type === "artifact") {
-      if (window.inventory.ARTIFACT.length >= maxBag) {
-        if (typeof window.pushHeaderToast === "function")
-          window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
-        return;
-      }
-      window.equippedSlots[slotKey] = null;
-      window.inventory.ARTIFACT.push(item);
-    } else {
-      if (window.inventory.EQUIP.length >= maxBag) {
-        if (typeof window.pushHeaderToast === "function")
-          window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
-        return;
-      }
-      window.equippedSlots[slotKey] = null;
-      window.inventory.EQUIP.push(item);
-    }
+                  window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+                  if (window.inventory.ARTIFACT.length >= maxBag) {
+                    if (typeof window.pushHeaderToast === "function")
+                      window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
+                    return;
+                  }
+                  window.equippedSlots[slotKey] = null;
+                  window.inventory.ARTIFACT.push(item);
+                } else {
+                  window.inventory.EQUIP = window.inventory.EQUIP || [];
+                  if (window.inventory.EQUIP.length >= maxBag) {
+                    if (typeof window.pushHeaderToast === "function")
+                      window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
+                    return;
+                  }
+                  window.equippedSlots[slotKey] = null;
+                  window.inventory.EQUIP.push(item);
+                }
 
     if (typeof window.invalidatePlayerStats === "function")
       window.invalidatePlayerStats();

@@ -941,8 +941,8 @@
           ctx.arc(hx, hy, 4, 0, Math.PI * 2);
           ctx.stroke();
 
-          let text = `BARRIER -${eff.amount}%`;
-          ctx.font = "bold 15px monospace";
+          let text = `BARRIER -${this.formatNumber(eff.amount)}`;
+                    ctx.font = "bold 15px monospace";
           ctx.strokeStyle = "#000000";
           ctx.lineWidth = 3.5;
           ctx.lineJoin = "round";
