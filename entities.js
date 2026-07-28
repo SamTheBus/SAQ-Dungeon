@@ -232,62 +232,62 @@
     }
 
     spawnProjectile(x, y, vx, vy, type = "standard", radius = 10) {
-          this.projectiles.push({
-            x,
-            y,
-            vx,
-            vy,
-            type,
-            r: radius,
-            pulseOffset: Math.random() * 10,
-          });
-        }
+      this.projectiles.push({
+        x,
+        y,
+        vx,
+        vy,
+        type,
+        r: radius,
+        pulseOffset: Math.random() * 10,
+      });
+    }
 
-        spawnProjectileImpact(x, y, type = "standard") {
-          let isEco = window.playerStats && window.playerStats.ecoMode;
-          let count = isEco ? 4 : 12;
-          let colors = ["#e74c3c", "#f1c40f"];
-          let speed = 4;
+    spawnProjectileImpact(x, y, type = "standard") {
+      let isEco = window.playerStats && window.playerStats.ecoMode;
+      let count = isEco ? 4 : 12;
+      let colors = ["#e74c3c", "#f1c40f"];
+      let speed = 4;
 
-          if (type === "thorn") {
-            colors = ["#2ecc71", "#27ae60", "#a3fd83", "#5c3a21"];
-            speed = 3.5;
-          } else if (type === "frost") {
-            colors = ["#38bdf8", "#e0f2fe", "#ffffff", "#0284c7"];
-            speed = 4.5;
-          } else if (type === "fireball") {
-            colors = ["#ff5500", "#e67e22", "#f1c40f", "#2c0e08"];
-            speed = 5;
-          } else if (type === "maelstrom") {
-            colors = ["#2ecc71", "#a3fd83", "#1e8449"];
-            speed = 3;
-          } else if (type === "void") {
-            colors = ["#e84393", "#8e44ad", "#00ffff", "#110221"];
-            speed = 5.5;
-          } else if (type === "boss_nova") {
-            colors = ["#ffd700", "#ff3300", "#ffffff", "#e67e22"];
-            speed = 6;
-          }
+      if (type === "thorn") {
+        colors = ["#2ecc71", "#27ae60", "#a3fd83", "#5c3a21"];
+        speed = 3.5;
+      } else if (type === "frost") {
+        colors = ["#38bdf8", "#e0f2fe", "#ffffff", "#0284c7"];
+        speed = 4.5;
+      } else if (type === "fireball") {
+        colors = ["#ff5500", "#e67e22", "#f1c40f", "#2c0e08"];
+        speed = 5;
+      } else if (type === "maelstrom") {
+        colors = ["#2ecc71", "#a3fd83", "#1e8449"];
+        speed = 3;
+      } else if (type === "void") {
+        colors = ["#e84393", "#8e44ad", "#00ffff", "#110221"];
+        speed = 5.5;
+      } else if (type === "boss_nova") {
+        colors = ["#ffd700", "#ff3300", "#ffffff", "#e67e22"];
+        speed = 6;
+      }
 
-          for (let i = 0; i < count; i++) {
-            let angle = Math.random() * Math.PI * 2;
-            let vel = window.randFloat(1, speed);
-            let life = window.randInt(12, 25);
-            this.particlePool.get(
-              x,
-              y,
-              Math.cos(angle) * vel,
-              Math.sin(angle) * vel,
-              window.randFloat(1.2, 3.2),
-              colors[Math.floor(Math.random() * colors.length)],
-              1,
-              life,
-              0.1,
-              true,
-              0,
-            );
-          }
-        }
+      for (let i = 0; i < count; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let vel = window.randFloat(1, speed);
+        let life = window.randInt(12, 25);
+        this.particlePool.get(
+          x,
+          y,
+          Math.cos(angle) * vel,
+          Math.sin(angle) * vel,
+          window.randFloat(1.2, 3.2),
+          colors[Math.floor(Math.random() * colors.length)],
+          1,
+          life,
+          0.1,
+          true,
+          0,
+        );
+      }
+    }
 
     spawnParticles(x, y, count = 15, theme = "default", speed = 4) {
       const colors = window.PARTICLE_THEMES[theme] ||
@@ -481,57 +481,57 @@
       }
 
       let isEco = window.playerStats && window.playerStats.ecoMode;
-            for (let i = this.projectiles.length - 1; i >= 0; i--) {
-              let p = this.projectiles[i];
-              p.x += p.vx;
-              p.y += p.vy;
+      for (let i = this.projectiles.length - 1; i >= 0; i--) {
+        let p = this.projectiles[i];
+        p.x += p.vx;
+        p.y += p.vy;
 
-              let spawnChance = isEco ? 0.25 : 0.65;
-              if (Math.random() < spawnChance) {
-                let trailColor = "#38bdf8";
-                let grav = 0;
-                let pRadius = Math.random() * 2 + 1.2;
-                let pLife = 16;
+        let spawnChance = isEco ? 0.25 : 0.65;
+        if (Math.random() < spawnChance) {
+          let trailColor = "#38bdf8";
+          let grav = 0;
+          let pRadius = Math.random() * 2 + 1.2;
+          let pLife = 16;
 
-                if (p.type === "thorn") {
-                  trailColor = Math.random() > 0.5 ? "#2ecc71" : "#a3fd83";
-                  grav = -0.05;
-                } else if (p.type === "frost") {
-                  trailColor = Math.random() > 0.4 ? "#e0f2fe" : "#38bdf8";
-                  grav = 0.02;
-                } else if (p.type === "fireball") {
-                  trailColor = Math.random() > 0.3 ? "#e67e22" : "#f1c40f";
-                  grav = -0.08;
-                } else if (p.type === "maelstrom") {
-                  trailColor = Math.random() > 0.5 ? "#2ecc71" : "#1e8449";
-                  grav = 0.12;
-                } else if (p.type === "void") {
-                  trailColor = Math.random() > 0.5 ? "#e84393" : "#8e44ad";
-                  grav = 0;
-                } else if (p.type === "boss_nova") {
-                  trailColor = Math.random() > 0.4 ? "#ffd700" : "#ff3300";
-                  grav = -0.04;
-                }
+          if (p.type === "thorn") {
+            trailColor = Math.random() > 0.5 ? "#2ecc71" : "#a3fd83";
+            grav = -0.05;
+          } else if (p.type === "frost") {
+            trailColor = Math.random() > 0.4 ? "#e0f2fe" : "#38bdf8";
+            grav = 0.02;
+          } else if (p.type === "fireball") {
+            trailColor = Math.random() > 0.3 ? "#e67e22" : "#f1c40f";
+            grav = -0.08;
+          } else if (p.type === "maelstrom") {
+            trailColor = Math.random() > 0.5 ? "#2ecc71" : "#1e8449";
+            grav = 0.12;
+          } else if (p.type === "void") {
+            trailColor = Math.random() > 0.5 ? "#e84393" : "#8e44ad";
+            grav = 0;
+          } else if (p.type === "boss_nova") {
+            trailColor = Math.random() > 0.4 ? "#ffd700" : "#ff3300";
+            grav = -0.04;
+          }
 
-                this.particlePool.get(
-                  p.x - p.vx * 0.5 + (Math.random() - 0.5) * 3,
-                  p.y - p.vy * 0.5 + (Math.random() - 0.5) * 3,
-                  -p.vx * 0.25 + (Math.random() - 0.5) * 0.8,
-                  -p.vy * 0.25 + (Math.random() - 0.5) * 0.8,
-                  pRadius,
-                  trailColor,
-                  0.9,
-                  pLife,
-                  grav,
-                  true,
-                  0,
-                );
-              }
+          this.particlePool.get(
+            p.x - p.vx * 0.5 + (Math.random() - 0.5) * 3,
+            p.y - p.vy * 0.5 + (Math.random() - 0.5) * 3,
+            -p.vx * 0.25 + (Math.random() - 0.5) * 0.8,
+            -p.vy * 0.25 + (Math.random() - 0.5) * 0.8,
+            pRadius,
+            trailColor,
+            0.9,
+            pLife,
+            grav,
+            true,
+            0,
+          );
+        }
 
-              if (p.x < -100 || p.x > 3000 || p.y < -100 || p.y > 3000) {
-                this.projectiles.splice(i, 1);
-              }
-            }
+        if (p.x < -100 || p.x > 3000 || p.y < -100 || p.y > 3000) {
+          this.projectiles.splice(i, 1);
+        }
+      }
     }
 
     render(ctx) {
@@ -565,189 +565,189 @@
       });
 
       this.projectiles.forEach((p) => {
-              ctx.save();
-              ctx.translate(p.x, p.y);
+        ctx.save();
+        ctx.translate(p.x, p.y);
 
-              let angle = Math.atan2(p.vy, p.vx);
-              let time = Date.now();
-              let r = p.r + Math.sin(time / 80 + p.pulseOffset) * 1.5;
+        let angle = Math.atan2(p.vy, p.vx);
+        let time = Date.now();
+        let r = p.r + Math.sin(time / 80 + p.pulseOffset) * 1.5;
 
-              if (p.type === "thorn") {
-                // --- THORN SPIKE / VINE NEEDLE ---
-                ctx.rotate(angle);
-                ctx.fillStyle = "#4a2d18";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 1.8;
+        if (p.type === "thorn") {
+          // --- THORN SPIKE / VINE NEEDLE ---
+          ctx.rotate(angle);
+          ctx.fillStyle = "#4a2d18";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 1.8;
 
-                ctx.beginPath();
-                ctx.moveTo(r * 2.2, 0);
-                ctx.lineTo(-r * 1.2, -r * 0.65);
-                ctx.lineTo(-r * 0.5, 0);
-                ctx.lineTo(-r * 1.2, r * 0.65);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(r * 2.2, 0);
+          ctx.lineTo(-r * 1.2, -r * 0.65);
+          ctx.lineTo(-r * 0.5, 0);
+          ctx.lineTo(-r * 1.2, r * 0.65);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
 
-                // Poison Tip Highlight
-                ctx.fillStyle = "#2ecc71";
-                ctx.beginPath();
-                ctx.moveTo(r * 2.2, 0);
-                ctx.lineTo(r * 0.6, -r * 0.35);
-                ctx.lineTo(r * 0.6, r * 0.35);
-                ctx.closePath();
-                ctx.fill();
+          // Poison Tip Highlight
+          ctx.fillStyle = "#2ecc71";
+          ctx.beginPath();
+          ctx.moveTo(r * 2.2, 0);
+          ctx.lineTo(r * 0.6, -r * 0.35);
+          ctx.lineTo(r * 0.6, r * 0.35);
+          ctx.closePath();
+          ctx.fill();
 
-                ctx.strokeStyle = "#a3fd83";
-                ctx.lineWidth = 1.0;
-                ctx.beginPath();
-                ctx.moveTo(-r * 0.5, 0);
-                ctx.lineTo(r * 2.0, 0);
-                ctx.stroke();
-              } else if (p.type === "frost") {
-                // --- FACETED ICE CRYSTAL LANCE ---
-                ctx.rotate(angle);
-                ctx.fillStyle = "#dff9fb";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 1.8;
+          ctx.strokeStyle = "#a3fd83";
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.5, 0);
+          ctx.lineTo(r * 2.0, 0);
+          ctx.stroke();
+        } else if (p.type === "frost") {
+          // --- FACETED ICE CRYSTAL LANCE ---
+          ctx.rotate(angle);
+          ctx.fillStyle = "#dff9fb";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 1.8;
 
-                ctx.beginPath();
-                ctx.moveTo(r * 2.0, 0);
-                ctx.lineTo(0, -r * 0.75);
-                ctx.lineTo(-r * 1.5, 0);
-                ctx.lineTo(0, r * 0.75);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(r * 2.0, 0);
+          ctx.lineTo(0, -r * 0.75);
+          ctx.lineTo(-r * 1.5, 0);
+          ctx.lineTo(0, r * 0.75);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
 
-                // Ice Specular Facets
-                ctx.fillStyle = "#38bdf8";
-                ctx.beginPath();
-                ctx.moveTo(r * 2.0, 0);
-                ctx.lineTo(0, 0);
-                ctx.lineTo(0, r * 0.75);
-                ctx.closePath();
-                ctx.fill();
+          // Ice Specular Facets
+          ctx.fillStyle = "#38bdf8";
+          ctx.beginPath();
+          ctx.moveTo(r * 2.0, 0);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(0, r * 0.75);
+          ctx.closePath();
+          ctx.fill();
 
-                ctx.fillStyle = "#ffffff";
-                ctx.beginPath();
-                ctx.moveTo(r * 2.0, 0);
-                ctx.lineTo(0, -r * 0.75);
-                ctx.lineTo(0, 0);
-                ctx.closePath();
-                ctx.fill();
-              } else if (p.type === "fireball") {
-                // --- FLAMING MOLTEN COMET ---
-                ctx.rotate(angle);
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.moveTo(r * 2.0, 0);
+          ctx.lineTo(0, -r * 0.75);
+          ctx.lineTo(0, 0);
+          ctx.closePath();
+          ctx.fill();
+        } else if (p.type === "fireball") {
+          // --- FLAMING MOLTEN COMET ---
+          ctx.rotate(angle);
 
-                // Outer Flame Tail
-                ctx.fillStyle = "#c0392b";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2.0;
-                ctx.beginPath();
-                ctx.arc(0, 0, r + 2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
+          // Outer Flame Tail
+          ctx.fillStyle = "#c0392b";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2.0;
+          ctx.beginPath();
+          ctx.arc(0, 0, r + 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-                // Flame Mantle
-                ctx.fillStyle = "#e67e22";
-                ctx.beginPath();
-                ctx.arc(r * 0.3, 0, r * 0.85, 0, Math.PI * 2);
-                ctx.fill();
+          // Flame Mantle
+          ctx.fillStyle = "#e67e22";
+          ctx.beginPath();
+          ctx.arc(r * 0.3, 0, r * 0.85, 0, Math.PI * 2);
+          ctx.fill();
 
-                // White-Hot Core
-                ctx.fillStyle = "#f1c40f";
-                ctx.beginPath();
-                ctx.arc(r * 0.5, 0, r * 0.5, 0, Math.PI * 2);
-                ctx.fill();
+          // White-Hot Core
+          ctx.fillStyle = "#f1c40f";
+          ctx.beginPath();
+          ctx.arc(r * 0.5, 0, r * 0.5, 0, Math.PI * 2);
+          ctx.fill();
 
-                ctx.fillStyle = "#ffffff";
-                ctx.beginPath();
-                ctx.arc(r * 0.6, 0, r * 0.25, 0, Math.PI * 2);
-                ctx.fill();
-              } else if (p.type === "maelstrom") {
-                // --- ACIDIC WOBBLING GLOBULE ---
-                let wobbleX = Math.sin(time / 60 + p.pulseOffset) * 2;
-                let wobbleY = Math.cos(time / 60 + p.pulseOffset) * 2;
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(r * 0.6, 0, r * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.type === "maelstrom") {
+          // --- ACIDIC WOBBLING GLOBULE ---
+          let wobbleX = Math.sin(time / 60 + p.pulseOffset) * 2;
+          let wobbleY = Math.cos(time / 60 + p.pulseOffset) * 2;
 
-                ctx.fillStyle = "#2ecc71";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 1.8;
-                ctx.beginPath();
-                ctx.ellipse(0, 0, r + wobbleX, r - wobbleY, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
+          ctx.fillStyle = "#2ecc71";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r + wobbleX, r - wobbleY, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-                ctx.fillStyle = "#a3fd83";
-                ctx.beginPath();
-                ctx.arc(-r * 0.3, -r * 0.3, r * 0.35, 0, Math.PI * 2);
-                ctx.arc(r * 0.2, r * 0.2, r * 0.25, 0, Math.PI * 2);
-                ctx.fill();
-              } else if (p.type === "void") {
-                // --- VOID SINGULARITY ORB ---
-                let rot = time / 300;
+          ctx.fillStyle = "#a3fd83";
+          ctx.beginPath();
+          ctx.arc(-r * 0.3, -r * 0.3, r * 0.35, 0, Math.PI * 2);
+          ctx.arc(r * 0.2, r * 0.2, r * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.type === "void") {
+          // --- VOID SINGULARITY ORB ---
+          let rot = time / 300;
 
-                // Back Event Horizon Ring
-                ctx.strokeStyle = "#8e44ad";
-                ctx.lineWidth = 1.5;
-                ctx.save();
-                ctx.rotate(rot);
-                ctx.beginPath();
-                ctx.ellipse(0, 0, r * 2.0, r * 0.65, 0, Math.PI, 0);
-                ctx.stroke();
-                ctx.restore();
+          // Back Event Horizon Ring
+          ctx.strokeStyle = "#8e44ad";
+          ctx.lineWidth = 1.5;
+          ctx.save();
+          ctx.rotate(rot);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r * 2.0, r * 0.65, 0, Math.PI, 0);
+          ctx.stroke();
+          ctx.restore();
 
-                // Black Hole Core
-                ctx.fillStyle = "#0c011a";
-                ctx.strokeStyle = "#ff007f";
-                ctx.lineWidth = 1.8;
-                ctx.beginPath();
-                ctx.arc(0, 0, r, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
+          // Black Hole Core
+          ctx.fillStyle = "#0c011a";
+          ctx.strokeStyle = "#ff007f";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-                // Front Event Horizon Ring
-                ctx.strokeStyle = "#e84393";
-                ctx.lineWidth = 1.8;
-                ctx.save();
-                ctx.rotate(rot);
-                ctx.beginPath();
-                ctx.ellipse(0, 0, r * 2.0, r * 0.65, 0, 0, Math.PI);
-                ctx.stroke();
-                ctx.restore();
-              } else if (p.type === "boss_nova") {
-                // --- OVERLORD PLASMA ORB ---
-                ctx.rotate(angle);
+          // Front Event Horizon Ring
+          ctx.strokeStyle = "#e84393";
+          ctx.lineWidth = 1.8;
+          ctx.save();
+          ctx.rotate(rot);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r * 2.0, r * 0.65, 0, 0, Math.PI);
+          ctx.stroke();
+          ctx.restore();
+        } else if (p.type === "boss_nova") {
+          // --- OVERLORD PLASMA ORB ---
+          ctx.rotate(angle);
 
-                ctx.fillStyle = "#ff3300";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2.2;
-                ctx.beginPath();
-                ctx.arc(0, 0, r + 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
+          ctx.fillStyle = "#ff3300";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(0, 0, r + 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-                ctx.fillStyle = "#ffd700";
-                ctx.beginPath();
-                ctx.arc(0, 0, r, 0, Math.PI * 2);
-                ctx.fill();
+          ctx.fillStyle = "#ffd700";
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
 
-                ctx.fillStyle = "#ffffff";
-                ctx.beginPath();
-                ctx.arc(r * 0.4, 0, r * 0.45, 0, Math.PI * 2);
-                ctx.fill();
-              } else {
-                // --- STANDARD ENERGY BOLT ---
-                ctx.fillStyle = "#3498db";
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 1.8;
-                ctx.beginPath();
-                ctx.arc(0, 0, r, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-              }
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(r * 0.4, 0, r * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // --- STANDARD ENERGY BOLT ---
+          ctx.fillStyle = "#3498db";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
 
-              ctx.restore();
-            });
+        ctx.restore();
+      });
 
       this.particlePool.pool.forEach((pt) => {
         if (!pt.active) return;
@@ -1109,1439 +1109,1629 @@
     }
 
     drawTargetHealthBar(ctx, target) {
-          if (!target || !target.hp || target.hp <= 0) return;
+      if (!target || !target.hp || target.hp <= 0) return;
 
-          let bHp =
-            typeof target.hp === "object"
-              ? target.hp.m * Math.pow(10, target.hp.e)
-              : target.hp;
-          let bMaxHp =
-            typeof target.maxHp === "object"
-              ? target.maxHp.m * Math.pow(10, target.maxHp.e)
-              : target.maxHp;
-          let hpPct = Math.max(0, Math.min(1, bHp / bMaxHp));
+      let bHp =
+        typeof target.hp === "object"
+          ? target.hp.m * Math.pow(10, target.hp.e)
+          : target.hp;
+      let bMaxHp =
+        typeof target.maxHp === "object"
+          ? target.maxHp.m * Math.pow(10, target.maxHp.e)
+          : target.maxHp;
+      let hpPct = Math.max(0, Math.min(1, bHp / bMaxHp));
 
-          target.trailingPct =
-            target.trailingPct !== undefined ? target.trailingPct : hpPct;
-          if (target.trailingPct > hpPct) {
-            target.trailingPct = Math.max(hpPct, target.trailingPct - 0.015);
-          } else {
-            target.trailingPct = hpPct;
-          }
+      target.trailingPct =
+        target.trailingPct !== undefined ? target.trailingPct : hpPct;
+      if (target.trailingPct > hpPct) {
+        target.trailingPct = Math.max(hpPct, target.trailingPct - 0.015);
+      } else {
+        target.trailingPct = hpPct;
+      }
 
-          ctx.save();
+      ctx.save();
 
-          if (
-            target.isBoss ||
-            target.type === "dungeon_boss" ||
-            target.type === "dungeon_miniboss" ||
-            target.type === "boss" ||
-            target.type === "aegis_goliath" ||
-            target.type === "chronos_arbitrator" ||
-            target.type === "nexus_overseer" ||
-            target.type === "gilded_vault_keeper" ||
-            target.type === "corrosive_abomination" ||
-            target.type === "hooktail" ||
-            target.type === "overlord_iron_vault"
-          ) {
-            let barW = Math.min(420, ctx.canvas.width * 0.5);
-            let barH = 12;
-            let barX = (ctx.canvas.width - barW) / 2;
-            let barY = 52;
+      if (
+        target.isBoss ||
+        target.type === "dungeon_boss" ||
+        target.type === "dungeon_miniboss" ||
+        target.type === "boss" ||
+        target.type === "aegis_goliath" ||
+        target.type === "chronos_arbitrator" ||
+        target.type === "nexus_overseer" ||
+        target.type === "gilded_vault_keeper" ||
+        target.type === "corrosive_abomination" ||
+        target.type === "hooktail" ||
+        target.type === "overlord_iron_vault"
+      ) {
+        let barW = Math.min(420, ctx.canvas.width * 0.5);
+        let barH = 12;
+        let barX = (ctx.canvas.width - barW) / 2;
+        let barY = 52;
 
-            let isAegis =
-              target.type === "aegis_goliath" ||
-              target.visualType === "aegis_goliath" ||
-              (target.name && target.name.toLowerCase().includes("aegis"));
+        let isAegis =
+          target.type === "aegis_goliath" ||
+          target.visualType === "aegis_goliath" ||
+          (target.name && target.name.toLowerCase().includes("aegis"));
 
-            if (isAegis) {
-              this.drawAegisGoliathBossBar(
-                ctx,
-                target,
-                hpPct,
-                bHp,
-                bMaxHp,
-                barX,
-                barY,
-                barW,
-                barH,
-              );
-              ctx.restore();
-              return;
-            }
-
-            let isChronos =
-              target.type === "chronos_arbitrator" ||
-              target.visualType === "chronos_arbitrator" ||
-              (target.name && target.name.toLowerCase().includes("chronos"));
-
-            if (isChronos) {
-              this.drawChronosArbitratorBossBar(
-                ctx,
-                target,
-                hpPct,
-                bHp,
-                bMaxHp,
-                barX,
-                barY,
-                barW,
-                barH,
-              );
-              ctx.restore();
-              return;
-            }
-
-            let isNexus =
-              target.type === "nexus_overseer" ||
-              target.visualType === "nexus_overseer" ||
-              (target.name && target.name.toLowerCase().includes("nexus"));
-
-            if (isNexus) {
-              this.drawNexusOverseerBossBar(
-                ctx,
-                target,
-                hpPct,
-                bHp,
-                bMaxHp,
-                barX,
-                barY,
-                barW,
-                barH,
-              );
-              ctx.restore();
-              return;
-            }
-
-            let isGilded =
-              target.type === "gilded_vault_keeper" ||
-              target.visualType === "gilded_vault_keeper" ||
-              (target.name && target.name.toLowerCase().includes("vault keeper")) ||
-              (target.name && target.name.toLowerCase().includes("gilded"));
-
-            if (isGilded) {
-              this.drawGildedVaultKeeperBossBar(
-                ctx,
-                target,
-                hpPct,
-                bHp,
-                bMaxHp,
-                barX,
-                barY,
-                barW,
-                barH,
-              );
-              ctx.restore();
-              return;
-            }
-
-            let isCorrosive =
-              target.type === "corrosive_abomination" ||
-              target.visualType === "corrosive_abomination" ||
-              (target.name && target.name.toLowerCase().includes("corrosive")) ||
-              (target.name && target.name.toLowerCase().includes("abomination"));
-
-            if (isCorrosive) {
-              this.drawCorrosiveAbominationBossBar(
-                ctx,
-                target,
-                hpPct,
-                bHp,
-                bMaxHp,
-                barX,
-                barY,
-                barW,
-                barH,
-              );
-              ctx.restore();
-              return;
-            }
-
-            let isHooktail =
-              target.type === "hooktail" ||
-              target.type === "prestige_boss" ||
-              target.visualType === "hooktail" ||
-              (target.name && target.name.toLowerCase().includes("hooktail")) ||
-              (target.name && target.name.toLowerCase().includes("calamity"));
-
-            if (isHooktail) {
-              this.drawHooktailBossBar(
-                ctx,
-                target,
-                hpPct,
-                bHp,
-                bMaxHp,
-                barX,
-                barY,
-                barW,
-                barH,
-              );
-              ctx.restore();
-              return;
-            }
-
-            let isOverlord =
-              target.type === "overlord_iron_vault" ||
-              target.visualType === "overlord_iron_vault" ||
-              (target.name && target.name.toLowerCase().includes("overlord")) ||
-              (target.name && target.name.toLowerCase().includes("iron vault"));
-
-            if (isOverlord) {
-              this.drawOverlordIronVaultBossBar(
-                ctx,
-                target,
-                hpPct,
-                bHp,
-                bMaxHp,
-                barX,
-                barY,
-                barW,
-                barH,
-              );
-              ctx.restore();
-              return;
-            }
-
-            this.drawStandardBossBar(
-              ctx,
-              target,
-              hpPct,
-              bHp,
-              bMaxHp,
-              barX,
-              barY,
-              barW,
-              barH,
-            );
-            ctx.restore();
-            return;
-          } else if (hpPct < 1.0) {
-            let barW = target.w || 30;
-            let barX = target.x;
-            let barY = target.y - 12;
-
-            ctx.fillStyle = "#111111";
-            ctx.fillRect(barX, barY, barW, 6);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(barX, barY, target.trailingPct * barW, 6);
-
-            ctx.fillStyle = "#e74c3c";
-            ctx.fillRect(barX, barY, hpPct * barW, 6);
-
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(barX, barY, barW, 6);
-
-            this.drawStatusDots(
-              ctx,
-              barX,
-              barY - 6,
-              target.bleedStacks || 0,
-              "#e74c3c",
-            );
-            this.drawStatusDots(
-              ctx,
-              barX,
-              barY - 12,
-              target.poisonStacks || 0,
-              "#2ecc71",
-            );
-          }
-
+        if (isAegis) {
+          this.drawAegisGoliathBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
           ctx.restore();
+          return;
         }
 
-        drawAegisGoliathBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
-          let tremorY = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
+        let isChronos =
+          target.type === "chronos_arbitrator" ||
+          target.visualType === "chronos_arbitrator" ||
+          (target.name && target.name.toLowerCase().includes("chronos"));
 
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
-
-          let theme = (window.BOSS_BAR_THEMES && window.BOSS_BAR_THEMES.aegis_goliath) || {
-            title: "AEGIS GOLIATH",
-            subtitle: "COSMIC SHIELD WARDEN",
-            primaryColor: "#00d2ff",
-            secondaryColor: "#3498db",
-          };
-
-          let pulse = Math.sin(time / 140) * 0.15 + 0.85;
-          ctx.shadowBlur = 12 * pulse;
-          ctx.shadowColor = theme.primaryColor;
-
-          ctx.fillStyle = "#050c18";
-          ctx.strokeStyle = theme.primaryColor;
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          [-14, barW + 6].forEach((offsetX) => {
-            let bracketX = barX + offsetX;
-            ctx.fillStyle = "#1e293b";
-            ctx.strokeStyle = theme.primaryColor;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(bracketX, barY - 1);
-            ctx.lineTo(bracketX + 8, barY + barH / 2);
-            ctx.lineTo(bracketX, barY + barH + 1);
-            ctx.lineTo(bracketX - 4, barY + barH / 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#e0f2fe";
-            ctx.beginPath();
-            ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          ctx.fillStyle = "#e0f2fe";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-            ctx.fill();
-          }
-
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#00ffff");
-            fillGrad.addColorStop(0.5, "#00d2ff");
-            fillGrad.addColorStop(1, "#1d4ed8");
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-            ctx.fill();
-
-            let scanX = barX + ((time / 6) % fillWidth);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-            ctx.fillRect(scanX, barY + 1, 6, barH - 2);
-          }
-
-          ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
-
-            ctx.fillStyle = "#00d2ff";
-            ctx.fillRect(notchX - 1, barY - 1, 2, 2);
-            ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
-          });
-
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
-
-          let bossTitle = (target.name || theme.title).toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#00d2ff";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
-
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#e0f2fe";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#00ffff";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
+        if (isChronos) {
+          this.drawChronosArbitratorBossBar(
             ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
           );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
           ctx.restore();
+          return;
         }
 
-        drawChronosArbitratorBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
-          let tremorY = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
+        let isNexus =
+          target.type === "nexus_overseer" ||
+          target.visualType === "nexus_overseer" ||
+          (target.name && target.name.toLowerCase().includes("nexus"));
 
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
+        if (isNexus) {
+          this.drawNexusOverseerBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
+          ctx.restore();
+          return;
+        }
 
-          let theme = (window.BOSS_BAR_THEMES && window.BOSS_BAR_THEMES.chronos_arbitrator) || {
-            title: "CHRONOS ARBITRATOR",
-            subtitle: "THE CLOCKWORK GOD",
-            primaryColor: "#f1c40f",
-            secondaryColor: "#d35400",
-          };
+        let isGilded =
+          target.type === "gilded_vault_keeper" ||
+          target.visualType === "gilded_vault_keeper" ||
+          (target.name && target.name.toLowerCase().includes("vault keeper")) ||
+          (target.name && target.name.toLowerCase().includes("gilded"));
 
-          let pulse = Math.sin(time / 160) * 0.15 + 0.85;
-          ctx.shadowBlur = 12 * pulse;
-          ctx.shadowColor = "#f1c40f";
+        if (isGilded) {
+          this.drawGildedVaultKeeperBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
+          ctx.restore();
+          return;
+        }
 
-          ctx.fillStyle = "#1c120c";
-          ctx.strokeStyle = "#d4af37";
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
+        let isCorrosive =
+          target.type === "corrosive_abomination" ||
+          target.visualType === "corrosive_abomination" ||
+          (target.name && target.name.toLowerCase().includes("corrosive")) ||
+          (target.name && target.name.toLowerCase().includes("abomination"));
 
-          [-14, barW + 14].forEach((offsetX, idx) => {
-            let gearX = barX + offsetX;
-            let gearY = barY + barH / 2;
-            let gearRad = 11;
-            let gearRot = (time / 800) * (idx === 0 ? 1 : -1);
+        if (isCorrosive) {
+          this.drawCorrosiveAbominationBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
+          ctx.restore();
+          return;
+        }
 
-            ctx.save();
-            ctx.translate(gearX, gearY);
+        let isHooktail =
+          target.type === "hooktail" ||
+          target.type === "prestige_boss" ||
+          target.visualType === "hooktail" ||
+          (target.name && target.name.toLowerCase().includes("hooktail")) ||
+          (target.name && target.name.toLowerCase().includes("calamity"));
 
-            ctx.save();
-            ctx.rotate(gearRot);
-            ctx.fillStyle = "#d4af37";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1.0;
-            ctx.beginPath();
-            ctx.arc(0, 0, gearRad, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+        if (isHooktail) {
+          this.drawHooktailBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
+          ctx.restore();
+          return;
+        }
 
-            let teeth = 6;
-            for (let i = 0; i < teeth; i++) {
-              let toothAngle = (i * Math.PI * 2) / teeth;
-              ctx.save();
-              ctx.rotate(toothAngle);
-              ctx.fillRect(-2, -gearRad - 2, 4, 4);
-              ctx.strokeRect(-2, -gearRad - 2, 4, 4);
+        let isOverlord =
+          target.type === "overlord_iron_vault" ||
+          target.visualType === "overlord_iron_vault" ||
+          (target.name && target.name.toLowerCase().includes("overlord")) ||
+          (target.name && target.name.toLowerCase().includes("iron vault"));
+
+        if (isOverlord) {
+          this.drawOverlordIronVaultBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
+          ctx.restore();
+          return;
+        }
+
+        this.drawStandardBossBar(
+          ctx,
+          target,
+          hpPct,
+          bHp,
+          bMaxHp,
+          barX,
+          barY,
+          barW,
+          barH,
+        );
+        ctx.restore();
+        return;
+      } else if (hpPct < 1.0) {
+        let barW = target.w || 30;
+        let barX = target.x;
+        let barY = target.y - 12;
+
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(barX, barY, barW, 6);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(barX, barY, target.trailingPct * barW, 6);
+
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(barX, barY, hpPct * barW, 6);
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(barX, barY, barW, 6);
+
+        this.drawStatusDots(
+                  ctx,
+                  barX,
+                  barY - 6,
+                  target.bleedStacks || 0,
+                  "#e74c3c",
+                );
+                this.drawStatusDots(
+                  ctx,
+                  barX,
+                  barY - 12,
+                  target.poisonStacks || 0,
+                  "#2ecc71",
+                );
+
+                // Render 3x Multi-Stack Buff Badges above Mob Healthbar
+                if (target.buffStacks) {
+                  let badgeY = barY - 18;
+                  let badgeParts = [];
+                  if ((target.buffStacks.haste || 0) > 0) badgeParts.push({ text: `Haste ${target.buffStacks.haste}x`, col: "#00d2ff" });
+                  if ((target.buffStacks.def || 0) > 0) badgeParts.push({ text: `Def ${target.buffStacks.def}x`, col: "#3498db" });
+                  if ((target.buffStacks.atk || 0) > 0) badgeParts.push({ text: `Atk ${target.buffStacks.atk}x`, col: "#e74c3c" });
+
+                  badgeParts.forEach((bp) => {
+                    ctx.font = "bold 8px monospace";
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 2.0;
+                    ctx.strokeText(bp.text, barX, badgeY);
+                    ctx.fillStyle = bp.col;
+                    ctx.fillText(bp.text, barX, badgeY);
+                    badgeY -= 9;
+                  });
+                }
+              }
+
               ctx.restore();
             }
-            ctx.restore();
 
-            ctx.fillStyle = "#fdf6e2";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1.0;
-            ctx.beginPath();
-            ctx.arc(0, 0, gearRad - 4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+    drawAegisGoliathBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
 
-            let handAngle = (time / (idx === 0 ? 600 : 1200)) % (Math.PI * 2);
-            ctx.strokeStyle = "#d35400";
-            ctx.lineWidth = 1.2;
-            ctx.lineCap = "round";
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(Math.cos(handAngle) * 4.5, Math.sin(handAngle) * 4.5);
-            ctx.stroke();
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
 
-            ctx.restore();
-          });
+      let theme = (window.BOSS_BAR_THEMES &&
+        window.BOSS_BAR_THEMES.aegis_goliath) || {
+        title: "AEGIS GOLIATH",
+        subtitle: "COSMIC SHIELD WARDEN",
+        primaryColor: "#00d2ff",
+        secondaryColor: "#3498db",
+      };
 
-          ctx.fillStyle = "#ffeaa7";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-            ctx.fill();
-          }
+      let pulse = Math.sin(time / 140) * 0.15 + 0.85;
+      ctx.shadowBlur = 12 * pulse;
+      ctx.shadowColor = theme.primaryColor;
 
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#ffeaa7");
-            fillGrad.addColorStop(0.5, "#f1c40f");
-            fillGrad.addColorStop(1, "#d35400");
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-            ctx.fill();
+      ctx.fillStyle = "#050c18";
+      ctx.strokeStyle = theme.primaryColor;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
 
-            let sweepX = barX + ((time / 5) % fillWidth);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-            ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
-          }
+      [-14, barW + 6].forEach((offsetX) => {
+        let bracketX = barX + offsetX;
+        ctx.fillStyle = "#1e293b";
+        ctx.strokeStyle = theme.primaryColor;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(bracketX, barY - 1);
+        ctx.lineTo(bracketX + 8, barY + barH / 2);
+        ctx.lineTo(bracketX, barY + barH + 1);
+        ctx.lineTo(bracketX - 4, barY + barH / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-          ctx.strokeStyle = "rgba(28, 18, 12, 0.9)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
+        ctx.fillStyle = "#e0f2fe";
+        ctx.beginPath();
+        ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
-            ctx.fillStyle = "#f1c40f";
-            ctx.fillRect(notchX - 1.5, barY - 2, 3, 3);
-            ctx.fillRect(notchX - 1.5, barY + barH - 1, 3, 3);
-          });
+      ctx.fillStyle = "#e0f2fe";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+        ctx.fill();
+      }
 
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#00ffff");
+        fillGrad.addColorStop(0.5, "#00d2ff");
+        fillGrad.addColorStop(1, "#1d4ed8");
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+        ctx.fill();
 
-          let bossTitle = (target.name || theme.title).toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#f1c40f";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+        let scanX = barX + ((time / 6) % fillWidth);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.fillRect(scanX, barY + 1, 6, barH - 2);
+      }
 
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#ffeaa7";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
 
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#ffd700";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
+        ctx.fillStyle = "#00d2ff";
+        ctx.fillRect(notchX - 1, barY - 1, 2, 2);
+        ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
+      });
 
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
 
+      let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#00d2ff";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#e0f2fe";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#00ffff";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawChronosArbitratorBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
+
+      let theme = (window.BOSS_BAR_THEMES &&
+        window.BOSS_BAR_THEMES.chronos_arbitrator) || {
+        title: "CHRONOS ARBITRATOR",
+        subtitle: "THE CLOCKWORK GOD",
+        primaryColor: "#f1c40f",
+        secondaryColor: "#d35400",
+      };
+
+      let pulse = Math.sin(time / 160) * 0.15 + 0.85;
+      ctx.shadowBlur = 12 * pulse;
+      ctx.shadowColor = "#f1c40f";
+
+      ctx.fillStyle = "#1c120c";
+      ctx.strokeStyle = "#d4af37";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      [-14, barW + 14].forEach((offsetX, idx) => {
+        let gearX = barX + offsetX;
+        let gearY = barY + barH / 2;
+        let gearRad = 11;
+        let gearRot = (time / 800) * (idx === 0 ? 1 : -1);
+
+        ctx.save();
+        ctx.translate(gearX, gearY);
+
+        ctx.save();
+        ctx.rotate(gearRot);
+        ctx.fillStyle = "#d4af37";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.arc(0, 0, gearRad, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        let teeth = 6;
+        for (let i = 0; i < teeth; i++) {
+          let toothAngle = (i * Math.PI * 2) / teeth;
+          ctx.save();
+          ctx.rotate(toothAngle);
+          ctx.fillRect(-2, -gearRad - 2, 4, 4);
+          ctx.strokeRect(-2, -gearRad - 2, 4, 4);
           ctx.restore();
         }
+        ctx.restore();
 
-        drawNexusOverseerBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let isGlitching = isLowHp || Math.sin(time / 40) > 0.88;
+        ctx.fillStyle = "#fdf6e2";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.arc(0, 0, gearRad - 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
-          let tremorX = isGlitching ? (Math.random() - 0.5) * (isLowHp ? 4.0 : 2.0) : 0;
-          let tremorY = isGlitching ? (Math.random() - 0.5) * (isLowHp ? 3.0 : 1.5) : 0;
+        let handAngle = (time / (idx === 0 ? 600 : 1200)) % (Math.PI * 2);
+        ctx.strokeStyle = "#d35400";
+        ctx.lineWidth = 1.2;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(handAngle) * 4.5, Math.sin(handAngle) * 4.5);
+        ctx.stroke();
 
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
+        ctx.restore();
+      });
 
-          let theme = (window.BOSS_BAR_THEMES && window.BOSS_BAR_THEMES.nexus_overseer) || {
-            title: "NEXUS OVERSEER",
-            subtitle: "CYBERSPACE SINGULARITY",
-            primaryColor: "#ff007f",
-            secondaryColor: "#00f0ff",
-          };
+      ctx.fillStyle = "#ffeaa7";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+        ctx.fill();
+      }
 
-          let pulse = Math.sin(time / 100) * 0.2 + 0.8;
-          ctx.shadowBlur = 14 * pulse;
-          ctx.shadowColor = "#ff007f";
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#ffeaa7");
+        fillGrad.addColorStop(0.5, "#f1c40f");
+        fillGrad.addColorStop(1, "#d35400");
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+        ctx.fill();
 
-          ctx.fillStyle = "#09090e";
-          ctx.strokeStyle = "#ff007f";
-          ctx.lineWidth = 2.0;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [2]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
+        let sweepX = barX + ((time / 5) % fillWidth);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+        ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
+      }
 
-          ctx.strokeStyle = "#00f0ff";
-          ctx.lineWidth = 1.5;
-          [-20, barW + 12].forEach((offsetX) => {
-            let bracketX = barX + offsetX;
-            ctx.beginPath();
-            ctx.moveTo(bracketX, barY - 4);
-            ctx.lineTo(bracketX + (offsetX < 0 ? 6 : -6), barY - 4);
-            ctx.moveTo(bracketX, barY - 4);
-            ctx.lineTo(bracketX, barY + 2);
+      ctx.strokeStyle = "rgba(28, 18, 12, 0.9)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
 
-            ctx.moveTo(bracketX, barY + barH + 4);
-            ctx.lineTo(bracketX + (offsetX < 0 ? 6 : -6), barY + barH + 4);
-            ctx.moveTo(bracketX, barY + barH + 4);
-            ctx.lineTo(bracketX, barY + barH - 2);
-            ctx.stroke();
-          });
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(notchX - 1.5, barY - 2, 3, 3);
+        ctx.fillRect(notchX - 1.5, barY + barH - 1, 3, 3);
+      });
 
-          [-14, barW + 14].forEach((offsetX, idx) => {
-            let nodeX = barX + offsetX;
-            let nodeY = barY + barH / 2;
-            let rot = (time / 400) * (idx === 0 ? 1 : -1);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
 
-            ctx.save();
-            ctx.translate(nodeX, nodeY);
-            ctx.rotate(rot);
+      let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#f1c40f";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
 
-            ctx.strokeStyle = "#00f0ff";
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(-5, -5, 10, 10);
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#ffeaa7";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
 
-            ctx.fillStyle = "#ff007f";
-            ctx.fillRect(-2, -2, 4, 4);
-            ctx.restore();
-          });
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#ffd700";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
 
-          ctx.fillStyle = "rgba(0, 240, 255, 0.4)";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.fillRect(barX, barY + 1, trailingWidth, barH - 2);
-          }
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
 
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#00f0ff");
-            fillGrad.addColorStop(0.5, "#ff007f");
-            fillGrad.addColorStop(1, "#8e44ad");
-            ctx.fillStyle = fillGrad;
-            ctx.fillRect(barX, barY + 1, fillWidth, barH - 2);
+      ctx.restore();
+    }
 
-            let sweepX = barX + ((time / 3) % fillWidth);
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(sweepX, barY + 1, 4, barH - 2);
+    drawNexusOverseerBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let isGlitching = isLowHp || Math.sin(time / 40) > 0.88;
 
-            if (Math.random() < 0.35) {
-              let glitchBlockX = barX + Math.random() * (fillWidth - 10);
-              ctx.fillStyle = "#00f0ff";
-              ctx.fillRect(glitchBlockX, barY + 1, 8, barH - 2);
-            }
-          }
+      let tremorX = isGlitching
+        ? (Math.random() - 0.5) * (isLowHp ? 4.0 : 2.0)
+        : 0;
+      let tremorY = isGlitching
+        ? (Math.random() - 0.5) * (isLowHp ? 3.0 : 1.5)
+        : 0;
 
-          ctx.strokeStyle = "rgba(9, 9, 14, 0.95)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
 
-            ctx.fillStyle = "#00f0ff";
-            ctx.fillRect(notchX - 1, barY - 2, 2, 3);
-            ctx.fillRect(notchX - 1, barY + barH - 1, 2, 3);
-          });
+      let theme = (window.BOSS_BAR_THEMES &&
+        window.BOSS_BAR_THEMES.nexus_overseer) || {
+        title: "NEXUS OVERSEER",
+        subtitle: "CYBERSPACE SINGULARITY",
+        primaryColor: "#ff007f",
+        secondaryColor: "#00f0ff",
+      };
 
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
+      let pulse = Math.sin(time / 100) * 0.2 + 0.8;
+      ctx.shadowBlur = 14 * pulse;
+      ctx.shadowColor = "#ff007f";
 
-          let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.fillStyle = "#09090e";
+      ctx.strokeStyle = "#ff007f";
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [2]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
 
-          if (isGlitching) {
-            ctx.fillStyle = "rgba(0, 240, 255, 0.8)";
-            ctx.fillText(bossTitle, barX + barW / 2 - 1.5, barY - 6);
-            ctx.fillStyle = "rgba(255, 0, 127, 0.8)";
-            ctx.fillText(bossTitle, barX + barW / 2 + 1.5, barY - 6);
-          }
+      ctx.strokeStyle = "#00f0ff";
+      ctx.lineWidth = 1.5;
+      [-20, barW + 12].forEach((offsetX) => {
+        let bracketX = barX + offsetX;
+        ctx.beginPath();
+        ctx.moveTo(bracketX, barY - 4);
+        ctx.lineTo(bracketX + (offsetX < 0 ? 6 : -6), barY - 4);
+        ctx.moveTo(bracketX, barY - 4);
+        ctx.lineTo(bracketX, barY + 2);
 
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#ff007f";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+        ctx.moveTo(bracketX, barY + barH + 4);
+        ctx.lineTo(bracketX + (offsetX < 0 ? 6 : -6), barY + barH + 4);
+        ctx.moveTo(bracketX, barY + barH + 4);
+        ctx.lineTo(bracketX, barY + barH - 2);
+        ctx.stroke();
+      });
 
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `[SYSTEM_HP: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      [-14, barW + 14].forEach((offsetX, idx) => {
+        let nodeX = barX + offsetX;
+        let nodeY = barY + barH / 2;
+        let rot = (time / 400) * (idx === 0 ? 1 : -1);
+
+        ctx.save();
+        ctx.translate(nodeX, nodeY);
+        ctx.rotate(rot);
+
+        ctx.strokeStyle = "#00f0ff";
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(-5, -5, 10, 10);
+
+        ctx.fillStyle = "#ff007f";
+        ctx.fillRect(-2, -2, 4, 4);
+        ctx.restore();
+      });
+
+      ctx.fillStyle = "rgba(0, 240, 255, 0.4)";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.fillRect(barX, barY + 1, trailingWidth, barH - 2);
+      }
+
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#00f0ff");
+        fillGrad.addColorStop(0.5, "#ff007f");
+        fillGrad.addColorStop(1, "#8e44ad");
+        ctx.fillStyle = fillGrad;
+        ctx.fillRect(barX, barY + 1, fillWidth, barH - 2);
+
+        let sweepX = barX + ((time / 3) % fillWidth);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(sweepX, barY + 1, 4, barH - 2);
+
+        if (Math.random() < 0.35) {
+          let glitchBlockX = barX + Math.random() * (fillWidth - 10);
           ctx.fillStyle = "#00f0ff";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#00f0ff";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
-          ctx.restore();
+          ctx.fillRect(glitchBlockX, barY + 1, 8, barH - 2);
         }
-
-        drawGildedVaultKeeperBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
-          let tremorY = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
-
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
-
-          let theme = (window.BOSS_BAR_THEMES && window.BOSS_BAR_THEMES.gilded_vault_keeper) || {
-            title: "GILDED VAULT KEEPER",
-            subtitle: "MIDAS TREASURY OVERSEER",
-            primaryColor: "#ffd700",
-            secondaryColor: "#b58700",
-          };
-
-          let pulse = Math.sin(time / 140) * 0.18 + 0.82;
-          ctx.shadowBlur = 14 * pulse;
-          ctx.shadowColor = "#ffd700";
-
-          ctx.fillStyle = "#1e1107";
-          ctx.strokeStyle = "#ffd700";
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          [-14, barW + 14].forEach((offsetX) => {
-            let coinX = barX + offsetX;
-            let coinY = barY + barH / 2;
-
-            ctx.fillStyle = "#b58700";
-            ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.arc(coinX, coinY, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#ffd700";
-            ctx.beginPath();
-            ctx.arc(coinX, coinY, 8, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "#111116";
-            ctx.beginPath();
-            ctx.arc(coinX, coinY - 1.5, 2, 0, Math.PI * 2);
-            ctx.rect(coinX - 1.2, coinY - 1, 2.4, 4);
-            ctx.fill();
-          });
-
-          ctx.fillStyle = "#fff1a8";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-            ctx.fill();
-          }
-
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#ffffff");
-            fillGrad.addColorStop(0.3, "#ffd700");
-            fillGrad.addColorStop(0.8, "#d4ac0d");
-            fillGrad.addColorStop(1, "#b58700");
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-            ctx.fill();
-
-            let gleamX = barX + ((time / 4) % fillWidth);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-            ctx.fillRect(gleamX, barY + 1, 6, barH - 2);
-          }
-
-          ctx.strokeStyle = "rgba(30, 17, 7, 0.9)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
-
-            ctx.fillStyle = "#ffd700";
-            ctx.beginPath();
-            ctx.arc(notchX, barY - 1, 2, 0, Math.PI * 2);
-            ctx.arc(notchX, barY + barH + 1, 2, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
-
-          let bossTitle = (target.name || theme.title).toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#ffd700";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
-
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `[TREASURY_HP: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#fff1a8";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#ffd700";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
-          ctx.restore();
-        }
-
-        drawCorrosiveAbominationBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2) : 0;
-          let tremorY = isLowHp ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2) : 0;
-
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
-
-          let theme = (window.BOSS_BAR_THEMES && window.BOSS_BAR_THEMES.corrosive_abomination) || {
-            title: "CORROSIVE ABOMINATION",
-            subtitle: "TOXIC SLUDGE OVERSEER",
-            primaryColor: "#2ecc71",
-            secondaryColor: "#00ff88",
-          };
-
-          let pulse = Math.sin(time / 110) * 0.2 + 0.8;
-          ctx.shadowBlur = 14 * pulse;
-          ctx.shadowColor = "#2ecc71";
-
-          ctx.fillStyle = "#091a10";
-          ctx.strokeStyle = "#2ecc71";
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          [-14, barW + 14].forEach((offsetX) => {
-            let podX = barX + offsetX;
-            let podY = barY + barH / 2;
-
-            ctx.fillStyle = "#112618";
-            ctx.strokeStyle = "#2ecc71";
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.arc(podX, podY, 9, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            let bubPulse = 4 + Math.sin(time / 120) * 1.5;
-            ctx.fillStyle = "#a3fd83";
-            ctx.beginPath();
-            ctx.arc(podX, podY, bubPulse, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          ctx.fillStyle = "rgba(163, 253, 131, 0.4)";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-            ctx.fill();
-          }
-
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#a3fd83");
-            fillGrad.addColorStop(0.5, "#2ecc71");
-            fillGrad.addColorStop(1, "#186a3b");
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-            ctx.fill();
-
-            for (let i = 0; i < 6; i++) {
-              let bubbleProgress = ((time / (120 + i * 20) + i * 40) % fillWidth);
-              let bubbleX = barX + bubbleProgress;
-              let bubbleY = barY + 3 + Math.sin(time / 100 + i) * 2;
-              let bubbleRad = 1.2 + (i % 3) * 0.8;
-
-              ctx.fillStyle = "#ffffff";
-              ctx.beginPath();
-              ctx.arc(bubbleX, bubbleY, bubbleRad, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-
-          ctx.strokeStyle = "rgba(9, 26, 16, 0.95)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
-
-            ctx.fillStyle = "#a3fd83";
-            ctx.fillRect(notchX - 1, barY - 2, 2, 3);
-            ctx.fillRect(notchX - 1, barY + barH - 1, 2, 3);
-          });
-
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
-
-          let bossTitle = (target.name || theme.title).toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#2ecc71";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
-
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `[BIO_MASS: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#a3fd83";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#a3fd83";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
-          ctx.restore();
-        }
-
-        drawHooktailBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp ? (Math.random() - 0.5) * 3.5 * (1.0 - hpPct / 0.2) : 0;
-          let tremorY = isLowHp ? (Math.random() - 0.5) * 3.5 * (1.0 - hpPct / 0.2) : 0;
-
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
-
-          let theme = (window.BOSS_BAR_THEMES && window.BOSS_BAR_THEMES.hooktail) || {
-            title: "HOOKTAIL",
-            subtitle: "THE SCARLET DRAGON CALAMITY",
-            primaryColor: "#ff3300",
-            secondaryColor: "#e74c3c",
-          };
-
-          let pulse = Math.sin(time / 90) * 0.2 + 0.8;
-          ctx.shadowBlur = 16 * pulse;
-          ctx.shadowColor = "#ff3300";
-
-          ctx.fillStyle = "#1c0404";
-          ctx.strokeStyle = "#ff3300";
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          [-14, barW + 6].forEach((offsetX, idx) => {
-            let bracketX = barX + offsetX;
-            let isLeft = idx === 0;
-
-            ctx.fillStyle = "#5a0e0e";
-            ctx.strokeStyle = "#ff3300";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            if (isLeft) {
-              ctx.moveTo(bracketX + 4, barY - 4);
-              ctx.lineTo(bracketX - 6, barY + barH / 2);
-              ctx.lineTo(bracketX + 4, barY + barH + 4);
-              ctx.lineTo(bracketX, barY + barH / 2);
-            } else {
-              ctx.moveTo(bracketX, barY - 4);
-              ctx.lineTo(bracketX + 10, barY + barH / 2);
-              ctx.lineTo(bracketX, barY + barH + 4);
-              ctx.lineTo(bracketX + 4, barY + barH / 2);
-            }
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#ffeaa7";
-            ctx.beginPath();
-            ctx.arc(bracketX + (isLeft ? -1 : 5), barY + barH / 2, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          ctx.fillStyle = "rgba(255, 234, 167, 0.45)";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-            ctx.fill();
-          }
-
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#ffeaa7");
-            fillGrad.addColorStop(0.4, "#ff5500");
-            fillGrad.addColorStop(1, "#960018");
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-            ctx.fill();
-
-            let sweepX = barX + ((time / 3) % fillWidth);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-            ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
-
-            for (let i = 0; i < 5; i++) {
-              let sparkX = barX + ((time / (100 + i * 15) + i * 50) % fillWidth);
-              let sparkY = barY + 2 + Math.sin(time / 80 + i) * 2;
-              ctx.fillStyle = "#ffffff";
-              ctx.fillRect(sparkX, sparkY, 1.8, 1.8);
-            }
-          }
-
-          ctx.strokeStyle = "rgba(28, 4, 4, 0.95)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
-
-            ctx.fillStyle = "#ff3300";
-            ctx.beginPath();
-            ctx.moveTo(notchX - 2, barY - 2);
-            ctx.lineTo(notchX + 2, barY - 2);
-            ctx.lineTo(notchX, barY + 1);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.moveTo(notchX - 2, barY + barH + 2);
-            ctx.lineTo(notchX + 2, barY + barH + 2);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.closePath();
-            ctx.fill();
-          });
-
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
-
-          let bossTitle = (target.name || theme.title).toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#ff3300";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
-
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `[DRAGON_VITALITY: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#ffeaa7";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#ff5500";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
-          ctx.restore();
-        }
-
-        drawOverlordIronVaultBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2) : 0;
-          let tremorY = isLowHp ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2) : 0;
-
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
-
-          let theme = (window.BOSS_BAR_THEMES && window.BOSS_BAR_THEMES.overlord_iron_vault) || {
-            title: "OVERLORD IRON VAULT",
-            subtitle: "THE UNBREAKABLE STEEL OVERLORD",
-            primaryColor: "#e67e22",
-            secondaryColor: "#7f8c8d",
-          };
-
-          let pulse = Math.sin(time / 130) * 0.15 + 0.85;
-          ctx.shadowBlur = 12 * pulse;
-          ctx.shadowColor = "#e67e22";
-
-          ctx.fillStyle = "#151922";
-          ctx.strokeStyle = "#7f8c8d";
-          ctx.lineWidth = 2.4;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [4]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          ctx.fillStyle = "#bdc3c7";
-          [-14, barW + 10].forEach((rx) => {
-            [barY, barY + barH - 2].forEach((ry) => {
-              ctx.beginPath();
-              ctx.arc(barX + rx, ry, 1.5, 0, Math.PI * 2);
-              ctx.fill();
-            });
-          });
-
-          [-14, barW + 6].forEach((offsetX, idx) => {
-            let bracketX = barX + offsetX;
-            let isLeft = idx === 0;
-
-            ctx.fillStyle = "#2c3e50";
-            ctx.strokeStyle = "#bdc3c7";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            if (isLeft) {
-              ctx.moveTo(bracketX + 6, barY - 3);
-              ctx.lineTo(bracketX - 6, barY + barH / 2);
-              ctx.lineTo(bracketX + 6, barY + barH + 3);
-              ctx.lineTo(bracketX + 2, barY + barH / 2);
-            } else {
-              ctx.moveTo(bracketX, barY - 3);
-              ctx.lineTo(bracketX + 12, barY + barH / 2);
-              ctx.lineTo(bracketX, barY + barH + 3);
-              ctx.lineTo(bracketX + 4, barY + barH / 2);
-            }
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#ff5500";
-            ctx.beginPath();
-            ctx.arc(bracketX + (isLeft ? 0 : 6), barY + barH / 2, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          ctx.fillStyle = "#ffeaa7";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [2]);
-            ctx.fill();
-          }
-
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#ffeaa7");
-            fillGrad.addColorStop(0.4, "#e67e22");
-            fillGrad.addColorStop(0.8, "#d35400");
-            fillGrad.addColorStop(1, "#2c3e50");
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [2]);
-            ctx.fill();
-
-            let sweepX = barX + ((time / 4) % fillWidth);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-            ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
-          }
-
-          ctx.strokeStyle = "rgba(21, 25, 34, 0.95)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
-
-            ctx.fillStyle = "#e67e22";
-            ctx.fillRect(notchX - 1.5, barY - 2, 3, 3);
-            ctx.fillRect(notchX - 1.5, barY + barH - 1, 3, 3);
-          });
-
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
-
-          let bossTitle = (target.name || theme.title).toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#e67e22";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
-
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `[ARMOR_INTEGRITY: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#ffeaa7";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#e67e22";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
-          ctx.restore();
-        }
-
-        drawStandardBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
-          let tremorY = isLowHp ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2) : 0;
-
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
-
-          let pulse = Math.sin(time / 120) * 0.15 + 0.85;
-          ctx.shadowBlur = 10 * pulse;
-          ctx.shadowColor = "#e74c3c";
-
-          ctx.fillStyle = "#111116";
-          ctx.strokeStyle = "#e74c3c";
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          [-14, barW + 6].forEach((offsetX) => {
-            let bracketX = barX + offsetX;
-            ctx.fillStyle = "#2c3e50";
-            ctx.strokeStyle = "#e74c3c";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(bracketX, barY - 1);
-            ctx.lineTo(bracketX + 8, barY + barH / 2);
-            ctx.lineTo(bracketX, barY + barH + 1);
-            ctx.lineTo(bracketX - 4, barY + barH / 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#ff6b6b";
-            ctx.beginPath();
-            ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          });
+      }
+
+      ctx.strokeStyle = "rgba(9, 9, 14, 0.95)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
+
+        ctx.fillStyle = "#00f0ff";
+        ctx.fillRect(notchX - 1, barY - 2, 2, 3);
+        ctx.fillRect(notchX - 1, barY + barH - 1, 2, 3);
+      });
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
+
+      let bossTitle = (target.name || theme.title).toUpperCase();
+
+      if (isGlitching) {
+        ctx.fillStyle = "rgba(0, 240, 255, 0.8)";
+        ctx.fillText(bossTitle, barX + barW / 2 - 1.5, barY - 6);
+        ctx.fillStyle = "rgba(255, 0, 127, 0.8)";
+        ctx.fillText(bossTitle, barX + barW / 2 + 1.5, barY - 6);
+      }
+
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#ff007f";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `[SYSTEM_HP: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#00f0ff";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#00f0ff";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawGildedVaultKeeperBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
+
+      let theme = (window.BOSS_BAR_THEMES &&
+        window.BOSS_BAR_THEMES.gilded_vault_keeper) || {
+        title: "GILDED VAULT KEEPER",
+        subtitle: "MIDAS TREASURY OVERSEER",
+        primaryColor: "#ffd700",
+        secondaryColor: "#b58700",
+      };
+
+      let pulse = Math.sin(time / 140) * 0.18 + 0.82;
+      ctx.shadowBlur = 14 * pulse;
+      ctx.shadowColor = "#ffd700";
+
+      ctx.fillStyle = "#1e1107";
+      ctx.strokeStyle = "#ffd700";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      [-14, barW + 14].forEach((offsetX) => {
+        let coinX = barX + offsetX;
+        let coinY = barY + barH / 2;
+
+        ctx.fillStyle = "#b58700";
+        ctx.strokeStyle = "#ffd700";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(coinX, coinY, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath();
+        ctx.arc(coinX, coinY, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#111116";
+        ctx.beginPath();
+        ctx.arc(coinX, coinY - 1.5, 2, 0, Math.PI * 2);
+        ctx.rect(coinX - 1.2, coinY - 1, 2.4, 4);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "#fff1a8";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+        ctx.fill();
+      }
+
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#ffffff");
+        fillGrad.addColorStop(0.3, "#ffd700");
+        fillGrad.addColorStop(0.8, "#d4ac0d");
+        fillGrad.addColorStop(1, "#b58700");
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+        ctx.fill();
+
+        let gleamX = barX + ((time / 4) % fillWidth);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+        ctx.fillRect(gleamX, barY + 1, 6, barH - 2);
+      }
+
+      ctx.strokeStyle = "rgba(30, 17, 7, 0.9)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath();
+        ctx.arc(notchX, barY - 1, 2, 0, Math.PI * 2);
+        ctx.arc(notchX, barY + barH + 1, 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
+
+      let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#ffd700";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `[TREASURY_HP: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#fff1a8";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#ffd700";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawCorrosiveAbominationBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2)
+        : 0;
+
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
+
+      let theme = (window.BOSS_BAR_THEMES &&
+        window.BOSS_BAR_THEMES.corrosive_abomination) || {
+        title: "CORROSIVE ABOMINATION",
+        subtitle: "TOXIC SLUDGE OVERSEER",
+        primaryColor: "#2ecc71",
+        secondaryColor: "#00ff88",
+      };
+
+      let pulse = Math.sin(time / 110) * 0.2 + 0.8;
+      ctx.shadowBlur = 14 * pulse;
+      ctx.shadowColor = "#2ecc71";
+
+      ctx.fillStyle = "#091a10";
+      ctx.strokeStyle = "#2ecc71";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      [-14, barW + 14].forEach((offsetX) => {
+        let podX = barX + offsetX;
+        let podY = barY + barH / 2;
+
+        ctx.fillStyle = "#112618";
+        ctx.strokeStyle = "#2ecc71";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(podX, podY, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        let bubPulse = 4 + Math.sin(time / 120) * 1.5;
+        ctx.fillStyle = "#a3fd83";
+        ctx.beginPath();
+        ctx.arc(podX, podY, bubPulse, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "rgba(163, 253, 131, 0.4)";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+        ctx.fill();
+      }
+
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#a3fd83");
+        fillGrad.addColorStop(0.5, "#2ecc71");
+        fillGrad.addColorStop(1, "#186a3b");
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+        ctx.fill();
+
+        for (let i = 0; i < 6; i++) {
+          let bubbleProgress = (time / (120 + i * 20) + i * 40) % fillWidth;
+          let bubbleX = barX + bubbleProgress;
+          let bubbleY = barY + 3 + Math.sin(time / 100 + i) * 2;
+          let bubbleRad = 1.2 + (i % 3) * 0.8;
 
           ctx.fillStyle = "#ffffff";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-            ctx.fill();
-          }
-
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
-            fillGrad.addColorStop(0, "#ff6b6b");
-            fillGrad.addColorStop(0.5, "#e74c3c");
-            fillGrad.addColorStop(1, "#960018");
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-            ctx.fill();
-
-            let sweepX = barX + ((time / 5) % fillWidth);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-            ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
-          }
-
-          ctx.strokeStyle = "rgba(17, 17, 22, 0.95)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
-
-            ctx.fillStyle = "#e74c3c";
-            ctx.fillRect(notchX - 1, barY - 1, 2, 2);
-            ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
-          });
-
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
-
-          let bossTitle = (target.name || "STAGE WARDEN").toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#e74c3c";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
-
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#ffffff";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#ffffff";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
-          ctx.restore();
+          ctx.beginPath();
+          ctx.arc(bubbleX, bubbleY, bubbleRad, 0, Math.PI * 2);
+          ctx.fill();
         }
+      }
 
-        drawStatusDots(ctx, startX, y, stacks, color) {
+      ctx.strokeStyle = "rgba(9, 26, 16, 0.95)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
+
+        ctx.fillStyle = "#a3fd83";
+        ctx.fillRect(notchX - 1, barY - 2, 2, 3);
+        ctx.fillRect(notchX - 1, barY + barH - 1, 2, 3);
+      });
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
+
+      let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#2ecc71";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `[BIO_MASS: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#a3fd83";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#a3fd83";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawHooktailBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 3.5 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 3.5 * (1.0 - hpPct / 0.2)
+        : 0;
+
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
+
+      let theme = (window.BOSS_BAR_THEMES &&
+        window.BOSS_BAR_THEMES.hooktail) || {
+        title: "HOOKTAIL",
+        subtitle: "THE SCARLET DRAGON CALAMITY",
+        primaryColor: "#ff3300",
+        secondaryColor: "#e74c3c",
+      };
+
+      let pulse = Math.sin(time / 90) * 0.2 + 0.8;
+      ctx.shadowBlur = 16 * pulse;
+      ctx.shadowColor = "#ff3300";
+
+      ctx.fillStyle = "#1c0404";
+      ctx.strokeStyle = "#ff3300";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      [-14, barW + 6].forEach((offsetX, idx) => {
+        let bracketX = barX + offsetX;
+        let isLeft = idx === 0;
+
+        ctx.fillStyle = "#5a0e0e";
+        ctx.strokeStyle = "#ff3300";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (isLeft) {
+          ctx.moveTo(bracketX + 4, barY - 4);
+          ctx.lineTo(bracketX - 6, barY + barH / 2);
+          ctx.lineTo(bracketX + 4, barY + barH + 4);
+          ctx.lineTo(bracketX, barY + barH / 2);
+        } else {
+          ctx.moveTo(bracketX, barY - 4);
+          ctx.lineTo(bracketX + 10, barY + barH / 2);
+          ctx.lineTo(bracketX, barY + barH + 4);
+          ctx.lineTo(bracketX + 4, barY + barH / 2);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffeaa7";
+        ctx.beginPath();
+        ctx.arc(
+          bracketX + (isLeft ? -1 : 5),
+          barY + barH / 2,
+          1.8,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "rgba(255, 234, 167, 0.45)";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+        ctx.fill();
+      }
+
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#ffeaa7");
+        fillGrad.addColorStop(0.4, "#ff5500");
+        fillGrad.addColorStop(1, "#960018");
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+        ctx.fill();
+
+        let sweepX = barX + ((time / 3) % fillWidth);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
+
+        for (let i = 0; i < 5; i++) {
+          let sparkX = barX + ((time / (100 + i * 15) + i * 50) % fillWidth);
+          let sparkY = barY + 2 + Math.sin(time / 80 + i) * 2;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sparkX, sparkY, 1.8, 1.8);
+        }
+      }
+
+      ctx.strokeStyle = "rgba(28, 4, 4, 0.95)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ff3300";
+        ctx.beginPath();
+        ctx.moveTo(notchX - 2, barY - 2);
+        ctx.lineTo(notchX + 2, barY - 2);
+        ctx.lineTo(notchX, barY + 1);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(notchX - 2, barY + barH + 2);
+        ctx.lineTo(notchX + 2, barY + barH + 2);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
+
+      let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#ff3300";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `[DRAGON_VITALITY: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#ffeaa7";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#ff5500";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawOverlordIronVaultBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 3.0 * (1.0 - hpPct / 0.2)
+        : 0;
+
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
+
+      let theme = (window.BOSS_BAR_THEMES &&
+        window.BOSS_BAR_THEMES.overlord_iron_vault) || {
+        title: "OVERLORD IRON VAULT",
+        subtitle: "THE UNBREAKABLE STEEL OVERLORD",
+        primaryColor: "#e67e22",
+        secondaryColor: "#7f8c8d",
+      };
+
+      let pulse = Math.sin(time / 130) * 0.15 + 0.85;
+      ctx.shadowBlur = 12 * pulse;
+      ctx.shadowColor = "#e67e22";
+
+      ctx.fillStyle = "#151922";
+      ctx.strokeStyle = "#7f8c8d";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [4]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "#bdc3c7";
+      [-14, barW + 10].forEach((rx) => {
+        [barY, barY + barH - 2].forEach((ry) => {
+          ctx.beginPath();
+          ctx.arc(barX + rx, ry, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+
+      [-14, barW + 6].forEach((offsetX, idx) => {
+        let bracketX = barX + offsetX;
+        let isLeft = idx === 0;
+
+        ctx.fillStyle = "#2c3e50";
+        ctx.strokeStyle = "#bdc3c7";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (isLeft) {
+          ctx.moveTo(bracketX + 6, barY - 3);
+          ctx.lineTo(bracketX - 6, barY + barH / 2);
+          ctx.lineTo(bracketX + 6, barY + barH + 3);
+          ctx.lineTo(bracketX + 2, barY + barH / 2);
+        } else {
+          ctx.moveTo(bracketX, barY - 3);
+          ctx.lineTo(bracketX + 12, barY + barH / 2);
+          ctx.lineTo(bracketX, barY + barH + 3);
+          ctx.lineTo(bracketX + 4, barY + barH / 2);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ff5500";
+        ctx.beginPath();
+        ctx.arc(
+          bracketX + (isLeft ? 0 : 6),
+          barY + barH / 2,
+          1.8,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "#ffeaa7";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [2]);
+        ctx.fill();
+      }
+
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#ffeaa7");
+        fillGrad.addColorStop(0.4, "#e67e22");
+        fillGrad.addColorStop(0.8, "#d35400");
+        fillGrad.addColorStop(1, "#2c3e50");
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [2]);
+        ctx.fill();
+
+        let sweepX = barX + ((time / 4) % fillWidth);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
+      }
+
+      ctx.strokeStyle = "rgba(21, 25, 34, 0.95)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
+
+        ctx.fillStyle = "#e67e22";
+        ctx.fillRect(notchX - 1.5, barY - 2, 3, 3);
+        ctx.fillRect(notchX - 1.5, barY + barH - 1, 3, 3);
+      });
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
+
+      let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#e67e22";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `[ARMOR_INTEGRITY: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#ffeaa7";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#e67e22";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawStandardBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
+
+      let pulse = Math.sin(time / 120) * 0.15 + 0.85;
+      ctx.shadowBlur = 10 * pulse;
+      ctx.shadowColor = "#e74c3c";
+
+      ctx.fillStyle = "#111116";
+      ctx.strokeStyle = "#e74c3c";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      [-14, barW + 6].forEach((offsetX) => {
+        let bracketX = barX + offsetX;
+        ctx.fillStyle = "#2c3e50";
+        ctx.strokeStyle = "#e74c3c";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(bracketX, barY - 1);
+        ctx.lineTo(bracketX + 8, barY + barH / 2);
+        ctx.lineTo(bracketX, barY + barH + 1);
+        ctx.lineTo(bracketX - 4, barY + barH / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ff6b6b";
+        ctx.beginPath();
+        ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "#ffffff";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+        ctx.fill();
+      }
+
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
+          barX,
+          barY,
+          barX + fillWidth,
+          barY,
+        );
+        fillGrad.addColorStop(0, "#ff6b6b");
+        fillGrad.addColorStop(0.5, "#e74c3c");
+        fillGrad.addColorStop(1, "#960018");
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+        ctx.fill();
+
+        let sweepX = barX + ((time / 5) % fillWidth);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+        ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
+      }
+
+      ctx.strokeStyle = "rgba(17, 17, 22, 0.95)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
+
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(notchX - 1, barY - 1, 2, 2);
+        ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
+      });
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
+
+      let bossTitle = (target.name || "STAGE WARDEN").toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#e74c3c";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawStatusDots(ctx, startX, y, stacks, color) {
       if (stacks <= 0) return;
       let dotSize = 2.0;
       let dotSpacing = 3;
@@ -2989,23 +3179,80 @@
       c.translate(-cx, -cy);
     }
 
-    // Ground Drop Shadow Pass
-    c.save();
-    let mobShadowW = m.w * 0.45;
-    let mobShadowH = Math.max(3, m.h * 0.15);
-    c.fillStyle = "rgba(0, 0, 0, 0.35)";
-    c.beginPath();
-    c.ellipse(
-      m.x + m.w / 2,
-      m.y + m.h - 2,
-      mobShadowW,
-      mobShadowH,
-      0,
-      0,
-      Math.PI * 2,
-    );
-    c.fill();
-    c.restore();
+    // Ground Drop Shadow & Elite Aura Pass
+        c.save();
+        let mCx = m.x + m.w / 2;
+        let mCy = m.y + m.h - 2;
+        let mobShadowW = m.w * 0.45;
+        let mobShadowH = Math.max(3, m.h * 0.15);
+
+        c.fillStyle = "rgba(0, 0, 0, 0.35)";
+        c.beginPath();
+        c.ellipse(mCx, mCy, mobShadowW, mobShadowH, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // Render Blood Berserker Death Detonation Warning Circle
+        if (m.isDetonating && m.detonationTimer > 0) {
+          let pulse = Math.sin(Date.now() / 50) * 4;
+          c.strokeStyle = "#e74c3c";
+          c.lineWidth = 2.0;
+          c.setLineDash([6, 4]);
+          c.beginPath();
+          c.arc(mCx, mCy - m.h / 2, 100 + pulse, 0, Math.PI * 2);
+          c.stroke();
+          c.setLineDash([]);
+
+          c.fillStyle = "rgba(231, 76, 60, 0.12)";
+          c.beginPath();
+          c.arc(mCx, mCy - m.h / 2, 100 + pulse, 0, Math.PI * 2);
+          c.fill();
+        }
+
+        // Render Elite Commander Ground Runic Aura Ring & Laser Tethers
+        if (m.eliteAffix) {
+          let auraColor = "#00d2ff";
+          let buffKey = "haste";
+
+          if (m.eliteAffix === "vitality_weaver") { auraColor = "#2ecc71"; buffKey = null; }
+          else if (m.eliteAffix === "iron_citadel") { auraColor = "#3498db"; buffKey = "def"; }
+          else if (m.eliteAffix === "swift_commander") { auraColor = "#00d2ff"; buffKey = "haste"; }
+          else if (m.eliteAffix === "blood_berserker") { auraColor = "#e74c3c"; buffKey = "atk"; }
+          else if (m.eliteAffix === "nullifier") { auraColor = "#a855f7"; buffKey = null; }
+
+          let rot = (Date.now() / 400) % (Math.PI * 2);
+          c.strokeStyle = auraColor;
+          c.lineWidth = 1.8;
+          c.setLineDash([4, 4]);
+          c.save();
+          c.translate(mCx, mCy);
+          c.rotate(rot);
+          c.beginPath();
+          c.ellipse(0, 0, m.w * 0.9, m.w * 0.45, 0, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+
+          // Draw Translucent Laser Tether Links to Buffed Minion Allies
+          if (buffKey && window.activeDungeonMobs) {
+            c.strokeStyle = auraColor;
+            c.lineWidth = 1.2;
+            c.globalAlpha = 0.35;
+            c.setLineDash([2, 2]);
+
+            window.activeDungeonMobs.forEach((m2) => {
+              if (m2 === m || !m2.buffStacks || (m2.buffStacks[buffKey] || 0) <= 0) return;
+              let m2Cx = m2.x + (m2.w || 24) / 2;
+              let m2Cy = m2.y + (m2.h || 24) / 2;
+
+              c.beginPath();
+              c.moveTo(mCx, mCy - m.h / 2);
+              c.lineTo(m2Cx, m2Cy);
+              c.stroke();
+            });
+            c.setLineDash([]);
+            c.globalAlpha = 1.0;
+          }
+        }
+        c.restore();
 
     let penWidth =
       m.type === "boss" ||
@@ -7273,7 +7520,7 @@
             c.lineWidth = 1.5;
             c.stroke();
             c.fillStyle = "#ff007f";
-            c.fillRect(px - 1.2, py - 4, 2.4, 8);
+            c.fillRect(px - 1.2, -4, 2.4, 8);
           }
         }
       }
@@ -7304,37 +7551,84 @@
   };
 
   window.drawSingleHero = function (
-    ctx,
-    x,
-    y,
-    scale,
-    equippedSlots,
-    playerStats,
-    bounce,
-    options = {},
-  ) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
+      ctx,
+      x,
+      y,
+      scale,
+      equippedSlots,
+      playerStats,
+      bounce,
+      options = {},
+    ) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
 
-    // Ground Drop Shadow Pass (Ambient Occlusion)
-    ctx.save();
-    let shadowScale = Math.max(0.65, 1.0 - Math.abs(bounce) * 0.05);
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-    ctx.beginPath();
-    ctx.ellipse(0, 16, 11 * shadowScale, 4.5 * shadowScale, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+      let equipped = equippedSlots ? { ...equippedSlots } : {};
+      let stats = playerStats || {};
+
+      // Ground Drop Shadow Pass (Ambient Occlusion)
+          ctx.save();
+          let shadowScale = Math.max(0.65, 1.0 - Math.abs(bounce) * 0.05);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+          ctx.beginPath();
+          ctx.ellipse(0, 16, 11 * shadowScale, 4.5 * shadowScale, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          // Active Buff & Elixir Ground Aura Ring Pass
+          if (
+            stats &&
+            (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+          ) {
+          let activeAuras = [];
+          let getAtkCol = (s) => (s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71");
+          let getHpCol = (s) => (s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c");
+          let getDefCol = (s) => (s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db");
+          let getHasteCol = (s) => (s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f");
+
+          if ((stats.atkPotionRuns || 0) > 0) activeAuras.push(getAtkCol(stats.atkPotionStrength || 0.1));
+          if ((stats.hpPotionRuns || 0) > 0) activeAuras.push(getHpCol(stats.hpPotionStrength || 0.1));
+          if ((stats.defPotionRuns || 0) > 0) activeAuras.push(getDefCol(stats.defPotionStrength || 0.1));
+          if ((stats.hastePotionRuns || 0) > 0) activeAuras.push(getHasteCol(stats.hastePotionStrength || 1));
+          if ((stats.xpPotionRuns || 0) > 0) activeAuras.push("#c084fc");
+          if ((stats.dropPotionRuns || 0) > 0) activeAuras.push("#34d399");
+          if ((stats.qlyPotionRuns || 0) > 0) activeAuras.push("#f472b6");
+          if (stats.frenzyTimer > 0) activeAuras.push("#f1c40f");
+          if (stats.astralAwakeningTimer > 0) activeAuras.push("#00d2ff");
+          if (stats.purifiedAegisTimer > 0) activeAuras.push("#2ecc71");
+
+          if (activeAuras.length > 0) {
+            ctx.save();
+            let time = Date.now();
+            let auraRot = (time / 400) % (Math.PI * 2);
+
+            activeAuras.forEach((col, idx) => {
+              let rx = 15 + idx * 3;
+              let ry = 7 + idx * 1.5;
+              let pulse = Math.sin(time / 200 + idx) * 1.2;
+
+              ctx.save();
+              ctx.translate(0, 16);
+              ctx.rotate(idx % 2 === 0 ? auraRot : -auraRot);
+              ctx.strokeStyle = col;
+              ctx.lineWidth = 1.2;
+              ctx.setLineDash([5, 3]);
+              ctx.beginPath();
+              ctx.ellipse(0, 0, rx + pulse, ry + pulse * 0.5, 0, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.restore();
+            });
+            ctx.restore();
+          }
+        }
 
     const penHero = 1.8;
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = penHero;
-    ctx.lineJoin = "round";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = penHero;
+        ctx.lineJoin = "round";
 
-    let equipped = equippedSlots ? { ...equippedSlots } : {};
-    let stats = playerStats || {};
-
-    // Phase 4: Spectral Cosmetic Projection Interceptor
+        // Phase 4: Spectral Cosmetic Projection Interceptor
     if (stats.projectSpectralCosmetic && stats.activeSpectralResonance) {
       let resonance = stats.activeSpectralResonance;
       if (resonance === "weapon_staff") {
@@ -10332,12 +10626,12 @@
 
     if (typeof window.showCustomConfirm === "function") {
       window.showCustomConfirm(
-        "📖 Hoor\\'s Tactical Guidebook",
+        "Hoor\\'s Tactical Guidebook",
         `Welcome, Hero! Optimize your build with these tactical tips:<br><br>
-         • <strong style="color:var(--accent-blue);">Deflection Mastery:</strong> Equip a Shield to enable Block Rate (capped at 20% / 30% / 40%), or a Dagger to enable Parry (capped at 15% / 25% / 35%).<br>
-         • <strong style="color:var(--accent-purple);">Arcane Barrier:</strong> Holding a Tome absorbs a base 20% of incoming damage before Defense checks. INT scales this up to a 35% cap.<br>
-         • <strong style="color:var(--accent-green);">Alchemical Synergy:</strong> High INT increases potion durations and unlocks potion sparring chances with select Relics.<br>
-         • <strong style="color:var(--text-gold);">Ascension PP:</strong> Slaying Hooktail on higher Stage challenges grants a massive amount of extra Prestige Points! Scale the slider on the Altar before initiating fights.`,
+           • <strong style="color:var(--accent-blue);">Deflection Mastery:</strong> Equip a Shield to enable Block Rate (capped at 20% / 30% / 40%), or a Dagger to enable Parry (capped at 15% / 25% / 35%).<br>
+           • <strong style="color:var(--accent-purple);">Arcane Barrier:</strong> Holding a Tome absorbs a base 20% of incoming damage before Defense checks. INT scales this up to a 35% cap.<br>
+           • <strong style="color:var(--accent-green);">Alchemical Synergy:</strong> High INT increases potion durations and unlocks potion sparring chances with select Relics.<br>
+           • <strong style="color:var(--text-gold);">Ascension PP:</strong> Slaying Hooktail on higher Stage challenges grants a massive amount of extra Prestige Points! Scale the slider on the Altar before initiating fights.`,
         "Got it!",
         "Exit",
         "var(--accent-purple)",
@@ -10827,37 +11121,37 @@
       let buffDescs = newItem.buffs
         .map(
           (b) =>
-            `<span style="color:#2ecc71; display:block; font-size:10px; margin-bottom:2px;">• ☀️ ${b.name}: ${b.desc}</span>`,
+            `<span style="color:#2ecc71; display:block; font-size:10px; margin-bottom:2px;">• ✦ ${b.name}: ${b.desc}</span>`,
         )
         .join("");
       let debuffDescs = newItem.debuffs
         .map(
           (d) =>
-            `<span style="color:#e74c3c; display:block; font-size:10px; margin-bottom:2px;">• 🌑 ${d.name}: ${d.desc}</span>`,
+            `<span style="color:#e74c3c; display:block; font-size:10px; margin-bottom:2px;">• ◈ ${d.name}: ${d.desc}</span>`,
         )
         .join("");
 
       overlay.innerHTML = `
-          <div style="background:#15121b; border:3px solid ${color}; border-radius:12px; width:95%; max-width:400px; box-shadow:0 15px 45px rgba(0,0,0,0.95); text-align:center; padding:20px; animation: toastFadeIn 0.3s;">
-            <h2 style="margin:0 0 10px 0; color:${color}; letter-spacing:2px; text-transform:uppercase; font-size:18px;">🔮 SIGIL UNBOXED!</h2>
-            <div style="height:2px; background:linear-gradient(90deg, transparent, ${color}, transparent); margin-bottom:15px;"></div>
-            <div style="text-align:center; margin-bottom:12px;">${window.getEquipIconHtml(newItem, 48)}</div>
-            <h3 style="color:${color}; font-size:14px; margin:0 0 4px 0;">${newItem.name}</h3>
-            <span style="font-size:10px; color:#aaa; font-family:monospace; display:block; margin-bottom:12px;">Quality: ${stars}★ ${window.getTierName(stars)}</span>
+              <div style="background:#15121b; border:3px solid ${color}; border-radius:12px; width:95%; max-width:400px; box-shadow:0 15px 45px rgba(0,0,0,0.95); text-align:center; padding:20px; animation: toastFadeIn 0.3s;">
+                <h2 style="margin:0 0 10px 0; color:${color}; letter-spacing:2px; text-transform:uppercase; font-size:18px;">✦ SIGIL UNBOXED! ✦</h2>
+                <div style="height:2px; background:linear-gradient(90deg, transparent, ${color}, transparent); margin-bottom:15px;"></div>
+                <div style="text-align:center; margin-bottom:12px;">${window.getEquipIconHtml(newItem, 48)}</div>
+                <h3 style="color:${color}; font-size:14px; margin:0 0 4px 0;">${newItem.name}</h3>
+                <span style="font-size:10px; color:#aaa; font-family:monospace; display:block; margin-bottom:12px;">Quality: ${stars}★ ${window.getTierName(stars)}</span>
 
-            <div style="background:#090610; border:1px solid #333; border-radius:6px; padding:12px; text-align:left; margin-bottom:15px; line-height:1.45;">
-                          <strong style="color:#f1c40f; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:10px; letter-spacing:0.5px;">⚡ SIGIL MODIFIERS:</strong>
-                          ${buffDescs}
-                          ${debuffDescs}
-                          <div style="border-top:1px dashed #333; margin-top:8px; padding-top:6px; display:flex; flex-direction:column; gap:2px; font-family:monospace; font-size:9.5px;">
-                            <span style="color:#3498db; font-weight:bold;">💎 Focus Rewards: +${(newItem.rewardMultiplier * 100).toFixed(0)}% Gold/Loot Multiplier</span>
-                            ${newItem.qualityBoost > 0 ? `<span style="color:#ff007f; font-weight:bold;">✨ Quality Boost: +${(newItem.qualityBoost * 100).toFixed(0)}% Drop Quality</span>` : ""}
-                          </div>
-                        </div>
+                <div style="background:#090610; border:1px solid #333; border-radius:6px; padding:12px; text-align:left; margin-bottom:15px; line-height:1.45;">
+                              <strong style="color:#f1c40f; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:10px; letter-spacing:0.5px;">[ SIGIL MODIFIERS ]</strong>
+                              ${buffDescs}
+                              ${debuffDescs}
+                              <div style="border-top:1px dashed #333; margin-top:8px; padding-top:6px; display:flex; flex-direction:column; gap:2px; font-family:monospace; font-size:9.5px;">
+                                <span style="color:#3498db; font-weight:bold;">✦ Focus Rewards: +${(newItem.rewardMultiplier * 100).toFixed(0)}% Gold/Loot Multiplier</span>
+                                ${newItem.qualityBoost > 0 ? `<span style="color:#ff007f; font-weight:bold;">✦ Quality Boost: +${(newItem.qualityBoost * 100).toFixed(0)}% Drop Quality</span>` : ""}
+                              </div>
+                            </div>
 
-            <button onclick="document.getElementById('sack-opening-overlay').remove(); window.setPauseState(false); window.updateUI(); window.renderInventory();" style="background:${color}; color:${stars === 4 || stars === 1 ? "#fff" : "#111"}; border:none; padding:10px; font-weight:bold; font-size:12px; border-radius:4px; cursor:pointer; width:100%; box-shadow:0 0 10px ${color}55;">Store in Sigil Sack</button>
-          </div>
-        `;
+                <button onclick="document.getElementById('sack-opening-overlay').remove(); window.setPauseState(false); window.updateUI(); window.renderInventory();" style="background:${color}; color:${stars === 4 || stars === 1 ? "#fff" : "#111"}; border:none; padding:10px; font-weight:bold; font-size:12px; border-radius:4px; cursor:pointer; width:100%; box-shadow:0 0 10px ${color}55;">Store in Sigil Sack</button>
+                              </div>
+                            `;
     }, 1100);
   };
 })();

@@ -137,10 +137,10 @@
     }
 
     generateBossArena() {
-          this.reset();
-          this.depth = 4;
-          this.width = 24;
-          this.height = 18;
+      this.reset();
+      this.depth = 4;
+      this.width = 24;
+      this.height = 18;
 
       this.grid = Array.from({ length: this.height }, () =>
         Array(this.width).fill(window.TILE_TYPES.WALL),
@@ -196,10 +196,10 @@
       );
 
       let rootNode = {
-        x: 1,
-        y: 1,
-        w: this.width - 2,
-        h: this.height - 2,
+        x: 2,
+        y: 2,
+        w: this.width - 4,
+        h: this.height - 4,
         left: null,
         right: null,
       };
@@ -373,8 +373,8 @@
       for (let y = 0; y < this.height; y++) {
         for (let x = 0; x < this.width; x++) {
           if (this.grid[y][x] === window.TILE_TYPES.FLOOR) {
-            for (let dy = -1; dy <= 1; dy++) {
-              for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -3; dy <= 3; dy++) {
+              for (let dx = -3; dx <= 3; dx++) {
                 let ny = y + dy;
                 let nx = x + dx;
                 if (
@@ -669,10 +669,10 @@
     }
 
     update(targetX, targetY, mapWidthPx, mapHeightPx) {
-          this.zoom = 1.6;
+      this.zoom = 1.6;
 
-          let effW = this.viewportW / this.zoom;
-          let effH = this.viewportH / this.zoom;
+      let effW = this.viewportW / this.zoom;
+      let effH = this.viewportH / this.zoom;
 
       // Offset camera target Y slightly for HUD clearance in landscape mode
       let hudOffset = 20;
@@ -688,7 +688,7 @@
       if (mapHeightPx <= effH) {
         this.y = (mapHeightPx - effH) / 2;
       } else {
-        this.y = Math.max(0, Math.min(this.y, mapHeightPx - effH));
+        this.y = Math.max(-10, Math.min(this.y, mapHeightPx - effH + 12));
       }
     }
   }
@@ -1036,7 +1036,10 @@
 
               if (isNorthFloor) {
                 pCtx.fillStyle = biome.wallTop;
-                pCtx.fillRect(px, py, tileSize, 2);
+                pCtx.fillRect(px, py, tileSize, 3.5);
+
+                pCtx.fillStyle = "#000000";
+                pCtx.fillRect(px, py, tileSize, 1.2);
               }
             }
 

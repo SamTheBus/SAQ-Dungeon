@@ -32,56 +32,56 @@ window.POTION_TRANSMUTATIONS = [
     result: "Greater Attack Elixir",
     req: "Attack Elixir",
     amount: 3,
-    color: "#27ae60",
+    color: "#10b981",
     desc: "Transmute 3x Attack Elixir into 1x Greater Attack Elixir.",
   },
   {
     result: "Supernal Attack Elixir",
     req: "Greater Attack Elixir",
     amount: 3,
-    color: "#1e824c",
+    color: "#00ffcc",
     desc: "Transmute 3x Greater Attack Elixir into 1x Supernal Attack Elixir.",
   },
   {
     result: "Greater Vitality Elixir",
     req: "Vitality Elixir",
     amount: 3,
-    color: "#c0392b",
+    color: "#f43f5e",
     desc: "Transmute 3x Vitality Elixir into 1x Greater Vitality Elixir.",
   },
   {
     result: "Supernal Vitality Elixir",
     req: "Greater Vitality Elixir",
     amount: 3,
-    color: "#962d22",
+    color: "#ff0055",
     desc: "Transmute 3x Greater Vitality Elixir into 1x Supernal Vitality Elixir.",
   },
   {
     result: "Greater Armored Elixir",
     req: "Armored Elixir",
     amount: 3,
-    color: "#2980b9",
+    color: "#00d2ff",
     desc: "Transmute 3x Armored Elixir into 1x Greater Armored Elixir.",
   },
   {
     result: "Supernal Armored Elixir",
     req: "Greater Armored Elixir",
     amount: 3,
-    color: "#1f3a52",
+    color: "#38bdf8",
     desc: "Transmute 3x Greater Armored Elixir into 1x Supernal Armored Elixir.",
   },
   {
     result: "Greater Haste Elixir",
     req: "Haste Elixir",
     amount: 3,
-    color: "#f39c12",
+    color: "#fbbf24",
     desc: "Transmute 3x Haste Elixir into 1x Greater Haste Elixir.",
   },
   {
     result: "Supernal Haste Elixir",
     req: "Greater Haste Elixir",
     amount: 3,
-    color: "#d35400",
+    color: "#ffaa00",
     desc: "Transmute 3x Greater Haste Elixir into 1x Supernal Haste Elixir.",
   },
 ];
@@ -150,65 +150,65 @@ window.useDex = {
     color: "#e67e22",
   },
   "Attack Elixir": {
-    desc: "Increases Attack Power by +10% for 1 Run.",
-    color: "#2ecc71",
-  },
-  "Greater Attack Elixir": {
-    desc: "Increases Attack Power by +20% for 2 Runs.",
-    color: "#27ae60",
-  },
-  "Supernal Attack Elixir": {
-    desc: "Increases Attack Power by +35% for 3 Runs.",
-    color: "#1e824c",
-  },
-  "Vitality Elixir": {
-    desc: "Increases Max HP by +10% for 1 Run.",
-    color: "#e74c3c",
-  },
-  "Greater Vitality Elixir": {
-    desc: "Increases Max HP by +20% for 2 Runs.",
-    color: "#c0392b",
-  },
-  "Supernal Vitality Elixir": {
-    desc: "Increases Max HP by +35% for 3 Runs.",
-    color: "#962d22",
-  },
-  "Armored Elixir": {
-    desc: "Increases Defense by +10% for 1 Run.",
-    color: "#3498db",
-  },
-  "Greater Armored Elixir": {
-    desc: "Increases Defense by +20% for 2 Runs.",
-    color: "#2980b9",
-  },
-  "Supernal Armored Elixir": {
-    desc: "Increases Defense by +35% for 3 Runs.",
-    color: "#1f3a52",
-  },
-  "Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +10% for 1 Run.",
-    color: "#f1c40f",
-  },
-  "Greater Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +20% for 2 Runs.",
-    color: "#f39c12",
-  },
-  "Supernal Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +35% for 3 Runs.",
-    color: "#d35400",
-  },
-  "Double XP Elixir": {
-    desc: "Doubles all acquired experience gains (+100% EXP) for 1 Run.",
-    color: "#a855f7",
-  },
-  "Double Drop Elixir": {
-    desc: "Doubles current drop rate multiplier (+100%) for 1 Run.",
-    color: "#22c55e",
-  },
-  "Drop Quality Elixir": {
-    desc: "Boosts item drop quality checks by +50% for 1 Run.",
-    color: "#3b82f6",
-  },
+      desc: "Increases Attack Power by +10% for 1 Run.",
+      color: "#2ecc71",
+    },
+    "Greater Attack Elixir": {
+      desc: "Increases Attack Power by +20% for 2 Runs.",
+      color: "#10b981",
+    },
+    "Supernal Attack Elixir": {
+      desc: "Increases Attack Power by +35% for 3 Runs.",
+      color: "#00ffcc",
+    },
+    "Vitality Elixir": {
+      desc: "Increases Max HP by +10% for 1 Run.",
+      color: "#e74c3c",
+    },
+    "Greater Vitality Elixir": {
+      desc: "Increases Max HP by +20% for 2 Runs.",
+      color: "#f43f5e",
+    },
+    "Supernal Vitality Elixir": {
+      desc: "Increases Max HP by +35% for 3 Runs.",
+      color: "#ff0055",
+    },
+    "Armored Elixir": {
+      desc: "Increases Defense by +10% for 1 Run.",
+      color: "#3498db",
+    },
+    "Greater Armored Elixir": {
+      desc: "Increases Defense by +20% for 2 Runs.",
+      color: "#00d2ff",
+    },
+    "Supernal Armored Elixir": {
+      desc: "Increases Defense by +35% for 3 Runs.",
+      color: "#38bdf8",
+    },
+    "Haste Elixir": {
+      desc: "Increases movement speed and attack recovery by +10% for 1 Run.",
+      color: "#f1c40f",
+    },
+    "Greater Haste Elixir": {
+      desc: "Increases movement speed and attack recovery by +20% for 2 Runs.",
+      color: "#fbbf24",
+    },
+    "Supernal Haste Elixir": {
+      desc: "Increases movement speed and attack recovery by +35% for 3 Runs.",
+      color: "#ffaa00",
+    },
+    "Double XP Elixir": {
+      desc: "Doubles all acquired experience gains (+100% EXP) for 1 Run.",
+      color: "#c084fc",
+    },
+    "Double Drop Elixir": {
+      desc: "Doubles current drop rate multiplier (+100%) for 1 Run.",
+      color: "#34d399",
+    },
+    "Drop Quality Elixir": {
+      desc: "Boosts item drop quality checks by +50% for 1 Run.",
+      color: "#f472b6",
+    },
 };
 
 window.ARTIFACT_POOL = [

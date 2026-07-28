@@ -1918,7 +1918,7 @@ window.renderForgeTab = function () {
     let selectedEqItem = window.equippedSlots[slotKey];
     let selectedTierColor = selectedEqItem
       ? window.getTierColor(selectedEqItem.statsRolled)
-      : "#f97316";
+      : "#38bdf8";
 
     if (lvl >= 100) {
       detailEl.innerHTML = `
@@ -1964,14 +1964,14 @@ window.renderForgeTab = function () {
               <div class="forge-progress-bg"><div class="forge-progress-fill" style="width:${lvl}%; background:linear-gradient(90deg, #ea580c, #f59e0b);"></div></div>
 
               <div style="margin-top:10px; text-align:left; background:rgba(0,0,0,0.35); border:1px solid #1e293b; padding:10px; border-radius:6px; margin-bottom:12px;">
-                <strong style="color:#f1c40f; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:9.5px; letter-spacing:0.5px;">ATTUNEMENT REQUIREMENTS:</strong>
-                <div style="font-size:10.5px; color:${goldColor}; margin-bottom:3px; font-family:monospace;">• ${window.formatNumber(goldCost)} Gold Required (Owned: ${window.formatNumber(goldOwned)})</div>
-                ${materialsHtml}
-              </div>
+                              <strong style="color:#38bdf8; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:9.5px; letter-spacing:0.5px;">ATTUNEMENT REQUIREMENTS:</strong>
+                              <div style="font-size:10.5px; color:${goldColor}; margin-bottom:3px; font-family:monospace;">• ${window.formatNumber(goldCost)} Gold Required (Owned: ${window.formatNumber(goldOwned)})</div>
+                              ${materialsHtml}
+                            </div>
 
-              ${liveComparisonHtml}
+                            ${liveComparisonHtml}
 
-              <button class="forge-anvil-button" style="width:100%; margin-top:14px; border-color:#ea580c; background:linear-gradient(135deg, #c2410c, #451a03);" ${canAfford ? "" : "disabled"} onclick="window.temperItem()" onpointerdown="window.temperItem()">Harness Heat & Attune Slot</button>
+                            <button class="forge-anvil-button" style="width:100%; margin-top:14px; border-color:#38bdf8; background:linear-gradient(135deg, #0284c7, #0369a1);" ${canAfford ? "" : "disabled"} onclick="window.temperItem()">Harness Heat & Attune Slot</button>
             `;
     return;
   }
@@ -2031,7 +2031,7 @@ window.renderForgeTab = function () {
         let iconBox = `<div style="margin-right:8px; display:inline-flex; align-items:center; flex-shrink:0;">${window.getEquipIconHtml(item, 28)}</div>`;
 
         // Configured onpointerdown as the primary selector to bypass mobile click-swallows
-        return `<div class="bag-item-forge" ${inlineStyle} onpointerdown="window.selectForgeItem(${item.id}); window.showForgeTooltip(event, ${item.id});" onmouseenter="window.showForgeTooltip(event, ${item.id})" onmouseleave="window.hideTooltip()" onclick="window.selectForgeItem(${item.id})">
+        return `<div class="bag-item-forge" ${inlineStyle} onpointerdown="event.stopPropagation(); window.selectForgeItem(${item.id});" onmouseenter="window.showForgeTooltip(event, ${item.id})" onmouseleave="window.hideTooltip()">
                             ${iconBox}
                             <div style="flex:1; min-width:0; text-align:left;">
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:1px;">
@@ -2635,7 +2635,7 @@ window.renderForgeTab = function () {
               <div style="font-size:9.5px; color:#34d399; font-weight:bold; font-family:monospace; border-top:1px dashed #334155; padding-top:4px;">✦ 100% Awakening Success Guaranteed</div>
             </div>
 
-            <button class="forge-anvil-button" style="width:100%; border-color:#ea580c; background:linear-gradient(135deg, #ea580c, #7c2d12);" ${canAffordGold && canAffordShards && canAffordScraps ? "" : "disabled"} onclick="window.temperItem()">Awaken Rarity & Unlock Modifier</button>
+            <button class="forge-anvil-button" style="width:100%; border-color:#38bdf8; background:linear-gradient(135deg, #0284c7, #0369a1);" ${canAffordGold && canAffordShards && canAffordScraps ? "" : "disabled"} onclick="window.temperItem()">Awaken Rarity & Unlock Modifier</button>
           `;
 
       previewHtml = `
@@ -4635,8 +4635,8 @@ window.toggleLock = function (id) {
     if (typeof window.pushHeaderToast === "function")
       window.pushHeaderToast(
         item.locked
-          ? "[INSURED] Item Locked & Protected!"
-          : "[UNINSURED] Item Unlocked & At Risk!",
+          ? `[SOUL BOUND] Protected ${item.name}!`
+          : `[UNBOUND] ${item.name} At Risk on Death!`,
         item.locked ? "#2ecc71" : "#e74c3c",
       );
     if (typeof window.renderInventory === "function") window.renderInventory();
@@ -4958,7 +4958,12 @@ window.salvageItem = function (id) {
   let slotToClear = null;
   let isArtifactSack = false;
   let isSigilSack = false;
+  let isBagItem = false;
 
+  if (!item && window.player && window.player.bag) {
+    item = window.player.bag.find((i) => i.id === id);
+    if (item) isBagItem = true;
+  }
   if (!item && window.inventory.ARTIFACT) {
     item = window.inventory.ARTIFACT.find((i) => i.id === id);
     if (item) isArtifactSack = true;
@@ -4986,9 +4991,17 @@ window.salvageItem = function (id) {
   }
 
   // Anti-Exploit: Untempered starter gear cannot be salvaged for free materials
-  if (item.isStarterItem && (item.temperLevel || 0) === 0 && !item.reforgedProperty && !item.totalEnchants) {
+  if (
+    item.isStarterItem &&
+    (item.temperLevel || 0) === 0 &&
+    !item.reforgedProperty &&
+    !item.totalEnchants
+  ) {
     if (typeof window.pushHeaderToast === "function") {
-      window.pushHeaderToast("[SYSTEM] Untempered starter gear cannot be salvaged.", "#e74c3c");
+      window.pushHeaderToast(
+        "[SYSTEM] Untempered starter gear cannot be salvaged.",
+        "#e74c3c",
+      );
     }
     return;
   }
@@ -5002,7 +5015,7 @@ window.salvageItem = function (id) {
 
     if (!isUnlocked && typeof window.showCustomConfirm === "function") {
       window.showCustomConfirm(
-        "⚠️ Unique Not in Codex",
+        "Unique Not in Codex",
         `This Unique item (<strong>${item.name}</strong>) is not yet unlocked in your Spectral Codex.<br><br>Salvaging it now will forfeit its active passive in your Codex. Are you sure you want to salvage it for materials instead?`,
         "Yes, Salvage",
         "Cancel",
@@ -5015,6 +5028,7 @@ window.salvageItem = function (id) {
             slotToClear,
             isArtifactSack,
             isSigilSack,
+            isBagItem,
           );
         },
       );
@@ -5029,6 +5043,7 @@ window.salvageItem = function (id) {
     slotToClear,
     isArtifactSack,
     isSigilSack,
+    isBagItem,
   );
 };
 
@@ -5036,10 +5051,14 @@ window.salvageItem = function (id) {
 window.GameState = window.GameState || {};
 Object.assign(window.GameState, {
   checkAutoSalvage(item, silent = false) {
-      if (!item || item.type === "artifact" || item.statsRolled === "UNIQUE")
-        return false;
-      if (item.isStarterItem && (item.temperLevel || 0) === 0 && !item.reforgedProperty)
-        return false;
+    if (!item || item.type === "artifact" || item.statsRolled === "UNIQUE")
+      return false;
+    if (
+      item.isStarterItem &&
+      (item.temperLevel || 0) === 0 &&
+      !item.reforgedProperty
+    )
+      return false;
     if (
       window.playerStats.autoSalvageThreshold === undefined ||
       window.playerStats.autoSalvageThreshold < 0
@@ -5634,14 +5653,14 @@ Object.assign(window.ForgeManager, {
 
       window.playerStats.slotUpgrades[slotKey]++;
 
-            // Recalculate statistics for the equipped item on the fly and trigger redraw flags
-            let eqItem = window.equippedSlots[slotKey];
-            if (eqItem) {
-              if (eqItem.isStarterItem) {
-                delete eqItem.isStarterItem; // Permanently promote starter item into standard gear
-              }
-              window.recalculateItemStats(eqItem);
-            }
+      // Recalculate statistics for the equipped item on the fly and trigger redraw flags
+      let eqItem = window.equippedSlots[slotKey];
+      if (eqItem) {
+        if (eqItem.isStarterItem) {
+          delete eqItem.isStarterItem; // Permanently promote starter item into standard gear
+        }
+        window.recalculateItemStats(eqItem);
+      }
       window.state.paperDollDirty = true;
       window.invalidatePlayerStats();
 
@@ -6254,10 +6273,10 @@ Object.assign(window.ForgeManager, {
       rolledValue = Math.ceil(window.randInt(1, 3) * stageScale * rarityMult);
 
     item[newProp] = rolledValue;
-        item.reforgedProperty = newProp;
-        if (item.isStarterItem) {
-          delete item.isStarterItem; // Permanently promote starter item into standard gear
-        }
+    item.reforgedProperty = newProp;
+    if (item.isStarterItem) {
+      delete item.isStarterItem; // Permanently promote starter item into standard gear
+    }
 
     window.recalculateItemStats(item);
     item.name = window.buildProceduralName(item);
@@ -6392,12 +6411,12 @@ window.rollGachaCrateItem = function (
     }
   }
 
-  let peakRunStage = window.playerStats.lifetimePeakStage || 1;
-  let stageScale = Math.floor((peakRunStage - 1) / 5) + 1;
+  let checkpoints = window.playerStats.unlockedCheckpoints || [1];
+  let highestCheckpoint = checkpoints[checkpoints.length - 1] || 1;
   let newItem = window.createItemObject(
     chosenType,
     statLinesCount,
-    stageScale,
+    highestCheckpoint,
     0,
   );
 
@@ -6434,6 +6453,10 @@ window.getGoldUpgradeCost = function (type, level) {
     return BigNum.from(30000).mul(BigNum.from(1.95).pow(lvl));
   } else if (type === "global") {
     return BigNum.from(100000).mul(BigNum.from(2.25).pow(lvl));
+  } else if (type === "flask_capacity") {
+    return BigNum.from(50000).mul(BigNum.from(3.5).pow(lvl));
+  } else if (type === "flask_potency") {
+    return BigNum.from(25000).mul(BigNum.from(2.2).pow(lvl));
   }
   return BigNum.from(10000);
 };
@@ -6459,12 +6482,7 @@ window.toggleShopModal = function () {
 
   if (modal.style.display === "none" || modal.style.display === "") {
     modal.style.display = "flex";
-    if (
-      !window.playerStats.shopItems ||
-      window.playerStats.shopItems.length === 0
-    ) {
-      window.refreshShopStock(true);
-    }
+    window.refreshShopStock(false);
     window.updateShopHeaderWallet();
     window.switchShopTab(window.activeShopTab || "gear");
   } else {
@@ -6507,9 +6525,8 @@ window.refreshShopStock = function (force = false) {
     return;
   }
 
-  let peakRunStage =
-    window.playerStats.maxFloorCleared || window.playerStats.stage || 1;
-  let stageScale = peakRunStage;
+  let checkpoints = window.playerStats.unlockedCheckpoints || [1];
+  let stageScale = checkpoints[checkpoints.length - 1] || 1;
   let shopLvl = window.playerStats.shopQLevel || 0;
 
   let types = [
@@ -6583,6 +6600,9 @@ window.executeManualShopRefresh = function () {
 window.renderMarketShop = function () {
   let content = document.getElementById("shop-content-panel");
   if (!content) return;
+
+  // Auto-refresh stock if timer expired or items missing
+  window.refreshShopStock(false);
 
   let items = window.playerStats.shopItems || [];
   let soulsOwned =
@@ -6887,14 +6907,30 @@ window.renderGoldUpgrades = function () {
       iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00d2ff" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/></svg>`,
     },
     {
-      type: "global",
-      title: "GLOBAL EXTRACTION QUALITY",
-      field: "globalQLevel",
-      desc: "Increases baseline item drop quality and star rolls across all dungeon runs.",
-      statBonus: `+${(p.globalQLevel || 0) * 1}% Global Drop Quality`,
-      iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
-    },
-  ];
+          type: "global",
+          title: "GLOBAL EXTRACTION QUALITY",
+          field: "globalQLevel",
+          desc: "Increases baseline item drop quality and star rolls across all dungeon runs.",
+          statBonus: `+${(p.globalQLevel || 0) * 1}% Global Drop Quality`,
+          iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+        },
+        {
+          type: "flask_capacity",
+          title: "FIELD FLASK CAPACITY",
+          field: "maxFlaskCharges",
+          desc: "Increases maximum emergency health flask charges carried per dungeon run (Cap: 4). Refills on boss defeat.",
+          statBonus: `${p.maxFlaskCharges || 1} / 4 Max Charges`,
+          iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M10 2h4v3l3 6v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V11l3-6V2z"/><line x1="9" y1="11" x2="15" y2="11"/></svg>`,
+        },
+        {
+          type: "flask_potency",
+          title: "FIELD FLASK POTENCY",
+          field: "flaskPotencyLevel",
+          desc: "Increases Instant Max HP restoration percentage when drinking from the Field Flask.",
+          statBonus: `+${Math.round((p.flaskPotency || 0.25) * 100)}% Max HP Restored`,
+          iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,
+        },
+      ];
 
   let cardsHtml = sinks
     .map((s) => {
@@ -7049,14 +7085,62 @@ window.buyMysticalItem = function (index) {
 
 window.buyGoldUpgrade = function (type) {
   let p = window.playerStats;
-  let levelField =
-    type === "vending"
-      ? "vendingQLevel"
-      : type === "shop"
-        ? "shopQLevel"
-        : "globalQLevel";
-  let curLvl = p[levelField] || 0;
-  let costBig = window.getGoldUpgradeCost(type, curLvl);
+  if (type === "flask_capacity") {
+      if ((p.maxFlaskCharges || 1) >= 4) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("[!] Max Flask Capacity Reached (4 Charges)!", "#e74c3c");
+        }
+        return;
+      }
+      let curCapLvl = (p.maxFlaskCharges || 1) - 1;
+      let costBig = window.getGoldUpgradeCost("flask_capacity", curCapLvl);
+      let coins = BigNum.from(p.coins);
+      if (coins.lt(costBig)) {
+        window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
+        return;
+      }
+      p.coins = coins.sub(costBig);
+      p.maxFlaskCharges = (p.maxFlaskCharges || 1) + 1;
+      p.flaskCharges = p.maxFlaskCharges; // Fill newly added charge
+      window.pushHeaderToast(`✦ Expanded Flask Capacity to ${p.maxFlaskCharges} Charges!`, "#34d399");
+      window.updateUI();
+      window.renderGoldUpgrades();
+      window.saveGame();
+      return;
+    }
+
+    if (type === "flask_potency") {
+      let curPotLvl = p.flaskPotencyLevel || 0;
+      if (curPotLvl >= 3) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("[!] Max Flask Potency Reached (55% Max HP)!", "#e74c3c");
+        }
+        return;
+      }
+      let costBig = window.getGoldUpgradeCost("flask_potency", curPotLvl);
+      let coins = BigNum.from(p.coins);
+      if (coins.lt(costBig)) {
+        window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
+        return;
+      }
+      p.coins = coins.sub(costBig);
+      p.flaskPotencyLevel = curPotLvl + 1;
+      p.flaskPotency = 0.25 + p.flaskPotencyLevel * 0.10; // 25% -> 35% -> 45% -> 55%
+      window.pushHeaderToast(`✦ Upgraded Flask Potency to +${Math.round(p.flaskPotency * 100)}% Max HP!`, "#34d399");
+      window.updateUI();
+      window.renderGoldUpgrades();
+      window.saveGame();
+      return;
+    }
+
+    let levelField =
+      type === "vending"
+        ? "vendingQLevel"
+        : type === "shop"
+          ? "shopQLevel"
+          : "globalQLevel";
+    let curLvl = p[levelField] || 0;
+    let costBig = window.getGoldUpgradeCost(type, curLvl);
 
   let coins = BigNum.from(p.coins);
   if (coins.lt(costBig)) {
@@ -7114,12 +7198,14 @@ window.transmutePotion = function (index) {
 
   window.addUseDrop(recipe.result, 1);
 
-  window.pushHeaderToast(`🧪 Brewed ${recipe.result}!`, "#2ecc71");
-  window.SoundManager.play("spell");
+    window.pushHeaderToast(`✦ Brewed ${recipe.result}!`, "#2ecc71");
+    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+      try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("spell"); }
+    }
 
-  if (window.spawnPurchaseCelebration) {
-    window.spawnPurchaseCelebration("alchemy", recipe.color || "#2ecc71", 3);
-  }
+    if (window.spawnPurchaseCelebration) {
+      window.spawnPurchaseCelebration("alchemy", recipe.color || "#2ecc71", 3);
+    }
 
   window.updateUI();
   window.updateShopHeaderWallet();
@@ -7418,7 +7504,7 @@ window.switchGachaMachine = function (machineType) {
     modal.className = "modal-overlay gacha-theme-standard";
     if (tabStd) tabStd.classList.add("active");
     if (tabGlim) tabGlim.classList.remove("active");
-    if (ratesTitle) ratesTitle.innerText = "STANDARD VENDING TERMINAL";
+    if (ratesTitle) ratesTitle.innerText = "STANDARD VENDING ALTAR";
     if (ratesPct) {
       ratesPct.innerHTML = `
                     <span style="color:#e74c3c;">5★: 1.27%</span>
@@ -7432,7 +7518,7 @@ window.switchGachaMachine = function (machineType) {
     modal.className = "modal-overlay gacha-theme-glimmering";
     if (tabStd) tabStd.classList.remove("active");
     if (tabGlim) tabGlim.classList.add("active");
-    if (ratesTitle) ratesTitle.innerText = "GLIMMERING BOOSTER TERMINAL";
+    if (ratesTitle) ratesTitle.innerText = "GLIMMERING BOOSTER ALTAR";
     if (ratesPct) {
       ratesPct.innerHTML = `
                     <span style="color:#e74c3c;">5★: 1.3%</span>
@@ -7565,20 +7651,30 @@ function updatePhysics(canvas) {
   }
 
   caps.forEach((c) => {
-    if (window.gachaState.isSpinning) {
-      // Chaotic spin forces applied directly
-      c.vx += (Math.random() - 0.5) * 6;
-      c.vy += -Math.random() * 3.5 - 1.5;
-      c.angle += (Math.random() - 0.5) * 0.4;
-    } else {
+      // Always apply natural gravity
       c.vy += gravity;
-      c.vx *= 0.985;
-      c.vy *= 0.985;
-      c.angle += c.vx * 0.02;
-    }
 
-    c.x += c.vx;
-    c.y += c.vy;
+      if (window.gachaState.isSpinning) {
+        // Agitator churns from the bottom crank floor upwards and sideways
+        let distFromFloor = bottomWall - c.radius - c.y;
+        if (distFromFloor < 45) {
+          // Agitator blade impulse near floor
+          let popForce = (1.0 - distFromFloor / 45) * (Math.random() * 4.5 + 2.0);
+          c.vy -= popForce;
+          c.vx += (Math.random() - 0.5) * 5.0;
+        } else {
+          // Swirling air friction in upper chamber
+          c.vx += (Math.random() - 0.5) * 1.5;
+        }
+        c.angle += (Math.random() - 0.5) * 0.3;
+      }
+
+      c.vx *= 0.98;
+      c.vy *= 0.98;
+      c.angle += c.vx * 0.02;
+
+      c.x += c.vx;
+      c.y += c.vy;
 
     // 1. Bottom Flat Wall Collision
     if (c.y > bottomWall - c.radius) {
@@ -7724,7 +7820,7 @@ window.triggerGachaSpin = function () {
   if (count < 1) {
     if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast(
-        `[!] Requires 1x ${keyName} to spin terminal!`,
+        `[!] Requires 1x ${keyName} to activate altar!`,
         "#e74c3c",
       );
     }
@@ -7843,15 +7939,25 @@ window.triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
         `${window.getUiIconSvg("critChance", 10)} +${Math.round(item.critChance * 100)}%`,
       );
 
+    window.frozenItemDb[item.id] = window.cloneItemForTooltip(item);
+
     resultsPanel.innerHTML = `
-      <div class="gacha-results-card" style="border-color:${color}; box-shadow: 0 0 20px ${color}44;">
-        <span class="results-header-tag" style="color:${color};">✦ CAPSULE UNBOXED ✦</span>
-        <div style="margin: 4px 0;">${iconHtml}</div>
-        <span class="results-item-title" style="color:${color};">${item.name}</span>
-        <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${starsLabel} • LV.${item.stageLevel || 1}</span>
-        ${statSummary.length > 0 ? `<div style="font-size: 9px; color: #e2e8f0; font-family: monospace; display: flex; gap: 8px; margin-top: 2px;">${statSummary.join("  ")}</div>` : ""}
-      </div>
-    `;
+          <div class="gacha-results-card" style="border-color:${color}; box-shadow: 0 0 20px ${color}44; cursor: pointer;" onclick="window.showItemTooltip(event, window.frozenItemDb[${item.id}])" onpointerdown="event.stopPropagation();">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+              <span class="results-header-tag" style="color:${color};">✦ CAPSULE UNBOXED ✦</span>
+              <span style="font-size: 8.5px; color: #2ecc71; font-weight: bold; font-family: monospace;">[TAP TO INSPECT & COMPARE]</span>
+            </div>
+            <div style="margin: 4px 0;">${iconHtml}</div>
+            <span class="results-item-title" style="color:${color};">${item.name}</span>
+            <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${starsLabel} • LV.${item.stageLevel || 1}</span>
+            ${statSummary.length > 0 ? `<div style="font-size: 9px; color: #e2e8f0; font-family: monospace; display: flex; gap: 8px; margin-top: 2px;">${statSummary.join("  ")}</div>` : ""}
+          </div>
+        `;
+
+    let gachaCard = document.getElementById("gacha-machine-card");
+    if (gachaCard) {
+      gachaCard.scrollTop = gachaCard.scrollHeight;
+    }
   }
 
   if (typeof window.pushHeaderToast === "function") {

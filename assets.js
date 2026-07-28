@@ -176,17 +176,23 @@ window.AssetCatalog = {
       `;
     },
     liquid(id, color) {
-      return `
-        <defs>
-          <linearGradient id="grad_liq_${id}" x1="0" y1="100%" x2="0" y2="0%">
-            <stop offset="0%" stop-color="rgba(0,0,0,0.3)"/>
-            <stop offset="30%" stop-color="${color}"/>
-            <stop offset="85%" stop-color="${color}"/>
-            <stop offset="100%" stop-color="#ffffff"/>
-          </linearGradient>
-        </defs>
-      `;
-    },
+          return `
+            <defs>
+              <linearGradient id="grad_liq_${id}" x1="0" y1="100%" x2="0" y2="0%">
+                <stop offset="0%" stop-color="rgba(0, 0, 0, 0.55)"/>
+                <stop offset="25%" stop-color="${color}"/>
+                <stop offset="75%" stop-color="${color}"/>
+                <stop offset="92%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="rgba(255, 255, 255, 0.85)"/>
+              </linearGradient>
+              <radialGradient id="grad_glow_${id}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+                <stop offset="50%" stop-color="${color}" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          `;
+        },
   },
 
   // Blueprints for procedurally rendering generic equipment based on slots
@@ -1058,17 +1064,61 @@ window.AssetCatalog = {
 
   // Centralized configurations of consumables, scrolls, crates, and sacks
   consumables: {
-    potion(uid, color) {
-      return `
-          ${window.AssetCatalog.gradients.liquid(uid, color)}
-          <path d="M13 5 L19 5 L19 12 L26 23 C28 26, 26 29, 21 29 L11 29 C6 29, 4 26, 6 23 L13 12 Z" fill="#334155" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M8.5 21 L23.5 21 L25 24 C26.2 26.2, 25 28, 21 28 L11 28 C7 28, 5.8 26.2, 7 24 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1.5"/>
-          <rect x="13.5" y="2" width="5" height="4" fill="#a0522d" stroke="#000" stroke-width="1.5"/>
-          <path d="M14.5 6 L14.5 11" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1" stroke-linecap="round" fill="none" />
-          <path d="M22 14 C23.5 17, 23.5 21, 22 24" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1" stroke-linecap="round" fill="none" />
-          <path d="M9 22 C8 24, 9 26, 11 27" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.65"/>
-        `;
-    },
+    potion(uid, color, name = "") {
+          let nameLower = (name || "").toLowerCase();
+          let isSupernal = nameLower.includes("supernal");
+          let isGreater = nameLower.includes("greater");
+
+          if (isSupernal) {
+            // TIER 3: Ornate Royal Celestial Flask with Gold Filigree Casing & Core Rune
+            return `
+              ${window.AssetCatalog.gradients.liquid(uid, color)}
+              <!-- Outer Gold Filigree Casing -->
+              <path d="M11 5 H21 V9 L27 17 C29 23, 26 29, 21 29 H11 C6 29, 3 23, 5 17 L11 9 Z" fill="#0d0a1a" stroke="#ffd700" stroke-width="2.2" stroke-linejoin="round"/>
+              <!-- Inner Glowing Liquid Pool -->
+              <path d="M7 19 H25 L26 23 C27 26, 25 28, 21 28 H11 C7 28, 5 26, 6 23 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1"/>
+              <!-- Gold Filigree Neck Ring -->
+              <rect x="10" y="8" width="12" height="3" rx="1" fill="#ffd700" stroke="#000" stroke-width="1"/>
+              <rect x="13.5" y="1" width="5" height="4" fill="#8c4118" stroke="#000" stroke-width="1.2"/>
+              <!-- Central Celestial Core Diamond -->
+              <polygon points="16,13 18.5,17 16,21 13.5,17" fill="#ffffff" stroke="#ffd700" stroke-width="1" />
+              <!-- Glass Specular Arc -->
+              <path d="M8 20 C7 23, 8 26, 10 27" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+            `;
+          } else if (isGreater) {
+            // TIER 2: Facet-Cut Crystal Flask with Silver Collar
+            return `
+              ${window.AssetCatalog.gradients.liquid(uid, color)}
+              <!-- Faceted Crystal Body -->
+              <path d="M12 5 H20 V10 L27 17 L22 28 H10 L5 17 L12 10 Z" fill="#0f172a" stroke="#e2e8f0" stroke-width="2" stroke-linejoin="round"/>
+              <!-- Liquid Fill -->
+              <path d="M7 19 L12 19 L20 19 L25 19 L21.5 27 H10.5 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1"/>
+              <!-- Silver Neck Band -->
+              <rect x="11" y="8" width="10" height="2.5" fill="#94a3b8" stroke="#000" stroke-width="1"/>
+              <rect x="13.5" y="1.5" width="5" height="3.5" fill="#78350f" stroke="#000" stroke-width="1"/>
+              <!-- Specular Crystal Facet Line -->
+              <line x1="8" y1="18" x2="11" y2="26" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+            `;
+          }
+
+          // TIER 1: Standard Alchemy Glass Sphere Flask
+          return `
+            ${window.AssetCatalog.gradients.liquid(uid, color)}
+            <!-- Round Spherical Glass Body -->
+            <circle cx="16" cy="19" r="10.5" fill="#0f172a" stroke="#000" stroke-width="2"/>
+            <path d="M13 4 H19 V10 H13 Z" fill="#1e293b" stroke="#000" stroke-width="1.8"/>
+            <!-- Liquid Level Pool -->
+            <path d="M6 18 C6 25, 26 25, 26 18 C26 24, 6 24, 6 18 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1"/>
+            <circle cx="16" cy="19" r="9.2" fill="url(#grad_liq_${uid})" opacity="0.6"/>
+            <!-- Cork Stopper -->
+            <rect x="13.5" y="1" width="5" height="4" fill="#a0522d" stroke="#000" stroke-width="1.2"/>
+            <!-- Internal Liquid Bubbles -->
+            <circle cx="13" cy="21" r="1" fill="#fff" opacity="0.7"/>
+            <circle cx="18" cy="17" r="1.2" fill="#fff" opacity="0.8"/>
+            <!-- Specular Glass Highlight -->
+            <path d="M9 14 C7 17, 7 21, 10 25" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.75"/>
+          `;
+        },
     scroll(uid, color) {
       return `
           <path d="M6 10 L26 6 L26 22 L6 26 Z" fill="#fdf6e2" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
@@ -1882,12 +1932,12 @@ window.getIconSvgData = function (itemOrName) {
       ) {
         innerSvg = window.AssetCatalog.consumables.scroll(uid, color);
       } else if (
-        name &&
-        (name.includes("Elixir") || name.includes("Potion")) &&
-        window.AssetCatalog.consumables.potion
-      ) {
-        innerSvg = window.AssetCatalog.consumables.potion(uid, color);
-      }
+              name &&
+              (name.includes("Elixir") || name.includes("Potion")) &&
+              window.AssetCatalog.consumables.potion
+            ) {
+              innerSvg = window.AssetCatalog.consumables.potion(uid, color, name);
+            }
     }
   } else {
     let item = itemOrName;
@@ -2045,178 +2095,178 @@ window.getUseIconHtml = function (name, size = 32) {
 // ==========================================================================
 window.AssetCatalog.skillIcons = {
   // Tree 1: Shield Mastery Custom Vector Icons
-    shield_starter: {
-      color: "#38bdf8",
-      path: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><line x1="12" y1="8" x2="12" y2="16" stroke="#ffffff" stroke-width="2" stroke-linecap="round" /><line x1="8" y1="12" x2="16" y2="12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />`,
-      opacity: "0.2"
-    },
-    shield_hp: {
-      color: "#ff4757",
-      path: `<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />`,
-      opacity: "0.25"
-    },
-    shield_def: {
-      color: "#38bdf8",
-      path: `<path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" />`,
-      opacity: "0.25"
-    },
+  shield_starter: {
+    color: "#38bdf8",
+    path: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><line x1="12" y1="8" x2="12" y2="16" stroke="#ffffff" stroke-width="2" stroke-linecap="round" /><line x1="8" y1="12" x2="16" y2="12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />`,
+    opacity: "0.2",
+  },
+  shield_hp: {
+    color: "#ff4757",
+    path: `<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />`,
+    opacity: "0.25",
+  },
+  shield_def: {
+    color: "#38bdf8",
+    path: `<path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" />`,
+    opacity: "0.25",
+  },
   shield_block: {
     color: "#3498db",
     path: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M8 10h8v4H8z" fill="#ffffff" fill-opacity="0.3" stroke="#ffffff" stroke-width="1.2" />`,
-    opacity: "0.25"
+    opacity: "0.25",
   },
   shield_bash: {
     color: "#f1c40f",
     path: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="#f1c40f" stroke-width="2" stroke-linecap="round" />`,
-    opacity: "0.2"
+    opacity: "0.2",
   },
   shield_fortitude: {
     color: "#2ecc71",
     path: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="8,14 12,10 16,14" stroke="#ffffff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" />`,
-    opacity: "0.25"
+    opacity: "0.25",
   },
   shield_keystone: {
-      color: "#a855f7",
-      path: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#a855f7" fill-opacity="0.4" /><circle cx="12" cy="12" r="9" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3 2" />`,
-      opacity: "0.3"
-    },
+    color: "#a855f7",
+    path: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#a855f7" fill-opacity="0.4" /><circle cx="12" cy="12" r="9" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3 2" />`,
+    opacity: "0.3",
+  },
 
-    // Tree 2: Dagger Mastery Custom Vector Icons
-        dagger_starter: {
-          color: "#a855f7",
-          path: `<path d="M12 2L15 8L13 18H11L9 8Z" fill="#a855f7" stroke="#a855f7" stroke-width="1.5" /><rect x="8" y="18" width="8" height="2" fill="#ffffff" /><rect x="11" y="20" width="2" height="4" fill="#333" /><line x1="12" y1="2" x2="12" y2="18" stroke="#ffffff" stroke-width="1" />`,
-          opacity: "0.2"
-        },
-        dagger_crit: {
-          color: "#f1c40f",
-          path: `<polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9" />`,
-          opacity: "0.25"
-        },
-        dagger_crit_dmg: {
-          color: "#e67e22",
-          path: `<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />`,
-          opacity: "0.25"
-        },
-    dagger_parry: {
-      color: "#c084fc",
-      path: `<path d="M4 20L20 4M4 20L2 22M5 15L9 19M20 20L4 4M20 20L22 22M15 19L19 15" stroke="#c084fc" stroke-width="2.2" stroke-linecap="round" fill="none" /><circle cx="12" cy="12" r="2.5" fill="#ffffff" stroke="#c084fc" stroke-width="1" />`,
-      opacity: "0.15"
-    },
-    dagger_bleed: {
-      color: "#e74c3c",
-      path: `<path d="M12 2L16 9 L14 17 H10 L8 9 Z" fill="#960018" stroke="#e74c3c" stroke-width="1.5" /><path d="M12 14 C10 17, 10 20, 12 22 C14 20, 14 17, 12 14 Z" fill="#e74c3c" stroke="#ffffff" stroke-width="0.8" />`,
-      opacity: "0.25"
-    },
-    dagger_riposte: {
-      color: "#f1c40f",
-      path: `<path d="M12 2L16 10H8Z" fill="#f1c40f" stroke="#ffffff" stroke-width="1.2" /><circle cx="12" cy="12" r="8" fill="none" stroke="#f1c40f" stroke-width="1.5" stroke-dasharray="2 2" /><path d="M12 6v12M6 12h12" stroke="#e74c3c" stroke-width="1.8" />`,
-      opacity: "0.2"
-    },
-    dagger_keystone: {
-        color: "#e84393",
-        path: `<path d="M8 4L11 12H5Z M16 4L19 12H13Z" fill="#e84393" stroke="#ffffff" stroke-width="1.2" /><path d="M3 18Q12 10, 21 18" fill="none" stroke="#e84393" stroke-width="2" stroke-dasharray="3 2" /><circle cx="12" cy="18" r="3" fill="#ffffff" stroke="#e84393" stroke-width="1" />`,
-        opacity: "0.3"
-      },
+  // Tree 2: Dagger Mastery Custom Vector Icons
+  dagger_starter: {
+    color: "#a855f7",
+    path: `<path d="M12 2L15 8L13 18H11L9 8Z" fill="#a855f7" stroke="#a855f7" stroke-width="1.5" /><rect x="8" y="18" width="8" height="2" fill="#ffffff" /><rect x="11" y="20" width="2" height="4" fill="#333" /><line x1="12" y1="2" x2="12" y2="18" stroke="#ffffff" stroke-width="1" />`,
+    opacity: "0.2",
+  },
+  dagger_crit: {
+    color: "#f1c40f",
+    path: `<polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9" />`,
+    opacity: "0.25",
+  },
+  dagger_crit_dmg: {
+    color: "#e67e22",
+    path: `<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />`,
+    opacity: "0.25",
+  },
+  dagger_parry: {
+    color: "#c084fc",
+    path: `<path d="M4 20L20 4M4 20L2 22M5 15L9 19M20 20L4 4M20 20L22 22M15 19L19 15" stroke="#c084fc" stroke-width="2.2" stroke-linecap="round" fill="none" /><circle cx="12" cy="12" r="2.5" fill="#ffffff" stroke="#c084fc" stroke-width="1" />`,
+    opacity: "0.15",
+  },
+  dagger_bleed: {
+    color: "#e74c3c",
+    path: `<path d="M12 2L16 9 L14 17 H10 L8 9 Z" fill="#960018" stroke="#e74c3c" stroke-width="1.5" /><path d="M12 14 C10 17, 10 20, 12 22 C14 20, 14 17, 12 14 Z" fill="#e74c3c" stroke="#ffffff" stroke-width="0.8" />`,
+    opacity: "0.25",
+  },
+  dagger_riposte: {
+    color: "#f1c40f",
+    path: `<path d="M12 2L16 10H8Z" fill="#f1c40f" stroke="#ffffff" stroke-width="1.2" /><circle cx="12" cy="12" r="8" fill="none" stroke="#f1c40f" stroke-width="1.5" stroke-dasharray="2 2" /><path d="M12 6v12M6 12h12" stroke="#e74c3c" stroke-width="1.8" />`,
+    opacity: "0.2",
+  },
+  dagger_keystone: {
+    color: "#e84393",
+    path: `<path d="M8 4L11 12H5Z M16 4L19 12H13Z" fill="#e84393" stroke="#ffffff" stroke-width="1.2" /><path d="M3 18Q12 10, 21 18" fill="none" stroke="#e84393" stroke-width="2" stroke-dasharray="3 2" /><circle cx="12" cy="18" r="3" fill="#ffffff" stroke="#e84393" stroke-width="1" />`,
+    opacity: "0.3",
+  },
 
-      // Tree 3: Tome Mastery Custom Vector Icons
-            tome_starter: {
-              color: "#3498db",
-              path: `<rect x="5" y="6" width="14" height="15" rx="1.5" fill="#3498db" fill-opacity="0.3" stroke="#3498db" stroke-width="1.8" /><rect x="5" y="6" width="3" height="15" fill="#1e293b" /><circle cx="12" cy="13.5" r="2.5" fill="#ffffff" stroke="#3498db" stroke-width="1" /><path d="M12 2v3M12 21v2M2 13.5h3M21 13.5h2" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />`,
-              opacity: "0.2"
-            },
-            tome_atk: {
-              color: "#e74c3c",
-              path: `<path d="M14.5 17.5L3 6V3h3l11.5 11.5 M13 19l6-6 M16 16l4 4 M19 21l2-2" />`,
-              opacity: "0.25"
-            },
-            tome_exp: {
-              color: "#a855f7",
-              path: `<circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />`,
-              opacity: "0.2"
-            },
-      tome_barrier: {
-        color: "#9b59b6",
-        path: `<rect x="7" y="7" width="10" height="12" rx="1" fill="#9b59b6" fill-opacity="0.4" stroke="#9b59b6" stroke-width="1.5" /><circle cx="12" cy="13" r="9" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-dasharray="4 2" /><circle cx="12" cy="13" r="11" fill="none" stroke="#9b59b6" stroke-width="1" opacity="0.6" />`,
-        opacity: "0.25"
-      },
-      tome_proc: {
-        color: "#00d2ff",
-        path: `<rect x="6" y="6" width="12" height="14" rx="1.5" fill="#00d2ff" fill-opacity="0.3" stroke="#00d2ff" stroke-width="1.8" /><path d="M18 4L16 9h4l-2 5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" /><circle cx="12" cy="13" r="2" fill="#ffffff" />`,
-        opacity: "0.2"
-      },
-      tome_power: {
-        color: "#f1c40f",
-        path: `<circle cx="8" cy="8" r="3" fill="#e74c3c" stroke="#ffffff" stroke-width="1" /><circle cx="16" cy="8" r="3" fill="#3498db" stroke="#ffffff" stroke-width="1" /><circle cx="12" cy="15" r="3.5" fill="#f1c40f" stroke="#ffffff" stroke-width="1" /><rect x="6" y="19" width="12" height="3" fill="#333" stroke="#f1c40f" stroke-width="1" />`,
-        opacity: "0.25"
-      },
-      tome_keystone: {
-          color: "#e879f9",
-          path: `<rect x="7" y="8" width="10" height="12" rx="1" fill="#e879f9" stroke="#ffffff" stroke-width="1.5" /><path d="M12 2L12 8 M4 18L8 14 M20 18L16 14" stroke="#e879f9" stroke-width="2" stroke-linecap="round" /><circle cx="12" cy="14" r="2" fill="#ffffff" />`,
-          opacity: "0.3"
-        },
+  // Tree 3: Tome Mastery Custom Vector Icons
+  tome_starter: {
+    color: "#3498db",
+    path: `<rect x="5" y="6" width="14" height="15" rx="1.5" fill="#3498db" fill-opacity="0.3" stroke="#3498db" stroke-width="1.8" /><rect x="5" y="6" width="3" height="15" fill="#1e293b" /><circle cx="12" cy="13.5" r="2.5" fill="#ffffff" stroke="#3498db" stroke-width="1" /><path d="M12 2v3M12 21v2M2 13.5h3M21 13.5h2" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />`,
+    opacity: "0.2",
+  },
+  tome_atk: {
+    color: "#e74c3c",
+    path: `<path d="M14.5 17.5L3 6V3h3l11.5 11.5 M13 19l6-6 M16 16l4 4 M19 21l2-2" />`,
+    opacity: "0.25",
+  },
+  tome_exp: {
+    color: "#a855f7",
+    path: `<circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />`,
+    opacity: "0.2",
+  },
+  tome_barrier: {
+    color: "#9b59b6",
+    path: `<rect x="7" y="7" width="10" height="12" rx="1" fill="#9b59b6" fill-opacity="0.4" stroke="#9b59b6" stroke-width="1.5" /><circle cx="12" cy="13" r="9" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-dasharray="4 2" /><circle cx="12" cy="13" r="11" fill="none" stroke="#9b59b6" stroke-width="1" opacity="0.6" />`,
+    opacity: "0.25",
+  },
+  tome_proc: {
+    color: "#00d2ff",
+    path: `<rect x="6" y="6" width="12" height="14" rx="1.5" fill="#00d2ff" fill-opacity="0.3" stroke="#00d2ff" stroke-width="1.8" /><path d="M18 4L16 9h4l-2 5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" /><circle cx="12" cy="13" r="2" fill="#ffffff" />`,
+    opacity: "0.2",
+  },
+  tome_power: {
+    color: "#f1c40f",
+    path: `<circle cx="8" cy="8" r="3" fill="#e74c3c" stroke="#ffffff" stroke-width="1" /><circle cx="16" cy="8" r="3" fill="#3498db" stroke="#ffffff" stroke-width="1" /><circle cx="12" cy="15" r="3.5" fill="#f1c40f" stroke="#ffffff" stroke-width="1" /><rect x="6" y="19" width="12" height="3" fill="#333" stroke="#f1c40f" stroke-width="1" />`,
+    opacity: "0.25",
+  },
+  tome_keystone: {
+    color: "#e879f9",
+    path: `<rect x="7" y="8" width="10" height="12" rx="1" fill="#e879f9" stroke="#ffffff" stroke-width="1.5" /><path d="M12 2L12 8 M4 18L8 14 M20 18L16 14" stroke="#e879f9" stroke-width="2" stroke-linecap="round" /><circle cx="12" cy="14" r="2" fill="#ffffff" />`,
+    opacity: "0.3",
+  },
 
-        // Tree 4: Utility & Survival Custom Vector Icons
-                utility_pioneer: {
-                  color: "#2ecc71",
-                  path: `<circle cx="12" cy="12" r="9" fill="none" stroke="#2ecc71" stroke-width="1.8" /><polygon points="12,5 15,12 12,19 9,12" fill="#ffffff" stroke="#2ecc71" stroke-width="1" /><circle cx="12" cy="12" r="2" fill="#f1c40f" />`,
-                  opacity: "0.2"
-                },
-                utility_start_weapon: {
-                  color: "#f1c40f",
-                  path: `<path d="M14.5 17.5L3 6V3h3l11.5 11.5" /><circle cx="18" cy="18" r="3" fill="#f1c40f" />`,
-                  opacity: "0.25"
-                },
-                utility_start_armor: {
-                  color: "#3498db",
-                  path: `<path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" /><path d="M12 6v12" stroke="#ffffff" stroke-width="1.5" />`,
-                  opacity: "0.25"
-                },
-                utility_start_head_feet: {
-                  color: "#2ecc71",
-                  path: `<path d="M6 5h12v6H6z M8 13h8v6H8z" />`,
-                  opacity: "0.25"
-                },
-                utility_start_ring: {
-                  color: "#e879f9",
-                  path: `<circle cx="12" cy="12" r="7" stroke="#e879f9" stroke-width="2" fill="none" /><circle cx="12" cy="5" r="2" fill="#ffffff" />`,
-                  opacity: "0.25"
-                },
-                utility_gold: {
-                  color: "#f1c40f",
-                  path: `<circle cx="12" cy="12" r="9" fill="#f1c40f" fill-opacity="0.3" stroke="#f1c40f" stroke-width="2" /><path d="M12 7v10M9 9h6M9 14h6" stroke="#ffffff" stroke-width="1.5" />`,
-                  opacity: "0.2"
-                },
-                utility_vitality: {
-                          color: "#2ecc71",
-                          path: `<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />`,
-                          opacity: "0.25"
-                        },
-        utility_quality: {
-          color: "#ec4899",
-          path: `<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" fill="none" stroke="#ec4899" stroke-width="1.8" /><polygon points="12,7 15,12 12,17 9,12" fill="#ffffff" stroke="#ec4899" stroke-width="1" />`,
-          opacity: "0.25"
-        },
-        utility_elixir: {
-          color: "#34d399",
-          path: `<path d="M10 5h4v3l4 8a2 2 0 0 1-1.8 3H7.8A2 2 0 0 1 6 16l4-8V5z" fill="#34d399" fill-opacity="0.3" stroke="#34d399" stroke-width="1.8" stroke-linejoin="round" /><rect x="9" y="3" width="6" height="2" fill="#a0522d" /><circle cx="12" cy="14" r="2" fill="#ffffff" />`,
-          opacity: "0.25"
-        },
-        utility_bag: {
-          color: "#38bdf8",
-          path: `<rect x="5" y="8" width="14" height="12" rx="2" fill="#38bdf8" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1.8" /><path d="M9 8V6a3 3 0 0 1 6 0v2" fill="none" stroke="#ffffff" stroke-width="1.5" /><line x1="2" y1="14" x2="4" y2="14" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" /><line x1="20" y1="14" x2="22" y2="14" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />`,
-          opacity: "0.2"
-        },
-        utility_insurance: {
-          color: "#f1c40f",
-          path: `<path d="M6 4h12v16H6z" fill="#f1c40f" fill-opacity="0.2" stroke="#f1c40f" stroke-width="1.8" /><path d="M12 7l4 2v4c0 3-4 5-4 5s-4-2-4-5V9l4-2z" fill="#ffffff" stroke="#f1c40f" stroke-width="1" />`,
-          opacity: "0.2"
-        },
-        utility_keystone: {
-          color: "#ffd700",
-          path: `<path d="M4 16l3-8 5 4 5-4 3 8H4z" fill="#ffd700" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" /><rect x="4" y="16" width="16" height="3" fill="#ffd700" stroke="#ffffff" stroke-width="1" /><circle cx="12" cy="11" r="1.5" fill="#ffffff" />`,
-          opacity: "0.35"
-        }
-      };
+  // Tree 4: Utility & Survival Custom Vector Icons
+  utility_pioneer: {
+    color: "#2ecc71",
+    path: `<circle cx="12" cy="12" r="9" fill="none" stroke="#2ecc71" stroke-width="1.8" /><polygon points="12,5 15,12 12,19 9,12" fill="#ffffff" stroke="#2ecc71" stroke-width="1" /><circle cx="12" cy="12" r="2" fill="#f1c40f" />`,
+    opacity: "0.2",
+  },
+  utility_start_weapon: {
+    color: "#f1c40f",
+    path: `<path d="M14.5 17.5L3 6V3h3l11.5 11.5" /><circle cx="18" cy="18" r="3" fill="#f1c40f" />`,
+    opacity: "0.25",
+  },
+  utility_start_armor: {
+    color: "#3498db",
+    path: `<path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" /><path d="M12 6v12" stroke="#ffffff" stroke-width="1.5" />`,
+    opacity: "0.25",
+  },
+  utility_start_head_feet: {
+    color: "#2ecc71",
+    path: `<path d="M6 5h12v6H6z M8 13h8v6H8z" />`,
+    opacity: "0.25",
+  },
+  utility_start_ring: {
+    color: "#e879f9",
+    path: `<circle cx="12" cy="12" r="7" stroke="#e879f9" stroke-width="2" fill="none" /><circle cx="12" cy="5" r="2" fill="#ffffff" />`,
+    opacity: "0.25",
+  },
+  utility_gold: {
+    color: "#f1c40f",
+    path: `<circle cx="12" cy="12" r="9" fill="#f1c40f" fill-opacity="0.3" stroke="#f1c40f" stroke-width="2" /><path d="M12 7v10M9 9h6M9 14h6" stroke="#ffffff" stroke-width="1.5" />`,
+    opacity: "0.2",
+  },
+  utility_vitality: {
+    color: "#2ecc71",
+    path: `<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />`,
+    opacity: "0.25",
+  },
+  utility_quality: {
+    color: "#ec4899",
+    path: `<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" fill="none" stroke="#ec4899" stroke-width="1.8" /><polygon points="12,7 15,12 12,17 9,12" fill="#ffffff" stroke="#ec4899" stroke-width="1" />`,
+    opacity: "0.25",
+  },
+  utility_elixir: {
+    color: "#34d399",
+    path: `<path d="M10 5h4v3l4 8a2 2 0 0 1-1.8 3H7.8A2 2 0 0 1 6 16l4-8V5z" fill="#34d399" fill-opacity="0.3" stroke="#34d399" stroke-width="1.8" stroke-linejoin="round" /><rect x="9" y="3" width="6" height="2" fill="#a0522d" /><circle cx="12" cy="14" r="2" fill="#ffffff" />`,
+    opacity: "0.25",
+  },
+  utility_bag: {
+    color: "#38bdf8",
+    path: `<rect x="5" y="8" width="14" height="12" rx="2" fill="#38bdf8" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1.8" /><path d="M9 8V6a3 3 0 0 1 6 0v2" fill="none" stroke="#ffffff" stroke-width="1.5" /><line x1="2" y1="14" x2="4" y2="14" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" /><line x1="20" y1="14" x2="22" y2="14" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />`,
+    opacity: "0.2",
+  },
+  utility_insurance: {
+    color: "#f1c40f",
+    path: `<path d="M6 4h12v16H6z" fill="#f1c40f" fill-opacity="0.2" stroke="#f1c40f" stroke-width="1.8" /><path d="M12 7l4 2v4c0 3-4 5-4 5s-4-2-4-5V9l4-2z" fill="#ffffff" stroke="#f1c40f" stroke-width="1" />`,
+    opacity: "0.2",
+  },
+  utility_keystone: {
+    color: "#ffd700",
+    path: `<path d="M4 16l3-8 5 4 5-4 3 8H4z" fill="#ffd700" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" /><rect x="4" y="16" width="16" height="3" fill="#ffd700" stroke="#ffffff" stroke-width="1" /><circle cx="12" cy="11" r="1.5" fill="#ffffff" />`,
+    opacity: "0.35",
+  },
+};
 
 window.getSkillIconSvg = function (iconKey, size = 28) {
   let icon = window.AssetCatalog.skillIcons[iconKey];
@@ -2229,7 +2279,9 @@ window.getSkillIconSvg = function (iconKey, size = 28) {
     </span>`;
   }
 
-  let rgb = window.hexToRgbValues ? window.hexToRgbValues(icon.color) : "56, 189, 248";
+  let rgb = window.hexToRgbValues
+    ? window.hexToRgbValues(icon.color)
+    : "56, 189, 248";
   let bg = `rgba(${rgb}, 0.18)`;
 
   return window.AssetCatalog.compile(
@@ -2237,6 +2289,6 @@ window.getSkillIconSvg = function (iconKey, size = 28) {
     `<g fill="${icon.color}" fill-opacity="${icon.opacity || "0.2"}" stroke="${icon.color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${icon.path}</g>`,
     size,
     bg,
-    icon.color
+    icon.color,
   );
 };

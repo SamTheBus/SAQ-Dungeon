@@ -5,22 +5,28 @@
 
 (function () {
   let canvas, ctx;
+  let isPointerHolding = false;
 
   window.activeStationPrompt = null;
   window.floatingTexts = [];
   window.xpOrbs = [];
 
   window.joystick = {
-    active: false,
-    pointerId: null,
-    baseX: 0,
-    baseY: 0,
-    currX: 0,
-    currY: 0,
-    radius: 45,
-    vx: 0,
-    vy: 0,
-  };
+      active: false,
+      pointerId: null,
+      baseX: 0,
+      baseY: 0,
+      currX: 0,
+      currY: 0,
+      radius: 45,
+      vx: 0,
+      vy: 0,
+    };
+
+    window.cursorPointer = {
+      screenX: 0,
+      screenY: 0,
+    };
 
   window.spawnFloatingText = function (
     x,
@@ -470,9 +476,7 @@
     }
 
     // Pointer Input Handling (Joystick & Follow Cursor Modes)
-    let isPointerHolding = false;
-
-    function handlePointerPosition(e) {
+        function handlePointerPosition(e) {
       let rect = canvas.getBoundingClientRect();
       let scaleX = canvas.width / rect.width;
       let scaleY = canvas.height / rect.height;
@@ -482,17 +486,19 @@
     }
 
     canvas.addEventListener("pointerdown", function (e) {
-      if (window.player.hp <= 0) return;
-      if (window.isAnyMenuOpen()) return;
-      if (Date.now() - (window.lastModalCloseTime || 0) < 200) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      window.scrollTo(0, 0); // Lock scroll to 0 to prevent landscape viewport shifts
-      isPointerHolding = true;
+          if (window.player.hp <= 0) return;
+          if (window.isAnyMenuOpen()) return;
+          if (Date.now() - (window.lastModalCloseTime || 0) < 200) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          window.scrollTo(0, 0); // Lock scroll to 0 to prevent landscape viewport shifts
+          isPointerHolding = true;
 
-      let { clickX, clickY } = handlePointerPosition(e);
+          let { clickX, clickY } = handlePointerPosition(e);
+          window.cursorPointer.screenX = clickX;
+          window.cursorPointer.screenY = clickY;
 
       // Check Station Prompt Interaction
       if (
@@ -555,12 +561,12 @@
           p.y - (targetMob.y + targetMob.h / 2),
         );
         if (dist > 50) {
-          window.pushHeaderToast(
-            "[!] Move closer to execute the Perfect Strike!",
-            "#f1c40f",
-          );
-          return;
-        }
+                  window.pushHeaderToast(
+                    "[!] Move closer to execute the Perfect Strike!",
+                    "#f1c40f",
+                  );
+                  return;
+                }
 
         let progress =
           targetMob.perfectStrikeTimer / targetMob.perfectStrikeMax;
@@ -641,11 +647,13 @@
     });
 
     canvas.addEventListener("pointermove", function (e) {
-      if (window.player.hp <= 0) return;
-      if (window.isAnyMenuOpen()) return;
-      if (Date.now() - (window.lastModalCloseTime || 0) < 200) return;
+          if (window.player.hp <= 0) return;
+          if (window.isAnyMenuOpen()) return;
+          if (Date.now() - (window.lastModalCloseTime || 0) < 200) return;
 
-      let { clickX, clickY } = handlePointerPosition(e);
+          let { clickX, clickY } = handlePointerPosition(e);
+          window.cursorPointer.screenX = clickX;
+          window.cursorPointer.screenY = clickY;
       let mode = window.playerStats
         ? window.playerStats.controlMode || "joystick"
         : "joystick";
@@ -717,12 +725,17 @@
     });
 
     // Recalculate all existing inventory & equipped items to migrate stats
-    if (typeof window.recalculateAllInventoryItems === "function") {
-      window.recalculateAllInventoryItems();
-    }
+        if (typeof window.recalculateAllInventoryItems === "function") {
+          window.recalculateAllInventoryItems();
+        }
 
-    // Start inside Adventurer's Hub
-    window.loadHub();
+        // Initialize Draggable Flask Button Engine
+        if (typeof window.initFlaskButtonDrag === "function") {
+          window.initFlaskButtonDrag();
+        }
+
+        // Start inside Adventurer's Hub
+        window.loadHub();
 
     // Start 60 FPS Engine Loop
     requestAnimationFrame(gameLoop);
@@ -763,10 +776,10 @@
     window.deathAnimationTimer = 0;
 
     // Clear active dungeon combat entities and gold particles
-        window.activeDungeonMobs = [];
-        window.mob = null;
-        window.goldParticles = [];
-        window.projectiles = [];
+    window.activeDungeonMobs = [];
+    window.mob = null;
+    window.goldParticles = [];
+    window.projectiles = [];
 
     // Vacuum uncollected ground loot and materials on hub load
     if (window.groundLoot && window.groundLoot.length > 0) {
@@ -806,8 +819,11 @@
     let tileSize = map.tileSize;
 
     window.player.hp = window.player.maxHp;
-    window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
-    window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
+        if (typeof window.refillFlaskCharges === "function") {
+          window.refillFlaskCharges(true);
+        }
+        window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
+        window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
     window.player.targetX = window.player.x;
     window.player.targetY = window.player.y;
 
@@ -841,125 +857,174 @@
   };
 
   window.enterDungeonRun = function (startFloor = 1) {
-        window.currentGameState = window.GAME_STATES.DUNGEON;
-        window.player.depth = Math.max(1, Number(startFloor) || 1);
-        window.player.bag = [];
+      window.currentGameState = window.GAME_STATES.DUNGEON;
+      window.player.depth = Math.max(1, Number(startFloor) || 1);
+      window.player.bag = [];
 
-        let st = window.SkillTreeManager;
-
-        // 1. Offhand Starter Provisioning
-        let activeStarter = window.playerStats ? window.playerStats.activeStarterSubweapon : "none";
-        if (activeStarter && activeStarter !== "none" && window.equippedSlots && !window.equippedSlots.subweapon) {
-          let starterItem = window.createItemObject(activeStarter, 0, 1, 0);
-          starterItem.name = `Starter ${activeStarter.charAt(0).toUpperCase() + activeStarter.slice(1)}`;
-          starterItem.isStarterItem = true;
-          window.equippedSlots.subweapon = starterItem;
-          starterItem.isEquippedSlot = "subweapon";
-        }
-
-        // 2. Main Hand Weapon Provisioning (utility_start_weapon: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
-        if (st && window.equippedSlots && !window.equippedSlots.weapon) {
-          let weapRank = st.getSkillLevel("utility_start_weapon");
-          if (weapRank > 0) {
-            let stars = Math.min(2, weapRank - 1);
-            let item = window.createItemObject("weapon", stars, 1, 0);
-            item.name = `Provisioned ${window.getTierName(stars)} Blade`;
-            item.isStarterItem = true;
-            window.equippedSlots.weapon = item;
-            item.isEquippedSlot = "weapon";
-          }
-        }
-
-        // 3. Chest Armor Provisioning (utility_start_armor: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
-        if (st && window.equippedSlots && !window.equippedSlots.chest && !window.equippedSlots.overall) {
-          let armorRank = st.getSkillLevel("utility_start_armor");
-          if (armorRank > 0) {
-            let stars = Math.min(2, armorRank - 1);
-            let item = window.createItemObject("chest", stars, 1, 0);
-            item.name = `Provisioned ${window.getTierName(stars)} Cuirass`;
-            item.isStarterItem = true;
-            window.equippedSlots.chest = item;
-            item.isEquippedSlot = "chest";
-          }
-        }
-
-        // 4. Helmet & Boots Provisioning (utility_start_head_feet)
-        if (st && window.equippedSlots) {
-          let hfRank = st.getSkillLevel("utility_start_head_feet");
-          if (hfRank > 0) {
-            let stars = Math.min(2, hfRank - 1);
-            if (!window.equippedSlots.helmet) {
-              let helm = window.createItemObject("helmet", stars, 1, 0);
-              helm.name = `Provisioned ${window.getTierName(stars)} Helm`;
-              helm.isStarterItem = true;
-              window.equippedSlots.helmet = helm;
-              helm.isEquippedSlot = "helmet";
-            }
-            if (!window.equippedSlots.boots) {
-              let boots = window.createItemObject("boots", stars, 1, 0);
-              boots.name = `Provisioned ${window.getTierName(stars)} Boots`;
-              boots.isStarterItem = true;
-              window.equippedSlots.boots = boots;
-              boots.isEquippedSlot = "boots";
-            }
-          }
-        }
-
-        // 5. Ring Provisioning (utility_start_ring)
-        if (st && window.equippedSlots) {
-          let ringRank = st.getSkillLevel("utility_start_ring");
-          if (ringRank > 0) {
-            let stars = Math.min(2, ringRank - 1);
-            if (!window.equippedSlots.ring1) {
-              let ring1 = window.createItemObject("ring", stars, 1, 0);
-              ring1.name = `Provisioned ${window.getTierName(stars)} Band`;
-              ring1.isStarterItem = true;
-              window.equippedSlots.ring1 = ring1;
-              ring1.isEquippedSlot = "ring1";
-            }
-            if (!window.equippedSlots.ring2) {
-              let ring2 = window.createItemObject("ring", stars, 1, 0);
-              ring2.name = `Provisioned ${window.getTierName(stars)} Signet`;
-              ring2.isStarterItem = true;
-              window.equippedSlots.ring2 = ring2;
-              ring2.isEquippedSlot = "ring2";
-            }
-          }
-        }
-
-      // Hook 2: Field Medic Run-Long Basic Elixir Effects
-      if (window.SkillTreeManager) {
-        let medicRank = window.SkillTreeManager.getSkillLevel("utility_elixir");
-        if (medicRank > 0) {
-          const basicElixirs = [
-            { key: "atkPotionRuns", name: "Attack Elixir (+10% Atk)", strKey: "atkPotionStrength", val: 0.1, color: "#2ecc71" },
-            { key: "hpPotionRuns", name: "Vitality Elixir (+10% Max HP)", strKey: "hpPotionStrength", val: 0.1, color: "#e74c3c" },
-            { key: "defPotionRuns", name: "Armored Elixir (+10% Def)", strKey: "defPotionStrength", val: 0.1, color: "#3498db" },
-            { key: "hastePotionRuns", name: "Haste Elixir (+10% Speed)", strKey: "hastePotionStrength", val: 1, color: "#f1c40f" }
-          ];
-
-          let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
-          let picked = shuffled.slice(0, Math.min(medicRank, basicElixirs.length));
-
-          let appliedNames = [];
-          picked.forEach((pot) => {
-            window.playerStats[pot.key] = Math.max(window.playerStats[pot.key] || 0, 1);
-            window.playerStats[pot.strKey] = pot.val;
-            appliedNames.push(pot.name);
-          });
-
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast(`✦ Field Medic Active: ${appliedNames.join(", ")}!`, "#34d399");
-          }
-        }
+      if (typeof window.refillFlaskCharges === "function") {
+        window.refillFlaskCharges(true);
       }
 
-      if (typeof window.invalidatePlayerStats === "function") {
-        window.invalidatePlayerStats();
-      }
+      let st = window.SkillTreeManager;
 
-      window.loadDungeonFloor(window.player.depth);
-    };
+    // 1. Offhand Starter Provisioning
+    let activeStarter = window.playerStats
+      ? window.playerStats.activeStarterSubweapon
+      : "none";
+    if (
+      activeStarter &&
+      activeStarter !== "none" &&
+      window.equippedSlots &&
+      !window.equippedSlots.subweapon
+    ) {
+      let starterItem = window.createItemObject(activeStarter, 0, 1, 0);
+      starterItem.name = `Starter ${activeStarter.charAt(0).toUpperCase() + activeStarter.slice(1)}`;
+      starterItem.isStarterItem = true;
+      window.equippedSlots.subweapon = starterItem;
+      starterItem.isEquippedSlot = "subweapon";
+    }
+
+    // 2. Main Hand Weapon Provisioning (utility_start_weapon: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
+    if (st && window.equippedSlots && !window.equippedSlots.weapon) {
+      let weapRank = st.getSkillLevel("utility_start_weapon");
+      if (weapRank > 0) {
+        let stars = Math.min(2, weapRank - 1);
+        let item = window.createItemObject("weapon", stars, 1, 0);
+        item.name = `Provisioned ${window.getTierName(stars)} Blade`;
+        item.isStarterItem = true;
+        window.equippedSlots.weapon = item;
+        item.isEquippedSlot = "weapon";
+      }
+    }
+
+    // 3. Chest Armor Provisioning (utility_start_armor: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
+    if (
+      st &&
+      window.equippedSlots &&
+      !window.equippedSlots.chest &&
+      !window.equippedSlots.overall
+    ) {
+      let armorRank = st.getSkillLevel("utility_start_armor");
+      if (armorRank > 0) {
+        let stars = Math.min(2, armorRank - 1);
+        let item = window.createItemObject("chest", stars, 1, 0);
+        item.name = `Provisioned ${window.getTierName(stars)} Cuirass`;
+        item.isStarterItem = true;
+        window.equippedSlots.chest = item;
+        item.isEquippedSlot = "chest";
+      }
+    }
+
+    // 4. Helmet & Boots Provisioning (utility_start_head_feet)
+    if (st && window.equippedSlots) {
+      let hfRank = st.getSkillLevel("utility_start_head_feet");
+      if (hfRank > 0) {
+        let stars = Math.min(2, hfRank - 1);
+        if (!window.equippedSlots.helmet) {
+          let helm = window.createItemObject("helmet", stars, 1, 0);
+          helm.name = `Provisioned ${window.getTierName(stars)} Helm`;
+          helm.isStarterItem = true;
+          window.equippedSlots.helmet = helm;
+          helm.isEquippedSlot = "helmet";
+        }
+        if (!window.equippedSlots.boots) {
+          let boots = window.createItemObject("boots", stars, 1, 0);
+          boots.name = `Provisioned ${window.getTierName(stars)} Boots`;
+          boots.isStarterItem = true;
+          window.equippedSlots.boots = boots;
+          boots.isEquippedSlot = "boots";
+        }
+      }
+    }
+
+    // 5. Ring Provisioning (utility_start_ring)
+    if (st && window.equippedSlots) {
+      let ringRank = st.getSkillLevel("utility_start_ring");
+      if (ringRank > 0) {
+        let stars = Math.min(2, ringRank - 1);
+        if (!window.equippedSlots.ring1) {
+          let ring1 = window.createItemObject("ring", stars, 1, 0);
+          ring1.name = `Provisioned ${window.getTierName(stars)} Band`;
+          ring1.isStarterItem = true;
+          window.equippedSlots.ring1 = ring1;
+          ring1.isEquippedSlot = "ring1";
+        }
+        if (!window.equippedSlots.ring2) {
+          let ring2 = window.createItemObject("ring", stars, 1, 0);
+          ring2.name = `Provisioned ${window.getTierName(stars)} Signet`;
+          ring2.isStarterItem = true;
+          window.equippedSlots.ring2 = ring2;
+          ring2.isEquippedSlot = "ring2";
+        }
+      }
+    }
+
+    // Hook 2: Field Medic Run-Long Basic Elixir Effects
+    if (window.SkillTreeManager) {
+      let medicRank = window.SkillTreeManager.getSkillLevel("utility_elixir");
+      if (medicRank > 0) {
+        const basicElixirs = [
+          {
+            key: "atkPotionRuns",
+            name: "Attack Elixir (+10% Atk)",
+            strKey: "atkPotionStrength",
+            val: 0.1,
+            color: "#2ecc71",
+          },
+          {
+            key: "hpPotionRuns",
+            name: "Vitality Elixir (+10% Max HP)",
+            strKey: "hpPotionStrength",
+            val: 0.1,
+            color: "#e74c3c",
+          },
+          {
+            key: "defPotionRuns",
+            name: "Armored Elixir (+10% Def)",
+            strKey: "defPotionStrength",
+            val: 0.1,
+            color: "#3498db",
+          },
+          {
+            key: "hastePotionRuns",
+            name: "Haste Elixir (+10% Speed)",
+            strKey: "hastePotionStrength",
+            val: 1,
+            color: "#f1c40f",
+          },
+        ];
+
+        let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
+        let picked = shuffled.slice(
+          0,
+          Math.min(medicRank, basicElixirs.length),
+        );
+
+        let appliedNames = [];
+        picked.forEach((pot) => {
+          window.playerStats[pot.key] = Math.max(
+            window.playerStats[pot.key] || 0,
+            1,
+          );
+          window.playerStats[pot.strKey] = pot.val;
+          appliedNames.push(pot.name);
+        });
+
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            `✦ Field Medic Active: ${appliedNames.join(", ")}!`,
+            "#34d399",
+          );
+        }
+      }
+    }
+
+    if (typeof window.invalidatePlayerStats === "function") {
+      window.invalidatePlayerStats();
+    }
+
+    window.loadDungeonFloor(window.player.depth);
+  };
 
   window.openHubPortalModal = function () {
     let modal = document.getElementById("deployment-modal");
@@ -1002,94 +1067,146 @@
           let isSelected = startFloor === selectedFloor ? "selected" : "";
           let recBadge =
             rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
-          return `<option value="${startFloor}" ${isSelected}>Sector ${sectorNum} - Floor ${startFloor}${recBadge}</option>`;
+
+          let tag =
+            startFloor === 1
+              ? "Start"
+              : (startFloor - 1) % 12 === 0
+                ? `Sector ${sectorNum} Start`
+                : `Post Mini-Boss`;
+          return `<option value="${startFloor}" ${isSelected}>Floor ${startFloor} (${tag})${recBadge}</option>`;
         })
         .join("");
 
       let recBannerHtml = "";
       if (rec && rec.items && rec.items.length > 0) {
         recBannerHtml = `
-                                                                            <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;">
-                                                                              <div>
-                                                                                <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
-                                                                                <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Retrieve them before dying again!</span>
-                                                                              </div>
-                                                                              <button style="background: #e74c3c; color: #ffffff; border: none; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 8.5px; font-weight: bold; cursor: pointer; flex-shrink: 0; margin-left: 6px;" onclick="window.changeDeploymentFloor(${rec.floor})">SELECT FL.${rec.floor}</button>
-                                                                            </div>
-                                                                          `;
+            <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;">
+              <div>
+                <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
+                <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Retrieve them before dying again!</span>
+              </div>
+              <button style="background: #e74c3c; color: #ffffff; border: none; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 8.5px; font-weight: bold; cursor: pointer; flex-shrink: 0; margin-left: 6px;" onclick="window.changeDeploymentFloor(${rec.floor})">SELECT FL.${rec.floor}</button>
+            </div>
+          `;
       }
 
-      let sigils = window.inventory.SIGIL || [];
-      let selectedSigilId = window.state.selectedDeploymentSigilId || "";
+      let selectedSigilId = window.state.selectedDeploymentSigilId;
+      let activeSigil = selectedSigilId
+        ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
+        : null;
 
-      let sigilOptions = `<option value="">[No Cavern Sigil]</option>`;
-      sigils.forEach((sig) => {
-        let isSelected = sig.id == selectedSigilId ? "selected" : "";
-        sigilOptions += `<option value="${sig.id}" ${isSelected}>${sig.name} (${sig.statsRolled}*)</option>`;
-      });
+      let sigilSlotHtml = "";
+      if (activeSigil) {
+        let col = window.getTierColor(activeSigil.statsRolled);
+        let buffPills = (activeSigil.buffs || [])
+          .map(
+            (b) =>
+              `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">+ ${b.name}</span>`,
+          )
+          .join(" ");
+        let debuffPills = (activeSigil.debuffs || [])
+          .map(
+            (d) =>
+              `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">- ${d.name}</span>`,
+          )
+          .join(" ");
+
+        sigilSlotHtml = `
+            <div class="deploy-sigil-card-slot" onclick="window.openSigilPickerModal()" style="border-color:${col}; cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                  ${window.getEquipIconHtml(activeSigil, 24)}
+                  <div style="display:flex; flex-direction:column; min-width:0;">
+                    <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${activeSigil.name}</span>
+                    <span style="color:#aaa; font-size:8px; font-family:monospace;">${activeSigil.statsRolled}★ ${window.getTierName(activeSigil.statsRolled)}</span>
+                  </div>
+                </div>
+                <button class="action-btn-sm" style="background:#3b0764; border-color:#a855f7; color:#df9ffb; font-size:8px; padding:3px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">SWAP</button>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:3px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:4px;">
+                ${buffPills} ${debuffPills}
+              </div>
+            </div>
+          `;
+      } else {
+        sigilSlotHtml = `
+            <div class="deploy-sigil-card-slot empty" onclick="window.openSigilPickerModal()" style="cursor:pointer; padding:12px 10px;">
+              <span style="color:#64748b; font-size:10px; font-weight:bold; font-style:italic;">[ NO SIGIL INFUSED ]</span>
+              <button class="action-btn-sm" style="background:#0284c7; border-color:#38bdf8; color:#fff; font-size:8px; padding:4px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">INFUSE SIGIL</button>
+            </div>
+          `;
+      }
 
       selectorsPanel.innerHTML = `
-                                                                              ${recBannerHtml}
-                                                                              <div style="display: flex; gap: 8px; width: 100%;">
-                                                                              <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. SELECT FLOOR</label>
-                                          <select id="deploy-floor-select" style="background: #1e293b; color: #00d2ff; border: 1px solid #334155; padding: 6px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentFloor(this.value)">
-                                            ${floorOptions}
-                                          </select>
-                                        </div>
-                                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">2. SLOT CAVERN SIGIL</label>
-                                          <select id="deploy-sigil-select" style="background: #1e293b; color: #a855f7; border: 1px solid #334155; padding: 6px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentSigil(this.value)">
-                                            ${sigilOptions}
-                                          </select>
-                                        </div>
-                                                                                </div>
-                                                                              `;
+                  ${recBannerHtml}
+                  <div class="deploy-pane-header">
+                    <span>EXPEDITION & SIGIL SETUP</span>
+                    <span class="deploy-risk-tag" style="border-color:#f1c40f; color:#f1c40f; background:rgba(241,196,15,0.1);">DESTINATION</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                      <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
+                      <select id="deploy-floor-select" style="background: #1e293b; color: #ffd700; border: 1px solid #334155; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentFloor(this.value)">
+                        ${floorOptions}
+                      </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                      <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">2. CAVERN SIGIL ALTAR</label>
+                      ${sigilSlotHtml}
+                    </div>
+                  </div>
+                `;
     }
 
     let container = document.getElementById("deployment-gear-list");
     if (!container) return;
 
-    let primarySlots = [
-      "weapon",
-      "subweapon",
-      "helmet",
-      "chest",
-      "leggings",
-      "overall",
-      "boots",
-    ];
-    let itemsHtml = "";
+    let allSlots = [
+          "weapon",
+          "subweapon",
+          "helmet",
+          "chest",
+          "leggings",
+          "overall",
+          "boots",
+          "ring1",
+          "ring2",
+          "art1",
+          "art2",
+          "art3",
+        ];
+        let itemsHtml = "";
 
-    primarySlots.forEach((slotKey) => {
-      let item = window.equippedSlots[slotKey];
-      if (item) {
-        let col = window.getTierColor(item.statsRolled);
-        let isLocked = !!item.locked;
-        let rawPremium = window.calculateInsurancePremium(item);
+        allSlots.forEach((slotKey) => {
+          let item = window.equippedSlots[slotKey];
+          if (item) {
+            let col = window.getTierColor(item.statsRolled);
+            let isLocked = !!item.locked;
+            let rawPremium = window.calculateInsurancePremium(item);
 
-        itemsHtml += `
-                                          <div class="deployment-gear-item" style="border-left: 3px solid ${col}; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; margin-bottom: 5px;">
-                                            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                                              ${window.getEquipIconHtml(item, 28)}
-                                              <div style="display: flex; flex-direction: column; min-width: 0;">
-                                                <span style="color:${col}; font-weight: bold; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
-                                                <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">LV.${item.stageLevel || 1} • Premium: ${window.formatNumber(rawPremium)} Gold</span>
-                                              </div>
-                                            </div>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                              <label class="insurance-switch-container" style="position: relative; display: inline-block; width: 40px; height: 20px;">
-                                                <input type="checkbox" style="opacity: 0; width: 0; height: 0;" ${isLocked ? "checked" : ""} onchange="window.toggleDeploymentInsurance('${slotKey}')">
-                                                <span class="insurance-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .2s; border-radius: 20px; border: 1px solid #475569;"></span>
-                                              </label>
-                                            </div>
-                                          </div>
-                                        `;
-      }
-    });
+            let cardStatusClass = isLocked ? "is-insured" : "is-uninsured";
+            let btnStatusClass = isLocked ? "active" : "";
+
+            itemsHtml += `
+                      <div class="deploy-gear-card ${cardStatusClass}" style="border-left: 3.5px solid ${col};">
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer;" onclick="event.stopPropagation(); window.showSlotTooltip(event, '${slotKey}');" onmouseenter="window.showSlotTooltip(event, '${slotKey}')" onmouseleave="window.hideTooltip()">
+                          ${window.getEquipIconHtml(item, 28)}
+                          <div style="display: flex; flex-direction: column; min-width: 0; text-align: left;">
+                            <span style="color:${col}; font-weight: bold; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+                            <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">LV.${item.stageLevel || 1} • Soul Bond: ${window.formatNumber(rawPremium)} Gold</span>
+                          </div>
+                        </div>
+                        <button class="tactical-insure-btn ${btnStatusClass}" onclick="event.stopPropagation(); window.toggleDeploymentInsurance('${slotKey}')">
+                          ${isLocked ? "[ SOUL BOUND ]" : "[ RISKING LOSS ]"}
+                        </button>
+                      </div>
+                    `;
+          }
+        });
 
     if (!itemsHtml) {
-      itemsHtml = `<div style="font-size: 10px; color: #64748b; font-style: italic; text-align: center; padding: 15px;">No gear currently equipped. Risking nothing!</div>`;
+      itemsHtml = `<div style="font-size: 10px; color: #64748b; font-style: italic; text-align: center; padding: 25px;">No gear currently equipped. Risking no items in cavern!</div>`;
     }
 
     container.innerHTML = itemsHtml;
@@ -1098,12 +1215,9 @@
     let statsContainer = document.getElementById("deployment-stats-panel");
     if (statsContainer) {
       let premiumText = window.formatNumber(totals.totalPremium);
-      let waivedText = totals.waivedItem
-        ? `[Free: ${totals.waivedItem.name}]`
-        : "";
       let wallet = BigNum.from(window.playerStats.coins);
       let canAfford = wallet.gte(totals.totalPremium);
-      let premiumColor = canAfford ? "#f1c40f" : "#ef4444";
+      let premiumColor = canAfford ? "#ffd700" : "#ef4444";
 
       let soulsOwned =
         window.inventory && window.inventory.ETC
@@ -1112,7 +1226,6 @@
       let canAffordSouls = soulsOwned >= totals.totalSoulsCost;
       let soulsColor = canAffordSouls ? "#34d399" : "#ef4444";
 
-      // Find active sigil details to print live stats
       let activeSigil = null;
       if (window.state.selectedDeploymentSigilId) {
         activeSigil = (window.inventory.SIGIL || []).find(
@@ -1125,44 +1238,58 @@
         let buffList = (activeSigil.buffs || [])
           .map(
             (b) =>
-              `<div style="color: #2ecc71;">• [✦] ${b.name}: ${b.desc}</div>`,
+              `<div style="color: #34d399;">+ [✦] ${b.name}: ${b.desc}</div>`,
           )
           .join("");
         let debuffList = (activeSigil.debuffs || [])
           .map(
             (d) =>
-              `<div style="color: #ef4444;">• [◈] ${d.name}: ${d.desc}</div>`,
+              `<div style="color: #f87171;">- [◈] ${d.name}: ${d.desc}</div>`,
           )
           .join("");
         sigilDetailsHtml = `
-                                          <div style="border-top: 1px dashed #1e293b; margin: 4px 0; padding-top: 4px;"></div>
-                                          <strong style="color: #a855f7; font-size: 8.5px; letter-spacing: 0.5px; text-transform: uppercase;">[ ACTIVE SIGIL MODIFIERS ]</strong>
-                                          ${buffList}
-                                          ${debuffList}
-                                          <div style="color: #3498db; font-size: 9.5px; font-weight: bold; margin-top: 2px;">Focus Multiplier: +${(activeSigil.rewardMultiplier * 100).toFixed(0)}%</div>
-                                          ${activeSigil.qualityBoost > 0 ? `<div style="color: #ff007f; font-size: 9.5px; font-weight: bold;">Quality Boost: +${(activeSigil.qualityBoost * 100).toFixed(0)}%</div>` : ""}
-                                        `;
+            <div style="border-top: 1px dashed rgba(255,255,255,0.1); margin: 6px 0; padding-top: 6px;"></div>
+            <strong style="color: #c084fc; font-size: 8.5px; letter-spacing: 0.8px; text-transform: uppercase;">[ ACTIVE SIGIL MODIFIERS ]</strong>
+            ${buffList}
+            ${debuffList}
+            <div style="display:flex; gap:12px; margin-top:3px; font-family:monospace; font-size:9px;">
+              <span style="color: #38bdf8; font-weight: bold;">Focus Multiplier: +${(activeSigil.rewardMultiplier * 100).toFixed(0)}%</span>
+              ${activeSigil.qualityBoost > 0 ? `<span style="color: #e879f9; font-weight: bold;">Quality Boost: +${(activeSigil.qualityBoost * 100).toFixed(0)}%</span>` : ""}
+            </div>
+          `;
+      }
+
+      // 3-Segment Insured Gauge Bar
+      let gaugeSegments = "";
+      for (let i = 1; i <= 3; i++) {
+        let isFilled = i <= totals.insuredCount;
+        let color = isFilled ? "#10b981" : "#334155";
+        gaugeSegments += `<div style="flex:1; height:6px; background:${color}; border-radius:2px; transition:all 0.2s;"></div>`;
       }
 
       statsContainer.innerHTML = `
-                                        <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid #1e293b; border-radius: 6px; padding: 10px; font-size: 10.5px; line-height: 1.45; display: flex; flex-direction: column; gap: 4px; text-align: left; font-family: monospace;">
-                                          <strong style="color: #00d2ff; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase;">[ RUN INSURANCE BREAKDOWN ]</strong>
-                                          <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Insured Items:</span> <strong style="color:#2ecc71;">${totals.insuredCount} / 3 Max</strong></div>
-                                          <div style="border-top: 1px dashed #1e293b; margin: 4px 0; padding-top: 4px;"></div>
-                                          <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Total Gold Premium:</span> <strong style="color:${premiumColor};">${premiumText} Gold</strong></div>
-                                          ${totals.totalSoulsCost > 0 ? `<div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Monster Souls Premium:</span> <strong style="color:${soulsColor};">${totals.totalSoulsCost} Souls (Owned: ${soulsOwned})</strong></div>` : ""}
-                                          ${totals.waivedItem ? `<div style="font-size: 8px; color: #34d399; text-align: right; font-style: italic;">[Free Waived Item: ${totals.waivedItem.name}]</div>` : ""}
-                                          ${sigilDetailsHtml}
-                                        </div>
-                                      `;
+                  <div style="display: flex; flex-direction: column; gap: 4px; text-align: left; font-family: monospace; font-size: 10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong style="color: #ffd700; font-size: 9px; letter-spacing: 0.8px; text-transform: uppercase;">[ EXPEDITION PROTECTION BREAKDOWN ]</strong>
+                      <span style="color:#10b981; font-weight:bold;">${totals.insuredCount} / 3 Max Bound</span>
+                    </div>
+                    <div style="display:flex; gap:4px; margin:2px 0 6px 0;">
+                      ${gaugeSegments}
+                    </div>
+                    <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Soul Binding Cost:</span> <strong style="color:${premiumColor};">${premiumText} Gold</strong></div>
+                    ${totals.totalSoulsCost > 0 ? `<div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Monster Souls Required:</span> <strong style="color:${soulsColor};">${totals.totalSoulsCost} Souls (Owned: ${soulsOwned})</strong></div>` : ""}
+                    ${totals.waivedItem ? `<div style="font-size: 8.5px; color: #34d399; text-align: right; font-style: italic;">[Waived Protection Slot: ${totals.waivedItem.name}]</div>` : ""}
+                    ${sigilDetailsHtml}
+                  </div>
+                `;
 
       let btnDeploySecure = document.getElementById("btn-deploy-secure");
       if (btnDeploySecure) {
         btnDeploySecure.disabled = !canAfford || !canAffordSouls;
         btnDeploySecure.innerText =
           totals.insuredCount > 0
-            ? `DEPLOY RUN (INSURED ${totals.insuredCount}/3)`
-            : "DEPLOY RUN (UNINSURED)";
+            ? `DESCEND INTO DUNGEON (BOUND ${totals.insuredCount}/3)`
+            : "DESCEND INTO DUNGEON (UNPROTECTED)";
       }
     }
   };
@@ -1171,21 +1298,26 @@
     let item = window.equippedSlots[slotKey];
     if (!item) return;
 
-    let primarySlots = [
-      "weapon",
-      "subweapon",
-      "helmet",
-      "chest",
-      "leggings",
-      "overall",
-      "boots",
-    ];
-    let currentlyInsuredCount = primarySlots.filter(
-      (s) =>
-        window.equippedSlots[s] &&
-        window.equippedSlots[s].locked &&
-        s !== slotKey,
-    ).length;
+    let allSlots = [
+          "weapon",
+          "subweapon",
+          "helmet",
+          "chest",
+          "leggings",
+          "overall",
+          "boots",
+          "ring1",
+          "ring2",
+          "art1",
+          "art2",
+          "art3",
+        ];
+        let currentlyInsuredCount = allSlots.filter(
+          (s) =>
+            window.equippedSlots[s] &&
+            window.equippedSlots[s].locked &&
+            s !== slotKey,
+        ).length;
 
     if (!item.locked && currentlyInsuredCount >= 3) {
       if (typeof window.pushHeaderToast === "function") {
@@ -1256,6 +1388,18 @@
 
     if (typeof window.saveGame === "function") window.saveGame();
 
+    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+      window.SoundManager.play("revive");
+    }
+    if (window.combatVisuals) {
+      let p = window.player;
+      if (p) {
+        window.combatVisuals.spawnBeam(p.x, "#00f3ff", 60, true, 0);
+        window.combatVisuals.spawnParticles(p.x, p.y, 25, "animated_armor", 4);
+        window.combatVisuals.triggerScreenShake(6, 10);
+      }
+    }
+
     let modal = document.getElementById("deployment-modal");
     if (modal) modal.style.display = "none";
 
@@ -1318,24 +1462,24 @@
   };
 
   window.onBossDefeated = function (tileX, tileY) {
-    let map = window.activeDungeonMap;
-    let depth = window.player.depth || 1;
-    let isMajorBoss = depth % 12 === 0;
+      let map = window.activeDungeonMap;
+      let depth = window.player.depth || 1;
 
-    if (isMajorBoss) {
-      let nextCheckpoint = depth + 1;
-      window.playerStats.unlockedCheckpoints = window.playerStats
-        .unlockedCheckpoints || [1];
-      if (!window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)) {
-        window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
-        window.playerStats.unlockedCheckpoints.sort((a, b) => a - b);
-      }
-      window.playerStats.maxFloorCleared = Math.max(
-        window.playerStats.maxFloorCleared || 0,
-        depth,
-      );
-      if (typeof window.saveGame === "function") window.saveGame();
+      // Refill Field Flask charges upon defeating a boss
+      window.refillFlaskCharges(false);
+
+    let nextCheckpoint = depth + 1;
+    window.playerStats.unlockedCheckpoints = window.playerStats
+      .unlockedCheckpoints || [1];
+    if (!window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)) {
+      window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
+      window.playerStats.unlockedCheckpoints.sort((a, b) => a - b);
     }
+    window.playerStats.maxFloorCleared = Math.max(
+      window.playerStats.maxFloorCleared || 0,
+      depth,
+    );
+    if (typeof window.saveGame === "function") window.saveGame();
 
     if (
       map &&
@@ -1348,9 +1492,7 @@
     window.spawnFloatingText(
       window.player.x,
       window.player.y - 25,
-      isMajorBoss
-        ? "CHECKPOINT UNLOCKED - EXTRACTION OPEN"
-        : "EXTRACTION ZONE OPEN",
+      "CHECKPOINT UNLOCKED - EXTRACTION OPEN",
       "#00d2ff",
     );
   };
@@ -1358,33 +1500,33 @@
   window.activeDungeonMobs = [];
 
   window.loadDungeonFloor = function (depth) {
-      if (!window.activeDungeonMap) return;
+    if (!window.activeDungeonMap) return;
 
-      // Strict Extraction Rules: Discard and reset uncollected floor state
-      window.groundLoot = [];
-      window.groundMaterials = [];
-      window.goldParticles = [];
-      window.xpOrbs = [];
-      window.cavernInteractives = [];
-      window.activeDungeonMobs = [];
-      window.mob = null;
-      window.projectiles = [];
+    // Strict Extraction Rules: Discard and reset uncollected floor state
+    window.groundLoot = [];
+    window.groundMaterials = [];
+    window.goldParticles = [];
+    window.xpOrbs = [];
+    window.cavernInteractives = [];
+    window.activeDungeonMobs = [];
+    window.mob = null;
+    window.projectiles = [];
 
-      let map;
-      let isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
-      let isMajorBoss = depth % 12 === 0;
+    let map;
+    let isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
+    let isMajorBoss = depth % 12 === 0;
 
-      if (isMiniBoss || isMajorBoss) {
-        map = window.activeDungeonMap.generateBossArena();
-      } else {
-        map = window.activeDungeonMap.generate(depth);
-      }
-      let tileSize = map.tileSize;
+    if (isMiniBoss || isMajorBoss) {
+      map = window.activeDungeonMap.generateBossArena();
+    } else {
+      map = window.activeDungeonMap.generate(depth);
+    }
+    let tileSize = map.tileSize;
 
-      window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
-      window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
-      window.player.targetX = window.player.x;
-      window.player.targetY = window.player.y;
+    window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
+    window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
+    window.player.targetX = window.player.x;
+    window.player.targetY = window.player.y;
 
     if (isMajorBoss) {
       let cx = Math.floor(map.width / 2);
@@ -1408,11 +1550,19 @@
       let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
 
       map.mobSpawns.forEach((sp) => {
-        let mobInfo = window.getMobPoolForDepth(depth);
-        let isRare = Math.random() < rareRate;
+              let mobInfo = window.getMobPoolForDepth(depth);
+              let isRare = Math.random() < rareRate;
 
-        let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
-        let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
+              // Roll Elite Support Affixes on higher floors
+              let eliteAffix = null;
+              let affixChance = depth >= 85 ? 0.35 : depth >= 49 ? 0.15 : 0;
+              if (Math.random() < affixChance) {
+                const affixes = ["vitality_weaver", "iron_citadel", "swift_commander", "blood_berserker", "nullifier"];
+                eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
+              }
+
+              let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
+              let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
 
         let rangedTypes = [
           "thorn_wyrm",
@@ -1456,8 +1606,12 @@
           isRanged: isRanged,
           projectileType: projType,
           facing: -1,
-          isRare: isRare,
-          wanderTimer: window.randInt(40, 120),
+                    isRare: isRare,
+                    eliteAffix: eliteAffix,
+                    buffStacks: { haste: 0, def: 0, atk: 0 },
+                    buffTimers: { haste: 0, def: 0, atk: 0 },
+                    buffDecayTimers: { haste: 0, def: 0, atk: 0 },
+                    wanderTimer: window.randInt(40, 120),
           wanderVx: 0,
           wanderVy: 0,
           isWandering: false,
@@ -1682,16 +1836,18 @@
       }
     });
 
-    if (
-      preservedList.length > 0 &&
-      typeof window.pushHeaderToast === "function"
-    ) {
-      let pctStr = Math.round(preservationChance * 100);
-      window.pushHeaderToast(
-        `[Alchemical Preservation ${pctStr}%] Preserved charge on: ${preservedList.join(", ")}!`,
-        "#34d399",
-      );
-    }
+    if (preservedList.length > 0) {
+          let pctStr = Math.round(preservationChance * 100);
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              `[Alchemical Preservation ${pctStr}%] Preserved charge on: ${preservedList.join(", ")}!`,
+              "#34d399",
+            );
+          }
+          if (window.SoundManager && typeof window.SoundManager.play === "function") {
+            try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("spell"); }
+          }
+        }
   };
 
   window.triggerExtraction = function (success = true, isAbandon = false) {
@@ -1822,21 +1978,25 @@
       window.player.bag = [];
 
       // Process Equipped Gear (Unlocked gear is lost on defeat, untempered starter items vanish silently)
-            for (let slotKey in window.equippedSlots) {
-              let eqItem = window.equippedSlots[slotKey];
-              if (eqItem) {
-                if (eqItem.locked) {
-                  eqItem.locked = false; // Reset used policy
-                  savedInsuredItems.push(eqItem);
-                } else if (eqItem.isStarterItem && (eqItem.temperLevel || 0) === 0 && !eqItem.reforgedProperty) {
-                  // Untempered starter item vanishes on death without cluttering recovery loot
-                  window.equippedSlots[slotKey] = null;
-                } else {
-                  lostItems.push(eqItem);
-                  window.equippedSlots[slotKey] = null;
-                }
-              }
-            }
+      for (let slotKey in window.equippedSlots) {
+        let eqItem = window.equippedSlots[slotKey];
+        if (eqItem) {
+          if (eqItem.locked) {
+            eqItem.locked = false; // Reset used policy
+            savedInsuredItems.push(eqItem);
+          } else if (
+            eqItem.isStarterItem &&
+            (eqItem.temperLevel || 0) === 0 &&
+            !eqItem.reforgedProperty
+          ) {
+            // Untempered starter item vanishes on death without cluttering recovery loot
+            window.equippedSlots[slotKey] = null;
+          } else {
+            lostItems.push(eqItem);
+            window.equippedSlots[slotKey] = null;
+          }
+        }
+      }
 
       // Safety Net: Ensure player is never left without a weapon option
       let hasWeapon =
@@ -1910,15 +2070,15 @@
           : `<div style="color:#7f8c8d; font-style:italic; padding:10px; text-align:center;">No carried loot extracted.<br><span style="color:#f1c40f; font-weight:bold;">100% Collected Gold Secured in Wallet!</span></div>`;
     } else {
       let savedHtml = savedInsuredItems
-        .map(
-          (i) => `
-            <div style="background:#0a1a10; border:1px solid #1e4620; border-left:3px solid #2ecc71; padding:5px 8px; border-radius:4px; font-size:10px; display:flex; justify-content:space-between;">
-              <span style="color:#2ecc71; font-weight:bold;">[INSURED] ${i.name}</span>
-              <span style="color:#81ecec; font-family:monospace;">SAVED</span>
-            </div>
-          `,
-        )
-        .join("");
+              .map(
+                (i) => `
+                  <div style="background:#0a1a10; border:1px solid #1e4620; border-left:3px solid #2ecc71; padding:5px 8px; border-radius:4px; font-size:10px; display:flex; justify-content:space-between;">
+                    <span style="color:#2ecc71; font-weight:bold;">[SOUL BOUND] ${i.name}</span>
+                    <span style="color:#81ecec; font-family:monospace;">SAVED</span>
+                  </div>
+                `,
+              )
+              .join("");
 
       let lostHtml = lostItems
         .map(
@@ -2009,8 +2169,19 @@
   };
 
   // --- PHYSICS & LOGIC UPDATE ---
-  function update() {
-    if (window.isAnyMenuOpen()) return;
+    function update() {
+      // Live UI updates for active open shop modal
+      if (Date.now() - (window.lastShopTimerUpdate || 0) >= 1000) {
+        window.lastShopTimerUpdate = Date.now();
+        let shopModal = document.getElementById("shop-modal");
+        if (shopModal && shopModal.style.display !== "none" && shopModal.style.display !== "") {
+          if (window.activeShopTab === "gear") {
+            window.renderMarketShop();
+          }
+        }
+      }
+
+      if (window.isAnyMenuOpen()) return;
 
     if (window.deathAnimationTimer > 0) {
       window.deathAnimationTimer--;
@@ -2026,9 +2197,12 @@
     }
 
     let p = window.player;
-    if (p.lastDamageTimer && p.lastDamageTimer > 0) {
-      p.lastDamageTimer--;
-    }
+        if (p.lastDamageTimer && p.lastDamageTimer > 0) {
+          p.lastDamageTimer--;
+        }
+        if (window.playerStats && window.playerStats.flaskCooldownTimer > 0) {
+          window.playerStats.flaskCooldownTimer--;
+        }
 
     let map = window.activeDungeonMap;
     if (!map || !map.grid) return;
@@ -2045,51 +2219,60 @@
     p.speedMultiplier = 1.0;
 
     if (mode === "joystick" && window.joystick.active) {
-      let joy = window.joystick;
-      vx = joy.vx * speedMult;
-      vy = joy.vy * speedMult;
-    } else {
-      let dx = p.targetX - p.x;
-      let dy = p.targetY - p.y;
-      let dist = Math.hypot(dx, dy);
+          let joy = window.joystick;
+          vx = joy.vx * speedMult;
+          vy = joy.vy * speedMult;
+        } else {
+          if (isPointerHolding && window.cursorPointer) {
+            let zoom = window.DungeonCamera ? window.DungeonCamera.zoom : 1.0;
+            let camX = window.DungeonCamera ? window.DungeonCamera.x : 0;
+            let camY = window.DungeonCamera ? window.DungeonCamera.y : 0;
+            p.targetX = window.cursorPointer.screenX / zoom + camX;
+            p.targetY = window.cursorPointer.screenY / zoom + camY;
+          }
 
-      if (dist > 2) {
-        let moveStep = Math.min(p.speed * speedMult, dist);
-        vx = (dx / dist) * moveStep;
-        vy = (dy / dist) * moveStep;
-      }
-    }
+          let dx = p.targetX - p.x;
+          let dy = p.targetY - p.y;
+          let dist = Math.hypot(dx, dy);
 
-    if (vx !== 0 || vy !== 0) {
-      if (vx < -0.1) p.facing = -1;
-      else if (vx > 0.1) p.facing = 1;
-
-      let pRadius = p.radius || 9;
-
-      // Axis-decoupled movement with smooth wall sliding
-      let moved = false;
-      if (vx !== 0) {
-        let nextX = p.x + vx;
-        if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
-          p.x = nextX;
-          moved = true;
+          if (dist > 2) {
+            let moveStep = Math.min(p.speed * speedMult, dist);
+            vx = (dx / dist) * moveStep;
+            vy = (dy / dist) * moveStep;
+          }
         }
-      }
 
-      if (vy !== 0) {
-        let nextY = p.y + vy;
-        if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
-          p.y = nextY;
-          moved = true;
+        if (vx !== 0 || vy !== 0) {
+          if (vx < -0.1) p.facing = -1;
+          else if (vx > 0.1) p.facing = 1;
+
+          let pRadius = p.radius || 9;
+
+          let moved = false;
+          if (vx !== 0) {
+            let nextX = p.x + vx;
+            if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
+              p.x = nextX;
+              moved = true;
+            }
+          }
+
+          if (vy !== 0) {
+            let nextY = p.y + vy;
+            if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
+              p.y = nextY;
+              moved = true;
+            }
+          }
+
+          p.isMoving = moved;
+          if (!moved) {
+            p.targetX = p.x;
+            p.targetY = p.y;
+          }
+        } else {
+          p.isMoving = false;
         }
-      }
-
-      p.targetX = p.x;
-      p.targetY = p.y;
-      p.isMoving = moved;
-    } else {
-      p.isMoving = false;
-    }
 
     if (p.isMoving) {
       p.walkTimer = (p.walkTimer || 0) + 0.18;
@@ -2148,8 +2331,9 @@
     }
 
     // Execute Top-Down Combat & Gold / XP Magnet Mechanics
-    window.updateCavernEffects();
-    window.updateDungeonCombat();
+        window.updateCavernEffects();
+        window.updateHeroBuffParticles();
+        window.updateDungeonCombat();
     window.updateGoldParticles();
     window.updateXpOrbs();
     window.updateGroundLoot();
@@ -2620,25 +2804,54 @@
   };
 
   window.useConsumableItem = function (name) {
-    if (
-      !window.inventory.USE ||
-      !window.inventory.USE[name] ||
-      window.inventory.USE[name] <= 0
-    ) {
-      if (typeof window.pushHeaderToast === "function")
-        window.pushHeaderToast("None remaining!", "#e74c3c");
-      return;
-    }
+        if (
+          !window.inventory.USE ||
+          !window.inventory.USE[name] ||
+          window.inventory.USE[name] <= 0
+        ) {
+          if (typeof window.pushHeaderToast === "function")
+            window.pushHeaderToast("None remaining!", "#e74c3c");
+          return;
+        }
 
-    window.inventory.USE[name]--;
-    if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
+        let isSpared = window.checkArtifactTrait && window.checkArtifactTrait("philosopher_catalyst") && Math.random() < 0.12;
+        if (isSpared) {
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast("[✦] Philosopher's Catalyst preserved elixir!", "#2ecc71");
+          }
+        } else {
+          window.inventory.USE[name]--;
+          if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
+        }
+      if (
+        !window.inventory.USE ||
+        !window.inventory.USE[name] ||
+        window.inventory.USE[name] <= 0
+      ) {
+        if (typeof window.pushHeaderToast === "function")
+          window.pushHeaderToast("None remaining!", "#e74c3c");
+        return;
+      }
 
-    let p = window.playerStats;
-    let runsGranted = name.includes("Supernal")
-      ? 3
-      : name.includes("Greater")
-        ? 2
-        : 1;
+      window.inventory.USE[name]--;
+      if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
+
+      if (window.SoundManager && typeof window.SoundManager.play === "function") {
+        if (name.includes("Elixir") || name.includes("Potion")) {
+          try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("fairy"); }
+        } else if (name.includes("Scroll")) {
+          window.SoundManager.play("spell");
+        } else if (name.includes("Sack") || name.includes("Crate")) {
+          window.SoundManager.play("revive");
+        }
+      }
+
+      let p = window.playerStats;
+      let runsGranted = name.includes("Supernal")
+        ? 3
+        : name.includes("Greater")
+          ? 2
+          : 1;
 
     if (name.includes("Attack Elixir")) {
       let str = name.includes("Supernal")
@@ -2877,69 +3090,144 @@
     }
   };
 
-  window.spawnHomingGold = function (x, y, amount) {
-    let particleCount = window.randInt(4, 7);
-    let totalAmt = BigNum.from(amount);
-    let share = totalAmt.div(particleCount);
-
-    for (let i = 0; i < particleCount; i++) {
-      window.goldParticles.push({
-        x: x,
-        y: y,
-        vx: window.randFloat(-3.5, 3.5),
-        vy: window.randFloat(-6, -3),
-        value: share,
-        scatterTimer: window.randInt(14, 20),
-        gravity: 0.35,
-        speed: 5.0,
-      });
-    }
-  };
-
-  window.updateGoldParticles = function () {
-    let p = window.player;
-    if (!window.goldParticles) return;
-
-    for (let i = window.goldParticles.length - 1; i >= 0; i--) {
-      let gp = window.goldParticles[i];
-      if (gp.scatterTimer > 0) {
-        gp.scatterTimer--;
-        gp.x += gp.vx;
-        gp.y += gp.vy;
-        gp.vy += gp.gravity || 0.35;
-        gp.vx *= 0.92;
+  window.addGoldFloatingText = function (p, amount) {
+      let existing = window.floatingTexts.find(
+        (ft) => ft.isGoldBatch && ft.life > 0,
+      );
+      if (existing) {
+        existing.goldTotal = BigNum.from(existing.goldTotal || 0).add(amount);
+        existing.text = `+${window.formatNumber(existing.goldTotal)} Gold`;
+        existing.life = 55;
       } else {
-        let targetX = p.x;
-        let targetY = p.y - 8;
-        let dx = targetX - gp.x;
-        let dy = targetY - gp.y;
-        let dist = Math.hypot(dx, dy);
+        let bAmt = BigNum.from(amount);
+        window.floatingTexts.push({
+          x: p.x,
+          y: p.y - 15,
+          offsetX: 0,
+          offsetY: -15,
+          goldTotal: bAmt,
+          text: `+${window.formatNumber(bAmt)} Gold`,
+          color: "#ffd700",
+          life: 55,
+          maxLife: 55,
+          followPlayer: true,
+          isGoldBatch: true,
+        });
+      }
+    };
 
-        if (dist < 14) {
-          window.absorbGoldParticle(gp.value, true, false);
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.playCoinCollect === "function"
-          ) {
-            window.SoundManager.playCoinCollect();
-          }
-          window.spawnFloatingText(
-            p.x,
-            p.y - 15,
-            `+${window.formatNumber(gp.value)} Gold`,
-            "#ffd700",
-          );
-          window.goldParticles.splice(i, 1);
+    window.spawnHomingGold = function (x, y, amount) {
+      if (window.goldParticles.length > 40) return;
+      let particleCount = window.randInt(4, 7);
+      let totalAmt = BigNum.from(amount);
+      let share = totalAmt.div(particleCount);
+
+      for (let i = 0; i < particleCount; i++) {
+        window.goldParticles.push({
+          x: x,
+          y: y,
+          vx: window.randFloat(-3.5, 3.5),
+          vy: window.randFloat(-6, -3),
+          value: share,
+          scatterTimer: window.randInt(14, 20),
+          gravity: 0.35,
+          speed: 5.0,
+        });
+      }
+    };
+
+    window.updateGoldParticles = function () {
+      let p = window.player;
+      if (!window.goldParticles) return;
+
+      for (let i = window.goldParticles.length - 1; i >= 0; i--) {
+        let gp = window.goldParticles[i];
+        if (gp.scatterTimer > 0) {
+          gp.scatterTimer--;
+          gp.x += gp.vx;
+          gp.y += gp.vy;
+          gp.vy += gp.gravity || 0.35;
+          gp.vx *= 0.92;
         } else {
-          gp.speed = Math.min(12, gp.speed + 0.4);
-          gp.x += (dx / dist) * gp.speed;
-          gp.y += (dy / dist) * gp.speed;
+          let targetX = p.x;
+          let targetY = p.y - 8;
+          let dx = targetX - gp.x;
+          let dy = targetY - gp.y;
+          let dist = Math.hypot(dx, dy);
+
+          if (dist < 14) {
+            window.absorbGoldParticle(gp.value, true, false);
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.playCoinCollect === "function"
+            ) {
+              window.SoundManager.playCoinCollect();
+            }
+            window.addGoldFloatingText(p, gp.value);
+            window.goldParticles.splice(i, 1);
+          } else {
+            gp.speed = Math.min(12, gp.speed + 0.4);
+            gp.x += (dx / dist) * gp.speed;
+            gp.y += (dy / dist) * gp.speed;
+          }
         }
       }
-    }
-  };
+    };
 
-  window.updateCavernEffects = function () {
+  window.updateHeroBuffParticles = function () {
+      let p = window.player;
+      let stats = window.playerStats;
+      if (!p || !stats || p.hp <= 0 || window.deathAnimationTimer > 0) return;
+
+      let isEco = stats.ecoMode === true;
+      let chance = isEco ? 0.08 : 0.28;
+      if (Math.random() > chance) return;
+
+      let getAtkCol = (s) => (s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71");
+      let getHpCol = (s) => (s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c");
+      let getDefCol = (s) => (s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db");
+      let getHasteCol = (s) => (s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f");
+
+      let activeColors = [];
+      if ((stats.atkPotionRuns || 0) > 0) activeColors.push(getAtkCol(stats.atkPotionStrength || 0.1));
+      if ((stats.hpPotionRuns || 0) > 0) activeColors.push(getHpCol(stats.hpPotionStrength || 0.1));
+      if ((stats.defPotionRuns || 0) > 0) activeColors.push(getDefCol(stats.defPotionStrength || 0.1));
+      if ((stats.hastePotionRuns || 0) > 0) activeColors.push(getHasteCol(stats.hastePotionStrength || 1));
+      if ((stats.xpPotionRuns || 0) > 0) activeColors.push("#c084fc");
+      if ((stats.dropPotionRuns || 0) > 0) activeColors.push("#34d399");
+      if ((stats.qlyPotionRuns || 0) > 0) activeColors.push("#f472b6");
+      if (stats.frenzyTimer > 0) activeColors.push("#f1c40f");
+      if (stats.astralAwakeningTimer > 0) activeColors.push("#00d2ff");
+
+      if (activeColors.length === 0) return;
+
+      let chosenColor = activeColors[Math.floor(Math.random() * activeColors.length)];
+      let spreadX = (Math.random() - 0.5) * 20;
+      let startY = p.y + window.randFloat(-4, 12);
+      let upwardVel = -window.randFloat(0.6, 1.8);
+      let sideVel = (Math.random() - 0.5) * 0.8;
+      let pLife = window.randInt(20, 38);
+
+      if (window.ParticlePool) {
+        window.particles.push(
+          window.ParticlePool.get(
+            p.x + spreadX,
+            startY,
+            sideVel,
+            upwardVel,
+            window.randFloat(1.2, 2.4),
+            chosenColor,
+            0.85,
+            pLife,
+            pLife,
+            -0.03,
+            true
+          )
+        );
+      }
+    };
+
+    window.updateCavernEffects = function () {
     if (
       !window.playerStats.isDungeonMode ||
       !window.playerStats.activeDungeonSigil
@@ -3665,857 +3953,726 @@
   };
 
   window.updateDungeonCombat = function () {
-      let p = window.player;
-      let pStats =
-        typeof window.resolvePlayerStats === "function"
-          ? window.resolvePlayerStats()
-          : { atk: BigNum.from(15) };
-      p.attackTimer = (p.attackTimer || 0) + 1;
+        let p = window.player;
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : { atk: BigNum.from(15) };
+        p.attackTimer = (p.attackTimer || 0) + 1;
 
-      if (window.hero.slashTimer > 0) {
-        window.hero.slashTimer--;
-        window.hero.slashFrame = true;
-      } else {
-        window.hero.slashFrame = false;
-      }
+        let logicClock = window.logicClock || 0;
 
-      // Build unified target list (including breakable debuff/hazard entities and room props)
-      let targetables = [];
+        // --- UNIQUE ITEM PERIODIC TIMERS ---
+        if (window.hasUniquePassive("weapon_staff")) {
+          window.playerStats.phoenixStaffTimer = (window.playerStats.phoenixStaffTimer || 0) + 1;
+          if (window.playerStats.phoenixStaffTimer >= 180) {
+            window.playerStats.phoenixStaffTimer = 0;
+            let targetMob = (window.activeDungeonMobs && window.activeDungeonMobs[0]) || (window.mob);
+            if (targetMob && targetMob.hp && targetMob.hp.gt && targetMob.hp.gt(0)) {
+              let tCx = targetMob.x + (targetMob.w || 24) / 2;
+              let tCy = targetMob.y + (targetMob.h || 24) / 2;
+              let dx = tCx - p.x;
+              let dy = tCy - (p.y - 8);
+              let dist = Math.hypot(dx, dy);
+              if (dist > 0 && dist < 300) {
+                let fireDmg = BigNum.from(pStats.atk || 15).mul(0.25);
+                window.projectiles.push({
+                  x: p.x,
+                  y: p.y - 8,
+                  vx: (dx / dist) * 4.5,
+                  vy: (dy / dist) * 4.5,
+                  r: 7,
+                  type: "fireball",
+                  damage: Math.round(fireDmg.valueOf()),
+                  life: 140,
+                  pulseOffset: Math.random() * 10
+                });
+                if (window.SoundManager) window.SoundManager.play("spell_fire");
+              }
+            }
+          }
+        }
+
+        if (window.hasUniquePassive("tome_watch")) {
+          window.playerStats.watchCycleTimer = (window.playerStats.watchCycleTimer || 0) + 1;
+          if (window.playerStats.watchCycleTimer >= 1200) {
+            window.playerStats.watchCycleTimer = 0;
+            window.playerStats.watchActiveTimer = 240;
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(p.x, p.y - 25, "TEMPORAL FRACTURE!", "#f1c40f", true);
+            }
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnBeam(p.x, "#f1c40f", 40, true);
+            }
+          }
+          if (window.playerStats.watchActiveTimer > 0) {
+            window.playerStats.watchActiveTimer--;
+          }
+        }
+
+        if (window.hasUniquePassive("tome_conduit")) {
+          window.playerStats.conduitSpawnTimer = (window.playerStats.conduitSpawnTimer || 0) + 1;
+          if (window.playerStats.conduitSpawnTimer >= 900) {
+            window.playerStats.conduitSpawnTimer = 0;
+            if (typeof window.spawnCavernInteractive === "function") {
+              window.spawnCavernInteractive("aetheric_conduit");
+            }
+          }
+        }
+
+      // --- ELITE SUPPORT AURA PULSES & STACK DECAY ENGINE ---
       if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-        window.activeDungeonMobs.forEach((m) => {
-          targetables.push({
-            obj: m,
-            type: "mob",
-            x: m.x + m.w / 2,
-            y: m.y + m.h / 2,
-            radius: (m.w || 24) * 0.45,
+        let mobs = window.activeDungeonMobs;
+
+        // 1. Process Active Aura Pulses from Elite Commanders
+              mobs.forEach((m) => {
+                if (!m.eliteAffix || m.hp.lte(0)) return;
+
+                let mCx = m.x + (m.w || 24) / 2;
+                let mCy = m.y + (m.h || 24) / 2;
+
+                if (m.eliteAffix === "vitality_weaver") {
+                  if (logicClock % 90 === 0) { // Pulse every 1.5 seconds
+                    let radiusSq = 14400; // 120px healing radius squared
+                    let injuredAllies = [];
+
+                    mobs.forEach((m2) => {
+                      if (m2 === m || m2.hp.lte(0) || m2.hp.gte(m2.maxHp)) return; // Strictly excludes self, hero, and full-HP/dead mobs
+                      let dx = (m2.x + (m2.w || 24) / 2) - mCx;
+                      let dy = (m2.y + (m2.h || 24) / 2) - mCy;
+                      if (dx * dx + dy * dy <= radiusSq) {
+                        let hpRatio = m2.hp.div(m2.maxHp).valueOf();
+                        injuredAllies.push({ mob: m2, ratio: hpRatio });
+                      }
+                    });
+
+                    // Target up to 3 lowest-HP injured monster allies
+                    injuredAllies.sort((a, b) => a.ratio - b.ratio);
+                    let targetsToHeal = injuredAllies.slice(0, 3);
+
+                    targetsToHeal.forEach((target) => {
+                      let targetMob = target.mob;
+                      let isBoss = targetMob.type === "dungeon_boss" || targetMob.type === "dungeon_miniboss";
+                      let healRatio = isBoss ? 0.015 : 0.06; // 1.5% for bosses, 6% for standard mobs
+                      let healVal = targetMob.maxHp.mul(healRatio);
+
+                      targetMob.hp = window.BigNumMin(targetMob.maxHp, targetMob.hp.add(healVal));
+
+                      let tx = targetMob.x + (targetMob.w || 24) / 2;
+                      let ty = targetMob.y + (targetMob.h || 24) / 2;
+
+                      if (typeof window.spawnFloatingText === "function") {
+                                              window.spawnFloatingText(tx, ty - 15, `+${window.formatNumber(healVal)} HP`, "#2ecc71");
+                                            }
+                                          });
+                                        }
+                                      } else if (m.eliteAffix === "swift_commander") {
+                                        let radiusSq = 19600; // 140px radius squared
+                                        mobs.forEach((m2) => {
+                                          if (m2 === m || m2.hp.lte(0)) return;
+                                          let dx = (m2.x + (m2.w || 24) / 2) - mCx;
+                                          let dy = (m2.y + (m2.h || 24) / 2) - mCy;
+                                          if (dx * dx + dy * dy <= radiusSq) {
+                                            m2.buffTimers.haste = 300; // 5-second lingering window
+                                            if (logicClock % 90 === 0) {
+                                              m2.buffStacks.haste = Math.min(3, (m2.buffStacks.haste || 0) + 1);
+                                            }
+                                          }
+                                        });
+                                      } else if (m.eliteAffix === "iron_citadel") {
+            let radiusSq = 10000; // 100px radius squared
+            mobs.forEach((m2) => {
+              if (m2 === m || m2.hp.lte(0)) return;
+              let dx = (m2.x + (m2.w || 24) / 2) - mCx;
+              let dy = (m2.y + (m2.h || 24) / 2) - mCy;
+              if (dx * dx + dy * dy <= radiusSq) {
+                m2.buffTimers.def = 300; // 5-second lingering window
+                if (logicClock % 90 === 0) {
+                  m2.buffStacks.def = Math.min(3, (m2.buffStacks.def || 0) + 1);
+                }
+              }
+            });
+          } else if (m.eliteAffix === "blood_berserker") {
+            let radiusSq = 12100; // 110px radius squared
+            mobs.forEach((m2) => {
+              if (m2 === m || m2.hp.lte(0)) return;
+              let dx = (m2.x + (m2.w || 24) / 2) - mCx;
+              let dy = (m2.y + (m2.h || 24) / 2) - mCy;
+              if (dx * dx + dy * dy <= radiusSq) {
+                m2.buffTimers.atk = 300; // 5-second lingering window
+                if (logicClock % 90 === 0) {
+                  m2.buffStacks.atk = Math.min(3, (m2.buffStacks.atk || 0) + 1);
+                }
+              }
+            });
+          } else if (m.eliteAffix === "nullifier") {
+            let dx = p.x - mCx;
+            let dy = p.y - mCy;
+            if (dx * dx + dy * dy <= 8100) { // 90px hero disruptor radius
+              p.nullifierDisrupted = true;
+            }
+          }
+        });
+
+        // 2. Process Lingering Window Countdown & Gradual 2.5s Stack Falloff
+        mobs.forEach((m) => {
+          if (!m.buffStacks) return;
+          ["haste", "def", "atk"].forEach((b) => {
+            if (m.buffTimers[b] > 0) {
+              m.buffTimers[b]--;
+              if (m.buffTimers[b] === 0 && m.buffStacks[b] > 0) {
+                m.buffStacks[b]--;
+                if (m.buffStacks[b] > 0) {
+                  m.buffTimers[b] = 150; // Drop 1 stack every 2.5s (150 frames)
+                }
+              }
+            }
           });
         });
       }
-      if (window.cavernInteractives && window.cavernInteractives.length > 0) {
-        window.cavernInteractives.forEach((item) => {
-          if (item.hp !== undefined && item.hp > 0) {
-            targetables.push({
-              obj: item,
-              type: "cavern",
-              x: item.x,
-              y: item.y,
-              radius: item.w / 2,
-            });
-          }
+
+    if (window.hero.slashTimer > 0) {
+      window.hero.slashTimer--;
+      window.hero.slashFrame = true;
+    } else {
+      window.hero.slashFrame = false;
+    }
+
+    // Build unified target list (including breakable debuff/hazard entities and room props)
+    let targetables = [];
+    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+      window.activeDungeonMobs.forEach((m) => {
+        targetables.push({
+          obj: m,
+          type: "mob",
+          x: m.x + m.w / 2,
+          y: m.y + m.h / 2,
+          radius: (m.w || 24) * 0.45,
         });
-      }
-      let mapInst = window.activeDungeonMap;
-      if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
-        let tSize = mapInst.tileSize || 32;
-        mapInst.breakables.forEach((b) => {
-          if (b.flashTimer > 0) b.flashTimer--;
-          if (b.hp > 0) {
-            targetables.push({
-              obj: b,
-              type: "breakable",
-              x: b.x * tSize + tSize / 2,
-              y: b.y * tSize + tSize / 2,
-              radius: 12,
-            });
-          }
-        });
-      }
+      });
+    }
+    if (window.cavernInteractives && window.cavernInteractives.length > 0) {
+      window.cavernInteractives.forEach((item) => {
+        if (item.hp !== undefined && item.hp > 0) {
+          targetables.push({
+            obj: item,
+            type: "cavern",
+            x: item.x,
+            y: item.y,
+            radius: item.w / 2,
+          });
+        }
+      });
+    }
+    let mapInst = window.activeDungeonMap;
+    if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
+      let tSize = mapInst.tileSize || 32;
+      mapInst.breakables.forEach((b) => {
+        if (b.flashTimer > 0) b.flashTimer--;
+        if (b.hp > 0) {
+          targetables.push({
+            obj: b,
+            type: "breakable",
+            x: b.x * tSize + tSize / 2,
+            y: b.y * tSize + tSize / 2,
+            radius: 12,
+          });
+        }
+      });
+    }
 
-      // Process targets in view
-      targetables.forEach((t) => {
-        if (t.type === "mob") {
-          let m = t.obj;
-          if (m.flashTimer > 0) m.flashTimer--;
-          if (m.attackCooldown > 0) m.attackCooldown--;
-          if (m.rangedCooldown > 0) m.rangedCooldown--;
+    // Process targets in view
+    targetables.forEach((t) => {
+      if (t.type === "mob") {
+        let m = t.obj;
+        if (m.flashTimer > 0) m.flashTimer--;
+        if (m.attackCooldown > 0) m.attackCooldown--;
+        if (m.rangedCooldown > 0) m.rangedCooldown--;
 
-          if (m.recoilX) {
-            m.recoilX *= 0.65;
-            if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
-          }
-          if (m.recoilY) {
-            m.recoilY *= 0.65;
-            if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
-          }
+        if (m.recoilX) {
+          m.recoilX *= 0.65;
+          if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
+        }
+        if (m.recoilY) {
+          m.recoilY *= 0.65;
+          if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
+        }
 
-          let dx = p.x - t.x;
-          let dy = p.y - t.y;
-          let dist = Math.hypot(dx, dy);
+        let dx = p.x - t.x;
+        let dy = p.y - t.y;
+        let dist = Math.hypot(dx, dy);
 
-          if (dx < -1) {
-            m.facing = -1;
-          } else if (dx > 1) {
-            m.facing = 1;
-          }
+        if (dx < -1) {
+          m.facing = -1;
+        } else if (dx > 1) {
+          m.facing = 1;
+        }
 
-          // Soft Entity Body-Blocking (Allows passing through with speed resistance and gentle push)
-          let pRadius = p.radius || 9;
-          let minDist = pRadius + t.radius;
+        // Soft Entity Body-Blocking (Allows passing through with speed resistance and gentle push)
+        let pRadius = p.radius || 9;
+        let minDist = pRadius + t.radius;
 
-          if (dist < minDist) {
-            let overlap = minDist - dist;
-            let nx = dist > 0 ? dx / dist : 1;
-            let ny = dist > 0 ? dy / dist : 0;
+        if (dist < minDist) {
+          let overlap = minDist - dist;
+          let nx = dist > 0 ? dx / dist : 1;
+          let ny = dist > 0 ? dy / dist : 0;
 
-            // Apply speed resistance to player
-            p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.45);
+          // Apply speed resistance to player
+          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.45);
 
-            // Push the mob away gently instead of blocking the player
-            let mobPushX = -nx * overlap * 0.25;
-            let mobPushY = -ny * overlap * 0.25;
+          // Push the mob away gently instead of blocking the player
+          let mobPushX = -nx * overlap * 0.25;
+          let mobPushY = -ny * overlap * 0.25;
 
-            let map = window.activeDungeonMap;
-            if (map && map.grid) {
-              let mCenterX = m.x + m.w / 2;
-              let mCenterY = m.y + m.h / 2;
-              if (
-                !checkCollisionAt(map, mCenterX + mobPushX, mCenterY, t.radius)
-              ) {
-                m.x += mobPushX;
-              }
-              if (
-                !checkCollisionAt(map, mCenterX, mCenterY + mobPushY, t.radius)
-              ) {
-                m.y += mobPushY;
-              }
-            } else {
+          let map = window.activeDungeonMap;
+          if (map && map.grid) {
+            let mCenterX = m.x + m.w / 2;
+            let mCenterY = m.y + m.h / 2;
+            if (
+              !checkCollisionAt(map, mCenterX + mobPushX, mCenterY, t.radius)
+            ) {
               m.x += mobPushX;
+            }
+            if (
+              !checkCollisionAt(map, mCenterX, mCenterY + mobPushY, t.radius)
+            ) {
               m.y += mobPushY;
             }
+          } else {
+            m.x += mobPushX;
+            m.y += mobPushY;
           }
+        }
 
-          // Persistent Aggro & Pursuit Movement
-          if (dist < 220 || m.hasTakenDamage) {
-            m.isAggroed = true;
-          }
+        // Persistent Aggro & Pursuit Movement
+        if (dist < 220 || m.hasTakenDamage) {
+          m.isAggroed = true;
+        }
 
-          // Mob Ranged Attack Execution with Windup & Recoil
-          if (m.isRanged && m.isAggroed && dist < 260) {
-            if (m.castTimer > 0) {
-              m.castTimer--;
+        // Mob Ranged Attack Execution with Windup & Recoil
+        if (m.isRanged && m.isAggroed && dist < 260) {
+          if (m.castTimer > 0) {
+            m.castTimer--;
 
-              // Windup Charge Particles
-              if (window.combatVisuals && Math.random() < 0.6) {
-                let mCx = m.x + m.w / 2;
-                let mCy = m.y + m.h / 2;
-                let pColor =
-                  m.projectileType === "thorn"
-                    ? "#2ecc71"
-                    : m.projectileType === "frost"
-                      ? "#38bdf8"
+            // Windup Charge Particles
+            if (window.combatVisuals && Math.random() < 0.6) {
+              let mCx = m.x + m.w / 2;
+              let mCy = m.y + m.h / 2;
+              let pColor =
+                m.projectileType === "thorn"
+                  ? "#2ecc71"
+                  : m.projectileType === "frost"
+                    ? "#38bdf8"
+                    : m.projectileType === "fireball"
+                      ? "#e67e22"
+                      : m.projectileType === "maelstrom"
+                        ? "#a3fd83"
+                        : "#e84393";
+              window.combatVisuals.particlePool.get(
+                mCx + (Math.random() - 0.5) * 20,
+                mCy + (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.5,
+                window.randFloat(1.0, 2.2),
+                pColor,
+                0.8,
+                12,
+                0,
+                true,
+                0,
+              );
+            }
+
+            if (m.castTimer === 0) {
+              m.rangedCooldown = m.isRare ? 65 : 95;
+              let pCx = p.x;
+              let pCy = p.y - 8;
+              let mCx = m.x + m.w / 2;
+              let mCy = m.y + m.h / 2;
+              let pDx = pCx - mCx;
+              let pDy = pCy - mCy;
+              let pDist = Math.hypot(pDx, pDy);
+
+              if (pDist > 0) {
+                let normX = pDx / pDist;
+                let normY = pDy / pDist;
+                let pSpeed = 3.6;
+
+                window.projectiles.push({
+                  x: mCx + normX * 10,
+                  y: mCy + normY * 10,
+                  vx: normX * pSpeed,
+                  vy: normY * pSpeed,
+                  r: 5,
+                  type: m.projectileType || "standard",
+                  damage: Math.round(m.atk * 0.85),
+                  life: 140,
+                  pulseOffset: Math.random() * 10,
+                });
+
+                // Apply Recoil Impulse
+                m.recoilX = -normX * 6;
+                m.recoilY = -normY * 6;
+
+                if (
+                  window.SoundManager &&
+                  typeof window.SoundManager.play === "function"
+                ) {
+                  let sfx =
+                    m.projectileType === "frost"
+                      ? "spell_frost"
                       : m.projectileType === "fireball"
-                        ? "#e67e22"
-                        : m.projectileType === "maelstrom"
-                          ? "#a3fd83"
-                          : "#e84393";
-                window.combatVisuals.particlePool.get(
-                  mCx + (Math.random() - 0.5) * 20,
-                  mCy + (Math.random() - 0.5) * 20,
-                  (Math.random() - 0.5) * 0.5,
-                  (Math.random() - 0.5) * 0.5,
-                  window.randFloat(1.0, 2.2),
-                  pColor,
-                  0.8,
-                  12,
-                  0,
-                  true,
-                  0,
-                );
-              }
-
-              if (m.castTimer === 0) {
-                m.rangedCooldown = m.isRare ? 65 : 95;
-                let pCx = p.x;
-                let pCy = p.y - 8;
-                let mCx = m.x + m.w / 2;
-                let mCy = m.y + m.h / 2;
-                let pDx = pCx - mCx;
-                let pDy = pCy - mCy;
-                let pDist = Math.hypot(pDx, pDy);
-
-                if (pDist > 0) {
-                  let normX = pDx / pDist;
-                  let normY = pDy / pDist;
-                  let pSpeed = 3.6;
-
-                  window.projectiles.push({
-                    x: mCx + normX * 10,
-                    y: mCy + normY * 10,
-                    vx: normX * pSpeed,
-                    vy: normY * pSpeed,
-                    r: 5,
-                    type: m.projectileType || "standard",
-                    damage: Math.round(m.atk * 0.85),
-                    life: 140,
-                    pulseOffset: Math.random() * 10,
-                  });
-
-                  // Apply Recoil Impulse
-                  m.recoilX = -normX * 6;
-                  m.recoilY = -normY * 6;
-
-                  if (
-                    window.SoundManager &&
-                    typeof window.SoundManager.play === "function"
-                  ) {
-                    let sfx =
-                      m.projectileType === "frost"
-                        ? "spell_frost"
-                        : m.projectileType === "fireball"
-                          ? "spell_fire"
-                          : m.projectileType === "void"
-                            ? "spell"
-                            : "swing";
-                    window.SoundManager.play(sfx);
-                  }
+                        ? "spell_fire"
+                        : m.projectileType === "void"
+                          ? "spell"
+                          : "swing";
+                  window.SoundManager.play(sfx);
                 }
               }
-            } else if (m.rangedCooldown <= 0 && dist > 20) {
-              m.castTimer = 14; // 14 frames anticipation wind-up
+            }
+          } else if (m.rangedCooldown <= 0 && dist > 20) {
+            m.castTimer = 14; // 14 frames anticipation wind-up
+          }
+        }
+
+        if (!m.isAggroed) {
+          m.wanderTimer = (m.wanderTimer || 0) - 1;
+          if (m.wanderTimer <= 0) {
+            m.wanderTimer = window.randInt(90, 200);
+            m.isWandering = Math.random() < 0.45;
+
+            if (m.isWandering) {
+              let angle = Math.random() * Math.PI * 2;
+              let wanderSpeed = 0.8;
+              m.wanderVx = Math.cos(angle) * wanderSpeed;
+              m.wanderVy = Math.sin(angle) * wanderSpeed;
+            } else {
+              m.wanderVx = 0;
+              m.wanderVy = 0;
             }
           }
 
-          if (!m.isAggroed) {
-            m.wanderTimer = (m.wanderTimer || 0) - 1;
-            if (m.wanderTimer <= 0) {
-              m.wanderTimer = window.randInt(90, 200);
-              m.isWandering = Math.random() < 0.45;
+          if (m.isWandering && (m.wanderVx !== 0 || m.wanderVy !== 0)) {
+            let mRadius = 6;
+            let mCenterX = m.x + m.w / 2;
+            let mCenterY = m.y + m.h / 2;
+            let nextX = mCenterX + m.wanderVx;
+            let nextY = mCenterY + m.wanderVy;
+            let hX = (m.homeX !== undefined ? m.homeX : m.x) + m.w / 2;
+            let hY = (m.homeY !== undefined ? m.homeY : m.y) + m.h / 2;
+            let distFromHome = Math.hypot(nextX - hX, nextY - hY);
 
-              if (m.isWandering) {
-                let angle = Math.random() * Math.PI * 2;
-                let wanderSpeed = 0.8;
-                m.wanderVx = Math.cos(angle) * wanderSpeed;
-                m.wanderVy = Math.sin(angle) * wanderSpeed;
-              } else {
-                m.wanderVx = 0;
-                m.wanderVy = 0;
-              }
-            }
+            let mapInst = window.activeDungeonMap;
+            if (distFromHome < 128 && mapInst && mapInst.grid) {
+              let canMoveX = !checkCollisionAt(
+                mapInst,
+                nextX,
+                mCenterY,
+                mRadius,
+              );
+              let canMoveY = !checkCollisionAt(
+                mapInst,
+                mCenterX,
+                nextY,
+                mRadius,
+              );
 
-            if (m.isWandering && (m.wanderVx !== 0 || m.wanderVy !== 0)) {
-              let mRadius = 6;
-              let mCenterX = m.x + m.w / 2;
-              let mCenterY = m.y + m.h / 2;
-              let nextX = mCenterX + m.wanderVx;
-              let nextY = mCenterY + m.wanderVy;
-              let hX = (m.homeX !== undefined ? m.homeX : m.x) + m.w / 2;
-              let hY = (m.homeY !== undefined ? m.homeY : m.y) + m.h / 2;
-              let distFromHome = Math.hypot(nextX - hX, nextY - hY);
+              if (canMoveX) m.x += m.wanderVx;
+              if (canMoveY) m.y += m.wanderVy;
 
-              let mapInst = window.activeDungeonMap;
-              if (distFromHome < 128 && mapInst && mapInst.grid) {
-                let canMoveX = !checkCollisionAt(
-                  mapInst,
-                  nextX,
-                  mCenterY,
-                  mRadius,
-                );
-                let canMoveY = !checkCollisionAt(
-                  mapInst,
-                  mCenterX,
-                  nextY,
-                  mRadius,
-                );
-
-                if (canMoveX) m.x += m.wanderVx;
-                if (canMoveY) m.y += m.wanderVy;
-
-                if (!canMoveX && !canMoveY) {
-                  m.isWandering = false;
-                  m.wanderVx = 0;
-                  m.wanderVy = 0;
-                }
-
-                if (m.wanderVx < -0.1) m.facing = -1;
-                else if (m.wanderVx > 0.1) m.facing = 1;
-
-                m.hopTimer = (m.hopTimer || 0) + 0.5;
-              } else {
+              if (!canMoveX && !canMoveY) {
                 m.isWandering = false;
                 m.wanderVx = 0;
                 m.wanderVy = 0;
               }
+
+              if (m.wanderVx < -0.1) m.facing = -1;
+              else if (m.wanderVx > 0.1) m.facing = 1;
+
+              m.hopTimer = (m.hopTimer || 0) + 0.5;
+            } else {
+              m.isWandering = false;
+              m.wanderVx = 0;
+              m.wanderVy = 0;
             }
           }
+        }
 
-          if (m.isAggroed && dist < 800 && dist > 14) {
-            m.hopTimer = (m.hopTimer || 0) + 1;
-            let cycle = m.hopTimer % 30; // 15 frames jumping, 15 frames resting
-            if (cycle < 15) {
-              let speed = m.isRare ? 2.2 : 1.8;
-              let mRadius = 6;
-              let mCenterX = m.x + m.w / 2;
-              let mCenterY = m.y + m.h / 2;
-              let mapInst = window.activeDungeonMap;
+        if (m.isAggroed && dist < 800 && dist > 14) {
+          m.hopTimer = (m.hopTimer || 0) + 1;
+          let cycle = m.hopTimer % 30; // 15 frames jumping, 15 frames resting
+          if (cycle < 15) {
+            let speed = m.isRare ? 2.2 : 1.8;
+            let mRadius = 6;
+            let mCenterX = m.x + m.w / 2;
+            let mCenterY = m.y + m.h / 2;
+            let mapInst = window.activeDungeonMap;
 
-              if (mapInst && mapInst.grid) {
-                let probeAngles = [
-                  0,
-                  Math.PI / 4,
-                  -Math.PI / 4,
-                  Math.PI / 2,
-                  -Math.PI / 2,
-                  (Math.PI * 3) / 4,
-                  -(Math.PI * 3) / 4,
-                ];
-                let baseAngle = Math.atan2(p.y - mCenterY, p.x - mCenterX);
+            if (mapInst && mapInst.grid) {
+              let probeAngles = [
+                0,
+                Math.PI / 4,
+                -Math.PI / 4,
+                Math.PI / 2,
+                -Math.PI / 2,
+                (Math.PI * 3) / 4,
+                -(Math.PI * 3) / 4,
+              ];
+              let baseAngle = Math.atan2(p.y - mCenterY, p.x - mCenterX);
 
-                for (let a = 0; a < probeAngles.length; a++) {
-                  let testAngle = baseAngle + probeAngles[a];
-                  let vx = Math.cos(testAngle) * speed;
-                  let vy = Math.sin(testAngle) * speed;
+              for (let a = 0; a < probeAngles.length; a++) {
+                let testAngle = baseAngle + probeAngles[a];
+                let vx = Math.cos(testAngle) * speed;
+                let vy = Math.sin(testAngle) * speed;
 
-                  if (
-                    !checkCollisionAt(
-                      mapInst,
-                      mCenterX + vx,
-                      mCenterY + vy,
-                      mRadius,
-                    )
-                  ) {
-                    m.x += vx;
-                    m.y += vy;
-                    if (vx < -0.1) m.facing = -1;
-                    else if (vx > 0.1) m.facing = 1;
-                    break;
-                  }
+                if (
+                  !checkCollisionAt(
+                    mapInst,
+                    mCenterX + vx,
+                    mCenterY + vy,
+                    mRadius,
+                  )
+                ) {
+                  m.x += vx;
+                  m.y += vy;
+                  if (vx < -0.1) m.facing = -1;
+                  else if (vx > 0.1) m.facing = 1;
+                  break;
                 }
               }
             }
           }
         }
-      });
+      }
+    });
 
-      // Find the closest overall target (mob or breakable cavern entity)
-      let closestTarget = null;
-      let closestDist = Infinity;
-      targetables.forEach((t) => {
-        let dist = Math.hypot(p.x - t.x, p.y - t.y);
-        let maxDist = t.type === "breakable" ? 25 : 38;
-        if (dist < maxDist && dist < closestDist) {
-          closestDist = dist;
-          closestTarget = t;
-        }
-      });
+    // Find the closest overall target (mob or breakable cavern entity)
+    let closestTarget = null;
+    let closestDist = Infinity;
+    targetables.forEach((t) => {
+      let dist = Math.hypot(p.x - t.x, p.y - t.y);
+      let maxDist = t.type === "breakable" ? 25 : 38;
+      if (dist < maxDist && dist < closestDist) {
+        closestDist = dist;
+        closestTarget = t;
+      }
+    });
 
-      if (closestTarget && p.attackTimer >= 20) {
-        p.attackTimer = 0;
-        window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
+    if (closestTarget && p.attackTimer >= 20) {
+      p.attackTimer = 0;
+      window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
 
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("swing");
-        }
-
-        // Face the target being attacked!
-        let dxToTarget = closestTarget.x - p.x;
-        if (dxToTarget < -0.1) p.facing = -1;
-        else if (dxToTarget > 0.1) p.facing = 1;
-
-        if (closestTarget.type === "mob") {
-          let m = closestTarget.obj;
-          let isCrit = Math.random() < (pStats.critChance || 0.05);
-          let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-          let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
-
-          m.hp = m.hp.sub(pAtk);
-          m.hasTakenDamage = true;
-          m.flashTimer = 6;
-
-          let mobCenterX = closestTarget.x;
-          let mobCenterY = closestTarget.y;
-          let dx = closestTarget.x - p.x;
-          let dy = closestTarget.y - p.y;
-          let dist = Math.hypot(dx, dy);
-
-          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-            window.RenderEngine.spawnDamageEffect(
-              mobCenterX,
-              mobCenterY,
-              pAtk,
-              "slash",
-              isCrit,
-            );
-          }
-
-          // Dagger Offhand Multi-Strike & Bleed DoT Triggers
-          if (pStats.subType === "dagger") {
-            if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-              let offhandHit = BigNum.from(pStats.atk || 15).mul(
-                pStats.offhandDmg || 0.45,
-              );
-              m.hp = m.hp.sub(offhandHit);
-              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                window.RenderEngine.spawnDamageEffect(
-                  mobCenterX,
-                  mobCenterY - 6,
-                  offhandHit,
-                  "dagger",
-                  false,
-                );
-              }
-            }
-
-            if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-              let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-              m.hp = m.hp.sub(bleedTick);
-              m.flashTimer = 6;
-              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                window.RenderEngine.spawnDamageEffect(
-                  mobCenterX,
-                  mobCenterY - 10,
-                  bleedTick,
-                  "bleed",
-                  false,
-                );
-              }
-            }
-          }
-
-          // Tome Spell Cast Trigger
-          let isTomeEquipped =
-            pStats.subType === "tome" ||
-            (window.equippedSlots &&
-              window.equippedSlots.subweapon &&
-              (window.equippedSlots.subweapon.subType === "tome" ||
-                window.equippedSlots.subweapon.type === "tome"));
-          let activeSpellChance =
-            pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-          let activeSpellType = pStats.spellType || "tri";
-
-          if (isTomeEquipped && Math.random() < activeSpellChance) {
-            let spellDmg = BigNum.from(pStats.atk || 15).mul(
-              pStats.spellPower || 1.5,
-            );
-            m.hp = m.hp.sub(spellDmg);
-            m.flashTimer = 8;
-
-            let spellEffectType = activeSpellType;
-            if (activeSpellType === "tri") {
-              const triElements = ["fire", "lightning", "frost"];
-              spellEffectType =
-                triElements[Math.floor(Math.random() * triElements.length)];
-            }
-
-            // Check Aetheric Overload Keystone (15% chance for Triple-Element Burst)
-                        let isOverload = window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 && Math.random() < 0.15;
-
-                        if (isOverload) {
-                          const triElements = ["fire", "lightning", "frost"];
-                          triElements.forEach((elem, eIdx) => {
-                            m.hp = m.hp.sub(spellDmg);
-                            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                              window.RenderEngine.spawnDamageEffect(
-                                mobCenterX + (eIdx - 1) * 12,
-                                mobCenterY - 12 - eIdx * 6,
-                                spellDmg,
-                                elem,
-                                false
-                              );
-                            }
-                          });
-                          if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                            window.SoundManager.play("spell_fire");
-                          }
-                        } else {
-                          if (
-                            window.SoundManager &&
-                            typeof window.SoundManager.play === "function"
-                          ) {
-                            window.SoundManager.play("spell_" + spellEffectType);
-                          }
-                          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                            window.RenderEngine.spawnDamageEffect(
-                              mobCenterX,
-                              mobCenterY - 12,
-                              spellDmg,
-                              spellEffectType,
-                              false,
-                            );
-                          }
-                        }
-          }
-
-          // Directional knockback impulse vector
-          let dirX = dist > 0 ? dx / dist : 1;
-          let dirY = dist > 0 ? dy / dist : 0;
-          m.recoilX = -dirX * (isCrit ? 8 : 5);
-          m.recoilY = -dirY * (isCrit ? 8 : 5);
-
-          // Spawn directional hit sparks
-          if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-            window.RenderEngine.spawnHitSparks(
-              m.x + m.w / 2,
-              m.y + m.h / 2,
-              isCrit,
-              -dirX,
-              -dirY,
-            );
-          }
-
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.playHitImpact === "function"
-          ) {
-            window.SoundManager.playHitImpact(isCrit);
-          }
-        }
-      } else if (closestTarget && closestTarget.type === "cavern") {
-        let item = closestTarget.obj;
-        item.hp--;
-        item.flashTimer = 5;
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("hit");
-        }
-        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-          window.RenderEngine.spawnHitSparks(item.x, item.y, false);
-        }
-        if (item.hp <= 0) {
-          window.triggerCavernShatter(item);
-          let idx = window.cavernInteractives.indexOf(item);
-          if (idx !== -1) window.cavernInteractives.splice(idx, 1);
-        }
-      } else if (closestTarget && closestTarget.type === "breakable") {
-        let prop = closestTarget.obj;
-        prop.hp--;
-        prop.flashTimer = 5;
-
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("hit");
-        }
-        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-          window.RenderEngine.spawnHitSparks(
-            closestTarget.x,
-            closestTarget.y,
-            false,
-          );
-        }
-
-        if (prop.hp <= 0) {
-          window.destroyBreakableProp(prop, closestTarget.x, closestTarget.y);
-        }
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("swing");
       }
 
-      // Process active room mobs (Standard logic loop)
-      if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-        for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
-          let m = window.activeDungeonMobs[i];
-          let dx = p.x - (m.x + m.w / 2);
-          let dy = p.y - (m.y + m.h / 2);
-          let dist = Math.hypot(dx, dy);
+      // Face the target being attacked!
+      let dxToTarget = closestTarget.x - p.x;
+      if (dxToTarget < -0.1) p.facing = -1;
+      else if (dxToTarget > 0.1) p.facing = 1;
 
-          // Check death state after any potential hit (main slash, dagger offhand, or tome spell)
-          if (m.hp.lte(0)) {
-            let mobCenterX = m.x + m.w / 2;
-            let mobCenterY = m.y + m.h / 2;
+      if (closestTarget.type === "mob") {
+        let m = closestTarget.obj;
+        let isCrit = Math.random() < (pStats.critChance || 0.05);
+        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
-            if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
-              window.RenderEngine.spawnDeathParticles(
-                mobCenterX,
-                mobCenterY,
-                m.type,
-              );
-            }
-            let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
-            let rewardXp = Math.floor(15 + window.player.depth * 4);
-            window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
-            window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
+        m.hp = m.hp.sub(pAtk);
+        m.hasTakenDamage = true;
+        m.flashTimer = 6;
 
-            // Monster Souls & Scraps Mob Drop Logic
-            let dropMult = pStats.drop || 1.0;
-            if (Math.random() < 0.45 * dropMult) {
-              let soulCount = Math.floor(Math.random() * 2) + 1;
-              window.addDungeonRunScrap(
-                "Monster Soul",
-                soulCount,
-                mobCenterX,
-                mobCenterY,
-              );
-            }
-
-            if (m.isRare) {
-                          // Utility Keystone: Fortune's Favor (+50% Gold Multiplier for 15s)
-                          if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("utility_keystone") > 0) {
-                            window.playerStats.fortunesFavorTimer = 900; // 15 seconds
-                            if (typeof window.spawnFloatingText === "function") {
-                              window.spawnFloatingText(p.x, p.y - 30, "FORTUNE'S FAVOR (+50% GOLD)", "#ffd700");
-                            }
-                          }
-
-                          window.addDungeonRunScrap(
-                            "Luminous Soul",
-                            1,
-                            mobCenterX,
-                            mobCenterY,
-                          );
-              let depth = window.player.depth || 1;
-              let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
-              let scrapName = window.getScrapYieldName(scrapTier);
-              window.addDungeonRunScrap(
-                scrapName,
-                Math.floor(Math.random() * 3) + 2,
-                mobCenterX,
-                mobCenterY,
-              );
-            }
-
-            // Cavern Sigil Drop Logic
-            let sigilBaseRate = m.isRare ? 0.025 : 0.0015;
-            let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
-            if (Math.random() < sigilRollRate) {
-              let maxSigilStars = 0;
-              let cleared = window.playerStats.maxFloorCleared || 0;
-              if (cleared >= 120) maxSigilStars = 5;
-              else if (cleared >= 72) maxSigilStars = 4;
-              else if (cleared >= 48) maxSigilStars = 3;
-              else if (cleared >= 24) maxSigilStars = 2;
-              else if (cleared >= 12) maxSigilStars = 1;
-
-              let rolledSigilRarity = window.rollSigilRarity(
-                maxSigilStars,
-                pStats.qly || 1.0,
-              );
-              let stageScale = window.player.depth || 1;
-              let sigilItem = window.createItemObject(
-                "sigil",
-                rolledSigilRarity,
-                stageScale,
-                0,
-              );
-              window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
-            }
-
-            // 5% Chance Mob Equipment Drop
-            if (Math.random() < 0.05) {
-              let stageScale = window.player.depth || 1;
-              let rolledRarity = window.rollItemRarity(
-                window.playerStats.maxFloorCleared || 0,
-                pStats.qly || 1.0,
-                false,
-              );
-              let types = [
-                "weapon",
-                "subweapon",
-                "helmet",
-                "chest",
-                "boots",
-                "ring",
-              ];
-              let chosenType = types[Math.floor(Math.random() * types.length)];
-              let droppedItem = window.createItemObject(
-                chosenType,
-                rolledRarity,
-                stageScale,
-                0,
-              );
-
-              window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
-            }
-
-            window.activeDungeonMobs.splice(i, 1);
-            continue;
-          }
-
-          // Mob Contact Melee Attack on Player
-          if (dist < 20 && m.attackCooldown <= 0) {
-            m.attackCooldown = 60; // 1s attack cooldown
-            window.damagePlayer(m.atk, m);
-            if (p.hp <= 0) {
-              window.triggerExtraction(false, false);
-            }
-          }
-        }
-      }
-
-      // Process Boss Warden Combat
-      if (window.mob && window.mob.hp) {
-        let bm = window.mob;
-        if (bm.flashTimer > 0) bm.flashTimer--;
-        if (bm.attackCooldown > 0) bm.attackCooldown--;
-
-        if (bm.recoilX) {
-          bm.recoilX *= 0.65;
-          if (Math.abs(bm.recoilX) < 0.2) bm.recoilX = 0;
-        }
-        if (bm.recoilY) {
-          bm.recoilY *= 0.65;
-          if (Math.abs(bm.recoilY) < 0.2) bm.recoilY = 0;
-        }
-
-        let dx = p.x - (bm.x + bm.w / 2);
-        let dy = p.y - (bm.y + bm.h / 2);
+        let mobCenterX = closestTarget.x;
+        let mobCenterY = closestTarget.y;
+        let dx = closestTarget.x - p.x;
+        let dy = closestTarget.y - p.y;
         let dist = Math.hypot(dx, dy);
 
-        if (dx < -1) {
-          bm.facing = -1;
-        } else if (dx > 1) {
-          bm.facing = 1;
+        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                  window.RenderEngine.spawnDamageEffect(
+                    mobCenterX,
+                    mobCenterY,
+                    pAtk,
+                    "slash",
+                    isCrit,
+                  );
+                }
+
+                // Artifact: Vampirism (Blood-Soaked Chalice)
+                if (window.checkArtifactTrait("vampirism")) {
+                  let now = Date.now();
+                  window.playerStats.recentHeals = (window.playerStats.recentHeals || []).filter(h => now - h.time < 1000);
+                  let totalHealedLastSec = window.playerStats.recentHeals.reduce((sum, h) => sum + h.amt, 0);
+                  let maxHealPerSec = p.maxHp * 0.03;
+                  let allowedHeal = Math.max(0, maxHealPerSec - totalHealedLastSec);
+
+                  let rawHeal = pAtk.mul(0.005).valueOf();
+                  let finalHeal = Math.min(allowedHeal, rawHeal);
+                  if (finalHeal > 0) {
+                    finalHeal = Math.round(finalHeal);
+                    p.hp = Math.min(p.maxHp, p.hp + finalHeal);
+                    window.playerStats.recentHeals.push({ time: now, amt: finalHeal });
+                    if (typeof window.spawnFloatingText === "function") {
+                      window.spawnFloatingText(p.x, p.y - 12, `+${finalHeal} HP`, "#e74c3c");
+                    }
+                  }
+                }
+
+                // Artifact: Echo Strike (Phantom Blade)
+                if (window.checkArtifactTrait("echo_strike") && Math.random() < 0.3) {
+                  let echoDmg = pAtk.mul(0.25);
+                  m.hp = m.hp.sub(echoDmg);
+                  if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                    window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY - 8, echoDmg, "echo", false);
+                  }
+                }
+
+                // Unique: Sanguine Reaver (Sword Bleed Rupture)
+                if (window.hasUniquePassive("weapon_sword")) {
+                  m.bleedStacks = (m.bleedStacks || 0) + 1;
+                  if (m.bleedStacks >= 5) {
+                    m.bleedStacks = 0;
+                    let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
+                    m.hp = m.hp.sub(ruptureDmg);
+                    let siphonedHp = Math.round(p.maxHp * 0.1);
+                    p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
+                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                      window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY, ruptureDmg, "crit", true);
+                    }
+                    if (typeof window.spawnFloatingText === "function") {
+                      window.spawnFloatingText(p.x, p.y - 20, `+${siphonedHp} HP (RUPTURE)`, "#2ecc71");
+                    }
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 20, "magma_elemental", 4);
+                    }
+                  } else {
+                    let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
+                    m.hp = m.hp.sub(bleedTick);
+                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                      window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY - 10, bleedTick, "bleed", false);
+                    }
+                  }
+                }
+
+                // Unique: Maelstrom Gale-Glaive (Wind Gales & Speed Stacks)
+                if (isCrit && window.hasUniquePassive("weapon_maelstrom")) {
+                  window.playerStats.maelstromSpeedStacks = Math.min(3, (window.playerStats.maelstromSpeedStacks || 0) + 1);
+                  window.playerStats.maelstromSpeedTimer = 360;
+                  window.playerStats.galeResonanceTimer = 360;
+
+                  let speed = 5.0;
+                  window.projectiles.push({
+                    x: p.x,
+                    y: p.y - 8,
+                    vx: (dx < 0 ? 1 : -1) * speed,
+                    vy: 0,
+                    r: 8,
+                    type: "maelstrom",
+                    damage: Math.round(pAtk.mul(0.6).valueOf()),
+                    life: 140,
+                  });
+                }
+
+                // Unique: Viper's Perfect Stiletto (Reticle Trigger)
+                if (isCrit && window.hasUniquePassive("dagger_viper") && Math.random() < 0.25) {
+                  m.perfectStrikeTimer = 120;
+                  m.perfectStrikeMax = 120;
+                  if (typeof window.pushHeaderToast === "function") {
+                    window.pushHeaderToast("[!] Viper's Reticle active! Tap target to execute!", "#a855f7");
+                  }
+                }
+
+        // Dagger Offhand Multi-Strike & Bleed DoT Triggers
+        if (pStats.subType === "dagger") {
+          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
+            let offhandHit = BigNum.from(pStats.atk || 15).mul(
+              pStats.offhandDmg || 0.45,
+            );
+            m.hp = m.hp.sub(offhandHit);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY - 6,
+                offhandHit,
+                "dagger",
+                false,
+              );
+            }
+          }
+
+          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
+            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
+            m.hp = m.hp.sub(bleedTick);
+            m.flashTimer = 6;
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY - 10,
+                bleedTick,
+                "bleed",
+                false,
+              );
+            }
+          }
         }
 
-        // Soft Boss Body-Blocking (Allows passing through with speed resistance and gentle push)
-        let bossRadius = (bm.w || 48) * 0.48;
-        let pRadius = p.radius || 9;
-        let bossMinDist = pRadius + bossRadius;
+        // Tome Spell Cast Trigger
+        let isTomeEquipped =
+          pStats.subType === "tome" ||
+          (window.equippedSlots &&
+            window.equippedSlots.subweapon &&
+            (window.equippedSlots.subweapon.subType === "tome" ||
+              window.equippedSlots.subweapon.type === "tome"));
+        let activeSpellChance =
+          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+        let activeSpellType = pStats.spellType || "tri";
 
-        if (dist < bossMinDist) {
-          let overlap = bossMinDist - dist;
-          let nx = dist > 0 ? dx / dist : 1;
-          let ny = dist > 0 ? dy / dist : 0;
+        if (isTomeEquipped && Math.random() < activeSpellChance) {
+          let spellDmg = BigNum.from(pStats.atk || 15).mul(
+            pStats.spellPower || 1.5,
+          );
+          m.hp = m.hp.sub(spellDmg);
+          m.flashTimer = 8;
 
-          // Apply heavy speed resistance to player
-          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.35);
+          let spellEffectType = activeSpellType;
+          if (activeSpellType === "tri") {
+            const triElements = ["fire", "lightning", "frost"];
+            spellEffectType =
+              triElements[Math.floor(Math.random() * triElements.length)];
+          }
 
-          // Push the boss away gently instead of blocking the player
-          let bossPushX = -nx * overlap * 0.15;
-          let bossPushY = -ny * overlap * 0.15;
+          // Check Aetheric Overload Keystone (15% chance for Triple-Element Burst)
+          let isOverload =
+            window.SkillTreeManager &&
+            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+            Math.random() < 0.15;
 
-          let map = window.activeDungeonMap;
-          if (map && map.grid) {
-            let bCenterX = bm.x + bm.w / 2;
-            let bCenterY = bm.y + bm.h / 2;
+          if (isOverload) {
+            const triElements = ["fire", "lightning", "frost"];
+            triElements.forEach((elem, eIdx) => {
+              m.hp = m.hp.sub(spellDmg);
+              if (
+                window.RenderEngine &&
+                window.RenderEngine.spawnDamageEffect
+              ) {
+                window.RenderEngine.spawnDamageEffect(
+                  mobCenterX + (eIdx - 1) * 12,
+                  mobCenterY - 12 - eIdx * 6,
+                  spellDmg,
+                  elem,
+                  false,
+                );
+              }
+            });
             if (
-              !checkCollisionAt(map, bCenterX + bossPushX, bCenterY, bossRadius)
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
             ) {
-              bm.x += bossPushX;
-            }
-            if (
-              !checkCollisionAt(map, bCenterX, bCenterY + bossPushY, bossRadius)
-            ) {
-              bm.y += bossPushY;
+              window.SoundManager.play("spell_fire");
             }
           } else {
-            bm.x += bossPushX;
-            bm.y += bossPushY;
-          }
-        }
-
-        if (dist < 48 && p.attackTimer >= 20) {
-          p.attackTimer = 0;
-
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("swing");
-          }
-
-          let bossCenterX = bm.x + bm.w / 2;
-          // Face the boss being attacked!
-          let dxToBoss = bossCenterX - p.x;
-          if (dxToBoss < -0.1) p.facing = -1;
-          else if (dxToBoss > 0.1) p.facing = 1;
-
-          let isCrit = Math.random() < (pStats.critChance || 0.05);
-          let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-          let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
-
-          bm.hp = bm.hp.sub(pAtk);
-          bm.hasTakenDamage = true;
-          bm.flashTimer = 6;
-
-          let dirX = dist > 0 ? dx / dist : 1;
-          let dirY = dist > 0 ? dy / dist : 0;
-          bm.recoilX = -dirX * (isCrit ? 10 : 6);
-          bm.recoilY = -dirY * (isCrit ? 10 : 6);
-
-          if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-            window.RenderEngine.spawnHitSparks(
-              bm.x + bm.w / 2,
-              bm.y + bm.h / 2,
-              isCrit,
-              -dirX,
-              -dirY,
-            );
-          }
-
-          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-            window.RenderEngine.spawnDamageEffect(
-              bm.x + bm.w / 2,
-              bm.y + bm.h / 2,
-              pAtk,
-              "slash",
-              isCrit,
-            );
-          }
-
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.playHitImpact === "function"
-          ) {
-            window.SoundManager.playHitImpact(isCrit);
-          }
-
-          // Define vertical center for boss offhand procs
-          let bossCenterY = bm.y + bm.h / 2;
-
-          // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
-          if (pStats.subType === "dagger") {
-            if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-              let offhandHit = BigNum.from(pStats.atk || 15).mul(
-                pStats.offhandDmg || 0.45,
-              );
-              bm.hp = bm.hp.sub(offhandHit);
-              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                window.RenderEngine.spawnDamageEffect(
-                  bossCenterX,
-                  bossCenterY - 6,
-                  offhandHit,
-                  "dagger",
-                  false,
-                );
-              }
-            }
-
-            if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-              let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-              bm.hp = bm.hp.sub(bleedTick);
-              bm.flashTimer = 6;
-              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                window.RenderEngine.spawnDamageEffect(
-                  bossCenterX,
-                  bossCenterY - 10,
-                  bleedTick,
-                  "bleed",
-                  false,
-                );
-              }
-            }
-          }
-
-          // Tome Spell Cast Trigger on Boss
-          let isTomeEquipped =
-            pStats.subType === "tome" ||
-            (window.equippedSlots &&
-              window.equippedSlots.subweapon &&
-              (window.equippedSlots.subweapon.subType === "tome" ||
-                window.equippedSlots.subweapon.type === "tome"));
-          let activeSpellChance =
-            pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-          let activeSpellType = pStats.spellType || "tri";
-
-          if (isTomeEquipped && Math.random() < activeSpellChance) {
-            let spellDmg = BigNum.from(pStats.atk || 15).mul(
-              pStats.spellPower || 1.5,
-            );
-            bm.hp = bm.hp.sub(spellDmg);
-            bm.flashTimer = 8;
-
-            let spellEffectType = activeSpellType;
-            if (activeSpellType === "tri") {
-              const triElements = ["fire", "lightning", "frost"];
-              spellEffectType =
-                triElements[Math.floor(Math.random() * triElements.length)];
-            }
-
             if (
               window.SoundManager &&
               typeof window.SoundManager.play === "function"
@@ -4524,86 +4681,273 @@
             }
             if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
               window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 12,
+                mobCenterX,
+                mobCenterY - 12,
                 spellDmg,
                 spellEffectType,
                 false,
               );
             }
           }
+        }
 
-          if (bm.hp.lte(0)) {
-            if (window.spawnDeathParticles) {
-              window.spawnDeathParticles(
-                bm.x + bm.w / 2,
-                bm.y + bm.h / 2,
-                "boss",
-              );
-            }
-            let rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
-            let rewardXp = Math.floor(120 + window.player.depth * 25);
-            window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
-            window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
+        // Directional knockback impulse vector
+        let dirX = dist > 0 ? dx / dist : 1;
+        let dirY = dist > 0 ? dy / dist : 0;
+        m.recoilX = -dirX * (isCrit ? 8 : 5);
+        m.recoilY = -dirY * (isCrit ? 8 : 5);
 
-            // Boss Material Payload
-            let bossCenterY = bm.y + bm.h / 2;
-            let soulCount = Math.floor(Math.random() * 4) + 3;
+        // Spawn directional hit sparks
+        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+          window.RenderEngine.spawnHitSparks(
+            m.x + m.w / 2,
+            m.y + m.h / 2,
+            isCrit,
+            -dirX,
+            -dirY,
+          );
+        }
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.playHitImpact === "function"
+        ) {
+          window.SoundManager.playHitImpact(isCrit);
+        }
+      }
+    } else if (closestTarget && closestTarget.type === "cavern") {
+      let item = closestTarget.obj;
+      item.hp--;
+      item.flashTimer = 5;
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("hit");
+      }
+      if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+        window.RenderEngine.spawnHitSparks(item.x, item.y, false);
+      }
+      if (item.hp <= 0) {
+        window.triggerCavernShatter(item);
+        let idx = window.cavernInteractives.indexOf(item);
+        if (idx !== -1) window.cavernInteractives.splice(idx, 1);
+      }
+    } else if (closestTarget && closestTarget.type === "breakable") {
+      let prop = closestTarget.obj;
+      prop.hp--;
+      prop.flashTimer = 5;
+
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("hit");
+      }
+      if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+        window.RenderEngine.spawnHitSparks(
+          closestTarget.x,
+          closestTarget.y,
+          false,
+        );
+      }
+
+      if (prop.hp <= 0) {
+        window.destroyBreakableProp(prop, closestTarget.x, closestTarget.y);
+      }
+    }
+
+    // Process active room mobs (Standard logic loop)
+    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+      for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
+        let m = window.activeDungeonMobs[i];
+        let dx = p.x - (m.x + m.w / 2);
+        let dy = p.y - (m.y + m.h / 2);
+        let dist = Math.hypot(dx, dy);
+
+        // Check Blood Berserker Telegraphed Detonation Countdown
+                if (m.isDetonating) {
+                  m.detonationTimer--;
+                  m.flashTimer = 2; // Flashing swell feedback during countdown
+
+                  if (m.detonationTimer <= 0) {
+                    let mobCenterX = m.x + (m.w || 24) / 2;
+                    let mobCenterY = m.y + (m.h || 24) / 2;
+
+                    // 1. Detonate Damage-Clamped Explosion on Player
+                    let dx = p.x - mobCenterX;
+                    let dy = p.y - mobCenterY;
+                    if (dx * dx + dy * dy <= 10000) { // 100px explosion radius
+                      let rawExplosionDmg = Math.round(m.atk * 1.0);
+                      let maxPlayerMaxHpCap = Math.round(p.maxHp * 0.25); // Damage clamped to 25% Max HP ceiling
+                      let clampedDmg = Math.min(rawExplosionDmg, maxPlayerMaxHpCap);
+
+                      window.damagePlayer(clampedDmg, m);
+                      if (window.combatVisuals) {
+                        window.combatVisuals.triggerScreenShake(8, 12);
+                        window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 25, "magma_elemental", 5);
+                      }
+                    }
+
+                    // 2. Grant Frenzy to Surviving Nearby Allies
+                    if (window.activeDungeonMobs) {
+                      window.activeDungeonMobs.forEach((m2) => {
+                        if (m2 === m || m2.hp.lte(0)) return;
+                        let adx = (m2.x + (m2.w || 24) / 2) - mobCenterX;
+                        let ady = (m2.y + (m2.h || 24) / 2) - mobCenterY;
+                        if (adx * adx + ady * ady <= 14400) { // 120px ally radius
+                          m2.buffStacks.haste = 3;
+                          m2.buffTimers.haste = 180; // 3 seconds of Frenzy
+                        }
+                      });
+                    }
+
+                    if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
+                      window.RenderEngine.spawnDeathParticles(mobCenterX, mobCenterY, m.type);
+                    }
+
+                    let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
+                    let rewardXp = Math.floor(15 + window.player.depth * 4);
+                    window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
+                    window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
+
+                    window.activeDungeonMobs.splice(i, 1);
+                    continue;
+                  }
+                  continue; // Freeze movement while detonating
+                }
+
+                // Check death state after any potential hit
+                if (m.hp.lte(0)) {
+                  // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
+                  if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
+                    m.isDetonating = true;
+                    m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
+                    m.detonationMax = 70;
+                    m.isStopped = true;
+                    if (typeof window.pushHeaderToast === "function") {
+                      window.pushHeaderToast("[!] BLOOD BERSERKER DETONATING!", "#e74c3c");
+                    }
+                    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                      window.SoundManager.play("spell_fire");
+                    }
+                    continue;
+                  }
+
+                  let mobCenterX = m.x + m.w / 2;
+                  let mobCenterY = m.y + m.h / 2;
+
+                  if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
+                    window.RenderEngine.spawnDeathParticles(
+                      mobCenterX,
+                      mobCenterY,
+                      m.type,
+                    );
+                  }
+          let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
+          let rewardXp = Math.floor(15 + window.player.depth * 4);
+          window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
+          window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
+
+          // Monster Souls & Scraps Mob Drop Logic
+          let dropMult = pStats.drop || 1.0;
+          if (Math.random() < 0.45 * dropMult) {
+            let soulCount = Math.floor(Math.random() * 2) + 1;
             window.addDungeonRunScrap(
               "Monster Soul",
               soulCount,
-              bossCenterX,
-              bossCenterY,
+              mobCenterX,
+              mobCenterY,
             );
+          }
 
+          if (m.isRare) {
+                      // Utility Keystone: Fortune's Favor (+50% Gold Multiplier for 15s)
+                      if (
+                        window.SkillTreeManager &&
+                        window.SkillTreeManager.getSkillLevel("utility_keystone") > 0
+                      ) {
+                        window.playerStats.fortunesFavorTimer = 900; // 15 seconds
+                        if (typeof window.spawnFloatingText === "function") {
+                          window.spawnFloatingText(
+                            p.x,
+                            p.y - 30,
+                            "FORTUNE'S FAVOR (+50% GOLD)",
+                            "#ffd700",
+                          );
+                        }
+                      }
+
+                      // Artifact: Void Pull (Heal 15% Max HP on Rare kill)
+                      if (window.checkArtifactTrait("void_pull")) {
+                        let healAmt = Math.round(p.maxHp * 0.15);
+                        p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                        if (typeof window.spawnFloatingText === "function") {
+                          window.spawnFloatingText(p.x, p.y - 20, `+${healAmt} HP (VOID PULL)`, "#a855f7");
+                        }
+                      }
+
+            window.addDungeonRunScrap(
+              "Luminous Soul",
+              1,
+              mobCenterX,
+              mobCenterY,
+            );
             let depth = window.player.depth || 1;
             let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
             let scrapName = window.getScrapYieldName(scrapTier);
             window.addDungeonRunScrap(
               scrapName,
               Math.floor(Math.random() * 3) + 2,
-              bossCenterX,
-              bossCenterY,
+              mobCenterX,
+              mobCenterY,
             );
+          }
 
-            if (depth >= 12 && Math.random() < 0.6) {
-              window.addDungeonRunScrap(
-                "Eridium Shard",
-                1,
-                bossCenterX,
-                bossCenterY,
-              );
-            }
+          // Artifact: Frenzy (Berserker Stone) - Increments kill counter
+                    if (window.checkArtifactTrait("frenzy")) {
+                      window.playerStats.frenzyKillCount = (window.playerStats.frenzyKillCount || 0) + 1;
+                      if (window.playerStats.frenzyKillCount >= 15) {
+                        window.playerStats.frenzyKillCount = 0;
+                        window.playerStats.frenzyTimer = 300; // 5 seconds of Frenzy
+                        if (typeof window.spawnFloatingText === "function") {
+                          window.spawnFloatingText(p.x, p.y - 25, "BERZERKER FRENZY!", "#ff4757");
+                        }
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnBeam(p.x, "#ff4757", 45, true);
+                        }
+                      }
+                    }
 
-            // Cavern Sigil Drop Logic for Bosses
-            let isMini = bm.type === "dungeon_miniboss";
-            let sigilBaseRate = isMini ? 0.08 : 0.3;
-            let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
-            if (Math.random() < sigilRollRate) {
-              let maxSigilStars = 0;
-              let cleared = window.playerStats.maxFloorCleared || 0;
-              if (cleared >= 120) maxSigilStars = 5;
-              else if (cleared >= 72) maxSigilStars = 4;
-              else if (cleared >= 48) maxSigilStars = 3;
-              else if (cleared >= 24) maxSigilStars = 2;
-              else if (cleared >= 12) maxSigilStars = 1;
+                    // Cavern Sigil Drop Logic
+          let sigilBaseRate = m.isRare ? 0.025 : 0.0015;
+          let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
+          if (Math.random() < sigilRollRate) {
+            let maxSigilStars = 0;
+            let cleared = window.playerStats.maxFloorCleared || 0;
+            if (cleared >= 120) maxSigilStars = 5;
+            else if (cleared >= 72) maxSigilStars = 4;
+            else if (cleared >= 48) maxSigilStars = 3;
+            else if (cleared >= 24) maxSigilStars = 2;
+            else if (cleared >= 12) maxSigilStars = 1;
 
-              let rolledSigilRarity = window.rollSigilRarity(
-                maxSigilStars,
-                pStats.qly || 1.0,
-              );
-              let stageScale = window.player.depth || 1;
-              let sigilItem = window.createItemObject(
-                "sigil",
-                rolledSigilRarity,
-                stageScale,
-                0,
-              );
-              window.spawnGroundLoot(sigilItem, bm.x + bm.w / 2, bm.y + bm.h / 2);
-            }
+            let rolledSigilRarity = window.rollSigilRarity(
+              maxSigilStars,
+              pStats.qly || 1.0,
+            );
+            let stageScale = window.player.depth || 1;
+            let sigilItem = window.createItemObject(
+              "sigil",
+              rolledSigilRarity,
+              stageScale,
+              0,
+            );
+            window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
+          }
 
-            // Standard On-Stage Boss Equipment Drop (Normal Quality Roll)
-            let stageScale = depth;
+          // 5% Chance Mob Equipment Drop
+          if (Math.random() < 0.05) {
+            let stageScale = window.player.depth || 1;
             let rolledRarity = window.rollItemRarity(
               window.playerStats.maxFloorCleared || 0,
               pStats.qly || 1.0,
@@ -4618,208 +4962,521 @@
               "ring",
             ];
             let chosenType = types[Math.floor(Math.random() * types.length)];
-            let bossEquip = window.createItemObject(
+            let droppedItem = window.createItemObject(
               chosenType,
               rolledRarity,
               stageScale,
               0,
             );
-            window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
 
-            // First-Time Boss Clear Key Reward Logic
-            if (!window.playerStats.firstClearBosses)
-              window.playerStats.firstClearBosses = [];
-            if (!window.playerStats.firstClearBosses.includes(depth)) {
-              window.playerStats.firstClearBosses.push(depth);
-              let isMajorBoss = depth % 12 === 0;
-
-              // Direct to Vault
-              window.addEtcDrop("Gacha Key", 1, false);
-              if (isMajorBoss) {
-                window.addEtcDrop("Glimmering Gachapon Key", 1, false);
-              }
-
-              if (typeof window.pushHeaderToast === "function") {
-                let toastMsg = isMajorBoss
-                  ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
-                  : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
-                window.pushHeaderToast(toastMsg, "#f1c40f");
-              }
-            }
-
-            let tileX = bm.bossTileX || Math.floor(bm.x / 32);
-            let tileY = bm.bossTileY || Math.floor(bm.y / 32);
-            window.mob = null;
-            window.onBossDefeated(tileX, tileY);
+            window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
           }
+
+          window.activeDungeonMobs.splice(i, 1);
+          continue;
         }
 
-        // Telegraphed Boss Ability AI Engine
-        if (bm && bm.hp.gt(0)) {
-          let bossCenterX = bm.x + bm.w / 2;
-          let bossCenterY = bm.y + bm.h / 2;
-
-          if (bm.state === "telegraphing") {
-            bm.telegraphTimer--;
-            if (bm.telegraphTimer <= 0) {
-              // Detonate Telegraphed Attack
-              bm.state = "idle";
-              bm.attackCooldown = 110;
-
-              let ability = bm.activeAbility;
-              if (ability === "slam") {
-                let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
-                if (hitDist <= 64) {
-                  let slamDmg = Math.round(bm.atk * 1.8);
-                  window.damagePlayer(slamDmg, bm);
-                  if (p.hp <= 0) window.triggerExtraction(false, false);
-                }
-              } else if (ability === "nova") {
-                for (let i = 0; i < 8; i++) {
-                  let angle = (i * Math.PI * 2) / 8;
-                  let speed = 3.8;
-                  window.projectiles.push({
-                    x: bossCenterX,
-                    y: bossCenterY,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    r: 6,
-                    pulseOffset: i,
-                    type: "boss_nova",
-                    damage: Math.round(bm.atk * 1.1),
-                    life: 120,
-                  });
-                }
-                if (
-                  window.SoundManager &&
-                  typeof window.SoundManager.play === "function"
-                ) {
-                  window.SoundManager.play("spell_fire");
-                }
-              } else if (ability === "charge") {
-                let dashDx = bm.targetX - bossCenterX;
-                let dashDy = bm.targetY - bossCenterY;
-                let dashDist = Math.hypot(dashDx, dashDy);
-                if (dashDist > 0) {
-                  bm.x += (dashDx / dashDist) * 75;
-                  bm.y += (dashDy / dashDist) * 75;
-                }
-                let hitDist = Math.hypot(
-                  p.x - (bm.x + bm.w / 2),
-                  p.y - (bm.y + bm.h / 2),
-                );
-                if (hitDist <= 42) {
-                  let chargeDmg = Math.round(bm.atk * 1.5);
-                  window.damagePlayer(chargeDmg, bm);
-                  if (p.hp <= 0) window.triggerExtraction(false, false);
-                }
-              }
-              bm.activeAbility = null;
-            }
-          } else if (bm.attackCooldown <= 0 && dist < 220) {
-            // Roll new telegraphed ability
-            let moves = bm.moveset || ["slam", "nova", "charge"];
-            let chosen = moves[Math.floor(Math.random() * moves.length)];
-
-            bm.state = "telegraphing";
-            bm.activeAbility = chosen;
-            bm.maxTelegraphTimer = 65;
-            bm.telegraphTimer = bm.maxTelegraphTimer;
-            bm.targetX = p.x;
-            bm.targetY = p.y;
-          } else if (dist < 30 && bm.attackCooldown <= 0) {
-            bm.attackCooldown = 60;
-            p.hp = Math.max(0, p.hp - bm.atk);
-            window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("block");
-            }
-            window.updateHUD();
-            if (p.hp <= 0) window.triggerExtraction(false, false);
+        // Mob Contact Melee Attack on Player
+        if (dist < 20 && m.attackCooldown <= 0) {
+          m.attackCooldown = 60; // 1s attack cooldown
+          window.damagePlayer(m.atk, m);
+          if (p.hp <= 0) {
+            window.triggerExtraction(false, false);
           }
         }
       }
+    }
 
-      // Update Active Projectiles and Test Player & Wall Hitboxes
-      for (let i = window.projectiles.length - 1; i >= 0; i--) {
-        let proj = window.projectiles[i];
-        proj.life--;
-        proj.x += proj.vx;
-        proj.y += proj.vy;
+    // Process Boss Warden Combat
+    if (window.mob && window.mob.hp) {
+      let bm = window.mob;
+      if (bm.flashTimer > 0) bm.flashTimer--;
+      if (bm.attackCooldown > 0) bm.attackCooldown--;
+
+      if (bm.recoilX) {
+        bm.recoilX *= 0.65;
+        if (Math.abs(bm.recoilX) < 0.2) bm.recoilX = 0;
+      }
+      if (bm.recoilY) {
+        bm.recoilY *= 0.65;
+        if (Math.abs(bm.recoilY) < 0.2) bm.recoilY = 0;
+      }
+
+      let dx = p.x - (bm.x + bm.w / 2);
+      let dy = p.y - (bm.y + bm.h / 2);
+      let dist = Math.hypot(dx, dy);
+
+      if (dx < -1) {
+        bm.facing = -1;
+      } else if (dx > 1) {
+        bm.facing = 1;
+      }
+
+      // Soft Boss Body-Blocking (Allows passing through with speed resistance and gentle push)
+      let bossRadius = (bm.w || 48) * 0.48;
+      let pRadius = p.radius || 9;
+      let bossMinDist = pRadius + bossRadius;
+
+      if (dist < bossMinDist) {
+        let overlap = bossMinDist - dist;
+        let nx = dist > 0 ? dx / dist : 1;
+        let ny = dist > 0 ? dy / dist : 0;
+
+        // Apply heavy speed resistance to player
+        p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.35);
+
+        // Push the boss away gently instead of blocking the player
+        let bossPushX = -nx * overlap * 0.15;
+        let bossPushY = -ny * overlap * 0.15;
 
         let map = window.activeDungeonMap;
-        if (map && map.grid && checkCollisionAt(map, proj.x, proj.y, proj.r)) {
-          if (window.combatVisuals) {
-            if (
-              typeof window.combatVisuals.spawnProjectileImpact === "function"
-            ) {
-              window.combatVisuals.spawnProjectileImpact(
-                proj.x,
-                proj.y,
-                proj.type || "standard",
-              );
-            } else {
-              window.combatVisuals.spawnParticles(
-                proj.x,
-                proj.y,
-                6,
-                "default",
-                3,
+        if (map && map.grid) {
+          let bCenterX = bm.x + bm.w / 2;
+          let bCenterY = bm.y + bm.h / 2;
+          if (
+            !checkCollisionAt(map, bCenterX + bossPushX, bCenterY, bossRadius)
+          ) {
+            bm.x += bossPushX;
+          }
+          if (
+            !checkCollisionAt(map, bCenterX, bCenterY + bossPushY, bossRadius)
+          ) {
+            bm.y += bossPushY;
+          }
+        } else {
+          bm.x += bossPushX;
+          bm.y += bossPushY;
+        }
+      }
+
+      if (dist < 48 && p.attackTimer >= 20) {
+        p.attackTimer = 0;
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("swing");
+        }
+
+        let bossCenterX = bm.x + bm.w / 2;
+        // Face the boss being attacked!
+        let dxToBoss = bossCenterX - p.x;
+        if (dxToBoss < -0.1) p.facing = -1;
+        else if (dxToBoss > 0.1) p.facing = 1;
+
+        let isCrit = Math.random() < (pStats.critChance || 0.05);
+        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+
+        bm.hp = bm.hp.sub(pAtk);
+        bm.hasTakenDamage = true;
+        bm.flashTimer = 6;
+
+        let dirX = dist > 0 ? dx / dist : 1;
+        let dirY = dist > 0 ? dy / dist : 0;
+        bm.recoilX = -dirX * (isCrit ? 10 : 6);
+        bm.recoilY = -dirY * (isCrit ? 10 : 6);
+
+        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+          window.RenderEngine.spawnHitSparks(
+            bm.x + bm.w / 2,
+            bm.y + bm.h / 2,
+            isCrit,
+            -dirX,
+            -dirY,
+          );
+        }
+
+        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+          window.RenderEngine.spawnDamageEffect(
+            bm.x + bm.w / 2,
+            bm.y + bm.h / 2,
+            pAtk,
+            "slash",
+            isCrit,
+          );
+        }
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.playHitImpact === "function"
+        ) {
+          window.SoundManager.playHitImpact(isCrit);
+        }
+
+        // Define vertical center for boss offhand procs
+        let bossCenterY = bm.y + bm.h / 2;
+
+        // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
+        if (pStats.subType === "dagger") {
+          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
+            let offhandHit = BigNum.from(pStats.atk || 15).mul(
+              pStats.offhandDmg || 0.45,
+            );
+            bm.hp = bm.hp.sub(offhandHit);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bossCenterX,
+                bossCenterY - 6,
+                offhandHit,
+                "dagger",
+                false,
               );
             }
           }
-          window.projectiles.splice(i, 1);
-          continue;
-        }
 
-        let projDist = Math.hypot(p.x - proj.x, p.y - proj.y);
-        if (projDist < proj.r + (p.radius || 9)) {
-          window.damagePlayer(proj.damage, null);
-          if (window.combatVisuals) {
-            if (
-              typeof window.combatVisuals.spawnProjectileImpact === "function"
-            ) {
-              window.combatVisuals.spawnProjectileImpact(
-                proj.x,
-                proj.y,
-                proj.type || "standard",
-              );
-            } else {
-              window.combatVisuals.spawnParticles(
-                proj.x,
-                proj.y,
-                8,
-                "default",
-                4,
+          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
+            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
+            bm.hp = bm.hp.sub(bleedTick);
+            bm.flashTimer = 6;
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bossCenterX,
+                bossCenterY - 10,
+                bleedTick,
+                "bleed",
+                false,
               );
             }
           }
-          window.projectiles.splice(i, 1);
-          if (p.hp <= 0) window.triggerExtraction(false, false);
-          continue;
         }
 
-        if (proj.life <= 0) {
-                  if (
-                    window.combatVisuals &&
-                    typeof window.combatVisuals.spawnProjectileImpact === "function"
-                  ) {
-                    window.combatVisuals.spawnProjectileImpact(
-                      proj.x,
-                      proj.y,
-                      proj.type || "standard",
-                    );
-                  }
-                  window.projectiles.splice(i, 1);
-                }
+        // Tome Spell Cast Trigger on Boss
+        let isTomeEquipped =
+          pStats.subType === "tome" ||
+          (window.equippedSlots &&
+            window.equippedSlots.subweapon &&
+            (window.equippedSlots.subweapon.subType === "tome" ||
+              window.equippedSlots.subweapon.type === "tome"));
+        let activeSpellChance =
+          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+        let activeSpellType = pStats.spellType || "tri";
+
+        if (isTomeEquipped && Math.random() < activeSpellChance) {
+          let spellDmg = BigNum.from(pStats.atk || 15).mul(
+            pStats.spellPower || 1.5,
+          );
+          bm.hp = bm.hp.sub(spellDmg);
+          bm.flashTimer = 8;
+
+          let spellEffectType = activeSpellType;
+          if (activeSpellType === "tri") {
+            const triElements = ["fire", "lightning", "frost"];
+            spellEffectType =
+              triElements[Math.floor(Math.random() * triElements.length)];
+          }
+
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("spell_" + spellEffectType);
+          }
+          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+            window.RenderEngine.spawnDamageEffect(
+              bossCenterX,
+              bossCenterY - 12,
+              spellDmg,
+              spellEffectType,
+              false,
+            );
+          }
+        }
+
+        if (bm.hp.lte(0)) {
+          if (window.spawnDeathParticles) {
+            window.spawnDeathParticles(
+              bm.x + bm.w / 2,
+              bm.y + bm.h / 2,
+              "boss",
+            );
+          }
+          let rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
+          let rewardXp = Math.floor(120 + window.player.depth * 25);
+          window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
+          window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
+
+          // Boss Material Payload
+          let bossCenterY = bm.y + bm.h / 2;
+          let soulCount = Math.floor(Math.random() * 4) + 3;
+          window.addDungeonRunScrap(
+            "Monster Soul",
+            soulCount,
+            bossCenterX,
+            bossCenterY,
+          );
+
+          let depth = window.player.depth || 1;
+          let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
+          let scrapName = window.getScrapYieldName(scrapTier);
+          window.addDungeonRunScrap(
+            scrapName,
+            Math.floor(Math.random() * 3) + 2,
+            bossCenterX,
+            bossCenterY,
+          );
+
+          if (depth >= 12 && Math.random() < 0.6) {
+            window.addDungeonRunScrap(
+              "Eridium Shard",
+              1,
+              bossCenterX,
+              bossCenterY,
+            );
+          }
+
+          // Cavern Sigil Drop Logic for Bosses
+          let isMini = bm.type === "dungeon_miniboss";
+          let sigilBaseRate = isMini ? 0.08 : 0.3;
+          let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
+          if (Math.random() < sigilRollRate) {
+            let maxSigilStars = 0;
+            let cleared = window.playerStats.maxFloorCleared || 0;
+            if (cleared >= 120) maxSigilStars = 5;
+            else if (cleared >= 72) maxSigilStars = 4;
+            else if (cleared >= 48) maxSigilStars = 3;
+            else if (cleared >= 24) maxSigilStars = 2;
+            else if (cleared >= 12) maxSigilStars = 1;
+
+            let rolledSigilRarity = window.rollSigilRarity(
+              maxSigilStars,
+              pStats.qly || 1.0,
+            );
+            let stageScale = window.player.depth || 1;
+            let sigilItem = window.createItemObject(
+              "sigil",
+              rolledSigilRarity,
+              stageScale,
+              0,
+            );
+            window.spawnGroundLoot(sigilItem, bm.x + bm.w / 2, bm.y + bm.h / 2);
+          }
+
+          // Standard On-Stage Boss Equipment Drop (Normal Quality Roll)
+          let stageScale = depth;
+          let rolledRarity = window.rollItemRarity(
+            window.playerStats.maxFloorCleared || 0,
+            pStats.qly || 1.0,
+            false,
+          );
+          let types = [
+            "weapon",
+            "subweapon",
+            "helmet",
+            "chest",
+            "boots",
+            "ring",
+          ];
+          let chosenType = types[Math.floor(Math.random() * types.length)];
+          let bossEquip = window.createItemObject(
+            chosenType,
+            rolledRarity,
+            stageScale,
+            0,
+          );
+          window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
+
+          // First-Time Boss Clear Key Reward Logic
+          if (!window.playerStats.firstClearBosses)
+            window.playerStats.firstClearBosses = [];
+          if (!window.playerStats.firstClearBosses.includes(depth)) {
+            window.playerStats.firstClearBosses.push(depth);
+            let isMajorBoss = depth % 12 === 0;
+
+            // Direct to Vault
+            window.addEtcDrop("Gacha Key", 1, false);
+            if (isMajorBoss) {
+              window.addEtcDrop("Glimmering Gachapon Key", 1, false);
+            }
+
+            if (typeof window.pushHeaderToast === "function") {
+              let toastMsg = isMajorBoss
+                ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
+                : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
+              window.pushHeaderToast(toastMsg, "#f1c40f");
+            }
+          }
+
+          if (window.hasUniquePassive("boots_warpcore")) {
+                      window.playerStats.warpCoreSprintTimer = 240; // 4 seconds of Maximum Haste
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(p.x, p.y - 25, "WARP-CORE MAX HASTE!", "#1abc9c");
+                      }
+                    }
+
+                    let tileX = bm.bossTileX || Math.floor(bm.x / 32);
+                    let tileY = bm.bossTileY || Math.floor(bm.y / 32);
+                    window.mob = null;
+                    window.onBossDefeated(tileX, tileY);
+        }
+      }
+
+      // Telegraphed Boss Ability AI Engine
+      if (bm && bm.hp.gt(0)) {
+        let bossCenterX = bm.x + bm.w / 2;
+        let bossCenterY = bm.y + bm.h / 2;
+
+        if (bm.state === "telegraphing") {
+          bm.telegraphTimer--;
+          if (bm.telegraphTimer <= 0) {
+            // Detonate Telegraphed Attack
+            bm.state = "idle";
+            bm.attackCooldown = 110;
+
+            let ability = bm.activeAbility;
+            if (ability === "slam") {
+              let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
+              if (hitDist <= 64) {
+                let slamDmg = Math.round(bm.atk * 1.8);
+                window.damagePlayer(slamDmg, bm);
+                if (p.hp <= 0) window.triggerExtraction(false, false);
               }
-            };
+            } else if (ability === "nova") {
+              for (let i = 0; i < 8; i++) {
+                let angle = (i * Math.PI * 2) / 8;
+                let speed = 3.8;
+                window.projectiles.push({
+                  x: bossCenterX,
+                  y: bossCenterY,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  r: 6,
+                  pulseOffset: i,
+                  type: "boss_nova",
+                  damage: Math.round(bm.atk * 1.1),
+                  life: 120,
+                });
+              }
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.play === "function"
+              ) {
+                window.SoundManager.play("spell_fire");
+              }
+            } else if (ability === "charge") {
+              let dashDx = bm.targetX - bossCenterX;
+              let dashDy = bm.targetY - bossCenterY;
+              let dashDist = Math.hypot(dashDx, dashDy);
+              if (dashDist > 0) {
+                bm.x += (dashDx / dashDist) * 75;
+                bm.y += (dashDy / dashDist) * 75;
+              }
+              let hitDist = Math.hypot(
+                p.x - (bm.x + bm.w / 2),
+                p.y - (bm.y + bm.h / 2),
+              );
+              if (hitDist <= 42) {
+                let chargeDmg = Math.round(bm.atk * 1.5);
+                window.damagePlayer(chargeDmg, bm);
+                if (p.hp <= 0) window.triggerExtraction(false, false);
+              }
+            }
+            bm.activeAbility = null;
+          }
+        } else if (bm.attackCooldown <= 0 && dist < 220) {
+          // Roll new telegraphed ability
+          let moves = bm.moveset || ["slam", "nova", "charge"];
+          let chosen = moves[Math.floor(Math.random() * moves.length)];
 
-          function render() {
+          bm.state = "telegraphing";
+          bm.activeAbility = chosen;
+          bm.maxTelegraphTimer = 65;
+          bm.telegraphTimer = bm.maxTelegraphTimer;
+          bm.targetX = p.x;
+          bm.targetY = p.y;
+        } else if (dist < 30 && bm.attackCooldown <= 0) {
+          bm.attackCooldown = 60;
+          p.hp = Math.max(0, p.hp - bm.atk);
+          window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("block");
+          }
+          window.updateHUD();
+          if (p.hp <= 0) window.triggerExtraction(false, false);
+        }
+      }
+    }
 
+    // Update Active Projectiles and Test Player & Wall Hitboxes
+    for (let i = window.projectiles.length - 1; i >= 0; i--) {
+      let proj = window.projectiles[i];
+      proj.life--;
+      proj.x += proj.vx;
+      proj.y += proj.vy;
+
+      let map = window.activeDungeonMap;
+      if (map && map.grid && checkCollisionAt(map, proj.x, proj.y, proj.r)) {
+        if (window.combatVisuals) {
+          if (
+            typeof window.combatVisuals.spawnProjectileImpact === "function"
+          ) {
+            window.combatVisuals.spawnProjectileImpact(
+              proj.x,
+              proj.y,
+              proj.type || "standard",
+            );
+          } else {
+            window.combatVisuals.spawnParticles(
+              proj.x,
+              proj.y,
+              6,
+              "default",
+              3,
+            );
+          }
+        }
+        window.projectiles.splice(i, 1);
+        continue;
+      }
+
+      let projDist = Math.hypot(p.x - proj.x, p.y - proj.y);
+      if (projDist < proj.r + (p.radius || 9)) {
+        window.damagePlayer(proj.damage, null);
+        if (window.combatVisuals) {
+          if (
+            typeof window.combatVisuals.spawnProjectileImpact === "function"
+          ) {
+            window.combatVisuals.spawnProjectileImpact(
+              proj.x,
+              proj.y,
+              proj.type || "standard",
+            );
+          } else {
+            window.combatVisuals.spawnParticles(
+              proj.x,
+              proj.y,
+              8,
+              "default",
+              4,
+            );
+          }
+        }
+        window.projectiles.splice(i, 1);
+        if (p.hp <= 0) window.triggerExtraction(false, false);
+        continue;
+      }
+
+      if (proj.life <= 0) {
+        if (
+          window.combatVisuals &&
+          typeof window.combatVisuals.spawnProjectileImpact === "function"
+        ) {
+          window.combatVisuals.spawnProjectileImpact(
+            proj.x,
+            proj.y,
+            proj.type || "standard",
+          );
+        }
+        window.projectiles.splice(i, 1);
+      }
+    }
+  };
+
+  function render() {
     // Fill entire canvas with dark abyssal void background to eliminate white border bleed
     ctx.fillStyle = "#05030a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -5078,254 +5735,304 @@
     }
 
     // B4. Ground Equipment Loot Pickups (Fog-of-War Culled)
-        if (window.groundLoot && window.groundLoot.length > 0) {
-          let time = Date.now();
-          window.groundLoot.forEach((gl) => {
-            let tileC = Math.floor(gl.x / tSize);
-            let tileR = Math.floor(gl.y / tSize);
-            let isExplored =
-              isHub ||
-              (mapInst &&
-                mapInst.exploredGrid &&
-                mapInst.exploredGrid[tileR] &&
-                mapInst.exploredGrid[tileR][tileC]);
-            if (!isExplored) return; // Hide ground equipment if in unexplored Fog of War!
+    if (window.groundLoot && window.groundLoot.length > 0) {
+      let time = Date.now();
+      window.groundLoot.forEach((gl) => {
+        let tileC = Math.floor(gl.x / tSize);
+        let tileR = Math.floor(gl.y / tSize);
+        let isExplored =
+          isHub ||
+          (mapInst &&
+            mapInst.exploredGrid &&
+            mapInst.exploredGrid[tileR] &&
+            mapInst.exploredGrid[tileR][tileC]);
+        if (!isExplored) return; // Hide ground equipment if in unexplored Fog of War!
 
-            depthQueue.push({
-              yBase: gl.y,
-              draw: () => {
-                let drawX = gl.x;
-                let drawY = gl.y + gl.z;
-                let color = gl.color || "#00d2ff";
-                let isEco = window.playerStats && window.playerStats.ecoMode;
+        depthQueue.push({
+          yBase: gl.y,
+          draw: () => {
+            let drawX = gl.x;
+            let drawY = gl.y + gl.z;
+            let color = gl.color || "#00d2ff";
+            let isEco = window.playerStats && window.playerStats.ecoMode;
 
+            ctx.save();
+
+            // 1. Ground Drop Shadow
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+            ctx.beginPath();
+            ctx.ellipse(gl.x, gl.y + 2, 8, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. Borderlands-Style Procedural Multi-Tier Rarity Loot Beam
+            let isUnique =
+              gl.item &&
+              ((window.isItemUnique && window.isItemUnique(gl.item)) ||
+                gl.item.statsRolled === "UNIQUE");
+            let stars = gl.item
+              ? gl.item.statsRolled === "UNIQUE"
+                ? 5
+                : (gl.item.statsRolled ?? 0)
+              : 0;
+            let dRgb = window.hexToRgbValues
+              ? window.hexToRgbValues(color)
+              : "255, 255, 255";
+
+            let beamH = 110 + stars * 22;
+            let beamW = 4 + stars * 2.2;
+            if (isUnique) {
+              beamH = 230;
+              beamW = 16;
+            }
+
+            let pulseSpeed = 160 - stars * 18;
+            let beamPulse = Math.sin(time / pulseSpeed) * (1.0 + stars * 0.35);
+            let currentWidth = Math.max(2, beamW + beamPulse);
+            let alpha = 0.25 + stars * 0.08 + (isUnique ? 0.2 : 0);
+            let topY = gl.y + 2 - beamH;
+            let groundY = gl.y + 2;
+
+            // A. Outer Atmospheric Glow (2★+)
+            if (stars >= 2 || isUnique) {
+              let outerW = currentWidth * (isUnique ? 2.8 : 2.0);
+              let outerGrad = ctx.createLinearGradient(
+                drawX,
+                groundY,
+                drawX,
+                topY,
+              );
+              outerGrad.addColorStop(0, `rgba(${dRgb}, ${alpha * 0.35})`);
+              outerGrad.addColorStop(0.6, `rgba(${dRgb}, ${alpha * 0.12})`);
+              outerGrad.addColorStop(1, `rgba(${dRgb}, 0)`);
+              ctx.fillStyle = outerGrad;
+              ctx.fillRect(drawX - outerW / 2, topY, outerW, beamH);
+            }
+
+            // B. Primary Shaft Gradient Beam (0★+)
+            let shaftGrad = ctx.createLinearGradient(
+              drawX,
+              groundY,
+              drawX,
+              topY,
+            );
+            if (isUnique) {
+              shaftGrad.addColorStop(0, `rgba(232, 67, 147, ${alpha})`);
+              shaftGrad.addColorStop(
+                0.4,
+                `rgba(142, 68, 173, ${alpha * 0.85})`,
+              );
+              shaftGrad.addColorStop(0.8, `rgba(0, 210, 255, ${alpha * 0.5})`);
+              shaftGrad.addColorStop(1, "rgba(0, 210, 255, 0)");
+            } else {
+              shaftGrad.addColorStop(0, `rgba(${dRgb}, ${alpha})`);
+              shaftGrad.addColorStop(0.5, `rgba(${dRgb}, ${alpha * 0.45})`);
+              shaftGrad.addColorStop(1, `rgba(${dRgb}, 0)`);
+            }
+            ctx.fillStyle = shaftGrad;
+            ctx.fillRect(drawX - currentWidth / 2, topY, currentWidth, beamH);
+
+            // C. White-Hot Inner Core Laser (1★+)
+            if (stars >= 1 || isUnique) {
+              let coreW = Math.max(1, currentWidth * 0.3);
+              let coreGrad = ctx.createLinearGradient(
+                drawX,
+                groundY,
+                drawX,
+                topY,
+              );
+              coreGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+              coreGrad.addColorStop(0.7, `rgba(255, 255, 255, ${alpha * 0.8})`);
+              coreGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+              ctx.fillStyle = coreGrad;
+              ctx.fillRect(drawX - coreW / 2, topY, coreW, beamH);
+            } else {
+              // 0★ Core Line
+              ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.moveTo(drawX, groundY);
+              ctx.lineTo(drawX, topY);
+              ctx.stroke();
+            }
+
+            // D. Ground Base Disc / Runic Ring (1★+)
+            if (stars >= 1 || isUnique) {
+              let baseRx = currentWidth * (stars >= 4 ? 2.2 : 1.5);
+              let baseRy = baseRx * 0.35;
+              ctx.strokeStyle = `rgba(${dRgb}, ${alpha * 0.9})`;
+              ctx.lineWidth = stars >= 3 ? 1.8 : 1.0;
+              ctx.beginPath();
+              ctx.ellipse(drawX, groundY, baseRx, baseRy, 0, 0, Math.PI * 2);
+              ctx.stroke();
+
+              if (stars >= 4 || isUnique) {
                 ctx.save();
-
-                // 1. Ground Drop Shadow
-                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                ctx.strokeStyle = isUnique ? "#00ffff" : "#ffd700";
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([4, 3]);
                 ctx.beginPath();
-                ctx.ellipse(gl.x, gl.y + 2, 8, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 2. Borderlands-Style Procedural Multi-Tier Rarity Loot Beam
-                                                let isUnique = gl.item && ((window.isItemUnique && window.isItemUnique(gl.item)) || gl.item.statsRolled === "UNIQUE");
-                                                let stars = gl.item ? (gl.item.statsRolled === "UNIQUE" ? 5 : (gl.item.statsRolled ?? 0)) : 0;
-                                                let dRgb = window.hexToRgbValues ? window.hexToRgbValues(color) : "255, 255, 255";
-
-                                let beamH = 110 + stars * 22;
-                                let beamW = 4 + stars * 2.2;
-                                if (isUnique) {
-                                  beamH = 230;
-                                  beamW = 16;
-                                }
-
-                                let pulseSpeed = 160 - stars * 18;
-                                let beamPulse = Math.sin(time / pulseSpeed) * (1.0 + stars * 0.35);
-                                let currentWidth = Math.max(2, beamW + beamPulse);
-                                let alpha = 0.25 + stars * 0.08 + (isUnique ? 0.2 : 0);
-                                let topY = gl.y + 2 - beamH;
-                                let groundY = gl.y + 2;
-
-                                // A. Outer Atmospheric Glow (2★+)
-                                if (stars >= 2 || isUnique) {
-                                  let outerW = currentWidth * (isUnique ? 2.8 : 2.0);
-                                  let outerGrad = ctx.createLinearGradient(drawX, groundY, drawX, topY);
-                                  outerGrad.addColorStop(0, `rgba(${dRgb}, ${alpha * 0.35})`);
-                                  outerGrad.addColorStop(0.6, `rgba(${dRgb}, ${alpha * 0.12})`);
-                                  outerGrad.addColorStop(1, `rgba(${dRgb}, 0)`);
-                                  ctx.fillStyle = outerGrad;
-                                  ctx.fillRect(drawX - outerW / 2, topY, outerW, beamH);
-                                }
-
-                                // B. Primary Shaft Gradient Beam (0★+)
-                                let shaftGrad = ctx.createLinearGradient(drawX, groundY, drawX, topY);
-                                if (isUnique) {
-                                  shaftGrad.addColorStop(0, `rgba(232, 67, 147, ${alpha})`);
-                                  shaftGrad.addColorStop(0.4, `rgba(142, 68, 173, ${alpha * 0.85})`);
-                                  shaftGrad.addColorStop(0.8, `rgba(0, 210, 255, ${alpha * 0.5})`);
-                                  shaftGrad.addColorStop(1, "rgba(0, 210, 255, 0)");
-                                } else {
-                                  shaftGrad.addColorStop(0, `rgba(${dRgb}, ${alpha})`);
-                                  shaftGrad.addColorStop(0.5, `rgba(${dRgb}, ${alpha * 0.45})`);
-                                  shaftGrad.addColorStop(1, `rgba(${dRgb}, 0)`);
-                                }
-                                ctx.fillStyle = shaftGrad;
-                                ctx.fillRect(drawX - currentWidth / 2, topY, currentWidth, beamH);
-
-                                // C. White-Hot Inner Core Laser (1★+)
-                                if (stars >= 1 || isUnique) {
-                                  let coreW = Math.max(1, currentWidth * 0.3);
-                                  let coreGrad = ctx.createLinearGradient(drawX, groundY, drawX, topY);
-                                  coreGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-                                  coreGrad.addColorStop(0.7, `rgba(255, 255, 255, ${alpha * 0.8})`);
-                                  coreGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-                                  ctx.fillStyle = coreGrad;
-                                  ctx.fillRect(drawX - coreW / 2, topY, coreW, beamH);
-                                } else {
-                                  // 0★ Core Line
-                                  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
-                                  ctx.lineWidth = 1.0;
-                                  ctx.beginPath();
-                                  ctx.moveTo(drawX, groundY);
-                                  ctx.lineTo(drawX, topY);
-                                  ctx.stroke();
-                                }
-
-                                // D. Ground Base Disc / Runic Ring (1★+)
-                                if (stars >= 1 || isUnique) {
-                                  let baseRx = currentWidth * (stars >= 4 ? 2.2 : 1.5);
-                                  let baseRy = baseRx * 0.35;
-                                  ctx.strokeStyle = `rgba(${dRgb}, ${alpha * 0.9})`;
-                                  ctx.lineWidth = stars >= 3 ? 1.8 : 1.0;
-                                  ctx.beginPath();
-                                  ctx.ellipse(drawX, groundY, baseRx, baseRy, 0, 0, Math.PI * 2);
-                                  ctx.stroke();
-
-                                  if (stars >= 4 || isUnique) {
-                                    ctx.save();
-                                    ctx.strokeStyle = isUnique ? "#00ffff" : "#ffd700";
-                                    ctx.lineWidth = 1.2;
-                                    ctx.setLineDash([4, 3]);
-                                    ctx.beginPath();
-                                    ctx.ellipse(drawX, groundY, baseRx * 1.35, baseRy * 1.35, 0, 0, Math.PI * 2);
-                                    ctx.stroke();
-                                    ctx.restore();
-                                  }
-                                }
-
-                                // E. Animated Helix Energy Strands (4★, 5★, UNIQUE)
-                                if ((stars >= 4 || isUnique) && !isEco) {
-                                  let helixSteps = 16;
-                                  let numHelixes = (stars >= 5 || isUnique) ? 2 : 1;
-                                  for (let h = 0; h < numHelixes; h++) {
-                                    let isReverse = h === 1;
-                                    ctx.strokeStyle = isUnique
-                                      ? (h === 0 ? "rgba(0, 255, 255, 0.75)" : "rgba(255, 0, 127, 0.75)")
-                                      : `rgba(255, 255, 255, ${0.6 + h * 0.2})`;
-                                    ctx.lineWidth = 1.2;
-                                    ctx.beginPath();
-                                    for (let s = 0; s <= helixSteps; s++) {
-                                      let ratio = s / helixSteps;
-                                      let hY = groundY - ratio * beamH;
-                                      let phase = ratio * Math.PI * 4 + (time / 140) * (isReverse ? -1.2 : 1.2);
-                                      let hX = drawX + Math.sin(phase) * (currentWidth * 0.9);
-                                      if (s === 0) ctx.moveTo(hX, hY);
-                                      else ctx.lineTo(hX, hY);
-                                    }
-                                    ctx.stroke();
-                                  }
-                                }
-
-                                // F. Upward Drifting Motes / Sparks along Beam (3★+)
-                                if (stars >= 3 || isUnique) {
-                                  let numSparks = isEco ? 2 : (stars >= 5 || isUnique ? 6 : 3);
-                                  for (let i = 0; i < numSparks; i++) {
-                                    let sparkSpeed = 900 + i * 150;
-                                    let sparkProgress = ((time / sparkSpeed) + i / numSparks) % 1.0;
-                                    let sparkY = groundY - sparkProgress * beamH;
-                                    let sparkX = drawX + Math.sin(time / 120 + i * 2.1) * (currentWidth * 0.45);
-                                    let sparkAlpha = (1.0 - sparkProgress) * 0.85;
-                                    let sparkRad = 1.0 + (i % 2) * 0.8 + (isUnique ? 0.6 : 0);
-
-                                    ctx.fillStyle = isUnique
-                                      ? (i % 2 === 0 ? `rgba(0, 210, 255, ${sparkAlpha})` : `rgba(232, 121, 249, ${sparkAlpha})`)
-                                      : `rgba(255, 255, 255, ${sparkAlpha})`;
-                                    ctx.beginPath();
-                                    ctx.arc(sparkX, sparkY, sparkRad, 0, Math.PI * 2);
-                                    ctx.fill();
-                                  }
-                                }
-
-                                // G. Top Ray & Lens Flare Burst (3★+)
-                                if (stars >= 3 || isUnique) {
-                                  ctx.save();
-                                  let flarePulse = 1.0 + Math.sin(time / 100) * 0.25;
-                                  let flareRad = (4 + stars * 2) * flarePulse;
-
-                                  let flareGrad = ctx.createRadialGradient(drawX, topY, 0, drawX, topY, flareRad * 2);
-                                  flareGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-                                  flareGrad.addColorStop(0.4, `rgba(${dRgb}, 0.7)`);
-                                  flareGrad.addColorStop(1, "rgba(0,0,0,0)");
-
-                                  ctx.fillStyle = flareGrad;
-                                  ctx.beginPath();
-                                  ctx.arc(drawX, topY, flareRad * 2, 0, Math.PI * 2);
-                                  ctx.fill();
-
-                                  // Horizontal Lens Flare Cross
-                                  ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 * flarePulse})`;
-                                  ctx.lineWidth = 1.2;
-                                  ctx.beginPath();
-                                  ctx.moveTo(drawX - flareRad * 2.5, topY);
-                                  ctx.lineTo(drawX + flareRad * 2.5, topY);
-                                  ctx.moveTo(drawX, topY - flareRad * 1.5);
-                                  ctx.lineTo(drawX, topY + flareRad * 1.5);
-                                  ctx.stroke();
-
-                                  if (isUnique || stars >= 5) {
-                                    ctx.strokeStyle = isUnique ? "#00ffff" : "#ffd700";
-                                    ctx.beginPath();
-                                    ctx.moveTo(drawX - flareRad * 1.8, topY - flareRad * 0.8);
-                                    ctx.lineTo(drawX + flareRad * 1.8, topY + flareRad * 0.8);
-                                    ctx.moveTo(drawX - flareRad * 1.8, topY + flareRad * 0.8);
-                                    ctx.lineTo(drawX + flareRad * 1.8, topY - flareRad * 0.8);
-                                    ctx.stroke();
-                                  }
-                                  ctx.restore();
-                                }
-
-                // 3. Radial Floor Glow Aura
-                if (!isEco) {
-                  let auraPulse = Math.sin(time / 130) * 1.5;
-                  let floorGrad = ctx.createRadialGradient(
-                    gl.x,
-                    gl.y + 2,
-                    1,
-                    gl.x,
-                    gl.y + 2,
-                    14 + auraPulse,
-                  );
-                  floorGrad.addColorStop(0, color);
-                  floorGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-                  ctx.fillStyle = floorGrad;
-                  ctx.beginPath();
-                  ctx.arc(gl.x, gl.y + 2, 14 + auraPulse, 0, Math.PI * 2);
-                  ctx.fill();
-                }
-
-                // 4. Floating Equipment Symbol
-                let bob = Math.sin(time / 150) * 2.5;
-                let lootY = drawY - 10 + bob;
-
-                let img = window.getCanvasIconImage
-                  ? window.getCanvasIconImage(gl.item)
-                  : null;
-                if (img && img.complete) {
-                  ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
-                } else {
-                  ctx.fillStyle = color;
-                  ctx.strokeStyle = "#000000";
-                  ctx.lineWidth = 1.2;
-                  ctx.beginPath();
-                  ctx.moveTo(drawX, lootY + 4 - 5);
-                  ctx.lineTo(drawX + 5, lootY + 4);
-                  ctx.lineTo(drawX, lootY + 4 + 5);
-                  ctx.lineTo(drawX - 5, lootY + 4);
-                  ctx.closePath();
-                  ctx.fill();
-                  ctx.stroke();
-
-                  ctx.fillStyle = "#ffffff";
-                  ctx.beginPath();
-                  ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
-                  ctx.fill();
-                }
-
+                ctx.ellipse(
+                  drawX,
+                  groundY,
+                  baseRx * 1.35,
+                  baseRy * 1.35,
+                  0,
+                  0,
+                  Math.PI * 2,
+                );
+                ctx.stroke();
                 ctx.restore();
-              },
-            });
-          });
-        }
+              }
+            }
+
+            // E. Animated Helix Energy Strands (4★, 5★, UNIQUE)
+            if ((stars >= 4 || isUnique) && !isEco) {
+              let helixSteps = 16;
+              let numHelixes = stars >= 5 || isUnique ? 2 : 1;
+              for (let h = 0; h < numHelixes; h++) {
+                let isReverse = h === 1;
+                ctx.strokeStyle = isUnique
+                  ? h === 0
+                    ? "rgba(0, 255, 255, 0.75)"
+                    : "rgba(255, 0, 127, 0.75)"
+                  : `rgba(255, 255, 255, ${0.6 + h * 0.2})`;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                for (let s = 0; s <= helixSteps; s++) {
+                  let ratio = s / helixSteps;
+                  let hY = groundY - ratio * beamH;
+                  let phase =
+                    ratio * Math.PI * 4 +
+                    (time / 140) * (isReverse ? -1.2 : 1.2);
+                  let hX = drawX + Math.sin(phase) * (currentWidth * 0.9);
+                  if (s === 0) ctx.moveTo(hX, hY);
+                  else ctx.lineTo(hX, hY);
+                }
+                ctx.stroke();
+              }
+            }
+
+            // F. Upward Drifting Motes / Sparks along Beam (3★+)
+            if (stars >= 3 || isUnique) {
+              let numSparks = isEco ? 2 : stars >= 5 || isUnique ? 6 : 3;
+              for (let i = 0; i < numSparks; i++) {
+                let sparkSpeed = 900 + i * 150;
+                let sparkProgress = (time / sparkSpeed + i / numSparks) % 1.0;
+                let sparkY = groundY - sparkProgress * beamH;
+                let sparkX =
+                  drawX +
+                  Math.sin(time / 120 + i * 2.1) * (currentWidth * 0.45);
+                let sparkAlpha = (1.0 - sparkProgress) * 0.85;
+                let sparkRad = 1.0 + (i % 2) * 0.8 + (isUnique ? 0.6 : 0);
+
+                ctx.fillStyle = isUnique
+                  ? i % 2 === 0
+                    ? `rgba(0, 210, 255, ${sparkAlpha})`
+                    : `rgba(232, 121, 249, ${sparkAlpha})`
+                  : `rgba(255, 255, 255, ${sparkAlpha})`;
+                ctx.beginPath();
+                ctx.arc(sparkX, sparkY, sparkRad, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+
+            // G. Top Ray & Lens Flare Burst (3★+)
+            if (stars >= 3 || isUnique) {
+              ctx.save();
+              let flarePulse = 1.0 + Math.sin(time / 100) * 0.25;
+              let flareRad = (4 + stars * 2) * flarePulse;
+
+              let flareGrad = ctx.createRadialGradient(
+                drawX,
+                topY,
+                0,
+                drawX,
+                topY,
+                flareRad * 2,
+              );
+              flareGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+              flareGrad.addColorStop(0.4, `rgba(${dRgb}, 0.7)`);
+              flareGrad.addColorStop(1, "rgba(0,0,0,0)");
+
+              ctx.fillStyle = flareGrad;
+              ctx.beginPath();
+              ctx.arc(drawX, topY, flareRad * 2, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Horizontal Lens Flare Cross
+              ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 * flarePulse})`;
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(drawX - flareRad * 2.5, topY);
+              ctx.lineTo(drawX + flareRad * 2.5, topY);
+              ctx.moveTo(drawX, topY - flareRad * 1.5);
+              ctx.lineTo(drawX, topY + flareRad * 1.5);
+              ctx.stroke();
+
+              if (isUnique || stars >= 5) {
+                ctx.strokeStyle = isUnique ? "#00ffff" : "#ffd700";
+                ctx.beginPath();
+                ctx.moveTo(drawX - flareRad * 1.8, topY - flareRad * 0.8);
+                ctx.lineTo(drawX + flareRad * 1.8, topY + flareRad * 0.8);
+                ctx.moveTo(drawX - flareRad * 1.8, topY + flareRad * 0.8);
+                ctx.lineTo(drawX + flareRad * 1.8, topY - flareRad * 0.8);
+                ctx.stroke();
+              }
+              ctx.restore();
+            }
+
+            // 3. Radial Floor Glow Aura
+            if (!isEco) {
+              let auraPulse = Math.sin(time / 130) * 1.5;
+              let floorGrad = ctx.createRadialGradient(
+                gl.x,
+                gl.y + 2,
+                1,
+                gl.x,
+                gl.y + 2,
+                14 + auraPulse,
+              );
+              floorGrad.addColorStop(0, color);
+              floorGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+              ctx.fillStyle = floorGrad;
+              ctx.beginPath();
+              ctx.arc(gl.x, gl.y + 2, 14 + auraPulse, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            // 4. Floating Equipment Symbol
+            let bob = Math.sin(time / 150) * 2.5;
+            let lootY = drawY - 10 + bob;
+
+            let img = window.getCanvasIconImage
+              ? window.getCanvasIconImage(gl.item)
+              : null;
+            if (img && img.complete) {
+              ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
+            } else {
+              ctx.fillStyle = color;
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(drawX, lootY + 4 - 5);
+              ctx.lineTo(drawX + 5, lootY + 4);
+              ctx.lineTo(drawX, lootY + 4 + 5);
+              ctx.lineTo(drawX - 5, lootY + 4);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            ctx.restore();
+          },
+        });
+      });
+    }
 
     // C. Active Dungeon Mobs (Fog-of-War Culled)
     if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
@@ -5483,17 +6190,36 @@
       yBase: p.y,
       draw: () => {
         let dx = p.targetX - p.x;
-        let dy = p.targetY - p.y;
-        if (Math.hypot(dx, dy) > 3) {
-          ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.targetX, p.targetY);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
+                let dy = p.targetY - p.y;
+                let distToTarget = Math.hypot(dx, dy);
+                let ctrlMode = window.playerStats
+                  ? window.playerStats.controlMode || "joystick"
+                  : "joystick";
+
+                if (ctrlMode === "cursor" && distToTarget > 4) {
+                  ctx.save();
+                  ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
+                  ctx.lineWidth = 1.5;
+                  ctx.setLineDash([4, 4]);
+                  ctx.beginPath();
+                  ctx.moveTo(p.x, p.y);
+                  ctx.lineTo(p.targetX, p.targetY);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  let pulse = Math.sin(Date.now() / 150) * 1.5;
+                  ctx.strokeStyle = "#00d2ff";
+                  ctx.lineWidth = 1.2;
+                  ctx.beginPath();
+                  ctx.arc(p.targetX, p.targetY, 6 + pulse, 0, Math.PI * 2);
+                  ctx.stroke();
+
+                  ctx.fillStyle = "rgba(0, 210, 255, 0.25)";
+                  ctx.beginPath();
+                  ctx.arc(p.targetX, p.targetY, 3, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.restore();
+                }
 
         ctx.save();
         ctx.translate(p.x, p.y - 8);
@@ -5987,9 +6713,228 @@
     }
 
     if (abandonBtn) {
-      abandonBtn.style.display = isHub ? "none" : "inline-block";
-    }
-  };
+          abandonBtn.style.display = isHub ? "none" : "inline-block";
+        }
+
+        // Update Quick-Slot Field Flask HUD Button
+                let flaskBtn = document.getElementById("hud-flask-button");
+                let fillRect = document.getElementById("hud-flask-fill-rect");
+                let cdRing = document.getElementById("hud-flask-cooldown-ring");
+                let cdText = document.getElementById("hud-flask-cd-text");
+                let flaskBadge = document.getElementById("hud-flask-count-badge");
+
+                if (flaskBtn) {
+                  let charges = stats.flaskCharges !== undefined ? stats.flaskCharges : 1;
+                  let maxCharges = stats.maxFlaskCharges || 1;
+                  let cdTimer = stats.flaskCooldownTimer || 0;
+
+                  if (flaskBadge) flaskBadge.innerText = `${charges}/${maxCharges}`;
+
+                  // 1. Dynamic Liquid Fill Level
+                  if (fillRect) {
+                    let fillPct = maxCharges > 0 ? charges / maxCharges : 0;
+                    let fillHeight = Math.round(52 * fillPct);
+                    let fillY = 6 + (52 - fillHeight);
+                    fillRect.setAttribute("y", fillY);
+                    fillRect.setAttribute("height", fillHeight);
+                  }
+
+                  // 2. Radial Sweeping 360 Degree Cooldown Ring & Countdown Text
+                  if (cdRing) {
+                                      let totalCircumference = 81.68;
+                                      if (cdTimer > 0 && charges > 0) {
+                                        let cdProgress = cdTimer / 180; // 180 frames = 3.0s
+                                        let offset = totalCircumference * (1 - cdProgress);
+                                        cdRing.setAttribute("stroke-dashoffset", offset.toFixed(2));
+                                        cdRing.style.display = "block";
+
+                                        if (cdText) {
+                                          let secLeft = (cdTimer / 60).toFixed(1);
+                                          cdText.innerText = `${secLeft}s`;
+                                        }
+                                        flaskBtn.classList.add("flask-on-cooldown");
+                                      } else {
+                                        cdRing.setAttribute("stroke-dashoffset", totalCircumference.toFixed(2));
+                                        cdRing.style.display = "none";
+                                        if (cdText) cdText.innerText = "";
+                                        flaskBtn.classList.remove("flask-on-cooldown");
+                                      }
+                                    }
+
+                  if (charges <= 0) {
+                    flaskBtn.classList.add("flask-empty");
+                  } else {
+                    flaskBtn.classList.remove("flask-empty");
+                  }
+
+                  // Apply saved position coordinates
+                  if (stats.flaskX !== null && stats.flaskY !== null && !flaskBtn.isDragging) {
+                    flaskBtn.style.left = stats.flaskX + "px";
+                    flaskBtn.style.top = stats.flaskY + "px";
+                    flaskBtn.style.bottom = "auto";
+                  } else if (!flaskBtn.isDragging) {
+                    flaskBtn.style.left = "20px";
+                    flaskBtn.style.bottom = "24px";
+                    flaskBtn.style.top = "auto";
+                  }
+                }
+
+                  if (typeof window.updateHudBuffTray === "function") {
+                    window.updateHudBuffTray();
+                  }
+                };
+
+            window.updateHudBuffTray = function () {
+              let tray = document.getElementById("hud-buff-tray");
+              if (!tray) return;
+
+              let stats = window.playerStats || {};
+              let badges = [];
+
+              let getAtkCol = (s) => (s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71");
+              let getHpCol = (s) => (s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c");
+              let getDefCol = (s) => (s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db");
+              let getHasteCol = (s) => (s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f");
+
+              if ((stats.atkPotionRuns || 0) > 0) {
+                let col = getAtkCol(stats.atkPotionStrength || 0.1);
+                badges.push({
+                  label: "ATK",
+                  val: `${stats.atkPotionRuns}R`,
+                  col: col,
+                  title: `Attack Elixir (+${Math.round((stats.atkPotionStrength || 0.1) * 100)}% Atk, ${stats.atkPotionRuns} run(s) left)`
+                });
+              }
+
+              if ((stats.hpPotionRuns || 0) > 0) {
+                let col = getHpCol(stats.hpPotionStrength || 0.1);
+                badges.push({
+                  label: "HP",
+                  val: `${stats.hpPotionRuns}R`,
+                  col: col,
+                  title: `Vitality Elixir (+${Math.round((stats.hpPotionStrength || 0.1) * 100)}% Max HP, ${stats.hpPotionRuns} run(s) left)`
+                });
+              }
+
+              if ((stats.defPotionRuns || 0) > 0) {
+                let col = getDefCol(stats.defPotionStrength || 0.1);
+                badges.push({
+                  label: "DEF",
+                  val: `${stats.defPotionRuns}R`,
+                  col: col,
+                  title: `Armored Elixir (+${Math.round((stats.defPotionStrength || 0.1) * 100)}% Def, ${stats.defPotionRuns} run(s) left)`
+                });
+              }
+
+              if ((stats.hastePotionRuns || 0) > 0) {
+                let col = getHasteCol(stats.hastePotionStrength || 1);
+                badges.push({
+                  label: "SPD",
+                  val: `${stats.hastePotionRuns}R`,
+                  col: col,
+                  title: `Haste Elixir (+Speed, ${stats.hastePotionRuns} run(s) left)`
+                });
+              }
+
+              if ((stats.xpPotionRuns || 0) > 0) {
+                badges.push({
+                  label: "2x XP",
+                  val: `${stats.xpPotionRuns}R`,
+                  col: "#c084fc",
+                  title: `Double XP Elixir (+100% XP, ${stats.xpPotionRuns} run(s) left)`
+                });
+              }
+
+              if ((stats.dropPotionRuns || 0) > 0) {
+                badges.push({
+                  label: "2x DROP",
+                  val: `${stats.dropPotionRuns}R`,
+                  col: "#34d399",
+                  title: `Double Drop Elixir (+100% Drop Rate, ${stats.dropPotionRuns} run(s) left)`
+                });
+              }
+
+              if ((stats.qlyPotionRuns || 0) > 0) {
+                badges.push({
+                  label: "QLY",
+                  val: `${stats.qlyPotionRuns}R`,
+                  col: "#f472b6",
+                  title: `Drop Quality Elixir (+50% Drop Quality, ${stats.qlyPotionRuns} run(s) left)`
+                });
+              }
+
+              if (stats.frenzyTimer > 0) {
+                badges.push({
+                  label: "FRENZY",
+                  val: `${Math.ceil(stats.frenzyTimer / 60)}s`,
+                  col: "#f1c40f",
+                  title: `Frenzy Mode Active (${Math.ceil(stats.frenzyTimer / 60)}s)`
+                });
+              }
+
+              if (stats.adrenalineTimer > 0) {
+                badges.push({
+                  label: "ADRENALINE",
+                  val: `${Math.ceil(stats.adrenalineTimer / 60)}s`,
+                  col: "#e67e22",
+                  title: `Adrenaline Rush (+30% Damage, ${Math.ceil(stats.adrenalineTimer / 60)}s)`
+                });
+              }
+
+              if (stats.fortunesFavorTimer > 0) {
+                badges.push({
+                  label: "FORTUNE",
+                  val: `${Math.ceil(stats.fortunesFavorTimer / 60)}s`,
+                  col: "#ffd700",
+                  title: `Fortune's Favor (+50% Gold, ${Math.ceil(stats.fortunesFavorTimer / 60)}s)`
+                });
+              }
+
+              if (stats.astralAwakeningTimer > 0) {
+                badges.push({
+                  label: "ASTRAL",
+                  val: `${Math.ceil(stats.astralAwakeningTimer / 60)}s`,
+                  col: "#00d2ff",
+                  title: `Astral Awakening (+100% Damage, ${Math.ceil(stats.astralAwakeningTimer / 60)}s)`
+                });
+              }
+
+              if (stats.purifiedAegisTimer > 0) {
+                badges.push({
+                  label: "AEGIS",
+                  val: `${Math.ceil(stats.purifiedAegisTimer / 60)}s`,
+                  col: "#2ecc71",
+                  title: `Purified Aegis (+50% Def, ${Math.ceil(stats.purifiedAegisTimer / 60)}s)`
+                });
+              }
+
+              if ((stats.viperShadowDanceCharges || 0) > 0) {
+                badges.push({
+                  label: "VIPER",
+                  val: `${stats.viperShadowDanceCharges}x`,
+                  col: "#a855f7",
+                  title: `Viper's Shadow Dance (${stats.viperShadowDanceCharges} 100% Crit Strike(s))`
+                });
+              }
+
+              if (badges.length === 0) {
+                tray.innerHTML = "";
+                tray.style.display = "none";
+                return;
+              }
+
+              tray.style.display = "flex";
+              tray.innerHTML = badges
+                .map(
+                  (b) => `
+                    <div class="hud-buff-badge" style="border-color:${b.col}; box-shadow: 0 0 6px ${b.col}44;" title="${b.title}">
+                      <span class="buff-label" style="color:${b.col};">${b.label}</span>
+                      <span class="buff-runs" style="color:#ffffff;">${b.val}</span>
+                    </div>
+                  `
+                )
+                .join("");
+            };
 
   // --- HERO PROFILE & STASH MANAGEMENT ENGINE ---
   window.getItemIconSvg = function (item, size = 28) {
@@ -6520,55 +7465,65 @@
 
   window.activeProfileMobileTab = "stats";
 
-    window.openSkillTree = function () {
-        if (typeof window.hideTooltip === "function") window.hideTooltip();
-        let modal = document.getElementById("profile-modal");
-        if (!modal) return;
-        modal.style.display = "flex";
-        window.switchProfileTab("skills");
-      };
+  window.openSkillTree = function () {
+    if (typeof window.hideTooltip === "function") window.hideTooltip();
+    let modal = document.getElementById("profile-modal");
+    if (!modal) return;
+    modal.style.display = "flex";
+    window.switchProfileTab("skills");
+  };
 
-      window.switchProfileTab = function (tabKey) {
-                    window.activeProfileMobileTab = tabKey;
-                    const tabs = ["stats", "gear", "satchel", "skills"];
-                    tabs.forEach((t) => {
-                      let btn = document.getElementById(`profile-tab-${t}`);
-                      let sec = document.getElementById(`profile-sec-${t}`);
-                      if (btn) btn.classList.toggle("active", t === tabKey);
-                      if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
-                    });
-                    let profileCard = document.querySelector(".profile-card");
-                    if (profileCard) {
-                      profileCard.classList.toggle("skills-fullscreen-mode", tabKey === "skills");
-                    }
-                    if (tabKey === "skills" && window.SkillTreeManager) {
-                      window.SkillTreeManager.renderSkillTreeUI();
-                    } else if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
-                      window.SkillTreeManager.stopAnimationLoop();
-                    }
-                  };
+  window.switchProfileTab = function (tabKey) {
+    window.activeProfileMobileTab = tabKey;
+    const tabs = ["stats", "gear", "satchel", "skills"];
+    tabs.forEach((t) => {
+      let btn = document.getElementById(`profile-tab-${t}`);
+      let sec = document.getElementById(`profile-sec-${t}`);
+      if (btn) btn.classList.toggle("active", t === tabKey);
+      if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
+    });
+    let profileCard = document.querySelector(".profile-card");
+    if (profileCard) {
+      profileCard.classList.toggle(
+        "skills-fullscreen-mode",
+        tabKey === "skills",
+      );
+    }
+    if (tabKey === "skills" && window.SkillTreeManager) {
+      window.SkillTreeManager.renderSkillTreeUI();
+    } else if (
+      window.SkillTreeManager &&
+      typeof window.SkillTreeManager.stopAnimationLoop === "function"
+    ) {
+      window.SkillTreeManager.stopAnimationLoop();
+    }
+    window.renderProfileModal();
+  };
 
-              window.toggleProfileModal = function () {
-                window.hideTooltip();
-                let modal = document.getElementById("profile-modal");
-                if (!modal) return;
+  window.toggleProfileModal = function () {
+    window.hideTooltip();
+    let modal = document.getElementById("profile-modal");
+    if (!modal) return;
 
-                if (modal.style.display === "none" || modal.style.display === "") {
-                  modal.style.display = "flex";
-                  window.switchProfileTab(window.activeProfileMobileTab || "stats");
-                  window.renderProfileModal();
-                } else {
-                  modal.style.display = "none";
-                  window.lastModalCloseTime = Date.now();
-                  let profileCard = document.querySelector(".profile-card");
-                  if (profileCard) {
-                    profileCard.classList.remove("skills-fullscreen-mode");
-                  }
-                  if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
-                    window.SkillTreeManager.stopAnimationLoop();
-                  }
-                }
-              };
+    if (modal.style.display === "none" || modal.style.display === "") {
+      modal.style.display = "flex";
+      window.switchProfileTab(window.activeProfileMobileTab || "stats");
+      window.renderProfileModal();
+    } else {
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
+      let profileCard = document.querySelector(".profile-card");
+      if (profileCard) {
+        profileCard.classList.remove("skills-fullscreen-mode");
+      }
+      if (
+        window.SkillTreeManager &&
+        typeof window.SkillTreeManager.stopAnimationLoop === "function"
+      ) {
+        window.SkillTreeManager.stopAnimationLoop();
+      }
+    }
+  };
 
   window.renderProfileModal = function () {
     let statsListEl = document.getElementById("profile-stats-list");
@@ -6620,8 +7575,8 @@
 
     if (headerTitleEl) {
       headerTitleEl.innerText = isHub
-        ? "HERO PROFILE & VAULT"
-        : `TACTICAL OVERVIEW (FLOOR ${window.player.depth || 1})`;
+        ? "HERO CREST & VAULT"
+        : `EXPEDITION OVERVIEW (FLOOR ${window.player.depth || 1})`;
     }
 
     // Initialize SP Draft State
@@ -6842,15 +7797,15 @@
         let iconHtml = window.getItemIconSvg(item, 28);
         let isInsured = !!item.locked;
 
-        let insureBtn = `<button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[INSURED]" : "INSURE"}</button>`;
+        let insureBtn = `<button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[ BOUND ]" : "SOUL BIND"}</button>`;
 
         let actionHtml = isHub
           ? `
-                                        ${insureBtn}
-                                        <button class="action-btn-sm" onclick="event.stopPropagation(); window.unequipToStash('${s.key}')">UNEQUIP</button>
-                                      `
+                                                ${insureBtn}
+                                                <button class="action-btn-sm" onclick="event.stopPropagation(); window.unequipToStash('${s.key}')">UNEQUIP</button>
+                                              `
           : isInsured
-            ? `<span style="font-size:8px; color:#2ecc71; font-family:monospace; font-weight:bold;">[INSURED]</span>`
+            ? `<span style="font-size:8px; color:#34d399; font-family:monospace; font-weight:bold;">[SOUL BOUND]</span>`
             : `<span style="font-size:8px; color:#e74c3c; font-family:monospace; font-weight:bold;">[EQUIPPED]</span>`;
 
         return `
@@ -6881,69 +7836,70 @@
       }
 
       if (displayList.length === 0) {
-        stashListEl.innerHTML = `<div style="font-size:8.5px; color:#64748b; font-style:italic; text-align:center; padding:15px;">${isHub ? "Storage vault is empty.<br>Extract loot from dungeon runs to store items here!" : "No items collected yet on this run.<br>Defeat monsters and open chests to find loot!"}</div>`;
-        return;
+        stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">${isHub ? "Storage vault is empty.<br>Extract loot from dungeon runs to store items here!" : "No items collected yet on this run.<br>Defeat monsters and open chests to find loot!"}</div>`;
+      } else {
+        stashListEl.innerHTML = displayList
+          .map((item, idx) => {
+            let col = window.getTierColor
+              ? window.getTierColor(item.statsRolled)
+              : "#00d2ff";
+            let typeLabel = (item.subType || item.type || "ITEM").toUpperCase();
+            let starsLabel =
+              item.statsRolled === "UNIQUE"
+                ? "UNIQUE"
+                : `${item.statsRolled || 0} STAR`;
+            let iconHtml = window.getItemIconSvg
+              ? window.getItemIconSvg(item, 28)
+              : "";
+            let isInsured = !!item.locked;
+
+            let statPreview = [];
+            if (item.atk)
+              statPreview.push(
+                `ATK +${window.formatNumber ? window.formatNumber(item.atk) : item.atk}`,
+              );
+            if (item.def)
+              statPreview.push(
+                `DEF +${window.formatNumber ? window.formatNumber(item.def) : item.def}`,
+              );
+            if (item.maxHp)
+              statPreview.push(
+                `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
+              );
+            let statStr =
+              statPreview.length > 0
+                ? statPreview.join(" | ")
+                : `${starsLabel}`;
+
+            let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderProfileModal();">SALVAGE</button>`;
+
+            let actionsHtml = isHub
+              ? `
+                                    <button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[ BOUND ]" : "SOUL BIND"}</button>
+                                    <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromStash(${item.id})">EQUIP</button>
+                                    ${salvageBtn}
+                                  `
+              : `
+                                    <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
+                                    ${salvageBtn}
+                                  `;
+
+            return `
+                                      <div class="stash-card" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, ${isHub ? "window.inventory.EQUIP" : "window.player.bag"}[${idx}])">
+                                        ${iconHtml}
+                        <div class="item-info">
+                          <span class="item-title" style="color:${col};">${item.name}</span>
+                          <span class="item-sub">${typeLabel} • LV.${item.stageLevel || 1}</span>
+                          <span class="item-sub" style="color:#2ecc71;">${statStr}</span>
+                        </div>
+                        <div class="item-actions">
+                          ${actionsHtml}
+                        </div>
+                      </div>
+                    `;
+          })
+          .join("");
       }
-
-      stashListEl.innerHTML = displayList
-        .map((item, idx) => {
-          let col = window.getTierColor
-            ? window.getTierColor(item.statsRolled)
-            : "#00d2ff";
-          let typeLabel = (item.subType || item.type || "ITEM").toUpperCase();
-          let starsLabel =
-            item.statsRolled === "UNIQUE"
-              ? "UNIQUE"
-              : `${item.statsRolled || 0} STAR`;
-          let iconHtml = window.getItemIconSvg
-            ? window.getItemIconSvg(item, 28)
-            : "";
-          let isInsured = !!item.locked;
-
-          let statPreview = [];
-          if (item.atk)
-            statPreview.push(
-              `ATK +${window.formatNumber ? window.formatNumber(item.atk) : item.atk}`,
-            );
-          if (item.def)
-            statPreview.push(
-              `DEF +${window.formatNumber ? window.formatNumber(item.def) : item.def}`,
-            );
-          if (item.maxHp)
-            statPreview.push(
-              `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
-            );
-          let statStr =
-            statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
-
-          let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderProfileModal();">SALVAGE</button>`;
-
-          let actionsHtml = isHub
-            ? `
-                    <button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[INSURED]" : "INSURE"}</button>
-                    <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromStash(${item.id})">EQUIP</button>
-                    ${salvageBtn}
-                  `
-            : `
-                    <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
-                    ${salvageBtn}
-                  `;
-
-          return `
-                <div class="stash-card" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, ${isHub ? `window.player.stash[${idx}]` : `window.player.bag[${idx}]`})">
-                  ${iconHtml}
-                  <div class="item-info">
-                    <span class="item-title" style="color:${col};">${item.name}</span>
-                    <span class="item-sub">${typeLabel} • LV.${item.stageLevel || 1}</span>
-                    <span class="item-sub" style="color:#2ecc71;">${statStr}</span>
-                  </div>
-                  <div class="item-actions">
-                    ${actionsHtml}
-                  </div>
-                </div>
-              `;
-        })
-        .join("");
     } else if (stashTab === "USE") {
       let useObj = window.inventory.USE || {};
       let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
@@ -6953,37 +7909,36 @@
       }
 
       if (keys.length === 0) {
-        stashListEl.innerHTML = `<div style="font-size:8.5px; color:#64748b; font-style:italic; text-align:center; padding:15px;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
-        return;
+        stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
+      } else {
+        stashListEl.innerHTML = keys
+          .map((k) => {
+            let count = useObj[k];
+            let data = window.useDex[k] || {
+              desc: "Consumable Item",
+              color: "#2ecc71",
+            };
+            let col = data.color || "#2ecc71";
+            let iconHtml = window.getUseIconHtml
+              ? window.getUseIconHtml(k, 28)
+              : "";
+
+            return `
+                              <div class="consumable-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px;">
+                                ${iconHtml}
+                                <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
+                                    <span style="color:#ffffff; font-family:monospace; font-weight:bold; font-size:10.5px; margin-left:4px;">x${count}</span>
+                                  </div>
+                                  <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${data.desc}</div>
+                                </div>
+                                <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
+                              </div>
+                            `;
+          })
+          .join("");
       }
-
-      stashListEl.innerHTML = keys
-        .map((k) => {
-          let count = useObj[k];
-          let data = window.useDex[k] || {
-            desc: "Consumable Item",
-            color: "#2ecc71",
-          };
-          let col = data.color || "#2ecc71";
-          let iconHtml = window.getUseIconHtml
-            ? window.getUseIconHtml(k, 28)
-            : "";
-
-          return `
-                        <div class="consumable-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px;">
-                          ${iconHtml}
-                          <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                              <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
-                              <span style="color:#ffffff; font-family:monospace; font-weight:bold; font-size:10.5px; margin-left:4px;">x${count}</span>
-                            </div>
-                            <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${data.desc}</div>
-                          </div>
-                          <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
-                        </div>
-                      `;
-        })
-        .join("");
     } else if (stashTab === "ETC") {
       let etcObj = window.inventory.ETC || {};
       let pendingScraps = window.player.pendingScraps || {};
@@ -7000,62 +7955,61 @@
       }
 
       if (allKeys.length === 0) {
-        stashListEl.innerHTML = `<div style="font-size:8.5px; color:#64748b; font-style:italic; text-align:center; padding:15px;">No materials or Monster Souls owned.<br>Slay monsters in dungeon runs to harvest souls and scraps!</div>`;
-        return;
-      }
+        stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">No materials or Monster Souls owned.<br>Slay monsters in dungeon runs to harvest souls and scraps!</div>`;
+      } else {
+        const matColors = {
+          "Monster Soul": "#a0aec0",
+          "Luminous Soul": "#ffb6c1",
+          "Rare Scrap": "#3498db",
+          "Magic Scrap": "#9b59b6",
+          "Epic Scrap": "#e67e22",
+          "Legendary Scrap": "#f1c40f",
+          "Mythic Scrap": "#e74c3c",
+          "Eridium Shard": "#8e44ad",
+          "Gacha Key": "#f1c40f",
+          "Glimmering Gachapon Key": "#00d2ff",
+          "Ancient Core": "#e74c3c",
+          "Overlord's Sigil": "#1abc9c",
+          "Astral Essence": "#9b59b6",
+          "Catalyst Core": "#2ecc71",
+        };
 
-      const matColors = {
-        "Monster Soul": "#a0aec0",
-        "Luminous Soul": "#ffb6c1",
-        "Rare Scrap": "#3498db",
-        "Magic Scrap": "#9b59b6",
-        "Epic Scrap": "#e67e22",
-        "Legendary Scrap": "#f1c40f",
-        "Mythic Scrap": "#e74c3c",
-        "Eridium Shard": "#8e44ad",
-        "Gacha Key": "#f1c40f",
-        "Glimmering Gachapon Key": "#00d2ff",
-        "Ancient Core": "#e74c3c",
-        "Overlord's Sigil": "#1abc9c",
-        "Astral Essence": "#9b59b6",
-        "Catalyst Core": "#2ecc71",
-      };
+        stashListEl.innerHTML = allKeys
+          .map((k) => {
+            let vaultCount = etcObj[k] || 0;
+            let pendingCount = pendingScraps[k] || 0;
+            let col = matColors[k] || "#00d2ff";
+            let desc = window.etcDex[k] || "Crafting Material";
+            let iconHtml = window.getEtcIconHtml
+              ? window.getEtcIconHtml(k, 28)
+              : "";
 
-      stashListEl.innerHTML = allKeys
-        .map((k) => {
-          let vaultCount = etcObj[k] || 0;
-          let pendingCount = pendingScraps[k] || 0;
-          let col = matColors[k] || "#00d2ff";
-          let desc = window.etcDex[k] || "Crafting Material";
-          let iconHtml = window.getEtcIconHtml
-            ? window.getEtcIconHtml(k, 28)
-            : "";
+            let countLabel =
+              pendingCount > 0
+                ? `<span style="color:#2ecc71; font-weight:bold;">+${pendingCount} Run</span> <span style="color:#aaa;">(${vaultCount} Vault)</span>`
+                : `<span style="color:#ffffff; font-weight:bold;">${vaultCount}</span>`;
 
-          let countLabel =
-            pendingCount > 0
-              ? `<span style="color:#2ecc71; font-weight:bold;">+${pendingCount} Run</span> <span style="color:#aaa;">(${vaultCount} Vault)</span>`
-              : `<span style="color:#ffffff; font-weight:bold;">${vaultCount}</span>`;
-
-          return `
+            return `
                                   <div class="material-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px;">
-                                    ${iconHtml}
-                                    <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
-                                      <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
-                                        <span style="font-family:monospace; font-size:9.5px; margin-left:4px;">${countLabel}</span>
-                                      </div>
-                                      <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${desc}</div>
-                                    </div>
-                                  </div>
-                                `;
-                  })
-                  .join("");
-              }
+                                                                      ${iconHtml}
+                                                                      <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                                                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                                          <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
+                                                                          <span style="font-family:monospace; font-size:9.5px; margin-left:4px;">${countLabel}</span>
+                                                                        </div>
+                                                                        <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${desc}</div>
+                                                                      </div>
+                                                                    </div>
+                                                                  `;
+          })
+          .join("");
+      }
+    }
 
-              if (window.activeProfileMobileTab === "skills" && window.SkillTreeManager) {
-                window.SkillTreeManager.renderSkillTreeUI();
-              }
-            };
+    if (window.activeProfileMobileTab === "skills" && window.SkillTreeManager) {
+      window.SkillTreeManager.renderSkillTreeUI();
+    }
+  };
 
   window.tryAutoEquip = function (item) {
     if (!item || !window.equippedSlots) return false;
@@ -7365,18 +8319,23 @@
   };
 
   window.calculateRunInsuranceTotals = function () {
-    let primarySlots = [
-      "weapon",
-      "subweapon",
-      "helmet",
-      "chest",
-      "leggings",
-      "overall",
-      "boots",
-    ];
-    let premiums = [];
+    let allSlots = [
+          "weapon",
+          "subweapon",
+          "helmet",
+          "chest",
+          "leggings",
+          "overall",
+          "boots",
+          "ring1",
+          "ring2",
+          "art1",
+          "art2",
+          "art3",
+        ];
+        let premiums = [];
 
-    primarySlots.forEach((slotKey) => {
+        allSlots.forEach((slotKey) => {
       let item = window.equippedSlots[slotKey];
       if (item && item.locked) {
         premiums.push({
@@ -7401,33 +8360,44 @@
     }
 
     // Insurance Underwriter Skill Tree Discount
-        if (window.SkillTreeManager) {
-          let insuranceRank = window.SkillTreeManager.getSkillLevel("utility_insurance");
-          if (insuranceRank > 0 && totalPremium.gt(0)) {
-            let discountMult = 1.0 - insuranceRank * 0.1;
-            totalPremium = totalPremium.mul(discountMult);
-          }
-        }
+    if (window.SkillTreeManager) {
+      let insuranceRank =
+        window.SkillTreeManager.getSkillLevel("utility_insurance");
+      if (insuranceRank > 0 && totalPremium.gt(0)) {
+        let discountMult = 1.0 - insuranceRank * 0.1;
+        totalPremium = totalPremium.mul(discountMult);
+      }
+    }
 
-        return {
-          totalPremium,
-          totalSoulsCost,
-          delta_drop: 0,
-          delta_quality: 0,
-          delta_gold: 0,
-          m_enemy: 1.0,
-          waivedItem: premiums[0] ? premiums[0].item : null,
-          insuredCount: premiums.length,
-        };
+    return {
+      totalPremium,
+      totalSoulsCost,
+      delta_drop: 0,
+      delta_quality: 0,
+      delta_gold: 0,
+      m_enemy: 1.0,
+      waivedItem: premiums[0] ? premiums[0].item : null,
+      insuredCount: premiums.length,
+    };
   };
 
   window.toggleInsurance = function (itemId) {
-    window.hideTooltip();
+      window.hideTooltip();
 
-    let allItems = [];
-    for (let k in window.equippedSlots) {
-      if (window.equippedSlots[k]) allItems.push(window.equippedSlots[k]);
-    }
+      if (window.currentGameState !== window.GAME_STATES.HUB) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            "[!] Soul Binding can only be configured at the Deployment Altar in the Hub!",
+            "#e74c3c",
+          );
+        }
+        return;
+      }
+
+      let allItems = [];
+      for (let k in window.equippedSlots) {
+        if (window.equippedSlots[k]) allItems.push(window.equippedSlots[k]);
+      }
     if (window.player && window.player.stash)
       allItems.push(...window.player.stash);
     if (window.player && window.player.bag) allItems.push(...window.player.bag);
@@ -7452,18 +8422,23 @@
     }
 
     if (isEquipped && !targetItem.locked) {
-      let primarySlots = [
-        "weapon",
-        "subweapon",
-        "helmet",
-        "chest",
-        "leggings",
-        "overall",
-        "boots",
-      ];
-      let equippedInsuredCount = primarySlots.filter(
-        (s) => window.equippedSlots[s] && window.equippedSlots[s].locked,
-      ).length;
+      let allSlots = [
+              "weapon",
+              "subweapon",
+              "helmet",
+              "chest",
+              "leggings",
+              "overall",
+              "boots",
+              "ring1",
+              "ring2",
+              "art1",
+              "art2",
+              "art3",
+            ];
+            let equippedInsuredCount = allSlots.filter(
+              (s) => window.equippedSlots[s] && window.equippedSlots[s].locked,
+            ).length;
       if (equippedInsuredCount >= 3) {
         if (typeof window.pushHeaderToast === "function") {
           window.pushHeaderToast(
@@ -7478,48 +8453,83 @@
     targetItem.locked = !targetItem.locked;
 
     if (typeof window.pushHeaderToast === "function") {
-      if (targetItem.locked) {
-        window.pushHeaderToast(
-          `[INSURED] Protected ${targetItem.name}!`,
-          "#2ecc71",
-        );
-      } else {
-        window.pushHeaderToast("[UNINSURED] Item At Risk on Death!", "#e74c3c");
-      }
-    }
+          if (targetItem.locked) {
+            window.pushHeaderToast(
+              `[SOUL BOUND] Protected ${targetItem.name}!`,
+              "#2ecc71",
+            );
+          } else {
+            window.pushHeaderToast(`[UNBOUND] ${targetItem.name} At Risk on Death!`, "#e74c3c");
+          }
+        }
 
     if (typeof window.saveGame === "function") window.saveGame();
     window.renderProfileModal();
   };
 
   // --- SETTINGS MODAL & AUDIO HANDLERS ---
-  window.toggleSettingsModal = function () {
-    let modal = document.getElementById("settings-modal");
-    if (!modal) return;
-    if (modal.style.display === "none" || modal.style.display === "") {
-      modal.style.display = "flex";
-      let stats = window.playerStats || {};
-      let masterSlider = document.getElementById("slider-master-vol");
-      let sfxSlider = document.getElementById("slider-sfx-vol");
-      let bgmSlider = document.getElementById("slider-bgm-vol");
-      if (masterSlider)
-        masterSlider.value =
-          stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5;
-      if (sfxSlider)
-        sfxSlider.value = stats.volumeSFX !== undefined ? stats.volumeSFX : 0.8;
-      if (bgmSlider)
-        bgmSlider.value =
-          stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5;
-      if (typeof window.updateEcoModeStyle === "function")
-        window.updateEcoModeStyle();
-      if (typeof window.updateLightingStyle === "function")
-        window.updateLightingStyle();
-      window.updateHUD();
-    } else {
-      modal.style.display = "none";
-      window.lastModalCloseTime = Date.now();
-    }
-  };
+  window.toggleEditHudMode = function () {
+      if (!window.playerStats) return;
+      window.playerStats.editHudMode = !window.playerStats.editHudMode;
+      window.updateEditHudModeStyle();
+      if (typeof window.saveGame === "function") window.saveGame();
+    };
+
+    window.updateEditHudModeStyle = function () {
+      let isEditing = window.playerStats && window.playerStats.editHudMode === true;
+      let btn = document.getElementById("btn-settings-edit-hud");
+      let flaskBtn = document.getElementById("hud-flask-button");
+
+      if (btn) {
+        btn.innerText = isEditing
+          ? "HUD LAYOUT: UNLOCKED (DRAG FLASK TO MOVE)"
+          : "HUD LAYOUT: LOCKED (TAP TO UNLOCK)";
+        btn.className = isEditing ? "settings-btn active" : "settings-btn";
+      }
+
+      if (flaskBtn) {
+        if (isEditing) {
+          flaskBtn.classList.add("edit-hud-active");
+        } else {
+          flaskBtn.classList.remove("edit-hud-active");
+        }
+      }
+    };
+
+    window.toggleSettingsModal = function () {
+      let modal = document.getElementById("settings-modal");
+      if (!modal) return;
+      if (modal.style.display === "none" || modal.style.display === "") {
+        modal.style.display = "flex";
+        let stats = window.playerStats || {};
+        let masterSlider = document.getElementById("slider-master-vol");
+        let sfxSlider = document.getElementById("slider-sfx-vol");
+        let bgmSlider = document.getElementById("slider-bgm-vol");
+        if (masterSlider)
+          masterSlider.value =
+            stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5;
+        if (sfxSlider)
+          sfxSlider.value = stats.volumeSFX !== undefined ? stats.volumeSFX : 0.8;
+        if (bgmSlider)
+          bgmSlider.value =
+            stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5;
+        if (typeof window.updateEcoModeStyle === "function")
+          window.updateEcoModeStyle();
+        if (typeof window.updateLightingStyle === "function")
+          window.updateLightingStyle();
+        if (typeof window.updateEditHudModeStyle === "function")
+          window.updateEditHudModeStyle();
+        window.updateHUD();
+      } else {
+        if (window.playerStats && window.playerStats.editHudMode) {
+          window.playerStats.editHudMode = false;
+          if (typeof window.updateEditHudModeStyle === "function")
+            window.updateEditHudModeStyle();
+        }
+        modal.style.display = "none";
+        window.lastModalCloseTime = Date.now();
+      }
+    };
 
   window.toggleMute = function () {
     if (!window.playerStats) return;
@@ -7569,7 +8579,7 @@
         : 20;
 
     if (headerEl) {
-      headerEl.innerHTML = `CARRIED LOOT SATCHEL <span style="font-size:10px; color:#94a3b8; font-family:monospace; margin-left:6px;">(${displayList.length} / ${maxBag} Gear)</span>`;
+      headerEl.innerHTML = `CARRIED EXPEDITION SATCHEL <span style="font-size:10px; color:var(--text-gold-amber); font-family:monospace; margin-left:6px;">(${displayList.length} / ${maxBag} Gear)</span>`;
     }
 
     if (tab === "EQUIP") {
@@ -7606,28 +8616,30 @@
               `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
             );
           let statStr =
-            statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
+                      statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
 
-          let insureBtn = `<button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id}); window.renderBagModalContent();">${isInsured ? "[INSURED]" : "INSURE"}</button>`;
-          let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderBagModalContent();">SALVAGE</button>`;
+                    let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderBagModalContent();">SALVAGE</button>`;
+                    let boundTag = isInsured
+                      ? `<span style="font-size:8px; color:#34d399; font-family:monospace; font-weight:bold;">[BOUND]</span>`
+                      : "";
 
-          return `
-              <div class="stash-card" style="border-left: 3.5px solid ${col}; cursor: pointer; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.player.bag[${idx}])">
-                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                  ${iconHtml}
-                  <div class="item-info" style="display: flex; flex-direction: column; min-width: 0;">
-                    <span class="item-title" style="color:${col}; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
-                    <span class="item-sub" style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${typeLabel} • LV.${item.stageLevel || 1}</span>
-                    <span class="item-sub" style="font-size: 8.5px; color: #2ecc71; font-family: monospace; font-weight: bold;">${statStr}</span>
-                  </div>
-                </div>
-                <div class="item-actions" style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                  ${insureBtn}
-                  <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
-                  ${salvageBtn}
-                </div>
-              </div>
-            `;
+                    return `
+                        <div class="stash-card" style="border-left: 3.5px solid ${col}; cursor: pointer; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.player.bag[${idx}])">
+                          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                            ${iconHtml}
+                            <div class="item-info" style="display: flex; flex-direction: column; min-width: 0;">
+                              <span class="item-title" style="color:${col}; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+                              <span class="item-sub" style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${typeLabel} • LV.${item.stageLevel || 1}</span>
+                              <span class="item-sub" style="font-size: 8.5px; color: #2ecc71; font-family: monospace; font-weight: bold;">${statStr}</span>
+                            </div>
+                          </div>
+                          <div class="item-actions" style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                            ${boundTag}
+                            <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
+                            ${salvageBtn}
+                          </div>
+                        </div>
+                      `;
         })
         .join("");
     } else if (tab === "USE") {
@@ -7751,6 +8763,96 @@
     }
   };
 
+  window.openSigilPickerModal = function () {
+    let modal = document.getElementById("sigil-picker-modal");
+    if (!modal) return;
+    modal.style.display = "flex";
+    window.renderSigilPickerList();
+  };
+
+  window.closeSigilPickerModal = function () {
+    let modal = document.getElementById("sigil-picker-modal");
+    if (modal) {
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
+    }
+  };
+
+  window.selectDeploymentSigil = function (sigilId) {
+    window.state.selectedDeploymentSigilId = sigilId ? Number(sigilId) : null;
+    window.closeSigilPickerModal();
+    window.renderDeploymentModal();
+  };
+
+  window.renderSigilPickerList = function () {
+    let container = document.getElementById("sigil-picker-list");
+    if (!container) return;
+
+    let sigils = window.inventory.SIGIL || [];
+    let currentSigilId = window.state.selectedDeploymentSigilId;
+
+    let html = `
+            <div class="sigil-vault-card none-slotted ${!currentSigilId ? "selected" : ""}" onclick="window.selectDeploymentSigil(null)">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#cbd5e1; font-weight:bold; font-size:11px;">[ NO CAVERN SIGIL SLOTTED ]</span>
+                ${!currentSigilId ? '<span style="color:#34d399; font-size:9px; font-weight:bold; font-family:monospace;">[ACTIVE]</span>' : '<button class="action-btn-sm" style="background:#0284c7; border-color:#38bdf8;">SELECT</button>'}
+              </div>
+              <span style="font-size:8.5px; color:#94a3b8; font-family:monospace; margin-top:3px; display:block;">Deploy without environmental modifiers or reward multipliers.</span>
+            </div>
+          `;
+
+    if (sigils.length === 0) {
+      html += `<div style="font-size:10.5px; color:#64748b; font-style:italic; text-align:center; padding:30px; background:rgba(0,0,0,0.3); border:1px dashed #3b0764; border-radius:8px;">No Cavern Sigils found in inventory.<br>Slay floor bosses or open Cavern Sigil Sacks to acquire run sigils!</div>`;
+    } else {
+      sigils.forEach((sig) => {
+        let isSelected = sig.id === currentSigilId;
+        let col = window.getTierColor(sig.statsRolled);
+
+        let buffDescs = (sig.buffs || [])
+          .map(
+            (b) =>
+              `<span style="background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#34d399; font-size:8.5px; font-family:monospace; padding:2px 6px; border-radius:4px;">+ ${b.name}: ${b.desc}</span>`,
+          )
+          .join(" ");
+
+        let debuffDescs = (sig.debuffs || [])
+          .map(
+            (d) =>
+              `<span style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#f87171; font-size:8.5px; font-family:monospace; padding:2px 6px; border-radius:4px;">- ${d.name}: ${d.desc}</span>`,
+          )
+          .join(" ");
+
+        html += `
+                <div class="sigil-vault-card ${isSelected ? "selected" : ""}" style="border-left: 4px solid ${col};" onclick="window.selectDeploymentSigil(${sig.id})">
+                  <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      ${window.getEquipIconHtml(sig, 28)}
+                      <div style="display:flex; flex-direction:column; text-align:left;">
+                        <span style="color:${col}; font-weight:800; font-size:12px;">${sig.name}</span>
+                        <span style="font-size:8.5px; color:#94a3b8; font-family:monospace;">${sig.statsRolled}★ ${window.getTierName(sig.statsRolled)}</span>
+                      </div>
+                    </div>
+                    ${isSelected ? '<span style="color:#34d399; font-size:9.5px; font-weight:bold; font-family:monospace;">[SLOTTED]</span>' : '<button class="action-btn-sm action-btn-equip" style="padding:4px 8px; font-size:8.5px;">SLOT SIGIL</button>'}
+                  </div>
+
+                  <div style="display:flex; flex-direction:column; gap:4px; text-align:left;">
+                    <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                      ${buffDescs}
+                      ${debuffDescs}
+                    </div>
+                    <div style="display:flex; gap:12px; margin-top:4px; padding-top:4px; border-top:1px dashed rgba(255,255,255,0.08); font-family:monospace; font-size:9px;">
+                      <span style="color:#38bdf8; font-weight:bold;">Focus Multiplier: +${((sig.rewardMultiplier || 0) * 100).toFixed(0)}%</span>
+                      ${sig.qualityBoost > 0 ? `<span style="color:#e879f9; font-weight:bold;">Quality Boost: +${((sig.qualityBoost || 0) * 100).toFixed(0)}%</span>` : ""}
+                    </div>
+                  </div>
+                </div>
+              `;
+      });
+    }
+
+    container.innerHTML = html;
+  };
+
   window.closeDeploymentModal = function () {
     let modal = document.getElementById("deployment-modal");
     if (modal) {
@@ -7759,172 +8861,381 @@
     }
   };
 
-  // --- ITEM PICKUP TOAST NOTIFICATION ENGINE ---
-  window.pushToast = function (item) {
-    if (!item) return;
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "toast-container";
-      document.body.appendChild(container);
-    }
+  // --- TOUCH / POINTER SWIPE NOTIFICATION DISMISSAL ENGINE ---
+    window.attachToastSwipeHandlers = function (toast, onClickCallback) {
+      let startX = 0, startY = 0;
+      let deltaX = 0, deltaY = 0;
+      let isDragging = false;
+      let startTime = 0;
+      let mode = null;
 
-    let col = window.getTierColor
-      ? window.getTierColor(item.statsRolled)
-      : "#00d2ff";
-    let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 26) : "";
-    let starsStr =
-      item.statsRolled === "UNIQUE"
-        ? "UNIQUE"
-        : `${item.statsRolled || 0} STAR`;
-    let typeStr = (item.subType || item.type || "LOOT").toUpperCase();
+      toast.addEventListener("pointerdown", (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        deltaX = 0;
+        deltaY = 0;
+        startTime = Date.now();
+        mode = null;
+        toast.style.transition = "none";
+        try {
+          toast.setPointerCapture(e.pointerId);
+        } catch (err) {}
+      });
 
-    let toast = document.createElement("div");
-    toast.className = "item-toast";
-    toast.style.borderColor = col;
+      toast.addEventListener("pointermove", (e) => {
+        if (!isDragging) return;
+        deltaX = e.clientX - startX;
+        deltaY = e.clientY - startY;
 
-    toast.innerHTML = `
-          ${iconHtml}
-          <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
-            <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${col}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
-              <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
-                <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
-                <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
-              </svg>
-              <span>+1 LOOT</span>
-              ${item.wasAutoEquipped ? `<span style="background:#2ecc71; color:#05030a; font-weight:900; font-size:7px; padding:1px 3px; border-radius:2px; font-family:monospace; margin-left:5px; letter-spacing:0.5px; line-height:1;">AUTO-EQUIPPED</span>` : ""}
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
-              <span style="color:${col}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
-              <span style="color:${col}; font-family:monospace; font-weight:800; flex-shrink:0;">x1</span>
-            </div>
-          </div>
-        `;
+        if (!mode) {
+          if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
+            mode = "up";
+          } else if (Math.abs(deltaX) > 8 && Math.abs(deltaX) >= Math.abs(deltaY)) {
+            mode = "side";
+          }
+        }
 
-    container.appendChild(toast);
+        if (mode === "up") {
+          let moveY = Math.min(0, deltaY);
+          let alpha = Math.max(0, 1 - Math.abs(moveY) / 100);
+          let container = document.getElementById("toast-container");
+          if (container) {
+            let allToasts = container.querySelectorAll(".item-toast, .header-toast");
+            allToasts.forEach((t) => {
+              t.style.transition = "none";
+              t.style.transform = `translateY(${moveY}px)`;
+              t.style.opacity = alpha;
+            });
+          }
+        } else if (mode === "side") {
+          let alpha = Math.max(0, 1 - Math.abs(deltaX) / 180);
+          toast.style.transform = `translateX(${deltaX}px)`;
+          toast.style.opacity = alpha;
+        }
+      });
 
-    if (
-      window.SoundManager &&
-      typeof window.SoundManager.playLootDrop === "function"
-    ) {
-      window.SoundManager.playLootDrop(item.statsRolled);
-    }
+      const endDrag = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        try {
+          toast.releasePointerCapture(e.pointerId);
+        } catch (err) {}
 
-    setTimeout(() => {
-      toast.classList.add("toast-fade-out");
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 300);
-    }, 2800);
-  };
+        let elapsed = Date.now() - startTime;
+        let distY = deltaY;
+        let distX = deltaX;
 
-  window.pushMaterialToast = function (name, qty, customColor = null) {
-    if (!name || qty <= 0) return;
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "toast-container";
-      document.body.appendChild(container);
-    }
+        if (Math.abs(distX) < 5 && Math.abs(distY) < 5) {
+          toast.style.transition = "all 0.2s ease";
+          toast.style.transform = "";
+          toast.style.opacity = "1";
+          if (typeof onClickCallback === "function") {
+            onClickCallback(e);
+          }
+          return;
+        }
 
-    let color = customColor;
-    if (!color) {
-      if (window.useDex && window.useDex[name] && window.useDex[name].color) {
-        color = window.useDex[name].color;
-      } else {
-        const matColors = {
-          "Monster Soul": "#a0aec0",
-          "Luminous Soul": "#ffb6c1",
-          "Rare Scrap": "#3498db",
-          "Magic Scrap": "#9b59b6",
-          "Epic Scrap": "#e67e22",
-          "Legendary Scrap": "#f1c40f",
-          "Mythic Scrap": "#e74c3c",
-          "Eridium Shard": "#8e44ad",
-          "Gacha Key": "#f1c40f",
-          "Glimmering Gachapon Key": "#00d2ff",
-          "Ancient Core": "#e74c3c",
-          "Overlord's Sigil": "#1abc9c",
-          "Astral Essence": "#9b59b6",
-          "Catalyst Core": "#2ecc71",
-        };
-        color = matColors[name] || "#00d2ff";
+        let container = document.getElementById("toast-container");
+
+        if (mode === "up" && (distY < -30 || (elapsed < 250 && distY < -15))) {
+          if (container) {
+            let allToasts = container.querySelectorAll(".item-toast, .header-toast");
+            allToasts.forEach((t) => {
+              if (t.dismissTimeout) clearTimeout(t.dismissTimeout);
+              t.style.transition = "transform 0.22s ease-in, opacity 0.22s ease-in";
+              t.style.transform = `translateY(-120px)`;
+              t.style.opacity = "0";
+              setTimeout(() => {
+                if (t.parentNode) t.parentNode.removeChild(t);
+              }, 220);
+            });
+          }
+        } else if (
+          mode === "side" &&
+          (Math.abs(distX) > 40 || (elapsed < 250 && Math.abs(distX) > 20))
+        ) {
+          if (toast.dismissTimeout) clearTimeout(toast.dismissTimeout);
+          let exitX = distX > 0 ? 350 : -350;
+          toast.style.transition = "transform 0.22s ease-in, opacity 0.22s ease-in";
+          toast.style.transform = `translateX(${exitX}px)`;
+          toast.style.opacity = "0";
+          setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+          }, 220);
+        } else {
+          if (container) {
+            let allToasts = container.querySelectorAll(".item-toast, .header-toast");
+            allToasts.forEach((t) => {
+              t.style.transition = "transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.2s ease";
+              t.style.transform = "";
+              t.style.opacity = "1";
+            });
+          }
+        }
+      };
+
+      toast.addEventListener("pointerup", endDrag);
+      toast.addEventListener("pointercancel", endDrag);
+    };
+
+    // --- ITEM PICKUP TOAST NOTIFICATION ENGINE ---
+    window.pushToast = function (item) {
+      if (!item) return;
+      let container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
       }
-    }
 
-    let desc =
-      (window.etcDex && window.etcDex[name]) ||
-      (window.useDex && window.useDex[name] && window.useDex[name].desc) ||
-      "Inventory Item";
+      let existingToast = Array.from(
+        container.querySelectorAll(".item-toast"),
+      ).find(
+        (t) =>
+          t.dataset.itemName === item.name &&
+          !t.classList.contains("toast-fade-out"),
+      );
 
-    let iconHtml = "";
-    if (window.getEtcIconHtml && window.etcDex && window.etcDex[name]) {
-      iconHtml = window.getEtcIconHtml(name, 26);
-    } else if (window.getUseIconHtml && window.useDex && window.useDex[name]) {
-      iconHtml = window.getUseIconHtml(name, 26);
-    }
+      if (existingToast) {
+        let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
+        let newQty = currentQty + 1;
+        existingToast.dataset.itemQty = newQty;
 
-    let toast = document.createElement("div");
-    toast.className = "item-toast";
-    toast.style.borderColor = color;
+        let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
+        let countEl = existingToast.querySelector(".toast-count-val");
 
-    toast.innerHTML = `
-          ${iconHtml}
-          <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
-            <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${color}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
-              <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
-                <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
-                <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
-              </svg>
-              <span>+${qty} LOOT</span>
+        if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
+        if (countEl) countEl.innerText = `x${newQty}`;
+
+        existingToast.classList.remove("toast-pop-bump");
+        void existingToast.offsetWidth;
+        existingToast.classList.add("toast-pop-bump");
+
+        if (existingToast.dismissTimeout) {
+          clearTimeout(existingToast.dismissTimeout);
+        }
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.playLootDrop === "function"
+        ) {
+          window.SoundManager.playLootDrop(item.statsRolled);
+        }
+
+        existingToast.dismissTimeout = setTimeout(() => {
+          existingToast.classList.add("toast-fade-out");
+          setTimeout(() => {
+            if (existingToast.parentNode)
+              existingToast.parentNode.removeChild(existingToast);
+          }, 300);
+        }, 2800);
+
+        return;
+      }
+
+      let col = window.getTierColor
+        ? window.getTierColor(item.statsRolled)
+        : "#00d2ff";
+      let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 26) : "";
+
+      let toast = document.createElement("div");
+      toast.className = "item-toast";
+      toast.style.borderColor = col;
+      toast.dataset.itemName = item.name;
+      toast.dataset.itemQty = 1;
+
+      toast.innerHTML = `
+            ${iconHtml}
+            <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
+              <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${col}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
+                <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
+                  <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
+                  <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
+                </svg>
+                <span class="toast-loot-header">+1 LOOT</span>
+                ${item.wasAutoEquipped ? `<span style="background:#2ecc71; color:#05030a; font-weight:900; font-size:7px; padding:1px 3px; border-radius:2px; font-family:monospace; margin-left:5px; letter-spacing:0.5px; line-height:1;">AUTO-EQUIPPED</span>` : ""}
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
+                <span style="color:${col}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                <span class="toast-count-val" style="color:${col}; font-family:monospace; font-weight:800; flex-shrink:0;">x1</span>
+              </div>
             </div>
-            <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
-              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>
-              <span style="color:${color}; font-family:monospace; font-weight:800; flex-shrink:0;">x${qty}</span>
+          `;
+
+      container.appendChild(toast);
+      window.attachToastSwipeHandlers(toast);
+
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.playLootDrop === "function"
+      ) {
+        window.SoundManager.playLootDrop(item.statsRolled);
+      }
+
+      toast.dismissTimeout = setTimeout(() => {
+        toast.classList.add("toast-fade-out");
+        setTimeout(() => {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 300);
+      }, 2800);
+    };
+
+    window.pushMaterialToast = function (name, qty, customColor = null) {
+      if (!name || qty <= 0) return;
+      let container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+      }
+
+      let existingToast = Array.from(
+        container.querySelectorAll(".item-toast"),
+      ).find(
+        (t) =>
+          t.dataset.itemName === name && !t.classList.contains("toast-fade-out"),
+      );
+
+      if (existingToast) {
+        let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
+        let newQty = currentQty + qty;
+        existingToast.dataset.itemQty = newQty;
+
+        let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
+        let countEl = existingToast.querySelector(".toast-count-val");
+
+        if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
+        if (countEl) countEl.innerText = `x${newQty}`;
+
+        existingToast.classList.remove("toast-pop-bump");
+        void existingToast.offsetWidth;
+        existingToast.classList.add("toast-pop-bump");
+
+        if (existingToast.dismissTimeout) {
+          clearTimeout(existingToast.dismissTimeout);
+        }
+
+        existingToast.dismissTimeout = setTimeout(() => {
+          existingToast.classList.add("toast-fade-out");
+          setTimeout(() => {
+            if (existingToast.parentNode)
+              existingToast.parentNode.removeChild(existingToast);
+          }, 300);
+        }, 2500);
+
+        return;
+      }
+
+      let color = customColor;
+      if (!color) {
+        if (window.useDex && window.useDex[name] && window.useDex[name].color) {
+          color = window.useDex[name].color;
+        } else {
+          const matColors = {
+            "Monster Soul": "#a0aec0",
+            "Luminous Soul": "#ffb6c1",
+            "Rare Scrap": "#3498db",
+            "Magic Scrap": "#9b59b6",
+            "Epic Scrap": "#e67e22",
+            "Legendary Scrap": "#f1c40f",
+            "Mythic Scrap": "#e74c3c",
+            "Eridium Shard": "#8e44ad",
+            "Gacha Key": "#f1c40f",
+            "Glimmering Gachapon Key": "#00d2ff",
+            "Ancient Core": "#e74c3c",
+            "Overlord's Sigil": "#1abc9c",
+            "Astral Essence": "#9b59b6",
+            "Catalyst Core": "#2ecc71",
+          };
+          color = matColors[name] || "#00d2ff";
+        }
+      }
+
+      let iconHtml = "";
+      if (window.getEtcIconHtml && window.etcDex && window.etcDex[name]) {
+        iconHtml = window.getEtcIconHtml(name, 26);
+      } else if (window.getUseIconHtml && window.useDex && window.useDex[name]) {
+        iconHtml = window.getUseIconHtml(name, 26);
+      }
+
+      let toast = document.createElement("div");
+      toast.className = "item-toast";
+      toast.style.borderColor = color;
+      toast.dataset.itemName = name;
+      toast.dataset.itemQty = qty;
+
+      toast.innerHTML = `
+            ${iconHtml}
+            <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
+              <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${color}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
+                <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
+                  <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
+                  <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
+                </svg>
+                <span class="toast-loot-header">+${qty} LOOT</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>
+                <span class="toast-count-val" style="color:${color}; font-family:monospace; font-weight:800; flex-shrink:0;">x${qty}</span>
+              </div>
             </div>
-          </div>
-        `;
+          `;
 
-    container.appendChild(toast);
+      container.appendChild(toast);
+      window.attachToastSwipeHandlers(toast);
 
-    setTimeout(() => {
-      toast.classList.add("toast-fade-out");
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 300);
-    }, 2500);
-  };
+      toast.dismissTimeout = setTimeout(() => {
+        toast.classList.add("toast-fade-out");
+        setTimeout(() => {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 300);
+      }, 2500);
+    };
 
-  window.pushHeaderToast = function (msg, color = "#00d2ff", onClick = null) {
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "toast-container";
-      document.body.appendChild(container);
-    }
+    window.pushHeaderToast = function (msg, color = "#00d2ff", onClick = null) {
+      let container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+      }
 
-    let toast = document.createElement("div");
-    toast.className = "header-toast";
-    toast.style.borderLeft = `3.5px solid ${color}`;
-    toast.innerHTML = `<span style="color:#f1f5f9; font-weight:bold; font-size:10px;">${msg}</span>`;
+      let toast = document.createElement("div");
+      toast.className = "header-toast";
+      toast.style.borderColor = color;
+      toast.style.boxShadow = `0 10px 30px rgba(0,0,0,0.9), 0 0 12px ${color}44`;
 
-    if (onClick) {
-      toast.style.cursor = "pointer";
-      toast.onclick = onClick;
-    }
+      let isBound = msg.includes("SOUL BOUND") || msg.includes("Protected");
+      let isUnbound = msg.includes("UNBOUND") || msg.includes("At Risk");
 
-    container.appendChild(toast);
+      let iconSvg = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" fill="${color}22"/>
+          ${isBound ? `<path d="M9 12l2 2 4-4" stroke="${color}" stroke-width="2.5"/>` : isUnbound ? `<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>` : `<circle cx="12" cy="12" r="3" fill="${color}"/>`}
+        </svg>
+      `;
 
-    setTimeout(() => {
-      toast.classList.add("toast-fade-out");
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 300);
-    }, 2800);
-  };
+      toast.innerHTML = `
+        ${iconSvg}
+        <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
+          <span style="color:${color}; font-weight:800; font-size:10.5px; font-family:monospace; line-height:1.2; letter-spacing:0.5px;">${msg}</span>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      window.attachToastSwipeHandlers(toast, onClick);
+
+      toast.dismissTimeout = setTimeout(() => {
+        toast.classList.add("toast-fade-out");
+        setTimeout(() => {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 300);
+      }, 2800);
+    };
 })();
 
 window.getMobPoolForDepth = function (depth) {
@@ -7932,36 +9243,237 @@ window.getMobPoolForDepth = function (depth) {
   let sector = Math.floor((depth - 1) / 12);
 
   let pools = [
-    // Sector 1 (Floors 1 - 12): Whispering Woods
+    // Sector 0 (Floors 1 - 12): Whispering Woods
     { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
-    // Sector 2 (Floors 13 - 24): Mountain Peaks & Alpine Mines
+    // Sector 1 (Floors 13 - 24): Mountain Peaks & Alpine Mines
     { tier: 1, types: ["golem", "wyrmling", "gargoyle", "rust_nibbler"] },
-    // Sector 3 (Floors 25 - 36): Inferno Depths & Smeltery
+    // Sector 2 (Floors 25 - 36): Inferno Depths & Smeltery
     {
       tier: 2,
       types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"],
     },
-    // Sector 4 (Floors 37 - 48): Fungal Swamp & Ruins
+    // Sector 3 (Floors 37 - 48): Fungal Swamp & Ruins
     {
       tier: 3,
       types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
     },
-    // Sector 5+ (Floors 49+): Void Singularity & Cyber Space
+    // Sector 4 (Floors 49 - 60): Void Singularity
     {
       tier: 4,
-      types: [
-        "void_orb",
-        "void_crawler",
-        "void_spectre",
-        "neon_spider",
-        "wireframe_orb",
-        "cursed_blade",
-      ],
+      types: ["void_orb", "void_crawler", "void_spectre"],
+    },
+    // Sector 5 (Floors 61 - 72): Temporal Sanctorum
+    {
+      tier: 5,
+      types: ["clockwork_scarab", "star_weaver"],
+    },
+    // Sector 6 (Floors 73 - 84): Cyberspace Nexus
+    {
+      tier: 6,
+      types: ["neon_spider", "wireframe_orb", "cursed_blade", "animated_armor"],
     },
   ];
 
-  let selected = pools[Math.min(sector, pools.length - 1)];
+  // Infinite Anomaly Cycle for Floors 85+ (Sector 7+)
+  let effectiveSector = sector >= 7 ? sector % 7 : sector;
+
+  let selected = pools[effectiveSector];
   let chosenType =
     selected.types[Math.floor(Math.random() * selected.types.length)];
   return { tier: selected.tier, type: chosenType };
 };
+
+window.refillFlaskCharges = function (silent = false) {
+    let p = window.playerStats;
+    if (!p) return;
+    p.flaskCharges = p.maxFlaskCharges || 1;
+    if (!silent) {
+      let flaskBtn = document.getElementById("hud-flask-button");
+      if (flaskBtn) {
+        flaskBtn.classList.remove("flask-recharged-flash");
+        void flaskBtn.offsetWidth;
+        flaskBtn.classList.add("flask-recharged-flash");
+        setTimeout(() => flaskBtn.classList.remove("flask-recharged-flash"), 600);
+      }
+
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast("[RECHARGED] Field Flask Charges Fully Restored!", "#34d399");
+      }
+      if (window.SoundManager && typeof window.SoundManager.play === "function") {
+        try { window.SoundManager.play("flask_refill"); } catch (e) { window.SoundManager.play("revive"); }
+      }
+      if (window.player && window.player.hp > 0 && typeof window.spawnFloatingText === "function") {
+        window.spawnFloatingText(window.player.x, window.player.y - 20, "FLASK RECHARGED", "#34d399", true);
+      }
+    }
+    if (typeof window.updateHUD === "function") window.updateHUD();
+  };
+
+  window.useDungeonFlask = function () {
+        let p = window.player;
+        let stats = window.playerStats;
+        if (!p || !stats || p.hp <= 0) return;
+        if (stats.editHudMode) return;
+
+      if (stats.flaskCooldownTimer > 0) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("[!] Flask is on internal cooldown!", "#f1c40f");
+        }
+        return;
+      }
+
+      if ((stats.flaskCharges || 0) <= 0) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("[!] Flask empty! Defeat a Boss to refill charges.", "#e74c3c");
+        }
+        return;
+      }
+
+      stats.flaskCharges--;
+            if (stats.flaskCharges > 0) {
+              stats.flaskCooldownTimer = 180; // 3 seconds internal cooldown (60 FPS)
+            } else {
+              stats.flaskCooldownTimer = 0;
+            }
+
+      let flaskBtn = document.getElementById("hud-flask-button");
+      if (flaskBtn) {
+        flaskBtn.classList.remove("flask-drink-pop");
+        void flaskBtn.offsetWidth;
+        flaskBtn.classList.add("flask-drink-pop");
+        setTimeout(() => flaskBtn.classList.remove("flask-drink-pop"), 350);
+      }
+
+      let healAmt = Math.round(p.maxHp * (stats.flaskPotency || 0.25));
+      p.hp = Math.min(p.maxHp, p.hp + healAmt);
+
+      if (stats.flaskSpeedBurst) {
+        p.speedMultiplier = 1.35; // +35% emergency speed burst for 2 seconds
+        p.flaskSpeedTimer = 120;
+      }
+
+      if (typeof window.spawnFloatingText === "function") {
+        window.spawnFloatingText(p.x, p.y - 20, `+${healAmt} HP (FLASK)`, "#34d399", true);
+      }
+
+      if (window.combatVisuals) {
+        window.combatVisuals.spawnParticles(p.x, p.y - 10, 25, "slag_slime", 4);
+        window.combatVisuals.spawnBeam(p.x, "#34d399", 40, true, 0);
+      }
+
+      if (window.SoundManager && typeof window.SoundManager.play === "function") {
+        window.SoundManager.play("fairy");
+      }
+
+      if (typeof window.updateHUD === "function") window.updateHUD();
+    };
+
+  window.initFlaskButtonDrag = function () {
+        let btn = document.getElementById("hud-flask-button");
+        let gameContainer = document.getElementById("game-container");
+        if (!btn || !gameContainer) return;
+
+        let isDragging = false;
+        let hasMoved = false;
+        let startX = 0, startY = 0;
+        let initialLeft = 0, initialTop = 0;
+
+        btn.addEventListener("pointerdown", function (e) {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          if (!window.playerStats || !window.playerStats.editHudMode) return;
+
+          isDragging = true;
+          hasMoved = false;
+          btn.isDragging = true;
+
+          let rect = btn.getBoundingClientRect();
+          let containerRect = gameContainer.getBoundingClientRect();
+
+          startX = e.clientX;
+          startY = e.clientY;
+          initialLeft = rect.left - containerRect.left;
+          initialTop = rect.top - containerRect.top;
+
+          if (btn.setPointerCapture) {
+            try {
+              btn.setPointerCapture(e.pointerId);
+            } catch (err) {}
+          }
+          e.stopPropagation();
+        });
+
+        btn.addEventListener("pointermove", function (e) {
+          if (!isDragging) return;
+          if (!window.playerStats || !window.playerStats.editHudMode) return;
+
+          let dx = e.clientX - startX;
+          let dy = e.clientY - startY;
+
+          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+            hasMoved = true;
+          }
+
+          let newX = initialLeft + dx;
+          let newY = initialTop + dy;
+
+          let containerW = gameContainer.clientWidth;
+          let containerH = gameContainer.clientHeight;
+          let btnW = btn.offsetWidth || 52;
+          let btnH = btn.offsetHeight || 52;
+
+          newX = Math.max(10, Math.min(containerW - btnW - 10, newX));
+          newY = Math.max(10, Math.min(containerH - btnH - 10, newY));
+
+          if (window.playerStats) {
+            window.playerStats.flaskX = newX;
+            window.playerStats.flaskY = newY;
+          }
+
+          btn.style.left = newX + "px";
+          btn.style.top = newY + "px";
+          btn.style.bottom = "auto";
+          e.stopPropagation();
+        });
+
+        const stopDrag = function (e) {
+          if (isDragging) {
+            isDragging = false;
+            btn.isDragging = false;
+            if (btn.releasePointerCapture && e.pointerId !== undefined) {
+              try {
+                btn.releasePointerCapture(e.pointerId);
+              } catch (err) {}
+            }
+
+            if (hasMoved && typeof window.saveGame === "function") {
+              window.saveGame();
+            }
+            e.stopPropagation();
+          }
+        };
+
+        btn.addEventListener("pointerup", stopDrag);
+        btn.addEventListener("pointercancel", stopDrag);
+      };
+
+      window.resetFlaskButtonPosition = function () {
+          if (window.playerStats) {
+            window.playerStats.flaskX = null;
+            window.playerStats.flaskY = null;
+          }
+
+          let btn = document.getElementById("hud-flask-button");
+          if (btn) {
+            btn.style.left = "20px";
+            btn.style.bottom = "24px";
+            btn.style.top = "auto";
+          }
+
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast("[HUD] Flask button reset to default position!", "#34d399");
+          }
+
+          if (typeof window.saveGame === "function") {
+            window.saveGame();
+          }
+        };
