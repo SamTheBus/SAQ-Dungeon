@@ -12,21 +12,21 @@
   window.xpOrbs = [];
 
   window.joystick = {
-      active: false,
-      pointerId: null,
-      baseX: 0,
-      baseY: 0,
-      currX: 0,
-      currY: 0,
-      radius: 45,
-      vx: 0,
-      vy: 0,
-    };
+    active: false,
+    pointerId: null,
+    baseX: 0,
+    baseY: 0,
+    currX: 0,
+    currY: 0,
+    radius: 45,
+    vx: 0,
+    vy: 0,
+  };
 
-    window.cursorPointer = {
-      screenX: 0,
-      screenY: 0,
-    };
+  window.cursorPointer = {
+    screenX: 0,
+    screenY: 0,
+  };
 
   window.spawnFloatingText = function (
     x,
@@ -258,54 +258,54 @@
     }
 
     // Wall Torches Light
-        if (map.torches) {
-          let tileSize = map.tileSize;
-          let time = Date.now();
-          map.torches.forEach((t) => {
-            let sx = t.x * tileSize + tileSize / 2;
-            let sy = t.y * tileSize + tileSize - 8;
-            if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
-              let torchFlicker = Math.sin(time / 70 + t.x * 3) * 10;
-              lights.push({
-                x: sx,
-                y: sy,
-                r: 190 + torchFlicker,
-                innerColor: "rgba(255, 245, 200, 1.0)",
-                outerColor: "rgba(255, 140, 30, 0.65)",
-              });
-            }
+    if (map.torches) {
+      let tileSize = map.tileSize;
+      let time = Date.now();
+      map.torches.forEach((t) => {
+        let sx = t.x * tileSize + tileSize / 2;
+        let sy = t.y * tileSize + tileSize - 8;
+        if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
+          let torchFlicker = Math.sin(time / 70 + t.x * 3) * 10;
+          lights.push({
+            x: sx,
+            y: sy,
+            r: 190 + torchFlicker,
+            innerColor: "rgba(255, 245, 200, 1.0)",
+            outerColor: "rgba(255, 140, 30, 0.65)",
           });
         }
+      });
+    }
 
-        // Sector Decorations Light
-                if (map.decorations) {
-                  map.decorations.forEach((dec) => {
-                    if (
-                      dec.light &&
-                      dec.worldX >= minCamX &&
-                      dec.worldX <= maxCamX &&
-                      dec.worldY >= minCamY &&
-                      dec.worldY <= maxCamY
-                    ) {
-                      let radius = dec.light.radius || 80;
-                      let time = Date.now();
-                      if (dec.light.pulseType === "flicker") {
-                        radius += Math.sin(time / 70 + dec.x * 3) * 6;
-                      } else if (dec.light.pulseType === "wave") {
-                        radius += Math.sin(time / 180 + dec.x) * 8;
-                      } else if (dec.light.pulseType === "strobe") {
-                        radius += Math.sin(time / 50) * 10;
-                      }
-                      lights.push({
-                        x: dec.worldX,
-                        y: dec.worldY,
-                        r: radius,
-                        innerColor: dec.light.innerColor,
-                        outerColor: dec.light.outerColor,
-                      });
-                    }
-                  });
-                }
+    // Sector Decorations Light
+    if (map.decorations) {
+      map.decorations.forEach((dec) => {
+        if (
+          dec.light &&
+          dec.worldX >= minCamX &&
+          dec.worldX <= maxCamX &&
+          dec.worldY >= minCamY &&
+          dec.worldY <= maxCamY
+        ) {
+          let radius = dec.light.radius || 80;
+          let time = Date.now();
+          if (dec.light.pulseType === "flicker") {
+            radius += Math.sin(time / 70 + dec.x * 3) * 6;
+          } else if (dec.light.pulseType === "wave") {
+            radius += Math.sin(time / 180 + dec.x) * 8;
+          } else if (dec.light.pulseType === "strobe") {
+            radius += Math.sin(time / 50) * 10;
+          }
+          lights.push({
+            x: dec.worldX,
+            y: dec.worldY,
+            r: radius,
+            innerColor: dec.light.innerColor,
+            outerColor: dec.light.outerColor,
+          });
+        }
+      });
+    }
     if (!isHub && map.grid) {
       let depth = window.player ? window.player.depth || 1 : 1;
       let sector = Math.floor((depth - 1) / 12);
@@ -470,80 +470,95 @@
   };
 
   // --- ENGINE INITIALIZATION ---
-    window.addEventListener("load", function () {
-      canvas = document.getElementById("gameCanvas");
-      if (!canvas) return;
-      ctx = canvas.getContext("2d");
+  window.addEventListener("load", function () {
+    canvas = document.getElementById("gameCanvas");
+    if (!canvas) return;
+    ctx = canvas.getContext("2d");
 
-      window.canvas = canvas;
-      window.ctx = ctx;
+    window.canvas = canvas;
+    window.ctx = ctx;
 
-      window.resizeCanvas();
-      window.addEventListener("resize", window.resizeCanvas);
+    window.resizeCanvas();
+    window.addEventListener("resize", window.resizeCanvas);
 
-      if (window.SoundManager && typeof window.SoundManager.init === "function") {
-        window.SoundManager.init();
-      }
+    if (window.SoundManager && typeof window.SoundManager.init === "function") {
+      window.SoundManager.init();
+    }
 
-      // Prevent document-level elastic bouncing unless the touch originates inside a scrollable container
-          document.addEventListener("touchmove", function (e) {
-            let isScrollable = false;
-            let el = e.target;
-            while (el && el !== document) {
-              if (
-                el.classList.contains("modal-body") ||
-                el.classList.contains("profile-section-body") ||
-                el.classList.contains("paperdoll-grid") ||
-                el.classList.contains("stash-grid") ||
-                el.classList.contains("deploy-gear-list") ||
-                el.classList.contains("sigil-picker-list") ||
-                el.classList.contains("forge-pane") ||
-                el.classList.contains("enchant-pane") ||
-                el.classList.contains("ach-list") ||
-                el.classList.contains("ach-filter-bar") ||
-                el.classList.contains("forge-mode-bar") ||
-                el.classList.contains("shop-tab-bar") ||
-                el.classList.contains("gacha-tab-bar") ||
-                el.classList.contains("satchel-tab-bar") ||
-                el.classList.contains("shop-content-panel") ||
-                el.classList.contains("settings-body")
-              ) {
-                isScrollable = true;
-                break;
-              }
-              let style = window.getComputedStyle(el);
-              if (
-                style.overflow === "auto" || style.overflow === "scroll" ||
-                style.overflowY === "auto" || style.overflowY === "scroll" ||
-                style.overflowX === "auto" || style.overflowX === "scroll"
-              ) {
-                isScrollable = true;
-                break;
-              }
-              el = el.parentNode;
-            }
+    // Prevent document-level elastic bouncing unless the touch originates inside a scrollable container
+    document.addEventListener(
+      "touchmove",
+      function (e) {
+        let isScrollable = false;
+        let el = e.target;
+        while (el && el !== document) {
+          if (
+            el.classList.contains("modal-body") ||
+            el.classList.contains("profile-section-body") ||
+            el.classList.contains("paperdoll-grid") ||
+            el.classList.contains("stash-grid") ||
+            el.classList.contains("deploy-gear-list") ||
+            el.classList.contains("sigil-picker-list") ||
+            el.classList.contains("forge-pane") ||
+            el.classList.contains("enchant-pane") ||
+            el.classList.contains("ach-list") ||
+            el.classList.contains("ach-filter-bar") ||
+            el.classList.contains("forge-mode-bar") ||
+            el.classList.contains("shop-tab-bar") ||
+            el.classList.contains("gacha-tab-bar") ||
+            el.classList.contains("satchel-tab-bar") ||
+            el.classList.contains("shop-content-panel") ||
+            el.classList.contains("settings-body")
+          ) {
+            isScrollable = true;
+            break;
+          }
+          let style = window.getComputedStyle(el);
+          if (
+            style.overflow === "auto" ||
+            style.overflow === "scroll" ||
+            style.overflowY === "auto" ||
+            style.overflowY === "scroll" ||
+            style.overflowX === "auto" ||
+            style.overflowX === "scroll"
+          ) {
+            isScrollable = true;
+            break;
+          }
+          el = el.parentNode;
+        }
 
-            if (!isScrollable && e.cancelable) {
-              e.preventDefault();
-            }
-          }, { passive: false });
+        if (!isScrollable && e.cancelable) {
+          e.preventDefault();
+        }
+      },
+      { passive: false },
+    );
 
-      // Intercept touchstart & touchmove on the canvas with non-passive listeners
-      // to block iOS back/forward edge swipes and prevent elastic window scrolling during gameplay.
-      canvas.addEventListener("touchstart", function (e) {
+    // Intercept touchstart & touchmove on the canvas with non-passive listeners
+    // to block iOS back/forward edge swipes and prevent elastic window scrolling during gameplay.
+    canvas.addEventListener(
+      "touchstart",
+      function (e) {
         if (e.cancelable) {
           e.preventDefault();
         }
-      }, { passive: false });
+      },
+      { passive: false },
+    );
 
-      canvas.addEventListener("touchmove", function (e) {
+    canvas.addEventListener(
+      "touchmove",
+      function (e) {
         if (e.cancelable) {
           e.preventDefault();
         }
-      }, { passive: false });
+      },
+      { passive: false },
+    );
 
-      // Pointer Input Handling (Joystick & Follow Cursor Modes)
-          function handlePointerPosition(e) {
+    // Pointer Input Handling (Joystick & Follow Cursor Modes)
+    function handlePointerPosition(e) {
       let rect = canvas.getBoundingClientRect();
       let scaleX = canvas.width / rect.width;
       let scaleY = canvas.height / rect.height;
@@ -553,19 +568,19 @@
     }
 
     canvas.addEventListener("pointerdown", function (e) {
-          if (window.player.hp <= 0) return;
-          if (window.isAnyMenuOpen()) return;
-          if (Date.now() - (window.lastModalCloseTime || 0) < 200) {
-            e.preventDefault();
-            e.stopPropagation();
-            return;
-          }
-          window.scrollTo(0, 0); // Lock scroll to 0 to prevent landscape viewport shifts
-          isPointerHolding = true;
+      if (window.player.hp <= 0) return;
+      if (window.isAnyMenuOpen()) return;
+      if (Date.now() - (window.lastModalCloseTime || 0) < 200) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      window.scrollTo(0, 0); // Lock scroll to 0 to prevent landscape viewport shifts
+      isPointerHolding = true;
 
-          let { clickX, clickY } = handlePointerPosition(e);
-          window.cursorPointer.screenX = clickX;
-          window.cursorPointer.screenY = clickY;
+      let { clickX, clickY } = handlePointerPosition(e);
+      window.cursorPointer.screenX = clickX;
+      window.cursorPointer.screenY = clickY;
 
       // Check Station Prompt Interaction
       if (
@@ -628,12 +643,12 @@
           p.y - (targetMob.y + targetMob.h / 2),
         );
         if (dist > 50) {
-                  window.pushHeaderToast(
-                    "[!] Move closer to execute the Perfect Strike!",
-                    "#f1c40f",
-                  );
-                  return;
-                }
+          window.pushHeaderToast(
+            "[!] Move closer to execute the Perfect Strike!",
+            "#f1c40f",
+          );
+          return;
+        }
 
         let progress =
           targetMob.perfectStrikeTimer / targetMob.perfectStrikeMax;
@@ -714,13 +729,13 @@
     });
 
     canvas.addEventListener("pointermove", function (e) {
-          if (window.player.hp <= 0) return;
-          if (window.isAnyMenuOpen()) return;
-          if (Date.now() - (window.lastModalCloseTime || 0) < 200) return;
+      if (window.player.hp <= 0) return;
+      if (window.isAnyMenuOpen()) return;
+      if (Date.now() - (window.lastModalCloseTime || 0) < 200) return;
 
-          let { clickX, clickY } = handlePointerPosition(e);
-          window.cursorPointer.screenX = clickX;
-          window.cursorPointer.screenY = clickY;
+      let { clickX, clickY } = handlePointerPosition(e);
+      window.cursorPointer.screenX = clickX;
+      window.cursorPointer.screenY = clickY;
       let mode = window.playerStats
         ? window.playerStats.controlMode || "joystick"
         : "joystick";
@@ -764,29 +779,33 @@
     }
 
     canvas.addEventListener("pointerup", stopJoystick);
-        canvas.addEventListener("pointercancel", stopJoystick);
+    canvas.addEventListener("pointercancel", stopJoystick);
 
-        // Allow tapping backdrop overlays to dismiss open modal windows
-        document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-          overlay.addEventListener("pointerdown", function (e) {
-            if (e.target === overlay) {
-              e.stopPropagation();
-              if (overlay.id === "summary-modal") {
-                window.lastModalCloseTime = Date.now();
-                window.loadHub();
-              } else if (overlay.id === "portal-modal") {
-                // Require explicit user action (Descend or Extract)
-                return;
-              } else {
-                overlay.style.display = "none";
-                window.lastModalCloseTime = Date.now();
-                if (overlay.id === "mastery-modal" && window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
-                  window.SkillTreeManager.stopAnimationLoop();
-                }
-              }
-              if (typeof window.hideTooltip === "function") window.hideTooltip();
+    // Allow tapping backdrop overlays to dismiss open modal windows
+    document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+      overlay.addEventListener("pointerdown", function (e) {
+        if (e.target === overlay) {
+          e.stopPropagation();
+          if (overlay.id === "summary-modal") {
+            window.lastModalCloseTime = Date.now();
+            window.loadHub();
+          } else if (overlay.id === "portal-modal") {
+            // Require explicit user action (Descend or Extract)
+            return;
+          } else {
+            overlay.style.display = "none";
+            window.lastModalCloseTime = Date.now();
+            if (
+              overlay.id === "mastery-modal" &&
+              window.SkillTreeManager &&
+              typeof window.SkillTreeManager.stopAnimationLoop === "function"
+            ) {
+              window.SkillTreeManager.stopAnimationLoop();
             }
-          });
+          }
+          if (typeof window.hideTooltip === "function") window.hideTooltip();
+        }
+      });
       overlay.addEventListener("click", function (e) {
         if (e.target === overlay) {
           e.stopPropagation();
@@ -795,7 +814,7 @@
     });
 
     // Recalculate all existing inventory & equipped items to migrate stats
-          window.recalculateAllInventoryItems();
+    window.recalculateAllInventoryItems();
 
     window.BossAIEngine = {
       initBoss(m) {
@@ -822,24 +841,51 @@
 
       resolveBossKey(m) {
         let nameLower = (m.name || "").toLowerCase();
-        if (m.visualType === "aegis_goliath" || nameLower.includes("aegis")) return "aegis_goliath";
-        if (m.visualType === "chronos_arbitrator" || nameLower.includes("chronos")) return "chronos_arbitrator";
-        if (m.visualType === "nexus_overseer" || nameLower.includes("nexus")) return "nexus_overseer";
-        if (m.visualType === "gilded_vault_keeper" || nameLower.includes("gilded") || nameLower.includes("vault keeper")) return "gilded_vault_keeper";
-        if (m.visualType === "corrosive_abomination" || nameLower.includes("corrosive") || nameLower.includes("abomination")) return "corrosive_abomination";
-        if (m.visualType === "hooktail" || nameLower.includes("hooktail") || nameLower.includes("calamity")) return "hooktail";
-        if (m.visualType === "overlord_iron_vault" || nameLower.includes("iron vault") || nameLower.includes("overlord")) return "overlord_iron_vault";
+        if (m.visualType === "aegis_goliath" || nameLower.includes("aegis"))
+          return "aegis_goliath";
+        if (
+          m.visualType === "chronos_arbitrator" ||
+          nameLower.includes("chronos")
+        )
+          return "chronos_arbitrator";
+        if (m.visualType === "nexus_overseer" || nameLower.includes("nexus"))
+          return "nexus_overseer";
+        if (
+          m.visualType === "gilded_vault_keeper" ||
+          nameLower.includes("gilded") ||
+          nameLower.includes("vault keeper")
+        )
+          return "gilded_vault_keeper";
+        if (
+          m.visualType === "corrosive_abomination" ||
+          nameLower.includes("corrosive") ||
+          nameLower.includes("abomination")
+        )
+          return "corrosive_abomination";
+        if (
+          m.visualType === "hooktail" ||
+          nameLower.includes("hooktail") ||
+          nameLower.includes("calamity")
+        )
+          return "hooktail";
+        if (
+          m.visualType === "overlord_iron_vault" ||
+          nameLower.includes("iron vault") ||
+          nameLower.includes("overlord")
+        )
+          return "overlord_iron_vault";
 
         // Fallback to active stage biome
-        let tier = typeof window.getStageTier === "function" ? window.getStageTier() : 0;
+        let tier =
+          typeof window.getStageTier === "function" ? window.getStageTier() : 0;
         const biomes = [
           "arachnid_treant", // Zone 1
-          "aegis_goliath",   // Zone 2
+          "aegis_goliath", // Zone 2
           "overlord_iron_vault", // Zone 3
           "corrosive_abomination", // Zone 4
-          "void_overseer",   // Zone 5
+          "void_overseer", // Zone 5
           "chronos_arbitrator", // Zone 6
-          "nexus_overseer"   // Zone 7
+          "nexus_overseer", // Zone 7
         ];
         return biomes[tier] || "arachnid_treant";
       },
@@ -849,15 +895,24 @@
         this.initBoss(m);
 
         let p = window.player;
-        let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : {};
 
         if (m.flashTimer > 0) m.flashTimer--;
         if (m.attackCooldown > 0) m.attackCooldown--;
         if (m.funnyTextTimer > 0) m.funnyTextTimer--;
 
         // Dampen recoil
-        if (m.recoilX) { m.recoilX *= 0.65; if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0; }
-        if (m.recoilY) { m.recoilY *= 0.65; if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0; }
+        if (m.recoilX) {
+          m.recoilX *= 0.65;
+          if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
+        }
+        if (m.recoilY) {
+          m.recoilY *= 0.65;
+          if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
+        }
 
         let dx = p.x - (m.x + m.w / 2);
         let dy = p.y - (m.y + m.h / 2);
@@ -883,8 +938,16 @@
           if (map && map.grid) {
             let bx = m.x + m.w / 2;
             let by = m.y + m.h / 2;
-            if (typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(map, bx + pushX, by, radius)) m.x += pushX;
-            if (typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(map, bx, by + pushY, radius)) m.y += pushY;
+            if (
+              typeof window.checkCollisionAt === "function" &&
+              !window.checkCollisionAt(map, bx + pushX, by, radius)
+            )
+              m.x += pushX;
+            if (
+              typeof window.checkCollisionAt === "function" &&
+              !window.checkCollisionAt(map, bx, by + pushY, radius)
+            )
+              m.y += pushY;
           } else {
             m.x += pushX;
             m.y += pushY;
@@ -954,7 +1017,7 @@
                   pulseOffset: i,
                   type: "boss_nova",
                   damage: Math.round(m.atk * 1.1),
-                  life: 120
+                  life: 120,
                 });
               }
               if (window.SoundManager) window.SoundManager.play("spell_fire");
@@ -966,7 +1029,9 @@
                 m.x += (dX / dDist) * 75;
                 m.y += (dY / dDist) * 75;
               }
-              if (Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2)) <= 42) {
+              if (
+                Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2)) <= 42
+              ) {
                 window.damagePlayer(Math.round(m.atk * 1.5), m);
               }
             }
@@ -992,6 +1057,7 @@
             m.actionState = "telegraphing";
             m.activeAbility = chosen;
             m.telegraphTimer = 65;
+            m.maxTelegraphTimer = 65;
             m.targetX = p.x;
             m.targetY = p.y;
           } else if (dist < 30 && m.attackCooldown <= 0) {
@@ -1003,2345 +1069,2880 @@
 
       // Subphase placeholders (will be fleshed out progressively with stunning visuals)
       updateArachnidTreant(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              // --- PHASE 2 TRIGGER: ELDRITCH BARK SHIELD & SUMMONS (UNDER 50% HP) ---
-              let bHp = m.hp.valueOf();
-              let bMaxHp = m.maxHp.valueOf();
-              if (bHp < bMaxHp * 0.5 && !m.phase2Triggered) {
-                m.phase2Triggered = true;
-                m.phase = 2;
-                m.actionState = "bark_shield";
-                m.isStopped = true;
-
-                // Teleport Stage Warden directly to the center of the arena
-                let map = window.activeDungeonMap;
-                let mapW = map ? map.width : 24;
-                let mapH = map ? map.height : 18;
-                let tSize = map ? map.tileSize : 32;
-                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
-                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
-                cx = m.x + m.w / 2;
-                cy = m.y + m.h / 2;
-
-                if (typeof window.spawnFloatingText === "function") {
-                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: BARK SHIELD!", "#e74c3c");
-                                }
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnParticles(cx, cy, 35, "slag_slime", 4);
-                                  window.combatVisuals.triggerScreenShake(10, 18);
-                                }
-                                if (window.SoundManager) window.SoundManager.play("spell");
-
-                // Spawn 3 Sprout Cocoons surrounding the Warden
-                window.activeDungeonMobs = window.activeDungeonMobs || [];
-                for (let i = 0; i < 3; i++) {
-                  let angle = (i * Math.PI * 2) / 3;
-                  let spawnDist = 54;
-                  let sx = cx + Math.cos(angle) * spawnDist;
-                  let sy = cy + Math.sin(angle) * spawnDist;
-
-                  window.activeDungeonMobs.push({
-                    id: window.idCounter++,
-                    type: "mob",
-                    visualTier: 0,
-                    visualType: "sprout_cocoon",
-                    x: sx - 12,
-                    y: sy - 12,
-                    w: 24,
-                    h: 24,
-                    hp: BigNum.from(60 + m.stageLevel * 20),
-                    maxHp: BigNum.from(60 + m.stageLevel * 20),
-                    atk: 0,
-                    flashTimer: 0,
-                    attackCooldown: 100,
-                    isBossSummon: true,
-                    isCocoon: true,
-                    hatchTimer: 240, // 4 seconds (240 frames)
-                    discovered: true
-                  });
-
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnParticles(sx, sy, 10, "slag_slime", 2);
-                  }
-                }
-
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[!] Eldritch Bark Shield active! Slay the hatched minions to break it!", "#e74c3c");
-                }
-              }
-
-              // Processing active Bark Shield & Orbital Web Storm particle effects
-              if (m.actionState === "bark_shield") {
-                let sumCount = window.activeDungeonMobs ? window.activeDungeonMobs.filter(mob => mob.isBossSummon && mob.hp.gt(0)).length : 0;
-
-                if (sumCount === 0) {
-                  // Shield Shatters!
-                  m.actionState = "idle";
-                  m.state = "idle";
-                  m.isStopped = false;
-                  m.attackCooldown = 60;
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnParticles(cx, cy, 30, "slag_slime", 4.5);
-                    window.combatVisuals.triggerScreenShake(8, 12);
-                  }
-                  if (window.SoundManager) window.SoundManager.play("block");
-                  if (typeof window.pushHeaderToast === "function") {
-                    window.pushHeaderToast("[✦] Eldritch Bark Shield shattered! Boss is vulnerable!", "#2ecc71");
-                  }
-                } else {
-                  // Emit orbital Web Storm wind particles
-                  if (Math.random() < 0.4) {
-                    let angle = Math.random() * Math.PI * 2;
-                    let orbDist = m.w * 0.75;
-                    let px = cx + Math.cos(angle) * orbDist;
-                    let py = cy + Math.sin(angle) * orbDist;
-                    let rotSpeed = 3.5;
-                    let vx = -Math.sin(angle) * rotSpeed;
-                    let vy = Math.cos(angle) * rotSpeed;
-                    if (window.combatVisuals && window.combatVisuals.particlePool) {
-                      window.combatVisuals.particlePool.get(
-                        px,
-                        py,
-                        vx,
-                        vy,
-                        window.randFloat(1.5, 3),
-                        Math.random() < 0.5 ? "#ffffff" : "#27ae60",
-                        0.8,
-                        30,
-                        0,
-                        true,
-                        0
-                      );
-                    }
-                  }
-                  return; // Skip normal combat movement/attack AI while shielded
-                }
-              }
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-
-                // Creeping vine particles traveling during root snare wind-up
-                if (m.activeAbility === "root_snare" && m.telegraphTimer % 3 === 0) {
-                  let tRatio = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
-                  let vx = cx + (m.targetX - cx) * tRatio;
-                  let vy = cy + (m.targetY - cy) * tRatio;
-                  if (window.combatVisuals && window.combatVisuals.particlePool) {
-                    window.combatVisuals.particlePool.get(
-                      vx + window.randFloat(-4, 4),
-                      vy + window.randFloat(-4, 4),
-                      window.randFloat(-0.2, 0.2),
-                      window.randFloat(-0.2, 0.2),
-                      window.randFloat(1.5, 2.5),
-                      "#27ae60",
-                      0.8,
-                      24,
-                      0,
-                      true,
-                      0
-                    );
-                  }
-                }
-
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 120; // 2s recovery
-
-                  let ability = m.activeAbility;
-                  if (ability === "slam") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(7, 12);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "slag_slime", 3.5);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                      window.damagePlayer(Math.round(m.atk * 1.8), m);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  } else if (ability === "root_snare") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(5, 8);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 20, "slag_slime", 2.2);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 75) {
-                      window.damagePlayer(Math.round(m.atk * 1.3), m);
-                      p.snareTimer = 132; // 2.2s snare slow
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(p.x, p.y - 12, "[SNARED] -60% Speed!", "#2ecc71", true);
-                      }
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player at a slow, heavy treant pace
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.3;
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Ability cast or basic close-range strikes
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let chosen = Math.random() < 0.5 ? "slam" : "root_snare";
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-                  m.telegraphTimer = 75;
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-      updateAegisGoliath(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              // --- PHASE 2 TRIGGER: RAISED TOWER SHIELD (UNDER 50% HP) ---
-              let bHp = m.hp.valueOf();
-              let bMaxHp = m.maxHp.valueOf();
-              if (bHp < bMaxHp * 0.5 && m.phase === 1) {
-                              m.phase = 2;
-                              m.shieldAngle = Math.atan2(p.y - cy, p.x - cx);
-                              m.dazeTimer = 0;
-                              if (typeof window.spawnFloatingText === "function") {
-                                window.spawnFloatingText(cx, m.y - 20, "PHASE 2: TOWER SHIELD!", "#00d2ff");
-                              }
-                              if (window.combatVisuals) {
-                                window.combatVisuals.spawnParticles(cx, cy, 30, "aegis_goliath", 4);
-                                window.combatVisuals.triggerScreenShake(8, 15);
-                              }
-                              if (typeof window.pushHeaderToast === "function") {
-                                window.pushHeaderToast("[!] Aegis Goliath raised his Tower Shield! Flank his exposed sides!", "#00d2ff");
-                              }
-                              if (window.SoundManager) window.SoundManager.play("revive");
-                            }
-
-              // Handle Dazed stun sequence
-              if (m.dazeTimer > 0) {
-                m.dazeTimer--;
-                m.isStopped = true;
-                // Spawn little daze stars particles on head occasionally
-                if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(cx, m.y - 4, 3, "gold_dungeon", 1.2);
-                }
-                return; // Frozen and vulnerable while dazed
-              }
-              m.isStopped = false;
-
-              // Lerp shield angle slowly toward the player to allow flanking outmaneuvers
-              if (m.phase === 2 && m.shieldAngle !== undefined && m.activeAbility !== "shield_bash") {
-                let targetAngle = Math.atan2(p.y - cy, p.x - cx);
-                let angleDiff = targetAngle - m.shieldAngle;
-                // Normalize to -PI to PI
-                angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
-                // Rotate up to 0.038 radians per frame
-                m.shieldAngle += Math.max(-0.038, Math.min(0.038, angleDiff));
-              }
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-
-                // Apply active gravitational magnetic pull
-                if (m.activeAbility === "magnetic_pull") {
-                  let pullForce = 2.2;
-                  let angle = Math.atan2(cy - p.y, cx - p.x);
-                  let testX = p.x + Math.cos(angle) * pullForce;
-                  let testY = p.y + Math.sin(angle) * pullForce;
-
-                  if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, testX, testY, p.radius || 9)) {
-                    p.x = testX;
-                    p.y = testY;
-                  }
-
-                  // Spawn blue gravitational sparks flowing inward
-                  if (m.telegraphTimer % 4 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
-                    window.combatVisuals.particlePool.get(
-                      p.x + window.randFloat(-10, 10),
-                      p.y + window.randFloat(-10, 10),
-                      Math.cos(angle) * 3,
-                      Math.sin(angle) * 3,
-                      window.randFloat(1.2, 2.5),
-                      "#00d2ff",
-                      0.8,
-                      20,
-                      0,
-                      true,
-                      0
-                    );
-                  }
-                }
-
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 110;
-
-                  let ability = m.activeAbility;
-                  if (ability === "magnetic_pull") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(8, 14);
-                      window.combatVisuals.spawnParticles(cx, cy, 25, "aegis_goliath", 4.5);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-
-                    // Ground slam damage check
-                    if (Math.hypot(p.x - cx, p.y - cy) <= 70) {
-                      window.damagePlayer(Math.round(m.atk * 1.6), m);
-                    }
-                  } else if (ability === "boomerang_shield") {
-                    // Spawn dual curving boomerang projectiles
-                    let angleToPlayer = Math.atan2(p.y - cy, p.x - cx);
-                    let speed = 4.5;
-
-                    let angles = [angleToPlayer - 0.25, angleToPlayer + 0.25];
-                    angles.forEach((ang) => {
-                      window.projectiles.push({
-                        x: cx,
-                        y: cy,
-                        vx: Math.cos(ang) * speed,
-                        vy: Math.sin(ang) * speed,
-                        r: 8,
-                        type: "boomerang",
-                        damage: Math.round(m.atk * 0.9),
-                        life: 180,
-                        pulseOffset: Math.random() * 10
-                      });
-                    });
-
-                    if (window.SoundManager) window.SoundManager.play("swing");
-                  } else if (ability === "shield_bash") {
-                    // Executing frontal shield bash
-                    let pAngle = Math.atan2(p.y - cy, p.x - cx);
-                    let angleDiff = Math.abs(Math.atan2(Math.sin(pAngle - m.shieldAngle), Math.cos(pAngle - m.shieldAngle)));
-
-                    if (Math.hypot(p.x - cx, p.y - cy) <= 64 && angleDiff <= 0.5) {
-                      // Player hit!
-                      window.damagePlayer(Math.round(m.atk * 1.7), m);
-                      // Apply knockback
-                      let kx = p.x + Math.cos(m.shieldAngle) * 24;
-                      let ky = p.y + Math.sin(m.shieldAngle) * 24;
-                      if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, kx, ky, p.radius || 9)) {
-                        p.x = kx;
-                        p.y = ky;
-                      }
-                      if (window.combatVisuals) {
-                        window.combatVisuals.triggerScreenShake(6, 10);
-                        window.combatVisuals.spawnParticles(p.x, p.y, 12, "aegis_goliath", 3);
-                      }
-                      if (window.SoundManager) window.SoundManager.play("block");
-                    } else {
-                      // Player evaded! Overcommit and enter DAZED state
-                      m.dazeTimer = 210; // 3.5 seconds
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(cx, m.y - 12, "DAZED!", "#ffd700");
-                      }
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnParticles(cx, m.y - 4, 15, "gold_dungeon", 2.2);
-                        window.combatVisuals.triggerScreenShake(4, 6);
-                      }
-                      if (window.SoundManager) window.SoundManager.play("block");
-                    }
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player at a steady vanguard speed
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = m.phase === 2 ? 1.4 : 1.7; // Slightly heavier and slower while shield raised
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Abilities
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let optionsPool = ["magnetic_pull", "boomerang_shield"];
-                  if (m.phase === 2) optionsPool.push("shield_bash");
-
-                  let chosen = optionsPool[Math.floor(Math.random() * optionsPool.length)];
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-
-                  if (chosen === "magnetic_pull") m.telegraphTimer = 90;
-                  else if (chosen === "boomerang_shield") m.telegraphTimer = 60;
-                  else m.telegraphTimer = 75; // shield_bash windup
-
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-      updateOverlordIronVault(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 120; // 2s recovery
-
-                  let ability = m.activeAbility;
-                  if (ability === "slam") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(8, 14);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "magma_elemental", 3.5);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                      window.damagePlayer(Math.round(m.atk * 1.8), m);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  } else if (ability === "magma_vents" && m.ventSpawnLocations) {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(6, 10);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("spell_fire");
-
-                    // Spawn 2 growing Magma Vents around the player
-                    window.activeDungeonMobs = window.activeDungeonMobs || [];
-                    m.ventSpawnLocations.forEach((loc) => {
-                      window.activeDungeonMobs.push({
-                        id: window.idCounter++,
-                        type: "mob",
-                        visualTier: 2,
-                        visualType: "magma_vent",
-                        x: loc.x - 12,
-                        y: loc.y - 12,
-                        w: 24,
-                        h: 24,
-                        hp: BigNum.from(1),
-                        maxHp: BigNum.from(1),
-                        parentAtk: m.atk,
-                        flashTimer: 0,
-                        isMagmaVent: true,
-                        ventTimer: 270, // 4.5 seconds
-                        discovered: true
-                      });
-
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnParticles(loc.x, loc.y, 8, "magma_elemental", 1.8);
-                      }
-                    });
-                    m.ventSpawnLocations = null;
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player at a slow, heavy colossus speed
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.35;
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Attacks
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let chosen = Math.random() < 0.5 ? "slam" : "magma_vents";
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-                  m.telegraphTimer = 75;
-
-                  if (chosen === "magma_vents") {
-                    // Pre-calculate target spots around the player's current location
-                    m.ventSpawnLocations = [];
-                    for (let i = 0; i < 2; i++) {
-                      let angle = Math.random() * Math.PI * 2;
-                      let spawnDist = window.randFloat(40, 80);
-                      m.ventSpawnLocations.push({
-                        x: p.x + Math.cos(angle) * spawnDist,
-                        y: p.y + Math.sin(angle) * spawnDist
-                      });
-                    }
-                  }
-
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-      updateCorrosiveAbomination(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              // Leave trailing Acid Pools while moving across both phases
-              if (m.isMoving && window.logicClock % 40 === 0) {
-                window.cavernInteractives = window.cavernInteractives || [];
-                window.cavernInteractives.push({
-                  id: window.idCounter++,
-                  type: "acid_pool",
-                  x: cx,
-                  y: cy,
-                  w: 24,
-                  h: 12,
-                  life: 480, // 8 seconds (480 frames)
-                  maxLife: 480
-                });
-              }
-
-              // --- PHASE 2 TRIGGER: TOXIC SPORE NOVA (UNDER 50% HP) ---
-              let bHp = m.hp.valueOf();
-              let bMaxHp = m.maxHp.valueOf();
-              if (bHp < bMaxHp * 0.5 && !m.phase2Triggered) {
-                              m.phase2Triggered = true;
-                              m.phase = 2;
-                              m.attackCooldown = 40;
-                              if (typeof window.spawnFloatingText === "function") {
-                                window.spawnFloatingText(cx, m.y - 20, "PHASE 2: TOXIC SPORE STORM!", "#2ecc71");
-                              }
-                              if (window.combatVisuals) {
-                                window.combatVisuals.spawnParticles(cx, cy, 35, "swamp_basilisk", 4);
-                                window.combatVisuals.triggerScreenShake(8, 15);
-                              }
-                              if (typeof window.pushHeaderToast === "function") {
-                                window.pushHeaderToast("[!] Corrosive Abomination has entered Phase 2! Watch out for toxic spore storms!", "#2ecc71");
-                              }
-                              if (window.SoundManager) window.SoundManager.play("revive");
-                            }
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 110;
-
-                  let ability = m.activeAbility;
-                  if (ability === "slam") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(7, 12);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "swamp_basilisk", 3.2);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                      window.damagePlayer(Math.round(m.atk * 1.8), m);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  } else if (ability === "spore_storm") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(6, 10);
-                      window.combatVisuals.spawnParticles(cx, cy, 25, "swamp_basilisk", 3.5);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("spell_fire");
-
-                    // Spawn 3 homing toxic spores with a strict 6-second lifetime
-                    window.activeDungeonMobs = window.activeDungeonMobs || [];
-                    for (let i = 0; i < 3; i++) {
-                      let angle = (i * Math.PI * 2) / 3;
-                      let spawnDist = 45;
-                      let sx = cx + Math.cos(angle) * spawnDist;
-                      let sy = cy + Math.sin(angle) * spawnDist;
-
-                      window.activeDungeonMobs.push({
-                        id: window.idCounter++,
-                        type: "mob",
-                        visualTier: 3,
-                        visualType: "toxic_spore",
-                        x: sx - 12,
-                        y: sy - 12,
-                        w: 24,
-                        h: 24,
-                        hp: BigNum.from(1),
-                        maxHp: BigNum.from(1),
-                        atk: Math.round(m.atk * 0.95),
-                        flashTimer: 0,
-                        isSpore: true,
-                        isBossSummon: true,
-                        hatchTimer: 360, // 6s lifetime (360 frames)
-                        discovered: true
-                      });
-                    }
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.6;
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                    m.isMoving = true;
-                  } else {
-                    m.isMoving = false;
-                  }
-                } else {
-                  m.isMoving = false;
-                }
-
-                // Trigger Abilities
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let optionsPool = ["slam"];
-                  if (m.phase === 2) optionsPool.push("spore_storm");
-
-                  let chosen = optionsPool[Math.floor(Math.random() * optionsPool.length)];
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-                  m.telegraphTimer = chosen === "spore_storm" ? 85 : 65;
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-      updateVoidOverseer(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-
-                // Apply active inverse-square gravitational singularity pull
-                if (m.activeAbility === "singularity") {
-                  let tDx = cx - p.x;
-                  let tDy = cy - p.y;
-                  let tDist = Math.hypot(tDx, tDy);
-
-                  if (tDist > 10) {
-                    // Gravity forces increase rapidly the closer you get (inverse square)
-                    let pull = 4500 / (tDist * tDist + 400);
-                    pull = Math.min(4.8, pull); // Cap maximum drag speed
-
-                    let testX = p.x + (tDx / tDist) * pull;
-                    let testY = p.y + (tDy / tDist) * pull;
-
-                    if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, testX, testY, p.radius || 9)) {
-                      p.x = testX;
-                      p.y = testY;
-                    }
-                  }
-
-                  // Spawn space dust vacuum particles flowing inward
-                  if (m.telegraphTimer % 3 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
-                    let pAngle = Math.random() * Math.PI * 2;
-                    let pDist = window.randFloat(40, 150);
-                    let px = cx + Math.cos(pAngle) * pDist;
-                    let py = cy + Math.sin(pAngle) * pDist;
-                    let vx = -Math.cos(pAngle) * (pDist / 15);
-                    let vy = -Math.sin(pAngle) * (pDist / 15);
-                    window.combatVisuals.particlePool.get(
-                      px,
-                      py,
-                      vx,
-                      vy,
-                      window.randFloat(1.5, 3.5),
-                      Math.random() < 0.5 ? "#e84393" : "#8e44ad",
-                      0.8,
-                      15,
-                      0,
-                      true,
-                      -0.05
-                    );
-                  }
-                }
-
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 110;
-
-                  let ability = m.activeAbility;
-                  if (ability === "slam") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(7, 12);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "void_orb", 3.2);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                      window.damagePlayer(Math.round(m.atk * 1.8), m);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  } else if (ability === "singularity") {
-                    // Accretion Core Collapse & Implosion!
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(12, 20);
-                      window.combatVisuals.spawnParticles(cx, cy, 35, "void_orb", 5.5);
-                      window.combatVisuals.spawnBeam(cx, "#e84393", 45, false);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("death");
-
-                    // Hit detection within the 90px Event Horizon radius
-                    if (Math.hypot(p.x - cx, p.y - cy) <= 90) {
-                      window.damagePlayer(Math.round(m.atk * 1.95), m);
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(p.x, p.y - 15, "EVENT HORIZON IMPLOSION!", "#e84393");
-                      }
-                    }
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.6;
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Abilities
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let chosen = Math.random() < 0.5 ? "slam" : "singularity";
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-                  m.telegraphTimer = chosen === "singularity" ? 360 : 65; // 6s channel for singularity
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-      updateChronosArbitrator(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              // --- PHASE 2 TRIGGER: CHRONOS REWIND CHANNEL (UNDER 40% HP) ---
-              let bHp = m.hp.valueOf();
-              let bMaxHp = m.maxHp.valueOf();
-              if (bHp < bMaxHp * 0.40 && m.phase === 1) {
-                m.phase = 2;
-                m.actionState = "chrono_rewind";
-                m.isStopped = true;
-                m.channelTimer = 240; // 4 seconds
-                m.staggerShield = m.maxHp.mul(0.15); // 15% Max HP stagger barrier
-
-                // Teleport directly to the center of the arena
-                let map = window.activeDungeonMap;
-                let mapW = map ? map.width : 24;
-                let mapH = map ? map.height : 18;
-                let tSize = map ? map.tileSize : 32;
-                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
-                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
-                cx = m.x + m.w / 2;
-                cy = m.y + m.h / 2;
-
-                if (typeof window.spawnFloatingText === "function") {
-                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: CHRONOS REWIND!", "#ffd700");
-                                }
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnParticles(cx, cy, 35, "gold_dungeon", 4.5);
-                                  window.combatVisuals.triggerScreenShake(10, 18);
-                                }
-                                if (window.SoundManager) window.SoundManager.play("spell");
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[!] Chronos Arbitrator is channeling Chronos Rewind! Shatter his Stagger Shield to interrupt!", "#ffd700");
-                }
-              }
-
-              // Processing active Chronos Rewind channel
-              if (m.actionState === "chrono_rewind") {
-                m.channelTimer--;
-                if (m.channelTimer <= 0) {
-                  // Channel completes! strike XII and heal 20%
-                  let healAmt = m.maxHp.mul(0.20);
-                  m.hp = window.BigNumMin(m.maxHp, m.hp.add(healAmt));
-
-                  if (typeof window.spawnFloatingText === "function") {
-                    window.spawnFloatingText(cx, m.y - 12, `+${window.formatNumber(healAmt)} HP (REWIND)`, "#2ecc71");
-                  }
-                  if (typeof window.pushHeaderToast === "function") {
-                    window.pushHeaderToast("[!] Clock struck XII! Chronos Arbitrator rewound time and healed himself!", "#e74c3c");
-                  }
-                  if (window.SoundManager) window.SoundManager.play("spell");
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnParticles(cx, cy, 20, "gold_dungeon", 3.0);
-                  }
-
-                  m.actionState = "idle";
-                  m.state = "idle";
-                  m.isStopped = false;
-                  m.attackCooldown = 110;
-                }
-                return; // Skip normal movements during channel
-              }
-
-              // Handle Dazed stun sequence
-              if (m.dazeTimer > 0) {
-                m.dazeTimer--;
-                m.isStopped = true;
-                if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(cx, m.y - 4, 3, "gold_dungeon", 1.2);
-                }
-                return;
-              }
-              m.isStopped = false;
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 110;
-
-                  let ability = m.activeAbility;
-                  if (ability === "slam") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(7, 12);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "gold_dungeon", 3.2);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                      window.damagePlayer(Math.round(m.atk * 1.8), m);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  } else if (ability === "dilation_field") {
-                    // Spawn a static Time Dilation Field hazard on the ground
-                    window.cavernInteractives = window.cavernInteractives || [];
-                    window.cavernInteractives.push({
-                      id: window.idCounter++,
-                      type: "dilation_field",
-                      x: m.targetX,
-                      y: m.targetY,
-                      w: 40,
-                      h: 18,
-                      life: 420, // 7 seconds (420 frames)
-                      maxLife: 420
-                    });
-
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "gold_dungeon", 2.0);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("spell");
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player at normal speed
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.7;
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Abilities
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let chosen = Math.random() < 0.5 ? "slam" : "dilation_field";
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-                  m.telegraphTimer = chosen === "dilation_field" ? 60 : 75;
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-      updateNexusOverseer(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              // --- PHASE 2 TRIGGER: DIGITAL DECOYS SPLIT (UNDER 50% HP) ---
-              let bHp = m.hp.valueOf();
-              let bMaxHp = m.maxHp.valueOf();
-              if (bHp < bMaxHp * 0.50 && m.phase === 1) {
-                m.phase = 2;
-                m.actionState = "cyber_barrier";
-                m.isStopped = true;
-
-                // Teleport directly to the center of the arena
-                let map = window.activeDungeonMap;
-                let mapW = map ? map.width : 24;
-                let mapH = map ? map.height : 18;
-                let tSize = map ? map.tileSize : 32;
-                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
-                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
-                cx = m.x + m.w / 2;
-                cy = m.y + m.h / 2;
-
-                if (typeof window.spawnFloatingText === "function") {
-                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: CYBER BARRIER!", "#ff007f");
-                                }
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnParticles(cx, cy, 35, "nexus_overseer", 4.0);
-                                  window.combatVisuals.triggerScreenShake(10, 18);
-                                }
-                                if (window.SoundManager) window.SoundManager.play("spell");
-
-                // Spawn 2 Holographic Decoys
-                window.activeDungeonMobs = window.activeDungeonMobs || [];
-                let decoyOffsets = [-48, 48];
-                decoyOffsets.forEach((ox) => {
-                  window.activeDungeonMobs.push({
-                    id: window.idCounter++,
-                    type: "mob",
-                    visualTier: 6,
-                    visualType: "nexus_overseer",
-                    x: cx + ox - 12,
-                    y: cy + 18 - 12,
-                    w: 24,
-                    h: 24,
-                    hp: BigNum.from(120 + m.stageLevel * 25),
-                    maxHp: BigNum.from(120 + m.stageLevel * 25),
-                    atk: Math.round(m.atk * 0.8),
-                    flashTimer: 0,
-                    attackCooldown: 80,
-                    isRanged: true,
-                    projectileType: "void",
-                    isBossSummon: true,
-                    isDecoy: true,
-                    discovered: true
-                  });
-
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnParticles(cx + ox, cy + 18, 10, "nexus_overseer", 2);
-                  }
-                });
-
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[!] Cyber Barrier active! Slay the 2 Holographic Decoys to break it!", "#ff007f");
-                }
-              }
-
-              // Processing active Cyber Barrier
-              if (m.actionState === "cyber_barrier") {
-                let decoyCount = window.activeDungeonMobs ? window.activeDungeonMobs.filter(mob => mob.isDecoy && mob.hp.gt(0)).length : 0;
-
-                if (decoyCount === 0) {
-                  // Barrier Shatters!
-                  m.actionState = "idle";
-                  m.state = "idle";
-                  m.isStopped = false;
-                  m.attackCooldown = 60;
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnParticles(cx, cy, 30, "nexus_overseer", 4.5);
-                    window.combatVisuals.triggerScreenShake(8, 12);
-                  }
-                  if (window.SoundManager) window.SoundManager.play("block");
-                  if (typeof window.pushHeaderToast === "function") {
-                    window.pushHeaderToast("[✦] Cyber Barrier shattered! Nexus Overseer is vulnerable!", "#00b894");
-                  }
-                } else {
-                  // Emit digital matrix ambient glitch noise
-                  if (Math.random() < 0.3 && window.combatVisuals && window.combatVisuals.particlePool) {
-                    let pAngle = Math.random() * Math.PI * 2;
-                    let orbDist = m.w * 0.75;
-                    let px = cx + Math.cos(pAngle) * orbDist;
-                    let py = cy + Math.sin(pAngle) * orbDist;
-                    window.combatVisuals.particlePool.get(
-                      px,
-                      py,
-                      (Math.random() - 0.5) * 0.8,
-                      (Math.random() - 0.5) * 0.8,
-                      window.randFloat(1.2, 2.5),
-                      "#ff007f",
-                      0.8,
-                      20,
-                      0,
-                      true,
-                      0
-                    );
-                  }
-                  return; // Protected while decoys are active
-                }
-              }
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 110;
-
-                  let ability = m.activeAbility;
-                  if (ability === "slam") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(7, 12);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "nexus_overseer", 3.2);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                      window.damagePlayer(Math.round(m.atk * 1.8), m);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  } else if (ability === "control_glitch") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(5, 8);
-                      window.combatVisuals.spawnParticles(cx, cy, 25, "nexus_overseer", 3.5);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("spell");
-
-                    // Scramble player joystick if caught within 180px
-                    if (dist <= 180) {
-                      p.glitchTimer = 180; // 3.0 seconds (180 frames)
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(p.x, p.y - 12, "[GLITCHED] Inverted Controls!", "#ff007f", true);
-                      }
-                    }
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.7;
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Abilities
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let chosen = Math.random() < 0.5 ? "slam" : "control_glitch";
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-                  m.telegraphTimer = chosen === "control_glitch" ? 60 : 75;
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-      updateGildedVaultKeeper(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              // --- PHASE 2 TRIGGER: TAXATION SIPHON (UNDER 50% HP) ---
-              let bHp = m.hp.valueOf();
-              let bMaxHp = m.maxHp.valueOf();
-              if (bHp < bMaxHp * 0.50 && m.phase === 1) {
-                m.phase = 2;
-                m.actionState = "taxation";
-                m.isStopped = true;
-                m.channelTimer = 240; // 4 seconds (240 frames)
-                m.staggerShield = m.maxHp.mul(0.15); // 15% Max HP stagger barrier
-
-                // Teleport directly to the center of the arena
-                let map = window.activeDungeonMap;
-                let mapW = map ? map.width : 24;
-                let mapH = map ? map.height : 18;
-                let tSize = map ? map.tileSize : 32;
-                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
-                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
-                cx = m.x + m.w / 2;
-                cy = m.y + m.h / 2;
-
-                if (typeof window.spawnFloatingText === "function") {
-                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: TAXATION SIPHON!", "#ffd700");
-                                }
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnParticles(cx, cy, 35, "gold_dungeon", 4.5);
-                                  window.combatVisuals.triggerScreenShake(10, 18);
-                                }
-                                if (window.SoundManager) window.SoundManager.play("spell");
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[!] Gilded Vault Keeper is channeling Taxation! Shatter his shield to protect your Gold!", "#ffd700");
-                }
-              }
-
-              // Processing active Gold Siphon channel
-              if (m.actionState === "taxation") {
-                m.channelTimer--;
-
-                // Siphon 10 Gold per frame from the player's wallet to heal himself (5x healing ratio)
-                let playerGold = BigNum.from(window.playerStats.coins || 0);
-                if (playerGold.gt(0)) {
-                  let siphonAmt = BigNum.from(10);
-                  if (playerGold.lt(siphonAmt)) {
-                    siphonAmt = playerGold;
-                  }
-                  window.playerStats.coins = playerGold.sub(siphonAmt);
-
-                  let healVal = siphonAmt.mul(5);
-                  m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
-
-                  // Visual golden siphon lines
-                  if (m.channelTimer % 3 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
-                    let angle = Math.atan2(cy - p.y, cx - p.x);
-                    window.combatVisuals.particlePool.get(
-                      p.x + window.randFloat(-6, 6),
-                      p.y - 4 + window.randFloat(-6, 6),
-                      Math.cos(angle) * 4.5,
-                      Math.sin(angle) * 4.5,
-                      window.randFloat(1.2, 2.8),
-                      "#ffd700",
-                      0.8,
-                      15,
-                      0,
-                      true,
-                      0
-                    );
-                  }
-                }
-
-                if (m.channelTimer <= 0) {
-                  // Siphon completes
-                  m.actionState = "idle";
-                  m.state = "idle";
-                  m.isStopped = false;
-                  m.attackCooldown = 110;
-                  if (typeof window.pushHeaderToast === "function") {
-                    window.pushHeaderToast("[!] Taxation cycle completed. Vault Keeper has recovered health!", "#e74c3c");
-                  }
-                }
-                return;
-              }
-
-              // Handle Stunned sequence
-              if (m.dazeTimer > 0) {
-                m.dazeTimer--;
-                m.isStopped = true;
-                if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(cx, m.y - 4, 3, "gold_dungeon", 1.2);
-                }
-                return;
-              }
-              m.isStopped = false;
-
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 120;
-
-                  let ability = m.activeAbility;
-                  if (ability === "slam") {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(7, 12);
-                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "gold_dungeon", 3.2);
-                    }
-                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                      window.damagePlayer(Math.round(m.atk * 1.8), m);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-                  } else if (ability === "gold_fall" && m.goldFallTargets) {
-                    if (window.combatVisuals) {
-                      window.combatVisuals.triggerScreenShake(6, 10);
-                    }
-                    if (window.SoundManager) window.SoundManager.play("block");
-
-                    m.goldFallTargets.forEach((target) => {
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnParticles(target.x, target.y, 10, "gold_dungeon", 2.2);
-                      }
-                      if (Math.hypot(p.x - target.x, p.y - target.y) <= 24) {
-                        window.damagePlayer(Math.round(m.atk * 1.25), m);
-                      }
-                    });
-                    m.goldFallTargets = null;
-                  }
-                  m.activeAbility = null;
-                }
-              } else {
-                // Chase player
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.45;
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Abilities
-                if (m.attackCooldown <= 0 && dist < 220) {
-                  let chosen = Math.random() < 0.5 ? "slam" : "gold_fall";
-                  m.state = "telegraphing";
-                  m.actionState = "telegraphing";
-                  m.activeAbility = chosen;
-                  m.telegraphTimer = 75;
-
-                  if (chosen === "gold_fall") {
-                    m.goldFallTargets = [];
-                    for (let i = 0; i < 3; i++) {
-                      let angle = Math.random() * Math.PI * 2;
-                      let spawnDist = window.randFloat(30, 75);
-                      m.goldFallTargets.push({
-                        x: p.x + Math.cos(angle) * spawnDist,
-                        y: p.y + Math.sin(angle) * spawnDist
-                      });
-                    }
-                  }
-
-                  m.targetX = p.x;
-                  m.targetY = p.y;
-                } else if (dist < 32 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 50;
-                  window.damagePlayer(m.atk, m);
-                }
-              }
-            },
-            updateHooktail(m, p, pStats, dist, dx, dy) {
-                    let cx = m.x + m.w / 2;
-                    let cy = m.y + m.h / 2;
-
-                    // --- PHASE 2 TRIGGER: CRITICAL ARENA COLLAPSE (UNDER 50% HP) ---
-                    let bHp = m.hp.valueOf();
-                    let bMaxHp = m.maxHp.valueOf();
-                    if (bHp < bMaxHp * 0.50 && m.phase === 1) {
-                                    m.phase = 2;
-                                    m.attackCooldown = 30;
-                                    if (typeof window.spawnFloatingText === "function") {
-                                      window.spawnFloatingText(cx, m.y - 20, "PHASE 2: ARENA COLLAPSE!", "#ff3300");
-                                    }
-                                    if (window.combatVisuals) {
-                                      window.combatVisuals.triggerScreenShake(15, 30);
-                                      window.combatVisuals.spawnParticles(cx, cy, 40, "prestige_boss", 6.0);
-                                    }
-                                    if (window.SoundManager) window.SoundManager.play("death");
-                                    if (typeof window.pushHeaderToast === "function") {
-                                      window.pushHeaderToast("[!] Hooktail has unleashed Calamity! The ground is collapsing into the void!", "#ff3300");
-                                    }
-                                  }
-
-                    // Periodic Abyssal damage ticks if the player steps over collapsed void tiles
-                    let map = window.activeDungeonMap;
-                    if (map && map.grid) {
-                      let pTileX = Math.floor(p.x / map.tileSize);
-                      let pTileY = Math.floor(p.y / map.tileSize);
-                      if (map.grid[pTileY] && map.grid[pTileY][pTileX] === window.TILE_TYPES.VOID) {
-                        if (window.logicClock % 40 === 0) {
-                          let fallDmg = Math.round(p.maxHp * 0.08); // 8% Max HP per tick in the void
-                          p.hp = Math.max(1, p.hp - fallDmg);
-                          window.spawnFloatingText(p.x, p.y - 15, `-${fallDmg} ABYSS DROWNING`, "#ff3300");
-                          if (window.SoundManager) window.SoundManager.play("hit");
-                        }
-                      }
-                    }
-
-                    if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                      m.telegraphTimer--;
-                      if (m.telegraphTimer <= 0) {
-                        m.state = "idle";
-                        m.actionState = "idle";
-                        m.attackCooldown = 110;
-
-                        let ability = m.activeAbility;
-                        if (ability === "slam") {
-                          if (window.combatVisuals) {
-                            window.combatVisuals.triggerScreenShake(7, 12);
-                            window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "prestige_boss", 3.5);
-                          }
-                          if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
-                            window.damagePlayer(Math.round(m.atk * 1.8), m);
-                          }
-                          if (window.SoundManager) window.SoundManager.play("block");
-                        } else if (ability === "scarlet_fire") {
-                          // Detonate Scarlet Fire Arc breath
-                          if (window.combatVisuals) {
-                            window.combatVisuals.triggerScreenShake(8, 14);
-                            // Spew fire particles
-                            let fAngle = m.facing === -1 ? Math.PI : 0;
-                            for (let k = 0; k < 20; k++) {
-                              let dev = window.randFloat(-0.7, 0.7);
-                              let spAngle = fAngle + dev;
-                              let speed = window.randFloat(3.0, 6.0);
-                              window.combatVisuals.particlePool.get(
-                                cx,
-                                cy,
-                                Math.cos(spAngle) * speed,
-                                Math.sin(spAngle) * speed,
-                                window.randFloat(1.5, 3.8),
-                                "#ff3300",
-                                0.85,
-                                25,
-                                -0.03,
-                                true,
-                                0.05
-                              );
-                            }
-                          }
-                          if (window.SoundManager) window.SoundManager.play("spell_fire");
-
-                          let pAngle = Math.atan2(p.y - cy, p.x - cx);
-                          let faceAngle = m.facing === -1 ? Math.PI : 0;
-                          let angleDiff = Math.abs(Math.atan2(Math.sin(pAngle - faceAngle), Math.cos(pAngle - faceAngle)));
-
-                          if (dist <= 110 && angleDiff <= 0.8) {
-                            window.damagePlayer(Math.round(m.atk * 1.55), m);
-                            if (typeof window.spawnFloatingText === "function") {
-                              window.spawnFloatingText(p.x, p.y - 12, "SCARLET INCINERATION!", "#ff3300");
-                            }
-                          }
-                        } else if (ability === "calamity_slam") {
-                          // Collapse one outer ring of the active floor into the void
-                          if (map && map.grid) {
-                            let collapseRing = m.collapseRing || 0;
-                            let minR = 2 + collapseRing;
-                            let maxR = map.height - 3 - collapseRing;
-                            let minC = 2 + collapseRing;
-                            let maxC = map.width - 3 - collapseRing;
-
-                            if (minR < maxR && minC < maxC) {
-                              for (let cCol = minC; cCol <= maxC; cCol++) {
-                                map.grid[minR][cCol] = window.TILE_TYPES.VOID;
-                                map.grid[maxR][cCol] = window.TILE_TYPES.VOID;
-                              }
-                              for (let rRow = minR; rRow <= maxR; rRow++) {
-                                map.grid[rRow][minC] = window.TILE_TYPES.VOID;
-                                map.grid[rRow][maxC] = window.TILE_TYPES.VOID;
-                              }
-                              m.collapseRing = collapseRing + 1;
-                              map.needsPreRender = true; // FORCE STATIC MAP REDRAW
-
-                              if (window.combatVisuals) {
-                                window.combatVisuals.triggerScreenShake(12, 22);
-                                window.combatVisuals.spawnParticles(cx, cy, 35, "prestige_boss", 4.5);
-                              }
-                              if (window.SoundManager) window.SoundManager.play("death");
-                              if (typeof window.pushHeaderToast === "function") {
-                                window.pushHeaderToast("[!] THE ARENA HAS COLLAPSED! PLAY AREA SHRINKING!", "#ff3300");
-                              }
-                            }
-                          }
-                        }
-                        m.activeAbility = null;
-                      }
-                    } else {
-                      // Chase player
-                      if (dist < 220 && dist > 14) {
-                        m.hopTimer = (m.hopTimer || 0) + 1;
-                        if (m.hopTimer % 30 < 15) {
-                          let speed = m.phase === 2 ? 1.8 : 1.5; // Dragon charges faster in Phase 2
-                          let angle = Math.atan2(dy, dx);
-                          m.x += Math.cos(angle) * speed;
-                          m.y += Math.sin(angle) * speed;
-                        }
-                      }
-
-                      // Trigger Abilities
-                      if (m.attackCooldown <= 0 && dist < 220) {
-                        let pool = ["slam", "scarlet_fire"];
-                        if (m.phase === 2) pool.push("calamity_slam");
-
-                        let chosen = pool[Math.floor(Math.random() * pool.length)];
-                        m.state = "telegraphing";
-                        m.actionState = "telegraphing";
-                        m.activeAbility = chosen;
-                        m.telegraphTimer = chosen === "calamity_slam" ? 85 : chosen === "scarlet_fire" ? 60 : 75;
-                        m.targetX = p.x;
-                        m.targetY = p.y;
-                      } else if (dist < 32 && m.attackCooldown <= 0) {
-                        m.attackCooldown = 50;
-                        window.damagePlayer(m.atk, m);
-                      }
-                    }
-                  },
-
-            renderTelegraph(c, m) {
-              if (!m || !m.activeAbility) return;
-              c.save();
-
-              let progress = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
-              let pulseAlpha = 0.25 + Math.sin(Date.now() / 45) * 0.15;
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
-
-              if (m.activeAbility === "slam") {
-                              let radius = 64;
-                              let isTreant = m.bossKey === "arachnid_treant" || m.visualType === "sprout" || m.visualType === "arachnid_treant";
-                              let isIronVault = m.bossKey === "overlord_iron_vault" || m.visualType === "overlord_iron_vault";
-                              let isCorrosive = m.bossKey === "corrosive_abomination" || m.visualType === "corrosive_abomination";
-
-                              if (isTreant) {
-                                // --- BOSS 1: BIO-LUMINESCENT ROOT SLAM GRID ---
-                                let time = Date.now();
-
-                                // 1. Bio-luminescent Root Boundary Ring
-                                c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
-                                c.lineWidth = 3.0;
-                                c.shadowBlur = 12;
-                                c.shadowColor = "#2ecc71";
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                                c.stroke();
-                                c.shadowBlur = 0;
-
-                                c.strokeStyle = "rgba(163, 253, 131, 0.6)";
-                                c.lineWidth = 1.2;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
-                                c.stroke();
-
-                                // 2. Inner Radial Bio-Spore Filling Disc
-                                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
-                                fillGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.7})`);
-                                fillGrad.addColorStop(0.5, `rgba(46, 204, 113, ${pulseAlpha * 0.4})`);
-                                fillGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
-
-                                c.fillStyle = fillGrad;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                                c.fill();
-
-                                // 3. Bio-Luminescent Root Vine Grid (8 Radial Root Tendrils with Jagged Branches)
-                                c.strokeStyle = `rgba(0, 255, 204, ${0.4 + progress * 0.5})`;
-                                c.lineWidth = 1.8;
-                                c.beginPath();
-                                let radRays = 8;
-                                for (let i = 0; i < radRays; i++) {
-                                  let rayAngle = (i * Math.PI * 2) / radRays + (m.id || 0);
-                                  let endDist = radius * progress;
-                                  let steps = 5;
-                                  let lastX = m.targetX;
-                                  let lastY = m.targetY;
-
-                                  for (let s = 1; s <= steps; s++) {
-                                    let curDist = (endDist * s) / steps;
-                                    let jitter = Math.sin(s * 2.3 + time / 200) * 4;
-                                    let curAngle = rayAngle + jitter * 0.05;
-                                    let nx = m.targetX + Math.cos(curAngle) * curDist;
-                                    let ny = m.targetY + Math.sin(curAngle) * curDist;
-
-                                    c.moveTo(lastX, lastY);
-                                    c.lineTo(nx, ny);
-
-                                    // Lateral root tendril split
-                                    if (s === 3) {
-                                      let branchAngle = curAngle + (i % 2 === 0 ? 0.4 : -0.4);
-                                      let bx = nx + Math.cos(branchAngle) * 12 * progress;
-                                      let by = ny + Math.sin(branchAngle) * 12 * progress;
-                                      c.moveTo(nx, ny);
-                                      c.lineTo(bx, by);
-                                    }
-
-                                    lastX = nx;
-                                    lastY = ny;
-                                  }
-                                }
-                                c.stroke();
-
-                                // 4. Bio-luminescent Spore Nodes at Intersection Joints
-                                c.fillStyle = "#a3fd83";
-                                for (let i = 0; i < radRays; i++) {
-                                  let rayAngle = (i * Math.PI * 2) / radRays + (m.id || 0);
-                                  let nodeDist = radius * progress * 0.6;
-                                  let nx = m.targetX + Math.cos(rayAngle) * nodeDist;
-                                  let ny = m.targetY + Math.sin(rayAngle) * nodeDist;
-                                  c.beginPath();
-                                  c.arc(nx, ny, 2.2, 0, Math.PI * 2);
-                                  c.fill();
-                                }
-                              } else if (isIronVault) {
-                                // --- BOSS 3: MOLTEN STEEL SLAM & FISSURE GRID ---
-                                let time = Date.now();
-
-                                // 1. Molten Iron Outer Boundary
-                                c.strokeStyle = `rgba(249, 115, 22, ${0.6 + pulseAlpha * 0.4})`;
-                                c.lineWidth = 3.0;
-                                c.shadowBlur = 12;
-                                c.shadowColor = "#f97316";
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                                c.stroke();
-                                c.shadowBlur = 0;
-
-                                c.strokeStyle = "rgba(254, 240, 138, 0.7)";
-                                c.lineWidth = 1.2;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
-                                c.stroke();
-
-                                // 2. Glowing Lava Core Disc
-                                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
-                                fillGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.75})`);
-                                fillGrad.addColorStop(0.5, `rgba(249, 115, 22, ${pulseAlpha * 0.45})`);
-                                fillGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
-
-                                c.fillStyle = fillGrad;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                                c.fill();
-
-                                // 3. Crosshair Lava Fissures (4 Cardinal Fractures)
-                                c.strokeStyle = `rgba(253, 186, 116, ${0.5 + progress * 0.5})`;
-                                c.lineWidth = 2.0;
-                                c.beginPath();
-                                for (let i = 0; i < 4; i++) {
-                                  let ang = (i * Math.PI) / 2;
-                                  let endDist = radius * progress;
-                                  c.moveTo(m.targetX, m.targetY);
-                                  c.lineTo(m.targetX + Math.cos(ang) * endDist, m.targetY + Math.sin(ang) * endDist);
-                                }
-                                c.stroke();
-
-                                // 4. Heat Motes / Ember Sparks
-                                c.fillStyle = "#fef08a";
-                                for (let i = 0; i < 4; i++) {
-                                  let ang = (i * Math.PI) / 2 + (time / 1000);
-                                  let sparkDist = radius * progress * 0.7;
-                                  let sx = m.targetX + Math.cos(ang) * sparkDist;
-                                  let sy = m.targetY + Math.sin(ang) * sparkDist;
-                                  c.beginPath();
-                                  c.arc(sx, sy, 1.8, 0, Math.PI * 2);
-                                  c.fill();
-                                }
-                              } else if (isCorrosive) {
-                                // --- BOSS 4: CAUSTIC SLUDGE SLAM ---
-                                let time = Date.now();
-
-                                // 1. Toxic Bio-Green Outer Ring
-                                c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
-                                c.lineWidth = 3.0;
-                                c.shadowBlur = 12;
-                                c.shadowColor = "#2ecc71";
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                                c.stroke();
-                                c.shadowBlur = 0;
-
-                                c.strokeStyle = "rgba(163, 253, 131, 0.7)";
-                                c.lineWidth = 1.2;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
-                                c.stroke();
-
-                                // 2. Bubbling Acid Pool Gradient Fill
-                                let acidGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
-                                acidGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.7})`);
-                                acidGrad.addColorStop(0.5, `rgba(46, 204, 113, ${pulseAlpha * 0.4})`);
-                                acidGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
-
-                                c.fillStyle = acidGrad;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                                c.fill();
-
-                                // 3. Toxic Splatter Lines
-                                c.strokeStyle = `rgba(163, 253, 131, ${0.4 + progress * 0.5})`;
-                                c.lineWidth = 1.5;
-                                c.beginPath();
-                                for (let i = 0; i < 6; i++) {
-                                  let ang = (i * Math.PI * 2) / 6 + (time / 1200);
-                                  let endDist = radius * progress;
-                                  c.moveTo(m.targetX, m.targetY);
-                                  c.lineTo(m.targetX + Math.cos(ang) * endDist, m.targetY + Math.sin(ang) * endDist);
-                                }
-                                c.stroke();
-                              } else {
-                                // --- STANDARD SLAM INDICATOR ---
-                                c.strokeStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
-                                c.lineWidth = 3.0;
-                                c.shadowBlur = 10;
-                                c.shadowColor = "#e74c3c";
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                                c.stroke();
-                                c.shadowBlur = 0;
-
-                                c.strokeStyle = "rgba(255, 255, 255, 0.4)";
-                                c.lineWidth = 1.0;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius + 4, 0, Math.PI * 2);
-                                c.stroke();
-
-                                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
-                                fillGrad.addColorStop(0, `rgba(255, 242, 0, ${pulseAlpha * 0.6})`);
-                                fillGrad.addColorStop(0.6, `rgba(231, 76, 60, ${pulseAlpha * 0.4})`);
-                                fillGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
-
-                                c.fillStyle = fillGrad;
-                                c.beginPath();
-                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                                c.fill();
-
-                                c.strokeStyle = `rgba(231, 76, 60, ${0.15 + progress * 0.45})`;
-                                c.lineWidth = 1.2;
-                                c.beginPath();
-                                for (let i = 0; i < 6; i++) {
-                                  let angle = (i * Math.PI * 2) / 6 + (m.id || 0);
-                                  let startRad = radius * 0.15;
-                                  let endRad = radius * progress;
-                                  let sx = m.targetX + Math.cos(angle) * startRad;
-                                  let sy = m.targetY + Math.sin(angle) * startRad;
-                                  c.moveTo(sx, sy);
-
-                                  let steps = 4;
-                                  for (let s = 1; s <= steps; s++) {
-                                    let segRad = startRad + (endRad - startRad) * (s / steps);
-                                    let jitterAngle = angle + (Math.sin(s * 1.5) * 0.15);
-                                    let jx = m.targetX + Math.cos(jitterAngle) * segRad;
-                                    let jy = m.targetY + Math.sin(jitterAngle) * segRad;
-                                    c.lineTo(jx, jy);
-                                  }
-                                }
-                                c.stroke();
-                              }
-
-                            } else if (m.activeAbility === "charge") {
-                // --- HIGH FIDELITY CHARGE INDICATOR ---
-                let dx = m.targetX - cx;
-                let dy = m.targetY - cy;
-                let dist = Math.hypot(dx, dy);
-                if (dist > 0) {
-                  let nx = dx / dist;
-                  let ny = dy / dist;
-                  let trackW = 18;
-
-                  // Translucent hazard stripe path backing
-                  c.fillStyle = `rgba(231, 76, 60, 0.12)`;
-                  c.save();
-                  c.translate(cx, cy);
-                  c.rotate(Math.atan2(dy, dx));
-                  c.fillRect(0, -trackW / 2, dist, trackW);
-
-                  // Glowing border rails
-                  c.strokeStyle = `rgba(231, 76, 60, ${0.4 + pulseAlpha})`;
-                  c.lineWidth = 2.0;
-                  c.beginPath();
-                  c.moveTo(0, -trackW / 2);
-                  c.lineTo(dist, -trackW / 2);
-                  c.moveTo(0, trackW / 2);
-                  c.lineTo(dist, trackW / 2);
-                  c.stroke();
-
-                  // Sliding Chevron speed indicators
-                  let speed = 6;
-                  let slideOffset = (Date.now() / 15) % 60;
-                  c.strokeStyle = "#ffffff";
-                  c.lineWidth = 2.2;
-                  c.lineCap = "round";
-                  c.lineJoin = "round";
-
-                  for (let d = slideOffset; d < dist; d += 60) {
-                    c.beginPath();
-                    c.moveTo(d - 6, -5);
-                    c.lineTo(d, 0);
-                    c.lineTo(d - 6, 5);
-                    c.stroke();
-                  }
-                  c.restore();
-                }
-
-              } else if (m.activeAbility === "nova") {
-                // --- HIGH FIDELITY NOVA INDICATOR ---
-                c.strokeStyle = `rgba(230, 126, 34, ${0.35 + pulseAlpha * 0.4})`;
-                c.lineWidth = 2.5;
-
-                // Accretion rings expansion effect
-                c.save();
-                c.strokeStyle = `rgba(230, 126, 34, ${pulseAlpha})`;
-                c.shadowBlur = 8;
-                c.shadowColor = "#e67e22";
-                c.beginPath();
-                c.arc(cx, cy, 120 * progress, 0, Math.PI * 2);
-                c.stroke();
-                c.restore();
-
-                // Detailed warning rays radiating outwards
-                for (let i = 0; i < 8; i++) {
-                              let angle = (i * Math.PI * 2) / 8;
-                              let cos = Math.cos(angle);
-                              let sin = Math.sin(angle);
-
-                              // Multi-layered glowing laser guidelines
-                              let rayGrad = c.createLinearGradient(cx, cy, cx + cos * 120, cy + sin * 120);
-                              rayGrad.addColorStop(0, "rgba(255, 242, 0, 0.85)");
-                              rayGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.4)");
-                              rayGrad.addColorStop(1, "rgba(230, 126, 34, 0)");
-
-                              c.strokeStyle = rayGrad;
-                                                            c.lineWidth = 2.0;
-                                                            c.beginPath();
-                                                            c.moveTo(cx + cos * 14, cy + sin * 14);
-                                                            c.lineTo(cx + cos * 120, cy + sin * 120);
-                                                            c.stroke();
-                                                          }
-                                                        } else if (m.activeAbility === "root_snare") {
-                                                                        // --- BOSS 1: BIO-LUMINESCENT CREEPING SNARE WEB & ROOT GRID ---
-                                                                        let radius = 75;
-                                                                        let time = Date.now();
-
-                                                                        // 1. Connecting Vine Tether from Treant Center to Target Location
-                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.4 + pulseAlpha * 0.3})`;
-                                                                        c.lineWidth = 2.0;
-                                                                        c.setLineDash([6, 4]);
-                                                                        c.beginPath();
-                                                                        c.moveTo(cx, cy);
-                                                                        c.lineTo(m.targetX, m.targetY);
-                                                                        c.stroke();
-                                                                        c.setLineDash([]);
-
-                                                                        // 2. Outer Bio-Luminescent Web Boundary Ring
-                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
-                                                                        c.lineWidth = 3.0;
-                                                                        c.shadowBlur = 12;
-                                                                        c.shadowColor = "#2ecc71";
-                                                                        c.beginPath();
-                                                                        c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                                                                        c.stroke();
-                                                                        c.shadowBlur = 0;
-
-                                                                        c.strokeStyle = "rgba(0, 255, 204, 0.6)";
-                                                                        c.lineWidth = 1.2;
-                                                                        c.beginPath();
-                                                                        c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
-                                                                        c.stroke();
-
-                                                                        // 3. Growing Inner Bio-Spore Web Fill
-                                                                        let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
-                                                                        fillGrad.addColorStop(0, `rgba(0, 255, 204, ${pulseAlpha * 0.5})`);
-                                                                        fillGrad.addColorStop(0.5, `rgba(39, 174, 96, ${pulseAlpha * 0.35})`);
-                                                                        fillGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
-
-                                                                        c.fillStyle = fillGrad;
-                                                                        c.beginPath();
-                                                                        c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                                                                        c.fill();
-
-                                                                        // 4. Concentric Arachnid Web Rings
-                                                                        let webRings = 4;
-                                                                        c.strokeStyle = `rgba(0, 255, 204, ${0.3 + progress * 0.4})`;
-                                                                        c.lineWidth = 1.4;
-                                                                        for (let r = 1; r <= webRings; r++) {
-                                                                          let ringRad = (radius * progress * r) / webRings;
-                                                                          if (ringRad > 2) {
-                                                                            c.beginPath();
-                                                                            c.arc(m.targetX, m.targetY, ringRad, 0, Math.PI * 2);
-                                                                            c.stroke();
-                                                                          }
-                                                                        }
-
-                                                                        // 5. Radial Root Vine Strands & Bio-Luminescent Nodes
-                                                                        let rays = 8;
-                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.5 + progress * 0.4})`;
-                                                                        c.lineWidth = 1.8;
-                                                                        c.beginPath();
-                                                                        for (let i = 0; i < rays; i++) {
-                                                                          let angle = (i * Math.PI * 2) / rays + (time / 2000);
-                                                                          let endR = radius * progress;
-                                                                          c.moveTo(m.targetX, m.targetY);
-                                                                          c.lineTo(m.targetX + Math.cos(angle) * endR, m.targetY + Math.sin(angle) * endR);
-                                                                        }
-                                                                        c.stroke();
-
-                                                                        // Bio-Luminescent Nodes at Web Intersections
-                                                                        c.fillStyle = "#00ffcc";
-                                                                        for (let r = 1; r <= webRings; r++) {
-                                                                          let ringRad = (radius * progress * r) / webRings;
-                                                                          if (ringRad > 4) {
-                                                                            for (let i = 0; i < rays; i++) {
-                                                                              let angle = (i * Math.PI * 2) / rays + (time / 2000);
-                                                                              let nx = m.targetX + Math.cos(angle) * ringRad;
-                                                                              let ny = m.targetY + Math.sin(angle) * ringRad;
-                                                                              c.beginPath();
-                                                                              c.arc(nx, ny, 1.8, 0, Math.PI * 2);
-                                                                              c.fill();
-                                                                            }
-                                                                          }
-                                                                        }
-
-                                                                        // 6. Perimeter Thorn Teeth
-                                                                        let thorns = 8;
-                                                                        c.fillStyle = `rgba(39, 174, 96, ${0.5 + progress * 0.5})`;
-                                                                        c.strokeStyle = "#000000";
-                                                                        c.lineWidth = 1.0;
-                                                                        for (let i = 0; i < thorns; i++) {
-                                                                          let ta = (i * Math.PI * 2) / thorns + (time / 800);
-                                                                          let outX = m.targetX + Math.cos(ta) * (radius + 6);
-                                                                          let outY = m.targetY + Math.sin(ta) * (radius + 6);
-                                                                          let side1X = m.targetX + Math.cos(ta - 0.15) * (radius - 2);
-                                                                          let side1Y = m.targetY + Math.sin(ta - 0.15) * (radius - 2);
-                                                                          let side2X = m.targetX + Math.cos(ta + 0.15) * (radius - 2);
-                                                                          let side2Y = m.targetY + Math.sin(ta + 0.15) * (radius - 2);
-
-                                                                          c.beginPath();
-                                                                          c.moveTo(side1X, side1Y);
-                                                                          c.lineTo(outX, outY);
-                                                                          c.lineTo(side2X, side2Y);
-                                                                          c.closePath();
-                                                                          c.fill();
-                                                                          c.stroke();
-                                                                        }
-                                                                      } else if (m.activeAbility === "magnetic_pull") {
-                                                                                                          // --- BOSS 2: SAPPHIRE MAGNETIC VORTEX ---
-                                                                                                          let time = Date.now();
-                                                                                                          let maxRadius = 140;
-
-                                                                                                          // 1. Central Impact Hazard Zone
-                                                                                                          let coreGrad = c.createRadialGradient(cx, cy, 2, cx, cy, 70);
-                                                                                                          coreGrad.addColorStop(0, `rgba(0, 210, 255, ${pulseAlpha * 0.7})`);
-                                                                                                          coreGrad.addColorStop(0.5, `rgba(56, 189, 248, ${pulseAlpha * 0.35})`);
-                                                                                                          coreGrad.addColorStop(1, "rgba(5, 12, 24, 0)");
-
-                                                                                                          c.fillStyle = coreGrad;
-                                                                                                          c.beginPath();
-                                                                                                          c.arc(cx, cy, 70, 0, Math.PI * 2);
-                                                                                                          c.fill();
-
-                                                                                                          c.strokeStyle = `rgba(0, 210, 255, ${0.5 + pulseAlpha * 0.4})`;
-                                                                                                          c.lineWidth = 2.0;
-                                                                                                          c.shadowBlur = 10;
-                                                                                                          c.shadowColor = "#00d2ff";
-                                                                                                          c.beginPath();
-                                                                                                          c.arc(cx, cy, 70, 0, Math.PI * 2);
-                                                                                                          c.stroke();
-                                                                                                          c.shadowBlur = 0;
-
-                                                                                                          // 2. Contracting Spiral Field Rings
-                                                                                                          let ringCount = 4;
-                                                                                                          c.lineWidth = 1.6;
-                                                                                                          for (let i = 0; i < ringCount; i++) {
-                                                                                                            let rProgress = (progress + i / ringCount) % 1.0;
-                                                                                                            let currentR = maxRadius * (1.0 - rProgress);
-
-                                                                                                            c.strokeStyle = `rgba(0, 210, 255, ${(1.0 - rProgress) * (0.4 + pulseAlpha * 0.4)})`;
-                                                                                                            c.beginPath();
-                                                                                                            c.arc(cx, cy, currentR, 0, Math.PI * 2);
-                                                                                                            c.stroke();
-                                                                                                          }
-
-                                                                                                          // 3. Rotating Magnetic Field Vector Spokes
-                                                                                                          let spokes = 6;
-                                                                                                          c.strokeStyle = `rgba(56, 189, 248, ${0.25 + pulseAlpha * 0.25})`;
-                                                                                                          c.lineWidth = 1.2;
-                                                                                                          c.save();
-                                                                                                          c.translate(cx, cy);
-                                                                                                          c.rotate(time / 300);
-                                                                                                          for (let s = 0; s < spokes; s++) {
-                                                                                                            let ang = (s * Math.PI * 2) / spokes;
-                                                                                                            c.beginPath();
-                                                                                                            c.moveTo(Math.cos(ang) * 15, Math.sin(ang) * 15);
-                                                                                                            c.lineTo(Math.cos(ang) * maxRadius, Math.sin(ang) * maxRadius);
-                                                                                                            c.stroke();
-                                                                                                          }
-                                                                                                          c.restore();
-
-                                                                                                        } else if (m.activeAbility === "boomerang_shield") {
-                                                                                                          // --- BOSS 2: SAPPHIRE BOOMERANG TRAJECTORY ---
-                                                                                                          let time = Date.now();
-                                                                                                          c.strokeStyle = `rgba(0, 210, 255, ${0.6 + pulseAlpha * 0.4})`;
-                                                                                                          c.lineWidth = 2.2;
-                                                                                                          c.shadowBlur = 10;
-                                                                                                          c.shadowColor = "#00d2ff";
-
-                                                                                                          // Target Reticle
-                                                                                                          let reticleR = 22 + Math.sin(time / 100) * 3;
-                                                                                                          c.beginPath();
-                                                                                                          c.arc(m.targetX, m.targetY, reticleR, 0, Math.PI * 2);
-                                                                                                          c.stroke();
-                                                                                                          c.shadowBlur = 0;
-
-                                                                                                          // Dual Trajectory Dotted Guidelines
-                                                                                                          let angleToPlayer = Math.atan2(m.targetY - cy, m.targetX - cx);
-                                                                                                          c.strokeStyle = "rgba(56, 189, 248, 0.4)";
-                                                                                                          c.lineWidth = 1.2;
-                                                                                                          c.setLineDash([5, 4]);
-
-                                                                                                          [-0.25, 0.25].forEach((offset) => {
-                                                                                                            let arcAng = angleToPlayer + offset;
-                                                                                                            let tx = cx + Math.cos(arcAng) * 160;
-                                                                                                            let ty = cy + Math.sin(arcAng) * 160;
-                                                                                                            c.beginPath();
-                                                                                                            c.moveTo(cx, cy);
-                                                                                                            c.lineTo(tx, ty);
-                                                                                                            c.stroke();
-                                                                                                          });
-                                                                                                          c.setLineDash([]);
-
-                                                                                                        } else if (m.activeAbility === "shield_bash" && m.shieldAngle !== undefined) {
-                                                                                                          // --- BOSS 2: DIRECTIONAL TOWER SHIELD BASH CONE ---
-                                                                                                          let radius = 68;
-                                                                                                          let arcWidth = 0.55; // Radians to each side of shieldAngle
-
-                                                                                                          // 1. Layered Sector Warning Cone
-                                                                                                          let coneGrad = c.createRadialGradient(cx, cy, 2, cx, cy, radius);
-                                                                                                          coneGrad.addColorStop(0, `rgba(0, 210, 255, ${pulseAlpha * 0.6})`);
-                                                                                                          coneGrad.addColorStop(0.7, `rgba(231, 76, 60, ${pulseAlpha * 0.5})`);
-                                                                                                          coneGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
-
-                                                                                                          c.fillStyle = coneGrad;
-                                                                                                          c.beginPath();
-                                                                                                          c.moveTo(cx, cy);
-                                                                                                          c.arc(cx, cy, radius, m.shieldAngle - arcWidth, m.shieldAngle + arcWidth);
-                                                                                                          c.closePath();
-                                                                                                          c.fill();
-
-                                                                                                          // 2. Heavy Outlined Arc Boundaries
-                                                                                                          c.strokeStyle = "#e74c3c";
-                                                                                                          c.lineWidth = 2.5;
-                                                                                                          c.shadowBlur = 10;
-                                                                                                          c.shadowColor = "#e74c3c";
-                                                                                                          c.beginPath();
-                                                                                                          c.moveTo(cx, cy);
-                                                                                                          c.arc(cx, cy, radius, m.shieldAngle - arcWidth, m.shieldAngle + arcWidth);
-                                                                                                          c.closePath();
-                                                                                                          c.stroke();
-                                                                                                          c.shadowBlur = 0;
-
-                                                                                                          // 3. Sweeping Shockwave Arc expanding with progress
-                                                                                                          let waveR = radius * progress;
-                                                                                                          c.strokeStyle = "#ffffff";
-                                                                                                          c.lineWidth = 2.0;
-                                                                                                          c.beginPath();
-                                                                                                          c.arc(cx, cy, waveR, m.shieldAngle - arcWidth, m.shieldAngle + arcWidth);
-                                                                                                          c.stroke();
-
-                                                                                                          // 4. Sector Directional Rib Lines
-                                                                                                          c.strokeStyle = "rgba(0, 210, 255, 0.4)";
-                                                                                                          c.lineWidth = 1.0;
-                                                                                                          [-0.35, 0, 0.35].forEach((angOffset) => {
-                                                                                                            let subAng = m.shieldAngle + angOffset;
-                                                                                                            c.beginPath();
-                                                                                                            c.moveTo(cx, cy);
-                                                                                                            c.lineTo(cx + Math.cos(subAng) * radius, cy + Math.sin(subAng) * radius);
-                                                                                                            c.stroke();
-                                                                                                          });
-                                                                                                        } else if (m.activeAbility === "magma_vents" && m.ventSpawnLocations) {
-                                                                                                                                                                    // --- BOSS 3: MAGMA VENT FISSURE TARGETS ---
-                                                                                                                                                                    let time = Date.now();
-                                                                                                                                                                    let ventRadius = 18;
-
-                                                                                                                                                                    m.ventSpawnLocations.forEach((loc) => {
-                                                                                                                                                                      // 1. Dual Molten Warning Rings
-                                                                                                                                                                      c.strokeStyle = `rgba(249, 115, 22, ${0.6 + pulseAlpha * 0.4})`;
-                                                                                                                                                                      c.lineWidth = 2.2;
-                                                                                                                                                                      c.shadowBlur = 10;
-                                                                                                                                                                      c.shadowColor = "#f97316";
-                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                      c.arc(loc.x, loc.y, ventRadius + pulseAlpha * 3, 0, Math.PI * 2);
-                                                                                                                                                                      c.stroke();
-                                                                                                                                                                      c.shadowBlur = 0;
-
-                                                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.8)";
-                                                                                                                                                                      c.lineWidth = 1.0;
-                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                      c.arc(loc.x, loc.y, ventRadius + 4, 0, Math.PI * 2);
-                                                                                                                                                                      c.stroke();
-
-                                                                                                                                                                      // 2. Bubbling Lava Core Fill
-                                                                                                                                                                      let lavaGrad = c.createRadialGradient(loc.x, loc.y, 1, loc.x, loc.y, ventRadius);
-                                                                                                                                                                      lavaGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.8})`);
-                                                                                                                                                                      lavaGrad.addColorStop(0.6, `rgba(249, 115, 22, ${pulseAlpha * 0.4})`);
-                                                                                                                                                                      lavaGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
-
-                                                                                                                                                                      c.fillStyle = lavaGrad;
-                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                      c.arc(loc.x, loc.y, ventRadius * progress, 0, Math.PI * 2);
-                                                                                                                                                                      c.fill();
-
-                                                                                                                                                                      // 3. Crosshair Fissure Ticks
-                                                                                                                                                                      c.strokeStyle = `rgba(253, 186, 116, ${0.4 + progress * 0.5})`;
-                                                                                                                                                                      c.lineWidth = 1.5;
-                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                      c.moveTo(loc.x - ventRadius - 4, loc.y);
-                                                                                                                                                                      c.lineTo(loc.x + ventRadius + 4, loc.y);
-                                                                                                                                                                      c.moveTo(loc.x, loc.y - ventRadius - 4);
-                                                                                                                                                                      c.lineTo(loc.x, loc.y + ventRadius + 4);
-                                                                                                                                                                      c.stroke();
-                                                                                                                                                                    });
-                                                                                                                                                                  } else if (m.activeAbility === "dilation_field") {
-                                                                                                                                                                                                                                      // --- BOSS 6: ROMAN NUMERAL CLOCKWORK DILATION FIELD & DIAL SWEEPS ---
-                                                                                                                                                                                                                                      let radius = 42;
-                                                                                                                                                                                                                                      let time = Date.now();
-
-                                                                                                                                                                                                                                      // 1. Outer Brass Gear Teeth Perimeter
-                                                                                                                                                                                                                                      c.save();
-                                                                                                                                                                                                                                      c.translate(m.targetX, m.targetY);
-                                                                                                                                                                                                                                      c.rotate(time / 1200);
-
-                                                                                                                                                                                                                                      c.fillStyle = `rgba(212, 175, 55, ${0.4 + pulseAlpha * 0.3})`;
-                                                                                                                                                                                                                                      c.strokeStyle = "#ffd700";
-                                                                                                                                                                                                                                      c.lineWidth = 1.0;
-                                                                                                                                                                                                                                      let teeth = 12;
-                                                                                                                                                                                                                                      for (let i = 0; i < teeth; i++) {
-                                                                                                                                                                                                                                        let tAng = (i * Math.PI * 2) / teeth;
-                                                                                                                                                                                                                                        c.save();
-                                                                                                                                                                                                                                        c.rotate(tAng);
-                                                                                                                                                                                                                                        c.fillRect(-2, -radius - 3, 4, 3);
-                                                                                                                                                                                                                                        c.restore();
-                                                                                                                                                                                                                                      }
-                                                                                                                                                                                                                                      c.restore();
-
-                                                                                                                                                                                                                                      // 2. Outer Pulsing Gold Dial Ring
-                                                                                                                                                                                                                                      c.strokeStyle = `rgba(241, 196, 15, ${0.7 + pulseAlpha * 0.3})`;
-                                                                                                                                                                                                                                      c.lineWidth = 2.5;
-                                                                                                                                                                                                                                      c.shadowBlur = 10;
-                                                                                                                                                                                                                                      c.shadowColor = "#ffd700";
-                                                                                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                                                                                      c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                                                                                                                                                                                                                                      c.stroke();
-                                                                                                                                                                                                                                      c.shadowBlur = 0;
-
-                                                                                                                                                                                                                                      // 3. Growing Concentric Warning Fill Disc
-                                                                                                                                                                                                                                      let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
-                                                                                                                                                                                                                                      fillGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.7})`);
-                                                                                                                                                                                                                                      fillGrad.addColorStop(0.5, `rgba(212, 175, 55, ${pulseAlpha * 0.4})`);
-                                                                                                                                                                                                                                      fillGrad.addColorStop(1, "rgba(120, 53, 15, 0)");
-
-                                                                                                                                                                                                                                      c.fillStyle = fillGrad;
-                                                                                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                                                                                      c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                                                                                                                                                                                                                                      c.fill();
-
-                                                                                                                                                                                                                                      // 4. 12 Clock Dial Hour Ticks (XII, III, VI, IX)
-                                                                                                                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.8)";
-                                                                                                                                                                                                                                      c.lineWidth = 1.2;
-                                                                                                                                                                                                                                      for (let i = 0; i < 12; i++) {
-                                                                                                                                                                                                                                        let tickAng = (i * Math.PI * 2) / 12;
-                                                                                                                                                                                                                                        let isMajor = i % 3 === 0;
-                                                                                                                                                                                                                                        let innerR = isMajor ? radius - 8 : radius - 4;
-                                                                                                                                                                                                                                        c.beginPath();
-                                                                                                                                                                                                                                        c.moveTo(m.targetX + Math.cos(tickAng) * innerR, m.targetY + Math.sin(tickAng) * innerR);
-                                                                                                                                                                                                                                        c.lineTo(m.targetX + Math.cos(tickAng) * radius, m.targetY + Math.sin(tickAng) * radius);
-                                                                                                                                                                                                                                        c.stroke();
-                                                                                                                                                                                                                                      }
-
-                                                                                                                                                                                                                                      // 5. Sweeping Clock Hand Line (0 to 2*PI in direction of progress)
-                                                                                                                                                                                                                                      let handAng = -Math.PI / 2 + progress * Math.PI * 2;
-                                                                                                                                                                                                                                      c.strokeStyle = "#ffffff";
-                                                                                                                                                                                                                                      c.lineWidth = 2.0;
-                                                                                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                                                                                      c.moveTo(m.targetX, m.targetY);
-                                                                                                                                                                                                                                      c.lineTo(m.targetX + Math.cos(handAng) * (radius - 3), m.targetY + Math.sin(handAng) * (radius - 3));
-                                                                                                                                                                                                                                      c.stroke();
-
-                                                                                                                                                                                                                                      c.fillStyle = "#ffd700";
-                                                                                                                                                                                                                                      c.beginPath();
-                                                                                                                                                                                                                                      c.arc(m.targetX, m.targetY, 2.5, 0, Math.PI * 2);
-                                                                                                                                                                                                                                      c.fill();
-                                                                                                                                                                                                                                    } else if (m.activeAbility === "control_glitch") {
-                                                                            // --- HIGH FIDELITY CONTROL GLITCH GRID ---
-                                                                            let radius = 180;
-                                                                            let time = Date.now();
-
-                                                                            // Outer pulsing digital wireframe boundary
-                                                                            c.strokeStyle = `rgba(255, 0, 127, ${pulseAlpha})`;
-                                                                            c.lineWidth = 2.5;
-                                                                            c.shadowBlur = 10;
-                                                                            c.shadowColor = "#ff007f";
-                                                                            c.beginPath();
-                                                                            c.arc(cx, cy, radius, 0, Math.PI * 2);
-                                                                            c.stroke();
-                                                                            c.shadowBlur = 0;
-
-                                                                            // Rotating cybernetic grid guidelines
-                                                                            c.strokeStyle = "rgba(0, 240, 255, 0.25)";
-                                                                            c.lineWidth = 1.0;
-                                                                            c.save();
-                                                                            c.translate(cx, cy);
-                                                                            c.rotate(time / 500);
-
-                                                                            // Draw horizontal and vertical grid intersection guides
-                                                                            for (let d = -radius + 30; d < radius; d += 30) {
-                                                                              if (Math.abs(d) >= radius) continue;
-                                                                              let chord = Math.sqrt(radius * radius - d * d);
-                                                                              c.beginPath();
-                                                                              c.moveTo(-chord, d);
-                                                                              c.lineTo(chord, d);
-                                                                              c.moveTo(d, -chord);
-                                                                              c.lineTo(d, chord);
-                                                                              c.stroke();
-                                                                            }
-                                                                            c.restore();
-
-                                                                            // Inner digital core warning
-                                                                            c.fillStyle = `rgba(255, 0, 127, ${pulseAlpha * 0.15})`;
-                                                                            c.beginPath();
-                                                                            c.arc(cx, cy, radius, 0, Math.PI * 2);
-                                                                            c.fill();
-                                                                          } else if (m.activeAbility === "gold_fall" && m.goldFallTargets) {
-                                                                            // --- HIGH FIDELITY GOLD FALL PLATES ---
-                                                                            m.goldFallTargets.forEach((target) => {
-                                                                              c.strokeStyle = `rgba(241, 196, 15, ${pulseAlpha})`;
-                                                                              c.lineWidth = 2.0;
-                                                                              c.shadowBlur = 8;
-                                                                              c.shadowColor = "#ffd700";
-                                                                              c.beginPath();
-                                                                              c.arc(target.x, target.y, 20 + pulseAlpha * 3, 0, Math.PI * 2);
-                                                                              c.stroke();
-                                                                              c.shadowBlur = 0;
-
-                                                                              c.fillStyle = `rgba(181, 135, 0, ${pulseAlpha * 0.22})`;
-                                                                              c.beginPath();
-                                                                              c.arc(target.x, target.y, 20 * progress, 0, Math.PI * 2);
-                                                                              c.fill();
-                                                                            });
-                                                                          } else if (m.activeAbility === "scarlet_fire") {
-                                                                                                                                      // --- BOSS 7: SCARLET DRAGON FIRE BREATH CONE ---
-                                                                                                                                      let radius = 115;
-                                                                                                                                      let faceAngle = m.facing === -1 ? Math.PI : 0;
-                                                                                                                                      let coneWidth = 0.85;
-
-                                                                                                                                      c.save();
-
-                                                                                                                                      // 1. Multi-Stop Flame Gradient Fill
-                                                                                                                                      let fireGrad = c.createRadialGradient(cx, cy, 2, cx, cy, radius);
-                                                                                                                                      fireGrad.addColorStop(0, `rgba(255, 255, 255, ${pulseAlpha * 0.85})`);
-                                                                                                                                      fireGrad.addColorStop(0.3, `rgba(254, 240, 138, ${pulseAlpha * 0.7})`);
-                                                                                                                                      fireGrad.addColorStop(0.7, `rgba(255, 85, 0, ${pulseAlpha * 0.5})`);
-                                                                                                                                      fireGrad.addColorStop(1, "rgba(150, 0, 24, 0)");
-
-                                                                                                                                      c.fillStyle = fireGrad;
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.moveTo(cx, cy);
-                                                                                                                                      c.arc(cx, cy, radius * progress, faceAngle - coneWidth, faceAngle + coneWidth);
-                                                                                                                                      c.closePath();
-                                                                                                                                      c.fill();
-
-                                                                                                                                      // 2. Outer Dragon Fire Boundary Contour
-                                                                                                                                      c.strokeStyle = "#ff3300";
-                                                                                                                                      c.lineWidth = 2.5;
-                                                                                                                                      c.shadowBlur = 12;
-                                                                                                                                      c.shadowColor = "#ff3300";
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.moveTo(cx, cy);
-                                                                                                                                      c.arc(cx, cy, radius, faceAngle - coneWidth, faceAngle + coneWidth);
-                                                                                                                                      c.closePath();
-                                                                                                                                      c.stroke();
-                                                                                                                                      c.shadowBlur = 0;
-
-                                                                                                                                      // 3. Advancing Fire Wavefront Arc
-                                                                                                                                      let waveR = radius * progress;
-                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.9)";
-                                                                                                                                      c.lineWidth = 2.0;
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.arc(cx, cy, waveR, faceAngle - coneWidth, faceAngle + coneWidth);
-                                                                                                                                      c.stroke();
-
-                                                                                                                                      // 4. Radial Flame Jet Guidelines
-                                                                                                                                      c.strokeStyle = `rgba(255, 85, 0, ${0.4 + progress * 0.4})`;
-                                                                                                                                      c.lineWidth = 1.2;
-                                                                                                                                      let rays = 5;
-                                                                                                                                      for (let r = 0; r < rays; r++) {
-                                                                                                                                        let rayAng = faceAngle - coneWidth + (r * (coneWidth * 2)) / (rays - 1);
-                                                                                                                                        c.beginPath();
-                                                                                                                                        c.moveTo(cx, cy);
-                                                                                                                                        c.lineTo(cx + Math.cos(rayAng) * radius, cy + Math.sin(rayAng) * radius);
-                                                                                                                                        c.stroke();
-                                                                                                                                      }
-
-                                                                                                                                      c.restore();
-
-                                                                                                                                    } else if (m.activeAbility === "calamity_slam") {
-                                                                                                                                      // --- BOSS 7: FAULT LINE GROUND SHATTER ---
-                                                                                                                                      let time = Date.now();
-                                                                                                                                      let radius = 80;
-
-                                                                                                                                      // 1. Outer Volcanic Calamity Boundary Ring
-                                                                                                                                      c.strokeStyle = `rgba(255, 51, 0, ${0.7 + pulseAlpha * 0.3})`;
-                                                                                                                                      c.lineWidth = 3.0;
-                                                                                                                                      c.shadowBlur = 14;
-                                                                                                                                      c.shadowColor = "#ff3300";
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.arc(cx, cy, radius, 0, Math.PI * 2);
-                                                                                                                                      c.stroke();
-                                                                                                                                      c.shadowBlur = 0;
-
-                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.7)";
-                                                                                                                                      c.lineWidth = 1.2;
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
-                                                                                                                                      c.stroke();
-
-                                                                                                                                      // 2. Inner Collapsing Ground Fill
-                                                                                                                                      let collapseGrad = c.createRadialGradient(cx, cy, 1, cx, cy, radius);
-                                                                                                                                      collapseGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.75})`);
-                                                                                                                                      collapseGrad.addColorStop(0.5, `rgba(255, 85, 0, ${pulseAlpha * 0.45})`);
-                                                                                                                                      collapseGrad.addColorStop(1, "rgba(150, 0, 24, 0)");
-
-                                                                                                                                      c.fillStyle = collapseGrad;
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.arc(cx, cy, radius * progress, 0, Math.PI * 2);
-                                                                                                                                      c.fill();
-
-                                                                                                                                      // 3. Jagged Fault Line Ground Cracks (8 Fractures)
-                                                                                                                                      c.strokeStyle = `rgba(255, 51, 0, ${0.5 + progress * 0.5})`;
-                                                                                                                                      c.lineWidth = 2.0;
-                                                                                                                                      c.beginPath();
-                                                                                                                                      let cracks = 8;
-                                                                                                                                      for (let i = 0; i < cracks; i++) {
-                                                                                                                                        let baseAng = (i * Math.PI * 2) / cracks + (m.id || 0);
-                                                                                                                                        let endDist = radius * progress;
-                                                                                                                                        let steps = 4;
-                                                                                                                                        let lastX = cx;
-                                                                                                                                        let lastY = cy;
-
-                                                                                                                                        for (let s = 1; s <= steps; s++) {
-                                                                                                                                          let curDist = (endDist * s) / steps;
-                                                                                                                                          let jitter = Math.sin(s * 3.1 + time / 180) * 3;
-                                                                                                                                          let curAngle = baseAng + jitter * 0.04;
-                                                                                                                                          let nx = cx + Math.cos(curAngle) * curDist;
-                                                                                                                                          let ny = cy + Math.sin(curAngle) * curDist;
-
-                                                                                                                                          c.moveTo(lastX, lastY);
-                                                                                                                                          c.lineTo(nx, ny);
-                                                                                                                                          lastX = nx;
-                                                                                                                                          lastY = ny;
-                                                                                                                                        }
-                                                                                                                                      }
-                                                                                                                                      c.stroke();
-                                                                                                                                    } else if (m.activeAbility === "spore_storm") {
-                                                                                                                                      // --- BOSS 4: ROTATING SPORE VECTOR CONES ---
-                                                                                                                                      let time = Date.now();
-                                                                                                                                      let coneRadius = 55;
-                                                                                                                                      let rotAngle = time / 500;
-
-                                                                                                                                      c.save();
-                                                                                                                                      c.translate(cx, cy);
-
-                                                                                                                                      // 1. 3 Rotating Directional Spore Cones
-                                                                                                                                      let numCones = 3;
-                                                                                                                                      let coneWidth = 0.35; // radians each side
-                                                                                                                                      for (let i = 0; i < numCones; i++) {
-                                                                                                                                        let baseAng = rotAngle + (i * Math.PI * 2) / numCones;
-
-                                                                                                                                        let sporeGrad = c.createRadialGradient(0, 0, 2, 0, 0, coneRadius);
-                                                                                                                                        sporeGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.7})`);
-                                                                                                                                        sporeGrad.addColorStop(0.6, `rgba(46, 204, 113, ${pulseAlpha * 0.35})`);
-                                                                                                                                        sporeGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
-
-                                                                                                                                        c.fillStyle = sporeGrad;
-                                                                                                                                        c.beginPath();
-                                                                                                                                        c.moveTo(0, 0);
-                                                                                                                                        c.arc(0, 0, coneRadius * progress, baseAng - coneWidth, baseAng + coneWidth);
-                                                                                                                                        c.closePath();
-                                                                                                                                        c.fill();
-
-                                                                                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
-                                                                                                                                        c.lineWidth = 1.8;
-                                                                                                                                        c.beginPath();
-                                                                                                                                        c.moveTo(0, 0);
-                                                                                                                                        c.arc(0, 0, coneRadius, baseAng - coneWidth, baseAng + coneWidth);
-                                                                                                                                        c.closePath();
-                                                                                                                                        c.stroke();
-                                                                                                                                      }
-
-                                                                                                                                      c.restore();
-
-                                                                                                                                      // 2. Central Toxic Core Circle
-                                                                                                                                      let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, 20);
-                                                                                                                                      coreGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.8})`);
-                                                                                                                                      coreGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
-
-                                                                                                                                      c.fillStyle = coreGrad;
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.arc(cx, cy, 20, 0, Math.PI * 2);
-                                                                                                                                      c.fill();
-
-                                                                                                                                      c.strokeStyle = "#2ecc71";
-                                                                                                                                      c.lineWidth = 1.8;
-                                                                                                                                      c.beginPath();
-                                                                                                                                      c.arc(cx, cy, 20, 0, Math.PI * 2);
-                                                                                                                                      c.stroke();
-                                                                                                                                    } else if (m.activeAbility === "singularity") {
-                                                                                                                                                                                                // --- BOSS 5: EVENT HORIZON ACCRETION DISK & GRAVITY VACUUM RINGS ---
-                                                                                                                                                                                                let radius = 90;
-                                                                                                                                                                                                let time = Date.now();
-
-                                                                                                                                                                                                // 1. Outer Pulsing Event Horizon Boundary
-                                                                                                                                                                                                c.strokeStyle = `rgba(232, 67, 147, ${0.7 + pulseAlpha * 0.3})`;
-                                                                                                                                                                                                c.lineWidth = 3.0;
-                                                                                                                                                                                                c.shadowBlur = 16;
-                                                                                                                                                                                                c.shadowColor = "#e84393";
-                                                                                                                                                                                                c.beginPath();
-                                                                                                                                                                                                c.arc(cx, cy, radius, 0, Math.PI * 2);
-                                                                                                                                                                                                c.stroke();
-                                                                                                                                                                                                c.shadowBlur = 0;
-
-                                                                                                                                                                                                c.strokeStyle = "rgba(142, 68, 173, 0.6)";
-                                                                                                                                                                                                c.lineWidth = 1.2;
-                                                                                                                                                                                                c.beginPath();
-                                                                                                                                                                                                c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
-                                                                                                                                                                                                c.stroke();
-
-                                                                                                                                                                                                // 2. Counter-Rotating Tilted Accretion Disk Ellipses
-                                                                                                                                                                                                c.save();
-                                                                                                                                                                                                c.translate(cx, cy);
-
-                                                                                                                                                                                                // Outer Accretion Ring (Counter-Clockwise)
-                                                                                                                                                                                                c.save();
-                                                                                                                                                                                                c.rotate(-time / 300);
-                                                                                                                                                                                                c.strokeStyle = "rgba(232, 67, 147, 0.65)";
-                                                                                                                                                                                                c.lineWidth = 1.8;
-                                                                                                                                                                                                c.beginPath();
-                                                                                                                                                                                                c.ellipse(0, 0, radius * 0.95, radius * 0.35, 0, 0, Math.PI * 2);
-                                                                                                                                                                                                c.stroke();
-                                                                                                                                                                                                c.restore();
-
-                                                                                                                                                                                                // Inner Accretion Ring (Clockwise)
-                                                                                                                                                                                                c.save();
-                                                                                                                                                                                                c.rotate(time / 220 + Math.PI / 4);
-                                                                                                                                                                                                c.strokeStyle = "rgba(0, 210, 255, 0.65)";
-                                                                                                                                                                                                c.lineWidth = 1.5;
-                                                                                                                                                                                                c.beginPath();
-                                                                                                                                                                                                c.ellipse(0, 0, radius * 0.75, radius * 0.28, 0, 0, Math.PI * 2);
-                                                                                                                                                                                                c.stroke();
-                                                                                                                                                                                                c.restore();
-
-                                                                                                                                                                                                c.restore();
-
-                                                                                                                                                                                                // 3. Contracting Gravity Vacuum Rings
-                                                                                                                                                                                                let ringCount = 4;
-                                                                                                                                                                                                for (let i = 0; i < ringCount; i++) {
-                                                                                                                                                                                                  let rProgress = (progress + i / ringCount) % 1.0;
-                                                                                                                                                                                                  let curR = radius * (1.0 - rProgress);
-                                                                                                                                                                                                  c.strokeStyle = `rgba(142, 68, 173, ${(1.0 - rProgress) * (0.5 + pulseAlpha * 0.4)})`;
-                                                                                                                                                                                                  c.lineWidth = 1.6;
-                                                                                                                                                                                                  c.beginPath();
-                                                                                                                                                                                                  c.arc(cx, cy, curR, 0, Math.PI * 2);
-                                                                                                                                                                                                  c.stroke();
-                                                                                                                                                                                                }
-
-                                                                                                                                                                                                // 4. Dense Black Hole Core Singularity with Magenta Rim
-                                                                                                                                                                                                                                                                                                                                                                                                let coreR = 14 + pulseAlpha * 4 + progress * 6;
-                                                                                                                                                                                                                                                                                                                                                                                                let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, coreR);
-                                                                                                                                                                                                                                                                                                                                                                                                coreGrad.addColorStop(0, "rgba(232, 67, 147, 0.95)");
-                                                                                                                                                                                                                                                                                                                                                                                                coreGrad.addColorStop(0.5, "rgba(9, 2, 26, 0.98)");
-                                                                                                                                                                                                                                                                                                                                                                                                coreGrad.addColorStop(1, "rgba(9, 2, 26, 0)");
-                                                                                                                                                                                                                                                                                                                                                                                                c.fillStyle = coreGrad;
-                                                                                                                                                                                                                                                                                                                                                                                                c.beginPath();
-                                                                                                                                                                                                                                                                                                                                                                                                c.arc(cx, cy, coreR, 0, Math.PI * 2);
-                                                                                                                                                                                                                                                                                                                                                                                                c.fill();
-
-                                                                                                                                                                                                                                                                                                                                                                                                c.restore();
-                                                                                                                                                                                                                                                                                                                                                                                              }
-                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                          };
-
-                                                                                                                                                                                                                                                              // Initialize Draggable Flask Button Engine
-                                                                                                                                                                                                                                                              if (typeof window.initFlaskButtonDrag === "function") {
-          window.initFlaskButtonDrag();
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        // --- PHASE 2 TRIGGER: ELDRITCH BARK SHIELD & SUMMONS (UNDER 50% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.5 && !m.phase2Triggered) {
+          m.phase2Triggered = true;
+          m.phase = 2;
+          m.actionState = "bark_shield";
+          m.isStopped = true;
+
+          // Teleport Stage Warden directly to the center of the arena
+          let map = window.activeDungeonMap;
+          let mapW = map ? map.width : 24;
+          let mapH = map ? map.height : 18;
+          let tSize = map ? map.tileSize : 32;
+          m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+          m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+          cx = m.x + m.w / 2;
+          cy = m.y + m.h / 2;
+
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: BARK SHIELD!",
+              "#e74c3c",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(cx, cy, 35, "slag_slime", 4);
+            window.combatVisuals.triggerScreenShake(10, 18);
+          }
+          if (window.SoundManager) window.SoundManager.play("spell");
+
+          // Spawn 3 Sprout Cocoons surrounding the Warden
+          window.activeDungeonMobs = window.activeDungeonMobs || [];
+          for (let i = 0; i < 3; i++) {
+            let angle = (i * Math.PI * 2) / 3;
+            let spawnDist = 54;
+            let sx = cx + Math.cos(angle) * spawnDist;
+            let sy = cy + Math.sin(angle) * spawnDist;
+
+            window.activeDungeonMobs.push({
+              id: window.idCounter++,
+              type: "mob",
+              visualTier: 0,
+              visualType: "sprout_cocoon",
+              x: sx - 12,
+              y: sy - 12,
+              w: 24,
+              h: 24,
+              hp: BigNum.from(60 + m.stageLevel * 20),
+              maxHp: BigNum.from(60 + m.stageLevel * 20),
+              atk: 0,
+              flashTimer: 0,
+              attackCooldown: 100,
+              isBossSummon: true,
+              isCocoon: true,
+              hatchTimer: 240, // 4 seconds (240 frames)
+              discovered: true,
+            });
+
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(sx, sy, 10, "slag_slime", 2);
+            }
+          }
+
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Eldritch Bark Shield active! Slay the hatched minions to break it!",
+              "#e74c3c",
+            );
+          }
         }
 
-        // Start inside Adventurer's Hub
-        window.loadHub();
+        // Processing active Bark Shield & Orbital Web Storm particle effects
+        if (m.actionState === "bark_shield") {
+          let sumCount = window.activeDungeonMobs
+            ? window.activeDungeonMobs.filter(
+                (mob) => mob.isBossSummon && mob.hp.gt(0),
+              ).length
+            : 0;
+
+          if (sumCount === 0) {
+            // Shield Shatters!
+            m.actionState = "idle";
+            m.state = "idle";
+            m.isStopped = false;
+            m.attackCooldown = 60;
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                cx,
+                cy,
+                30,
+                "slag_slime",
+                4.5,
+              );
+              window.combatVisuals.triggerScreenShake(8, 12);
+            }
+            if (window.SoundManager) window.SoundManager.play("block");
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[✦] Eldritch Bark Shield shattered! Boss is vulnerable!",
+                "#2ecc71",
+              );
+            }
+          } else {
+            // Emit orbital Web Storm wind particles
+            if (Math.random() < 0.4) {
+              let angle = Math.random() * Math.PI * 2;
+              let orbDist = m.w * 0.75;
+              let px = cx + Math.cos(angle) * orbDist;
+              let py = cy + Math.sin(angle) * orbDist;
+              let rotSpeed = 3.5;
+              let vx = -Math.sin(angle) * rotSpeed;
+              let vy = Math.cos(angle) * rotSpeed;
+              if (window.combatVisuals && window.combatVisuals.particlePool) {
+                window.combatVisuals.particlePool.get(
+                  px,
+                  py,
+                  vx,
+                  vy,
+                  window.randFloat(1.5, 3),
+                  Math.random() < 0.5 ? "#ffffff" : "#27ae60",
+                  0.8,
+                  30,
+                  0,
+                  true,
+                  0,
+                );
+              }
+            }
+            return; // Skip normal combat movement/attack AI while shielded
+          }
+        }
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+
+          // Creeping vine particles traveling during root snare wind-up
+          if (m.activeAbility === "root_snare" && m.telegraphTimer % 3 === 0) {
+            let tRatio = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
+            let vx = cx + (m.targetX - cx) * tRatio;
+            let vy = cy + (m.targetY - cy) * tRatio;
+            if (window.combatVisuals && window.combatVisuals.particlePool) {
+              window.combatVisuals.particlePool.get(
+                vx + window.randFloat(-4, 4),
+                vy + window.randFloat(-4, 4),
+                window.randFloat(-0.2, 0.2),
+                window.randFloat(-0.2, 0.2),
+                window.randFloat(1.5, 2.5),
+                "#27ae60",
+                0.8,
+                24,
+                0,
+                true,
+                0,
+              );
+            }
+          }
+
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 120; // 2s recovery
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(7, 12);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "slag_slime",
+                  3.5,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "root_snare") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(5, 8);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  20,
+                  "slag_slime",
+                  2.2,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 75) {
+                window.damagePlayer(Math.round(m.atk * 1.3), m);
+                p.snareTimer = 132; // 2.2s snare slow
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    p.x,
+                    p.y - 12,
+                    "[SNARED] -60% Speed!",
+                    "#2ecc71",
+                    true,
+                  );
+                }
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player at a slow, heavy treant pace
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.3;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Ability cast or basic close-range strikes
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let chosen = Math.random() < 0.5 ? "slam" : "root_snare";
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = 75;
+            m.maxTelegraphTimer = 75;
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateAegisGoliath(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        // --- PHASE 2 TRIGGER: RAISED TOWER SHIELD (UNDER 50% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.5 && m.phase === 1) {
+          m.phase = 2;
+          m.shieldAngle = Math.atan2(p.y - cy, p.x - cx);
+          m.dazeTimer = 0;
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: TOWER SHIELD!",
+              "#00d2ff",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(cx, cy, 30, "aegis_goliath", 4);
+            window.combatVisuals.triggerScreenShake(8, 15);
+          }
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Aegis Goliath raised his Tower Shield! Flank his exposed sides!",
+              "#00d2ff",
+            );
+          }
+          if (window.SoundManager) window.SoundManager.play("revive");
+        }
+
+        // Handle Dazed stun sequence
+        if (m.dazeTimer > 0) {
+          m.dazeTimer--;
+          m.isStopped = true;
+          // Spawn little daze stars particles on head occasionally
+          if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              m.y - 4,
+              3,
+              "gold_dungeon",
+              1.2,
+            );
+          }
+          return; // Frozen and vulnerable while dazed
+        }
+        m.isStopped = false;
+
+        // Lerp shield angle slowly toward the player to allow flanking outmaneuvers
+        if (
+          m.phase === 2 &&
+          m.shieldAngle !== undefined &&
+          m.activeAbility !== "shield_bash"
+        ) {
+          let targetAngle = Math.atan2(p.y - cy, p.x - cx);
+          let angleDiff = targetAngle - m.shieldAngle;
+          // Normalize to -PI to PI
+          angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+          // Rotate up to 0.038 radians per frame
+          m.shieldAngle += Math.max(-0.038, Math.min(0.038, angleDiff));
+        }
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+
+          // Apply active gravitational magnetic pull
+          if (m.activeAbility === "magnetic_pull") {
+            let pullForce = 2.2;
+            let angle = Math.atan2(cy - p.y, cx - p.x);
+            let testX = p.x + Math.cos(angle) * pullForce;
+            let testY = p.y + Math.sin(angle) * pullForce;
+
+            if (
+              window.activeDungeonMap &&
+              typeof window.checkCollisionAt === "function" &&
+              !window.checkCollisionAt(
+                window.activeDungeonMap,
+                testX,
+                testY,
+                p.radius || 9,
+              )
+            ) {
+              p.x = testX;
+              p.y = testY;
+            }
+
+            // Spawn blue gravitational sparks flowing inward
+            if (
+              m.telegraphTimer % 4 === 0 &&
+              window.combatVisuals &&
+              window.combatVisuals.particlePool
+            ) {
+              window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-10, 10),
+                p.y + window.randFloat(-10, 10),
+                Math.cos(angle) * 3,
+                Math.sin(angle) * 3,
+                window.randFloat(1.2, 2.5),
+                "#00d2ff",
+                0.8,
+                20,
+                0,
+                true,
+                0,
+              );
+            }
+          }
+
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 110;
+
+            let ability = m.activeAbility;
+            if (ability === "magnetic_pull") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(8, 14);
+                window.combatVisuals.spawnParticles(
+                  cx,
+                  cy,
+                  25,
+                  "aegis_goliath",
+                  4.5,
+                );
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+
+              // Ground slam damage check
+              if (Math.hypot(p.x - cx, p.y - cy) <= 70) {
+                window.damagePlayer(Math.round(m.atk * 1.6), m);
+              }
+            } else if (ability === "boomerang_shield") {
+              // Spawn dual curving boomerang projectiles
+              let angleToPlayer = Math.atan2(p.y - cy, p.x - cx);
+              let speed = 4.5;
+
+              let angles = [angleToPlayer - 0.25, angleToPlayer + 0.25];
+              angles.forEach((ang) => {
+                window.projectiles.push({
+                  x: cx,
+                  y: cy,
+                  vx: Math.cos(ang) * speed,
+                  vy: Math.sin(ang) * speed,
+                  r: 8,
+                  type: "boomerang",
+                  damage: Math.round(m.atk * 0.9),
+                  life: 180,
+                  pulseOffset: Math.random() * 10,
+                });
+              });
+
+              if (window.SoundManager) window.SoundManager.play("swing");
+            } else if (ability === "shield_bash") {
+              // Executing frontal shield bash
+              let pAngle = Math.atan2(p.y - cy, p.x - cx);
+              let angleDiff = Math.abs(
+                Math.atan2(
+                  Math.sin(pAngle - m.shieldAngle),
+                  Math.cos(pAngle - m.shieldAngle),
+                ),
+              );
+
+              if (Math.hypot(p.x - cx, p.y - cy) <= 64 && angleDiff <= 0.5) {
+                // Player hit!
+                window.damagePlayer(Math.round(m.atk * 1.7), m);
+                // Apply knockback
+                let kx = p.x + Math.cos(m.shieldAngle) * 24;
+                let ky = p.y + Math.sin(m.shieldAngle) * 24;
+                if (
+                  window.activeDungeonMap &&
+                  typeof window.checkCollisionAt === "function" &&
+                  !window.checkCollisionAt(
+                    window.activeDungeonMap,
+                    kx,
+                    ky,
+                    p.radius || 9,
+                  )
+                ) {
+                  p.x = kx;
+                  p.y = ky;
+                }
+                if (window.combatVisuals) {
+                  window.combatVisuals.triggerScreenShake(6, 10);
+                  window.combatVisuals.spawnParticles(
+                    p.x,
+                    p.y,
+                    12,
+                    "aegis_goliath",
+                    3,
+                  );
+                }
+                if (window.SoundManager) window.SoundManager.play("block");
+              } else {
+                // Player evaded! Overcommit and enter DAZED state
+                m.dazeTimer = 210; // 3.5 seconds
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(cx, m.y - 12, "DAZED!", "#ffd700");
+                }
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(
+                    cx,
+                    m.y - 4,
+                    15,
+                    "gold_dungeon",
+                    2.2,
+                  );
+                  window.combatVisuals.triggerScreenShake(4, 6);
+                }
+                if (window.SoundManager) window.SoundManager.play("block");
+              }
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player at a steady vanguard speed
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = m.phase === 2 ? 1.4 : 1.7; // Slightly heavier and slower while shield raised
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Abilities
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let optionsPool = ["magnetic_pull", "boomerang_shield"];
+            if (m.phase === 2) optionsPool.push("shield_bash");
+
+            let chosen =
+              optionsPool[Math.floor(Math.random() * optionsPool.length)];
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+
+            if (chosen === "magnetic_pull") m.telegraphTimer = 90;
+            else if (chosen === "boomerang_shield") m.telegraphTimer = 60;
+            else m.telegraphTimer = 75; // shield_bash windup
+            m.maxTelegraphTimer = m.telegraphTimer;
+
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateOverlordIronVault(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 120; // 2s recovery
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(8, 14);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "magma_elemental",
+                  3.5,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "magma_vents" && m.ventSpawnLocations) {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(6, 10);
+              }
+              if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+              // Spawn 2 growing Magma Vents around the player
+              window.activeDungeonMobs = window.activeDungeonMobs || [];
+              m.ventSpawnLocations.forEach((loc) => {
+                window.activeDungeonMobs.push({
+                  id: window.idCounter++,
+                  type: "mob",
+                  visualTier: 2,
+                  visualType: "magma_vent",
+                  x: loc.x - 12,
+                  y: loc.y - 12,
+                  w: 24,
+                  h: 24,
+                  hp: BigNum.from(1),
+                  maxHp: BigNum.from(1),
+                  parentAtk: m.atk,
+                  flashTimer: 0,
+                  isMagmaVent: true,
+                  ventTimer: 270, // 4.5 seconds
+                  discovered: true,
+                });
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(
+                    loc.x,
+                    loc.y,
+                    8,
+                    "magma_elemental",
+                    1.8,
+                  );
+                }
+              });
+              m.ventSpawnLocations = null;
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player at a slow, heavy colossus speed
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.35;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Attacks
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let chosen = Math.random() < 0.5 ? "slam" : "magma_vents";
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = 75;
+            m.maxTelegraphTimer = 75;
+
+            if (chosen === "magma_vents") {
+              // Pre-calculate target spots around the player's current location
+              m.ventSpawnLocations = [];
+              for (let i = 0; i < 2; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let spawnDist = window.randFloat(40, 80);
+                m.ventSpawnLocations.push({
+                  x: p.x + Math.cos(angle) * spawnDist,
+                  y: p.y + Math.sin(angle) * spawnDist,
+                });
+              }
+            }
+
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateCorrosiveAbomination(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        // Leave trailing Acid Pools while moving across both phases
+        if (m.isMoving && window.logicClock % 40 === 0) {
+          window.cavernInteractives = window.cavernInteractives || [];
+          window.cavernInteractives.push({
+            id: window.idCounter++,
+            type: "acid_pool",
+            x: cx,
+            y: cy,
+            w: 24,
+            h: 12,
+            life: 480, // 8 seconds (480 frames)
+            maxLife: 480,
+          });
+        }
+
+        // --- PHASE 2 TRIGGER: TOXIC SPORE NOVA (UNDER 50% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.5 && !m.phase2Triggered) {
+          m.phase2Triggered = true;
+          m.phase = 2;
+          m.attackCooldown = 40;
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: TOXIC SPORE STORM!",
+              "#2ecc71",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              cy,
+              35,
+              "swamp_basilisk",
+              4,
+            );
+            window.combatVisuals.triggerScreenShake(8, 15);
+          }
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Corrosive Abomination has entered Phase 2! Watch out for toxic spore storms!",
+              "#2ecc71",
+            );
+          }
+          if (window.SoundManager) window.SoundManager.play("revive");
+        }
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 110;
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(7, 12);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "swamp_basilisk",
+                  3.2,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "spore_storm") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(6, 10);
+                window.combatVisuals.spawnParticles(
+                  cx,
+                  cy,
+                  25,
+                  "swamp_basilisk",
+                  3.5,
+                );
+              }
+              if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+              // Spawn 3 homing toxic spores with a strict 6-second lifetime
+              window.activeDungeonMobs = window.activeDungeonMobs || [];
+              for (let i = 0; i < 3; i++) {
+                let angle = (i * Math.PI * 2) / 3;
+                let spawnDist = 45;
+                let sx = cx + Math.cos(angle) * spawnDist;
+                let sy = cy + Math.sin(angle) * spawnDist;
+
+                window.activeDungeonMobs.push({
+                  id: window.idCounter++,
+                  type: "mob",
+                  visualTier: 3,
+                  visualType: "toxic_spore",
+                  x: sx - 12,
+                  y: sy - 12,
+                  w: 24,
+                  h: 24,
+                  hp: BigNum.from(1),
+                  maxHp: BigNum.from(1),
+                  atk: Math.round(m.atk * 0.95),
+                  flashTimer: 0,
+                  isSpore: true,
+                  isBossSummon: true,
+                  hatchTimer: 360, // 6s lifetime (360 frames)
+                  discovered: true,
+                });
+              }
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.6;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+              m.isMoving = true;
+            } else {
+              m.isMoving = false;
+            }
+          } else {
+            m.isMoving = false;
+          }
+
+          // Trigger Abilities
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let optionsPool = ["slam"];
+            if (m.phase === 2) optionsPool.push("spore_storm");
+
+            let chosen =
+              optionsPool[Math.floor(Math.random() * optionsPool.length)];
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = chosen === "spore_storm" ? 85 : 65;
+            m.maxTelegraphTimer = m.telegraphTimer;
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateVoidOverseer(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+
+          // Apply active inverse-square gravitational singularity pull
+          if (m.activeAbility === "singularity") {
+            let tDx = cx - p.x;
+            let tDy = cy - p.y;
+            let tDist = Math.hypot(tDx, tDy);
+
+            if (tDist > 10) {
+              // Gravity forces increase rapidly the closer you get (inverse square)
+              let pull = 4500 / (tDist * tDist + 400);
+              pull = Math.min(4.8, pull); // Cap maximum drag speed
+
+              let testX = p.x + (tDx / tDist) * pull;
+              let testY = p.y + (tDy / tDist) * pull;
+
+              if (
+                window.activeDungeonMap &&
+                typeof window.checkCollisionAt === "function" &&
+                !window.checkCollisionAt(
+                  window.activeDungeonMap,
+                  testX,
+                  testY,
+                  p.radius || 9,
+                )
+              ) {
+                p.x = testX;
+                p.y = testY;
+              }
+            }
+
+            // Spawn space dust vacuum particles flowing inward
+            if (
+              m.telegraphTimer % 3 === 0 &&
+              window.combatVisuals &&
+              window.combatVisuals.particlePool
+            ) {
+              let pAngle = Math.random() * Math.PI * 2;
+              let pDist = window.randFloat(40, 150);
+              let px = cx + Math.cos(pAngle) * pDist;
+              let py = cy + Math.sin(pAngle) * pDist;
+              let vx = -Math.cos(pAngle) * (pDist / 15);
+              let vy = -Math.sin(pAngle) * (pDist / 15);
+              window.combatVisuals.particlePool.get(
+                px,
+                py,
+                vx,
+                vy,
+                window.randFloat(1.5, 3.5),
+                Math.random() < 0.5 ? "#e84393" : "#8e44ad",
+                0.8,
+                15,
+                0,
+                true,
+                -0.05,
+              );
+            }
+          }
+
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 110;
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(7, 12);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "void_orb",
+                  3.2,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "singularity") {
+              // Accretion Core Collapse & Implosion!
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(12, 20);
+                window.combatVisuals.spawnParticles(
+                  cx,
+                  cy,
+                  35,
+                  "void_orb",
+                  5.5,
+                );
+                window.combatVisuals.spawnBeam(cx, "#e84393", 45, false);
+              }
+              if (window.SoundManager) window.SoundManager.play("death");
+
+              // Hit detection within the 90px Event Horizon radius
+              if (Math.hypot(p.x - cx, p.y - cy) <= 90) {
+                window.damagePlayer(Math.round(m.atk * 1.95), m);
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    p.x,
+                    p.y - 15,
+                    "EVENT HORIZON IMPLOSION!",
+                    "#e84393",
+                  );
+                }
+              }
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.6;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Abilities
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let chosen = Math.random() < 0.5 ? "slam" : "singularity";
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = chosen === "singularity" ? 360 : 65; // 6s channel for singularity
+            m.maxTelegraphTimer = m.telegraphTimer;
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateChronosArbitrator(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        // --- PHASE 2 TRIGGER: CHRONOS REWIND CHANNEL (UNDER 40% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.4 && m.phase === 1) {
+          m.phase = 2;
+          m.actionState = "chrono_rewind";
+          m.isStopped = true;
+          m.channelTimer = 240; // 4 seconds
+          m.staggerShield = m.maxHp.mul(0.15); // 15% Max HP stagger barrier
+
+          // Teleport directly to the center of the arena
+          let map = window.activeDungeonMap;
+          let mapW = map ? map.width : 24;
+          let mapH = map ? map.height : 18;
+          let tSize = map ? map.tileSize : 32;
+          m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+          m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+          cx = m.x + m.w / 2;
+          cy = m.y + m.h / 2;
+
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: CHRONOS REWIND!",
+              "#ffd700",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              cy,
+              35,
+              "gold_dungeon",
+              4.5,
+            );
+            window.combatVisuals.triggerScreenShake(10, 18);
+          }
+          if (window.SoundManager) window.SoundManager.play("spell");
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Chronos Arbitrator is channeling Chronos Rewind! Shatter his Stagger Shield to interrupt!",
+              "#ffd700",
+            );
+          }
+        }
+
+        // Processing active Chronos Rewind channel
+        if (m.actionState === "chrono_rewind") {
+          m.channelTimer--;
+          if (m.channelTimer <= 0) {
+            // Channel completes! strike XII and heal 20%
+            let healAmt = m.maxHp.mul(0.2);
+            m.hp = window.BigNumMin(m.maxHp, m.hp.add(healAmt));
+
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                cx,
+                m.y - 12,
+                `+${window.formatNumber(healAmt)} HP (REWIND)`,
+                "#2ecc71",
+              );
+            }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[!] Clock struck XII! Chronos Arbitrator rewound time and healed himself!",
+                "#e74c3c",
+              );
+            }
+            if (window.SoundManager) window.SoundManager.play("spell");
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                cx,
+                cy,
+                20,
+                "gold_dungeon",
+                3.0,
+              );
+            }
+
+            m.actionState = "idle";
+            m.state = "idle";
+            m.isStopped = false;
+            m.attackCooldown = 110;
+          }
+          return; // Skip normal movements during channel
+        }
+
+        // Handle Dazed stun sequence
+        if (m.dazeTimer > 0) {
+          m.dazeTimer--;
+          m.isStopped = true;
+          if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              m.y - 4,
+              3,
+              "gold_dungeon",
+              1.2,
+            );
+          }
+          return;
+        }
+        m.isStopped = false;
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 110;
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(7, 12);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "gold_dungeon",
+                  3.2,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "dilation_field") {
+              // Spawn a static Time Dilation Field hazard on the ground
+              window.cavernInteractives = window.cavernInteractives || [];
+              window.cavernInteractives.push({
+                id: window.idCounter++,
+                type: "dilation_field",
+                x: m.targetX,
+                y: m.targetY,
+                w: 40,
+                h: 18,
+                life: 420, // 7 seconds (420 frames)
+                maxLife: 420,
+              });
+
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "gold_dungeon",
+                  2.0,
+                );
+              }
+              if (window.SoundManager) window.SoundManager.play("spell");
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player at normal speed
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.7;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Abilities
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let chosen = Math.random() < 0.5 ? "slam" : "dilation_field";
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = chosen === "dilation_field" ? 60 : 75;
+            m.maxTelegraphTimer = m.telegraphTimer;
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateNexusOverseer(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        // --- PHASE 2 TRIGGER: DIGITAL DECOYS SPLIT (UNDER 50% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.5 && m.phase === 1) {
+          m.phase = 2;
+          m.actionState = "cyber_barrier";
+          m.isStopped = true;
+
+          // Teleport directly to the center of the arena
+          let map = window.activeDungeonMap;
+          let mapW = map ? map.width : 24;
+          let mapH = map ? map.height : 18;
+          let tSize = map ? map.tileSize : 32;
+          m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+          m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+          cx = m.x + m.w / 2;
+          cy = m.y + m.h / 2;
+
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: CYBER BARRIER!",
+              "#ff007f",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              cy,
+              35,
+              "nexus_overseer",
+              4.0,
+            );
+            window.combatVisuals.triggerScreenShake(10, 18);
+          }
+          if (window.SoundManager) window.SoundManager.play("spell");
+
+          // Spawn 2 Holographic Decoys
+          window.activeDungeonMobs = window.activeDungeonMobs || [];
+          let decoyOffsets = [-48, 48];
+          decoyOffsets.forEach((ox) => {
+            window.activeDungeonMobs.push({
+              id: window.idCounter++,
+              type: "mob",
+              visualTier: 6,
+              visualType: "nexus_overseer",
+              x: cx + ox - 12,
+              y: cy + 18 - 12,
+              w: 24,
+              h: 24,
+              hp: BigNum.from(120 + m.stageLevel * 25),
+              maxHp: BigNum.from(120 + m.stageLevel * 25),
+              atk: Math.round(m.atk * 0.8),
+              flashTimer: 0,
+              attackCooldown: 80,
+              isRanged: true,
+              projectileType: "void",
+              isBossSummon: true,
+              isDecoy: true,
+              discovered: true,
+            });
+
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                cx + ox,
+                cy + 18,
+                10,
+                "nexus_overseer",
+                2,
+              );
+            }
+          });
+
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Cyber Barrier active! Slay the 2 Holographic Decoys to break it!",
+              "#ff007f",
+            );
+          }
+        }
+
+        // Processing active Cyber Barrier
+        if (m.actionState === "cyber_barrier") {
+          let decoyCount = window.activeDungeonMobs
+            ? window.activeDungeonMobs.filter(
+                (mob) => mob.isDecoy && mob.hp.gt(0),
+              ).length
+            : 0;
+
+          if (decoyCount === 0) {
+            // Barrier Shatters!
+            m.actionState = "idle";
+            m.state = "idle";
+            m.isStopped = false;
+            m.attackCooldown = 60;
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                cx,
+                cy,
+                30,
+                "nexus_overseer",
+                4.5,
+              );
+              window.combatVisuals.triggerScreenShake(8, 12);
+            }
+            if (window.SoundManager) window.SoundManager.play("block");
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[✦] Cyber Barrier shattered! Nexus Overseer is vulnerable!",
+                "#00b894",
+              );
+            }
+          } else {
+            // Emit digital matrix ambient glitch noise
+            if (
+              Math.random() < 0.3 &&
+              window.combatVisuals &&
+              window.combatVisuals.particlePool
+            ) {
+              let pAngle = Math.random() * Math.PI * 2;
+              let orbDist = m.w * 0.75;
+              let px = cx + Math.cos(pAngle) * orbDist;
+              let py = cy + Math.sin(pAngle) * orbDist;
+              window.combatVisuals.particlePool.get(
+                px,
+                py,
+                (Math.random() - 0.5) * 0.8,
+                (Math.random() - 0.5) * 0.8,
+                window.randFloat(1.2, 2.5),
+                "#ff007f",
+                0.8,
+                20,
+                0,
+                true,
+                0,
+              );
+            }
+            return; // Protected while decoys are active
+          }
+        }
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 110;
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(7, 12);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "nexus_overseer",
+                  3.2,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "control_glitch") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(5, 8);
+                window.combatVisuals.spawnParticles(
+                  cx,
+                  cy,
+                  25,
+                  "nexus_overseer",
+                  3.5,
+                );
+              }
+              if (window.SoundManager) window.SoundManager.play("spell");
+
+              // Scramble player joystick if caught within 180px
+              if (dist <= 180) {
+                p.glitchTimer = 180; // 3.0 seconds (180 frames)
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    p.x,
+                    p.y - 12,
+                    "[GLITCHED] Inverted Controls!",
+                    "#ff007f",
+                    true,
+                  );
+                }
+              }
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.7;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Abilities
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let chosen = Math.random() < 0.5 ? "slam" : "control_glitch";
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = chosen === "control_glitch" ? 60 : 75;
+            m.maxTelegraphTimer = m.telegraphTimer;
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateGildedVaultKeeper(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        // --- PHASE 2 TRIGGER: TAXATION SIPHON (UNDER 50% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.5 && m.phase === 1) {
+          m.phase = 2;
+          m.actionState = "taxation";
+          m.isStopped = true;
+          m.channelTimer = 240; // 4 seconds (240 frames)
+          m.staggerShield = m.maxHp.mul(0.15); // 15% Max HP stagger barrier
+
+          // Teleport directly to the center of the arena
+          let map = window.activeDungeonMap;
+          let mapW = map ? map.width : 24;
+          let mapH = map ? map.height : 18;
+          let tSize = map ? map.tileSize : 32;
+          m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+          m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+          cx = m.x + m.w / 2;
+          cy = m.y + m.h / 2;
+
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: TAXATION SIPHON!",
+              "#ffd700",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              cy,
+              35,
+              "gold_dungeon",
+              4.5,
+            );
+            window.combatVisuals.triggerScreenShake(10, 18);
+          }
+          if (window.SoundManager) window.SoundManager.play("spell");
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Gilded Vault Keeper is channeling Taxation! Shatter his shield to protect your Gold!",
+              "#ffd700",
+            );
+          }
+        }
+
+        // Processing active Gold Siphon channel
+        if (m.actionState === "taxation") {
+          m.channelTimer--;
+
+          // Siphon 10 Gold per frame from the player's wallet to heal himself (5x healing ratio)
+          let playerGold = BigNum.from(window.playerStats.coins || 0);
+          if (playerGold.gt(0)) {
+            let siphonAmt = BigNum.from(10);
+            if (playerGold.lt(siphonAmt)) {
+              siphonAmt = playerGold;
+            }
+            window.playerStats.coins = playerGold.sub(siphonAmt);
+
+            let healVal = siphonAmt.mul(5);
+            m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
+
+            // Visual golden siphon lines
+            if (
+              m.channelTimer % 3 === 0 &&
+              window.combatVisuals &&
+              window.combatVisuals.particlePool
+            ) {
+              let angle = Math.atan2(cy - p.y, cx - p.x);
+              window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-6, 6),
+                p.y - 4 + window.randFloat(-6, 6),
+                Math.cos(angle) * 4.5,
+                Math.sin(angle) * 4.5,
+                window.randFloat(1.2, 2.8),
+                "#ffd700",
+                0.8,
+                15,
+                0,
+                true,
+                0,
+              );
+            }
+          }
+
+          if (m.channelTimer <= 0) {
+            // Siphon completes
+            m.actionState = "idle";
+            m.state = "idle";
+            m.isStopped = false;
+            m.attackCooldown = 110;
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[!] Taxation cycle completed. Vault Keeper has recovered health!",
+                "#e74c3c",
+              );
+            }
+          }
+          return;
+        }
+
+        // Handle Stunned sequence
+        if (m.dazeTimer > 0) {
+          m.dazeTimer--;
+          m.isStopped = true;
+          if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              m.y - 4,
+              3,
+              "gold_dungeon",
+              1.2,
+            );
+          }
+          return;
+        }
+        m.isStopped = false;
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 120;
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(7, 12);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "gold_dungeon",
+                  3.2,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "gold_fall" && m.goldFallTargets) {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(6, 10);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+
+              m.goldFallTargets.forEach((target) => {
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(
+                    target.x,
+                    target.y,
+                    10,
+                    "gold_dungeon",
+                    2.2,
+                  );
+                }
+                if (Math.hypot(p.x - target.x, p.y - target.y) <= 24) {
+                  window.damagePlayer(Math.round(m.atk * 1.25), m);
+                }
+              });
+              m.goldFallTargets = null;
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.45;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Abilities
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let chosen = Math.random() < 0.5 ? "slam" : "gold_fall";
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = 75;
+            m.maxTelegraphTimer = 75;
+
+            if (chosen === "gold_fall") {
+              m.goldFallTargets = [];
+              for (let i = 0; i < 3; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let spawnDist = window.randFloat(30, 75);
+                m.goldFallTargets.push({
+                  x: p.x + Math.cos(angle) * spawnDist,
+                  y: p.y + Math.sin(angle) * spawnDist,
+                });
+              }
+            }
+
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+      updateHooktail(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        // --- PHASE 2 TRIGGER: CRITICAL ARENA COLLAPSE (UNDER 50% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.5 && m.phase === 1) {
+          m.phase = 2;
+          m.attackCooldown = 30;
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: ARENA COLLAPSE!",
+              "#ff3300",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.triggerScreenShake(15, 30);
+            window.combatVisuals.spawnParticles(
+              cx,
+              cy,
+              40,
+              "prestige_boss",
+              6.0,
+            );
+          }
+          if (window.SoundManager) window.SoundManager.play("death");
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Hooktail has unleashed Calamity! The ground is collapsing into the void!",
+              "#ff3300",
+            );
+          }
+        }
+
+        // Periodic Abyssal damage ticks if the player steps over collapsed void tiles
+        let map = window.activeDungeonMap;
+        if (map && map.grid) {
+          let pTileX = Math.floor(p.x / map.tileSize);
+          let pTileY = Math.floor(p.y / map.tileSize);
+          if (
+            map.grid[pTileY] &&
+            map.grid[pTileY][pTileX] === window.TILE_TYPES.VOID
+          ) {
+            if (window.logicClock % 40 === 0) {
+              let fallDmg = Math.round(p.maxHp * 0.08); // 8% Max HP per tick in the void
+              p.hp = Math.max(1, p.hp - fallDmg);
+              window.spawnFloatingText(
+                p.x,
+                p.y - 15,
+                `-${fallDmg} ABYSS DROWNING`,
+                "#ff3300",
+              );
+              if (window.SoundManager) window.SoundManager.play("hit");
+            }
+          }
+        }
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 110;
+
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(7, 12);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  15,
+                  "prestige_boss",
+                  3.5,
+                );
+              }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            } else if (ability === "scarlet_fire") {
+              // Detonate Scarlet Fire Arc breath
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(8, 14);
+                // Spew fire particles
+                let fAngle = m.facing === -1 ? Math.PI : 0;
+                for (let k = 0; k < 20; k++) {
+                  let dev = window.randFloat(-0.7, 0.7);
+                  let spAngle = fAngle + dev;
+                  let speed = window.randFloat(3.0, 6.0);
+                  window.combatVisuals.particlePool.get(
+                    cx,
+                    cy,
+                    Math.cos(spAngle) * speed,
+                    Math.sin(spAngle) * speed,
+                    window.randFloat(1.5, 3.8),
+                    "#ff3300",
+                    0.85,
+                    25,
+                    -0.03,
+                    true,
+                    0.05,
+                  );
+                }
+              }
+              if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+              let pAngle = Math.atan2(p.y - cy, p.x - cx);
+              let faceAngle = m.facing === -1 ? Math.PI : 0;
+              let angleDiff = Math.abs(
+                Math.atan2(
+                  Math.sin(pAngle - faceAngle),
+                  Math.cos(pAngle - faceAngle),
+                ),
+              );
+
+              if (dist <= 110 && angleDiff <= 0.8) {
+                window.damagePlayer(Math.round(m.atk * 1.55), m);
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    p.x,
+                    p.y - 12,
+                    "SCARLET INCINERATION!",
+                    "#ff3300",
+                  );
+                }
+              }
+            } else if (ability === "calamity_slam") {
+              // Collapse one outer ring of the active floor into the void
+              if (map && map.grid) {
+                let collapseRing = m.collapseRing || 0;
+                let minR = 2 + collapseRing;
+                let maxR = map.height - 3 - collapseRing;
+                let minC = 2 + collapseRing;
+                let maxC = map.width - 3 - collapseRing;
+
+                if (minR < maxR && minC < maxC) {
+                  for (let cCol = minC; cCol <= maxC; cCol++) {
+                    map.grid[minR][cCol] = window.TILE_TYPES.VOID;
+                    map.grid[maxR][cCol] = window.TILE_TYPES.VOID;
+                  }
+                  for (let rRow = minR; rRow <= maxR; rRow++) {
+                    map.grid[rRow][minC] = window.TILE_TYPES.VOID;
+                    map.grid[rRow][maxC] = window.TILE_TYPES.VOID;
+                  }
+                  m.collapseRing = collapseRing + 1;
+                  map.needsPreRender = true; // FORCE STATIC MAP REDRAW
+
+                  if (window.combatVisuals) {
+                    window.combatVisuals.triggerScreenShake(12, 22);
+                    window.combatVisuals.spawnParticles(
+                      cx,
+                      cy,
+                      35,
+                      "prestige_boss",
+                      4.5,
+                    );
+                  }
+                  if (window.SoundManager) window.SoundManager.play("death");
+                  if (typeof window.pushHeaderToast === "function") {
+                    window.pushHeaderToast(
+                      "[!] THE ARENA HAS COLLAPSED! PLAY AREA SHRINKING!",
+                      "#ff3300",
+                    );
+                  }
+                }
+              }
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = m.phase === 2 ? 1.8 : 1.5; // Dragon charges faster in Phase 2
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger Abilities
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let pool = ["slam", "scarlet_fire"];
+            if (m.phase === 2) pool.push("calamity_slam");
+
+            let chosen = pool[Math.floor(Math.random() * pool.length)];
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer =
+              chosen === "calamity_slam"
+                ? 85
+                : chosen === "scarlet_fire"
+                  ? 60
+                  : 75;
+            m.maxTelegraphTimer = m.telegraphTimer;
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+
+      renderTelegraph(c, m) {
+        if (!m || !m.activeAbility) return;
+        c.save();
+
+        // Clamp progress to prevent negative values if telegraphTimer is temporarily larger than maxTelegraphTimer
+        let progress = Math.max(
+          0,
+          Math.min(1, 1.0 - m.telegraphTimer / m.maxTelegraphTimer),
+        );
+        let pulseAlpha = 0.25 + Math.sin(Date.now() / 45) * 0.15;
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        if (m.activeAbility === "slam") {
+          let radius = 64;
+          let isTreant =
+            m.bossKey === "arachnid_treant" ||
+            m.visualType === "sprout" ||
+            m.visualType === "arachnid_treant";
+          let isIronVault =
+            m.bossKey === "overlord_iron_vault" ||
+            m.visualType === "overlord_iron_vault";
+          let isCorrosive =
+            m.bossKey === "corrosive_abomination" ||
+            m.visualType === "corrosive_abomination";
+
+          if (isTreant) {
+            // --- BOSS 1: BIO-LUMINESCENT ROOT SLAM GRID ---
+            let time = Date.now();
+
+            // 1. Bio-luminescent Root Boundary Ring
+            c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+            c.lineWidth = 3.0;
+            c.shadowBlur = 12;
+            c.shadowColor = "#2ecc71";
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+            c.stroke();
+            c.shadowBlur = 0;
+
+            c.strokeStyle = "rgba(163, 253, 131, 0.6)";
+            c.lineWidth = 1.2;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+            c.stroke();
+
+            // 2. Inner Radial Bio-Spore Filling Disc
+            let fillGrad = c.createRadialGradient(
+              m.targetX,
+              m.targetY,
+              1,
+              m.targetX,
+              m.targetY,
+              radius,
+            );
+            fillGrad.addColorStop(
+              0,
+              `rgba(163, 253, 131, ${pulseAlpha * 0.7})`,
+            );
+            fillGrad.addColorStop(
+              0.5,
+              `rgba(46, 204, 113, ${pulseAlpha * 0.4})`,
+            );
+            fillGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
+
+            c.fillStyle = fillGrad;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+            c.fill();
+
+            // 3. Bio-Luminescent Root Vine Grid (8 Radial Root Tendrils with Jagged Branches)
+            c.strokeStyle = `rgba(0, 255, 204, ${0.4 + progress * 0.5})`;
+            c.lineWidth = 1.8;
+            c.beginPath();
+            let radRays = 8;
+            for (let i = 0; i < radRays; i++) {
+              let rayAngle = (i * Math.PI * 2) / radRays + (m.id || 0);
+              let endDist = radius * progress;
+              let steps = 5;
+              let lastX = m.targetX;
+              let lastY = m.targetY;
+
+              for (let s = 1; s <= steps; s++) {
+                let curDist = (endDist * s) / steps;
+                let jitter = Math.sin(s * 2.3 + time / 200) * 4;
+                let curAngle = rayAngle + jitter * 0.05;
+                let nx = m.targetX + Math.cos(curAngle) * curDist;
+                let ny = m.targetY + Math.sin(curAngle) * curDist;
+
+                c.moveTo(lastX, lastY);
+                c.lineTo(nx, ny);
+
+                // Lateral root tendril split
+                if (s === 3) {
+                  let branchAngle = curAngle + (i % 2 === 0 ? 0.4 : -0.4);
+                  let bx = nx + Math.cos(branchAngle) * 12 * progress;
+                  let by = ny + Math.sin(branchAngle) * 12 * progress;
+                  c.moveTo(nx, ny);
+                  c.lineTo(bx, by);
+                }
+
+                lastX = nx;
+                lastY = ny;
+              }
+            }
+            c.stroke();
+
+            // 4. Bio-luminescent Spore Nodes at Intersection Joints
+            c.fillStyle = "#a3fd83";
+            for (let i = 0; i < radRays; i++) {
+              let rayAngle = (i * Math.PI * 2) / radRays + (m.id || 0);
+              let nodeDist = radius * progress * 0.6;
+              let nx = m.targetX + Math.cos(rayAngle) * nodeDist;
+              let ny = m.targetY + Math.sin(rayAngle) * nodeDist;
+              c.beginPath();
+              c.arc(nx, ny, 2.2, 0, Math.PI * 2);
+              c.fill();
+            }
+          } else if (isIronVault) {
+            // --- BOSS 3: MOLTEN STEEL SLAM & FISSURE GRID ---
+            let time = Date.now();
+
+            // 1. Molten Iron Outer Boundary
+            c.strokeStyle = `rgba(249, 115, 22, ${0.6 + pulseAlpha * 0.4})`;
+            c.lineWidth = 3.0;
+            c.shadowBlur = 12;
+            c.shadowColor = "#f97316";
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+            c.stroke();
+            c.shadowBlur = 0;
+
+            c.strokeStyle = "rgba(254, 240, 138, 0.7)";
+            c.lineWidth = 1.2;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+            c.stroke();
+
+            // 2. Glowing Lava Core Disc
+            let fillGrad = c.createRadialGradient(
+              m.targetX,
+              m.targetY,
+              1,
+              m.targetX,
+              m.targetY,
+              radius,
+            );
+            fillGrad.addColorStop(
+              0,
+              `rgba(254, 240, 138, ${pulseAlpha * 0.75})`,
+            );
+            fillGrad.addColorStop(
+              0.5,
+              `rgba(249, 115, 22, ${pulseAlpha * 0.45})`,
+            );
+            fillGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
+
+            c.fillStyle = fillGrad;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+            c.fill();
+
+            // 3. Crosshair Lava Fissures (4 Cardinal Fractures)
+            c.strokeStyle = `rgba(253, 186, 116, ${0.5 + progress * 0.5})`;
+            c.lineWidth = 2.0;
+            c.beginPath();
+            for (let i = 0; i < 4; i++) {
+              let ang = (i * Math.PI) / 2;
+              let endDist = radius * progress;
+              c.moveTo(m.targetX, m.targetY);
+              c.lineTo(
+                m.targetX + Math.cos(ang) * endDist,
+                m.targetY + Math.sin(ang) * endDist,
+              );
+            }
+            c.stroke();
+
+            // 4. Heat Motes / Ember Sparks
+            c.fillStyle = "#fef08a";
+            for (let i = 0; i < 4; i++) {
+              let ang = (i * Math.PI) / 2 + time / 1000;
+              let sparkDist = radius * progress * 0.7;
+              let sx = m.targetX + Math.cos(ang) * sparkDist;
+              let sy = m.targetY + Math.sin(ang) * sparkDist;
+              c.beginPath();
+              c.arc(sx, sy, 1.8, 0, Math.PI * 2);
+              c.fill();
+            }
+          } else if (isCorrosive) {
+            // --- BOSS 4: CAUSTIC SLUDGE SLAM ---
+            let time = Date.now();
+
+            // 1. Toxic Bio-Green Outer Ring
+            c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+            c.lineWidth = 3.0;
+            c.shadowBlur = 12;
+            c.shadowColor = "#2ecc71";
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+            c.stroke();
+            c.shadowBlur = 0;
+
+            c.strokeStyle = "rgba(163, 253, 131, 0.7)";
+            c.lineWidth = 1.2;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+            c.stroke();
+
+            // 2. Bubbling Acid Pool Gradient Fill
+            let acidGrad = c.createRadialGradient(
+              m.targetX,
+              m.targetY,
+              1,
+              m.targetX,
+              m.targetY,
+              radius,
+            );
+            acidGrad.addColorStop(
+              0,
+              `rgba(163, 253, 131, ${pulseAlpha * 0.7})`,
+            );
+            acidGrad.addColorStop(
+              0.5,
+              `rgba(46, 204, 113, ${pulseAlpha * 0.4})`,
+            );
+            acidGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
+
+            c.fillStyle = acidGrad;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+            c.fill();
+
+            // 3. Toxic Splatter Lines
+            c.strokeStyle = `rgba(163, 253, 131, ${0.4 + progress * 0.5})`;
+            c.lineWidth = 1.5;
+            c.beginPath();
+            for (let i = 0; i < 6; i++) {
+              let ang = (i * Math.PI * 2) / 6 + time / 1200;
+              let endDist = radius * progress;
+              c.moveTo(m.targetX, m.targetY);
+              c.lineTo(
+                m.targetX + Math.cos(ang) * endDist,
+                m.targetY + Math.sin(ang) * endDist,
+              );
+            }
+            c.stroke();
+          } else {
+            // --- STANDARD SLAM INDICATOR ---
+            c.strokeStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
+            c.lineWidth = 3.0;
+            c.shadowBlur = 10;
+            c.shadowColor = "#e74c3c";
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+            c.stroke();
+            c.shadowBlur = 0;
+
+            c.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            c.lineWidth = 1.0;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius + 4, 0, Math.PI * 2);
+            c.stroke();
+
+            let fillGrad = c.createRadialGradient(
+              m.targetX,
+              m.targetY,
+              1,
+              m.targetX,
+              m.targetY,
+              radius,
+            );
+            fillGrad.addColorStop(0, `rgba(255, 242, 0, ${pulseAlpha * 0.6})`);
+            fillGrad.addColorStop(
+              0.6,
+              `rgba(231, 76, 60, ${pulseAlpha * 0.4})`,
+            );
+            fillGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
+
+            c.fillStyle = fillGrad;
+            c.beginPath();
+            c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+            c.fill();
+
+            c.strokeStyle = `rgba(231, 76, 60, ${0.15 + progress * 0.45})`;
+            c.lineWidth = 1.2;
+            c.beginPath();
+            for (let i = 0; i < 6; i++) {
+              let angle = (i * Math.PI * 2) / 6 + (m.id || 0);
+              let startRad = radius * 0.15;
+              let endRad = radius * progress;
+              let sx = m.targetX + Math.cos(angle) * startRad;
+              let sy = m.targetY + Math.sin(angle) * startRad;
+              c.moveTo(sx, sy);
+
+              let steps = 4;
+              for (let s = 1; s <= steps; s++) {
+                let segRad = startRad + (endRad - startRad) * (s / steps);
+                let jitterAngle = angle + Math.sin(s * 1.5) * 0.15;
+                let jx = m.targetX + Math.cos(jitterAngle) * segRad;
+                let jy = m.targetY + Math.sin(jitterAngle) * segRad;
+                c.lineTo(jx, jy);
+              }
+            }
+            c.stroke();
+          }
+        } else if (m.activeAbility === "charge") {
+          // --- HIGH FIDELITY CHARGE INDICATOR ---
+          let dx = m.targetX - cx;
+          let dy = m.targetY - cy;
+          let dist = Math.hypot(dx, dy);
+          if (dist > 0) {
+            let nx = dx / dist;
+            let ny = dy / dist;
+            let trackW = 18;
+
+            // Translucent hazard stripe path backing
+            c.fillStyle = `rgba(231, 76, 60, 0.12)`;
+            c.save();
+            c.translate(cx, cy);
+            c.rotate(Math.atan2(dy, dx));
+            c.fillRect(0, -trackW / 2, dist, trackW);
+
+            // Glowing border rails
+            c.strokeStyle = `rgba(231, 76, 60, ${0.4 + pulseAlpha})`;
+            c.lineWidth = 2.0;
+            c.beginPath();
+            c.moveTo(0, -trackW / 2);
+            c.lineTo(dist, -trackW / 2);
+            c.moveTo(0, trackW / 2);
+            c.lineTo(dist, trackW / 2);
+            c.stroke();
+
+            // Sliding Chevron speed indicators
+            let speed = 6;
+            let slideOffset = (Date.now() / 15) % 60;
+            c.strokeStyle = "#ffffff";
+            c.lineWidth = 2.2;
+            c.lineCap = "round";
+            c.lineJoin = "round";
+
+            for (let d = slideOffset; d < dist; d += 60) {
+              c.beginPath();
+              c.moveTo(d - 6, -5);
+              c.lineTo(d, 0);
+              c.lineTo(d - 6, 5);
+              c.stroke();
+            }
+            c.restore();
+          }
+        } else if (m.activeAbility === "nova") {
+          // --- HIGH FIDELITY NOVA INDICATOR ---
+          c.strokeStyle = `rgba(230, 126, 34, ${0.35 + pulseAlpha * 0.4})`;
+          c.lineWidth = 2.5;
+
+          // Accretion rings expansion effect
+          c.save();
+          c.strokeStyle = `rgba(230, 126, 34, ${pulseAlpha})`;
+          c.shadowBlur = 8;
+          c.shadowColor = "#e67e22";
+          c.beginPath();
+          c.arc(cx, cy, 120 * progress, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+
+          // Detailed warning rays radiating outwards
+          for (let i = 0; i < 8; i++) {
+            let angle = (i * Math.PI * 2) / 8;
+            let cos = Math.cos(angle);
+            let sin = Math.sin(angle);
+
+            // Multi-layered glowing laser guidelines
+            let rayGrad = c.createLinearGradient(
+              cx,
+              cy,
+              cx + cos * 120,
+              cy + sin * 120,
+            );
+            rayGrad.addColorStop(0, "rgba(255, 242, 0, 0.85)");
+            rayGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.4)");
+            rayGrad.addColorStop(1, "rgba(230, 126, 34, 0)");
+
+            c.strokeStyle = rayGrad;
+            c.lineWidth = 2.0;
+            c.beginPath();
+            c.moveTo(cx + cos * 14, cy + sin * 14);
+            c.lineTo(cx + cos * 120, cy + sin * 120);
+            c.stroke();
+          }
+        } else if (m.activeAbility === "root_snare") {
+          // --- BOSS 1: BIO-LUMINESCENT CREEPING SNARE WEB & ROOT GRID ---
+          let radius = 75;
+          let time = Date.now();
+
+          // 1. Connecting Vine Tether from Treant Center to Target Location
+          c.strokeStyle = `rgba(46, 204, 113, ${0.4 + pulseAlpha * 0.3})`;
+          c.lineWidth = 2.0;
+          c.setLineDash([6, 4]);
+          c.beginPath();
+          c.moveTo(cx, cy);
+          c.lineTo(m.targetX, m.targetY);
+          c.stroke();
+          c.setLineDash([]);
+
+          // 2. Outer Bio-Luminescent Web Boundary Ring
+          c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+          c.lineWidth = 3.0;
+          c.shadowBlur = 12;
+          c.shadowColor = "#2ecc71";
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
+
+          c.strokeStyle = "rgba(0, 255, 204, 0.6)";
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+          c.stroke();
+
+          // 3. Growing Inner Bio-Spore Web Fill
+          let fillGrad = c.createRadialGradient(
+            m.targetX,
+            m.targetY,
+            1,
+            m.targetX,
+            m.targetY,
+            radius,
+          );
+          fillGrad.addColorStop(0, `rgba(0, 255, 204, ${pulseAlpha * 0.5})`);
+          fillGrad.addColorStop(0.5, `rgba(39, 174, 96, ${pulseAlpha * 0.35})`);
+          fillGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
+
+          c.fillStyle = fillGrad;
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+          c.fill();
+
+          // 4. Concentric Arachnid Web Rings
+          let webRings = 4;
+          c.strokeStyle = `rgba(0, 255, 204, ${0.3 + progress * 0.4})`;
+          c.lineWidth = 1.4;
+          for (let r = 1; r <= webRings; r++) {
+            let ringRad = (radius * progress * r) / webRings;
+            if (ringRad > 2) {
+              c.beginPath();
+              c.arc(m.targetX, m.targetY, ringRad, 0, Math.PI * 2);
+              c.stroke();
+            }
+          }
+
+          // 5. Radial Root Vine Strands & Bio-Luminescent Nodes
+          let rays = 8;
+          c.strokeStyle = `rgba(46, 204, 113, ${0.5 + progress * 0.4})`;
+          c.lineWidth = 1.8;
+          c.beginPath();
+          for (let i = 0; i < rays; i++) {
+            let angle = (i * Math.PI * 2) / rays + time / 2000;
+            let endR = radius * progress;
+            c.moveTo(m.targetX, m.targetY);
+            c.lineTo(
+              m.targetX + Math.cos(angle) * endR,
+              m.targetY + Math.sin(angle) * endR,
+            );
+          }
+          c.stroke();
+
+          // Bio-Luminescent Nodes at Web Intersections
+          c.fillStyle = "#00ffcc";
+          for (let r = 1; r <= webRings; r++) {
+            let ringRad = (radius * progress * r) / webRings;
+            if (ringRad > 4) {
+              for (let i = 0; i < rays; i++) {
+                let angle = (i * Math.PI * 2) / rays + time / 2000;
+                let nx = m.targetX + Math.cos(angle) * ringRad;
+                let ny = m.targetY + Math.sin(angle) * ringRad;
+                c.beginPath();
+                c.arc(nx, ny, 1.8, 0, Math.PI * 2);
+                c.fill();
+              }
+            }
+          }
+
+          // 6. Perimeter Thorn Teeth
+          let thorns = 8;
+          c.fillStyle = `rgba(39, 174, 96, ${0.5 + progress * 0.5})`;
+          c.strokeStyle = "#000000";
+          c.lineWidth = 1.0;
+          for (let i = 0; i < thorns; i++) {
+            let ta = (i * Math.PI * 2) / thorns + time / 800;
+            let outX = m.targetX + Math.cos(ta) * (radius + 6);
+            let outY = m.targetY + Math.sin(ta) * (radius + 6);
+            let side1X = m.targetX + Math.cos(ta - 0.15) * (radius - 2);
+            let side1Y = m.targetY + Math.sin(ta - 0.15) * (radius - 2);
+            let side2X = m.targetX + Math.cos(ta + 0.15) * (radius - 2);
+            let side2Y = m.targetY + Math.sin(ta + 0.15) * (radius - 2);
+
+            c.beginPath();
+            c.moveTo(side1X, side1Y);
+            c.lineTo(outX, outY);
+            c.lineTo(side2X, side2Y);
+            c.closePath();
+            c.fill();
+            c.stroke();
+          }
+        } else if (m.activeAbility === "magnetic_pull") {
+          // --- BOSS 2: SAPPHIRE MAGNETIC VORTEX ---
+          let time = Date.now();
+          let maxRadius = 140;
+
+          // 1. Central Impact Hazard Zone
+          let coreGrad = c.createRadialGradient(cx, cy, 2, cx, cy, 70);
+          coreGrad.addColorStop(0, `rgba(0, 210, 255, ${pulseAlpha * 0.7})`);
+          coreGrad.addColorStop(
+            0.5,
+            `rgba(56, 189, 248, ${pulseAlpha * 0.35})`,
+          );
+          coreGrad.addColorStop(1, "rgba(5, 12, 24, 0)");
+
+          c.fillStyle = coreGrad;
+          c.beginPath();
+          c.arc(cx, cy, 70, 0, Math.PI * 2);
+          c.fill();
+
+          c.strokeStyle = `rgba(0, 210, 255, ${0.5 + pulseAlpha * 0.4})`;
+          c.lineWidth = 2.0;
+          c.shadowBlur = 10;
+          c.shadowColor = "#00d2ff";
+          c.beginPath();
+          c.arc(cx, cy, 70, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
+
+          // 2. Contracting Spiral Field Rings
+          let ringCount = 4;
+          c.lineWidth = 1.6;
+          for (let i = 0; i < ringCount; i++) {
+            let rProgress = (progress + i / ringCount) % 1.0;
+            let currentR = maxRadius * (1.0 - rProgress);
+
+            c.strokeStyle = `rgba(0, 210, 255, ${(1.0 - rProgress) * (0.4 + pulseAlpha * 0.4)})`;
+            c.beginPath();
+            c.arc(cx, cy, currentR, 0, Math.PI * 2);
+            c.stroke();
+          }
+
+          // 3. Rotating Magnetic Field Vector Spokes
+          let spokes = 6;
+          c.strokeStyle = `rgba(56, 189, 248, ${0.25 + pulseAlpha * 0.25})`;
+          c.lineWidth = 1.2;
+          c.save();
+          c.translate(cx, cy);
+          c.rotate(time / 300);
+          for (let s = 0; s < spokes; s++) {
+            let ang = (s * Math.PI * 2) / spokes;
+            c.beginPath();
+            c.moveTo(Math.cos(ang) * 15, Math.sin(ang) * 15);
+            c.lineTo(Math.cos(ang) * maxRadius, Math.sin(ang) * maxRadius);
+            c.stroke();
+          }
+          c.restore();
+        } else if (m.activeAbility === "boomerang_shield") {
+          // --- BOSS 2: SAPPHIRE BOOMERANG TRAJECTORY ---
+          let time = Date.now();
+          c.strokeStyle = `rgba(0, 210, 255, ${0.6 + pulseAlpha * 0.4})`;
+          c.lineWidth = 2.2;
+          c.shadowBlur = 10;
+          c.shadowColor = "#00d2ff";
+
+          // Target Reticle
+          let reticleR = 22 + Math.sin(time / 100) * 3;
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, reticleR, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
+
+          // Dual Trajectory Dotted Guidelines
+          let angleToPlayer = Math.atan2(m.targetY - cy, m.targetX - cx);
+          c.strokeStyle = "rgba(56, 189, 248, 0.4)";
+          c.lineWidth = 1.2;
+          c.setLineDash([5, 4]);
+
+          [-0.25, 0.25].forEach((offset) => {
+            let arcAng = angleToPlayer + offset;
+            let tx = cx + Math.cos(arcAng) * 160;
+            let ty = cy + Math.sin(arcAng) * 160;
+            c.beginPath();
+            c.moveTo(cx, cy);
+            c.lineTo(tx, ty);
+            c.stroke();
+          });
+          c.setLineDash([]);
+        } else if (
+          m.activeAbility === "shield_bash" &&
+          m.shieldAngle !== undefined
+        ) {
+          // --- BOSS 2: DIRECTIONAL TOWER SHIELD BASH CONE ---
+          let radius = 68;
+          let arcWidth = 0.55; // Radians to each side of shieldAngle
+
+          // 1. Layered Sector Warning Cone
+          let coneGrad = c.createRadialGradient(cx, cy, 2, cx, cy, radius);
+          coneGrad.addColorStop(0, `rgba(0, 210, 255, ${pulseAlpha * 0.6})`);
+          coneGrad.addColorStop(0.7, `rgba(231, 76, 60, ${pulseAlpha * 0.5})`);
+          coneGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
+
+          c.fillStyle = coneGrad;
+          c.beginPath();
+          c.moveTo(cx, cy);
+          c.arc(
+            cx,
+            cy,
+            radius,
+            m.shieldAngle - arcWidth,
+            m.shieldAngle + arcWidth,
+          );
+          c.closePath();
+          c.fill();
+
+          // 2. Heavy Outlined Arc Boundaries
+          c.strokeStyle = "#e74c3c";
+          c.lineWidth = 2.5;
+          c.shadowBlur = 10;
+          c.shadowColor = "#e74c3c";
+          c.beginPath();
+          c.moveTo(cx, cy);
+          c.arc(
+            cx,
+            cy,
+            radius,
+            m.shieldAngle - arcWidth,
+            m.shieldAngle + arcWidth,
+          );
+          c.closePath();
+          c.stroke();
+          c.shadowBlur = 0;
+
+          // 3. Sweeping Shockwave Arc expanding with progress
+          let waveR = Math.max(0, radius * progress);
+          c.strokeStyle = "#ffffff";
+          c.lineWidth = 2.0;
+          c.beginPath();
+          c.arc(
+            cx,
+            cy,
+            waveR,
+            m.shieldAngle - arcWidth,
+            m.shieldAngle + arcWidth,
+          );
+          c.stroke();
+
+          // 4. Sector Directional Rib Lines
+          c.strokeStyle = "rgba(0, 210, 255, 0.4)";
+          c.lineWidth = 1.0;
+          [-0.35, 0, 0.35].forEach((angOffset) => {
+            let subAng = m.shieldAngle + angOffset;
+            c.beginPath();
+            c.moveTo(cx, cy);
+            c.lineTo(
+              cx + Math.cos(subAng) * radius,
+              cy + Math.sin(subAng) * radius,
+            );
+            c.stroke();
+          });
+        } else if (m.activeAbility === "magma_vents" && m.ventSpawnLocations) {
+          // --- BOSS 3: MAGMA VENT FISSURE TARGETS ---
+          let time = Date.now();
+          let ventRadius = 18;
+
+          m.ventSpawnLocations.forEach((loc) => {
+            // 1. Dual Molten Warning Rings
+            c.strokeStyle = `rgba(249, 115, 22, ${0.6 + pulseAlpha * 0.4})`;
+            c.lineWidth = 2.2;
+            c.shadowBlur = 10;
+            c.shadowColor = "#f97316";
+            c.beginPath();
+            c.arc(loc.x, loc.y, ventRadius + pulseAlpha * 3, 0, Math.PI * 2);
+            c.stroke();
+            c.shadowBlur = 0;
+
+            c.strokeStyle = "rgba(254, 240, 138, 0.8)";
+            c.lineWidth = 1.0;
+            c.beginPath();
+            c.arc(loc.x, loc.y, ventRadius + 4, 0, Math.PI * 2);
+            c.stroke();
+
+            // 2. Bubbling Lava Core Fill
+            let lavaGrad = c.createRadialGradient(
+              loc.x,
+              loc.y,
+              1,
+              loc.x,
+              loc.y,
+              ventRadius,
+            );
+            lavaGrad.addColorStop(
+              0,
+              `rgba(254, 240, 138, ${pulseAlpha * 0.8})`,
+            );
+            lavaGrad.addColorStop(
+              0.6,
+              `rgba(249, 115, 22, ${pulseAlpha * 0.4})`,
+            );
+            lavaGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
+
+            c.fillStyle = lavaGrad;
+            c.beginPath();
+            c.arc(loc.x, loc.y, ventRadius * progress, 0, Math.PI * 2);
+            c.fill();
+
+            // 3. Crosshair Fissure Ticks
+            c.strokeStyle = `rgba(253, 186, 116, ${0.4 + progress * 0.5})`;
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(loc.x - ventRadius - 4, loc.y);
+            c.lineTo(loc.x + ventRadius + 4, loc.y);
+            c.moveTo(loc.x, loc.y - ventRadius - 4);
+            c.lineTo(loc.x, loc.y + ventRadius + 4);
+            c.stroke();
+          });
+        } else if (m.activeAbility === "dilation_field") {
+          // --- BOSS 6: ROMAN NUMERAL CLOCKWORK DILATION FIELD & DIAL SWEEPS ---
+          let radius = 42;
+          let time = Date.now();
+
+          // 1. Outer Brass Gear Teeth Perimeter
+          c.save();
+          c.translate(m.targetX, m.targetY);
+          c.rotate(time / 1200);
+
+          c.fillStyle = `rgba(212, 175, 55, ${0.4 + pulseAlpha * 0.3})`;
+          c.strokeStyle = "#ffd700";
+          c.lineWidth = 1.0;
+          let teeth = 12;
+          for (let i = 0; i < teeth; i++) {
+            let tAng = (i * Math.PI * 2) / teeth;
+            c.save();
+            c.rotate(tAng);
+            c.fillRect(-2, -radius - 3, 4, 3);
+            c.restore();
+          }
+          c.restore();
+
+          // 2. Outer Pulsing Gold Dial Ring
+          c.strokeStyle = `rgba(241, 196, 15, ${0.7 + pulseAlpha * 0.3})`;
+          c.lineWidth = 2.5;
+          c.shadowBlur = 10;
+          c.shadowColor = "#ffd700";
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
+
+          // 3. Growing Concentric Warning Fill Disc
+          let fillGrad = c.createRadialGradient(
+            m.targetX,
+            m.targetY,
+            1,
+            m.targetX,
+            m.targetY,
+            radius,
+          );
+          fillGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.7})`);
+          fillGrad.addColorStop(0.5, `rgba(212, 175, 55, ${pulseAlpha * 0.4})`);
+          fillGrad.addColorStop(1, "rgba(120, 53, 15, 0)");
+
+          c.fillStyle = fillGrad;
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+          c.fill();
+
+          // 4. 12 Clock Dial Hour Ticks (XII, III, VI, IX)
+          c.strokeStyle = "rgba(254, 240, 138, 0.8)";
+          c.lineWidth = 1.2;
+          for (let i = 0; i < 12; i++) {
+            let tickAng = (i * Math.PI * 2) / 12;
+            let isMajor = i % 3 === 0;
+            let innerR = isMajor ? radius - 8 : radius - 4;
+            c.beginPath();
+            c.moveTo(
+              m.targetX + Math.cos(tickAng) * innerR,
+              m.targetY + Math.sin(tickAng) * innerR,
+            );
+            c.lineTo(
+              m.targetX + Math.cos(tickAng) * radius,
+              m.targetY + Math.sin(tickAng) * radius,
+            );
+            c.stroke();
+          }
+
+          // 5. Sweeping Clock Hand Line (0 to 2*PI in direction of progress)
+          let handAng = -Math.PI / 2 + progress * Math.PI * 2;
+          c.strokeStyle = "#ffffff";
+          c.lineWidth = 2.0;
+          c.beginPath();
+          c.moveTo(m.targetX, m.targetY);
+          c.lineTo(
+            m.targetX + Math.cos(handAng) * (radius - 3),
+            m.targetY + Math.sin(handAng) * (radius - 3),
+          );
+          c.stroke();
+
+          c.fillStyle = "#ffd700";
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, 2.5, 0, Math.PI * 2);
+          c.fill();
+        } else if (m.activeAbility === "control_glitch") {
+          // --- HIGH FIDELITY CONTROL GLITCH GRID ---
+          let radius = 180;
+          let time = Date.now();
+
+          // Outer pulsing digital wireframe boundary
+          c.strokeStyle = `rgba(255, 0, 127, ${pulseAlpha})`;
+          c.lineWidth = 2.5;
+          c.shadowBlur = 10;
+          c.shadowColor = "#ff007f";
+          c.beginPath();
+          c.arc(cx, cy, radius, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
+
+          // Rotating cybernetic grid guidelines
+          c.strokeStyle = "rgba(0, 240, 255, 0.25)";
+          c.lineWidth = 1.0;
+          c.save();
+          c.translate(cx, cy);
+          c.rotate(time / 500);
+
+          // Draw horizontal and vertical grid intersection guides
+          for (let d = -radius + 30; d < radius; d += 30) {
+            if (Math.abs(d) >= radius) continue;
+            let chord = Math.sqrt(radius * radius - d * d);
+            c.beginPath();
+            c.moveTo(-chord, d);
+            c.lineTo(chord, d);
+            c.moveTo(d, -chord);
+            c.lineTo(d, chord);
+            c.stroke();
+          }
+          c.restore();
+
+          // Inner digital core warning
+          c.fillStyle = `rgba(255, 0, 127, ${pulseAlpha * 0.15})`;
+          c.beginPath();
+          c.arc(cx, cy, radius, 0, Math.PI * 2);
+          c.fill();
+        } else if (m.activeAbility === "gold_fall" && m.goldFallTargets) {
+          // --- HIGH FIDELITY GOLD FALL PLATES ---
+          m.goldFallTargets.forEach((target) => {
+            c.strokeStyle = `rgba(241, 196, 15, ${pulseAlpha})`;
+            c.lineWidth = 2.0;
+            c.shadowBlur = 8;
+            c.shadowColor = "#ffd700";
+            c.beginPath();
+            c.arc(target.x, target.y, 20 + pulseAlpha * 3, 0, Math.PI * 2);
+            c.stroke();
+            c.shadowBlur = 0;
+
+            c.fillStyle = `rgba(181, 135, 0, ${pulseAlpha * 0.22})`;
+            c.beginPath();
+            c.arc(target.x, target.y, 20 * progress, 0, Math.PI * 2);
+            c.fill();
+          });
+        } else if (m.activeAbility === "scarlet_fire") {
+          // --- BOSS 7: SCARLET DRAGON FIRE BREATH CONE ---
+          let radius = 115;
+          let faceAngle = m.facing === -1 ? Math.PI : 0;
+          let coneWidth = 0.85;
+
+          c.save();
+
+          // 1. Multi-Stop Flame Gradient Fill
+          let fireGrad = c.createRadialGradient(cx, cy, 2, cx, cy, radius);
+          fireGrad.addColorStop(0, `rgba(255, 255, 255, ${pulseAlpha * 0.85})`);
+          fireGrad.addColorStop(
+            0.3,
+            `rgba(254, 240, 138, ${pulseAlpha * 0.7})`,
+          );
+          fireGrad.addColorStop(0.7, `rgba(255, 85, 0, ${pulseAlpha * 0.5})`);
+          fireGrad.addColorStop(1, "rgba(150, 0, 24, 0)");
+
+          c.fillStyle = fireGrad;
+          c.beginPath();
+          c.moveTo(cx, cy);
+          c.arc(
+            cx,
+            cy,
+            radius * progress,
+            faceAngle - coneWidth,
+            faceAngle + coneWidth,
+          );
+          c.closePath();
+          c.fill();
+
+          // 2. Outer Dragon Fire Boundary Contour
+          c.strokeStyle = "#ff3300";
+          c.lineWidth = 2.5;
+          c.shadowBlur = 12;
+          c.shadowColor = "#ff3300";
+          c.beginPath();
+          c.moveTo(cx, cy);
+          c.arc(cx, cy, radius, faceAngle - coneWidth, faceAngle + coneWidth);
+          c.closePath();
+          c.stroke();
+          c.shadowBlur = 0;
+
+          // 3. Advancing Fire Wavefront Arc
+          let waveR = Math.max(0, radius * progress);
+          c.strokeStyle = "rgba(254, 240, 138, 0.9)";
+          c.lineWidth = 2.0;
+          c.beginPath();
+          c.arc(cx, cy, waveR, faceAngle - coneWidth, faceAngle + coneWidth);
+          c.stroke();
+
+          // 4. Radial Flame Jet Guidelines
+          c.strokeStyle = `rgba(255, 85, 0, ${0.4 + progress * 0.4})`;
+          c.lineWidth = 1.2;
+          let rays = 5;
+          for (let r = 0; r < rays; r++) {
+            let rayAng =
+              faceAngle - coneWidth + (r * (coneWidth * 2)) / (rays - 1);
+            c.beginPath();
+            c.moveTo(cx, cy);
+            c.lineTo(
+              cx + Math.cos(rayAng) * radius,
+              cy + Math.sin(rayAng) * radius,
+            );
+            c.stroke();
+          }
+
+          c.restore();
+        } else if (m.activeAbility === "calamity_slam") {
+          // --- BOSS 7: FAULT LINE GROUND SHATTER ---
+          let time = Date.now();
+          let radius = 80;
+
+          // 1. Outer Volcanic Calamity Boundary Ring
+          c.strokeStyle = `rgba(255, 51, 0, ${0.7 + pulseAlpha * 0.3})`;
+          c.lineWidth = 3.0;
+          c.shadowBlur = 14;
+          c.shadowColor = "#ff3300";
+          c.beginPath();
+          c.arc(cx, cy, radius, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
+
+          c.strokeStyle = "rgba(254, 240, 138, 0.7)";
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+          c.stroke();
+
+          // 2. Inner Collapsing Ground Fill
+          let collapseGrad = c.createRadialGradient(cx, cy, 1, cx, cy, radius);
+          collapseGrad.addColorStop(
+            0,
+            `rgba(254, 240, 138, ${pulseAlpha * 0.75})`,
+          );
+          collapseGrad.addColorStop(
+            0.5,
+            `rgba(255, 85, 0, ${pulseAlpha * 0.45})`,
+          );
+          collapseGrad.addColorStop(1, "rgba(150, 0, 24, 0)");
+
+          c.fillStyle = collapseGrad;
+          c.beginPath();
+          c.arc(cx, cy, radius * progress, 0, Math.PI * 2);
+          c.fill();
+
+          // 3. Jagged Fault Line Ground Cracks (8 Fractures)
+          c.strokeStyle = `rgba(255, 51, 0, ${0.5 + progress * 0.5})`;
+          c.lineWidth = 2.0;
+          c.beginPath();
+          let cracks = 8;
+          for (let i = 0; i < cracks; i++) {
+            let baseAng = (i * Math.PI * 2) / cracks + (m.id || 0);
+            let endDist = radius * progress;
+            let steps = 4;
+            let lastX = cx;
+            let lastY = cy;
+
+            for (let s = 1; s <= steps; s++) {
+              let curDist = (endDist * s) / steps;
+              let jitter = Math.sin(s * 3.1 + time / 180) * 3;
+              let curAngle = baseAng + jitter * 0.04;
+              let nx = cx + Math.cos(curAngle) * curDist;
+              let ny = cy + Math.sin(curAngle) * curDist;
+
+              c.moveTo(lastX, lastY);
+              c.lineTo(nx, ny);
+              lastX = nx;
+              lastY = ny;
+            }
+          }
+          c.stroke();
+        } else if (m.activeAbility === "spore_storm") {
+          // --- BOSS 4: ROTATING SPORE VECTOR CONES ---
+          let time = Date.now();
+          let coneRadius = 55;
+          let rotAngle = time / 500;
+
+          c.save();
+          c.translate(cx, cy);
+
+          // 1. 3 Rotating Directional Spore Cones
+          let numCones = 3;
+          let coneWidth = 0.35; // radians each side
+          for (let i = 0; i < numCones; i++) {
+            let baseAng = rotAngle + (i * Math.PI * 2) / numCones;
+
+            let sporeGrad = c.createRadialGradient(0, 0, 2, 0, 0, coneRadius);
+            sporeGrad.addColorStop(
+              0,
+              `rgba(163, 253, 131, ${pulseAlpha * 0.7})`,
+            );
+            sporeGrad.addColorStop(
+              0.6,
+              `rgba(46, 204, 113, ${pulseAlpha * 0.35})`,
+            );
+            sporeGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
+
+            c.fillStyle = sporeGrad;
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.arc(
+              0,
+              0,
+              coneRadius * progress,
+              baseAng - coneWidth,
+              baseAng + coneWidth,
+            );
+            c.closePath();
+            c.fill();
+
+            c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+            c.lineWidth = 1.8;
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.arc(0, 0, coneRadius, baseAng - coneWidth, baseAng + coneWidth);
+            c.closePath();
+            c.stroke();
+          }
+
+          c.restore();
+
+          // 2. Central Toxic Core Circle
+          let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, 20);
+          coreGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.8})`);
+          coreGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
+
+          c.fillStyle = coreGrad;
+          c.beginPath();
+          c.arc(cx, cy, 20, 0, Math.PI * 2);
+          c.fill();
+
+          c.strokeStyle = "#2ecc71";
+          c.lineWidth = 1.8;
+          c.beginPath();
+          c.arc(cx, cy, 20, 0, Math.PI * 2);
+          c.stroke();
+        } else if (m.activeAbility === "singularity") {
+          // --- BOSS 5: EVENT HORIZON ACCRETION DISK & GRAVITY VACUUM RINGS ---
+          let radius = 90;
+          let time = Date.now();
+
+          // 1. Outer Pulsing Event Horizon Boundary
+          c.strokeStyle = `rgba(232, 67, 147, ${0.7 + pulseAlpha * 0.3})`;
+          c.lineWidth = 3.0;
+          c.shadowBlur = 16;
+          c.shadowColor = "#e84393";
+          c.beginPath();
+          c.arc(cx, cy, radius, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
+
+          c.strokeStyle = "rgba(142, 68, 173, 0.6)";
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+          c.stroke();
+
+          // 2. Counter-Rotating Tilted Accretion Disk Ellipses
+          c.save();
+          c.translate(cx, cy);
+
+          // Outer Accretion Ring (Counter-Clockwise)
+          c.save();
+          c.rotate(-time / 300);
+          c.strokeStyle = "rgba(232, 67, 147, 0.65)";
+          c.lineWidth = 1.8;
+          c.beginPath();
+          c.ellipse(0, 0, radius * 0.95, radius * 0.35, 0, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+
+          // Inner Accretion Ring (Clockwise)
+          c.save();
+          c.rotate(time / 220 + Math.PI / 4);
+          c.strokeStyle = "rgba(0, 210, 255, 0.65)";
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.ellipse(0, 0, radius * 0.75, radius * 0.28, 0, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+
+          c.restore();
+
+          // 3. Contracting Gravity Vacuum Rings
+          let ringCount = 4;
+          for (let i = 0; i < ringCount; i++) {
+            let rProgress = (progress + i / ringCount) % 1.0;
+            let curR = radius * (1.0 - rProgress);
+            c.strokeStyle = `rgba(142, 68, 173, ${(1.0 - rProgress) * (0.5 + pulseAlpha * 0.4)})`;
+            c.lineWidth = 1.6;
+            c.beginPath();
+            c.arc(cx, cy, curR, 0, Math.PI * 2);
+            c.stroke();
+          }
+
+          // 4. Dense Black Hole Core Singularity with Magenta Rim
+          let coreR = 14 + pulseAlpha * 4 + progress * 6;
+          let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, coreR);
+          coreGrad.addColorStop(0, "rgba(232, 67, 147, 0.95)");
+          coreGrad.addColorStop(0.5, "rgba(9, 2, 26, 0.98)");
+          coreGrad.addColorStop(1, "rgba(9, 2, 26, 0)");
+          c.fillStyle = coreGrad;
+          c.beginPath();
+          c.arc(cx, cy, coreR, 0, Math.PI * 2);
+          c.fill();
+        }
+        c.restore(); // Unified top-level restore to prevent canvas transform leaks on non-singularity boss abilities
+      },
+    };
+
+    // Initialize Draggable Flask Button Engine
+    if (typeof window.initFlaskButtonDrag === "function") {
+      window.initFlaskButtonDrag();
+    }
+
+    // Start inside Adventurer's Hub
+    window.loadHub();
 
     // Start 60 FPS Engine Loop
     requestAnimationFrame(gameLoop);
@@ -3425,11 +4026,11 @@
     let tileSize = map.tileSize;
 
     window.player.hp = window.player.maxHp;
-        if (typeof window.refillFlaskCharges === "function") {
-          window.refillFlaskCharges(true);
-        }
-        window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
-        window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
+    if (typeof window.refillFlaskCharges === "function") {
+      window.refillFlaskCharges(true);
+    }
+    window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
+    window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
     window.player.targetX = window.player.x;
     window.player.targetY = window.player.y;
 
@@ -3463,15 +4064,15 @@
   };
 
   window.enterDungeonRun = function (startFloor = 1) {
-      window.currentGameState = window.GAME_STATES.DUNGEON;
-      window.player.depth = Math.max(1, Number(startFloor) || 1);
-      window.player.bag = [];
+    window.currentGameState = window.GAME_STATES.DUNGEON;
+    window.player.depth = Math.max(1, Number(startFloor) || 1);
+    window.player.bag = [];
 
-      if (typeof window.refillFlaskCharges === "function") {
-        window.refillFlaskCharges(true);
-      }
+    if (typeof window.refillFlaskCharges === "function") {
+      window.refillFlaskCharges(true);
+    }
 
-      let st = window.SkillTreeManager;
+    let st = window.SkillTreeManager;
 
     // 1. Offhand Starter Provisioning
     let activeStarter = window.playerStats
@@ -3601,30 +4202,37 @@
         ];
 
         // Clear any lingering Field Medic elixirs from previous runs to enforce exactly 1 active elixir limit
-                    const basicElixirKeys = ["atkPotionRuns", "hpPotionRuns", "defPotionRuns", "hastePotionRuns"];
-                    basicElixirKeys.forEach(k => {
-                      window.playerStats[k] = 0;
-                    });
+        const basicElixirKeys = [
+          "atkPotionRuns",
+          "hpPotionRuns",
+          "defPotionRuns",
+          "hastePotionRuns",
+        ];
+        basicElixirKeys.forEach((k) => {
+          window.playerStats[k] = 0;
+        });
 
-                    let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
-                    let pot = shuffled[0]; // Select exactly 1 random elixir effect
+        let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
+        let pot = shuffled[0]; // Select exactly 1 random elixir effect
 
-                    // Set the runs duration to exactly 1 run
-                    window.playerStats[pot.key] = 1;
+        // Set the runs duration to exactly 1 run
+        window.playerStats[pot.key] = 1;
 
-                    // Scale the potion's potency linearly based on the purchased rank (Rank 1: +10%, Rank 2: +15%, Rank 3: +20%)
-                    let strength = pot.key === "hastePotionRuns"
-                      ? 1 + (medicRank - 1) * 0.5
-                      : 0.1 + (medicRank - 1) * 0.05;
+        // Scale the potion's potency linearly based on the purchased rank (Rank 1: +10%, Rank 2: +15%, Rank 3: +20%)
+        let strength =
+          pot.key === "hastePotionRuns"
+            ? 1 + (medicRank - 1) * 0.5
+            : 0.1 + (medicRank - 1) * 0.05;
 
-                    window.playerStats[pot.strKey] = strength;
+        window.playerStats[pot.strKey] = strength;
 
-                    let pctText = pot.key === "hastePotionRuns"
-                      ? `+${Math.round(strength * 10)}% Speed`
-                      : `+${Math.round(strength * 100)}% ${pot.key === "atkPotionRuns" ? "Atk" : pot.key === "hpPotionRuns" ? "Max HP" : "Def"}`;
-                    let potName = `${pot.key === "atkPotionRuns" ? "Attack" : pot.key === "hpPotionRuns" ? "Vitality" : pot.key === "defPotionRuns" ? "Armored" : "Haste"} Elixir (${pctText})`;
+        let pctText =
+          pot.key === "hastePotionRuns"
+            ? `+${Math.round(strength * 10)}% Speed`
+            : `+${Math.round(strength * 100)}% ${pot.key === "atkPotionRuns" ? "Atk" : pot.key === "hpPotionRuns" ? "Max HP" : "Def"}`;
+        let potName = `${pot.key === "atkPotionRuns" ? "Attack" : pot.key === "hpPotionRuns" ? "Vitality" : pot.key === "defPotionRuns" ? "Armored" : "Haste"} Elixir (${pctText})`;
 
-                    let appliedNames = [potName];
+        let appliedNames = [potName];
 
         if (typeof window.pushHeaderToast === "function") {
           window.pushHeaderToast(
@@ -3695,14 +4303,14 @@
         .join("");
 
       let recBannerHtml = "";
-                if (rec && rec.items && rec.items.length > 0) {
-                  recBannerHtml = `
+      if (rec && rec.items && rec.items.length > 0) {
+        recBannerHtml = `
                       <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
                         <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
                         <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
                       </div>
                     `;
-                }
+      }
 
       let selectedSigilId = window.state.selectedDeploymentSigilId;
       let activeSigil = selectedSigilId
@@ -3776,32 +4384,32 @@
     if (!container) return;
 
     let allSlots = [
-          "weapon",
-          "subweapon",
-          "helmet",
-          "chest",
-          "leggings",
-          "overall",
-          "boots",
-          "ring1",
-          "ring2",
-          "art1",
-          "art2",
-          "art3",
-        ];
-        let itemsHtml = "";
+      "weapon",
+      "subweapon",
+      "helmet",
+      "chest",
+      "leggings",
+      "overall",
+      "boots",
+      "ring1",
+      "ring2",
+      "art1",
+      "art2",
+      "art3",
+    ];
+    let itemsHtml = "";
 
-        allSlots.forEach((slotKey) => {
-          let item = window.equippedSlots[slotKey];
-          if (item) {
-            let col = window.getTierColor(item.statsRolled);
-            let isLocked = !!item.locked;
-            let rawPremium = window.calculateInsurancePremium(item);
+    allSlots.forEach((slotKey) => {
+      let item = window.equippedSlots[slotKey];
+      if (item) {
+        let col = window.getTierColor(item.statsRolled);
+        let isLocked = !!item.locked;
+        let rawPremium = window.calculateInsurancePremium(item);
 
-            let cardStatusClass = isLocked ? "is-insured" : "is-uninsured";
-            let btnStatusClass = isLocked ? "active" : "";
+        let cardStatusClass = isLocked ? "is-insured" : "is-uninsured";
+        let btnStatusClass = isLocked ? "active" : "";
 
-            itemsHtml += `
+        itemsHtml += `
                       <div class="deploy-gear-card ${cardStatusClass}" style="border-left: 3.5px solid ${col};">
                         <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer;" onclick="event.stopPropagation(); window.showSlotTooltip(event, '${slotKey}');" onmouseenter="window.showSlotTooltip(event, '${slotKey}')" onmouseleave="window.hideTooltip()">
                           ${window.getEquipIconHtml(item, 28)}
@@ -3815,8 +4423,8 @@
                         </button>
                       </div>
                     `;
-          }
-        });
+      }
+    });
 
     if (!itemsHtml) {
       itemsHtml = `<div style="font-size: 10px; color: #64748b; font-style: italic; text-align: center; padding: 25px;">No gear currently equipped. Risking no items in cavern!</div>`;
@@ -3912,25 +4520,25 @@
     if (!item) return;
 
     let allSlots = [
-          "weapon",
-          "subweapon",
-          "helmet",
-          "chest",
-          "leggings",
-          "overall",
-          "boots",
-          "ring1",
-          "ring2",
-          "art1",
-          "art2",
-          "art3",
-        ];
-        let currentlyInsuredCount = allSlots.filter(
-          (s) =>
-            window.equippedSlots[s] &&
-            window.equippedSlots[s].locked &&
-            s !== slotKey,
-        ).length;
+      "weapon",
+      "subweapon",
+      "helmet",
+      "chest",
+      "leggings",
+      "overall",
+      "boots",
+      "ring1",
+      "ring2",
+      "art1",
+      "art2",
+      "art3",
+    ];
+    let currentlyInsuredCount = allSlots.filter(
+      (s) =>
+        window.equippedSlots[s] &&
+        window.equippedSlots[s].locked &&
+        s !== slotKey,
+    ).length;
 
     if (!item.locked && currentlyInsuredCount >= 3) {
       if (typeof window.pushHeaderToast === "function") {
@@ -3972,17 +4580,17 @@
     }
 
     if (totals.totalPremium.gt(0)) {
-          window.playerStats.coins = wallet.sub(totals.totalPremium);
-          if (window.playerStats.coins.eq(0)) {
-            window.playerStats.hasTriggeredExactChange = true;
-          }
-        }
+      window.playerStats.coins = wallet.sub(totals.totalPremium);
+      if (window.playerStats.coins.eq(0)) {
+        window.playerStats.hasTriggeredExactChange = true;
+      }
+    }
 
-        if (totals.insuredCount >= 3) {
-          window.playerStats.hasTriggeredSoulBound = true;
-        }
+    if (totals.insuredCount >= 3) {
+      window.playerStats.hasTriggeredSoulBound = true;
+    }
 
-        if (totals.totalSoulsCost > 0) {
+    if (totals.totalSoulsCost > 0) {
       window.inventory.ETC["Monster Soul"] -= totals.totalSoulsCost;
       if (window.inventory.ETC["Monster Soul"] === 0) {
         delete window.inventory.ETC["Monster Soul"];
@@ -4030,112 +4638,115 @@
   };
 
   window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
-      let map = window.activeDungeonMap;
-      let tileSize = map ? map.tileSize : 32;
+    let map = window.activeDungeonMap;
+    let tileSize = map ? map.tileSize : 32;
 
-      let depth = window.player.depth || 1;
-      let isMini = bossTier === "mini";
+    let depth = window.player.depth || 1;
+    let isMini = bossTier === "mini";
 
-      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-      let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
-      let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
+    let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+    let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
+    let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
 
-      bossHp = Math.round(bossHp * enemyScale);
-      bossAtk = Math.round(bossAtk * enemyScale);
+    bossHp = Math.round(bossHp * enemyScale);
+    bossAtk = Math.round(bossAtk * enemyScale);
 
-      let tier = typeof window.getStageTier === "function" ? window.getStageTier() : 0;
-      let isDungeon = window.playerStats.isDungeonMode;
-      let dType = window.playerStats.currentDungeon || "gold";
+    let tier =
+      typeof window.getStageTier === "function" ? window.getStageTier() : 0;
+    let isDungeon = window.playerStats.isDungeonMode;
+    let dType = window.playerStats.currentDungeon || "gold";
 
-      let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
-      let vType = null;
+    let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
+    let vType = null;
 
-      if (isDungeon) {
-        if (dType === "gold") {
-          bossName = isMini ? "Treasury Guard" : "Gilded Vault Keeper";
-          vType = "gilded_vault_keeper";
-        } else if (dType === "mat") {
-          bossName = isMini ? "Sludge Sentinel" : "Corrosive Abomination";
-          vType = "corrosive_abomination";
-        } else if (dType === "equip") {
-          bossName = isMini ? "Iron Golem" : "Overlord Iron Vault";
-          vType = "overlord_iron_vault";
-        }
-      } else if (window.playerStats.isUberBoss) {
-        let uType = window.playerStats.currentUberBoss || "guardian";
-        if (uType === "guardian") {
-          bossName = "Aegis Goliath";
-          vType = "aegis_goliath";
-        } else if (uType === "chronos" || uType === "arbitrator") {
-          bossName = "Chronos Arbitrator";
-          vType = "chronos_arbitrator";
-        } else if (uType === "nexus") {
-          bossName = "Nexus Overseer";
-          vType = "nexus_overseer";
-        }
-      } else {
-        const names = [
-          "Arachnid Treant",
-          "Aegis Goliath",
-          "Brimstone Colossus",
-          "Corrosive Abomination",
-          "Void Overseer",
-          "Chronos Arbitrator",
-          "Nexus Overseer"
-        ];
-        const types = [
-          "arachnid_treant",
-          "aegis_goliath",
-          "overlord_iron_vault",
-          "corrosive_abomination",
-          "void_overseer",
-          "chronos_arbitrator",
-          "nexus_overseer"
-        ];
-        bossName = isMini ? "Guard " + (names[tier] || "Warden") : (names[tier] || "Dungeon Overlord");
-        vType = types[tier] || "arachnid_treant";
+    if (isDungeon) {
+      if (dType === "gold") {
+        bossName = isMini ? "Treasury Guard" : "Gilded Vault Keeper";
+        vType = "gilded_vault_keeper";
+      } else if (dType === "mat") {
+        bossName = isMini ? "Sludge Sentinel" : "Corrosive Abomination";
+        vType = "corrosive_abomination";
+      } else if (dType === "equip") {
+        bossName = isMini ? "Iron Golem" : "Overlord Iron Vault";
+        vType = "overlord_iron_vault";
       }
+    } else if (window.playerStats.isUberBoss) {
+      let uType = window.playerStats.currentUberBoss || "guardian";
+      if (uType === "guardian") {
+        bossName = "Aegis Goliath";
+        vType = "aegis_goliath";
+      } else if (uType === "chronos" || uType === "arbitrator") {
+        bossName = "Chronos Arbitrator";
+        vType = "chronos_arbitrator";
+      } else if (uType === "nexus") {
+        bossName = "Nexus Overseer";
+        vType = "nexus_overseer";
+      }
+    } else {
+      const names = [
+        "Arachnid Treant",
+        "Aegis Goliath",
+        "Brimstone Colossus",
+        "Corrosive Abomination",
+        "Void Overseer",
+        "Chronos Arbitrator",
+        "Nexus Overseer",
+      ];
+      const types = [
+        "arachnid_treant",
+        "aegis_goliath",
+        "overlord_iron_vault",
+        "corrosive_abomination",
+        "void_overseer",
+        "chronos_arbitrator",
+        "nexus_overseer",
+      ];
+      bossName = isMini
+        ? "Guard " + (names[tier] || "Warden")
+        : names[tier] || "Dungeon Overlord";
+      vType = types[tier] || "arachnid_treant";
+    }
 
-      window.mob = {
-            type: isMini ? "dungeon_miniboss" : "dungeon_boss",
-            name: bossName,
-            visualType: vType,
-            hp: BigNum.from(bossHp),
-            maxHp: BigNum.from(bossHp),
-            atk: bossAtk,
-            x: tileX * tileSize - (isMini ? 4 : 16),
-            y: tileY * tileSize - (isMini ? 4 : 16),
-            w: isMini ? 40 : 64,
-            h: isMini ? 40 : 64,
-        flashTimer: 0,
-        isStopped: true,
-        bossTileX: tileX,
-        bossTileY: tileY,
-        state: "idle",
-        telegraphTimer: 0,
-        maxTelegraphTimer: isMini ? 80 : 65,
-        activeAbility: null,
-        targetX: 0,
-        targetY: 0,
-        attackCooldown: 60,
-        moveset: isMini ? ["slam", "charge"] : ["slam", "nova", "charge"],
-        facing: -1,
-      };
-
-      window.spawnFloatingText(
-        window.player.x,
-        window.player.y - 25,
-        `${bossName.toUpperCase()} ENGAGED`,
-        isMini ? "#e67e22" : "#e74c3c",
-      );
+    window.mob = {
+      type: isMini ? "dungeon_miniboss" : "dungeon_boss",
+      name: bossName,
+      visualType: vType,
+      hp: BigNum.from(bossHp),
+      maxHp: BigNum.from(bossHp),
+      atk: bossAtk,
+      x: tileX * tileSize - (isMini ? 4 : 16),
+      y: tileY * tileSize - (isMini ? 4 : 16),
+      w: isMini ? 40 : 64,
+      h: isMini ? 40 : 64,
+      flashTimer: 0,
+      isStopped: true,
+      bossTileX: tileX,
+      bossTileY: tileY,
+      state: "idle",
+      telegraphTimer: 0,
+      maxTelegraphTimer: isMini ? 80 : 65,
+      activeAbility: null,
+      targetX: 0,
+      targetY: 0,
+      attackCooldown: 60,
+      moveset: isMini ? ["slam", "charge"] : ["slam", "nova", "charge"],
+      facing: -1,
     };
 
-  window.onBossDefeated = function (tileX, tileY) {
-      let map = window.activeDungeonMap;
-      let depth = window.player.depth || 1;
+    window.spawnFloatingText(
+      window.player.x,
+      window.player.y - 25,
+      `${bossName.toUpperCase()} ENGAGED`,
+      isMini ? "#e67e22" : "#e74c3c",
+    );
+  };
 
-      // Refill Field Flask charges upon defeating a boss
-      window.refillFlaskCharges(false);
+  window.onBossDefeated = function (tileX, tileY) {
+    let map = window.activeDungeonMap;
+    let depth = window.player.depth || 1;
+
+    // Refill Field Flask charges upon defeating a boss
+    window.refillFlaskCharges(false);
 
     let nextCheckpoint = depth + 1;
     window.playerStats.unlockedCheckpoints = window.playerStats
@@ -4219,19 +4830,25 @@
       let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
 
       map.mobSpawns.forEach((sp) => {
-              let mobInfo = window.getMobPoolForDepth(depth);
-              let isRare = Math.random() < rareRate;
+        let mobInfo = window.getMobPoolForDepth(depth);
+        let isRare = Math.random() < rareRate;
 
-              // Roll Elite Support Affixes on higher floors
-              let eliteAffix = null;
-              let affixChance = depth >= 85 ? 0.35 : depth >= 49 ? 0.15 : 0;
-              if (Math.random() < affixChance) {
-                const affixes = ["vitality_weaver", "iron_citadel", "swift_commander", "blood_berserker", "nullifier"];
-                eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
-              }
+        // Roll Elite Support Affixes on higher floors
+        let eliteAffix = null;
+        let affixChance = depth >= 85 ? 0.35 : depth >= 49 ? 0.15 : 0;
+        if (Math.random() < affixChance) {
+          const affixes = [
+            "vitality_weaver",
+            "iron_citadel",
+            "swift_commander",
+            "blood_berserker",
+            "nullifier",
+          ];
+          eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
+        }
 
-              let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
-              let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
+        let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
+        let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
 
         let rangedTypes = [
           "thorn_wyrm",
@@ -4275,12 +4892,12 @@
           isRanged: isRanged,
           projectileType: projType,
           facing: -1,
-                    isRare: isRare,
-                    eliteAffix: eliteAffix,
-                    buffStacks: { haste: 0, def: 0, atk: 0 },
-                    buffTimers: { haste: 0, def: 0, atk: 0 },
-                    buffDecayTimers: { haste: 0, def: 0, atk: 0 },
-                    wanderTimer: window.randInt(40, 120),
+          isRare: isRare,
+          eliteAffix: eliteAffix,
+          buffStacks: { haste: 0, def: 0, atk: 0 },
+          buffTimers: { haste: 0, def: 0, atk: 0 },
+          buffDecayTimers: { haste: 0, def: 0, atk: 0 },
+          wanderTimer: window.randInt(40, 120),
           wanderVx: 0,
           wanderVy: 0,
           isWandering: false,
@@ -4335,25 +4952,29 @@
   };
 
   window.requestAbandonRun = function () {
-      if (window.currentGameState === window.GAME_STATES.HUB) return;
+    if (window.currentGameState === window.GAME_STATES.HUB) return;
 
-      if (typeof window.showCustomConfirm === "function") {
-        window.showCustomConfirm(
-          "Retreat to Hub",
-          "Are you sure you want to abandon the current run?<br><br><span style='color: #e74c3c;'><strong>WARNING:</strong> All uninsured equipped gear and items in your carried satchel will be permanently lost!</span>",
-          "RETREAT",
-          "CANCEL",
-          "#e74c3c",
-          function () {
-            window.triggerExtraction(false, true);
-          }
-        );
-      } else {
-        if (confirm("Are you sure you want to retreat? All uninsured equipped gear and items in your carried satchel will be permanently lost!")) {
+    if (typeof window.showCustomConfirm === "function") {
+      window.showCustomConfirm(
+        "Retreat to Hub",
+        "Are you sure you want to abandon the current run?<br><br><span style='color: #e74c3c;'><strong>WARNING:</strong> All uninsured equipped gear and items in your carried satchel will be permanently lost!</span>",
+        "RETREAT",
+        "CANCEL",
+        "#e74c3c",
+        function () {
           window.triggerExtraction(false, true);
-        }
+        },
+      );
+    } else {
+      if (
+        confirm(
+          "Are you sure you want to retreat? All uninsured equipped gear and items in your carried satchel will be permanently lost!",
+        )
+      ) {
+        window.triggerExtraction(false, true);
       }
-    };
+    }
+  };
 
   window.openPortalChoiceModal = function () {
     let modal = document.getElementById("portal-modal");
@@ -4522,17 +5143,24 @@
     });
 
     if (preservedList.length > 0) {
-          let pctStr = Math.round(preservationChance * 100);
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast(
-              `[Alchemical Preservation ${pctStr}%] Preserved charge on: ${preservedList.join(", ")}!`,
-              "#34d399",
-            );
-          }
-          if (window.SoundManager && typeof window.SoundManager.play === "function") {
-            try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("spell"); }
-          }
+      let pctStr = Math.round(preservationChance * 100);
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          `[Alchemical Preservation ${pctStr}%] Preserved charge on: ${preservedList.join(", ")}!`,
+          "#34d399",
+        );
+      }
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        try {
+          window.SoundManager.play("potion");
+        } catch (e) {
+          window.SoundManager.play("spell");
         }
+      }
+    }
   };
 
   window.triggerExtraction = function (success = true, isAbandon = false) {
@@ -4610,16 +5238,20 @@
     }
 
     if (success) {
-          titleEl.innerText = "EXTRACTION SUCCESSFUL";
-          titleEl.style.color = "#2ecc71";
+      titleEl.innerText = "EXTRACTION SUCCESSFUL";
+      titleEl.style.color = "#2ecc71";
 
-          window.playerStats.successfulExtractions = (window.playerStats.successfulExtractions || 0) + 1;
-          let maxBag = typeof window.getMaxBagSlots === "function" ? window.getMaxBagSlots() : 20;
-          if (extractedLoot.length >= maxBag) {
-            window.playerStats.hasTriggeredFullBag = true;
-          }
+      window.playerStats.successfulExtractions =
+        (window.playerStats.successfulExtractions || 0) + 1;
+      let maxBag =
+        typeof window.getMaxBagSlots === "function"
+          ? window.getMaxBagSlots()
+          : 20;
+      if (extractedLoot.length >= maxBag) {
+        window.playerStats.hasTriggeredFullBag = true;
+      }
 
-          // Deposit pending run scraps into permanent inventory
+      // Deposit pending run scraps into permanent inventory
       pendingScrapsList.forEach((s) => {
         if (typeof window.addEtcDrop === "function") {
           window.addEtcDrop(s.name, s.count, true);
@@ -4761,15 +5393,15 @@
           : `<div style="color:#7f8c8d; font-style:italic; padding:10px; text-align:center;">No carried loot extracted.<br><span style="color:#f1c40f; font-weight:bold;">100% Collected Gold Secured in Wallet!</span></div>`;
     } else {
       let savedHtml = savedInsuredItems
-              .map(
-                (i) => `
+        .map(
+          (i) => `
                   <div style="background:#0a1a10; border:1px solid #1e4620; border-left:3px solid #2ecc71; padding:5px 8px; border-radius:4px; font-size:10px; display:flex; justify-content:space-between;">
                     <span style="color:#2ecc71; font-weight:bold;">[SOUL BOUND] ${i.name}</span>
                     <span style="color:#81ecec; font-family:monospace;">SAVED</span>
                   </div>
                 `,
-              )
-              .join("");
+        )
+        .join("");
 
       let lostHtml = lostItems
         .map(
@@ -4860,19 +5492,23 @@
   };
 
   // --- PHYSICS & LOGIC UPDATE ---
-    function update() {
-      // Live UI updates for active open shop modal
-      if (Date.now() - (window.lastShopTimerUpdate || 0) >= 1000) {
-        window.lastShopTimerUpdate = Date.now();
-        let shopModal = document.getElementById("shop-modal");
-        if (shopModal && shopModal.style.display !== "none" && shopModal.style.display !== "") {
-          if (window.activeShopTab === "gear") {
-            window.renderMarketShop();
-          }
+  function update() {
+    // Live UI updates for active open shop modal
+    if (Date.now() - (window.lastShopTimerUpdate || 0) >= 1000) {
+      window.lastShopTimerUpdate = Date.now();
+      let shopModal = document.getElementById("shop-modal");
+      if (
+        shopModal &&
+        shopModal.style.display !== "none" &&
+        shopModal.style.display !== ""
+      ) {
+        if (window.activeShopTab === "gear") {
+          window.renderMarketShop();
         }
       }
+    }
 
-      if (window.isAnyMenuOpen()) return;
+    if (window.isAnyMenuOpen()) return;
 
     if (window.deathAnimationTimer > 0) {
       window.deathAnimationTimer--;
@@ -4888,17 +5524,17 @@
     }
 
     let p = window.player;
-                if (p.lastDamageTimer && p.lastDamageTimer > 0) {
-                  p.lastDamageTimer--;
-                }
-                if (window.playerStats && window.playerStats.flaskCooldownTimer > 0) {
-                  window.playerStats.flaskCooldownTimer--;
-                }
-                if (p.snareTimer && p.snareTimer > 0) {
-                  p.snareTimer--;
-                  p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4);
-                }
-                p.inDilationField = false; // Reset on every frame
+    if (p.lastDamageTimer && p.lastDamageTimer > 0) {
+      p.lastDamageTimer--;
+    }
+    if (window.playerStats && window.playerStats.flaskCooldownTimer > 0) {
+      window.playerStats.flaskCooldownTimer--;
+    }
+    if (p.snareTimer && p.snareTimer > 0) {
+      p.snareTimer--;
+      p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4);
+    }
+    p.inDilationField = false; // Reset on every frame
 
     let map = window.activeDungeonMap;
     if (!map || !map.grid) return;
@@ -4915,85 +5551,101 @@
     p.speedMultiplier = 1.0;
 
     if (mode === "joystick") {
-          if (window.joystick.active) {
-            let joy = window.joystick;
-            vx = joy.vx * speedMult;
-            vy = joy.vy * speedMult;
-          } else {
-            vx = 0;
-            vy = 0;
-          }
-          // Keep target coordinates synced with the player's position while in joystick mode
-          p.targetX = p.x;
-          p.targetY = p.y;
-        } else {
-          // Cursor pathfinding logic
-          if (isPointerHolding && window.cursorPointer) {
-            let zoom = window.DungeonCamera ? window.DungeonCamera.zoom : 1.0;
-            let camX = window.DungeonCamera ? window.DungeonCamera.x : 0;
-            let camY = window.DungeonCamera ? window.DungeonCamera.y : 0;
-            p.targetX = window.cursorPointer.screenX / zoom + camX;
-            p.targetY = window.cursorPointer.screenY / zoom + camY;
-          }
+      if (window.joystick.active) {
+        let joy = window.joystick;
+        vx = joy.vx * speedMult;
+        vy = joy.vy * speedMult;
+      } else {
+        vx = 0;
+        vy = 0;
+      }
+      // Keep target coordinates synced with the player's position while in joystick mode
+      p.targetX = p.x;
+      p.targetY = p.y;
+    } else {
+      // Cursor pathfinding logic
+      if (isPointerHolding && window.cursorPointer) {
+        let zoom = window.DungeonCamera ? window.DungeonCamera.zoom : 1.0;
+        let camX = window.DungeonCamera ? window.DungeonCamera.x : 0;
+        let camY = window.DungeonCamera ? window.DungeonCamera.y : 0;
+        p.targetX = window.cursorPointer.screenX / zoom + camX;
+        p.targetY = window.cursorPointer.screenY / zoom + camY;
+      }
 
-          let dx = p.targetX - p.x;
-          let dy = p.targetY - p.y;
-          let dist = Math.hypot(dx, dy);
+      let dx = p.targetX - p.x;
+      let dy = p.targetY - p.y;
+      let dist = Math.hypot(dx, dy);
 
-          if (dist > 2) {
-            let moveStep = Math.min(p.speed * speedMult, dist);
-            vx = (dx / dist) * moveStep;
-            vy = (dy / dist) * moveStep;
-          }
+      if (dist > 2) {
+        let moveStep = Math.min(p.speed * speedMult, dist);
+        vx = (dx / dist) * moveStep;
+        vy = (dy / dist) * moveStep;
+      }
+    }
+
+    if (vx !== 0 || vy !== 0) {
+      if (vx < -0.1) p.facing = -1;
+      else if (vx > 0.1) p.facing = 1;
+
+      let pRadius = p.radius || 9;
+
+      let moved = false;
+      if (vx !== 0) {
+        let nextX = p.x + vx;
+        if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
+          p.x = nextX;
+          moved = true;
         }
+      }
 
-        if (vx !== 0 || vy !== 0) {
-          if (vx < -0.1) p.facing = -1;
-          else if (vx > 0.1) p.facing = 1;
+      if (vy !== 0) {
+        let nextY = p.y + vy;
+        if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
+          p.y = nextY;
+          moved = true;
+        }
+      }
 
-          let pRadius = p.radius || 9;
+      p.isMoving = moved;
+      if (!moved) {
+        p.targetX = p.x;
+        p.targetY = p.y;
+      }
+    } else {
+      p.isMoving = false;
+    }
 
-          let moved = false;
-          if (vx !== 0) {
-            let nextX = p.x + vx;
-            if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
-              p.x = nextX;
-              moved = true;
-            }
-          }
+    // Apply Control Glitch Inversion (Nexus Overseer)
+    if (p.glitchTimer && p.glitchTimer > 0) {
+      p.glitchTimer--;
+      vx = -vx;
+      vy = -vy;
+      p.targetX = p.x + vx;
+      p.targetY = p.y + vy;
 
-          if (vy !== 0) {
-            let nextY = p.y + vy;
-            if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
-              p.y = nextY;
-              moved = true;
-            }
-          }
+      // Spawn glitch digital noise occasionally on player
+      if (
+        p.glitchTimer % 12 === 0 &&
+        window.combatVisuals &&
+        window.combatVisuals.particlePool
+      ) {
+        window.combatVisuals.particlePool.get(
+          p.x + window.randFloat(-6, 6),
+          p.y - 8 + window.randFloat(-8, 8),
+          0,
+          -0.2,
+          window.randFloat(1.2, 2.5),
+          "#ff007f",
+          0.9,
+          15,
+          0,
+          true,
+          0,
+        );
+      }
+    }
 
-          p.isMoving = moved;
-                    if (!moved) {
-                      p.targetX = p.x;
-                      p.targetY = p.y;
-                    }
-                  } else {
-                    p.isMoving = false;
-                  }
-
-              // Apply Control Glitch Inversion (Nexus Overseer)
-              if (p.glitchTimer && p.glitchTimer > 0) {
-                p.glitchTimer--;
-                vx = -vx;
-                vy = -vy;
-                p.targetX = p.x + vx;
-                p.targetY = p.y + vy;
-
-                // Spawn glitch digital noise occasionally on player
-                if (p.glitchTimer % 12 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
-                  window.combatVisuals.particlePool.get(p.x + window.randFloat(-6, 6), p.y - 8 + window.randFloat(-8, 8), 0, -0.2, window.randFloat(1.2, 2.5), "#ff007f", 0.9, 15, 0, true, 0);
-                }
-              }
-
-              if (p.isMoving) {
+    if (p.isMoving) {
       p.walkTimer = (p.walkTimer || 0) + 0.18;
     } else {
       p.walkTimer = 0;
@@ -5050,9 +5702,9 @@
     }
 
     // Execute Top-Down Combat & Gold / XP Magnet Mechanics
-        window.updateCavernEffects();
-        window.updateHeroBuffParticles();
-        window.updateDungeonCombat();
+    window.updateCavernEffects();
+    window.updateHeroBuffParticles();
+    window.updateDungeonCombat();
     window.updateGoldParticles();
     window.updateXpOrbs();
     window.updateGroundLoot();
@@ -5150,10 +5802,10 @@
         }
 
         if (tile === window.TILE_TYPES.RECOVERY_CHEST) {
-                  map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
-                  window.playerStats.hasTriggeredRecovery = true;
+          map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
+          window.playerStats.hasTriggeredRecovery = true;
 
-                  let rec = window.playerStats && window.playerStats.recoveryLoot;
+          let rec = window.playerStats && window.playerStats.recoveryLoot;
           if (rec && rec.items && rec.items.length > 0) {
             let itemsToRecover = rec.items;
             let recoveredCount = itemsToRecover.length;
@@ -5524,44 +6176,54 @@
   };
 
   window.useConsumableItem = function (name) {
-        if (
-          !window.inventory.USE ||
-          !window.inventory.USE[name] ||
-          window.inventory.USE[name] <= 0
-        ) {
-          if (typeof window.pushHeaderToast === "function")
-            window.pushHeaderToast("None remaining!", "#e74c3c");
-          return;
+    if (
+      !window.inventory.USE ||
+      !window.inventory.USE[name] ||
+      window.inventory.USE[name] <= 0
+    ) {
+      if (typeof window.pushHeaderToast === "function")
+        window.pushHeaderToast("None remaining!", "#e74c3c");
+      return;
+    }
+
+    let isSpared =
+      window.checkArtifactTrait &&
+      window.checkArtifactTrait("philosopher_catalyst") &&
+      Math.random() < 0.12;
+    if (isSpared) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[✦] Philosopher's Catalyst preserved elixir!",
+          "#2ecc71",
+        );
+      }
+    } else {
+      window.inventory.USE[name]--;
+      if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
+    }
+
+    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+      if (name.includes("Elixir") || name.includes("Potion")) {
+        try {
+          window.SoundManager.play("potion");
+        } catch (e) {
+          window.SoundManager.play("fairy");
         }
+      } else if (name.includes("Scroll")) {
+        window.SoundManager.play("spell");
+      } else if (name.includes("Sack") || name.includes("Crate")) {
+        window.SoundManager.play("revive");
+      }
+    }
 
-        let isSpared = window.checkArtifactTrait && window.checkArtifactTrait("philosopher_catalyst") && Math.random() < 0.12;
-        if (isSpared) {
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast("[✦] Philosopher's Catalyst preserved elixir!", "#2ecc71");
-          }
-        } else {
-          window.inventory.USE[name]--;
-          if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
-        }
+    let p = window.playerStats;
+    let runsGranted = name.includes("Supernal")
+      ? 3
+      : name.includes("Greater")
+        ? 2
+        : 1;
 
-        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-          if (name.includes("Elixir") || name.includes("Potion")) {
-            try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("fairy"); }
-          } else if (name.includes("Scroll")) {
-            window.SoundManager.play("spell");
-          } else if (name.includes("Sack") || name.includes("Crate")) {
-            window.SoundManager.play("revive");
-          }
-        }
-
-        let p = window.playerStats;
-        let runsGranted = name.includes("Supernal")
-          ? 3
-          : name.includes("Greater")
-            ? 2
-            : 1;
-
-      if (name.includes("Attack Elixir")) {
+    if (name.includes("Attack Elixir")) {
       let str = name.includes("Supernal")
         ? 0.35
         : name.includes("Greater")
@@ -5799,165 +6461,174 @@
   };
 
   window.addGoldFloatingText = function (p, amount) {
-      let existing = window.floatingTexts.find(
-        (ft) => ft.isGoldBatch && ft.life > 0,
-      );
-      if (existing) {
-        existing.goldTotal = BigNum.from(existing.goldTotal || 0).add(amount);
-        existing.text = `+${window.formatNumber(existing.goldTotal)} Gold`;
-        existing.life = 55;
+    let existing = window.floatingTexts.find(
+      (ft) => ft.isGoldBatch && ft.life > 0,
+    );
+    if (existing) {
+      existing.goldTotal = BigNum.from(existing.goldTotal || 0).add(amount);
+      existing.text = `+${window.formatNumber(existing.goldTotal)} Gold`;
+      existing.life = 55;
+    } else {
+      let bAmt = BigNum.from(amount);
+      window.floatingTexts.push({
+        x: p.x,
+        y: p.y - 15,
+        offsetX: 0,
+        offsetY: -15,
+        goldTotal: bAmt,
+        text: `+${window.formatNumber(bAmt)} Gold`,
+        color: "#ffd700",
+        life: 55,
+        maxLife: 55,
+        followPlayer: true,
+        isGoldBatch: true,
+      });
+    }
+  };
+
+  window.triggerGravitationalVacuum = function (p) {
+    if (!p) return;
+    if (window.groundLoot) {
+      window.groundLoot.forEach((gl) => {
+        gl.settled = true;
+        gl.magnetSpeed = Math.max(gl.magnetSpeed || 1.0, 10.0);
+      });
+    }
+    if (window.groundMaterials) {
+      window.groundMaterials.forEach((gm) => {
+        gm.settled = true;
+        gm.magnetSpeed = Math.max(gm.magnetSpeed || 1.0, 10.0);
+      });
+    }
+    if (window.goldParticles) {
+      window.goldParticles.forEach((gp) => {
+        gp.scatterTimer = 0;
+        gp.speed = Math.max(gp.speed || 5.0, 12.0);
+      });
+    }
+  };
+
+  window.spawnHomingGold = function (x, y, amount) {
+    if (window.goldParticles.length > 40) return;
+    let particleCount = window.randInt(4, 7);
+    let totalAmt = BigNum.from(amount);
+    let share = totalAmt.div(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      window.goldParticles.push({
+        x: x,
+        y: y,
+        vx: window.randFloat(-3.5, 3.5),
+        vy: window.randFloat(-6, -3),
+        value: share,
+        scatterTimer: window.randInt(14, 20),
+        gravity: 0.35,
+        speed: 5.0,
+      });
+    }
+  };
+
+  window.updateGoldParticles = function () {
+    let p = window.player;
+    if (!window.goldParticles) return;
+
+    for (let i = window.goldParticles.length - 1; i >= 0; i--) {
+      let gp = window.goldParticles[i];
+      if (gp.scatterTimer > 0) {
+        gp.scatterTimer--;
+        gp.x += gp.vx;
+        gp.y += gp.vy;
+        gp.vy += gp.gravity || 0.35;
+        gp.vx *= 0.92;
       } else {
-        let bAmt = BigNum.from(amount);
-        window.floatingTexts.push({
-          x: p.x,
-          y: p.y - 15,
-          offsetX: 0,
-          offsetY: -15,
-          goldTotal: bAmt,
-          text: `+${window.formatNumber(bAmt)} Gold`,
-          color: "#ffd700",
-          life: 55,
-          maxLife: 55,
-          followPlayer: true,
-          isGoldBatch: true,
-        });
-      }
-    };
+        let targetX = p.x;
+        let targetY = p.y - 8;
+        let dx = targetX - gp.x;
+        let dy = targetY - gp.y;
+        let dist = Math.hypot(dx, dy);
 
-    window.triggerGravitationalVacuum = function (p) {
-        if (!p) return;
-        if (window.groundLoot) {
-          window.groundLoot.forEach((gl) => {
-            gl.settled = true;
-            gl.magnetSpeed = Math.max(gl.magnetSpeed || 1.0, 10.0);
-          });
-        }
-        if (window.groundMaterials) {
-          window.groundMaterials.forEach((gm) => {
-            gm.settled = true;
-            gm.magnetSpeed = Math.max(gm.magnetSpeed || 1.0, 10.0);
-          });
-        }
-        if (window.goldParticles) {
-          window.goldParticles.forEach((gp) => {
-            gp.scatterTimer = 0;
-            gp.speed = Math.max(gp.speed || 5.0, 12.0);
-          });
-        }
-      };
-
-      window.spawnHomingGold = function (x, y, amount) {
-      if (window.goldParticles.length > 40) return;
-      let particleCount = window.randInt(4, 7);
-      let totalAmt = BigNum.from(amount);
-      let share = totalAmt.div(particleCount);
-
-      for (let i = 0; i < particleCount; i++) {
-        window.goldParticles.push({
-          x: x,
-          y: y,
-          vx: window.randFloat(-3.5, 3.5),
-          vy: window.randFloat(-6, -3),
-          value: share,
-          scatterTimer: window.randInt(14, 20),
-          gravity: 0.35,
-          speed: 5.0,
-        });
-      }
-    };
-
-    window.updateGoldParticles = function () {
-      let p = window.player;
-      if (!window.goldParticles) return;
-
-      for (let i = window.goldParticles.length - 1; i >= 0; i--) {
-        let gp = window.goldParticles[i];
-        if (gp.scatterTimer > 0) {
-          gp.scatterTimer--;
-          gp.x += gp.vx;
-          gp.y += gp.vy;
-          gp.vy += gp.gravity || 0.35;
-          gp.vx *= 0.92;
-        } else {
-          let targetX = p.x;
-          let targetY = p.y - 8;
-          let dx = targetX - gp.x;
-          let dy = targetY - gp.y;
-          let dist = Math.hypot(dx, dy);
-
-          if (dist < 14) {
-            window.absorbGoldParticle(gp.value, true, false);
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.playCoinCollect === "function"
-            ) {
-              window.SoundManager.playCoinCollect();
-            }
-            window.addGoldFloatingText(p, gp.value);
-            window.goldParticles.splice(i, 1);
-          } else {
-            gp.speed = Math.min(12, gp.speed + 0.4);
-            gp.x += (dx / dist) * gp.speed;
-            gp.y += (dy / dist) * gp.speed;
+        if (dist < 14) {
+          window.absorbGoldParticle(gp.value, true, false);
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.playCoinCollect === "function"
+          ) {
+            window.SoundManager.playCoinCollect();
           }
+          window.addGoldFloatingText(p, gp.value);
+          window.goldParticles.splice(i, 1);
+        } else {
+          gp.speed = Math.min(12, gp.speed + 0.4);
+          gp.x += (dx / dist) * gp.speed;
+          gp.y += (dy / dist) * gp.speed;
         }
       }
-    };
+    }
+  };
 
   window.updateHeroBuffParticles = function () {
-      let p = window.player;
-      let stats = window.playerStats;
-      if (!p || !stats || p.hp <= 0 || window.deathAnimationTimer > 0) return;
+    let p = window.player;
+    let stats = window.playerStats;
+    if (!p || !stats || p.hp <= 0 || window.deathAnimationTimer > 0) return;
 
-      let isEco = stats.ecoMode === true;
-      let chance = isEco ? 0.08 : 0.28;
-      if (Math.random() > chance) return;
+    let isEco = stats.ecoMode === true;
+    let chance = isEco ? 0.08 : 0.28;
+    if (Math.random() > chance) return;
 
-      let getAtkCol = (s) => (s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71");
-      let getHpCol = (s) => (s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c");
-      let getDefCol = (s) => (s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db");
-      let getHasteCol = (s) => (s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f");
+    let getAtkCol = (s) =>
+      s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71";
+    let getHpCol = (s) =>
+      s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c";
+    let getDefCol = (s) =>
+      s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db";
+    let getHasteCol = (s) =>
+      s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f";
 
-      let activeColors = [];
-      if ((stats.atkPotionRuns || 0) > 0) activeColors.push(getAtkCol(stats.atkPotionStrength || 0.1));
-      if ((stats.hpPotionRuns || 0) > 0) activeColors.push(getHpCol(stats.hpPotionStrength || 0.1));
-      if ((stats.defPotionRuns || 0) > 0) activeColors.push(getDefCol(stats.defPotionStrength || 0.1));
-      if ((stats.hastePotionRuns || 0) > 0) activeColors.push(getHasteCol(stats.hastePotionStrength || 1));
-      if ((stats.xpPotionRuns || 0) > 0) activeColors.push("#c084fc");
-      if ((stats.dropPotionRuns || 0) > 0) activeColors.push("#34d399");
-      if ((stats.qlyPotionRuns || 0) > 0) activeColors.push("#f472b6");
-      if (stats.frenzyTimer > 0) activeColors.push("#f1c40f");
-      if (stats.astralAwakeningTimer > 0) activeColors.push("#00d2ff");
+    let activeColors = [];
+    if ((stats.atkPotionRuns || 0) > 0)
+      activeColors.push(getAtkCol(stats.atkPotionStrength || 0.1));
+    if ((stats.hpPotionRuns || 0) > 0)
+      activeColors.push(getHpCol(stats.hpPotionStrength || 0.1));
+    if ((stats.defPotionRuns || 0) > 0)
+      activeColors.push(getDefCol(stats.defPotionStrength || 0.1));
+    if ((stats.hastePotionRuns || 0) > 0)
+      activeColors.push(getHasteCol(stats.hastePotionStrength || 1));
+    if ((stats.xpPotionRuns || 0) > 0) activeColors.push("#c084fc");
+    if ((stats.dropPotionRuns || 0) > 0) activeColors.push("#34d399");
+    if ((stats.qlyPotionRuns || 0) > 0) activeColors.push("#f472b6");
+    if (stats.frenzyTimer > 0) activeColors.push("#f1c40f");
+    if (stats.astralAwakeningTimer > 0) activeColors.push("#00d2ff");
 
-      if (activeColors.length === 0) return;
+    if (activeColors.length === 0) return;
 
-      let chosenColor = activeColors[Math.floor(Math.random() * activeColors.length)];
-      let spreadX = (Math.random() - 0.5) * 20;
-      let startY = p.y + window.randFloat(-4, 12);
-      let upwardVel = -window.randFloat(0.6, 1.8);
-      let sideVel = (Math.random() - 0.5) * 0.8;
-      let pLife = window.randInt(20, 38);
+    let chosenColor =
+      activeColors[Math.floor(Math.random() * activeColors.length)];
+    let spreadX = (Math.random() - 0.5) * 20;
+    let startY = p.y + window.randFloat(-4, 12);
+    let upwardVel = -window.randFloat(0.6, 1.8);
+    let sideVel = (Math.random() - 0.5) * 0.8;
+    let pLife = window.randInt(20, 38);
 
-      if (window.ParticlePool) {
-        window.particles.push(
-          window.ParticlePool.get(
-            p.x + spreadX,
-            startY,
-            sideVel,
-            upwardVel,
-            window.randFloat(1.2, 2.4),
-            chosenColor,
-            0.85,
-            pLife,
-            pLife,
-            -0.03,
-            true
-          )
-        );
-      }
-    };
+    if (window.ParticlePool) {
+      window.particles.push(
+        window.ParticlePool.get(
+          p.x + spreadX,
+          startY,
+          sideVel,
+          upwardVel,
+          window.randFloat(1.2, 2.4),
+          chosenColor,
+          0.85,
+          pLife,
+          pLife,
+          -0.03,
+          true,
+        ),
+      );
+    }
+  };
 
-    window.updateCavernEffects = function () {
+  window.updateCavernEffects = function () {
     if (
       !window.playerStats.isDungeonMode ||
       !window.playerStats.activeDungeonSigil
@@ -6025,31 +6696,36 @@
     }
 
     for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
-          let item = window.cavernInteractives[i];
-          item.life--;
+      let item = window.cavernInteractives[i];
+      item.life--;
 
-          if (item.type === "acid_pool") {
-                      let dist = Math.hypot(p.x - item.x, p.y - item.y);
-                      if (dist <= pRadius + 12) {
-                        // caustics tick rate (every 45 frames)
-                        if (window.logicClock % 45 === 0) {
-                          let tickDmg = Math.round(p.maxHp * 0.015);
-                          p.hp = Math.max(1, p.hp - tickDmg);
-                          window.spawnFloatingText(p.x, p.y - 12, `-${tickDmg} ACID BURN`, "#2ecc71");
-                          if (window.SoundManager) window.SoundManager.play("hit");
-                        }
-                      }
-                    }
+      if (item.type === "acid_pool") {
+        let dist = Math.hypot(p.x - item.x, p.y - item.y);
+        if (dist <= pRadius + 12) {
+          // caustics tick rate (every 45 frames)
+          if (window.logicClock % 45 === 0) {
+            let tickDmg = Math.round(p.maxHp * 0.015);
+            p.hp = Math.max(1, p.hp - tickDmg);
+            window.spawnFloatingText(
+              p.x,
+              p.y - 12,
+              `-${tickDmg} ACID BURN`,
+              "#2ecc71",
+            );
+            if (window.SoundManager) window.SoundManager.play("hit");
+          }
+        }
+      }
 
-                    if (item.type === "dilation_field") {
-                      let dist = Math.hypot(p.x - item.x, p.y - item.y);
-                      if (dist <= pRadius + 35) {
-                        p.inDilationField = true;
-                        p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.6); // 40% slow
-                      }
-                    }
+      if (item.type === "dilation_field") {
+        let dist = Math.hypot(p.x - item.x, p.y - item.y);
+        if (dist <= pRadius + 35) {
+          p.inDilationField = true;
+          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.6); // 40% slow
+        }
+      }
 
-                    if (item.life <= 0) {
+      if (item.life <= 0) {
         // Expiration of Void Rupture Core (Failed debuff event triggers damage)
         if (item.type === "rupture_core") {
           let collapseDmg = Math.round(p.maxHp * 0.3);
@@ -6425,83 +7101,101 @@
   };
 
   window.drawCavernInteractive = function (ctx, item) {
-      if (item.type === "lightning_arc") {
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2.0;
-        ctx.beginPath();
-        ctx.moveTo(item.x, item.y);
-        let dx = item.x2 - item.x;
-        let dy = item.y2 - item.y;
-        let dist = Math.hypot(dx, dy);
-        let steps = Math.floor(dist / 8);
-        for (let s = 1; s < steps; s++) {
-          let progress = s / steps;
-          let jx = item.x + dx * progress + (Math.random() - 0.5) * 6;
-          let jy = item.y + dy * progress + (Math.random() - 0.5) * 6;
-          ctx.lineTo(jx, jy);
-        }
-        ctx.lineTo(item.x2, item.y2);
-        ctx.stroke();
-        return;
+    if (item.type === "lightning_arc") {
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(item.x, item.y);
+      let dx = item.x2 - item.x;
+      let dy = item.y2 - item.y;
+      let dist = Math.hypot(dx, dy);
+      let steps = Math.floor(dist / 8);
+      for (let s = 1; s < steps; s++) {
+        let progress = s / steps;
+        let jx = item.x + dx * progress + (Math.random() - 0.5) * 6;
+        let jy = item.y + dy * progress + (Math.random() - 0.5) * 6;
+        ctx.lineTo(jx, jy);
       }
+      ctx.lineTo(item.x2, item.y2);
+      ctx.stroke();
+      return;
+    }
 
-      if (item.type === "acid_pool") {
-            let time = Date.now();
-            let pulse = Math.sin(time / 140) * 1.5;
-            ctx.save();
-            // Caustic flat green pool
-            ctx.fillStyle = "rgba(22, 160, 133, 0.35)";
-            ctx.strokeStyle = "rgba(46, 204, 113, 0.65)";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.ellipse(item.x, item.y, 14 + pulse, 6 + pulse * 0.5, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+    if (item.type === "acid_pool") {
+      let time = Date.now();
+      let pulse = Math.sin(time / 140) * 1.5;
+      ctx.save();
+      // Caustic flat green pool
+      ctx.fillStyle = "rgba(22, 160, 133, 0.35)";
+      ctx.strokeStyle = "rgba(46, 204, 113, 0.65)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(
+        item.x,
+        item.y,
+        14 + pulse,
+        6 + pulse * 0.5,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+      ctx.stroke();
 
-            // Caustic tiny bubbles popping
-            ctx.fillStyle = "#a3fd83";
-            for (let i = 0; i < 3; i++) {
-              let bubbleProgress = (time / (400 + i * 100) + i * 2) % 1.0;
-              let bx = item.x + Math.sin(i * 12 + time / 500) * (10 * (1 - bubbleProgress));
-              let by = item.y + Math.cos(i * 8 + time / 500) * (4 * (1 - bubbleProgress));
-              ctx.beginPath();
-              ctx.arc(bx, by, 1.2 * (1.0 - bubbleProgress), 0, Math.PI * 2);
-              ctx.fill();
-            }
-            ctx.restore();
-            return;
-          }
+      // Caustic tiny bubbles popping
+      ctx.fillStyle = "#a3fd83";
+      for (let i = 0; i < 3; i++) {
+        let bubbleProgress = (time / (400 + i * 100) + i * 2) % 1.0;
+        let bx =
+          item.x + Math.sin(i * 12 + time / 500) * (10 * (1 - bubbleProgress));
+        let by =
+          item.y + Math.cos(i * 8 + time / 500) * (4 * (1 - bubbleProgress));
+        ctx.beginPath();
+        ctx.arc(bx, by, 1.2 * (1.0 - bubbleProgress), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      return;
+    }
 
-          if (item.type === "dilation_field") {
-            let time = Date.now();
-            let pulse = Math.sin(time / 150) * 1.5;
-            ctx.save();
-            // Golden clockwork distortion zone
-            ctx.fillStyle = "rgba(241, 196, 15, 0.12)";
-            ctx.strokeStyle = "rgba(212, 175, 55, 0.55)";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.ellipse(item.x, item.y, 40 + pulse, 18 + pulse * 0.4, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+    if (item.type === "dilation_field") {
+      let time = Date.now();
+      let pulse = Math.sin(time / 150) * 1.5;
+      ctx.save();
+      // Golden clockwork distortion zone
+      ctx.fillStyle = "rgba(241, 196, 15, 0.12)";
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.55)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(
+        item.x,
+        item.y,
+        40 + pulse,
+        18 + pulse * 0.4,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+      ctx.stroke();
 
-            // Draw ticking clock hands inside the zone
-            ctx.translate(item.x, item.y);
-            ctx.rotate(time / 800);
-            ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
-            ctx.lineWidth = 1.0;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, -12);
-            ctx.moveTo(0, 0);
-            ctx.lineTo(8, 0);
-            ctx.stroke();
-            ctx.restore();
-            return;
-          }
+      // Draw ticking clock hands inside the zone
+      ctx.translate(item.x, item.y);
+      ctx.rotate(time / 800);
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -12);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(8, 0);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
 
-          ctx.save();
-          let pulse = Math.sin(Date.now() / 150) * 1.5;
+    ctx.save();
+    let pulse = Math.sin(Date.now() / 150) * 1.5;
 
     if (item.type === "anomalous_shard") {
       ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
@@ -6648,304 +7342,326 @@
       ctx.stroke();
 
       if (item.isMainPylon) {
-                ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([3, 3]);
-                ctx.beginPath();
-                ctx.moveTo(item.x, item.y);
-                ctx.lineTo(item.partnerX, item.partnerY);
-                ctx.stroke();
-                ctx.setLineDash([]);
-              }
-            }
-            ctx.restore();
-          };
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(item.x, item.y);
+        ctx.lineTo(item.partnerX, item.partnerY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    ctx.restore();
+  };
 
-          window.drawDungeonStructureTile = function (ctx, type, px, py, tileSize) {
-            let time = Date.now();
-            let cx = px + tileSize / 2;
-            let cy = py + tileSize / 2;
+  window.drawDungeonStructureTile = function (ctx, type, px, py, tileSize) {
+    let time = Date.now();
+    let cx = px + tileSize / 2;
+    let cy = py + tileSize / 2;
 
-            if (type === window.TILE_TYPES.CHEST_SPAWN) {
-              ctx.save();
+    if (type === window.TILE_TYPES.CHEST_SPAWN) {
+      ctx.save();
 
-              // 1. Soft Ambient Occlusion Drop Shadow
-              ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-              ctx.beginPath();
-              ctx.ellipse(cx, cy + 9, 13, 5, 0, 0, Math.PI * 2);
-              ctx.fill();
+      // 1. Soft Ambient Occlusion Drop Shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 9, 13, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-              // 2. Warm Radial Golden Floor Glow
-              let pulse = Math.sin(time / 200) * 2;
-              let auraGrad = ctx.createRadialGradient(cx, cy + 2, 2, cx, cy + 2, 16 + pulse);
-              auraGrad.addColorStop(0, "rgba(255, 215, 0, 0.4)");
-              auraGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.15)");
-              auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-              ctx.fillStyle = auraGrad;
-              ctx.beginPath();
-              ctx.arc(cx, cy + 2, 16 + pulse, 0, Math.PI * 2);
-              ctx.fill();
+      // 2. Warm Radial Golden Floor Glow
+      let pulse = Math.sin(time / 200) * 2;
+      let auraGrad = ctx.createRadialGradient(
+        cx,
+        cy + 2,
+        2,
+        cx,
+        cy + 2,
+        16 + pulse,
+      );
+      auraGrad.addColorStop(0, "rgba(255, 215, 0, 0.4)");
+      auraGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.15)");
+      auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy + 2, 16 + pulse, 0, Math.PI * 2);
+      ctx.fill();
 
-              // 3. Chest Lower Body (Rich Beveled Mahogany)
-              let w = 22;
-              let bodyH = 11;
-              let lidH = 6;
-              let x = cx - w / 2;
-              let y = cy - (bodyH + lidH) / 2 + 3;
+      // 3. Chest Lower Body (Rich Beveled Mahogany)
+      let w = 22;
+      let bodyH = 11;
+      let lidH = 6;
+      let x = cx - w / 2;
+      let y = cy - (bodyH + lidH) / 2 + 3;
 
-              let bodyGrad = ctx.createLinearGradient(x, y + lidH, x, y + lidH + bodyH);
-              bodyGrad.addColorStop(0, "#8b4513");
-              bodyGrad.addColorStop(0.4, "#5c2e0b");
-              bodyGrad.addColorStop(1, "#2a1204");
+      let bodyGrad = ctx.createLinearGradient(x, y + lidH, x, y + lidH + bodyH);
+      bodyGrad.addColorStop(0, "#8b4513");
+      bodyGrad.addColorStop(0.4, "#5c2e0b");
+      bodyGrad.addColorStop(1, "#2a1204");
 
-              ctx.fillStyle = bodyGrad;
-              ctx.strokeStyle = "#120701";
-              ctx.lineWidth = 1.5;
-              ctx.fillRect(x, y + lidH, w, bodyH);
-              ctx.strokeRect(x, y + lidH, w, bodyH);
+      ctx.fillStyle = bodyGrad;
+      ctx.strokeStyle = "#120701";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(x, y + lidH, w, bodyH);
+      ctx.strokeRect(x, y + lidH, w, bodyH);
 
-              // 4. Domed Arched Lid (3D Beveled Top)
-              let lidGrad = ctx.createLinearGradient(x, y, x, y + lidH);
-              lidGrad.addColorStop(0, "#a0522d");
-              lidGrad.addColorStop(0.5, "#8b4513");
-              lidGrad.addColorStop(1, "#4a2206");
+      // 4. Domed Arched Lid (3D Beveled Top)
+      let lidGrad = ctx.createLinearGradient(x, y, x, y + lidH);
+      lidGrad.addColorStop(0, "#a0522d");
+      lidGrad.addColorStop(0.5, "#8b4513");
+      lidGrad.addColorStop(1, "#4a2206");
 
-              ctx.fillStyle = lidGrad;
-              ctx.beginPath();
-              ctx.moveTo(x, y + lidH);
-              ctx.quadraticCurveTo(cx, y - 2, x + w, y + lidH);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
+      ctx.fillStyle = lidGrad;
+      ctx.beginPath();
+      ctx.moveTo(x, y + lidH);
+      ctx.quadraticCurveTo(cx, y - 2, x + w, y + lidH);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
 
-              // Lid Top Highlight Strip
-              ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-              ctx.lineWidth = 1.0;
-              ctx.beginPath();
-              ctx.moveTo(x + 3, y + lidH - 2);
-              ctx.quadraticCurveTo(cx, y + 1, x + w - 3, y + lidH - 2);
-              ctx.stroke();
+      // Lid Top Highlight Strip
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(x + 3, y + lidH - 2);
+      ctx.quadraticCurveTo(cx, y + 1, x + w - 3, y + lidH - 2);
+      ctx.stroke();
 
-              // 5. Polished Gold Corner Brackets & Vertical Bands
-              ctx.fillStyle = "#f1c40f";
-              ctx.strokeStyle = "#5e4a02";
-              ctx.lineWidth = 1.0;
+      // 5. Polished Gold Corner Brackets & Vertical Bands
+      ctx.fillStyle = "#f1c40f";
+      ctx.strokeStyle = "#5e4a02";
+      ctx.lineWidth = 1.0;
 
-              ctx.fillRect(x + 3, y + 2, 3, bodyH + lidH - 2);
-              ctx.strokeRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+      ctx.fillRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+      ctx.strokeRect(x + 3, y + 2, 3, bodyH + lidH - 2);
 
-              ctx.fillRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
-              ctx.strokeRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+      ctx.fillRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+      ctx.strokeRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
 
-              // Gold Rivets / Bolts
-              ctx.fillStyle = "#ffffff";
-              ctx.fillRect(x + 4, y + 4, 1, 1);
-              ctx.fillRect(x + 4, y + lidH + 4, 1, 1);
-              ctx.fillRect(x + w - 5, y + 4, 1, 1);
-              ctx.fillRect(x + w - 5, y + lidH + 4, 1, 1);
+      // Gold Rivets / Bolts
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x + 4, y + 4, 1, 1);
+      ctx.fillRect(x + 4, y + lidH + 4, 1, 1);
+      ctx.fillRect(x + w - 5, y + 4, 1, 1);
+      ctx.fillRect(x + w - 5, y + lidH + 4, 1, 1);
 
-              // 6. Lid Seam & Lip Line
-              ctx.strokeStyle = "#120701";
-              ctx.lineWidth = 1.5;
-              ctx.beginPath();
-              ctx.moveTo(x, y + lidH);
-              ctx.lineTo(x + w, y + lidH);
-              ctx.stroke();
+      // 6. Lid Seam & Lip Line
+      ctx.strokeStyle = "#120701";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y + lidH);
+      ctx.lineTo(x + w, y + lidH);
+      ctx.stroke();
 
-              ctx.strokeStyle = "#ffd700";
-              ctx.lineWidth = 1.0;
-              ctx.beginPath();
-              ctx.moveTo(x + 1, y + lidH + 1);
-              ctx.lineTo(x + w - 1, y + lidH + 1);
-              ctx.stroke();
+      ctx.strokeStyle = "#ffd700";
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(x + 1, y + lidH + 1);
+      ctx.lineTo(x + w - 1, y + lidH + 1);
+      ctx.stroke();
 
-              // 7. Golden Shield Lock Plaque & Glowing Keyhole
-              let lockW = 6;
-              let lockH = 7;
-              let lockX = cx - lockW / 2;
-              let lockY = y + lidH - 3;
+      // 7. Golden Shield Lock Plaque & Glowing Keyhole
+      let lockW = 6;
+      let lockH = 7;
+      let lockX = cx - lockW / 2;
+      let lockY = y + lidH - 3;
 
-              let lockGrad = ctx.createLinearGradient(lockX, lockY, lockX, lockY + lockH);
-              lockGrad.addColorStop(0, "#ffe066");
-              lockGrad.addColorStop(1, "#d4af37");
+      let lockGrad = ctx.createLinearGradient(
+        lockX,
+        lockY,
+        lockX,
+        lockY + lockH,
+      );
+      lockGrad.addColorStop(0, "#ffe066");
+      lockGrad.addColorStop(1, "#d4af37");
 
-              ctx.fillStyle = lockGrad;
-              ctx.strokeStyle = "#3a2b00";
-              ctx.lineWidth = 1.0;
-              ctx.fillRect(lockX, lockY, lockW, lockH);
-              ctx.strokeRect(lockX, lockY, lockW, lockH);
+      ctx.fillStyle = lockGrad;
+      ctx.strokeStyle = "#3a2b00";
+      ctx.lineWidth = 1.0;
+      ctx.fillRect(lockX, lockY, lockW, lockH);
+      ctx.strokeRect(lockX, lockY, lockW, lockH);
 
-              // Glowing Keyhole
-              ctx.fillStyle = "#120701";
-              ctx.beginPath();
-              ctx.arc(cx, lockY + 2.5, 1.2, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.fillRect(cx - 0.6, lockY + 2.5, 1.2, 2.5);
+      // Glowing Keyhole
+      ctx.fillStyle = "#120701";
+      ctx.beginPath();
+      ctx.arc(cx, lockY + 2.5, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(cx - 0.6, lockY + 2.5, 1.2, 2.5);
 
-              ctx.fillStyle = "#fff5a0";
-              ctx.beginPath();
-              ctx.arc(cx, lockY + 2.5, 0.6, 0, Math.PI * 2);
-              ctx.fill();
+      ctx.fillStyle = "#fff5a0";
+      ctx.beginPath();
+      ctx.arc(cx, lockY + 2.5, 0.6, 0, Math.PI * 2);
+      ctx.fill();
 
-              // 8. Ambient Rising Gold Sparkle Particles
-              for (let i = 0; i < 3; i++) {
-                let sparkProgress = (time / (700 + i * 250) + i * 0.33) % 1.0;
-                let sx = cx + Math.sin(time / 180 + i * 2.5) * 10;
-                let sy = cy - sparkProgress * 16;
-                let alpha = (1.0 - sparkProgress) * 0.85;
-                ctx.fillStyle = `rgba(255, 235, 150, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
-                ctx.fill();
-              }
+      // 8. Ambient Rising Gold Sparkle Particles
+      for (let i = 0; i < 3; i++) {
+        let sparkProgress = (time / (700 + i * 250) + i * 0.33) % 1.0;
+        let sx = cx + Math.sin(time / 180 + i * 2.5) * 10;
+        let sy = cy - sparkProgress * 16;
+        let alpha = (1.0 - sparkProgress) * 0.85;
+        ctx.fillStyle = `rgba(255, 235, 150, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
-              ctx.restore();
-            } else if (type === window.TILE_TYPES.RECOVERY_CHEST) {
-                          let cx = px + tileSize / 2;
-                          let cy = py + tileSize / 2;
-                          let time = Date.now();
+      ctx.restore();
+    } else if (type === window.TILE_TYPES.RECOVERY_CHEST) {
+      let cx = px + tileSize / 2;
+      let cy = py + tileSize / 2;
+      let time = Date.now();
 
-                          ctx.save();
+      ctx.save();
 
-                          // 1. Soft Drop Shadow
-                          ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-                          ctx.beginPath();
-                          ctx.ellipse(cx, cy + 9, 14, 5, 0, 0, Math.PI * 2);
-                          ctx.fill();
+      // 1. Soft Drop Shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 9, 14, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-                          // 2. Pulsing Crimson & Cyan Soul Aura
-                          let auraPulse = 18 + Math.sin(time / 140) * 3;
-                          let auraGrad = ctx.createRadialGradient(cx, cy + 2, 2, cx, cy + 2, auraPulse);
-                          auraGrad.addColorStop(0, "rgba(0, 210, 255, 0.6)");
-                          auraGrad.addColorStop(0.4, "rgba(168, 85, 247, 0.3)");
-                          auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-                          ctx.fillStyle = auraGrad;
-                          ctx.beginPath();
-                          ctx.arc(cx, cy + 2, auraPulse, 0, Math.PI * 2);
-                          ctx.fill();
+      // 2. Pulsing Crimson & Cyan Soul Aura
+      let auraPulse = 18 + Math.sin(time / 140) * 3;
+      let auraGrad = ctx.createRadialGradient(
+        cx,
+        cy + 2,
+        2,
+        cx,
+        cy + 2,
+        auraPulse,
+      );
+      auraGrad.addColorStop(0, "rgba(0, 210, 255, 0.6)");
+      auraGrad.addColorStop(0.4, "rgba(168, 85, 247, 0.3)");
+      auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy + 2, auraPulse, 0, Math.PI * 2);
+      ctx.fill();
 
-                          // 3. Obsidian Chest Lower Body (3D Dark Steel)
-                          let w = 24;
-                          let bodyH = 12;
-                          let lidH = 6;
-                          let x = cx - w / 2;
-                          let y = cy - (bodyH + lidH) / 2 + 2;
+      // 3. Obsidian Chest Lower Body (3D Dark Steel)
+      let w = 24;
+      let bodyH = 12;
+      let lidH = 6;
+      let x = cx - w / 2;
+      let y = cy - (bodyH + lidH) / 2 + 2;
 
-                          let obsGrad = ctx.createLinearGradient(x, y + lidH, x, y + lidH + bodyH);
-                          obsGrad.addColorStop(0, "#2d3748");
-                          obsGrad.addColorStop(0.5, "#1a202c");
-                          obsGrad.addColorStop(1, "#0a0e17");
+      let obsGrad = ctx.createLinearGradient(x, y + lidH, x, y + lidH + bodyH);
+      obsGrad.addColorStop(0, "#2d3748");
+      obsGrad.addColorStop(0.5, "#1a202c");
+      obsGrad.addColorStop(1, "#0a0e17");
 
-                          ctx.fillStyle = obsGrad;
-                          ctx.strokeStyle = "#ffd700";
-                          ctx.lineWidth = 1.5;
-                          ctx.fillRect(x, y + lidH, w, bodyH);
-                          ctx.strokeRect(x, y + lidH, w, bodyH);
+      ctx.fillStyle = obsGrad;
+      ctx.strokeStyle = "#ffd700";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(x, y + lidH, w, bodyH);
+      ctx.strokeRect(x, y + lidH, w, bodyH);
 
-                          // 4. Domed Obsidian Lid (3D Beveled Top)
-                          let lidGrad = ctx.createLinearGradient(x, y, x, y + lidH);
-                          lidGrad.addColorStop(0, "#4a5568");
-                          lidGrad.addColorStop(0.5, "#2d3748");
-                          lidGrad.addColorStop(1, "#1a202c");
+      // 4. Domed Obsidian Lid (3D Beveled Top)
+      let lidGrad = ctx.createLinearGradient(x, y, x, y + lidH);
+      lidGrad.addColorStop(0, "#4a5568");
+      lidGrad.addColorStop(0.5, "#2d3748");
+      lidGrad.addColorStop(1, "#1a202c");
 
-                          ctx.fillStyle = lidGrad;
-                          ctx.beginPath();
-                          ctx.moveTo(x, y + lidH);
-                          ctx.quadraticCurveTo(cx, y - 2, x + w, y + lidH);
-                          ctx.closePath();
-                          ctx.fill();
-                          ctx.stroke();
+      ctx.fillStyle = lidGrad;
+      ctx.beginPath();
+      ctx.moveTo(x, y + lidH);
+      ctx.quadraticCurveTo(cx, y - 2, x + w, y + lidH);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
 
-                          // Specular Top Highlight
-                          ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
-                          ctx.lineWidth = 1.0;
-                          ctx.beginPath();
-                          ctx.moveTo(x + 3, y + lidH - 2);
-                          ctx.quadraticCurveTo(cx, y + 1, x + w - 3, y + lidH - 2);
-                          ctx.stroke();
+      // Specular Top Highlight
+      ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(x + 3, y + lidH - 2);
+      ctx.quadraticCurveTo(cx, y + 1, x + w - 3, y + lidH - 2);
+      ctx.stroke();
 
-                          // 5. Polished Cyan & Gold Corner Brackets
-                          ctx.fillStyle = "#00d2ff";
-                          ctx.strokeStyle = "#005577";
-                          ctx.lineWidth = 1.0;
+      // 5. Polished Cyan & Gold Corner Brackets
+      ctx.fillStyle = "#00d2ff";
+      ctx.strokeStyle = "#005577";
+      ctx.lineWidth = 1.0;
 
-                          ctx.fillRect(x + 3, y + 2, 3, bodyH + lidH - 2);
-                          ctx.strokeRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+      ctx.fillRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+      ctx.strokeRect(x + 3, y + 2, 3, bodyH + lidH - 2);
 
-                          ctx.fillRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
-                          ctx.strokeRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+      ctx.fillRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+      ctx.strokeRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
 
-                          // Gold Rivets / Bolts
-                          ctx.fillStyle = "#ffd700";
-                          ctx.fillRect(x + 4, y + 4, 1, 1);
-                          ctx.fillRect(x + 4, y + lidH + 4, 1, 1);
-                          ctx.fillRect(x + w - 5, y + 4, 1, 1);
-                          ctx.fillRect(x + w - 5, y + lidH + 4, 1, 1);
+      // Gold Rivets / Bolts
+      ctx.fillStyle = "#ffd700";
+      ctx.fillRect(x + 4, y + 4, 1, 1);
+      ctx.fillRect(x + 4, y + lidH + 4, 1, 1);
+      ctx.fillRect(x + w - 5, y + 4, 1, 1);
+      ctx.fillRect(x + w - 5, y + lidH + 4, 1, 1);
 
-                          // 6. Gold Lid Seam & Lip Line
-                          ctx.strokeStyle = "#ffd700";
-                          ctx.lineWidth = 1.2;
-                          ctx.beginPath();
-                          ctx.moveTo(x, y + lidH);
-                          ctx.lineTo(x + w, y + lidH);
-                          ctx.stroke();
+      // 6. Gold Lid Seam & Lip Line
+      ctx.strokeStyle = "#ffd700";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, y + lidH);
+      ctx.lineTo(x + w, y + lidH);
+      ctx.stroke();
 
-                          // 7. Glowing Gold Shield Lock Plaque
-                          let lockW = 6;
-                          let lockH = 7;
-                          let lockX = cx - lockW / 2;
-                          let lockY = y + lidH - 3;
+      // 7. Glowing Gold Shield Lock Plaque
+      let lockW = 6;
+      let lockH = 7;
+      let lockX = cx - lockW / 2;
+      let lockY = y + lidH - 3;
 
-                          ctx.fillStyle = "#ffd700";
-                          ctx.strokeStyle = "#3a2b00";
-                          ctx.lineWidth = 1.0;
-                          ctx.fillRect(lockX, lockY, lockW, lockH);
-                          ctx.strokeRect(lockX, lockY, lockW, lockH);
+      ctx.fillStyle = "#ffd700";
+      ctx.strokeStyle = "#3a2b00";
+      ctx.lineWidth = 1.0;
+      ctx.fillRect(lockX, lockY, lockW, lockH);
+      ctx.strokeRect(lockX, lockY, lockW, lockH);
 
-                          // Glowing Cyan Keyhole
-                          ctx.fillStyle = "#00d2ff";
-                          ctx.beginPath();
-                          ctx.arc(cx, lockY + 2.5, 1.2, 0, Math.PI * 2);
-                          ctx.fill();
+      // Glowing Cyan Keyhole
+      ctx.fillStyle = "#00d2ff";
+      ctx.beginPath();
+      ctx.arc(cx, lockY + 2.5, 1.2, 0, Math.PI * 2);
+      ctx.fill();
 
-                          // 8. Floating Soul Beacon Marker (3D Glowing Diamond)
-                          let floatY = Math.sin(time / 200) * 3;
-                          let beaconY = y - 12 + floatY;
+      // 8. Floating Soul Beacon Marker (3D Glowing Diamond)
+      let floatY = Math.sin(time / 200) * 3;
+      let beaconY = y - 12 + floatY;
 
-                          ctx.fillStyle = "#ffd700";
-                          ctx.strokeStyle = "#00d2ff";
-                          ctx.lineWidth = 1.2;
-                          ctx.beginPath();
-                          ctx.moveTo(cx, beaconY - 6);
-                          ctx.lineTo(cx + 4, beaconY);
-                          ctx.lineTo(cx, beaconY + 6);
-                          ctx.lineTo(cx - 4, beaconY);
-                          ctx.closePath();
-                          ctx.fill();
-                          ctx.stroke();
+      ctx.fillStyle = "#ffd700";
+      ctx.strokeStyle = "#00d2ff";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, beaconY - 6);
+      ctx.lineTo(cx + 4, beaconY);
+      ctx.lineTo(cx, beaconY + 6);
+      ctx.lineTo(cx - 4, beaconY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
 
-                          ctx.fillStyle = "#ffffff";
-                          ctx.beginPath();
-                          ctx.arc(cx, beaconY, 1.2, 0, Math.PI * 2);
-                          ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(cx, beaconY, 1.2, 0, Math.PI * 2);
+      ctx.fill();
 
-                          // 9. Rising Ethereal Soul Particles
-                          for (let i = 0; i < 3; i++) {
-                            let sparkProgress = (time / (600 + i * 200) + i * 0.33) % 1.0;
-                            let sx = cx + Math.sin(time / 150 + i * 2) * 10;
-                            let sy = cy - sparkProgress * 20;
-                            let alpha = (1.0 - sparkProgress) * 0.85;
-                            ctx.fillStyle = i % 2 === 0 ? `rgba(0, 210, 255, ${alpha})` : `rgba(255, 215, 0, ${alpha})`;
-                            ctx.beginPath();
-                            ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
-                            ctx.fill();
-                          }
+      // 9. Rising Ethereal Soul Particles
+      for (let i = 0; i < 3; i++) {
+        let sparkProgress = (time / (600 + i * 200) + i * 0.33) % 1.0;
+        let sx = cx + Math.sin(time / 150 + i * 2) * 10;
+        let sy = cy - sparkProgress * 20;
+        let alpha = (1.0 - sparkProgress) * 0.85;
+        ctx.fillStyle =
+          i % 2 === 0
+            ? `rgba(0, 210, 255, ${alpha})`
+            : `rgba(255, 215, 0, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
-                          ctx.restore();
-                        }
-          };
+      ctx.restore();
+    }
+  };
 
-          window.destroyBreakableProp = function (prop, worldX, worldY) {
+  window.destroyBreakableProp = function (prop, worldX, worldY) {
     if (!prop) return;
 
     let map = window.activeDungeonMap;
@@ -7043,183 +7759,214 @@
   };
 
   window.updateDungeonCombat = function () {
-        let p = window.player;
-        let pStats =
-          typeof window.resolvePlayerStats === "function"
-            ? window.resolvePlayerStats()
-            : { atk: BigNum.from(15) };
-        p.attackTimer = (p.attackTimer || 0) + 1;
+    let p = window.player;
+    let pStats =
+      typeof window.resolvePlayerStats === "function"
+        ? window.resolvePlayerStats()
+        : { atk: BigNum.from(15) };
+    p.attackTimer = (p.attackTimer || 0) + 1;
 
-        let logicClock = window.logicClock || 0;
+    let logicClock = window.logicClock || 0;
 
-        // --- UNIQUE ITEM PERIODIC TIMERS ---
-        if (window.hasUniquePassive("weapon_staff")) {
-          window.playerStats.phoenixStaffTimer = (window.playerStats.phoenixStaffTimer || 0) + 1;
-          if (window.playerStats.phoenixStaffTimer >= 180) {
-            window.playerStats.phoenixStaffTimer = 0;
-            let targetMob = (window.activeDungeonMobs && window.activeDungeonMobs[0]) || (window.mob);
-            if (targetMob && targetMob.hp && targetMob.hp.gt && targetMob.hp.gt(0)) {
-              let tCx = targetMob.x + (targetMob.w || 24) / 2;
-              let tCy = targetMob.y + (targetMob.h || 24) / 2;
-              let dx = tCx - p.x;
-              let dy = tCy - (p.y - 8);
-              let dist = Math.hypot(dx, dy);
-              if (dist > 0 && dist < 300) {
-                let fireDmg = BigNum.from(pStats.atk || 15).mul(0.25);
-                window.projectiles.push({
-                  x: p.x,
-                  y: p.y - 8,
-                  vx: (dx / dist) * 4.5,
-                  vy: (dy / dist) * 4.5,
-                  r: 7,
-                  type: "fireball",
-                  damage: Math.round(fireDmg.valueOf()),
-                  life: 140,
-                  pulseOffset: Math.random() * 10
-                });
-                if (window.SoundManager) window.SoundManager.play("spell_fire");
-              }
-            }
+    // --- UNIQUE ITEM PERIODIC TIMERS ---
+    if (window.hasUniquePassive("weapon_staff")) {
+      window.playerStats.phoenixStaffTimer =
+        (window.playerStats.phoenixStaffTimer || 0) + 1;
+      if (window.playerStats.phoenixStaffTimer >= 180) {
+        window.playerStats.phoenixStaffTimer = 0;
+        let targetMob =
+          (window.activeDungeonMobs && window.activeDungeonMobs[0]) ||
+          window.mob;
+        if (
+          targetMob &&
+          targetMob.hp &&
+          targetMob.hp.gt &&
+          targetMob.hp.gt(0)
+        ) {
+          let tCx = targetMob.x + (targetMob.w || 24) / 2;
+          let tCy = targetMob.y + (targetMob.h || 24) / 2;
+          let dx = tCx - p.x;
+          let dy = tCy - (p.y - 8);
+          let dist = Math.hypot(dx, dy);
+          if (dist > 0 && dist < 300) {
+            let fireDmg = BigNum.from(pStats.atk || 15).mul(0.25);
+            window.projectiles.push({
+              x: p.x,
+              y: p.y - 8,
+              vx: (dx / dist) * 4.5,
+              vy: (dy / dist) * 4.5,
+              r: 7,
+              type: "fireball",
+              damage: Math.round(fireDmg.valueOf()),
+              life: 140,
+              pulseOffset: Math.random() * 10,
+            });
+            if (window.SoundManager) window.SoundManager.play("spell_fire");
           }
         }
+      }
+    }
 
-        if (window.hasUniquePassive("tome_watch")) {
-          window.playerStats.watchCycleTimer = (window.playerStats.watchCycleTimer || 0) + 1;
-          if (window.playerStats.watchCycleTimer >= 1200) {
-            window.playerStats.watchCycleTimer = 0;
-            window.playerStats.watchActiveTimer = 240;
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(p.x, p.y - 25, "TEMPORAL FRACTURE!", "#f1c40f", true);
-            }
-            if (window.combatVisuals) {
-              window.combatVisuals.spawnBeam(p.x, "#f1c40f", 40, true);
-            }
-          }
-          if (window.playerStats.watchActiveTimer > 0) {
-            window.playerStats.watchActiveTimer--;
-          }
+    if (window.hasUniquePassive("tome_watch")) {
+      window.playerStats.watchCycleTimer =
+        (window.playerStats.watchCycleTimer || 0) + 1;
+      if (window.playerStats.watchCycleTimer >= 1200) {
+        window.playerStats.watchCycleTimer = 0;
+        window.playerStats.watchActiveTimer = 240;
+        if (typeof window.spawnFloatingText === "function") {
+          window.spawnFloatingText(
+            p.x,
+            p.y - 25,
+            "TEMPORAL FRACTURE!",
+            "#f1c40f",
+            true,
+          );
         }
-
-        if (window.hasUniquePassive("tome_conduit")) {
-          window.playerStats.conduitSpawnTimer = (window.playerStats.conduitSpawnTimer || 0) + 1;
-          if (window.playerStats.conduitSpawnTimer >= 900) {
-            window.playerStats.conduitSpawnTimer = 0;
-            if (typeof window.spawnCavernInteractive === "function") {
-              window.spawnCavernInteractive("aetheric_conduit");
-            }
-          }
+        if (window.combatVisuals) {
+          window.combatVisuals.spawnBeam(p.x, "#f1c40f", 40, true);
         }
+      }
+      if (window.playerStats.watchActiveTimer > 0) {
+        window.playerStats.watchActiveTimer--;
+      }
+    }
 
-      // --- ELITE SUPPORT AURA PULSES & STACK DECAY ENGINE ---
-      if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-        let mobs = window.activeDungeonMobs;
+    if (window.hasUniquePassive("tome_conduit")) {
+      window.playerStats.conduitSpawnTimer =
+        (window.playerStats.conduitSpawnTimer || 0) + 1;
+      if (window.playerStats.conduitSpawnTimer >= 900) {
+        window.playerStats.conduitSpawnTimer = 0;
+        if (typeof window.spawnCavernInteractive === "function") {
+          window.spawnCavernInteractive("aetheric_conduit");
+        }
+      }
+    }
 
-        // 1. Process Active Aura Pulses from Elite Commanders
-              mobs.forEach((m) => {
-                if (!m.eliteAffix || m.hp.lte(0)) return;
+    // --- ELITE SUPPORT AURA PULSES & STACK DECAY ENGINE ---
+    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+      let mobs = window.activeDungeonMobs;
 
-                let mCx = m.x + (m.w || 24) / 2;
-                let mCy = m.y + (m.h || 24) / 2;
+      // 1. Process Active Aura Pulses from Elite Commanders
+      mobs.forEach((m) => {
+        if (!m.eliteAffix || m.hp.lte(0)) return;
 
-                if (m.eliteAffix === "vitality_weaver") {
-                  if (logicClock % 90 === 0) { // Pulse every 1.5 seconds
-                    let radiusSq = 14400; // 120px healing radius squared
-                    let injuredAllies = [];
+        let mCx = m.x + (m.w || 24) / 2;
+        let mCy = m.y + (m.h || 24) / 2;
 
-                    mobs.forEach((m2) => {
-                      if (m2 === m || m2.hp.lte(0) || m2.hp.gte(m2.maxHp)) return; // Strictly excludes self, hero, and full-HP/dead mobs
-                      let dx = (m2.x + (m2.w || 24) / 2) - mCx;
-                      let dy = (m2.y + (m2.h || 24) / 2) - mCy;
-                      if (dx * dx + dy * dy <= radiusSq) {
-                        let hpRatio = m2.hp.div(m2.maxHp).valueOf();
-                        injuredAllies.push({ mob: m2, ratio: hpRatio });
-                      }
-                    });
+        if (m.eliteAffix === "vitality_weaver") {
+          if (logicClock % 90 === 0) {
+            // Pulse every 1.5 seconds
+            let radiusSq = 14400; // 120px healing radius squared
+            let injuredAllies = [];
 
-                    // Target up to 3 lowest-HP injured monster allies
-                    injuredAllies.sort((a, b) => a.ratio - b.ratio);
-                    let targetsToHeal = injuredAllies.slice(0, 3);
-
-                    targetsToHeal.forEach((target) => {
-                      let targetMob = target.mob;
-                      let isBoss = targetMob.type === "dungeon_boss" || targetMob.type === "dungeon_miniboss";
-                      let healRatio = isBoss ? 0.015 : 0.06; // 1.5% for bosses, 6% for standard mobs
-                      let healVal = targetMob.maxHp.mul(healRatio);
-
-                      targetMob.hp = window.BigNumMin(targetMob.maxHp, targetMob.hp.add(healVal));
-
-                      let tx = targetMob.x + (targetMob.w || 24) / 2;
-                      let ty = targetMob.y + (targetMob.h || 24) / 2;
-
-                      if (typeof window.spawnFloatingText === "function") {
-                                                                    window.spawnFloatingText(tx, ty - 15, `+${window.formatNumber(healVal)} HP`, "#2ecc71");
-                                                                  }
-                                                                });
-                                                              }
-                                                            } else if (m.eliteAffix === "swift_commander") {
-                                        let radiusSq = 19600; // 140px radius squared
-                                        mobs.forEach((m2) => {
-                                          if (m2 === m || m2.hp.lte(0)) return;
-                                          let dx = (m2.x + (m2.w || 24) / 2) - mCx;
-                                          let dy = (m2.y + (m2.h || 24) / 2) - mCy;
-                                          if (dx * dx + dy * dy <= radiusSq) {
-                                            m2.buffTimers.haste = 300; // 5-second lingering window
-                                            if (logicClock % 90 === 0) {
-                                              m2.buffStacks.haste = Math.min(3, (m2.buffStacks.haste || 0) + 1);
-                                            }
-                                          }
-                                        });
-                                      } else if (m.eliteAffix === "iron_citadel") {
-            let radiusSq = 10000; // 100px radius squared
             mobs.forEach((m2) => {
-              if (m2 === m || m2.hp.lte(0)) return;
-              let dx = (m2.x + (m2.w || 24) / 2) - mCx;
-              let dy = (m2.y + (m2.h || 24) / 2) - mCy;
+              if (m2 === m || m2.hp.lte(0) || m2.hp.gte(m2.maxHp)) return; // Strictly excludes self, hero, and full-HP/dead mobs
+              let dx = m2.x + (m2.w || 24) / 2 - mCx;
+              let dy = m2.y + (m2.h || 24) / 2 - mCy;
               if (dx * dx + dy * dy <= radiusSq) {
-                m2.buffTimers.def = 300; // 5-second lingering window
-                if (logicClock % 90 === 0) {
-                  m2.buffStacks.def = Math.min(3, (m2.buffStacks.def || 0) + 1);
-                }
+                let hpRatio = m2.hp.div(m2.maxHp).valueOf();
+                injuredAllies.push({ mob: m2, ratio: hpRatio });
               }
             });
-          } else if (m.eliteAffix === "blood_berserker") {
-            let radiusSq = 12100; // 110px radius squared
-            mobs.forEach((m2) => {
-              if (m2 === m || m2.hp.lte(0)) return;
-              let dx = (m2.x + (m2.w || 24) / 2) - mCx;
-              let dy = (m2.y + (m2.h || 24) / 2) - mCy;
-              if (dx * dx + dy * dy <= radiusSq) {
-                m2.buffTimers.atk = 300; // 5-second lingering window
-                if (logicClock % 90 === 0) {
-                  m2.buffStacks.atk = Math.min(3, (m2.buffStacks.atk || 0) + 1);
-                }
+
+            // Target up to 3 lowest-HP injured monster allies
+            injuredAllies.sort((a, b) => a.ratio - b.ratio);
+            let targetsToHeal = injuredAllies.slice(0, 3);
+
+            targetsToHeal.forEach((target) => {
+              let targetMob = target.mob;
+              let isBoss =
+                targetMob.type === "dungeon_boss" ||
+                targetMob.type === "dungeon_miniboss";
+              let healRatio = isBoss ? 0.015 : 0.06; // 1.5% for bosses, 6% for standard mobs
+              let healVal = targetMob.maxHp.mul(healRatio);
+
+              targetMob.hp = window.BigNumMin(
+                targetMob.maxHp,
+                targetMob.hp.add(healVal),
+              );
+
+              let tx = targetMob.x + (targetMob.w || 24) / 2;
+              let ty = targetMob.y + (targetMob.h || 24) / 2;
+
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  tx,
+                  ty - 15,
+                  `+${window.formatNumber(healVal)} HP`,
+                  "#2ecc71",
+                );
               }
             });
-          } else if (m.eliteAffix === "nullifier") {
-            let dx = p.x - mCx;
-            let dy = p.y - mCy;
-            if (dx * dx + dy * dy <= 8100) { // 90px hero disruptor radius
-              p.nullifierDisrupted = true;
-            }
           }
-        });
-
-        // 2. Process Lingering Window Countdown & Gradual 2.5s Stack Falloff
-        mobs.forEach((m) => {
-          if (!m.buffStacks) return;
-          ["haste", "def", "atk"].forEach((b) => {
-            if (m.buffTimers[b] > 0) {
-              m.buffTimers[b]--;
-              if (m.buffTimers[b] === 0 && m.buffStacks[b] > 0) {
-                m.buffStacks[b]--;
-                if (m.buffStacks[b] > 0) {
-                  m.buffTimers[b] = 150; // Drop 1 stack every 2.5s (150 frames)
-                }
+        } else if (m.eliteAffix === "swift_commander") {
+          let radiusSq = 19600; // 140px radius squared
+          mobs.forEach((m2) => {
+            if (m2 === m || m2.hp.lte(0)) return;
+            let dx = m2.x + (m2.w || 24) / 2 - mCx;
+            let dy = m2.y + (m2.h || 24) / 2 - mCy;
+            if (dx * dx + dy * dy <= radiusSq) {
+              m2.buffTimers.haste = 300; // 5-second lingering window
+              if (logicClock % 90 === 0) {
+                m2.buffStacks.haste = Math.min(
+                  3,
+                  (m2.buffStacks.haste || 0) + 1,
+                );
               }
             }
           });
+        } else if (m.eliteAffix === "iron_citadel") {
+          let radiusSq = 10000; // 100px radius squared
+          mobs.forEach((m2) => {
+            if (m2 === m || m2.hp.lte(0)) return;
+            let dx = m2.x + (m2.w || 24) / 2 - mCx;
+            let dy = m2.y + (m2.h || 24) / 2 - mCy;
+            if (dx * dx + dy * dy <= radiusSq) {
+              m2.buffTimers.def = 300; // 5-second lingering window
+              if (logicClock % 90 === 0) {
+                m2.buffStacks.def = Math.min(3, (m2.buffStacks.def || 0) + 1);
+              }
+            }
+          });
+        } else if (m.eliteAffix === "blood_berserker") {
+          let radiusSq = 12100; // 110px radius squared
+          mobs.forEach((m2) => {
+            if (m2 === m || m2.hp.lte(0)) return;
+            let dx = m2.x + (m2.w || 24) / 2 - mCx;
+            let dy = m2.y + (m2.h || 24) / 2 - mCy;
+            if (dx * dx + dy * dy <= radiusSq) {
+              m2.buffTimers.atk = 300; // 5-second lingering window
+              if (logicClock % 90 === 0) {
+                m2.buffStacks.atk = Math.min(3, (m2.buffStacks.atk || 0) + 1);
+              }
+            }
+          });
+        } else if (m.eliteAffix === "nullifier") {
+          let dx = p.x - mCx;
+          let dy = p.y - mCy;
+          if (dx * dx + dy * dy <= 8100) {
+            // 90px hero disruptor radius
+            p.nullifierDisrupted = true;
+          }
+        }
+      });
+
+      // 2. Process Lingering Window Countdown & Gradual 2.5s Stack Falloff
+      mobs.forEach((m) => {
+        if (!m.buffStacks) return;
+        ["haste", "def", "atk"].forEach((b) => {
+          if (m.buffTimers[b] > 0) {
+            m.buffTimers[b]--;
+            if (m.buffTimers[b] === 0 && m.buffStacks[b] > 0) {
+              m.buffStacks[b]--;
+              if (m.buffStacks[b] > 0) {
+                m.buffTimers[b] = 150; // Drop 1 stack every 2.5s (150 frames)
+              }
+            }
+          }
         });
-      }
+      });
+    }
 
     if (window.hero.slashTimer > 0) {
       window.hero.slashTimer--;
@@ -7571,164 +8318,262 @@
         let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
         m.hp = m.hp.sub(pAtk);
-                m.hasTakenDamage = true;
-                m.flashTimer = 6;
+        m.hasTakenDamage = true;
+        m.flashTimer = 6;
 
-                let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
-                window.playerStats.peakSingleHit = Math.max(window.playerStats.peakSingleHit || 0, rawHitNum);
+        let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
+        window.playerStats.peakSingleHit = Math.max(
+          window.playerStats.peakSingleHit || 0,
+          rawHitNum,
+        );
 
-                let mMaxHpNum = m.maxHp.valueOf ? m.maxHp.valueOf() : Number(m.maxHp || 1);
-                if (isCrit && mMaxHpNum > 0 && (rawHitNum / mMaxHpNum) >= 10) {
-                  window.playerStats.hasTriggeredOverkill = true;
-                }
+        let mMaxHpNum = m.maxHp.valueOf
+          ? m.maxHp.valueOf()
+          : Number(m.maxHp || 1);
+        if (isCrit && mMaxHpNum > 0 && rawHitNum / mMaxHpNum >= 10) {
+          window.playerStats.hasTriggeredOverkill = true;
+        }
 
-                let curHr = new Date().getHours();
-                if (curHr >= 0 && curHr < 4) window.playerStats.hasTriggeredNightOwl = true;
-                if (curHr >= 5 && curHr < 8) window.playerStats.hasTriggeredEarlyBird = true;
-                let curDay = new Date().getDay();
-                if (curDay === 0 || curDay === 6) window.playerStats.hasTriggeredWeekendWarrior = true;
+        let curHr = new Date().getHours();
+        if (curHr >= 0 && curHr < 4)
+          window.playerStats.hasTriggeredNightOwl = true;
+        if (curHr >= 5 && curHr < 8)
+          window.playerStats.hasTriggeredEarlyBird = true;
+        let curDay = new Date().getDay();
+        if (curDay === 0 || curDay === 6)
+          window.playerStats.hasTriggeredWeekendWarrior = true;
 
-                let mobCenterX = closestTarget.x;
+        let mobCenterX = closestTarget.x;
         let mobCenterY = closestTarget.y;
         let dx = closestTarget.x - p.x;
         let dy = closestTarget.y - p.y;
         let dist = Math.hypot(dx, dy);
 
         if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                  window.RenderEngine.spawnDamageEffect(
-                    mobCenterX,
-                    mobCenterY,
-                    pAtk,
-                    "slash",
-                    isCrit,
-                  );
-                }
+          window.RenderEngine.spawnDamageEffect(
+            mobCenterX,
+            mobCenterY,
+            pAtk,
+            "slash",
+            isCrit,
+          );
+        }
 
-                // Artifact: Vampirism (Blood-Soaked Chalice)
-                if (window.checkArtifactTrait("vampirism")) {
-                  let now = Date.now();
-                  window.playerStats.recentHeals = (window.playerStats.recentHeals || []).filter(h => now - h.time < 1000);
-                  let totalHealedLastSec = window.playerStats.recentHeals.reduce((sum, h) => sum + h.amt, 0);
-                  let maxHealPerSec = p.maxHp * 0.03;
-                  let allowedHeal = Math.max(0, maxHealPerSec - totalHealedLastSec);
+        // Artifact: Vampirism (Blood-Soaked Chalice)
+        if (window.checkArtifactTrait("vampirism")) {
+          let now = Date.now();
+          window.playerStats.recentHeals = (
+            window.playerStats.recentHeals || []
+          ).filter((h) => now - h.time < 1000);
+          let totalHealedLastSec = window.playerStats.recentHeals.reduce(
+            (sum, h) => sum + h.amt,
+            0,
+          );
+          let maxHealPerSec = p.maxHp * 0.03;
+          let allowedHeal = Math.max(0, maxHealPerSec - totalHealedLastSec);
 
-                  let rawHeal = pAtk.mul(0.005).valueOf();
-                  let finalHeal = Math.min(allowedHeal, rawHeal);
-                  if (finalHeal > 0) {
-                    finalHeal = Math.round(finalHeal);
-                    p.hp = Math.min(p.maxHp, p.hp + finalHeal);
-                    window.playerStats.recentHeals.push({ time: now, amt: finalHeal });
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(p.x, p.y - 12, `+${finalHeal} HP`, "#e74c3c");
-                    }
-                  }
-                }
+          let rawHeal = pAtk.mul(0.005).valueOf();
+          let finalHeal = Math.min(allowedHeal, rawHeal);
+          if (finalHeal > 0) {
+            finalHeal = Math.round(finalHeal);
+            p.hp = Math.min(p.maxHp, p.hp + finalHeal);
+            window.playerStats.recentHeals.push({ time: now, amt: finalHeal });
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 12,
+                `+${finalHeal} HP`,
+                "#e74c3c",
+              );
+            }
+          }
+        }
 
-                // Artifact: Echo Strike (Phantom Blade)
-                if (window.checkArtifactTrait("echo_strike") && Math.random() < 0.3) {
-                  let echoDmg = pAtk.mul(0.25);
-                  m.hp = m.hp.sub(echoDmg);
-                  if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                    window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY - 8, echoDmg, "echo", false);
-                  }
-                }
+        // Artifact: Echo Strike (Phantom Blade)
+        if (window.checkArtifactTrait("echo_strike") && Math.random() < 0.3) {
+          let echoDmg = pAtk.mul(0.25);
+          m.hp = m.hp.sub(echoDmg);
+          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+            window.RenderEngine.spawnDamageEffect(
+              mobCenterX,
+              mobCenterY - 8,
+              echoDmg,
+              "echo",
+              false,
+            );
+          }
+        }
 
-                // Unique: Sanguine Reaver (Sword Bleed Rupture)
-                if (window.hasUniquePassive("weapon_sword")) {
-                  m.bleedStacks = (m.bleedStacks || 0) + 1;
-                  if (m.bleedStacks >= 5) {
-                    m.bleedStacks = 0;
-                    let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
-                    m.hp = m.hp.sub(ruptureDmg);
-                    let siphonedHp = Math.round(p.maxHp * 0.1);
-                    p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
-                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                      window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY, ruptureDmg, "crit", true);
-                    }
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(p.x, p.y - 20, `+${siphonedHp} HP (RUPTURE)`, "#2ecc71");
-                    }
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 20, "magma_elemental", 4);
-                    }
-                  } else {
-                    let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
-                    m.hp = m.hp.sub(bleedTick);
-                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                      window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY - 10, bleedTick, "bleed", false);
-                    }
-                  }
-                }
+        // Unique: Sanguine Reaver (Sword Bleed Rupture)
+        if (window.hasUniquePassive("weapon_sword")) {
+          m.bleedStacks = (m.bleedStacks || 0) + 1;
+          if (m.bleedStacks >= 5) {
+            m.bleedStacks = 0;
+            let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
+            m.hp = m.hp.sub(ruptureDmg);
+            let siphonedHp = Math.round(p.maxHp * 0.1);
+            p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY,
+                ruptureDmg,
+                "crit",
+                true,
+              );
+            }
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 20,
+                `+${siphonedHp} HP (RUPTURE)`,
+                "#2ecc71",
+              );
+            }
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                mobCenterX,
+                mobCenterY,
+                20,
+                "magma_elemental",
+                4,
+              );
+            }
+          } else {
+            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
+            m.hp = m.hp.sub(bleedTick);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY - 10,
+                bleedTick,
+                "bleed",
+                false,
+              );
+            }
+          }
+        }
 
-                // Unique: Maelstrom Gale-Glaive (Wind Gales & Speed Stacks)
-                if (isCrit && window.hasUniquePassive("weapon_maelstrom")) {
-                  window.playerStats.maelstromSpeedStacks = Math.min(3, (window.playerStats.maelstromSpeedStacks || 0) + 1);
-                  window.playerStats.maelstromSpeedTimer = 360;
-                  window.playerStats.galeResonanceTimer = 360;
+        // Unique: Maelstrom Gale-Glaive (Wind Gales & Speed Stacks)
+        if (isCrit && window.hasUniquePassive("weapon_maelstrom")) {
+          window.playerStats.maelstromSpeedStacks = Math.min(
+            3,
+            (window.playerStats.maelstromSpeedStacks || 0) + 1,
+          );
+          window.playerStats.maelstromSpeedTimer = 360;
+          window.playerStats.galeResonanceTimer = 360;
 
-                  let speed = 5.0;
-                  window.projectiles.push({
-                    x: p.x,
-                    y: p.y - 8,
-                    vx: (dx < 0 ? 1 : -1) * speed,
-                    vy: 0,
-                    r: 8,
-                    type: "maelstrom",
-                    damage: Math.round(pAtk.mul(0.6).valueOf()),
-                    life: 140,
-                  });
-                }
+          let speed = 5.0;
+          window.projectiles.push({
+            x: p.x,
+            y: p.y - 8,
+            vx: (dx < 0 ? 1 : -1) * speed,
+            vy: 0,
+            r: 8,
+            type: "maelstrom",
+            damage: Math.round(pAtk.mul(0.6).valueOf()),
+            life: 140,
+          });
+        }
 
-                // Unique: Viper's Perfect Stiletto (Reticle Trigger)
-                        if (isCrit && window.hasUniquePassive("dagger_viper") && Math.random() < 0.25) {
-                          m.perfectStrikeTimer = 120;
-                          m.perfectStrikeMax = 120;
-                          if (typeof window.pushHeaderToast === "function") {
-                            window.pushHeaderToast("[!] Viper's Reticle active! Tap target to execute!", "#a855f7");
-                          }
-                        }
+        // Unique: Viper's Perfect Stiletto (Reticle Trigger)
+        if (
+          isCrit &&
+          window.hasUniquePassive("dagger_viper") &&
+          Math.random() < 0.25
+        ) {
+          m.perfectStrikeTimer = 120;
+          m.perfectStrikeMax = 120;
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Viper's Reticle active! Tap target to execute!",
+              "#a855f7",
+            );
+          }
+        }
 
-                        // Unique: Void-Sovereign Greatsword (Gravitational Room Vacuum)
-                                if (window.hasUniquePassive("weapon_singularity")) {
-                                  window.triggerGravitationalVacuum(p);
-                                }
+        // Unique: Void-Sovereign Greatsword (Gravitational Room Vacuum)
+        if (window.hasUniquePassive("weapon_singularity")) {
+          window.triggerGravitationalVacuum(p);
+        }
 
-                                // Artifact: Dread Presence (25% Chance to execute non-boss mobs under 20% HP)
-                                                            let isBossTarget = m.type === "dungeon_boss" || m.type === "dungeon_miniboss";
-                                                            if (window.checkArtifactTrait("dread_presence") && !isBossTarget && m.hp.gt(0)) {
-                                                              let mobHpRatio = m.hp.div(m.maxHp).valueOf();
-                                                              if (mobHpRatio <= 0.20 && Math.random() < 0.25) {
-                                                                let remHp = m.hp;
-                                                                m.hp = BigNum.from(0);
-                                                                if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                                                                  window.RenderEngine.spawnDamageEffect(mobCenterX, mobCenterY, remHp, "crit", true);
-                                                                }
-                                                                if (typeof window.spawnFloatingText === "function") {
-                                                                  window.spawnFloatingText(mobCenterX, mobCenterY - 15, "EXECUTE!", "#e74c3c");
-                                                                }
-                                                                if (window.combatVisuals) {
-                                                                  window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 15, "magma_elemental", 4);
-                                                                  window.combatVisuals.triggerScreenShake(5, 10);
-                                                                }
-                                                              }
-                                                            }
+        // Artifact: Dread Presence (25% Chance to execute non-boss mobs under 20% HP)
+        let isBossTarget =
+          m.type === "dungeon_boss" || m.type === "dungeon_miniboss";
+        if (
+          window.checkArtifactTrait("dread_presence") &&
+          !isBossTarget &&
+          m.hp.gt(0)
+        ) {
+          let mobHpRatio = m.hp.div(m.maxHp).valueOf();
+          if (mobHpRatio <= 0.2 && Math.random() < 0.25) {
+            let remHp = m.hp;
+            m.hp = BigNum.from(0);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY,
+                remHp,
+                "crit",
+                true,
+              );
+            }
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                mobCenterX,
+                mobCenterY - 15,
+                "EXECUTE!",
+                "#e74c3c",
+              );
+            }
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                mobCenterX,
+                mobCenterY,
+                15,
+                "magma_elemental",
+                4,
+              );
+              window.combatVisuals.triggerScreenShake(5, 10);
+            }
+          }
+        }
 
-                                // Artifact: Midas Touch (3% Chance on hit against non-boss mobs for Gold Transmutation)
-                                if (!isBossTarget && m.hp.gt(0) && window.checkArtifactTrait("gold_hoard") && Math.random() < 0.03) {
-                                  let remHp = m.hp;
-                                  m.hp = BigNum.from(0);
-                                  if (typeof window.spawnFloatingText === "function") {
-                                    window.spawnFloatingText(mobCenterX, mobCenterY - 18, "GOLD TRANSMUTATION!", "#ffd700");
-                                  }
-                                  let bonusGold = Math.floor(75 * (1 + window.player.depth * 0.5));
-                                  window.spawnHomingGold(mobCenterX, mobCenterY, bonusGold);
-                                  if (window.combatVisuals) {
-                                    window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 25, "gold_dungeon", 5);
-                                  }
-                                  if (window.SoundManager && typeof window.SoundManager.playCoinCollect === "function") {
-                                    window.SoundManager.playCoinCollect();
-                                  }
-                                }
+        // Artifact: Midas Touch (3% Chance on hit against non-boss mobs for Gold Transmutation)
+        if (
+          !isBossTarget &&
+          m.hp.gt(0) &&
+          window.checkArtifactTrait("gold_hoard") &&
+          Math.random() < 0.03
+        ) {
+          let remHp = m.hp;
+          m.hp = BigNum.from(0);
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              mobCenterX,
+              mobCenterY - 18,
+              "GOLD TRANSMUTATION!",
+              "#ffd700",
+            );
+          }
+          let bonusGold = Math.floor(75 * (1 + window.player.depth * 0.5));
+          window.spawnHomingGold(mobCenterX, mobCenterY, bonusGold);
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              mobCenterX,
+              mobCenterY,
+              25,
+              "gold_dungeon",
+              5,
+            );
+          }
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.playCoinCollect === "function"
+          ) {
+            window.SoundManager.playCoinCollect();
+          }
+        }
 
         // Dagger Offhand Multi-Strike & Bleed DoT Triggers
         if (pStats.subType === "dagger") {
@@ -7765,214 +8610,314 @@
         }
 
         // Tome Spell Cast Trigger
-                let isTomeEquipped =
-                                  pStats.subType === "tome" ||
-                                  (window.equippedSlots &&
-                                    window.equippedSlots.subweapon &&
-                                    (window.equippedSlots.subweapon.subType === "tome" ||
-                                      window.equippedSlots.subweapon.type === "tome"));
-                                let activeSpellChance =
-                                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-                                let activeSpellType = pStats.spellType || "tri";
+        let isTomeEquipped =
+          pStats.subType === "tome" ||
+          (window.equippedSlots &&
+            window.equippedSlots.subweapon &&
+            (window.equippedSlots.subweapon.subType === "tome" ||
+              window.equippedSlots.subweapon.type === "tome"));
+        let activeSpellChance =
+          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+        let activeSpellType = pStats.spellType || "tri";
 
-                                if (isTomeEquipped && Math.random() < activeSpellChance) {
-                                  // Gain +1 Tome Mastery XP on Spell Proc
-                                                    if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
+        if (isTomeEquipped && Math.random() < activeSpellChance) {
+          // Gain +1 Tome Mastery XP on Spell Proc
+          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
 
-                  let spellDmg = BigNum.from(pStats.atk || 15).mul(
-                    pStats.spellPower || 1.5,
+          let spellDmg = BigNum.from(pStats.atk || 15).mul(
+            pStats.spellPower || 1.5,
+          );
+          m.hp = m.hp.sub(spellDmg);
+          m.flashTimer = 8;
+
+          let spellEffectType = activeSpellType;
+          if (activeSpellType === "tri") {
+            const triElements = ["fire", "lightning", "frost"];
+            spellEffectType =
+              triElements[Math.floor(Math.random() * triElements.length)];
+          }
+
+          // Spell Weaving: Shifting between different element casts boosts Spell Power
+          if (pStats.hasSpellWeaving) {
+            if (
+              window.playerStats.lastSpellCastType &&
+              window.playerStats.lastSpellCastType !== spellEffectType
+            ) {
+              let prevStacks = window.playerStats.spellWeavingStacks || 0;
+              window.playerStats.spellWeavingStacks = Math.min(
+                4,
+                prevStacks + 1,
+              );
+              window.playerStats.spellWeavingTimer = 240; // 4 seconds
+              if (
+                window.playerStats.spellWeavingStacks > prevStacks &&
+                typeof window.spawnFloatingText === "function"
+              ) {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 22,
+                  `SPELL WEAVING (${window.playerStats.spellWeavingStacks}/4)`,
+                  "#38bdf8",
+                  true,
+                );
+              }
+            }
+            window.playerStats.lastSpellCastType = spellEffectType;
+          }
+
+          // Arcane Syphon: Spell procs restore 1%/2%/3% HP, grant +4%/+8%/+12% INT
+          if (pStats.hasArcaneSyphon) {
+            let healAmt = Math.round(
+              p.maxHp * (pStats.arcaneSyphonLevel * 0.01),
+            );
+            p.hp = Math.min(p.maxHp, p.hp + healAmt);
+            window.playerStats.syphonIntStacks = Math.min(
+              3,
+              (window.playerStats.syphonIntStacks || 0) + 1,
+            );
+            window.playerStats.syphonIntTimer = 360; // 6s at 60 FPS
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 12,
+                `+${healAmt} HP (SYPHON)`,
+                "#2ecc71",
+                true,
+              );
+            }
+          }
+
+          // Mana Shielding (Restored original Tome heal on spell proc)
+          if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
+            let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
+            p.hp = Math.min(p.maxHp, p.hp + healAmt);
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 15,
+                `+${healAmt} HP (MANA SHIELD)`,
+                "#2ecc71",
+                true,
+              );
+            }
+          }
+
+          // Triad Convergence / Aetheric Overload Check
+          let isOverload =
+            window.SkillTreeManager &&
+            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+            Math.random() < 0.15;
+
+          if (pStats.hasTriadConvergence || isOverload) {
+            const triElements = ["fire", "lightning", "frost"];
+            triElements.forEach((elem, eIdx) => {
+              m.hp = m.hp.sub(spellDmg);
+              if (
+                window.RenderEngine &&
+                window.RenderEngine.spawnDamageEffect
+              ) {
+                window.RenderEngine.spawnDamageEffect(
+                  mobCenterX + (eIdx - 1) * 12,
+                  mobCenterY - 12 - eIdx * 6,
+                  spellDmg,
+                  elem,
+                  false,
+                );
+              }
+
+              // Apply Elemental Overload on each part of the Triad Convergence
+              if (pStats.hasElementalOverload) {
+                if (elem === "fire") {
+                  let splashDmg = spellDmg.mul(
+                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
                   );
-                  m.hp = m.hp.sub(spellDmg);
-                  m.flashTimer = 8;
-
-                  let spellEffectType = activeSpellType;
-                  if (activeSpellType === "tri") {
-                    const triElements = ["fire", "lightning", "frost"];
-                    spellEffectType =
-                      triElements[Math.floor(Math.random() * triElements.length)];
-                  }
-
-                  // Spell Weaving: Shifting between different element casts boosts Spell Power
-                                    if (pStats.hasSpellWeaving) {
-                                      if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
-                                        let prevStacks = window.playerStats.spellWeavingStacks || 0;
-                                        window.playerStats.spellWeavingStacks = Math.min(4, prevStacks + 1);
-                                        window.playerStats.spellWeavingTimer = 240; // 4 seconds
-                                        if (window.playerStats.spellWeavingStacks > prevStacks && typeof window.spawnFloatingText === "function") {
-                                          window.spawnFloatingText(p.x, p.y - 22, `SPELL WEAVING (${window.playerStats.spellWeavingStacks}/4)`, "#38bdf8", true);
-                                        }
-                                      }
-                                      window.playerStats.lastSpellCastType = spellEffectType;
-                                    }
-
-                  // Arcane Syphon: Spell procs restore 1%/2%/3% HP, grant +4%/+8%/+12% INT
-                  if (pStats.hasArcaneSyphon) {
-                    let healAmt = Math.round(p.maxHp * (pStats.arcaneSyphonLevel * 0.01));
-                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                    window.playerStats.syphonIntStacks = Math.min(3, (window.playerStats.syphonIntStacks || 0) + 1);
-                    window.playerStats.syphonIntTimer = 360; // 6s at 60 FPS
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(p.x, p.y - 12, `+${healAmt} HP (SYPHON)`, "#2ecc71", true);
-                    }
-                  }
-
-                  // Mana Shielding (Restored original Tome heal on spell proc)
-                  if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
-                    let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
-                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(p.x, p.y - 15, `+${healAmt} HP (MANA SHIELD)`, "#2ecc71", true);
-                    }
-                  }
-
-                  // Triad Convergence / Aetheric Overload Check
-                  let isOverload =
-                    window.SkillTreeManager &&
-                    window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-                    Math.random() < 0.15;
-
-                  if (pStats.hasTriadConvergence || isOverload) {
-                    const triElements = ["fire", "lightning", "frost"];
-                    triElements.forEach((elem, eIdx) => {
-                      m.hp = m.hp.sub(spellDmg);
-                      if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                        window.RenderEngine.spawnDamageEffect(
-                          mobCenterX + (eIdx - 1) * 12,
-                          mobCenterY - 12 - eIdx * 6,
-                          spellDmg,
-                          elem,
-                          false,
+                  if (window.activeDungeonMobs) {
+                    window.activeDungeonMobs.forEach((otherMob) => {
+                      if (otherMob.id !== m.id) {
+                        let dist = Math.hypot(
+                          m.x - otherMob.x,
+                          m.y - otherMob.y,
                         );
-                      }
-
-                      // Apply Elemental Overload on each part of the Triad Convergence
-                      if (pStats.hasElementalOverload) {
-                        if (elem === "fire") {
-                          let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
-                          if (window.activeDungeonMobs) {
-                            window.activeDungeonMobs.forEach((otherMob) => {
-                              if (otherMob.id !== m.id) {
-                                let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
-                                if (dist <= 80) {
-                                  otherMob.hp = otherMob.hp.sub(splashDmg);
-                                  otherMob.flashTimer = 6;
-                                  if (window.combatVisuals) {
-                                    window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
-                                  }
-                                }
-                              }
-                            });
-                          }
-                        } else if (elem === "lightning") {
-                          let bouncesLeft = pStats.overloadLevel;
-                          let hitIds = new Set([m.id]);
-                          let currentTarget = m;
-                          while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                            let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
-                            if (nextTarget) {
-                              nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                              nextTarget.flashTimer = 6;
-                              hitIds.add(nextTarget.id);
-                              if (window.combatVisuals) {
-                                window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
-                              }
-                              currentTarget = nextTarget;
-                              bouncesLeft--;
-                            } else {
-                              break;
-                            }
-                          }
-                        } else if (elem === "frost") {
-                          let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
-                          if (window.activeDungeonMobs) {
-                            window.activeDungeonMobs.forEach((otherMob) => {
-                              if (Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= 80) {
-                                otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
-                                }
-                              }
-                            });
+                        if (dist <= 80) {
+                          otherMob.hp = otherMob.hp.sub(splashDmg);
+                          otherMob.flashTimer = 6;
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(
+                              otherMob.x + otherMob.w / 2,
+                              otherMob.y + otherMob.h / 2,
+                              splashDmg,
+                              "fire",
+                              false,
+                            );
                           }
                         }
                       }
                     });
-                    if (
-                      window.SoundManager &&
-                      typeof window.SoundManager.play === "function"
-                    ) {
-                      window.SoundManager.play("spell_fire");
+                  }
+                } else if (elem === "lightning") {
+                  let bouncesLeft = pStats.overloadLevel;
+                  let hitIds = new Set([m.id]);
+                  let currentTarget = m;
+                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                    let nextTarget = window.activeDungeonMobs.find(
+                      (other) =>
+                        !hitIds.has(other.id) &&
+                        Math.hypot(
+                          currentTarget.x - other.x,
+                          currentTarget.y - other.y,
+                        ) <= 120,
+                    );
+                    if (nextTarget) {
+                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                      nextTarget.flashTimer = 6;
+                      hitIds.add(nextTarget.id);
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnDamageEffect(
+                          nextTarget.x + nextTarget.w / 2,
+                          nextTarget.y + nextTarget.h / 2,
+                          spellDmg,
+                          "lightning",
+                          false,
+                        );
+                      }
+                      currentTarget = nextTarget;
+                      bouncesLeft--;
+                    } else {
+                      break;
                     }
-                  } else {
-                    // Apply single-spell Overload logic
-                    if (pStats.hasElementalOverload) {
-                      if (spellEffectType === "fire") {
-                        let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
-                        if (window.activeDungeonMobs) {
-                          window.activeDungeonMobs.forEach((otherMob) => {
-                            if (otherMob.id !== m.id) {
-                              let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
-                              if (dist <= 80) {
-                                otherMob.hp = otherMob.hp.sub(splashDmg);
-                                otherMob.flashTimer = 6;
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
-                                }
-                              }
-                            }
-                          });
+                  }
+                } else if (elem === "frost") {
+                  let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
+                  if (window.activeDungeonMobs) {
+                    window.activeDungeonMobs.forEach((otherMob) => {
+                      if (
+                        Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= 80
+                      ) {
+                        otherMob.speedMultiplier = Math.max(
+                          0.2,
+                          (otherMob.speedMultiplier || 1.0) - slowPct,
+                        );
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnParticles(
+                            otherMob.x + otherMob.w / 2,
+                            otherMob.y + otherMob.h / 2,
+                            8,
+                            "void_orb",
+                            1,
+                          );
                         }
-                      } else if (spellEffectType === "lightning") {
-                        let bouncesLeft = pStats.overloadLevel;
-                        let hitIds = new Set([m.id]);
-                        let currentTarget = m;
-                        while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                          let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
-                          if (nextTarget) {
-                            nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                            nextTarget.flashTimer = 6;
-                            hitIds.add(nextTarget.id);
-                            if (window.combatVisuals) {
-                              window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
-                            }
-                            currentTarget = nextTarget;
-                            bouncesLeft--;
-                          } else {
-                            break;
-                          }
-                        }
-                      } else if (spellEffectType === "frost") {
-                        let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
-                        if (window.activeDungeonMobs) {
-                          window.activeDungeonMobs.forEach((otherMob) => {
-                            if (Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= 80) {
-                              otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
-                              if (window.combatVisuals) {
-                                window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
-                              }
-                            }
-                          });
+                      }
+                    });
+                  }
+                }
+              }
+            });
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_fire");
+            }
+          } else {
+            // Apply single-spell Overload logic
+            if (pStats.hasElementalOverload) {
+              if (spellEffectType === "fire") {
+                let splashDmg = spellDmg.mul(
+                  pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                );
+                if (window.activeDungeonMobs) {
+                  window.activeDungeonMobs.forEach((otherMob) => {
+                    if (otherMob.id !== m.id) {
+                      let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
+                      if (dist <= 80) {
+                        otherMob.hp = otherMob.hp.sub(splashDmg);
+                        otherMob.flashTimer = 6;
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnDamageEffect(
+                            otherMob.x + otherMob.w / 2,
+                            otherMob.y + otherMob.h / 2,
+                            splashDmg,
+                            "fire",
+                            false,
+                          );
                         }
                       }
                     }
-
-                    if (
-                      window.SoundManager &&
-                      typeof window.SoundManager.play === "function"
-                    ) {
-                      window.SoundManager.play("spell_" + spellEffectType);
-                    }
-                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                      window.RenderEngine.spawnDamageEffect(
-                        mobCenterX,
-                        mobCenterY - 12,
+                  });
+                }
+              } else if (spellEffectType === "lightning") {
+                let bouncesLeft = pStats.overloadLevel;
+                let hitIds = new Set([m.id]);
+                let currentTarget = m;
+                while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                  let nextTarget = window.activeDungeonMobs.find(
+                    (other) =>
+                      !hitIds.has(other.id) &&
+                      Math.hypot(
+                        currentTarget.x - other.x,
+                        currentTarget.y - other.y,
+                      ) <= 120,
+                  );
+                  if (nextTarget) {
+                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                    nextTarget.flashTimer = 6;
+                    hitIds.add(nextTarget.id);
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        nextTarget.x + nextTarget.w / 2,
+                        nextTarget.y + nextTarget.h / 2,
                         spellDmg,
-                        spellEffectType,
+                        "lightning",
                         false,
                       );
                     }
+                    currentTarget = nextTarget;
+                    bouncesLeft--;
+                  } else {
+                    break;
                   }
                 }
+              } else if (spellEffectType === "frost") {
+                let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
+                if (window.activeDungeonMobs) {
+                  window.activeDungeonMobs.forEach((otherMob) => {
+                    if (Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= 80) {
+                      otherMob.speedMultiplier = Math.max(
+                        0.2,
+                        (otherMob.speedMultiplier || 1.0) - slowPct,
+                      );
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnParticles(
+                          otherMob.x + otherMob.w / 2,
+                          otherMob.y + otherMob.h / 2,
+                          8,
+                          "void_orb",
+                          1,
+                        );
+                      }
+                    }
+                  });
+                }
+              }
+            }
+
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_" + spellEffectType);
+            }
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY - 12,
+                spellDmg,
+                spellEffectType,
+                false,
+              );
+            }
+          }
+        }
 
         // Directional knockback impulse vector
         let dirX = dist > 0 ? dx / dist : 1;
@@ -8041,217 +8986,295 @@
     }
 
     // Process active room mobs (Standard logic loop)
-        if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-          for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
-            let m = window.activeDungeonMobs[i];
-            let dx = p.x - (m.x + m.w / 2);
-            let dy = p.y - (m.y + m.h / 2);
-            let dist = Math.hypot(dx, dy);
+    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+      for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
+        let m = window.activeDungeonMobs[i];
+        let dx = p.x - (m.x + m.w / 2);
+        let dy = p.y - (m.y + m.h / 2);
+        let dist = Math.hypot(dx, dy);
 
-            // Process Hatching Summons (Sprout Cocoons)
-                    if (m.isCocoon) {
-                      m.hatchTimer--;
-                      m.flashTimer = 0; // prevent red flash unless directly attacked
-                      if (m.hatchTimer <= 0) {
-                        m.isCocoon = false;
-                        m.isRanged = Math.random() < 0.5;
-                        m.visualType = Math.random() < 0.5 ? "slime" : "sprout";
-                        m.visualTier = 0;
-                        m.name = m.visualType === "slime" ? "Hatched Slime" : "Hatched Sprout";
-                        m.atk = Math.round(10 + (window.player.depth || 1) * 3);
-                        m.hp = m.maxHp; // Refill HP for active minion combat
-                        m.projectileType = "thorn";
-                        m.rangedCooldown = 60;
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 15, "slag_slime", 3);
-                        }
-                        if (window.SoundManager) window.SoundManager.play("spell");
-                      }
-                      continue; // Skip standard movement/attack logic while incubating
-                    }
+        // Process Hatching Summons (Sprout Cocoons)
+        if (m.isCocoon) {
+          m.hatchTimer--;
+          m.flashTimer = 0; // prevent red flash unless directly attacked
+          if (m.hatchTimer <= 0) {
+            m.isCocoon = false;
+            m.isRanged = Math.random() < 0.5;
+            m.visualType = Math.random() < 0.5 ? "slime" : "sprout";
+            m.visualTier = 0;
+            m.name =
+              m.visualType === "slime" ? "Hatched Slime" : "Hatched Sprout";
+            m.atk = Math.round(10 + (window.player.depth || 1) * 3);
+            m.hp = m.maxHp; // Refill HP for active minion combat
+            m.projectileType = "thorn";
+            m.rangedCooldown = 60;
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                m.x + m.w / 2,
+                m.y + m.h / 2,
+                15,
+                "slag_slime",
+                3,
+              );
+            }
+            if (window.SoundManager) window.SoundManager.play("spell");
+          }
+          continue; // Skip standard movement/attack logic while incubating
+        }
 
-                    // Process Floating Homing Toxic Spores (Swamp Stage Warden)
-                    if (m.isSpore) {
-                      m.hatchTimer--; // Repurpose hatchTimer as spore lifetime
-                      m.flashTimer = 0;
+        // Process Floating Homing Toxic Spores (Swamp Stage Warden)
+        if (m.isSpore) {
+          m.hatchTimer--; // Repurpose hatchTimer as spore lifetime
+          m.flashTimer = 0;
 
-                      // Float slowly toward the player's position
-                      let sDx = p.x - (m.x + m.w / 2);
-                      let sDy = p.y - (m.y + m.h / 2);
-                      let sDist = Math.hypot(sDx, sDy);
-                      if (sDist > 0) {
-                        let speed = 1.0; // Floating speed
-                        m.x += (sDx / sDist) * speed;
-                        m.y += (sDy / sDist) * speed;
-                      }
+          // Float slowly toward the player's position
+          let sDx = p.x - (m.x + m.w / 2);
+          let sDy = p.y - (m.y + m.h / 2);
+          let sDist = Math.hypot(sDx, sDy);
+          if (sDist > 0) {
+            let speed = 1.0; // Floating speed
+            m.x += (sDx / sDist) * speed;
+            m.y += (sDy / sDist) * speed;
+          }
 
-                      // Detonate on direct contact
-                      if (sDist < m.w / 2 + (p.radius || 9)) {
-                        window.damagePlayer(Math.round(m.atk * 1.25), m);
-                        // Apply 3 stacks of poison
-                        p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 3);
-                        p.poisonTimer = 240; // 4s tick
+          // Detonate on direct contact
+          if (sDist < m.w / 2 + (p.radius || 9)) {
+            window.damagePlayer(Math.round(m.atk * 1.25), m);
+            // Apply 3 stacks of poison
+            p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 3);
+            p.poisonTimer = 240; // 4s tick
 
-                        if (window.combatVisuals) {
-                          window.combatVisuals.triggerScreenShake(4, 6);
-                          window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 12, "swamp_basilisk", 2.5);
-                        }
-                        if (window.SoundManager) window.SoundManager.play("block");
+            if (window.combatVisuals) {
+              window.combatVisuals.triggerScreenShake(4, 6);
+              window.combatVisuals.spawnParticles(
+                m.x + m.w / 2,
+                m.y + m.h / 2,
+                12,
+                "swamp_basilisk",
+                2.5,
+              );
+            }
+            if (window.SoundManager) window.SoundManager.play("block");
 
-                        m.hp = BigNum.from(0); // Mark dead for removal
-                      }
+            m.hp = BigNum.from(0); // Mark dead for removal
+          }
 
-                      // Dissolve harmlessly into steam after 6 seconds (360 frames)
-                      if (m.hatchTimer <= 0 && m.hp.gt(0)) {
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 8, "swamp_basilisk", 1.2);
-                        }
-                        if (window.SoundManager) window.SoundManager.play("block");
-                        m.hp = BigNum.from(0); // Mark dead for removal
-                      }
-                      continue; // Skip standard movement/attack logic while drifting
-                    }
+          // Dissolve harmlessly into steam after 6 seconds (360 frames)
+          if (m.hatchTimer <= 0 && m.hp.gt(0)) {
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                m.x + m.w / 2,
+                m.y + m.h / 2,
+                8,
+                "swamp_basilisk",
+                1.2,
+              );
+            }
+            if (window.SoundManager) window.SoundManager.play("block");
+            m.hp = BigNum.from(0); // Mark dead for removal
+          }
+          continue; // Skip standard movement/attack logic while drifting
+        }
 
-            // Process Pulsating Magma Vents (Inferno Stage Warden)
-            if (m.isMagmaVent) {
-              m.ventTimer--;
-              m.flashTimer = 0;
+        // Process Pulsating Magma Vents (Inferno Stage Warden)
+        if (m.isMagmaVent) {
+          m.ventTimer--;
+          m.flashTimer = 0;
 
-              // Pulsate scale during active boil countdown
-              let sizePulse = Math.sin(Date.now() / 60) * 3;
-              m.w = 24 + sizePulse;
-              m.h = 24 + sizePulse;
+          // Pulsate scale during active boil countdown
+          let sizePulse = Math.sin(Date.now() / 60) * 3;
+          m.w = 24 + sizePulse;
+          m.h = 24 + sizePulse;
 
-              if (m.ventTimer <= 0) {
-                // Detonate Cross-Shaped Lava Wave!
-                let mcx = m.x + m.w / 2;
-                let mcy = m.y + m.h / 2;
+          if (m.ventTimer <= 0) {
+            // Detonate Cross-Shaped Lava Wave!
+            let mcx = m.x + m.w / 2;
+            let mcy = m.y + m.h / 2;
 
-                if (window.combatVisuals) {
-                  window.combatVisuals.triggerScreenShake(5, 8);
-                  // Spawn fiery lava particles along North, South, East, West axes
-                  for (let d = -96; d <= 96; d += 16) {
-                    if (d === 0) continue;
-                    // Horizontal axis
-                    window.combatVisuals.particlePool.get(mcx + d, mcy, 0, -window.randFloat(0.1, 0.5), window.randFloat(2, 4), "#f97316", 0.9, 18, 0, true, 0);
-                    // Vertical axis
-                    window.combatVisuals.particlePool.get(mcx, mcy + d, 0, -window.randFloat(0.1, 0.5), window.randFloat(2, 4), "#f97316", 0.9, 18, 0, true, 0);
-                  }
-                }
-                if (window.SoundManager) window.SoundManager.play("spell_fire");
-
-                // Damage player if caught inside the lava crosshairs
-                let pxDiff = Math.abs(p.x - mcx);
-                let pyDiff = Math.abs(p.y - mcy);
-                let isHit = (pxDiff <= 96 && pyDiff <= 12) || (pyDiff <= 96 && pxDiff <= 12);
-                if (isHit) {
-                  let parentAtk = m.parentAtk || 25;
-                  window.damagePlayer(Math.round(parentAtk * 1.3), null);
-                  if (typeof window.spawnFloatingText === "function") {
-                    window.spawnFloatingText(p.x, p.y - 15, "LAVA ERUPTION!", "#f97316");
-                  }
-                }
-
-                m.hp = BigNum.from(0); // Mark dead for removal
+            if (window.combatVisuals) {
+              window.combatVisuals.triggerScreenShake(5, 8);
+              // Spawn fiery lava particles along North, South, East, West axes
+              for (let d = -96; d <= 96; d += 16) {
+                if (d === 0) continue;
+                // Horizontal axis
+                window.combatVisuals.particlePool.get(
+                  mcx + d,
+                  mcy,
+                  0,
+                  -window.randFloat(0.1, 0.5),
+                  window.randFloat(2, 4),
+                  "#f97316",
+                  0.9,
+                  18,
+                  0,
+                  true,
+                  0,
+                );
+                // Vertical axis
+                window.combatVisuals.particlePool.get(
+                  mcx,
+                  mcy + d,
+                  0,
+                  -window.randFloat(0.1, 0.5),
+                  window.randFloat(2, 4),
+                  "#f97316",
+                  0.9,
+                  18,
+                  0,
+                  true,
+                  0,
+                );
               }
-              continue; // Skip normal chase/swipe AI for static vents
+            }
+            if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+            // Damage player if caught inside the lava crosshairs
+            let pxDiff = Math.abs(p.x - mcx);
+            let pyDiff = Math.abs(p.y - mcy);
+            let isHit =
+              (pxDiff <= 96 && pyDiff <= 12) || (pyDiff <= 96 && pxDiff <= 12);
+            if (isHit) {
+              let parentAtk = m.parentAtk || 25;
+              window.damagePlayer(Math.round(parentAtk * 1.3), null);
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 15,
+                  "LAVA ERUPTION!",
+                  "#f97316",
+                );
+              }
             }
 
-            // Check Blood Berserker Telegraphed Detonation Countdown
-                if (m.isDetonating) {
-                  m.detonationTimer--;
-                  m.flashTimer = 2; // Flashing swell feedback during countdown
+            m.hp = BigNum.from(0); // Mark dead for removal
+          }
+          continue; // Skip normal chase/swipe AI for static vents
+        }
 
-                  if (m.detonationTimer <= 0) {
-                    let mobCenterX = m.x + (m.w || 24) / 2;
-                    let mobCenterY = m.y + (m.h || 24) / 2;
+        // Check Blood Berserker Telegraphed Detonation Countdown
+        if (m.isDetonating) {
+          m.detonationTimer--;
+          m.flashTimer = 2; // Flashing swell feedback during countdown
 
-                    // 1. Detonate Damage-Clamped Explosion on Player
-                    let dx = p.x - mobCenterX;
-                    let dy = p.y - mobCenterY;
-                    if (dx * dx + dy * dy <= 10000) { // 100px explosion radius
-                      let rawExplosionDmg = Math.round(m.atk * 1.0);
-                      let maxPlayerMaxHpCap = Math.round(p.maxHp * 0.25); // Damage clamped to 25% Max HP ceiling
-                      let clampedDmg = Math.min(rawExplosionDmg, maxPlayerMaxHpCap);
+          if (m.detonationTimer <= 0) {
+            let mobCenterX = m.x + (m.w || 24) / 2;
+            let mobCenterY = m.y + (m.h || 24) / 2;
 
-                      window.damagePlayer(clampedDmg, m);
-                      if (window.combatVisuals) {
-                        window.combatVisuals.triggerScreenShake(8, 12);
-                        window.combatVisuals.spawnParticles(mobCenterX, mobCenterY, 25, "magma_elemental", 5);
-                      }
-                    }
+            // 1. Detonate Damage-Clamped Explosion on Player
+            let dx = p.x - mobCenterX;
+            let dy = p.y - mobCenterY;
+            if (dx * dx + dy * dy <= 10000) {
+              // 100px explosion radius
+              let rawExplosionDmg = Math.round(m.atk * 1.0);
+              let maxPlayerMaxHpCap = Math.round(p.maxHp * 0.25); // Damage clamped to 25% Max HP ceiling
+              let clampedDmg = Math.min(rawExplosionDmg, maxPlayerMaxHpCap);
 
-                    // 2. Grant Frenzy to Surviving Nearby Allies
-                    if (window.activeDungeonMobs) {
-                      window.activeDungeonMobs.forEach((m2) => {
-                        if (m2 === m || m2.hp.lte(0)) return;
-                        let adx = (m2.x + (m2.w || 24) / 2) - mobCenterX;
-                        let ady = (m2.y + (m2.h || 24) / 2) - mobCenterY;
-                        if (adx * adx + ady * ady <= 14400) { // 120px ally radius
-                          m2.buffStacks.haste = 3;
-                          m2.buffTimers.haste = 180; // 3 seconds of Frenzy
-                        }
-                      });
-                    }
+              window.damagePlayer(clampedDmg, m);
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(8, 12);
+                window.combatVisuals.spawnParticles(
+                  mobCenterX,
+                  mobCenterY,
+                  25,
+                  "magma_elemental",
+                  5,
+                );
+              }
+            }
 
-                    if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
-                      window.RenderEngine.spawnDeathParticles(mobCenterX, mobCenterY, m.type);
-                    }
-
-                    let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
-                    let rewardXp = Math.floor(15 + window.player.depth * 4);
-                    window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
-                    window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
-
-                    window.activeDungeonMobs.splice(i, 1);
-                    continue;
-                  }
-                  continue; // Freeze movement while detonating
+            // 2. Grant Frenzy to Surviving Nearby Allies
+            if (window.activeDungeonMobs) {
+              window.activeDungeonMobs.forEach((m2) => {
+                if (m2 === m || m2.hp.lte(0)) return;
+                let adx = m2.x + (m2.w || 24) / 2 - mobCenterX;
+                let ady = m2.y + (m2.h || 24) / 2 - mobCenterY;
+                if (adx * adx + ady * ady <= 14400) {
+                  // 120px ally radius
+                  m2.buffStacks.haste = 3;
+                  m2.buffTimers.haste = 180; // 3 seconds of Frenzy
                 }
+              });
+            }
 
-                // Check death state after any potential hit
-                        if (m.hp.lte(0)) {
-                          // Check Magma Vent & Spore harmless pop bypass
-                          if (m.isMagmaVent || m.isSpore) {
-                            let theme = m.isMagmaVent ? "magma_elemental" : "swamp_basilisk";
-                            if (window.combatVisuals) {
-                              window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 10, theme, 1.8);
-                            }
-                            if (window.SoundManager) window.SoundManager.play("block");
-                            window.activeDungeonMobs.splice(i, 1);
-                            continue;
-                          }
+            if (
+              window.RenderEngine &&
+              window.RenderEngine.spawnDeathParticles
+            ) {
+              window.RenderEngine.spawnDeathParticles(
+                mobCenterX,
+                mobCenterY,
+                m.type,
+              );
+            }
 
-                          window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
-                          if (m.isRare) {
-                            window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
-                          }
+            let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
+            let rewardXp = Math.floor(15 + window.player.depth * 4);
+            window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
+            window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
 
-                                  // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
-                  if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
-                    m.isDetonating = true;
-                    m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
-                    m.detonationMax = 70;
-                    m.isStopped = true;
-                    if (typeof window.pushHeaderToast === "function") {
-                      window.pushHeaderToast("[!] BLOOD BERSERKER DETONATING!", "#e74c3c");
-                    }
-                    if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                      window.SoundManager.play("spell_fire");
-                    }
-                    continue;
-                  }
+            window.activeDungeonMobs.splice(i, 1);
+            continue;
+          }
+          continue; // Freeze movement while detonating
+        }
 
-                  let mobCenterX = m.x + m.w / 2;
-                  let mobCenterY = m.y + m.h / 2;
+        // Check death state after any potential hit
+        if (m.hp.lte(0)) {
+          // Check Magma Vent & Spore harmless pop bypass
+          if (m.isMagmaVent || m.isSpore) {
+            let theme = m.isMagmaVent ? "magma_elemental" : "swamp_basilisk";
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                m.x + m.w / 2,
+                m.y + m.h / 2,
+                10,
+                theme,
+                1.8,
+              );
+            }
+            if (window.SoundManager) window.SoundManager.play("block");
+            window.activeDungeonMobs.splice(i, 1);
+            continue;
+          }
 
-                  if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
-                    window.RenderEngine.spawnDeathParticles(
-                      mobCenterX,
-                      mobCenterY,
-                      m.type,
-                    );
-                  }
+          window.playerStats.totalLifetimeKills =
+            (window.playerStats.totalLifetimeKills || 0) + 1;
+          if (m.isRare) {
+            window.playerStats.rareSpawnsSlain =
+              (window.playerStats.rareSpawnsSlain || 0) + 1;
+          }
+
+          // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
+          if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
+            m.isDetonating = true;
+            m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
+            m.detonationMax = 70;
+            m.isStopped = true;
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[!] BLOOD BERSERKER DETONATING!",
+                "#e74c3c",
+              );
+            }
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_fire");
+            }
+            continue;
+          }
+
+          let mobCenterX = m.x + m.w / 2;
+          let mobCenterY = m.y + m.h / 2;
+
+          if (window.RenderEngine && window.RenderEngine.spawnDeathParticles) {
+            window.RenderEngine.spawnDeathParticles(
+              mobCenterX,
+              mobCenterY,
+              m.type,
+            );
+          }
           let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
           let rewardXp = Math.floor(15 + window.player.depth * 4);
           window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
@@ -8270,50 +9293,73 @@
           }
 
           if (m.isRare) {
-                      // Utility Keystone: Fortune's Favor (+50% Gold Multiplier for 15s)
-                      if (
-                        window.SkillTreeManager &&
-                        window.SkillTreeManager.getSkillLevel("utility_keystone") > 0
-                      ) {
-                        window.playerStats.fortunesFavorTimer = 900; // 15 seconds
-                        if (typeof window.spawnFloatingText === "function") {
-                          window.spawnFloatingText(
-                            p.x,
-                            p.y - 30,
-                            "FORTUNE'S FAVOR (+50% GOLD)",
-                            "#ffd700",
-                          );
-                        }
-                      }
+            // Utility Keystone: Fortune's Favor (+50% Gold Multiplier for 15s)
+            if (
+              window.SkillTreeManager &&
+              window.SkillTreeManager.getSkillLevel("utility_keystone") > 0
+            ) {
+              window.playerStats.fortunesFavorTimer = 900; // 15 seconds
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 30,
+                  "FORTUNE'S FAVOR (+50% GOLD)",
+                  "#ffd700",
+                );
+              }
+            }
 
-                      // Artifact: Void Pull (Heal 15% Max HP on Rare kill)
-                                  if (window.checkArtifactTrait("void_pull")) {
-                                    let healAmt = Math.round(p.maxHp * 0.15);
-                                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                                    if (typeof window.spawnFloatingText === "function") {
-                                      window.spawnFloatingText(p.x, p.y - 20, `+${healAmt} HP (VOID PULL)`, "#a855f7");
-                                    }
-                                  }
+            // Artifact: Void Pull (Heal 15% Max HP on Rare kill)
+            if (window.checkArtifactTrait("void_pull")) {
+              let healAmt = Math.round(p.maxHp * 0.15);
+              p.hp = Math.min(p.maxHp, p.hp + healAmt);
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 20,
+                  `+${healAmt} HP (VOID PULL)`,
+                  "#a855f7",
+                );
+              }
+            }
 
-                                  // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Rare Kill)
-                                  if (window.hasUniquePassive("boots_warpcore") && Math.random() < 0.20) {
-                                    let map = window.activeDungeonMap;
-                                    let tSize = map ? map.tileSize : 32;
-                                    let tileX = Math.floor(mobCenterX / tSize);
-                                    let tileY = Math.floor(mobCenterY / tSize);
-                                    if (map && map.grid && map.grid[tileY] && map.grid[tileY][tileX] !== undefined) {
-                                      map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
-                                      if (typeof window.pushHeaderToast === "function") {
-                                        window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
-                                      }
-                                      if (typeof window.spawnFloatingText === "function") {
-                                        window.spawnFloatingText(mobCenterX, mobCenterY - 15, "SPATIAL RIFT", "#1abc9c");
-                                      }
-                                      if (window.combatVisuals) {
-                                        window.combatVisuals.spawnBeam(mobCenterX, "#1abc9c", 45, false);
-                                      }
-                                    }
-                                  }
+            // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Rare Kill)
+            if (
+              window.hasUniquePassive("boots_warpcore") &&
+              Math.random() < 0.2
+            ) {
+              let map = window.activeDungeonMap;
+              let tSize = map ? map.tileSize : 32;
+              let tileX = Math.floor(mobCenterX / tSize);
+              let tileY = Math.floor(mobCenterY / tSize);
+              if (
+                map &&
+                map.grid &&
+                map.grid[tileY] &&
+                map.grid[tileY][tileX] !== undefined
+              ) {
+                map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
+                }
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    mobCenterX,
+                    mobCenterY - 15,
+                    "SPATIAL RIFT",
+                    "#1abc9c",
+                  );
+                }
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnBeam(
+                    mobCenterX,
+                    "#1abc9c",
+                    45,
+                    false,
+                  );
+                }
+              }
+            }
 
             window.addDungeonRunScrap(
               "Luminous Soul",
@@ -8333,21 +9379,27 @@
           }
 
           // Artifact: Frenzy (Berserker Stone) - Increments kill counter
-                    if (window.checkArtifactTrait("frenzy")) {
-                      window.playerStats.frenzyKillCount = (window.playerStats.frenzyKillCount || 0) + 1;
-                      if (window.playerStats.frenzyKillCount >= 15) {
-                        window.playerStats.frenzyKillCount = 0;
-                        window.playerStats.frenzyTimer = 300; // 5 seconds of Frenzy
-                        if (typeof window.spawnFloatingText === "function") {
-                          window.spawnFloatingText(p.x, p.y - 25, "BERZERKER FRENZY!", "#ff4757");
-                        }
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnBeam(p.x, "#ff4757", 45, true);
-                        }
-                      }
-                    }
+          if (window.checkArtifactTrait("frenzy")) {
+            window.playerStats.frenzyKillCount =
+              (window.playerStats.frenzyKillCount || 0) + 1;
+            if (window.playerStats.frenzyKillCount >= 15) {
+              window.playerStats.frenzyKillCount = 0;
+              window.playerStats.frenzyTimer = 300; // 5 seconds of Frenzy
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 25,
+                  "BERZERKER FRENZY!",
+                  "#ff4757",
+                );
+              }
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnBeam(p.x, "#ff4757", 45, true);
+              }
+            }
+          }
 
-                    // Cavern Sigil Drop Logic
+          // Cavern Sigil Drop Logic
           let sigilBaseRate = m.isRare ? 0.025 : 0.0015;
           let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
           if (Math.random() < sigilRollRate) {
@@ -8416,399 +9468,541 @@
     }
 
     // Process Boss Warden Combat
-        if (window.mob && window.mob.hp) {
-          let bm = window.mob;
-          window.BossAIEngine.update(bm);
+    if (window.mob && window.mob.hp) {
+      let bm = window.mob;
+      window.BossAIEngine.update(bm);
 
-          let dx = p.x - (bm.x + bm.w / 2);
-          let dy = p.y - (bm.y + bm.h / 2);
-          let dist = Math.hypot(dx, dy);
+      let dx = p.x - (bm.x + bm.w / 2);
+      let dy = p.y - (bm.y + bm.h / 2);
+      let dist = Math.hypot(dx, dy);
 
-          if (dist < 48 && p.attackTimer >= 20) {
-            p.attackTimer = 0;
+      if (dist < 48 && p.attackTimer >= 20) {
+        p.attackTimer = 0;
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("swing");
+        }
+
+        let bossCenterX = bm.x + bm.w / 2;
+        // Face the boss being attacked!
+        let dxToBoss = bossCenterX - p.x;
+        if (dxToBoss < -0.1) p.facing = -1;
+        else if (dxToBoss > 0.1) p.facing = 1;
+
+        let isCrit = Math.random() < (pStats.critChance || 0.05);
+        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+
+        // REDUCE DAMAGE BY 90% IF ELDRITCH BARK SHIELD IS ACTIVE!
+        if (bm.actionState === "bark_shield") {
+          pAtk = pAtk.mul(0.1);
+        }
+
+        // CYBER BARRIER (NEXUS OVERSEER) IMMUNITY
+        if (bm.actionState === "cyber_barrier") {
+          pAtk = BigNum.from(0);
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              bm.x + bm.w / 2,
+              bm.y - 12,
+              "SYSTEM IMMUNE",
+              "#ff007f",
+            );
+          }
+          if (window.SoundManager) window.SoundManager.play("block");
+        }
+
+        // STAGGER SHIELD ABSORPTION (CHRONOS & GILDED KEEPER)
+        if (
+          bm.actionState === "chrono_rewind" ||
+          bm.actionState === "taxation"
+        ) {
+          let dmgVal = pAtk.valueOf();
+          bm.staggerShield = bm.staggerShield.sub(dmgVal);
+
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnDamageEffect(
+              bm.x + bm.w / 2,
+              bm.y + bm.h / 2,
+              pAtk,
+              "static",
+              false,
+            );
+          }
+
+          if (bm.staggerShield.lte(0)) {
+            bm.staggerShield = BigNum.from(0);
+            bm.actionState = "idle";
+            bm.state = "idle";
+            bm.isStopped = false;
+            bm.dazeTimer = 210; // 3.5s daze stun
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                bm.x + bm.w / 2,
+                bm.y - 12,
+                "SHIELD BROKEN! DAZED!",
+                "#ffd700",
+              );
+            }
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                bm.x + bm.w / 2,
+                bm.y + bm.h / 2,
+                25,
+                "gold_dungeon",
+                3,
+              );
+              window.combatVisuals.triggerScreenShake(8, 12);
+            }
+            if (window.SoundManager) window.SoundManager.play("block");
+          }
+          pAtk = BigNum.from(0); // 0 direct damage to boss HP
+        }
+
+        // DAZED STUN DAMAGE AMPLIFICATION (Takes 50% more damage)
+        if (bm.dazeTimer > 0) {
+          pAtk = pAtk.mul(1.5);
+        }
+
+        // AEGIS GOLIATH DIRECTIONAL SHIELD CALCULATIONS
+        if (
+          bm.bossKey === "aegis_goliath" &&
+          bm.phase === 2 &&
+          !(bm.dazeTimer > 0)
+        ) {
+          if (bm.shieldAngle !== undefined) {
+            let bCenterX = bm.x + bm.w / 2;
+            let bCenterY = bm.y + bm.h / 2;
+            let attackAngle = Math.atan2(p.y - bCenterY, p.x - bCenterX);
+            let angleDiff = Math.abs(
+              Math.atan2(
+                Math.sin(attackAngle - bm.shieldAngle),
+                Math.cos(attackAngle - bm.shieldAngle),
+              ),
+            );
+
+            // Frontal attack hits his raised Tower Shield!
+            if (angleDiff < 0.6) {
+              pAtk = BigNum.from(0);
+              bm.flashTimer = 4;
+              if (window.SoundManager) window.SoundManager.play("block");
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnParticles(
+                  bCenterX + Math.cos(bm.shieldAngle) * (bm.w * 0.75),
+                  bCenterY + Math.sin(bm.shieldAngle) * (bm.w * 0.75),
+                  8,
+                  "aegis_goliath",
+                  2,
+                );
+                window.spawnFloatingText(
+                  bm.x + bm.w / 2,
+                  bm.y - 12,
+                  "BLOCKED!",
+                  "#00d2ff",
+                );
+              }
+            }
+          }
+        }
+
+        bm.hp = bm.hp.sub(pAtk);
+        bm.hasTakenDamage = true;
+        bm.flashTimer = 6;
+
+        let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
+        window.playerStats.peakSingleHit = Math.max(
+          window.playerStats.peakSingleHit || 0,
+          rawHitNum,
+        );
+
+        let bmMaxHpNum = bm.maxHp.valueOf
+          ? bm.maxHp.valueOf()
+          : Number(bm.maxHp || 1);
+        if (isCrit && bmMaxHpNum > 0 && rawHitNum / bmMaxHpNum >= 10) {
+          window.playerStats.hasTriggeredOverkill = true;
+        }
+
+        let curHr = new Date().getHours();
+        if (curHr >= 0 && curHr < 4)
+          window.playerStats.hasTriggeredNightOwl = true;
+        if (curHr >= 5 && curHr < 8)
+          window.playerStats.hasTriggeredEarlyBird = true;
+        let curDay = new Date().getDay();
+        if (curDay === 0 || curDay === 6)
+          window.playerStats.hasTriggeredWeekendWarrior = true;
+
+        let dirX = dist > 0 ? dx / dist : 1;
+        let dirY = dist > 0 ? dy / dist : 0;
+        bm.recoilX = -dirX * (isCrit ? 10 : 6);
+        bm.recoilY = -dirY * (isCrit ? 10 : 6);
+
+        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+          window.RenderEngine.spawnHitSparks(
+            bm.x + bm.w / 2,
+            bm.y + bm.h / 2,
+            isCrit,
+            -dirX,
+            -dirY,
+          );
+        }
+
+        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+          window.RenderEngine.spawnDamageEffect(
+            bm.x + bm.w / 2,
+            bm.y + bm.h / 2,
+            pAtk,
+            "slash",
+            isCrit,
+          );
+        }
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.playHitImpact === "function"
+        ) {
+          window.SoundManager.playHitImpact(isCrit);
+        }
+
+        // Define vertical center for boss offhand procs
+        let bossCenterY = bm.y + bm.h / 2;
+
+        // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
+        if (pStats.subType === "dagger") {
+          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
+            let offhandHit = BigNum.from(pStats.atk || 15).mul(
+              pStats.offhandDmg || 0.45,
+            );
+            bm.hp = bm.hp.sub(offhandHit);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bossCenterX,
+                bossCenterY - 6,
+                offhandHit,
+                "dagger",
+                false,
+              );
+            }
+          }
+
+          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
+            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
+            bm.hp = bm.hp.sub(bleedTick);
+            bm.flashTimer = 6;
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bossCenterX,
+                bossCenterY - 10,
+                bleedTick,
+                "bleed",
+                false,
+              );
+            }
+          }
+        }
+
+        // Tome Spell Cast Trigger on Boss
+        let isTomeEquipped =
+          pStats.subType === "tome" ||
+          (window.equippedSlots &&
+            window.equippedSlots.subweapon &&
+            (window.equippedSlots.subweapon.subType === "tome" ||
+              window.equippedSlots.subweapon.type === "tome"));
+        let activeSpellChance =
+          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+        let activeSpellType = pStats.spellType || "tri";
+
+        if (isTomeEquipped && Math.random() < activeSpellChance) {
+          // Gain +1 Tome Mastery XP on Spell Proc (Boss)
+          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
+
+          let spellDmg = BigNum.from(pStats.atk || 15).mul(
+            pStats.spellPower || 1.5,
+          );
+          bm.hp = bm.hp.sub(spellDmg);
+          bm.flashTimer = 8;
+
+          let spellEffectType = activeSpellType;
+          if (activeSpellType === "tri") {
+            const triElements = ["fire", "lightning", "frost"];
+            spellEffectType =
+              triElements[Math.floor(Math.random() * triElements.length)];
+          }
+
+          // Spell Weaving (Boss)
+          if (pStats.hasSpellWeaving) {
+            if (
+              window.playerStats.lastSpellCastType &&
+              window.playerStats.lastSpellCastType !== spellEffectType
+            ) {
+              window.playerStats.spellWeavingStacks = Math.min(
+                4,
+                (window.playerStats.spellWeavingStacks || 0) + 1,
+              );
+              window.playerStats.spellWeavingTimer = 240;
+            }
+            window.playerStats.lastSpellCastType = spellEffectType;
+          }
+
+          // Arcane Syphon (Boss)
+          if (pStats.hasArcaneSyphon) {
+            let healAmt = Math.round(
+              p.maxHp * (pStats.arcaneSyphonLevel * 0.01),
+            );
+            p.hp = Math.min(p.maxHp, p.hp + healAmt);
+            window.playerStats.syphonIntStacks = Math.min(
+              3,
+              (window.playerStats.syphonIntStacks || 0) + 1,
+            );
+            window.playerStats.syphonIntTimer = 360;
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 12,
+                `+${healAmt} HP (SYPHON)`,
+                "#2ecc71",
+                true,
+              );
+            }
+          }
+
+          // Mana Shielding (Restored original Tome heal on spell proc - Boss)
+          if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
+            let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
+            p.hp = Math.min(p.maxHp, p.hp + healAmt);
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 15,
+                `+${healAmt} HP (MANA SHIELD)`,
+                "#2ecc71",
+                true,
+              );
+            }
+          }
+
+          // Triad Convergence / Aetheric Overload Check (Boss)
+          let isOverload =
+            window.SkillTreeManager &&
+            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+            Math.random() < 0.15;
+
+          if (pStats.hasTriadConvergence || isOverload) {
+            const triElements = ["fire", "lightning", "frost"];
+            triElements.forEach((elem, eIdx) => {
+              bm.hp = bm.hp.sub(spellDmg);
+              if (
+                window.RenderEngine &&
+                window.RenderEngine.spawnDamageEffect
+              ) {
+                window.RenderEngine.spawnDamageEffect(
+                  bossCenterX + (eIdx - 1) * 12,
+                  bossCenterY - 12 - eIdx * 6,
+                  spellDmg,
+                  elem,
+                  false,
+                );
+              }
+
+              if (pStats.hasElementalOverload) {
+                if (elem === "fire") {
+                  let splashDmg = spellDmg.mul(
+                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                  );
+                  if (window.activeDungeonMobs) {
+                    window.activeDungeonMobs.forEach((otherMob) => {
+                      let dist = Math.hypot(
+                        bm.x - otherMob.x,
+                        bm.y - otherMob.y,
+                      );
+                      if (dist <= 100) {
+                        otherMob.hp = otherMob.hp.sub(splashDmg);
+                        otherMob.flashTimer = 6;
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnDamageEffect(
+                            otherMob.x + otherMob.w / 2,
+                            otherMob.y + otherMob.h / 2,
+                            splashDmg,
+                            "fire",
+                            false,
+                          );
+                        }
+                      }
+                    });
+                  }
+                } else if (elem === "lightning") {
+                  let bouncesLeft = pStats.overloadLevel;
+                  let hitIds = new Set();
+                  let currentTarget = bm;
+                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                    let nextTarget = window.activeDungeonMobs.find(
+                      (other) =>
+                        !hitIds.has(other.id) &&
+                        Math.hypot(
+                          currentTarget.x - other.x,
+                          currentTarget.y - other.y,
+                        ) <= 120,
+                    );
+                    if (nextTarget) {
+                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                      nextTarget.flashTimer = 6;
+                      hitIds.add(nextTarget.id);
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnDamageEffect(
+                          nextTarget.x + nextTarget.w / 2,
+                          nextTarget.y + nextTarget.h / 2,
+                          spellDmg,
+                          "lightning",
+                          false,
+                        );
+                      }
+                      currentTarget = nextTarget;
+                      bouncesLeft--;
+                    } else {
+                      break;
+                    }
+                  }
+                } else if (elem === "frost") {
+                  let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
+                  if (window.activeDungeonMobs) {
+                    window.activeDungeonMobs.forEach((otherMob) => {
+                      if (
+                        Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100
+                      ) {
+                        otherMob.speedMultiplier = Math.max(
+                          0.2,
+                          (otherMob.speedMultiplier || 1.0) - slowPct,
+                        );
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnParticles(
+                            otherMob.x + otherMob.w / 2,
+                            otherMob.y + otherMob.h / 2,
+                            8,
+                            "void_orb",
+                            1,
+                          );
+                        }
+                      }
+                    });
+                  }
+                }
+              }
+            });
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_fire");
+            }
+          } else {
+            if (pStats.hasElementalOverload) {
+              if (spellEffectType === "fire") {
+                let splashDmg = spellDmg.mul(
+                  pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                );
+                if (window.activeDungeonMobs) {
+                  window.activeDungeonMobs.forEach((otherMob) => {
+                    let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
+                    if (dist <= 100) {
+                      otherMob.hp = otherMob.hp.sub(splashDmg);
+                      otherMob.flashTimer = 6;
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnDamageEffect(
+                          otherMob.x + otherMob.w / 2,
+                          otherMob.y + otherMob.h / 2,
+                          splashDmg,
+                          "fire",
+                          false,
+                        );
+                      }
+                    }
+                  });
+                }
+              } else if (spellEffectType === "lightning") {
+                let bouncesLeft = pStats.overloadLevel;
+                let hitIds = new Set();
+                let currentTarget = bm;
+                while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                  let nextTarget = window.activeDungeonMobs.find(
+                    (other) =>
+                      !hitIds.has(other.id) &&
+                      Math.hypot(
+                        currentTarget.x - other.x,
+                        currentTarget.y - other.y,
+                      ) <= 120,
+                  );
+                  if (nextTarget) {
+                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                    nextTarget.flashTimer = 6;
+                    hitIds.add(nextTarget.id);
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        nextTarget.x + nextTarget.w / 2,
+                        nextTarget.y + nextTarget.h / 2,
+                        spellDmg,
+                        "lightning",
+                        false,
+                      );
+                    }
+                    currentTarget = nextTarget;
+                    bouncesLeft--;
+                  } else {
+                    break;
+                  }
+                }
+              } else if (spellEffectType === "frost") {
+                let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
+                if (window.activeDungeonMobs) {
+                  window.activeDungeonMobs.forEach((otherMob) => {
+                    if (
+                      Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100
+                    ) {
+                      otherMob.speedMultiplier = Math.max(
+                        0.2,
+                        (otherMob.speedMultiplier || 1.0) - slowPct,
+                      );
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnParticles(
+                          otherMob.x + otherMob.w / 2,
+                          otherMob.y + otherMob.h / 2,
+                          8,
+                          "void_orb",
+                          1,
+                        );
+                      }
+                    }
+                  });
+                }
+              }
+            }
 
             if (
               window.SoundManager &&
               typeof window.SoundManager.play === "function"
             ) {
-              window.SoundManager.play("swing");
+              window.SoundManager.play("spell_" + spellEffectType);
             }
-
-            let bossCenterX = bm.x + bm.w / 2;
-            // Face the boss being attacked!
-            let dxToBoss = bossCenterX - p.x;
-            if (dxToBoss < -0.1) p.facing = -1;
-            else if (dxToBoss > 0.1) p.facing = 1;
-
-            let isCrit = Math.random() < (pStats.critChance || 0.05);
-            let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-            let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
-
-            // REDUCE DAMAGE BY 90% IF ELDRITCH BARK SHIELD IS ACTIVE!
-            if (bm.actionState === "bark_shield") {
-              pAtk = pAtk.mul(0.1);
-            }
-
-            // CYBER BARRIER (NEXUS OVERSEER) IMMUNITY
-            if (bm.actionState === "cyber_barrier") {
-              pAtk = BigNum.from(0);
-              if (typeof window.spawnFloatingText === "function") {
-                window.spawnFloatingText(bm.x + bm.w / 2, bm.y - 12, "SYSTEM IMMUNE", "#ff007f");
-              }
-              if (window.SoundManager) window.SoundManager.play("block");
-            }
-
-            // STAGGER SHIELD ABSORPTION (CHRONOS & GILDED KEEPER)
-            if (bm.actionState === "chrono_rewind" || bm.actionState === "taxation") {
-              let dmgVal = pAtk.valueOf();
-              bm.staggerShield = bm.staggerShield.sub(dmgVal);
-
-              if (window.combatVisuals) {
-                window.combatVisuals.spawnDamageEffect(bm.x + bm.w/2, bm.y + bm.h/2, pAtk, "static", false);
-              }
-
-              if (bm.staggerShield.lte(0)) {
-                bm.staggerShield = BigNum.from(0);
-                bm.actionState = "idle";
-                bm.state = "idle";
-                bm.isStopped = false;
-                bm.dazeTimer = 210; // 3.5s daze stun
-                if (typeof window.spawnFloatingText === "function") {
-                  window.spawnFloatingText(bm.x + bm.w / 2, bm.y - 12, "SHIELD BROKEN! DAZED!", "#ffd700");
-                }
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(bm.x + bm.w/2, bm.y + bm.h/2, 25, "gold_dungeon", 3);
-                  window.combatVisuals.triggerScreenShake(8, 12);
-                }
-                if (window.SoundManager) window.SoundManager.play("block");
-              }
-              pAtk = BigNum.from(0); // 0 direct damage to boss HP
-            }
-
-            // DAZED STUN DAMAGE AMPLIFICATION (Takes 50% more damage)
-            if (bm.dazeTimer > 0) {
-              pAtk = pAtk.mul(1.5);
-            }
-
-            // AEGIS GOLIATH DIRECTIONAL SHIELD CALCULATIONS
-            if (bm.bossKey === "aegis_goliath" && bm.phase === 2 && !(bm.dazeTimer > 0)) {
-              if (bm.shieldAngle !== undefined) {
-                let bCenterX = bm.x + bm.w / 2;
-                let bCenterY = bm.y + bm.h / 2;
-                let attackAngle = Math.atan2(p.y - bCenterY, p.x - bCenterX);
-                let angleDiff = Math.abs(Math.atan2(Math.sin(attackAngle - bm.shieldAngle), Math.cos(attackAngle - bm.shieldAngle)));
-
-                // Frontal attack hits his raised Tower Shield!
-                if (angleDiff < 0.6) {
-                  pAtk = BigNum.from(0);
-                  bm.flashTimer = 4;
-                  if (window.SoundManager) window.SoundManager.play("block");
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnParticles(bCenterX + Math.cos(bm.shieldAngle) * (bm.w * 0.75), bCenterY + Math.sin(bm.shieldAngle) * (bm.w * 0.75), 8, "aegis_goliath", 2);
-                    window.spawnFloatingText(bm.x + bm.w / 2, bm.y - 12, "BLOCKED!", "#00d2ff");
-                  }
-                }
-              }
-            }
-
-            bm.hp = bm.hp.sub(pAtk);
-            bm.hasTakenDamage = true;
-            bm.flashTimer = 6;
-
-            let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
-            window.playerStats.peakSingleHit = Math.max(window.playerStats.peakSingleHit || 0, rawHitNum);
-
-            let bmMaxHpNum = bm.maxHp.valueOf ? bm.maxHp.valueOf() : Number(bm.maxHp || 1);
-            if (isCrit && bmMaxHpNum > 0 && (rawHitNum / bmMaxHpNum) >= 10) {
-              window.playerStats.hasTriggeredOverkill = true;
-            }
-
-            let curHr = new Date().getHours();
-            if (curHr >= 0 && curHr < 4) window.playerStats.hasTriggeredNightOwl = true;
-            if (curHr >= 5 && curHr < 8) window.playerStats.hasTriggeredEarlyBird = true;
-            let curDay = new Date().getDay();
-            if (curDay === 0 || curDay === 6) window.playerStats.hasTriggeredWeekendWarrior = true;
-
-            let dirX = dist > 0 ? dx / dist : 1;
-            let dirY = dist > 0 ? dy / dist : 0;
-            bm.recoilX = -dirX * (isCrit ? 10 : 6);
-            bm.recoilY = -dirY * (isCrit ? 10 : 6);
-
-            if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-              window.RenderEngine.spawnHitSparks(
-                bm.x + bm.w / 2,
-                bm.y + bm.h / 2,
-                isCrit,
-                -dirX,
-                -dirY,
-              );
-            }
-
             if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
               window.RenderEngine.spawnDamageEffect(
-                bm.x + bm.w / 2,
-                bm.y + bm.h / 2,
-                pAtk,
-                "slash",
-                isCrit,
+                bossCenterX,
+                bossCenterY - 12,
+                spellDmg,
+                spellEffectType,
+                false,
               );
             }
+          }
+        }
 
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.playHitImpact === "function"
-            ) {
-              window.SoundManager.playHitImpact(isCrit);
-            }
+        if (bm.hp.lte(0)) {
+          window.playerStats.totalLifetimeKills =
+            (window.playerStats.totalLifetimeKills || 0) + 1;
+          window.playerStats.rareSpawnsSlain =
+            (window.playerStats.rareSpawnsSlain || 0) + 1;
 
-            // Define vertical center for boss offhand procs
-            let bossCenterY = bm.y + bm.h / 2;
-
-            // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
-            if (pStats.subType === "dagger") {
-              if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-                let offhandHit = BigNum.from(pStats.atk || 15).mul(
-                  pStats.offhandDmg || 0.45,
-                );
-                bm.hp = bm.hp.sub(offhandHit);
-                if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                  window.RenderEngine.spawnDamageEffect(
-                    bossCenterX,
-                    bossCenterY - 6,
-                    offhandHit,
-                    "dagger",
-                    false,
-                  );
-                }
-              }
-
-              if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-                let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-                bm.hp = bm.hp.sub(bleedTick);
-                bm.flashTimer = 6;
-                if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                  window.RenderEngine.spawnDamageEffect(
-                    bossCenterX,
-                    bossCenterY - 10,
-                    bleedTick,
-                    "bleed",
-                    false,
-                  );
-                }
-              }
-            }
-
-            // Tome Spell Cast Trigger on Boss
-            let isTomeEquipped =
-                              pStats.subType === "tome" ||
-                              (window.equippedSlots &&
-                                window.equippedSlots.subweapon &&
-                                (window.equippedSlots.subweapon.subType === "tome" ||
-                                  window.equippedSlots.subweapon.type === "tome"));
-                            let activeSpellChance =
-                              pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-                            let activeSpellType = pStats.spellType || "tri";
-
-                            if (isTomeEquipped && Math.random() < activeSpellChance) {
-                              // Gain +1 Tome Mastery XP on Spell Proc (Boss)
-                                                if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
-
-              let spellDmg = BigNum.from(pStats.atk || 15).mul(
-                pStats.spellPower || 1.5,
-              );
-              bm.hp = bm.hp.sub(spellDmg);
-              bm.flashTimer = 8;
-
-              let spellEffectType = activeSpellType;
-              if (activeSpellType === "tri") {
-                const triElements = ["fire", "lightning", "frost"];
-                spellEffectType =
-                  triElements[Math.floor(Math.random() * triElements.length)];
-              }
-
-              // Spell Weaving (Boss)
-              if (pStats.hasSpellWeaving) {
-                if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
-                  window.playerStats.spellWeavingStacks = Math.min(4, (window.playerStats.spellWeavingStacks || 0) + 1);
-                  window.playerStats.spellWeavingTimer = 240;
-                }
-                window.playerStats.lastSpellCastType = spellEffectType;
-              }
-
-              // Arcane Syphon (Boss)
-              if (pStats.hasArcaneSyphon) {
-                let healAmt = Math.round(p.maxHp * (pStats.arcaneSyphonLevel * 0.01));
-                p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                window.playerStats.syphonIntStacks = Math.min(3, (window.playerStats.syphonIntStacks || 0) + 1);
-                window.playerStats.syphonIntTimer = 360;
-                if (typeof window.spawnFloatingText === "function") {
-                  window.spawnFloatingText(p.x, p.y - 12, `+${healAmt} HP (SYPHON)`, "#2ecc71", true);
-                }
-              }
-
-              // Mana Shielding (Restored original Tome heal on spell proc - Boss)
-              if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
-                let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
-                p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                if (typeof window.spawnFloatingText === "function") {
-                  window.spawnFloatingText(p.x, p.y - 15, `+${healAmt} HP (MANA SHIELD)`, "#2ecc71", true);
-                }
-              }
-
-              // Triad Convergence / Aetheric Overload Check (Boss)
-              let isOverload =
-                window.SkillTreeManager &&
-                window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-                Math.random() < 0.15;
-
-              if (pStats.hasTriadConvergence || isOverload) {
-                const triElements = ["fire", "lightning", "frost"];
-                triElements.forEach((elem, eIdx) => {
-                  bm.hp = bm.hp.sub(spellDmg);
-                  if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                    window.RenderEngine.spawnDamageEffect(
-                      bossCenterX + (eIdx - 1) * 12,
-                      bossCenterY - 12 - eIdx * 6,
-                      spellDmg,
-                      elem,
-                      false,
-                    );
-                  }
-
-                  if (pStats.hasElementalOverload) {
-                    if (elem === "fire") {
-                      let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
-                      if (window.activeDungeonMobs) {
-                        window.activeDungeonMobs.forEach((otherMob) => {
-                          let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
-                          if (dist <= 100) {
-                            otherMob.hp = otherMob.hp.sub(splashDmg);
-                            otherMob.flashTimer = 6;
-                            if (window.combatVisuals) {
-                              window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
-                            }
-                          }
-                        });
-                      }
-                    } else if (elem === "lightning") {
-                      let bouncesLeft = pStats.overloadLevel;
-                      let hitIds = new Set();
-                      let currentTarget = bm;
-                      while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                        let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
-                        if (nextTarget) {
-                          nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                          nextTarget.flashTimer = 6;
-                          hitIds.add(nextTarget.id);
-                          if (window.combatVisuals) {
-                            window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
-                          }
-                          currentTarget = nextTarget;
-                          bouncesLeft--;
-                        } else {
-                          break;
-                        }
-                      }
-                    } else if (elem === "frost") {
-                      let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
-                      if (window.activeDungeonMobs) {
-                        window.activeDungeonMobs.forEach((otherMob) => {
-                          if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
-                            otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
-                            if (window.combatVisuals) {
-                              window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
-                            }
-                          }
-                        });
-                      }
-                    }
-                  }
-                });
-                if (
-                  window.SoundManager &&
-                  typeof window.SoundManager.play === "function"
-                ) {
-                  window.SoundManager.play("spell_fire");
-                }
-              } else {
-                if (pStats.hasElementalOverload) {
-                  if (spellEffectType === "fire") {
-                    let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
-                    if (window.activeDungeonMobs) {
-                      window.activeDungeonMobs.forEach((otherMob) => {
-                        let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
-                        if (dist <= 100) {
-                          otherMob.hp = otherMob.hp.sub(splashDmg);
-                          otherMob.flashTimer = 6;
-                          if (window.combatVisuals) {
-                            window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
-                          }
-                        }
-                      });
-                    }
-                  } else if (spellEffectType === "lightning") {
-                    let bouncesLeft = pStats.overloadLevel;
-                    let hitIds = new Set();
-                    let currentTarget = bm;
-                    while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                      let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
-                      if (nextTarget) {
-                                                  nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                                                  nextTarget.flashTimer = 6;
-                                                  hitIds.add(nextTarget.id);
-                                                  if (window.combatVisuals) {
-                                                    window.combatVisuals.spawnDamageEffect(
-                                                      nextTarget.x + nextTarget.w / 2,
-                                                      nextTarget.y + nextTarget.h / 2,
-                                                      spellDmg,
-                                                      "lightning",
-                                                      false
-                                                    );
-                                                  }
-                                                  currentTarget = nextTarget;
-                                                  bouncesLeft--;
-                                                } else {
-                                                  break;
-                                                }
-                                              }
-                                            } else if (spellEffectType === "frost") {
-                                              let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
-                                              if (window.activeDungeonMobs) {
-                                                window.activeDungeonMobs.forEach((otherMob) => {
-                                                  if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
-                                                    otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
-                                                    if (window.combatVisuals) {
-                                                      window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
-                                                    }
-                                                  }
-                                                });
-                                              }
-                                            }
-                                          }
-
-                                          if (
-                                            window.SoundManager &&
-                                            typeof window.SoundManager.play === "function"
-                                          ) {
-                                            window.SoundManager.play("spell_" + spellEffectType);
-                                          }
-                                          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                                            window.RenderEngine.spawnDamageEffect(
-                                              bossCenterX,
-                                              bossCenterY - 12,
-                                              spellDmg,
-                                              spellEffectType,
-                                              false,
-                                            );
-                                          }
-                                        }
-                                      }
-
-                              if (bm.hp.lte(0)) {
-                  window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
-                  window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
-
-                  if (window.spawnDeathParticles) {
+          if (window.spawnDeathParticles) {
             window.spawnDeathParticles(
               bm.x + bm.w / 2,
               bm.y + bm.h / 2,
@@ -8922,30 +10116,40 @@
           }
 
           if (window.hasUniquePassive("boots_warpcore")) {
-                      window.playerStats.warpCoreSprintTimer = 240; // 4 seconds of Maximum Haste
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(p.x, p.y - 25, "WARP-CORE MAX HASTE!", "#1abc9c");
-                      }
+            window.playerStats.warpCoreSprintTimer = 240; // 4 seconds of Maximum Haste
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 25,
+                "WARP-CORE MAX HASTE!",
+                "#1abc9c",
+              );
+            }
 
-                      // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Boss Defeat)
-                      if (Math.random() < 0.20) {
-                        let map = window.activeDungeonMap;
-                        let tSize = map ? map.tileSize : 32;
-                        let tileX = Math.floor(bossCenterX / tSize);
-                        let tileY = Math.floor(bossCenterY / tSize);
-                        if (map && map.grid && map.grid[tileY] && map.grid[tileY][tileX] !== undefined) {
-                          map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
-                          if (typeof window.pushHeaderToast === "function") {
-                            window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
-                          }
-                        }
-                      }
-                    }
+            // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Boss Defeat)
+            if (Math.random() < 0.2) {
+              let map = window.activeDungeonMap;
+              let tSize = map ? map.tileSize : 32;
+              let tileX = Math.floor(bossCenterX / tSize);
+              let tileY = Math.floor(bossCenterY / tSize);
+              if (
+                map &&
+                map.grid &&
+                map.grid[tileY] &&
+                map.grid[tileY][tileX] !== undefined
+              ) {
+                map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
+                }
+              }
+            }
+          }
 
-                    let tileX = bm.bossTileX || Math.floor(bm.x / 32);
-                    let tileY = bm.bossTileY || Math.floor(bm.y / 32);
-                    window.mob = null;
-                    window.onBossDefeated(tileX, tileY);
+          let tileX = bm.bossTileX || Math.floor(bm.x / 32);
+          let tileY = bm.bossTileY || Math.floor(bm.y / 32);
+          window.mob = null;
+          window.onBossDefeated(tileX, tileY);
         }
       }
 
@@ -9039,33 +10243,33 @@
     }
 
     // Update Active Projectiles and Test Player & Wall Hitboxes
-        for (let i = window.projectiles.length - 1; i >= 0; i--) {
-          let proj = window.projectiles[i];
-          proj.life--;
+    for (let i = window.projectiles.length - 1; i >= 0; i--) {
+      let proj = window.projectiles[i];
+      proj.life--;
 
-          // Custom Boomerang Shield Kinematics
-          if (proj.type === "boomerang" && window.mob) {
-            let bm = window.mob;
-            let bCx = bm.x + bm.w / 2;
-            let bCy = bm.y + bm.h / 2;
-            let bdx = bCx - proj.x;
-            let bdy = bCy - proj.y;
-            let bdist = Math.hypot(bdx, bdy);
-            if (bdist > 0) {
-              proj.vx += (bdx / bdist) * 0.24;
-              proj.vy += (bdy / bdist) * 0.24;
-            }
-            let speed = Math.hypot(proj.vx, proj.vy);
-            if (speed > 5.5) {
-              proj.vx = (proj.vx / speed) * 5.5;
-              proj.vy = (proj.vy / speed) * 5.5;
-            }
-          }
+      // Custom Boomerang Shield Kinematics
+      if (proj.type === "boomerang" && window.mob) {
+        let bm = window.mob;
+        let bCx = bm.x + bm.w / 2;
+        let bCy = bm.y + bm.h / 2;
+        let bdx = bCx - proj.x;
+        let bdy = bCy - proj.y;
+        let bdist = Math.hypot(bdx, bdy);
+        if (bdist > 0) {
+          proj.vx += (bdx / bdist) * 0.24;
+          proj.vy += (bdy / bdist) * 0.24;
+        }
+        let speed = Math.hypot(proj.vx, proj.vy);
+        if (speed > 5.5) {
+          proj.vx = (proj.vx / speed) * 5.5;
+          proj.vy = (proj.vy / speed) * 5.5;
+        }
+      }
 
-          proj.x += proj.vx;
-          proj.y += proj.vy;
+      proj.x += proj.vx;
+      proj.y += proj.vy;
 
-          let map = window.activeDungeonMap;
+      let map = window.activeDungeonMap;
       if (map && map.grid && checkCollisionAt(map, proj.x, proj.y, proj.r)) {
         if (window.combatVisuals) {
           if (
@@ -9658,64 +10862,69 @@
             }
 
             // 4. Floating Equipment Symbol
-                        let bob = Math.sin(time / 150) * 2.5;
-                        let lootY = drawY - 10 + bob;
+            let bob = Math.sin(time / 150) * 2.5;
+            let lootY = drawY - 10 + bob;
 
-                        let img = window.getCanvasIconImage
-                          ? window.getCanvasIconImage(gl.item)
-                          : null;
-                        if (img && img.complete) {
-                          ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
-                        } else {
-                          ctx.fillStyle = color;
-                          ctx.strokeStyle = "#000000";
-                          ctx.lineWidth = 1.2;
-                          ctx.beginPath();
-                          ctx.moveTo(drawX, lootY + 4 - 5);
-                          ctx.lineTo(drawX + 5, lootY + 4);
-                          ctx.lineTo(drawX, lootY + 4 + 5);
-                          ctx.lineTo(drawX - 5, lootY + 4);
-                          ctx.closePath();
-                          ctx.fill();
-                          ctx.stroke();
+            let img = window.getCanvasIconImage
+              ? window.getCanvasIconImage(gl.item)
+              : null;
+            if (img && img.complete) {
+              ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
+            } else {
+              ctx.fillStyle = color;
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(drawX, lootY + 4 - 5);
+              ctx.lineTo(drawX + 5, lootY + 4);
+              ctx.lineTo(drawX, lootY + 4 + 5);
+              ctx.lineTo(drawX - 5, lootY + 4);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
 
-                          ctx.fillStyle = "#ffffff";
-                          ctx.beginPath();
-                          ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
-                          ctx.fill();
-                        }
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+            }
 
-                        ctx.restore();
-                      },
-                    });
-                  });
-                }
+            ctx.restore();
+          },
+        });
+      });
+    }
 
-                // B5. Sector Environmental Decorations (Fog-of-War Culled)
-                    if (!isHub && mapInst && mapInst.decorations && mapInst.decorations.length > 0) {
-                      mapInst.decorations.forEach((dec) => {
-                        let isExplored =
-                          mapInst.exploredGrid &&
-                          mapInst.exploredGrid[dec.y] &&
-                          mapInst.exploredGrid[dec.y][dec.x];
-                        if (!isExplored) return;
+    // B5. Sector Environmental Decorations (Fog-of-War Culled)
+    if (
+      !isHub &&
+      mapInst &&
+      mapInst.decorations &&
+      mapInst.decorations.length > 0
+    ) {
+      mapInst.decorations.forEach((dec) => {
+        let isExplored =
+          mapInst.exploredGrid &&
+          mapInst.exploredGrid[dec.y] &&
+          mapInst.exploredGrid[dec.y][dec.x];
+        if (!isExplored) return;
 
-                        let isWallProp =
-                          mapInst.grid[dec.y] &&
-                          mapInst.grid[dec.y][dec.x] === window.TILE_TYPES.WALL;
+        let isWallProp =
+          mapInst.grid[dec.y] &&
+          mapInst.grid[dec.y][dec.x] === window.TILE_TYPES.WALL;
 
-                        depthQueue.push({
-                          yBase: dec.worldY + (isWallProp ? 0 : 8),
-                          draw: () => {
-                            if (window.drawSectorDecoration) {
-                              window.drawSectorDecoration(ctx, dec, tSize);
-                            }
-                          },
-                        });
-                      });
-                    }
+        depthQueue.push({
+          yBase: dec.worldY + (isWallProp ? 0 : 8),
+          draw: () => {
+            if (window.drawSectorDecoration) {
+              window.drawSectorDecoration(ctx, dec, tSize);
+            }
+          },
+        });
+      });
+    }
 
-                // C. Active Dungeon Mobs (Fog-of-War Culled)
+    // C. Active Dungeon Mobs (Fog-of-War Culled)
     if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
       window.activeDungeonMobs.forEach((m) => {
         let tileC = Math.floor((m.x + (m.w || 24) / 2) / tSize);
@@ -9794,10 +11003,13 @@
         yBase: bm.y + (bm.h || 48),
         draw: () => {
           if (bm.state === "telegraphing" && bm.activeAbility) {
-                      if (window.BossAIEngine && typeof window.BossAIEngine.renderTelegraph === "function") {
-                        window.BossAIEngine.renderTelegraph(ctx, bm);
-                      }
-                    }
+            if (
+              window.BossAIEngine &&
+              typeof window.BossAIEngine.renderTelegraph === "function"
+            ) {
+              window.BossAIEngine.renderTelegraph(ctx, bm);
+            }
+          }
 
           window.drawSingleMob(ctx, window.mob);
         },
@@ -9820,36 +11032,36 @@
       yBase: p.y,
       draw: () => {
         let dx = p.targetX - p.x;
-                let dy = p.targetY - p.y;
-                let distToTarget = Math.hypot(dx, dy);
-                let ctrlMode = window.playerStats
-                  ? window.playerStats.controlMode || "joystick"
-                  : "joystick";
+        let dy = p.targetY - p.y;
+        let distToTarget = Math.hypot(dx, dy);
+        let ctrlMode = window.playerStats
+          ? window.playerStats.controlMode || "joystick"
+          : "joystick";
 
-                if (ctrlMode === "cursor" && distToTarget > 4) {
-                  ctx.save();
-                  ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
-                  ctx.lineWidth = 1.5;
-                  ctx.setLineDash([4, 4]);
-                  ctx.beginPath();
-                  ctx.moveTo(p.x, p.y);
-                  ctx.lineTo(p.targetX, p.targetY);
-                  ctx.stroke();
-                  ctx.setLineDash([]);
+        if (ctrlMode === "cursor" && distToTarget > 4) {
+          ctx.save();
+          ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.targetX, p.targetY);
+          ctx.stroke();
+          ctx.setLineDash([]);
 
-                  let pulse = Math.sin(Date.now() / 150) * 1.5;
-                  ctx.strokeStyle = "#00d2ff";
-                  ctx.lineWidth = 1.2;
-                  ctx.beginPath();
-                  ctx.arc(p.targetX, p.targetY, 6 + pulse, 0, Math.PI * 2);
-                  ctx.stroke();
+          let pulse = Math.sin(Date.now() / 150) * 1.5;
+          ctx.strokeStyle = "#00d2ff";
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(p.targetX, p.targetY, 6 + pulse, 0, Math.PI * 2);
+          ctx.stroke();
 
-                  ctx.fillStyle = "rgba(0, 210, 255, 0.25)";
-                  ctx.beginPath();
-                  ctx.arc(p.targetX, p.targetY, 3, 0, Math.PI * 2);
-                  ctx.fill();
-                  ctx.restore();
-                }
+          ctx.fillStyle = "rgba(0, 210, 255, 0.25)";
+          ctx.beginPath();
+          ctx.arc(p.targetX, p.targetY, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
 
         ctx.save();
         ctx.translate(p.x, p.y - 8);
@@ -10343,273 +11555,287 @@
     }
 
     if (abandonBtn) {
-          abandonBtn.style.display = isHub ? "none" : "inline-block";
+      abandonBtn.style.display = isHub ? "none" : "inline-block";
+    }
+
+    // Update Quick-Slot Field Flask HUD Button
+    let flaskBtn = document.getElementById("hud-flask-button");
+    let fillRect = document.getElementById("hud-flask-fill-rect");
+    let cdRing = document.getElementById("hud-flask-cooldown-ring");
+    let cdText = document.getElementById("hud-flask-cd-text");
+    let flaskBadge = document.getElementById("hud-flask-count-badge");
+
+    if (flaskBtn) {
+      let charges = stats.flaskCharges !== undefined ? stats.flaskCharges : 1;
+      let maxCharges = stats.maxFlaskCharges || 1;
+      let cdTimer = stats.flaskCooldownTimer || 0;
+
+      if (flaskBadge) flaskBadge.innerText = `${charges}/${maxCharges}`;
+
+      // 1. Dynamic Liquid Fill Level
+      if (fillRect) {
+        let fillPct = maxCharges > 0 ? charges / maxCharges : 0;
+        let fillHeight = Math.round(52 * fillPct);
+        let fillY = 6 + (52 - fillHeight);
+        fillRect.setAttribute("y", fillY);
+        fillRect.setAttribute("height", fillHeight);
+      }
+
+      // 2. Radial Sweeping 360 Degree Cooldown Ring & Countdown Text
+      if (cdRing) {
+        let totalCircumference = 81.68;
+        if (cdTimer > 0 && charges > 0) {
+          let cdProgress = cdTimer / 180; // 180 frames = 3.0s
+          let offset = totalCircumference * (1 - cdProgress);
+          cdRing.setAttribute("stroke-dashoffset", offset.toFixed(2));
+          cdRing.style.display = "block";
+
+          if (cdText) {
+            let secLeft = (cdTimer / 60).toFixed(1);
+            cdText.innerText = `${secLeft}s`;
+          }
+          flaskBtn.classList.add("flask-on-cooldown");
+        } else {
+          cdRing.setAttribute(
+            "stroke-dashoffset",
+            totalCircumference.toFixed(2),
+          );
+          cdRing.style.display = "none";
+          if (cdText) cdText.innerText = "";
+          flaskBtn.classList.remove("flask-on-cooldown");
         }
+      }
 
-        // Update Quick-Slot Field Flask HUD Button
-                let flaskBtn = document.getElementById("hud-flask-button");
-                let fillRect = document.getElementById("hud-flask-fill-rect");
-                let cdRing = document.getElementById("hud-flask-cooldown-ring");
-                let cdText = document.getElementById("hud-flask-cd-text");
-                let flaskBadge = document.getElementById("hud-flask-count-badge");
+      if (charges <= 0) {
+        flaskBtn.classList.add("flask-empty");
+      } else {
+        flaskBtn.classList.remove("flask-empty");
+      }
 
-                if (flaskBtn) {
-                  let charges = stats.flaskCharges !== undefined ? stats.flaskCharges : 1;
-                  let maxCharges = stats.maxFlaskCharges || 1;
-                  let cdTimer = stats.flaskCooldownTimer || 0;
+      // Apply saved position coordinates
+      if (
+        typeof stats.flaskX === "number" &&
+        typeof stats.flaskY === "number" &&
+        !flaskBtn.isDragging
+      ) {
+        flaskBtn.style.left = stats.flaskX + "px";
+        flaskBtn.style.top = stats.flaskY + "px";
+        flaskBtn.style.bottom = "auto";
+        flaskBtn.style.right = "auto";
+      } else if (!flaskBtn.isDragging) {
+        const isLandscapeMobile =
+          window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
+        const isMobile = window.innerWidth <= 600 || isLandscapeMobile;
+        if (isMobile) {
+          flaskBtn.style.left = "env(safe-area-inset-left, 24px)";
+          flaskBtn.style.right = "auto";
+          flaskBtn.style.bottom = "env(safe-area-inset-bottom, 36px)";
+          flaskBtn.style.top = "auto";
+        } else {
+          flaskBtn.style.left = "24px";
+          flaskBtn.style.right = "auto";
+          flaskBtn.style.bottom = "36px";
+          flaskBtn.style.top = "auto";
+        }
+      }
+    }
 
-                  if (flaskBadge) flaskBadge.innerText = `${charges}/${maxCharges}`;
+    if (typeof window.updateHudBuffTray === "function") {
+      window.updateHudBuffTray();
+    }
 
-                  // 1. Dynamic Liquid Fill Level
-                  if (fillRect) {
-                    let fillPct = maxCharges > 0 ? charges / maxCharges : 0;
-                    let fillHeight = Math.round(52 * fillPct);
-                    let fillY = 6 + (52 - fillHeight);
-                    fillRect.setAttribute("y", fillY);
-                    fillRect.setAttribute("height", fillHeight);
-                  }
+    // Mastery/MP Alert Badge
+    let masteryBtn = document.getElementById("btn-skills-toggle");
+    if (masteryBtn) {
+      let unspentMP = window.SkillTreeManager
+        ? window.SkillTreeManager.getUnspentMP()
+        : 0;
+      let existingMpBadge = masteryBtn.querySelector(".hud-alert-badge");
+      if (unspentMP > 0) {
+        if (!existingMpBadge) {
+          existingMpBadge = document.createElement("span");
+          existingMpBadge.className = "hud-alert-badge";
+          masteryBtn.appendChild(existingMpBadge);
+        }
+        existingMpBadge.innerText = unspentMP;
+      } else if (existingMpBadge) {
+        existingMpBadge.remove();
+      }
+    }
 
-                  // 2. Radial Sweeping 360 Degree Cooldown Ring & Countdown Text
-                  if (cdRing) {
-                                      let totalCircumference = 81.68;
-                                      if (cdTimer > 0 && charges > 0) {
-                                        let cdProgress = cdTimer / 180; // 180 frames = 3.0s
-                                        let offset = totalCircumference * (1 - cdProgress);
-                                        cdRing.setAttribute("stroke-dashoffset", offset.toFixed(2));
-                                        cdRing.style.display = "block";
+    // Hero Pod/SP Alert Badge
+    let heroPod = document.querySelector(".hud-hero-pod");
+    if (heroPod) {
+      let unspentSP = stats.sp || 0;
+      let existingSpBadge = heroPod.querySelector(".hud-alert-badge");
+      if (unspentSP > 0) {
+        if (!existingSpBadge) {
+          existingSpBadge = document.createElement("span");
+          existingSpBadge.className = "hud-alert-badge";
+          heroPod.appendChild(existingSpBadge);
+        }
+        existingSpBadge.innerText = unspentSP;
+      } else if (existingSpBadge) {
+        existingSpBadge.remove();
+      }
+    }
+  };
 
-                                        if (cdText) {
-                                          let secLeft = (cdTimer / 60).toFixed(1);
-                                          cdText.innerText = `${secLeft}s`;
-                                        }
-                                        flaskBtn.classList.add("flask-on-cooldown");
-                                      } else {
-                                        cdRing.setAttribute("stroke-dashoffset", totalCircumference.toFixed(2));
-                                        cdRing.style.display = "none";
-                                        if (cdText) cdText.innerText = "";
-                                        flaskBtn.classList.remove("flask-on-cooldown");
-                                      }
-                                    }
+  window.updateHudBuffTray = function () {
+    let tray = document.getElementById("hud-buff-tray");
+    if (!tray) return;
 
-                  if (charges <= 0) {
-                                      flaskBtn.classList.add("flask-empty");
-                                    } else {
-                                      flaskBtn.classList.remove("flask-empty");
-                                    }
+    let stats = window.playerStats || {};
+    let badges = [];
 
-                                    // Apply saved position coordinates
-                                    if (typeof stats.flaskX === "number" && typeof stats.flaskY === "number" && !flaskBtn.isDragging) {
-                                      flaskBtn.style.left = stats.flaskX + "px";
-                                      flaskBtn.style.top = stats.flaskY + "px";
-                                      flaskBtn.style.bottom = "auto";
-                                      flaskBtn.style.right = "auto";
-                                    } else if (!flaskBtn.isDragging) {
-                                      const isLandscapeMobile = window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
-                                      const isMobile = window.innerWidth <= 600 || isLandscapeMobile;
-                                      if (isMobile) {
-                                        flaskBtn.style.left = "env(safe-area-inset-left, 24px)";
-                                        flaskBtn.style.right = "auto";
-                                        flaskBtn.style.bottom = "env(safe-area-inset-bottom, 36px)";
-                                        flaskBtn.style.top = "auto";
-                                      } else {
-                                        flaskBtn.style.left = "24px";
-                                        flaskBtn.style.right = "auto";
-                                        flaskBtn.style.bottom = "36px";
-                                        flaskBtn.style.top = "auto";
-                                      }
-                                    }
-                }
+    let getAtkCol = (s) =>
+      s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71";
+    let getHpCol = (s) =>
+      s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c";
+    let getDefCol = (s) =>
+      s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db";
+    let getHasteCol = (s) =>
+      s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f";
 
-                  if (typeof window.updateHudBuffTray === "function") {
-                                      window.updateHudBuffTray();
-                                    }
+    if ((stats.atkPotionRuns || 0) > 0) {
+      let col = getAtkCol(stats.atkPotionStrength || 0.1);
+      badges.push({
+        label: "ATK",
+        val: `${stats.atkPotionRuns}R`,
+        col: col,
+        title: `Attack Elixir (+${Math.round((stats.atkPotionStrength || 0.1) * 100)}% Atk, ${stats.atkPotionRuns} run(s) left)`,
+      });
+    }
 
-                                    // Mastery/MP Alert Badge
-                                    let masteryBtn = document.getElementById("btn-skills-toggle");
-                                    if (masteryBtn) {
-                                      let unspentMP = window.SkillTreeManager ? window.SkillTreeManager.getUnspentMP() : 0;
-                                      let existingMpBadge = masteryBtn.querySelector(".hud-alert-badge");
-                                      if (unspentMP > 0) {
-                                        if (!existingMpBadge) {
-                                          existingMpBadge = document.createElement("span");
-                                          existingMpBadge.className = "hud-alert-badge";
-                                          masteryBtn.appendChild(existingMpBadge);
-                                        }
-                                        existingMpBadge.innerText = unspentMP;
-                                      } else if (existingMpBadge) {
-                                        existingMpBadge.remove();
-                                      }
-                                    }
+    if ((stats.hpPotionRuns || 0) > 0) {
+      let col = getHpCol(stats.hpPotionStrength || 0.1);
+      badges.push({
+        label: "HP",
+        val: `${stats.hpPotionRuns}R`,
+        col: col,
+        title: `Vitality Elixir (+${Math.round((stats.hpPotionStrength || 0.1) * 100)}% Max HP, ${stats.hpPotionRuns} run(s) left)`,
+      });
+    }
 
-                                    // Hero Pod/SP Alert Badge
-                                    let heroPod = document.querySelector(".hud-hero-pod");
-                                    if (heroPod) {
-                                      let unspentSP = stats.sp || 0;
-                                      let existingSpBadge = heroPod.querySelector(".hud-alert-badge");
-                                      if (unspentSP > 0) {
-                                        if (!existingSpBadge) {
-                                          existingSpBadge = document.createElement("span");
-                                          existingSpBadge.className = "hud-alert-badge";
-                                          heroPod.appendChild(existingSpBadge);
-                                        }
-                                        existingSpBadge.innerText = unspentSP;
-                                      } else if (existingSpBadge) {
-                                        existingSpBadge.remove();
-                                      }
-                                    }
-                                  };
+    if ((stats.defPotionRuns || 0) > 0) {
+      let col = getDefCol(stats.defPotionStrength || 0.1);
+      badges.push({
+        label: "DEF",
+        val: `${stats.defPotionRuns}R`,
+        col: col,
+        title: `Armored Elixir (+${Math.round((stats.defPotionStrength || 0.1) * 100)}% Def, ${stats.defPotionRuns} run(s) left)`,
+      });
+    }
 
-                              window.updateHudBuffTray = function () {
-              let tray = document.getElementById("hud-buff-tray");
-              if (!tray) return;
+    if ((stats.hastePotionRuns || 0) > 0) {
+      let col = getHasteCol(stats.hastePotionStrength || 1);
+      badges.push({
+        label: "SPD",
+        val: `${stats.hastePotionRuns}R`,
+        col: col,
+        title: `Haste Elixir (+Speed, ${stats.hastePotionRuns} run(s) left)`,
+      });
+    }
 
-              let stats = window.playerStats || {};
-              let badges = [];
+    if ((stats.xpPotionRuns || 0) > 0) {
+      badges.push({
+        label: "2x XP",
+        val: `${stats.xpPotionRuns}R`,
+        col: "#c084fc",
+        title: `Double XP Elixir (+100% XP, ${stats.xpPotionRuns} run(s) left)`,
+      });
+    }
 
-              let getAtkCol = (s) => (s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71");
-              let getHpCol = (s) => (s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c");
-              let getDefCol = (s) => (s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db");
-              let getHasteCol = (s) => (s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f");
+    if ((stats.dropPotionRuns || 0) > 0) {
+      badges.push({
+        label: "2x DROP",
+        val: `${stats.dropPotionRuns}R`,
+        col: "#34d399",
+        title: `Double Drop Elixir (+100% Drop Rate, ${stats.dropPotionRuns} run(s) left)`,
+      });
+    }
 
-              if ((stats.atkPotionRuns || 0) > 0) {
-                let col = getAtkCol(stats.atkPotionStrength || 0.1);
-                badges.push({
-                  label: "ATK",
-                  val: `${stats.atkPotionRuns}R`,
-                  col: col,
-                  title: `Attack Elixir (+${Math.round((stats.atkPotionStrength || 0.1) * 100)}% Atk, ${stats.atkPotionRuns} run(s) left)`
-                });
-              }
+    if ((stats.qlyPotionRuns || 0) > 0) {
+      badges.push({
+        label: "QLY",
+        val: `${stats.qlyPotionRuns}R`,
+        col: "#f472b6",
+        title: `Drop Quality Elixir (+50% Drop Quality, ${stats.qlyPotionRuns} run(s) left)`,
+      });
+    }
 
-              if ((stats.hpPotionRuns || 0) > 0) {
-                let col = getHpCol(stats.hpPotionStrength || 0.1);
-                badges.push({
-                  label: "HP",
-                  val: `${stats.hpPotionRuns}R`,
-                  col: col,
-                  title: `Vitality Elixir (+${Math.round((stats.hpPotionStrength || 0.1) * 100)}% Max HP, ${stats.hpPotionRuns} run(s) left)`
-                });
-              }
+    if (stats.frenzyTimer > 0) {
+      badges.push({
+        label: "FRENZY",
+        val: `${Math.ceil(stats.frenzyTimer / 60)}s`,
+        col: "#f1c40f",
+        title: `Frenzy Mode Active (${Math.ceil(stats.frenzyTimer / 60)}s)`,
+      });
+    }
 
-              if ((stats.defPotionRuns || 0) > 0) {
-                let col = getDefCol(stats.defPotionStrength || 0.1);
-                badges.push({
-                  label: "DEF",
-                  val: `${stats.defPotionRuns}R`,
-                  col: col,
-                  title: `Armored Elixir (+${Math.round((stats.defPotionStrength || 0.1) * 100)}% Def, ${stats.defPotionRuns} run(s) left)`
-                });
-              }
+    if (stats.adrenalineTimer > 0) {
+      badges.push({
+        label: "ADRENALINE",
+        val: `${Math.ceil(stats.adrenalineTimer / 60)}s`,
+        col: "#e67e22",
+        title: `Adrenaline Rush (+30% Damage, ${Math.ceil(stats.adrenalineTimer / 60)}s)`,
+      });
+    }
 
-              if ((stats.hastePotionRuns || 0) > 0) {
-                let col = getHasteCol(stats.hastePotionStrength || 1);
-                badges.push({
-                  label: "SPD",
-                  val: `${stats.hastePotionRuns}R`,
-                  col: col,
-                  title: `Haste Elixir (+Speed, ${stats.hastePotionRuns} run(s) left)`
-                });
-              }
+    if (stats.fortunesFavorTimer > 0) {
+      badges.push({
+        label: "FORTUNE",
+        val: `${Math.ceil(stats.fortunesFavorTimer / 60)}s`,
+        col: "#ffd700",
+        title: `Fortune's Favor (+50% Gold, ${Math.ceil(stats.fortunesFavorTimer / 60)}s)`,
+      });
+    }
 
-              if ((stats.xpPotionRuns || 0) > 0) {
-                badges.push({
-                  label: "2x XP",
-                  val: `${stats.xpPotionRuns}R`,
-                  col: "#c084fc",
-                  title: `Double XP Elixir (+100% XP, ${stats.xpPotionRuns} run(s) left)`
-                });
-              }
+    if (stats.astralAwakeningTimer > 0) {
+      badges.push({
+        label: "ASTRAL",
+        val: `${Math.ceil(stats.astralAwakeningTimer / 60)}s`,
+        col: "#00d2ff",
+        title: `Astral Awakening (+100% Damage, ${Math.ceil(stats.astralAwakeningTimer / 60)}s)`,
+      });
+    }
 
-              if ((stats.dropPotionRuns || 0) > 0) {
-                badges.push({
-                  label: "2x DROP",
-                  val: `${stats.dropPotionRuns}R`,
-                  col: "#34d399",
-                  title: `Double Drop Elixir (+100% Drop Rate, ${stats.dropPotionRuns} run(s) left)`
-                });
-              }
+    if (stats.purifiedAegisTimer > 0) {
+      badges.push({
+        label: "AEGIS",
+        val: `${Math.ceil(stats.purifiedAegisTimer / 60)}s`,
+        col: "#2ecc71",
+        title: `Purified Aegis (+50% Def, ${Math.ceil(stats.purifiedAegisTimer / 60)}s)`,
+      });
+    }
 
-              if ((stats.qlyPotionRuns || 0) > 0) {
-                badges.push({
-                  label: "QLY",
-                  val: `${stats.qlyPotionRuns}R`,
-                  col: "#f472b6",
-                  title: `Drop Quality Elixir (+50% Drop Quality, ${stats.qlyPotionRuns} run(s) left)`
-                });
-              }
+    if ((stats.viperShadowDanceCharges || 0) > 0) {
+      badges.push({
+        label: "VIPER",
+        val: `${stats.viperShadowDanceCharges}x`,
+        col: "#a855f7",
+        title: `Viper's Shadow Dance (${stats.viperShadowDanceCharges} 100% Crit Strike(s))`,
+      });
+    }
 
-              if (stats.frenzyTimer > 0) {
-                badges.push({
-                  label: "FRENZY",
-                  val: `${Math.ceil(stats.frenzyTimer / 60)}s`,
-                  col: "#f1c40f",
-                  title: `Frenzy Mode Active (${Math.ceil(stats.frenzyTimer / 60)}s)`
-                });
-              }
+    if (badges.length === 0) {
+      tray.innerHTML = "";
+      tray.style.display = "none";
+      return;
+    }
 
-              if (stats.adrenalineTimer > 0) {
-                badges.push({
-                  label: "ADRENALINE",
-                  val: `${Math.ceil(stats.adrenalineTimer / 60)}s`,
-                  col: "#e67e22",
-                  title: `Adrenaline Rush (+30% Damage, ${Math.ceil(stats.adrenalineTimer / 60)}s)`
-                });
-              }
-
-              if (stats.fortunesFavorTimer > 0) {
-                badges.push({
-                  label: "FORTUNE",
-                  val: `${Math.ceil(stats.fortunesFavorTimer / 60)}s`,
-                  col: "#ffd700",
-                  title: `Fortune's Favor (+50% Gold, ${Math.ceil(stats.fortunesFavorTimer / 60)}s)`
-                });
-              }
-
-              if (stats.astralAwakeningTimer > 0) {
-                badges.push({
-                  label: "ASTRAL",
-                  val: `${Math.ceil(stats.astralAwakeningTimer / 60)}s`,
-                  col: "#00d2ff",
-                  title: `Astral Awakening (+100% Damage, ${Math.ceil(stats.astralAwakeningTimer / 60)}s)`
-                });
-              }
-
-              if (stats.purifiedAegisTimer > 0) {
-                badges.push({
-                  label: "AEGIS",
-                  val: `${Math.ceil(stats.purifiedAegisTimer / 60)}s`,
-                  col: "#2ecc71",
-                  title: `Purified Aegis (+50% Def, ${Math.ceil(stats.purifiedAegisTimer / 60)}s)`
-                });
-              }
-
-              if ((stats.viperShadowDanceCharges || 0) > 0) {
-                badges.push({
-                  label: "VIPER",
-                  val: `${stats.viperShadowDanceCharges}x`,
-                  col: "#a855f7",
-                  title: `Viper's Shadow Dance (${stats.viperShadowDanceCharges} 100% Crit Strike(s))`
-                });
-              }
-
-              if (badges.length === 0) {
-                tray.innerHTML = "";
-                tray.style.display = "none";
-                return;
-              }
-
-              tray.style.display = "flex";
-              tray.innerHTML = badges
-                .map(
-                  (b) => `
+    tray.style.display = "flex";
+    tray.innerHTML = badges
+      .map(
+        (b) => `
                     <div class="hud-buff-badge" style="border-color:${b.col}; box-shadow: 0 0 6px ${b.col}44;" title="${b.title}">
                       <span class="buff-label" style="color:${b.col};">${b.label}</span>
                       <span class="buff-runs" style="color:#ffffff;">${b.val}</span>
                     </div>
-                  `
-                )
-                .join("");
-            };
+                  `,
+      )
+      .join("");
+  };
 
   // --- HERO PROFILE & STASH MANAGEMENT ENGINE ---
   window.getItemIconSvg = function (item, size = 28) {
@@ -11141,178 +12367,240 @@
   window.activeProfileMobileTab = "stats";
 
   window.openSkillTree = function () {
-      if (typeof window.hideTooltip === "function") window.hideTooltip();
-      let modal = document.getElementById("mastery-modal");
-      if (!modal) return;
+    if (typeof window.hideTooltip === "function") window.hideTooltip();
+    let modal = document.getElementById("mastery-modal");
+    if (!modal) return;
+    modal.style.display = "flex";
+    if (window.SkillTreeManager) {
+      window.SkillTreeManager.renderSkillTreeUI();
+    }
+  };
+
+  window.toggleMasteryModal = function () {
+    if (typeof window.hideTooltip === "function") window.hideTooltip();
+    let modal = document.getElementById("mastery-modal");
+    if (!modal) return;
+    if (modal.style.display === "none" || modal.style.display === "") {
       modal.style.display = "flex";
       if (window.SkillTreeManager) {
         window.SkillTreeManager.renderSkillTreeUI();
       }
-    };
-
-    window.toggleMasteryModal = function () {
-      if (typeof window.hideTooltip === "function") window.hideTooltip();
-      let modal = document.getElementById("mastery-modal");
-      if (!modal) return;
-      if (modal.style.display === "none" || modal.style.display === "") {
-        modal.style.display = "flex";
-        if (window.SkillTreeManager) {
-          window.SkillTreeManager.renderSkillTreeUI();
-        }
-      } else {
-        modal.style.display = "none";
-        window.lastModalCloseTime = Date.now();
-        if (window.SkillTreeManager && typeof window.SkillTreeManager.stopAnimationLoop === "function") {
-          window.SkillTreeManager.stopAnimationLoop();
-        }
+    } else {
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
+      if (
+        window.SkillTreeManager &&
+        typeof window.SkillTreeManager.stopAnimationLoop === "function"
+      ) {
+        window.SkillTreeManager.stopAnimationLoop();
       }
-    };
+    }
+  };
 
   window.switchProfileTab = function (tabKey) {
-      window.activeProfileMobileTab = tabKey;
-      const tabs = ["stats", "gear", "satchel", "achievements"];
-      tabs.forEach((t) => {
-        let btn = document.getElementById(`profile-tab-${t}`);
-        let sec = document.getElementById(`profile-sec-${t}`);
-        if (btn) btn.classList.toggle("active", t === tabKey);
-        if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
-      });
-      let profileCard = document.querySelector(".profile-card");
-      if (profileCard) {
-        profileCard.classList.toggle(
-          "skills-fullscreen-mode",
-          tabKey === "achievements",
-        );
-      }
-      if (tabKey === "achievements") {
-        window.renderAchievementsTab();
-      }
-      window.renderProfileModal();
-    };
-
-window.state.achievementFilter = "all";
-
-window.switchAchievementFilter = function (filterKey) {
-  window.state.achievementFilter = filterKey;
-  window.renderAchievementsTab();
-};
-
-window.renderAchievementsTab = function () {
-  let container = document.getElementById("achievements-content-panel");
-  if (!container) return;
-
-  let unlocked = window.playerStats.unlockedAchievements || [];
-  let timestamps = window.playerStats.achievementTimestamps || {};
-  let totals = window.playerStats.cachedAchievementBonusTotals || {};
-
-  let totalCount = window.AchievementsData.length;
-  let unlockedCount = unlocked.length;
-  let progressPct = Math.round((unlockedCount / totalCount) * 100) || 0;
-
-  // Compile active passive stats
-  let activeBonusTexts = [];
-  for (let sKey in totals) {
-    let val = totals[sKey];
-    if (val > 0) {
-      let isPct = [
-        "drop", "qly", "critChance", "critDamage", "block", "parry", "gold",
-        "fairySpawn", "rareSpawn", "expPct", "potDurationPct", "potStrengthPct",
-        "atkPct", "maxHpPct", "defPct", "moveSpeedPct", "strPct", "dexPct",
-        "intPct", "idleSpeedPct", "activeSpeedPct"
-      ].includes(sKey);
-      let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
-      let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey;
-      activeBonusTexts.push(`${label} ${valStr}`);
+    window.activeProfileMobileTab = tabKey;
+    const tabs = ["stats", "gear", "satchel", "achievements"];
+    tabs.forEach((t) => {
+      let btn = document.getElementById(`profile-tab-${t}`);
+      let sec = document.getElementById(`profile-sec-${t}`);
+      if (btn) btn.classList.toggle("active", t === tabKey);
+      if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
+    });
+    let profileCard = document.querySelector(".profile-card");
+    if (profileCard) {
+      profileCard.classList.toggle(
+        "skills-fullscreen-mode",
+        tabKey === "achievements",
+      );
     }
-  }
-  let activeBonusStr = activeBonusTexts.length > 0
-    ? activeBonusTexts.join(" • ")
-    : "No active milestone bonuses yet.";
+    if (tabKey === "achievements") {
+      window.renderAchievementsTab();
+    }
+    window.renderProfileModal();
+  };
 
-  // Achievements Category Filter Options
-  let activeFilter = window.state.achievementFilter || "all";
-  let filters = [
-    { key: "all", label: "ALL" },
-    { key: "slayer", label: "SLAYER" },
-    { key: "floor", label: "EXPLORER" },
-    { key: "hoarder", label: "WEALTH" },
-    { key: "extract", label: "SURVIVOR" },
-    { key: "salvage", label: "SALVAGER" },
-    { key: "forge", label: "CRAFTING" },
-    { key: "misc", label: "TACTICAL" },
-    { key: "sing", label: "VALOR FEATS" }
-  ];
+  window.state.achievementFilter = "all";
 
-  let filterBarHtml = `
+  window.switchAchievementFilter = function (filterKey) {
+    window.state.achievementFilter = filterKey;
+    window.renderAchievementsTab();
+  };
+
+  window.renderAchievementsTab = function () {
+    let container = document.getElementById("achievements-content-panel");
+    if (!container) return;
+
+    let unlocked = window.playerStats.unlockedAchievements || [];
+    let timestamps = window.playerStats.achievementTimestamps || {};
+    let totals = window.playerStats.cachedAchievementBonusTotals || {};
+
+    let totalCount = window.AchievementsData.length;
+    let unlockedCount = unlocked.length;
+    let progressPct = Math.round((unlockedCount / totalCount) * 100) || 0;
+
+    // Compile active passive stats
+    let activeBonusTexts = [];
+    for (let sKey in totals) {
+      let val = totals[sKey];
+      if (val > 0) {
+        let isPct = [
+          "drop",
+          "qly",
+          "critChance",
+          "critDamage",
+          "block",
+          "parry",
+          "gold",
+          "fairySpawn",
+          "rareSpawn",
+          "expPct",
+          "potDurationPct",
+          "potStrengthPct",
+          "atkPct",
+          "maxHpPct",
+          "defPct",
+          "moveSpeedPct",
+          "strPct",
+          "dexPct",
+          "intPct",
+          "idleSpeedPct",
+          "activeSpeedPct",
+        ].includes(sKey);
+        let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
+        let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey;
+        activeBonusTexts.push(`${label} ${valStr}`);
+      }
+    }
+    let activeBonusStr =
+      activeBonusTexts.length > 0
+        ? activeBonusTexts.join(" • ")
+        : "No active milestone bonuses yet.";
+
+    // Achievements Category Filter Options
+    let activeFilter = window.state.achievementFilter || "all";
+    let filters = [
+      { key: "all", label: "ALL" },
+      { key: "slayer", label: "SLAYER" },
+      { key: "floor", label: "EXPLORER" },
+      { key: "hoarder", label: "WEALTH" },
+      { key: "extract", label: "SURVIVOR" },
+      { key: "salvage", label: "SALVAGER" },
+      { key: "forge", label: "CRAFTING" },
+      { key: "misc", label: "TACTICAL" },
+      { key: "sing", label: "VALOR FEATS" },
+    ];
+
+    let filterBarHtml = `
     <div class="ach-filter-bar">
-      ${filters.map(f => {
-        let isActive = f.key === activeFilter;
-        return `
-          <button class="ach-filter-btn ${isActive ? 'active' : ''}" onclick="window.switchAchievementFilter('${f.key}')">
+      ${filters
+        .map((f) => {
+          let isActive = f.key === activeFilter;
+          return `
+          <button class="ach-filter-btn ${isActive ? "active" : ""}" onclick="window.switchAchievementFilter('${f.key}')">
             ${f.label}
           </button>
         `;
-      }).join("")}
+        })
+        .join("")}
     </div>
   `;
 
-  // Filter the achievements list
-  let filteredAchs = window.AchievementsData.filter(ach => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "sing") return !!ach.isSingleTier;
+    // Filter the achievements list
+    let filteredAchs = window.AchievementsData.filter((ach) => {
+      if (activeFilter === "all") return true;
+      if (activeFilter === "sing") return !!ach.isSingleTier;
 
-    let cat = "";
-    if (ach.reqType === "kills") cat = "slayer";
-    else if (ach.reqType === "floor") cat = "floor";
-    else if (ach.reqType === "gold") cat = "hoarder";
-    else if (ach.reqType === "extract") cat = "extract";
-    else if (ach.reqType === "salvage") cat = "salvage";
-    else if (["temper", "reforges", "enchant"].includes(ach.reqType)) cat = "forge";
-    else if (["deflections", "rare_spawns", "single_hit", "gold_upgrades"].includes(ach.reqType)) cat = "misc";
+      let cat = "";
+      if (ach.reqType === "kills") cat = "slayer";
+      else if (ach.reqType === "floor") cat = "floor";
+      else if (ach.reqType === "gold") cat = "hoarder";
+      else if (ach.reqType === "extract") cat = "extract";
+      else if (ach.reqType === "salvage") cat = "salvage";
+      else if (["temper", "reforges", "enchant"].includes(ach.reqType))
+        cat = "forge";
+      else if (
+        ["deflections", "rare_spawns", "single_hit", "gold_upgrades"].includes(
+          ach.reqType,
+        )
+      )
+        cat = "misc";
 
-    return cat === activeFilter;
-  });
+      return cat === activeFilter;
+    });
 
-  // Render cards
-  let cardsHtml = filteredAchs.map(ach => {
-    let isUnlocked = unlocked.includes(ach.id);
-    let timeStr = "";
-    if (isUnlocked && timestamps[ach.id]) {
-      timeStr = new Date(timestamps[ach.id]).toLocaleDateString("en-US", {
-        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
-      });
-    }
+    // Render cards
+    let cardsHtml = filteredAchs
+      .map((ach) => {
+        let isUnlocked = unlocked.includes(ach.id);
+        let timeStr = "";
+        if (isUnlocked && timestamps[ach.id]) {
+          timeStr = new Date(timestamps[ach.id]).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
 
-    // Process Rewards Text
-    let rewardsList = [];
-    if (ach.stats) {
-      for (let sKey in ach.stats) {
-        let val = ach.stats[sKey];
-        let isPct = [
-          "drop", "qly", "critChance", "critDamage", "block", "parry", "gold",
-          "fairySpawn", "rareSpawn", "expPct", "potDurationPct", "potStrengthPct",
-          "atkPct", "maxHpPct", "defPct", "moveSpeedPct", "strPct", "dexPct",
-          "intPct", "idleSpeedPct", "activeSpeedPct"
-        ].includes(sKey);
-        let valStr = isPct ? `+${(val * 100).toFixed(0)}%` : `+${val}`;
-        let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey;
-        rewardsList.push(`${label} ${valStr}`);
-      }
-    }
-    let rewardsStr = rewardsList.length > 0 ? `Reward: ${rewardsList.join(", ")}` : "Cosmetic Award";
+        // Process Rewards Text
+        let rewardsList = [];
+        if (ach.stats) {
+          for (let sKey in ach.stats) {
+            let val = ach.stats[sKey];
+            let isPct = [
+              "drop",
+              "qly",
+              "critChance",
+              "critDamage",
+              "block",
+              "parry",
+              "gold",
+              "fairySpawn",
+              "rareSpawn",
+              "expPct",
+              "potDurationPct",
+              "potStrengthPct",
+              "atkPct",
+              "maxHpPct",
+              "defPct",
+              "moveSpeedPct",
+              "strPct",
+              "dexPct",
+              "intPct",
+              "idleSpeedPct",
+              "activeSpeedPct",
+            ].includes(sKey);
+            let valStr = isPct ? `+${(val * 100).toFixed(0)}%` : `+${val}`;
+            let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey;
+            rewardsList.push(`${label} ${valStr}`);
+          }
+        }
+        let rewardsStr =
+          rewardsList.length > 0
+            ? `Reward: ${rewardsList.join(", ")}`
+            : "Cosmetic Award";
 
-    // Progress bar for locked achievements
-    let progressHtml = "";
-    if (!isUnlocked) {
-      let progress = window.getAchievementProgress(ach);
-      let progressNum = progress instanceof BigNum ? progress.valueOf() : Number(progress || 0);
-      let targetNum = ach.isSingleTier ? 1 : Number(ach.reqValue || 1);
+        // Progress bar for locked achievements
+        let progressHtml = "";
+        if (!isUnlocked) {
+          let progress = window.getAchievementProgress(ach);
+          let progressNum =
+            progress instanceof BigNum
+              ? progress.valueOf()
+              : Number(progress || 0);
+          let targetNum = ach.isSingleTier ? 1 : Number(ach.reqValue || 1);
 
-      let pct = Math.max(0, Math.min(100, (progressNum / targetNum) * 100)) || 0;
-      let displayProgress = progress instanceof BigNum ? window.formatNumber(progress) : progressNum.toLocaleString();
-      let displayTarget = ach.isSingleTier ? "1" : ach.reqValue.toLocaleString();
+          let pct =
+            Math.max(0, Math.min(100, (progressNum / targetNum) * 100)) || 0;
+          let displayProgress =
+            progress instanceof BigNum
+              ? window.formatNumber(progress)
+              : progressNum.toLocaleString();
+          let displayTarget = ach.isSingleTier
+            ? "1"
+            : ach.reqValue.toLocaleString();
 
-      progressHtml = `
+          progressHtml = `
         <div class="ach-progress-box">
           <div class="ach-progress-bar-bg">
             <div class="ach-progress-bar-fill" style="width:${pct}%;"></div>
@@ -11320,33 +12608,36 @@ window.renderAchievementsTab = function () {
           <div class="ach-progress-text">${displayProgress} / ${displayTarget}</div>
         </div>
       `;
-    }
+        }
 
-    let badgeHtml = window.getAchievementBadgeHtml ? window.getAchievementBadgeHtml(ach, isUnlocked, 34) : "";
+        let badgeHtml = window.getAchievementBadgeHtml
+          ? window.getAchievementBadgeHtml(ach, isUnlocked, 34)
+          : "";
 
-    return `
-      <div id="ach-card-${ach.id}" class="ach-card ${isUnlocked ? 'unlocked' : 'locked'}">
+        return `
+      <div id="ach-card-${ach.id}" class="ach-card ${isUnlocked ? "unlocked" : "locked"}">
         <div class="ach-badge-box">
           ${badgeHtml}
         </div>
         <div class="ach-info">
           <div class="ach-title-row">
             <span class="ach-title">${ach.name}</span>
-            <span class="ach-status-tag ${isUnlocked ? 'tag-unlocked' : 'tag-locked'}">
-              ${isUnlocked ? `UNLOCKED • ${timeStr}` : 'LOCKED'}
+            <span class="ach-status-tag ${isUnlocked ? "tag-unlocked" : "tag-locked"}">
+              ${isUnlocked ? `UNLOCKED • ${timeStr}` : "LOCKED"}
             </span>
           </div>
           <span class="ach-desc">${ach.desc}</span>
-          <span class="ach-reward-badge" style="color: ${isUnlocked ? '#34d399' : '#64748b'};">
+          <span class="ach-reward-badge" style="color: ${isUnlocked ? "#34d399" : "#64748b"};">
             ${rewardsStr}
           </span>
           ${progressHtml}
         </div>
       </div>
     `;
-  }).join("");
+      })
+      .join("");
 
-  container.innerHTML = `
+    container.innerHTML = `
     <div class="ach-wrapper">
       <!-- Unlocked Count & Summary Banner -->
       <div class="ach-summary-banner">
@@ -11371,44 +12662,50 @@ window.renderAchievementsTab = function () {
       </div>
     </div>
   `;
-};
+  };
 
-window.navigateToAchievement = function (id) {
-  if (typeof window.hideTooltip === "function") window.hideTooltip();
-  let modal = document.getElementById("profile-modal");
-  if (modal) {
-    modal.style.display = "flex";
-  }
-
-  // Auto-switch to correct category filter before loading tab
-  let ach = window.AchievementsData.find(a => a.id === id);
-  if (ach) {
-    let cat = "all";
-    if (ach.isSingleTier) cat = "sing";
-    else if (ach.reqType === "kills") cat = "slayer";
-    else if (ach.reqType === "floor") cat = "floor";
-    else if (ach.reqType === "gold") cat = "hoarder";
-    else if (ach.reqType === "extract") cat = "extract";
-    else if (ach.reqType === "salvage") cat = "salvage";
-    else if (["temper", "reforges", "enchant"].includes(ach.reqType)) cat = "forge";
-    else if (["deflections", "rare_spawns", "single_hit", "gold_upgrades"].includes(ach.reqType)) cat = "misc";
-
-    window.state.achievementFilter = cat;
-  }
-
-  window.switchProfileTab("achievements");
-
-  // Smooth scroll and pulse high-contrast highlight on the targeted card
-  setTimeout(() => {
-    let card = document.getElementById(`ach-card-${id}`);
-    if (card) {
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-      card.classList.remove("ach-highlight-pulse");
-      void card.offsetWidth; // trigger reflow
-      card.classList.add("ach-highlight-pulse");
+  window.navigateToAchievement = function (id) {
+    if (typeof window.hideTooltip === "function") window.hideTooltip();
+    let modal = document.getElementById("profile-modal");
+    if (modal) {
+      modal.style.display = "flex";
     }
-  }, 250);
-};
+
+    // Auto-switch to correct category filter before loading tab
+    let ach = window.AchievementsData.find((a) => a.id === id);
+    if (ach) {
+      let cat = "all";
+      if (ach.isSingleTier) cat = "sing";
+      else if (ach.reqType === "kills") cat = "slayer";
+      else if (ach.reqType === "floor") cat = "floor";
+      else if (ach.reqType === "gold") cat = "hoarder";
+      else if (ach.reqType === "extract") cat = "extract";
+      else if (ach.reqType === "salvage") cat = "salvage";
+      else if (["temper", "reforges", "enchant"].includes(ach.reqType))
+        cat = "forge";
+      else if (
+        ["deflections", "rare_spawns", "single_hit", "gold_upgrades"].includes(
+          ach.reqType,
+        )
+      )
+        cat = "misc";
+
+      window.state.achievementFilter = cat;
+    }
+
+    window.switchProfileTab("achievements");
+
+    // Smooth scroll and pulse high-contrast highlight on the targeted card
+    setTimeout(() => {
+      let card = document.getElementById(`ach-card-${id}`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.classList.remove("ach-highlight-pulse");
+        void card.offsetWidth; // trigger reflow
+        card.classList.add("ach-highlight-pulse");
+      }
+    }, 250);
+  };
 
   window.toggleProfileModal = function () {
     window.hideTooltip();
@@ -12160,10 +13457,10 @@ window.navigateToAchievement = function (id) {
   };
 
   window.unequipToStash = function (slotKey) {
-      if (typeof window.unequipItem === "function") {
-        window.unequipItem(slotKey);
-      }
-    };
+    if (typeof window.unequipItem === "function") {
+      window.unequipItem(slotKey);
+    }
+  };
 
   window.salvageFromStash = function (itemId) {
     window.hideTooltip();
@@ -12214,22 +13511,22 @@ window.navigateToAchievement = function (id) {
 
   window.calculateRunInsuranceTotals = function () {
     let allSlots = [
-          "weapon",
-          "subweapon",
-          "helmet",
-          "chest",
-          "leggings",
-          "overall",
-          "boots",
-          "ring1",
-          "ring2",
-          "art1",
-          "art2",
-          "art3",
-        ];
-        let premiums = [];
+      "weapon",
+      "subweapon",
+      "helmet",
+      "chest",
+      "leggings",
+      "overall",
+      "boots",
+      "ring1",
+      "ring2",
+      "art1",
+      "art2",
+      "art3",
+    ];
+    let premiums = [];
 
-        allSlots.forEach((slotKey) => {
+    allSlots.forEach((slotKey) => {
       let item = window.equippedSlots[slotKey];
       if (item && item.locked) {
         premiums.push({
@@ -12276,22 +13573,22 @@ window.navigateToAchievement = function (id) {
   };
 
   window.toggleInsurance = function (itemId) {
-      window.hideTooltip();
+    window.hideTooltip();
 
-      if (window.currentGameState !== window.GAME_STATES.HUB) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast(
-            "[!] Soul Binding can only be configured at the Deployment Altar in the Hub!",
-            "#e74c3c",
-          );
-        }
-        return;
+    if (window.currentGameState !== window.GAME_STATES.HUB) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[!] Soul Binding can only be configured at the Deployment Altar in the Hub!",
+          "#e74c3c",
+        );
       }
+      return;
+    }
 
-      let allItems = [];
-      for (let k in window.equippedSlots) {
-        if (window.equippedSlots[k]) allItems.push(window.equippedSlots[k]);
-      }
+    let allItems = [];
+    for (let k in window.equippedSlots) {
+      if (window.equippedSlots[k]) allItems.push(window.equippedSlots[k]);
+    }
     if (window.player && window.player.stash)
       allItems.push(...window.player.stash);
     if (window.player && window.player.bag) allItems.push(...window.player.bag);
@@ -12317,22 +13614,22 @@ window.navigateToAchievement = function (id) {
 
     if (isEquipped && !targetItem.locked) {
       let allSlots = [
-              "weapon",
-              "subweapon",
-              "helmet",
-              "chest",
-              "leggings",
-              "overall",
-              "boots",
-              "ring1",
-              "ring2",
-              "art1",
-              "art2",
-              "art3",
-            ];
-            let equippedInsuredCount = allSlots.filter(
-              (s) => window.equippedSlots[s] && window.equippedSlots[s].locked,
-            ).length;
+        "weapon",
+        "subweapon",
+        "helmet",
+        "chest",
+        "leggings",
+        "overall",
+        "boots",
+        "ring1",
+        "ring2",
+        "art1",
+        "art2",
+        "art3",
+      ];
+      let equippedInsuredCount = allSlots.filter(
+        (s) => window.equippedSlots[s] && window.equippedSlots[s].locked,
+      ).length;
       if (equippedInsuredCount >= 3) {
         if (typeof window.pushHeaderToast === "function") {
           window.pushHeaderToast(
@@ -12347,15 +13644,18 @@ window.navigateToAchievement = function (id) {
     targetItem.locked = !targetItem.locked;
 
     if (typeof window.pushHeaderToast === "function") {
-          if (targetItem.locked) {
-            window.pushHeaderToast(
-              `[SOUL BOUND] Protected ${targetItem.name}!`,
-              "#2ecc71",
-            );
-          } else {
-            window.pushHeaderToast(`[UNBOUND] ${targetItem.name} At Risk on Death!`, "#e74c3c");
-          }
-        }
+      if (targetItem.locked) {
+        window.pushHeaderToast(
+          `[SOUL BOUND] Protected ${targetItem.name}!`,
+          "#2ecc71",
+        );
+      } else {
+        window.pushHeaderToast(
+          `[UNBOUND] ${targetItem.name} At Risk on Death!`,
+          "#e74c3c",
+        );
+      }
+    }
 
     if (typeof window.saveGame === "function") window.saveGame();
     window.renderProfileModal();
@@ -12363,67 +13663,68 @@ window.navigateToAchievement = function (id) {
 
   // --- SETTINGS MODAL & AUDIO HANDLERS ---
   window.toggleEditHudMode = function () {
-      if (!window.playerStats) return;
-      window.playerStats.editHudMode = !window.playerStats.editHudMode;
-      window.updateEditHudModeStyle();
-      if (typeof window.saveGame === "function") window.saveGame();
-    };
+    if (!window.playerStats) return;
+    window.playerStats.editHudMode = !window.playerStats.editHudMode;
+    window.updateEditHudModeStyle();
+    if (typeof window.saveGame === "function") window.saveGame();
+  };
 
-    window.updateEditHudModeStyle = function () {
-      let isEditing = window.playerStats && window.playerStats.editHudMode === true;
-      let btn = document.getElementById("btn-settings-edit-hud");
-      let flaskBtn = document.getElementById("hud-flask-button");
+  window.updateEditHudModeStyle = function () {
+    let isEditing =
+      window.playerStats && window.playerStats.editHudMode === true;
+    let btn = document.getElementById("btn-settings-edit-hud");
+    let flaskBtn = document.getElementById("hud-flask-button");
 
-      if (btn) {
-        btn.innerText = isEditing
-          ? "HUD LAYOUT: UNLOCKED (DRAG FLASK TO MOVE)"
-          : "HUD LAYOUT: LOCKED (TAP TO UNLOCK)";
-        btn.className = isEditing ? "settings-btn active" : "settings-btn";
+    if (btn) {
+      btn.innerText = isEditing
+        ? "HUD LAYOUT: UNLOCKED (DRAG FLASK TO MOVE)"
+        : "HUD LAYOUT: LOCKED (TAP TO UNLOCK)";
+      btn.className = isEditing ? "settings-btn active" : "settings-btn";
+    }
+
+    if (flaskBtn) {
+      if (isEditing) {
+        flaskBtn.classList.add("edit-hud-active");
+      } else {
+        flaskBtn.classList.remove("edit-hud-active");
       }
+    }
+  };
 
-      if (flaskBtn) {
-        if (isEditing) {
-          flaskBtn.classList.add("edit-hud-active");
-        } else {
-          flaskBtn.classList.remove("edit-hud-active");
-        }
-      }
-    };
-
-    window.toggleSettingsModal = function () {
-      let modal = document.getElementById("settings-modal");
-      if (!modal) return;
-      if (modal.style.display === "none" || modal.style.display === "") {
-        modal.style.display = "flex";
-        let stats = window.playerStats || {};
-        let masterSlider = document.getElementById("slider-master-vol");
-        let sfxSlider = document.getElementById("slider-sfx-vol");
-        let bgmSlider = document.getElementById("slider-bgm-vol");
-        if (masterSlider)
-          masterSlider.value =
-            stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5;
-        if (sfxSlider)
-          sfxSlider.value = stats.volumeSFX !== undefined ? stats.volumeSFX : 0.8;
-        if (bgmSlider)
-          bgmSlider.value =
-            stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5;
-        if (typeof window.updateEcoModeStyle === "function")
-          window.updateEcoModeStyle();
-        if (typeof window.updateLightingStyle === "function")
-          window.updateLightingStyle();
+  window.toggleSettingsModal = function () {
+    let modal = document.getElementById("settings-modal");
+    if (!modal) return;
+    if (modal.style.display === "none" || modal.style.display === "") {
+      modal.style.display = "flex";
+      let stats = window.playerStats || {};
+      let masterSlider = document.getElementById("slider-master-vol");
+      let sfxSlider = document.getElementById("slider-sfx-vol");
+      let bgmSlider = document.getElementById("slider-bgm-vol");
+      if (masterSlider)
+        masterSlider.value =
+          stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5;
+      if (sfxSlider)
+        sfxSlider.value = stats.volumeSFX !== undefined ? stats.volumeSFX : 0.8;
+      if (bgmSlider)
+        bgmSlider.value =
+          stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5;
+      if (typeof window.updateEcoModeStyle === "function")
+        window.updateEcoModeStyle();
+      if (typeof window.updateLightingStyle === "function")
+        window.updateLightingStyle();
+      if (typeof window.updateEditHudModeStyle === "function")
+        window.updateEditHudModeStyle();
+      window.updateHUD();
+    } else {
+      if (window.playerStats && window.playerStats.editHudMode) {
+        window.playerStats.editHudMode = false;
         if (typeof window.updateEditHudModeStyle === "function")
           window.updateEditHudModeStyle();
-        window.updateHUD();
-      } else {
-        if (window.playerStats && window.playerStats.editHudMode) {
-          window.playerStats.editHudMode = false;
-          if (typeof window.updateEditHudModeStyle === "function")
-            window.updateEditHudModeStyle();
-        }
-        modal.style.display = "none";
-        window.lastModalCloseTime = Date.now();
       }
-    };
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
+    }
+  };
 
   window.toggleMute = function () {
     if (!window.playerStats) return;
@@ -12510,14 +13811,14 @@ window.navigateToAchievement = function (id) {
               `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
             );
           let statStr =
-                      statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
+            statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
 
-                    let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderBagModalContent();">SALVAGE</button>`;
-                    let boundTag = isInsured
-                      ? `<span style="font-size:8px; color:#34d399; font-family:monospace; font-weight:bold;">[BOUND]</span>`
-                      : "";
+          let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderBagModalContent();">SALVAGE</button>`;
+          let boundTag = isInsured
+            ? `<span style="font-size:8px; color:#34d399; font-family:monospace; font-weight:bold;">[BOUND]</span>`
+            : "";
 
-                    return `
+          return `
                         <div class="stash-card" style="border-left: 3.5px solid ${col}; cursor: pointer; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.player.bag[${idx}])">
                           <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
                             ${iconHtml}
@@ -12756,191 +14057,205 @@ window.navigateToAchievement = function (id) {
   };
 
   // --- TOUCH / POINTER SWIPE NOTIFICATION DISMISSAL ENGINE ---
-    window.attachToastSwipeHandlers = function (toast, onClickCallback) {
-      let startX = 0, startY = 0;
-      let deltaX = 0, deltaY = 0;
-      let isDragging = false;
-      let startTime = 0;
-      let mode = null;
+  window.attachToastSwipeHandlers = function (toast, onClickCallback) {
+    let startX = 0,
+      startY = 0;
+    let deltaX = 0,
+      deltaY = 0;
+    let isDragging = false;
+    let startTime = 0;
+    let mode = null;
 
-      toast.addEventListener("pointerdown", (e) => {
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        deltaX = 0;
-        deltaY = 0;
-        startTime = Date.now();
-        mode = null;
-        toast.style.transition = "none";
-        try {
-          toast.setPointerCapture(e.pointerId);
-        } catch (err) {}
-      });
+    toast.addEventListener("pointerdown", (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      deltaX = 0;
+      deltaY = 0;
+      startTime = Date.now();
+      mode = null;
+      toast.style.transition = "none";
+      try {
+        toast.setPointerCapture(e.pointerId);
+      } catch (err) {}
+    });
 
-      toast.addEventListener("pointermove", (e) => {
-        if (!isDragging) return;
-        deltaX = e.clientX - startX;
-        deltaY = e.clientY - startY;
+    toast.addEventListener("pointermove", (e) => {
+      if (!isDragging) return;
+      deltaX = e.clientX - startX;
+      deltaY = e.clientY - startY;
 
-        if (!mode) {
-          if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
-            mode = "up";
-          } else if (Math.abs(deltaX) > 8 && Math.abs(deltaX) >= Math.abs(deltaY)) {
-            mode = "side";
-          }
-        }
-
-        if (mode === "up") {
-          let moveY = Math.min(0, deltaY);
-          let alpha = Math.max(0, 1 - Math.abs(moveY) / 100);
-          let container = document.getElementById("toast-container");
-          if (container) {
-            let allToasts = container.querySelectorAll(".item-toast, .header-toast");
-            allToasts.forEach((t) => {
-              t.style.transition = "none";
-              t.style.transform = `translateY(${moveY}px)`;
-              t.style.opacity = alpha;
-            });
-          }
-        } else if (mode === "side") {
-          let alpha = Math.max(0, 1 - Math.abs(deltaX) / 180);
-          toast.style.transform = `translateX(${deltaX}px)`;
-          toast.style.opacity = alpha;
-        }
-      });
-
-      const endDrag = (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        try {
-          toast.releasePointerCapture(e.pointerId);
-        } catch (err) {}
-
-        let elapsed = Date.now() - startTime;
-        let distY = deltaY;
-        let distX = deltaX;
-
-        if (Math.abs(distX) < 5 && Math.abs(distY) < 5) {
-          toast.style.transition = "all 0.2s ease";
-          toast.style.transform = "";
-          toast.style.opacity = "1";
-          if (typeof onClickCallback === "function") {
-            onClickCallback(e);
-          }
-          return;
-        }
-
-        let container = document.getElementById("toast-container");
-
-        if (mode === "up" && (distY < -30 || (elapsed < 250 && distY < -15))) {
-          if (container) {
-            let allToasts = container.querySelectorAll(".item-toast, .header-toast");
-            allToasts.forEach((t) => {
-              if (t.dismissTimeout) clearTimeout(t.dismissTimeout);
-              t.style.transition = "transform 0.22s ease-in, opacity 0.22s ease-in";
-              t.style.transform = `translateY(-120px)`;
-              t.style.opacity = "0";
-              setTimeout(() => {
-                if (t.parentNode) t.parentNode.removeChild(t);
-              }, 220);
-            });
-          }
+      if (!mode) {
+        if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
+          mode = "up";
         } else if (
-          mode === "side" &&
-          (Math.abs(distX) > 40 || (elapsed < 250 && Math.abs(distX) > 20))
+          Math.abs(deltaX) > 8 &&
+          Math.abs(deltaX) >= Math.abs(deltaY)
         ) {
-          if (toast.dismissTimeout) clearTimeout(toast.dismissTimeout);
-          let exitX = distX > 0 ? 350 : -350;
-          toast.style.transition = "transform 0.22s ease-in, opacity 0.22s ease-in";
-          toast.style.transform = `translateX(${exitX}px)`;
-          toast.style.opacity = "0";
-          setTimeout(() => {
-            if (toast.parentNode) toast.parentNode.removeChild(toast);
-          }, 220);
-        } else {
-          if (container) {
-            let allToasts = container.querySelectorAll(".item-toast, .header-toast");
-            allToasts.forEach((t) => {
-              t.style.transition = "transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.2s ease";
-              t.style.transform = "";
-              t.style.opacity = "1";
-            });
-          }
+          mode = "side";
         }
-      };
-
-      toast.addEventListener("pointerup", endDrag);
-      toast.addEventListener("pointercancel", endDrag);
-    };
-
-    // --- ITEM PICKUP TOAST NOTIFICATION ENGINE ---
-    window.pushToast = function (item) {
-      if (!item) return;
-      let container = document.getElementById("toast-container");
-      if (!container) {
-        container = document.createElement("div");
-        container.id = "toast-container";
-        container.className = "toast-container";
-        document.body.appendChild(container);
       }
 
-      let existingToast = Array.from(
-        container.querySelectorAll(".item-toast"),
-      ).find(
-        (t) =>
-          t.dataset.itemName === item.name &&
-          !t.classList.contains("toast-fade-out"),
-      );
-
-      if (existingToast) {
-        let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
-        let newQty = currentQty + 1;
-        existingToast.dataset.itemQty = newQty;
-
-        let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
-        let countEl = existingToast.querySelector(".toast-count-val");
-
-        if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
-        if (countEl) countEl.innerText = `x${newQty}`;
-
-        existingToast.classList.remove("toast-pop-bump");
-        void existingToast.offsetWidth;
-        existingToast.classList.add("toast-pop-bump");
-
-        if (existingToast.dismissTimeout) {
-          clearTimeout(existingToast.dismissTimeout);
+      if (mode === "up") {
+        let moveY = Math.min(0, deltaY);
+        let alpha = Math.max(0, 1 - Math.abs(moveY) / 100);
+        let container = document.getElementById("toast-container");
+        if (container) {
+          let allToasts = container.querySelectorAll(
+            ".item-toast, .header-toast",
+          );
+          allToasts.forEach((t) => {
+            t.style.transition = "none";
+            t.style.transform = `translateY(${moveY}px)`;
+            t.style.opacity = alpha;
+          });
         }
+      } else if (mode === "side") {
+        let alpha = Math.max(0, 1 - Math.abs(deltaX) / 180);
+        toast.style.transform = `translateX(${deltaX}px)`;
+        toast.style.opacity = alpha;
+      }
+    });
 
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.playLootDrop === "function"
-        ) {
-          window.SoundManager.playLootDrop(item.statsRolled);
+    const endDrag = (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      try {
+        toast.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+
+      let elapsed = Date.now() - startTime;
+      let distY = deltaY;
+      let distX = deltaX;
+
+      if (Math.abs(distX) < 5 && Math.abs(distY) < 5) {
+        toast.style.transition = "all 0.2s ease";
+        toast.style.transform = "";
+        toast.style.opacity = "1";
+        if (typeof onClickCallback === "function") {
+          onClickCallback(e);
         }
-
-        existingToast.dismissTimeout = setTimeout(() => {
-          existingToast.classList.add("toast-fade-out");
-          setTimeout(() => {
-            if (existingToast.parentNode)
-              existingToast.parentNode.removeChild(existingToast);
-          }, 300);
-        }, 2800);
-
         return;
       }
 
-      let col = window.getTierColor
-        ? window.getTierColor(item.statsRolled)
-        : "#00d2ff";
-      let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 26) : "";
+      let container = document.getElementById("toast-container");
 
-      let toast = document.createElement("div");
-      toast.className = "item-toast";
-      toast.style.borderColor = col;
-      toast.dataset.itemName = item.name;
-      toast.dataset.itemQty = 1;
+      if (mode === "up" && (distY < -30 || (elapsed < 250 && distY < -15))) {
+        if (container) {
+          let allToasts = container.querySelectorAll(
+            ".item-toast, .header-toast",
+          );
+          allToasts.forEach((t) => {
+            if (t.dismissTimeout) clearTimeout(t.dismissTimeout);
+            t.style.transition =
+              "transform 0.22s ease-in, opacity 0.22s ease-in";
+            t.style.transform = `translateY(-120px)`;
+            t.style.opacity = "0";
+            setTimeout(() => {
+              if (t.parentNode) t.parentNode.removeChild(t);
+            }, 220);
+          });
+        }
+      } else if (
+        mode === "side" &&
+        (Math.abs(distX) > 40 || (elapsed < 250 && Math.abs(distX) > 20))
+      ) {
+        if (toast.dismissTimeout) clearTimeout(toast.dismissTimeout);
+        let exitX = distX > 0 ? 350 : -350;
+        toast.style.transition =
+          "transform 0.22s ease-in, opacity 0.22s ease-in";
+        toast.style.transform = `translateX(${exitX}px)`;
+        toast.style.opacity = "0";
+        setTimeout(() => {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 220);
+      } else {
+        if (container) {
+          let allToasts = container.querySelectorAll(
+            ".item-toast, .header-toast",
+          );
+          allToasts.forEach((t) => {
+            t.style.transition =
+              "transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.2s ease";
+            t.style.transform = "";
+            t.style.opacity = "1";
+          });
+        }
+      }
+    };
 
-      toast.innerHTML = `
+    toast.addEventListener("pointerup", endDrag);
+    toast.addEventListener("pointercancel", endDrag);
+  };
+
+  // --- ITEM PICKUP TOAST NOTIFICATION ENGINE ---
+  window.pushToast = function (item) {
+    if (!item) return;
+    let container = document.getElementById("toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "toast-container";
+      container.className = "toast-container";
+      document.body.appendChild(container);
+    }
+
+    let existingToast = Array.from(
+      container.querySelectorAll(".item-toast"),
+    ).find(
+      (t) =>
+        t.dataset.itemName === item.name &&
+        !t.classList.contains("toast-fade-out"),
+    );
+
+    if (existingToast) {
+      let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
+      let newQty = currentQty + 1;
+      existingToast.dataset.itemQty = newQty;
+
+      let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
+      let countEl = existingToast.querySelector(".toast-count-val");
+
+      if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
+      if (countEl) countEl.innerText = `x${newQty}`;
+
+      existingToast.classList.remove("toast-pop-bump");
+      void existingToast.offsetWidth;
+      existingToast.classList.add("toast-pop-bump");
+
+      if (existingToast.dismissTimeout) {
+        clearTimeout(existingToast.dismissTimeout);
+      }
+
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.playLootDrop === "function"
+      ) {
+        window.SoundManager.playLootDrop(item.statsRolled);
+      }
+
+      existingToast.dismissTimeout = setTimeout(() => {
+        existingToast.classList.add("toast-fade-out");
+        setTimeout(() => {
+          if (existingToast.parentNode)
+            existingToast.parentNode.removeChild(existingToast);
+        }, 300);
+      }, 2800);
+
+      return;
+    }
+
+    let col = window.getTierColor
+      ? window.getTierColor(item.statsRolled)
+      : "#00d2ff";
+    let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 26) : "";
+
+    let toast = document.createElement("div");
+    toast.className = "item-toast";
+    toast.style.borderColor = col;
+    toast.dataset.itemName = item.name;
+    toast.dataset.itemQty = 1;
+
+    toast.innerHTML = `
             ${iconHtml}
             <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
               <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${col}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
@@ -12958,110 +14273,110 @@ window.navigateToAchievement = function (id) {
             </div>
           `;
 
-      container.appendChild(toast);
-      window.attachToastSwipeHandlers(toast);
+    container.appendChild(toast);
+    window.attachToastSwipeHandlers(toast);
 
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.playLootDrop === "function"
-      ) {
-        window.SoundManager.playLootDrop(item.statsRolled);
+    if (
+      window.SoundManager &&
+      typeof window.SoundManager.playLootDrop === "function"
+    ) {
+      window.SoundManager.playLootDrop(item.statsRolled);
+    }
+
+    toast.dismissTimeout = setTimeout(() => {
+      toast.classList.add("toast-fade-out");
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }, 2800);
+  };
+
+  window.pushMaterialToast = function (name, qty, customColor = null) {
+    if (!name || qty <= 0) return;
+    let container = document.getElementById("toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "toast-container";
+      container.className = "toast-container";
+      document.body.appendChild(container);
+    }
+
+    let existingToast = Array.from(
+      container.querySelectorAll(".item-toast"),
+    ).find(
+      (t) =>
+        t.dataset.itemName === name && !t.classList.contains("toast-fade-out"),
+    );
+
+    if (existingToast) {
+      let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
+      let newQty = currentQty + qty;
+      existingToast.dataset.itemQty = newQty;
+
+      let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
+      let countEl = existingToast.querySelector(".toast-count-val");
+
+      if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
+      if (countEl) countEl.innerText = `x${newQty}`;
+
+      existingToast.classList.remove("toast-pop-bump");
+      void existingToast.offsetWidth;
+      existingToast.classList.add("toast-pop-bump");
+
+      if (existingToast.dismissTimeout) {
+        clearTimeout(existingToast.dismissTimeout);
       }
 
-      toast.dismissTimeout = setTimeout(() => {
-        toast.classList.add("toast-fade-out");
+      existingToast.dismissTimeout = setTimeout(() => {
+        existingToast.classList.add("toast-fade-out");
         setTimeout(() => {
-          if (toast.parentNode) toast.parentNode.removeChild(toast);
+          if (existingToast.parentNode)
+            existingToast.parentNode.removeChild(existingToast);
         }, 300);
-      }, 2800);
-    };
+      }, 2500);
 
-    window.pushMaterialToast = function (name, qty, customColor = null) {
-      if (!name || qty <= 0) return;
-      let container = document.getElementById("toast-container");
-      if (!container) {
-        container = document.createElement("div");
-        container.id = "toast-container";
-        container.className = "toast-container";
-        document.body.appendChild(container);
+      return;
+    }
+
+    let color = customColor;
+    if (!color) {
+      if (window.useDex && window.useDex[name] && window.useDex[name].color) {
+        color = window.useDex[name].color;
+      } else {
+        const matColors = {
+          "Monster Soul": "#a0aec0",
+          "Luminous Soul": "#ffb6c1",
+          "Rare Scrap": "#3498db",
+          "Magic Scrap": "#9b59b6",
+          "Epic Scrap": "#e67e22",
+          "Legendary Scrap": "#f1c40f",
+          "Mythic Scrap": "#e74c3c",
+          "Eridium Shard": "#8e44ad",
+          "Gacha Key": "#f1c40f",
+          "Glimmering Gachapon Key": "#00d2ff",
+          "Ancient Core": "#e74c3c",
+          "Overlord's Sigil": "#1abc9c",
+          "Astral Essence": "#9b59b6",
+          "Catalyst Core": "#2ecc71",
+        };
+        color = matColors[name] || "#00d2ff";
       }
+    }
 
-      let existingToast = Array.from(
-        container.querySelectorAll(".item-toast"),
-      ).find(
-        (t) =>
-          t.dataset.itemName === name && !t.classList.contains("toast-fade-out"),
-      );
+    let iconHtml = "";
+    if (window.getEtcIconHtml && window.etcDex && window.etcDex[name]) {
+      iconHtml = window.getEtcIconHtml(name, 26);
+    } else if (window.getUseIconHtml && window.useDex && window.useDex[name]) {
+      iconHtml = window.getUseIconHtml(name, 26);
+    }
 
-      if (existingToast) {
-        let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
-        let newQty = currentQty + qty;
-        existingToast.dataset.itemQty = newQty;
+    let toast = document.createElement("div");
+    toast.className = "item-toast";
+    toast.style.borderColor = color;
+    toast.dataset.itemName = name;
+    toast.dataset.itemQty = qty;
 
-        let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
-        let countEl = existingToast.querySelector(".toast-count-val");
-
-        if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
-        if (countEl) countEl.innerText = `x${newQty}`;
-
-        existingToast.classList.remove("toast-pop-bump");
-        void existingToast.offsetWidth;
-        existingToast.classList.add("toast-pop-bump");
-
-        if (existingToast.dismissTimeout) {
-          clearTimeout(existingToast.dismissTimeout);
-        }
-
-        existingToast.dismissTimeout = setTimeout(() => {
-          existingToast.classList.add("toast-fade-out");
-          setTimeout(() => {
-            if (existingToast.parentNode)
-              existingToast.parentNode.removeChild(existingToast);
-          }, 300);
-        }, 2500);
-
-        return;
-      }
-
-      let color = customColor;
-      if (!color) {
-        if (window.useDex && window.useDex[name] && window.useDex[name].color) {
-          color = window.useDex[name].color;
-        } else {
-          const matColors = {
-            "Monster Soul": "#a0aec0",
-            "Luminous Soul": "#ffb6c1",
-            "Rare Scrap": "#3498db",
-            "Magic Scrap": "#9b59b6",
-            "Epic Scrap": "#e67e22",
-            "Legendary Scrap": "#f1c40f",
-            "Mythic Scrap": "#e74c3c",
-            "Eridium Shard": "#8e44ad",
-            "Gacha Key": "#f1c40f",
-            "Glimmering Gachapon Key": "#00d2ff",
-            "Ancient Core": "#e74c3c",
-            "Overlord's Sigil": "#1abc9c",
-            "Astral Essence": "#9b59b6",
-            "Catalyst Core": "#2ecc71",
-          };
-          color = matColors[name] || "#00d2ff";
-        }
-      }
-
-      let iconHtml = "";
-      if (window.getEtcIconHtml && window.etcDex && window.etcDex[name]) {
-        iconHtml = window.getEtcIconHtml(name, 26);
-      } else if (window.getUseIconHtml && window.useDex && window.useDex[name]) {
-        iconHtml = window.getUseIconHtml(name, 26);
-      }
-
-      let toast = document.createElement("div");
-      toast.className = "item-toast";
-      toast.style.borderColor = color;
-      toast.dataset.itemName = name;
-      toast.dataset.itemQty = qty;
-
-      toast.innerHTML = `
+    toast.innerHTML = `
             ${iconHtml}
             <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
               <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${color}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
@@ -13078,105 +14393,110 @@ window.navigateToAchievement = function (id) {
             </div>
           `;
 
-      container.appendChild(toast);
-      window.attachToastSwipeHandlers(toast);
+    container.appendChild(toast);
+    window.attachToastSwipeHandlers(toast);
 
-      toast.dismissTimeout = setTimeout(() => {
-        toast.classList.add("toast-fade-out");
-        setTimeout(() => {
-          if (toast.parentNode) toast.parentNode.removeChild(toast);
-        }, 300);
-      }, 2500);
-    };
+    toast.dismissTimeout = setTimeout(() => {
+      toast.classList.add("toast-fade-out");
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }, 2500);
+  };
 
-    window.pushHeaderToast = function (msg, color = "#00d2ff", onClick = null) {
-      let container = document.getElementById("toast-container");
-      if (!container) {
-        container = document.createElement("div");
-        container.id = "toast-container";
-        container.className = "toast-container";
-        document.body.appendChild(container);
-      }
+  window.pushHeaderToast = function (msg, color = "#00d2ff", onClick = null) {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "toast-container";
+      container.className = "toast-container";
+      document.body.appendChild(container);
+    }
 
-      let toast = document.createElement("div");
-      toast.className = "header-toast";
-      toast.style.borderColor = color;
-      toast.style.boxShadow = `0 10px 30px rgba(0,0,0,0.9), 0 0 12px ${color}44`;
+    let toast = document.createElement("div");
+    toast.className = "header-toast";
+    toast.style.borderColor = color;
+    toast.style.boxShadow = `0 10px 30px rgba(0,0,0,0.9), 0 0 12px ${color}44`;
 
-      let isBound = msg.includes("SOUL BOUND") || msg.includes("Protected");
-      let isUnbound = msg.includes("UNBOUND") || msg.includes("At Risk");
+    let isBound = msg.includes("SOUL BOUND") || msg.includes("Protected");
+    let isUnbound = msg.includes("UNBOUND") || msg.includes("At Risk");
 
-      let iconSvg = `
+    let iconSvg = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
           <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" fill="${color}22"/>
           ${isBound ? `<path d="M9 12l2 2 4-4" stroke="${color}" stroke-width="2.5"/>` : isUnbound ? `<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>` : `<circle cx="12" cy="12" r="3" fill="${color}"/>`}
         </svg>
       `;
 
-      toast.innerHTML = `
+    toast.innerHTML = `
         ${iconSvg}
         <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
           <span style="color:${color}; font-weight:800; font-size:10.5px; font-family:monospace; line-height:1.2; letter-spacing:0.5px;">${msg}</span>
         </div>
       `;
 
-      container.appendChild(toast);
-      window.attachToastSwipeHandlers(toast, onClick);
+    container.appendChild(toast);
+    window.attachToastSwipeHandlers(toast, onClick);
 
-      toast.dismissTimeout = setTimeout(() => {
-              toast.classList.add("toast-fade-out");
-              setTimeout(() => {
-                if (toast.parentNode) toast.parentNode.removeChild(toast);
-              }, 300);
-            }, 2800);
-          };
+    toast.dismissTimeout = setTimeout(() => {
+      toast.classList.add("toast-fade-out");
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }, 2800);
+  };
 
-window.getMobPoolForDepth = function (depth) {
-  // Sectors advance every 12 floors (after each Major Boss on Floor 12, 24, 36...)
-  let sector = Math.floor((depth - 1) / 12);
+  window.getMobPoolForDepth = function (depth) {
+    // Sectors advance every 12 floors (after each Major Boss on Floor 12, 24, 36...)
+    let sector = Math.floor((depth - 1) / 12);
 
-  let pools = [
-    // Sector 0 (Floors 1 - 12): Whispering Woods
-    { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
-    // Sector 1 (Floors 13 - 24): Mountain Peaks & Alpine Mines
-    { tier: 1, types: ["golem", "wyrmling", "gargoyle", "rust_nibbler"] },
-    // Sector 2 (Floors 25 - 36): Inferno Depths & Smeltery
-    {
-      tier: 2,
-      types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"],
-    },
-    // Sector 3 (Floors 37 - 48): Fungal Swamp & Ruins
-    {
-      tier: 3,
-      types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
-    },
-    // Sector 4 (Floors 49 - 60): Void Singularity
-    {
-      tier: 4,
-      types: ["void_orb", "void_crawler", "void_spectre"],
-    },
-    // Sector 5 (Floors 61 - 72): Temporal Sanctorum
-    {
-      tier: 5,
-      types: ["clockwork_scarab", "star_weaver"],
-    },
-    // Sector 6 (Floors 73 - 84): Cyberspace Nexus
-    {
-      tier: 6,
-      types: ["neon_spider", "wireframe_orb", "cursed_blade", "animated_armor"],
-    },
-  ];
+    let pools = [
+      // Sector 0 (Floors 1 - 12): Whispering Woods
+      { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
+      // Sector 1 (Floors 13 - 24): Mountain Peaks & Alpine Mines
+      { tier: 1, types: ["golem", "wyrmling", "gargoyle", "rust_nibbler"] },
+      // Sector 2 (Floors 25 - 36): Inferno Depths & Smeltery
+      {
+        tier: 2,
+        types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"],
+      },
+      // Sector 3 (Floors 37 - 48): Fungal Swamp & Ruins
+      {
+        tier: 3,
+        types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
+      },
+      // Sector 4 (Floors 49 - 60): Void Singularity
+      {
+        tier: 4,
+        types: ["void_orb", "void_crawler", "void_spectre"],
+      },
+      // Sector 5 (Floors 61 - 72): Temporal Sanctorum
+      {
+        tier: 5,
+        types: ["clockwork_scarab", "star_weaver"],
+      },
+      // Sector 6 (Floors 73 - 84): Cyberspace Nexus
+      {
+        tier: 6,
+        types: [
+          "neon_spider",
+          "wireframe_orb",
+          "cursed_blade",
+          "animated_armor",
+        ],
+      },
+    ];
 
-  // Infinite Anomaly Cycle for Floors 85+ (Sector 7+)
-  let effectiveSector = sector >= 7 ? sector % 7 : sector;
+    // Infinite Anomaly Cycle for Floors 85+ (Sector 7+)
+    let effectiveSector = sector >= 7 ? sector % 7 : sector;
 
-  let selected = pools[effectiveSector];
-  let chosenType =
-    selected.types[Math.floor(Math.random() * selected.types.length)];
-  return { tier: selected.tier, type: chosenType };
-};
+    let selected = pools[effectiveSector];
+    let chosenType =
+      selected.types[Math.floor(Math.random() * selected.types.length)];
+    return { tier: selected.tier, type: chosenType };
+  };
 
-window.refillFlaskCharges = function (silent = false) {
+  window.refillFlaskCharges = function (silent = false) {
     let p = window.playerStats;
     if (!p) return;
     p.flaskCharges = p.maxFlaskCharges || 1;
@@ -13186,202 +14506,255 @@ window.refillFlaskCharges = function (silent = false) {
         flaskBtn.classList.remove("flask-recharged-flash");
         void flaskBtn.offsetWidth;
         flaskBtn.classList.add("flask-recharged-flash");
-        setTimeout(() => flaskBtn.classList.remove("flask-recharged-flash"), 600);
+        setTimeout(
+          () => flaskBtn.classList.remove("flask-recharged-flash"),
+          600,
+        );
       }
 
       if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast("[RECHARGED] Field Flask Charges Fully Restored!", "#34d399");
+        window.pushHeaderToast(
+          "[RECHARGED] Field Flask Charges Fully Restored!",
+          "#34d399",
+        );
       }
-      if (window.SoundManager && typeof window.SoundManager.play === "function") {
-        try { window.SoundManager.play("flask_refill"); } catch (e) { window.SoundManager.play("revive"); }
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        try {
+          window.SoundManager.play("flask_refill");
+        } catch (e) {
+          window.SoundManager.play("revive");
+        }
       }
-      if (window.player && window.player.hp > 0 && typeof window.spawnFloatingText === "function") {
-        window.spawnFloatingText(window.player.x, window.player.y - 20, "FLASK RECHARGED", "#34d399", true);
+      if (
+        window.player &&
+        window.player.hp > 0 &&
+        typeof window.spawnFloatingText === "function"
+      ) {
+        window.spawnFloatingText(
+          window.player.x,
+          window.player.y - 20,
+          "FLASK RECHARGED",
+          "#34d399",
+          true,
+        );
       }
     }
     if (typeof window.updateHUD === "function") window.updateHUD();
   };
 
   window.useDungeonFlask = function () {
-        let p = window.player;
-        let stats = window.playerStats;
-        if (!p || !stats || p.hp <= 0) return;
-        if (stats.editHudMode) return;
+    let p = window.player;
+    let stats = window.playerStats;
+    if (!p || !stats || p.hp <= 0) return;
+    if (stats.editHudMode) return;
 
-      if (stats.flaskCooldownTimer > 0) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("[!] Flask is on internal cooldown!", "#f1c40f");
-        }
-        return;
+    if (stats.flaskCooldownTimer > 0) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast("[!] Flask is on internal cooldown!", "#f1c40f");
       }
+      return;
+    }
 
-      if ((stats.flaskCharges || 0) <= 0) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("[!] Flask empty! Defeat a Boss to refill charges.", "#e74c3c");
-        }
-        return;
+    if ((stats.flaskCharges || 0) <= 0) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[!] Flask empty! Defeat a Boss to refill charges.",
+          "#e74c3c",
+        );
       }
+      return;
+    }
 
-      stats.flaskCharges--;
-            if (stats.flaskCharges > 0) {
-              stats.flaskCooldownTimer = 180; // 3 seconds internal cooldown (60 FPS)
-            } else {
-              stats.flaskCooldownTimer = 0;
-            }
+    stats.flaskCharges--;
+    if (stats.flaskCharges > 0) {
+      stats.flaskCooldownTimer = 180; // 3 seconds internal cooldown (60 FPS)
+    } else {
+      stats.flaskCooldownTimer = 0;
+    }
 
-      let flaskBtn = document.getElementById("hud-flask-button");
-      if (flaskBtn) {
-        flaskBtn.classList.remove("flask-drink-pop");
-        void flaskBtn.offsetWidth;
-        flaskBtn.classList.add("flask-drink-pop");
-        setTimeout(() => flaskBtn.classList.remove("flask-drink-pop"), 350);
-      }
+    let flaskBtn = document.getElementById("hud-flask-button");
+    if (flaskBtn) {
+      flaskBtn.classList.remove("flask-drink-pop");
+      void flaskBtn.offsetWidth;
+      flaskBtn.classList.add("flask-drink-pop");
+      setTimeout(() => flaskBtn.classList.remove("flask-drink-pop"), 350);
+    }
 
-      let healAmt = Math.round(p.maxHp * (stats.flaskPotency || 0.25));
-      p.hp = Math.min(p.maxHp, p.hp + healAmt);
+    let healAmt = Math.round(p.maxHp * (stats.flaskPotency || 0.25));
+    p.hp = Math.min(p.maxHp, p.hp + healAmt);
 
-      if (stats.flaskSpeedBurst) {
-        p.speedMultiplier = 1.35; // +35% emergency speed burst for 2 seconds
-        p.flaskSpeedTimer = 120;
-      }
+    if (stats.flaskSpeedBurst) {
+      p.speedMultiplier = 1.35; // +35% emergency speed burst for 2 seconds
+      p.flaskSpeedTimer = 120;
+    }
 
-      if (typeof window.spawnFloatingText === "function") {
-        window.spawnFloatingText(p.x, p.y - 20, `+${healAmt} HP (FLASK)`, "#34d399", true);
-      }
+    if (typeof window.spawnFloatingText === "function") {
+      window.spawnFloatingText(
+        p.x,
+        p.y - 20,
+        `+${healAmt} HP (FLASK)`,
+        "#34d399",
+        true,
+      );
+    }
 
-      if (window.combatVisuals) {
-        window.combatVisuals.spawnParticles(p.x, p.y - 10, 25, "slag_slime", 4);
-        window.combatVisuals.spawnBeam(p.x, "#34d399", 40, true, 0);
-      }
+    if (window.combatVisuals) {
+      window.combatVisuals.spawnParticles(p.x, p.y - 10, 25, "slag_slime", 4);
+      window.combatVisuals.spawnBeam(p.x, "#34d399", 40, true, 0);
+    }
 
-      if (window.SoundManager && typeof window.SoundManager.play === "function") {
-        window.SoundManager.play("fairy");
-      }
+    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+      window.SoundManager.play("fairy");
+    }
 
-      if (typeof window.updateHUD === "function") window.updateHUD();
-    };
+    if (typeof window.updateHUD === "function") window.updateHUD();
+  };
 
   window.initFlaskButtonDrag = function () {
-          let btn = document.getElementById("hud-flask-button");
-          let gameContainer = document.getElementById("game-container");
-          if (!btn || !gameContainer) return;
+    let btn = document.getElementById("hud-flask-button");
+    let gameContainer = document.getElementById("game-container");
+    if (!btn || !gameContainer) return;
 
-          let isDragging = false;
-          let hasMoved = false;
-          let startX = 0, startY = 0;
-          let initialLeft = 0, initialTop = 0;
+    let isDragging = false;
+    let hasMoved = false;
+    let startX = 0,
+      startY = 0;
+    let initialLeft = 0,
+      initialTop = 0;
 
-          // Prevent dragging the button from scrolling the screen or triggering OS gestures
-          btn.addEventListener("touchstart", function (e) {
-            if (window.playerStats && window.playerStats.editHudMode && e.cancelable) {
-              e.preventDefault();
-            }
-          }, { passive: false });
+    // Prevent dragging the button from scrolling the screen or triggering OS gestures
+    btn.addEventListener(
+      "touchstart",
+      function (e) {
+        if (
+          window.playerStats &&
+          window.playerStats.editHudMode &&
+          e.cancelable
+        ) {
+          e.preventDefault();
+        }
+      },
+      { passive: false },
+    );
 
-          btn.addEventListener("touchmove", function (e) {
-            if (window.playerStats && window.playerStats.editHudMode && e.cancelable) {
-              e.preventDefault();
-            }
-          }, { passive: false });
+    btn.addEventListener(
+      "touchmove",
+      function (e) {
+        if (
+          window.playerStats &&
+          window.playerStats.editHudMode &&
+          e.cancelable
+        ) {
+          e.preventDefault();
+        }
+      },
+      { passive: false },
+    );
 
-          btn.addEventListener("pointerdown", function (e) {
-          if (e.pointerType === "mouse" && e.button !== 0) return;
-          if (!window.playerStats || !window.playerStats.editHudMode) return;
+    btn.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (!window.playerStats || !window.playerStats.editHudMode) return;
 
-          isDragging = true;
-          hasMoved = false;
-          btn.isDragging = true;
+      isDragging = true;
+      hasMoved = false;
+      btn.isDragging = true;
 
-          let rect = btn.getBoundingClientRect();
-          let containerRect = gameContainer.getBoundingClientRect();
+      let rect = btn.getBoundingClientRect();
+      let containerRect = gameContainer.getBoundingClientRect();
 
-          startX = e.clientX;
-          startY = e.clientY;
-          initialLeft = rect.left - containerRect.left;
-          initialTop = rect.top - containerRect.top;
+      startX = e.clientX;
+      startY = e.clientY;
+      initialLeft = rect.left - containerRect.left;
+      initialTop = rect.top - containerRect.top;
 
-          if (btn.setPointerCapture) {
-            try {
-              btn.setPointerCapture(e.pointerId);
-            } catch (err) {}
-          }
-          e.stopPropagation();
-        });
+      if (btn.setPointerCapture) {
+        try {
+          btn.setPointerCapture(e.pointerId);
+        } catch (err) {}
+      }
+      e.stopPropagation();
+    });
 
-        btn.addEventListener("pointermove", function (e) {
-          if (!isDragging) return;
-          if (!window.playerStats || !window.playerStats.editHudMode) return;
+    btn.addEventListener("pointermove", function (e) {
+      if (!isDragging) return;
+      if (!window.playerStats || !window.playerStats.editHudMode) return;
 
-          let dx = e.clientX - startX;
-          let dy = e.clientY - startY;
+      let dx = e.clientX - startX;
+      let dy = e.clientY - startY;
 
-          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-            hasMoved = true;
-          }
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        hasMoved = true;
+      }
 
-          let newX = initialLeft + dx;
-          let newY = initialTop + dy;
+      let newX = initialLeft + dx;
+      let newY = initialTop + dy;
 
-          let containerW = gameContainer.clientWidth;
-          let containerH = gameContainer.clientHeight;
-          let btnW = btn.offsetWidth || 52;
-          let btnH = btn.offsetHeight || 52;
+      let containerW = gameContainer.clientWidth;
+      let containerH = gameContainer.clientHeight;
+      let btnW = btn.offsetWidth || 52;
+      let btnH = btn.offsetHeight || 52;
 
-          newX = Math.max(10, Math.min(containerW - btnW - 10, newX));
-          newY = Math.max(10, Math.min(containerH - btnH - 10, newY));
+      newX = Math.max(10, Math.min(containerW - btnW - 10, newX));
+      newY = Math.max(10, Math.min(containerH - btnH - 10, newY));
 
-          if (window.playerStats) {
-            window.playerStats.flaskX = newX;
-            window.playerStats.flaskY = newY;
-          }
+      if (window.playerStats) {
+        window.playerStats.flaskX = newX;
+        window.playerStats.flaskY = newY;
+      }
 
-          btn.style.left = newX + "px";
-          btn.style.top = newY + "px";
-          btn.style.bottom = "auto";
-          e.stopPropagation();
-        });
+      btn.style.left = newX + "px";
+      btn.style.top = newY + "px";
+      btn.style.bottom = "auto";
+      e.stopPropagation();
+    });
 
-        const stopDrag = function (e) {
-          if (isDragging) {
-            isDragging = false;
-            btn.isDragging = false;
-            if (btn.releasePointerCapture && e.pointerId !== undefined) {
-              try {
-                btn.releasePointerCapture(e.pointerId);
-              } catch (err) {}
-            }
+    const stopDrag = function (e) {
+      if (isDragging) {
+        isDragging = false;
+        btn.isDragging = false;
+        if (btn.releasePointerCapture && e.pointerId !== undefined) {
+          try {
+            btn.releasePointerCapture(e.pointerId);
+          } catch (err) {}
+        }
 
-            if (hasMoved && typeof window.saveGame === "function") {
-              window.saveGame();
-            }
-            e.stopPropagation();
-          }
-        };
+        if (hasMoved && typeof window.saveGame === "function") {
+          window.saveGame();
+        }
+        e.stopPropagation();
+      }
+    };
 
-        btn.addEventListener("pointerup", stopDrag);
-                btn.addEventListener("pointercancel", stopDrag);
-              };
+    btn.addEventListener("pointerup", stopDrag);
+    btn.addEventListener("pointercancel", stopDrag);
+  };
 
-      window.resetFlaskButtonPosition = function () {
-                if (window.playerStats) {
-                  window.playerStats.flaskX = null;
-                  window.playerStats.flaskY = null;
-                }
+  window.resetFlaskButtonPosition = function () {
+    if (window.playerStats) {
+      window.playerStats.flaskX = null;
+      window.playerStats.flaskY = null;
+    }
 
-                let btn = document.getElementById("hud-flask-button");
-                if (btn) {
-                  btn.style.left = "env(safe-area-inset-left, 24px)";
-                  btn.style.right = "auto";
-                  btn.style.bottom = "env(safe-area-inset-bottom, 36px)";
-                  btn.style.top = "auto";
-                }
+    let btn = document.getElementById("hud-flask-button");
+    if (btn) {
+      btn.style.left = "env(safe-area-inset-left, 24px)";
+      btn.style.right = "auto";
+      btn.style.bottom = "env(safe-area-inset-bottom, 36px)";
+      btn.style.top = "auto";
+    }
 
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast("[HUD] Flask button reset to default position!", "#34d399");
-          }
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        "[HUD] Flask button reset to default position!",
+        "#34d399",
+      );
+    }
 
-          if (typeof window.saveGame === "function") {
-                      window.saveGame();
-                    }
-                  };
-          })();
+    if (typeof window.saveGame === "function") {
+      window.saveGame();
+    }
+  };
+})();
