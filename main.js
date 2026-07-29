@@ -1128,10 +1128,11 @@
               flashTimer: 0,
               attackCooldown: 100,
               isBossSummon: true,
-              isCocoon: true,
-              hatchTimer: 240, // 4 seconds (240 frames)
-              discovered: true,
-            });
+                                  isCocoon: true,
+                                  hatchTimer: 240, // 4 seconds (240 frames)
+                                  discovered: true,
+                                  hopTimer: window.randInt(0, 29), // Desynchronize summons' hopping phases
+                                });
 
             if (window.combatVisuals) {
               window.combatVisuals.spawnParticles(sx, sy, 10, "slag_slime", 2);
@@ -2217,11 +2218,12 @@
               flashTimer: 0,
               attackCooldown: 80,
               isRanged: true,
-              projectileType: "void",
-              isBossSummon: true,
-              isDecoy: true,
-              discovered: true,
-            });
+                                  projectileType: "void",
+                                  isBossSummon: true,
+                                  isDecoy: true,
+                                  discovered: true,
+                                  hopTimer: window.randInt(0, 29), // Desynchronize decoy hopping phases
+                                });
 
             if (window.combatVisuals) {
               window.combatVisuals.spawnParticles(
@@ -3949,11 +3951,113 @@
   });
 
   window.checkOrientation = function () {
-    let overlay = document.getElementById("rotate-device-overlay");
-    if (overlay) overlay.style.display = "none";
-  };
+      let overlay = document.getElementById("rotate-device-overlay");
+      if (overlay) overlay.style.display = "none";
+    };
 
-  window.resizeCanvas = function () {
+    window.drawPortraitBossHealthBar = function (ctx, m, canvas) {
+      if (!m || !m.hp || !m.maxHp) return;
+
+      ctx.save();
+
+      let barW = Math.min(canvas.width - 40, 280);
+      let barH = 10;
+      let barX = (canvas.width - barW) / 2;
+      let barY = 82;
+
+      let bHp = BigNum.from(m.hp);
+      let bMaxHp = BigNum.from(m.maxHp);
+      let hpPct = 1.0;
+      if (bMaxHp.gt(0)) {
+        let div = bHp.div(bMaxHp);
+        hpPct = Math.max(0, Math.min(1, div.m * Math.pow(10, Math.min(15, div.e))));
+      }
+
+      if (m.screenTrailingPct === undefined) m.screenTrailingPct = hpPct;
+      if (m.screenTrailingPct > hpPct) {
+        m.screenTrailingPct = Math.max(hpPct, m.screenTrailingPct - 0.01);
+      } else {
+        m.screenTrailingPct = hpPct;
+      }
+
+      ctx.fillStyle = "rgba(10, 8, 16, 0.9)";
+      ctx.strokeStyle = m.type === "dungeon_boss" ? "#e74c3c" : "#e67e22";
+      ctx.lineWidth = 2.0;
+
+      ctx.fillRect(barX - 4, barY - 20, barW + 8, barH + 28);
+      ctx.strokeRect(barX - 4, barY - 20, barW + 8, barH + 28);
+
+      ctx.font = "bold 10px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      if (m.dazeTimer > 0) {
+        ctx.fillStyle = "#ffd700";
+        ctx.fillText(`★ ${m.name.toUpperCase()} (DAZED!) ★`, canvas.width / 2, barY - 11);
+      } else if (m.actionState === "cyber_barrier" || m.actionState === "bark_shield") {
+        ctx.fillStyle = "#ff007f";
+        ctx.fillText(`${m.name.toUpperCase()} (SHIELDED)`, canvas.width / 2, barY - 11);
+      } else {
+        ctx.fillStyle = "#f1f5f9";
+        ctx.fillText(m.name.toUpperCase(), canvas.width / 2, barY - 11);
+      }
+
+      ctx.fillStyle = "rgba(40, 20, 20, 0.9)";
+      ctx.fillRect(barX, barY, barW, barH);
+
+      if (m.screenTrailingPct > hpPct) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(barX, barY, barW * m.screenTrailingPct, barH);
+      }
+
+      let fillGrad = ctx.createLinearGradient(barX, barY, barX + barW, barY);
+      if (m.dazeTimer > 0) {
+        fillGrad.addColorStop(0, "#ffe066");
+        fillGrad.addColorStop(1, "#f1c40f");
+      } else if (m.actionState === "bark_shield") {
+        fillGrad.addColorStop(0, "#27ae60");
+        fillGrad.addColorStop(1, "#2ecc71");
+      } else {
+        fillGrad.addColorStop(0, "#c0392b");
+        fillGrad.addColorStop(1, "#ff4757");
+      }
+      ctx.fillStyle = fillGrad;
+      ctx.fillRect(barX, barY, barW * hpPct, barH);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.fillRect(barX, barY, barW * hpPct, barH / 2);
+
+      let sShield = m.staggerShield ? BigNum.from(m.staggerShield) : BigNum.from(0);
+      let sMaxShield = m.maxStaggerShield ? BigNum.from(m.maxStaggerShield) : BigNum.from(0);
+      if (sShield.gt(0) && sMaxShield.gt(0)) {
+        let sDiv = sShield.div(sMaxShield);
+        let sPct = Math.max(0, Math.min(1, sDiv.m * Math.pow(10, Math.min(15, sDiv.e))));
+        ctx.fillStyle = "rgba(0, 210, 255, 0.4)";
+        ctx.fillRect(barX, barY, barW * sPct, barH);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.0;
+        ctx.strokeRect(barX, barY, barW * sPct, barH);
+      }
+
+      ctx.font = "bold 8.5px monospace";
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      let hpTextStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)}`;
+      if (sShield.gt(0)) {
+        hpTextStr += ` [S: ${window.formatNumber(sShield)}]`;
+      }
+
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 2.0;
+      ctx.strokeText(hpTextStr, canvas.width / 2, barY + barH / 2 + 0.5);
+      ctx.fillText(hpTextStr, canvas.width / 2, barY + barH / 2 + 0.5);
+
+      ctx.restore();
+    };
+
+    window.resizeCanvas = function () {
     if (!canvas) return;
     window.scrollTo(0, 0); // Lock scroll offset to absolute 0 on resize
     let rect = canvas.getBoundingClientRect();
@@ -4898,12 +5002,13 @@
           buffTimers: { haste: 0, def: 0, atk: 0 },
           buffDecayTimers: { haste: 0, def: 0, atk: 0 },
           wanderTimer: window.randInt(40, 120),
-          wanderVx: 0,
-          wanderVy: 0,
-          isWandering: false,
-        });
-      });
-    }
+                    wanderVx: 0,
+                    wanderVy: 0,
+                    isWandering: false,
+                    hopTimer: window.randInt(0, 29), // Desynchronize hopping phase offsets on spawn
+                  });
+                });
+              }
 
     window.updateHUD();
     let floorTitle = isMajorBoss
@@ -6629,13 +6734,17 @@
   };
 
   window.updateCavernEffects = function () {
-    if (
-      !window.playerStats.isDungeonMode ||
-      !window.playerStats.activeDungeonSigil
-    ) {
-      window.cavernInteractives = [];
-      return;
-    }
+      if (window.currentGameState !== window.GAME_STATES.DUNGEON) {
+        window.cavernInteractives = [];
+        return;
+      }
+      if (
+        !window.playerStats.isDungeonMode ||
+        !window.playerStats.activeDungeonSigil
+      ) {
+        window.cavernInteractives = [];
+        return;
+      }
 
     window.cavernInteractives = window.cavernInteractives || [];
     let p = window.player;
@@ -7759,14 +7868,17 @@
   };
 
   window.updateDungeonCombat = function () {
-    let p = window.player;
-    let pStats =
-      typeof window.resolvePlayerStats === "function"
-        ? window.resolvePlayerStats()
-        : { atk: BigNum.from(15) };
-    p.attackTimer = (p.attackTimer || 0) + 1;
+          let p = window.player;
+          if (!p || p.hp <= 0) return;
+          if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
 
-    let logicClock = window.logicClock || 0;
+          let pStats =
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : { atk: BigNum.from(15) };
+          p.attackTimer = (p.attackTimer || 0) + 1;
+
+          let logicClock = window.logicClock || 0;
 
     // --- UNIQUE ITEM PERIODIC TIMERS ---
     if (window.hasUniquePassive("weapon_staff")) {
@@ -8246,18 +8358,21 @@
             let mapInst = window.activeDungeonMap;
 
             if (mapInst && mapInst.grid) {
-              let probeAngles = [
-                0,
-                Math.PI / 4,
-                -Math.PI / 4,
-                Math.PI / 2,
-                -Math.PI / 2,
-                (Math.PI * 3) / 4,
-                -(Math.PI * 3) / 4,
-              ];
-              let baseAngle = Math.atan2(p.y - mCenterY, p.x - mCenterX);
+                          let probeAngles = [
+                            0,
+                            Math.PI / 4,
+                            -Math.PI / 4,
+                            Math.PI / 2,
+                            -Math.PI / 2,
+                            (Math.PI * 3) / 4,
+                            -(Math.PI * 3) / 4,
+                          ];
+                          let baseAngle = Math.atan2(p.y - mCenterY, p.x - mCenterX);
+                          // Add a slight dynamic drift based on logic clock and mob ID to break identical conga-lines
+                          let drift = Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
+                          baseAngle += drift;
 
-              for (let a = 0; a < probeAngles.length; a++) {
+                          for (let a = 0; a < probeAngles.length; a++) {
                 let testAngle = baseAngle + probeAngles[a];
                 let vx = Math.cos(testAngle) * speed;
                 let vy = Math.sin(testAngle) * speed;
@@ -8986,14 +9101,50 @@
     }
 
     // Process active room mobs (Standard logic loop)
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
-        let m = window.activeDungeonMobs[i];
-        let dx = p.x - (m.x + m.w / 2);
-        let dy = p.y - (m.y + m.h / 2);
-        let dist = Math.hypot(dx, dy);
+            if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+              for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
+                let m = window.activeDungeonMobs[i];
+                let dx = p.x - (m.x + m.w / 2);
+                let dy = p.y - (m.y + m.h / 2);
+                let dist = Math.hypot(dx, dy);
 
-        // Process Hatching Summons (Sprout Cocoons)
+                // Apply lightweight separation/repulsion forces to prevent monster clumping
+                if (!m.isCocoon && !m.isSpore && !m.isMagmaVent && m.hp.gt(0)) {
+                  let mCx = m.x + m.w / 2;
+                  let mCy = m.y + m.h / 2;
+                  for (let j = 0; j < window.activeDungeonMobs.length; j++) {
+                    let other = window.activeDungeonMobs[j];
+                    if (other === m || other.hp.lte(0) || other.isCocoon || other.isSpore || other.isMagmaVent) continue;
+
+                    let odx = mCx - (other.x + other.w / 2);
+                    let ody = mCy - (other.y + other.h / 2);
+                    let odist = Math.hypot(odx, ody);
+                    let minSep = 18; // Desired separation boundary distance
+                    if (odist < minSep && odist > 0.1) {
+                      let force = (minSep - odist) * 0.15; // spring strength
+                      let pushX = (odx / odist) * force;
+                      let pushY = (ody / odist) * force;
+
+                      let mapInst = window.activeDungeonMap;
+                      if (mapInst && mapInst.grid) {
+                        if (!checkCollisionAt(mapInst, mCx + pushX, mCy, 8)) {
+                          m.x += pushX;
+                        }
+                        if (!checkCollisionAt(mapInst, mCx, mCy + pushY, 8)) {
+                          m.y += pushY;
+                        }
+                      } else {
+                        m.x += pushX;
+                        m.y += pushY;
+                      }
+                      // Recalculate centers
+                      mCx = m.x + m.w / 2;
+                      mCy = m.y + m.h / 2;
+                    }
+                  }
+                }
+
+                // Process Hatching Summons (Sprout Cocoons)
         if (m.isCocoon) {
           m.hatchTimer--;
           m.flashTimer = 0; // prevent red flash unless directly attacked
@@ -9002,13 +9153,13 @@
             m.isRanged = Math.random() < 0.5;
             m.visualType = Math.random() < 0.5 ? "slime" : "sprout";
             m.visualTier = 0;
-            m.name =
-              m.visualType === "slime" ? "Hatched Slime" : "Hatched Sprout";
-            m.atk = Math.round(10 + (window.player.depth || 1) * 3);
-            m.hp = m.maxHp; // Refill HP for active minion combat
-            m.projectileType = "thorn";
-            m.rangedCooldown = 60;
-            if (window.combatVisuals) {
+            m.name = m.visualType === "slime" ? "Hatched Slime" : "Hatched Sprout";
+                                    m.atk = Math.round(10 + (window.player.depth || 1) * 3);
+                                    m.hp = m.maxHp; // Refill HP for active minion combat
+                                    m.projectileType = "thorn";
+                                    m.rangedCooldown = 60;
+                                    m.hopTimer = window.randInt(0, 29); // Desynchronize hatched minion jumping phase
+                                    if (window.combatVisuals) {
               window.combatVisuals.spawnParticles(
                 m.x + m.w / 2,
                 m.y + m.h / 2,
@@ -9457,13 +9608,13 @@
         }
 
         // Mob Contact Melee Attack on Player
-        if (dist < 20 && m.attackCooldown <= 0) {
-          m.attackCooldown = 60; // 1s attack cooldown
-          window.damagePlayer(m.atk, m);
-          if (p.hp <= 0) {
-            window.triggerExtraction(false, false);
-          }
-        }
+                if (dist < 20 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 60; // 1s attack cooldown
+                  window.damagePlayer(m.atk, m);
+                  if (p.hp <= 0) {
+                    window.startDeathSequence();
+                  }
+                }
       }
     }
 
@@ -10167,13 +10318,13 @@
 
             let ability = bm.activeAbility;
             if (ability === "slam") {
-              let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
-              if (hitDist <= 64) {
-                let slamDmg = Math.round(bm.atk * 1.8);
-                window.damagePlayer(slamDmg, bm);
-                if (p.hp <= 0) window.triggerExtraction(false, false);
-              }
-            } else if (ability === "nova") {
+                          let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
+                          if (hitDist <= 64) {
+                            let slamDmg = Math.round(bm.atk * 1.8);
+                            window.damagePlayer(slamDmg, bm);
+                            if (p.hp <= 0) window.startDeathSequence();
+                          }
+                        } else if (ability === "nova") {
               for (let i = 0; i < 8; i++) {
                 let angle = (i * Math.PI * 2) / 8;
                 let speed = 3.8;
@@ -10204,15 +10355,15 @@
                 bm.y += (dashDy / dashDist) * 75;
               }
               let hitDist = Math.hypot(
-                p.x - (bm.x + bm.w / 2),
-                p.y - (bm.y + bm.h / 2),
-              );
-              if (hitDist <= 42) {
-                let chargeDmg = Math.round(bm.atk * 1.5);
-                window.damagePlayer(chargeDmg, bm);
-                if (p.hp <= 0) window.triggerExtraction(false, false);
-              }
-            }
+                              p.x - (bm.x + bm.w / 2),
+                              p.y - (bm.y + bm.h / 2),
+                            );
+                            if (hitDist <= 42) {
+                              let chargeDmg = Math.round(bm.atk * 1.5);
+                              window.damagePlayer(chargeDmg, bm);
+                              if (p.hp <= 0) window.startDeathSequence();
+                            }
+                          }
             bm.activeAbility = null;
           }
         } else if (bm.attackCooldown <= 0 && dist < 220) {
@@ -10227,18 +10378,18 @@
           bm.targetX = p.x;
           bm.targetY = p.y;
         } else if (dist < 30 && bm.attackCooldown <= 0) {
-          bm.attackCooldown = 60;
-          p.hp = Math.max(0, p.hp - bm.atk);
-          window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("block");
-          }
-          window.updateHUD();
-          if (p.hp <= 0) window.triggerExtraction(false, false);
-        }
+                  bm.attackCooldown = 60;
+                  p.hp = Math.max(0, p.hp - bm.atk);
+                  window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
+                  if (
+                    window.SoundManager &&
+                    typeof window.SoundManager.play === "function"
+                  ) {
+                    window.SoundManager.play("block");
+                  }
+                  window.updateHUD();
+                  if (p.hp <= 0) window.startDeathSequence();
+                }
       }
     }
 
@@ -10317,9 +10468,9 @@
           }
         }
         window.projectiles.splice(i, 1);
-        if (p.hp <= 0) window.triggerExtraction(false, false);
-        continue;
-      }
+                if (p.hp <= 0) window.startDeathSequence();
+                continue;
+              }
 
       if (proj.life <= 0) {
         if (
@@ -11343,14 +11494,21 @@
     ctx.restore();
 
     // Render Minimap in Screen Space
-    if (typeof window.renderMinimap === "function") {
-      window.renderMinimap(ctx, canvas);
-    }
+        // Safe-optimization: On mobile portrait, hide the minimap during active Boss fights to prevent HUD overlap/clutter
+        let isPortrait = window.innerHeight > window.innerWidth;
+        let shouldHideMinimap = isPortrait && window.mob;
+        if (!shouldHideMinimap && typeof window.renderMinimap === "function") {
+          window.renderMinimap(ctx, canvas);
+        }
 
-    // Render Boss Health Bar in Screen Space
-    if (window.mob && window.combatVisuals) {
-      window.combatVisuals.drawTargetHealthBar(ctx, window.mob);
-    }
+        // Render Boss Health Bar in Screen Space
+        if (window.mob) {
+          if (isPortrait) {
+            window.drawPortraitBossHealthBar(ctx, window.mob, canvas);
+          } else if (window.combatVisuals && typeof window.combatVisuals.drawTargetHealthBar === "function") {
+            window.combatVisuals.drawTargetHealthBar(ctx, window.mob);
+          }
+        }
 
     // 3. Render Floating Virtual Joystick Overlay (Screen Space)
     let mode = window.playerStats
