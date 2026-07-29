@@ -258,44 +258,54 @@
     }
 
     // Wall Torches Light
-    if (map.torches) {
-      let tileSize = map.tileSize;
-      let time = Date.now();
-      map.torches.forEach((t) => {
-        let sx = t.x * tileSize + tileSize / 2;
-        let sy = t.y * tileSize + tileSize - 8;
-        if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
-          let torchFlicker = Math.sin(time / 70 + t.x * 3) * 10;
-          lights.push({
-            x: sx,
-            y: sy,
-            r: 190 + torchFlicker,
-            innerColor: "rgba(255, 245, 200, 1.0)",
-            outerColor: "rgba(255, 140, 30, 0.65)",
+        if (map.torches) {
+          let tileSize = map.tileSize;
+          let time = Date.now();
+          map.torches.forEach((t) => {
+            let sx = t.x * tileSize + tileSize / 2;
+            let sy = t.y * tileSize + tileSize - 8;
+            if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
+              let torchFlicker = Math.sin(time / 70 + t.x * 3) * 10;
+              lights.push({
+                x: sx,
+                y: sy,
+                r: 190 + torchFlicker,
+                innerColor: "rgba(255, 245, 200, 1.0)",
+                outerColor: "rgba(255, 140, 30, 0.65)",
+              });
+            }
           });
         }
-      });
-    }
 
-    // Bioluminescent Mushrooms Light
-    if (map.shrooms && !isHub) {
-      let tileSize = map.tileSize;
-      map.shrooms.forEach((s) => {
-        let sx = s.x * tileSize + tileSize / 2;
-        let sy = s.y * tileSize + tileSize / 2;
-        if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
-          lights.push({
-            x: sx,
-            y: sy,
-            r: 85,
-            innerColor: "rgba(180, 255, 255, 0.85)",
-            outerColor: "rgba(0, 210, 255, 0.40)",
-          });
-        }
-      });
-    }
-
-    // Biome Ambient Ground Hazards Light
+        // Sector Decorations Light
+                if (map.decorations) {
+                  map.decorations.forEach((dec) => {
+                    if (
+                      dec.light &&
+                      dec.worldX >= minCamX &&
+                      dec.worldX <= maxCamX &&
+                      dec.worldY >= minCamY &&
+                      dec.worldY <= maxCamY
+                    ) {
+                      let radius = dec.light.radius || 80;
+                      let time = Date.now();
+                      if (dec.light.pulseType === "flicker") {
+                        radius += Math.sin(time / 70 + dec.x * 3) * 6;
+                      } else if (dec.light.pulseType === "wave") {
+                        radius += Math.sin(time / 180 + dec.x) * 8;
+                      } else if (dec.light.pulseType === "strobe") {
+                        radius += Math.sin(time / 50) * 10;
+                      }
+                      lights.push({
+                        x: dec.worldX,
+                        y: dec.worldY,
+                        r: radius,
+                        innerColor: dec.light.innerColor,
+                        outerColor: dec.light.outerColor,
+                      });
+                    }
+                  });
+                }
     if (!isHub && map.grid) {
       let depth = window.player ? window.player.depth || 1 : 1;
       let sector = Math.floor((depth - 1) / 12);
@@ -1015,11 +1025,14 @@
                 cx = m.x + m.w / 2;
                 cy = m.y + m.h / 2;
 
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(cx, cy, 35, "slag_slime", 4);
-                  window.combatVisuals.triggerScreenShake(8, 15);
-                }
-                if (window.SoundManager) window.SoundManager.play("spell");
+                if (typeof window.spawnFloatingText === "function") {
+                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: BARK SHIELD!", "#e74c3c");
+                                }
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnParticles(cx, cy, 35, "slag_slime", 4);
+                                  window.combatVisuals.triggerScreenShake(10, 18);
+                                }
+                                if (window.SoundManager) window.SoundManager.play("spell");
 
                 // Spawn 3 Sprout Cocoons surrounding the Warden
                 window.activeDungeonMobs = window.activeDungeonMobs || [];
@@ -1198,14 +1211,21 @@
               let bHp = m.hp.valueOf();
               let bMaxHp = m.maxHp.valueOf();
               if (bHp < bMaxHp * 0.5 && m.phase === 1) {
-                m.phase = 2;
-                m.shieldAngle = Math.atan2(p.y - cy, p.x - cx);
-                m.dazeTimer = 0;
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[!] Aegis Goliath raised his Tower Shield! Flank his exposed sides!", "#00d2ff");
-                }
-                if (window.SoundManager) window.SoundManager.play("revive");
-              }
+                              m.phase = 2;
+                              m.shieldAngle = Math.atan2(p.y - cy, p.x - cx);
+                              m.dazeTimer = 0;
+                              if (typeof window.spawnFloatingText === "function") {
+                                window.spawnFloatingText(cx, m.y - 20, "PHASE 2: TOWER SHIELD!", "#00d2ff");
+                              }
+                              if (window.combatVisuals) {
+                                window.combatVisuals.spawnParticles(cx, cy, 30, "aegis_goliath", 4);
+                                window.combatVisuals.triggerScreenShake(8, 15);
+                              }
+                              if (typeof window.pushHeaderToast === "function") {
+                                window.pushHeaderToast("[!] Aegis Goliath raised his Tower Shield! Flank his exposed sides!", "#00d2ff");
+                              }
+                              if (window.SoundManager) window.SoundManager.play("revive");
+                            }
 
               // Handle Dazed stun sequence
               if (m.dazeTimer > 0) {
@@ -1489,14 +1509,21 @@
               let bHp = m.hp.valueOf();
               let bMaxHp = m.maxHp.valueOf();
               if (bHp < bMaxHp * 0.5 && !m.phase2Triggered) {
-                m.phase2Triggered = true;
-                m.phase = 2;
-                m.attackCooldown = 40;
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[!] Corrosive Abomination has entered Phase 2! Watch out for toxic spore storms!", "#2ecc71");
-                }
-                if (window.SoundManager) window.SoundManager.play("revive");
-              }
+                              m.phase2Triggered = true;
+                              m.phase = 2;
+                              m.attackCooldown = 40;
+                              if (typeof window.spawnFloatingText === "function") {
+                                window.spawnFloatingText(cx, m.y - 20, "PHASE 2: TOXIC SPORE STORM!", "#2ecc71");
+                              }
+                              if (window.combatVisuals) {
+                                window.combatVisuals.spawnParticles(cx, cy, 35, "swamp_basilisk", 4);
+                                window.combatVisuals.triggerScreenShake(8, 15);
+                              }
+                              if (typeof window.pushHeaderToast === "function") {
+                                window.pushHeaderToast("[!] Corrosive Abomination has entered Phase 2! Watch out for toxic spore storms!", "#2ecc71");
+                              }
+                              if (window.SoundManager) window.SoundManager.play("revive");
+                            }
 
               if (m.actionState === "telegraphing" || m.state === "telegraphing") {
                 m.telegraphTimer--;
@@ -1723,11 +1750,14 @@
                 cx = m.x + m.w / 2;
                 cy = m.y + m.h / 2;
 
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(cx, cy, 30, "gold_dungeon", 4.0);
-                  window.combatVisuals.triggerScreenShake(6, 12);
-                }
-                if (window.SoundManager) window.SoundManager.play("spell");
+                if (typeof window.spawnFloatingText === "function") {
+                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: CHRONOS REWIND!", "#ffd700");
+                                }
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnParticles(cx, cy, 35, "gold_dungeon", 4.5);
+                                  window.combatVisuals.triggerScreenShake(10, 18);
+                                }
+                                if (window.SoundManager) window.SoundManager.play("spell");
                 if (typeof window.pushHeaderToast === "function") {
                   window.pushHeaderToast("[!] Chronos Arbitrator is channeling Chronos Rewind! Shatter his Stagger Shield to interrupt!", "#ffd700");
                 }
@@ -1858,11 +1888,14 @@
                 cx = m.x + m.w / 2;
                 cy = m.y + m.h / 2;
 
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(cx, cy, 35, "nexus_overseer", 4.0);
-                  window.combatVisuals.triggerScreenShake(8, 12);
-                }
-                if (window.SoundManager) window.SoundManager.play("spell");
+                if (typeof window.spawnFloatingText === "function") {
+                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: CYBER BARRIER!", "#ff007f");
+                                }
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnParticles(cx, cy, 35, "nexus_overseer", 4.0);
+                                  window.combatVisuals.triggerScreenShake(10, 18);
+                                }
+                                if (window.SoundManager) window.SoundManager.play("spell");
 
                 // Spawn 2 Holographic Decoys
                 window.activeDungeonMobs = window.activeDungeonMobs || [];
@@ -2027,11 +2060,14 @@
                 cx = m.x + m.w / 2;
                 cy = m.y + m.h / 2;
 
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(cx, cy, 30, "gold_dungeon", 4.0);
-                  window.combatVisuals.triggerScreenShake(6, 12);
-                }
-                if (window.SoundManager) window.SoundManager.play("spell");
+                if (typeof window.spawnFloatingText === "function") {
+                                  window.spawnFloatingText(cx, m.y - 20, "PHASE 2: TAXATION SIPHON!", "#ffd700");
+                                }
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnParticles(cx, cy, 35, "gold_dungeon", 4.5);
+                                  window.combatVisuals.triggerScreenShake(10, 18);
+                                }
+                                if (window.SoundManager) window.SoundManager.play("spell");
                 if (typeof window.pushHeaderToast === "function") {
                   window.pushHeaderToast("[!] Gilded Vault Keeper is channeling Taxation! Shatter his shield to protect your Gold!", "#ffd700");
                 }
@@ -2179,17 +2215,20 @@
                     let bHp = m.hp.valueOf();
                     let bMaxHp = m.maxHp.valueOf();
                     if (bHp < bMaxHp * 0.50 && m.phase === 1) {
-                      m.phase = 2;
-                      m.attackCooldown = 30;
-                      if (window.combatVisuals) {
-                        window.combatVisuals.triggerScreenShake(15, 30);
-                        window.combatVisuals.spawnParticles(cx, cy, 40, "prestige_boss", 6.0);
-                      }
-                      if (window.SoundManager) window.SoundManager.play("death");
-                      if (typeof window.pushHeaderToast === "function") {
-                        window.pushHeaderToast("[!] Hooktail has unleashed Calamity! The ground is collapsing into the void!", "#ff3300");
-                      }
-                    }
+                                    m.phase = 2;
+                                    m.attackCooldown = 30;
+                                    if (typeof window.spawnFloatingText === "function") {
+                                      window.spawnFloatingText(cx, m.y - 20, "PHASE 2: ARENA COLLAPSE!", "#ff3300");
+                                    }
+                                    if (window.combatVisuals) {
+                                      window.combatVisuals.triggerScreenShake(15, 30);
+                                      window.combatVisuals.spawnParticles(cx, cy, 40, "prestige_boss", 6.0);
+                                    }
+                                    if (window.SoundManager) window.SoundManager.play("death");
+                                    if (typeof window.pushHeaderToast === "function") {
+                                      window.pushHeaderToast("[!] Hooktail has unleashed Calamity! The ground is collapsing into the void!", "#ff3300");
+                                    }
+                                  }
 
                     // Periodic Abyssal damage ticks if the player steps over collapsed void tiles
                     let map = window.activeDungeonMap;
@@ -2335,61 +2374,237 @@
               let cy = m.y + m.h / 2;
 
               if (m.activeAbility === "slam") {
-                // --- HIGH FIDELITY SLAM INDICATOR ---
-                let radius = 64;
+                              let radius = 64;
+                              let isTreant = m.bossKey === "arachnid_treant" || m.visualType === "sprout" || m.visualType === "arachnid_treant";
+                              let isIronVault = m.bossKey === "overlord_iron_vault" || m.visualType === "overlord_iron_vault";
+                              let isCorrosive = m.bossKey === "corrosive_abomination" || m.visualType === "corrosive_abomination";
 
-                // Outer glowing boundaries
-                c.strokeStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
-                c.lineWidth = 3.0;
-                c.shadowBlur = 10;
-                c.shadowColor = "#e74c3c";
-                c.beginPath();
-                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                c.stroke();
-                c.shadowBlur = 0;
+                              if (isTreant) {
+                                // --- BOSS 1: BIO-LUMINESCENT ROOT SLAM GRID ---
+                                let time = Date.now();
 
-                c.strokeStyle = "rgba(255, 255, 255, 0.4)";
-                c.lineWidth = 1.0;
-                c.beginPath();
-                c.arc(m.targetX, m.targetY, radius + 4, 0, Math.PI * 2);
-                c.stroke();
+                                // 1. Bio-luminescent Root Boundary Ring
+                                c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+                                c.lineWidth = 3.0;
+                                c.shadowBlur = 12;
+                                c.shadowColor = "#2ecc71";
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                                c.stroke();
+                                c.shadowBlur = 0;
 
-                // Concentric filling warning disc
-                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
-                fillGrad.addColorStop(0, `rgba(255, 242, 0, ${pulseAlpha * 0.6})`);
-                fillGrad.addColorStop(0.6, `rgba(231, 76, 60, ${pulseAlpha * 0.4})`);
-                fillGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
+                                c.strokeStyle = "rgba(163, 253, 131, 0.6)";
+                                c.lineWidth = 1.2;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+                                c.stroke();
 
-                c.fillStyle = fillGrad;
-                c.beginPath();
-                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                c.fill();
+                                // 2. Inner Radial Bio-Spore Filling Disc
+                                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
+                                fillGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.7})`);
+                                fillGrad.addColorStop(0.5, `rgba(46, 204, 113, ${pulseAlpha * 0.4})`);
+                                fillGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
 
-                // Procedural cracked earth ground textures
-                c.strokeStyle = `rgba(231, 76, 60, ${0.15 + progress * 0.45})`;
-                c.lineWidth = 1.2;
-                c.beginPath();
-                for (let i = 0; i < 6; i++) {
-                  let angle = (i * Math.PI * 2) / 6 + (m.id || 0);
-                  let startRad = radius * 0.15;
-                  let endRad = radius * progress;
-                  let sx = m.targetX + Math.cos(angle) * startRad;
-                  let sy = m.targetY + Math.sin(angle) * startRad;
-                  c.moveTo(sx, sy);
+                                c.fillStyle = fillGrad;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                                c.fill();
 
-                  // Jitter/zig-zag lines out to active threshold
-                  let steps = 4;
-                  for (let s = 1; s <= steps; s++) {
-                    let segRad = startRad + (endRad - startRad) * (s / steps);
-                    let jitterAngle = angle + (Math.sin(s * 1.5) * 0.15);
-                    let jx = m.targetX + Math.cos(jitterAngle) * segRad;
-                    let jy = m.targetY + Math.sin(jitterAngle) * segRad;
-                    c.lineTo(jx, jy);
-                  }
-                }
-                c.stroke();
+                                // 3. Bio-Luminescent Root Vine Grid (8 Radial Root Tendrils with Jagged Branches)
+                                c.strokeStyle = `rgba(0, 255, 204, ${0.4 + progress * 0.5})`;
+                                c.lineWidth = 1.8;
+                                c.beginPath();
+                                let radRays = 8;
+                                for (let i = 0; i < radRays; i++) {
+                                  let rayAngle = (i * Math.PI * 2) / radRays + (m.id || 0);
+                                  let endDist = radius * progress;
+                                  let steps = 5;
+                                  let lastX = m.targetX;
+                                  let lastY = m.targetY;
 
-              } else if (m.activeAbility === "charge") {
+                                  for (let s = 1; s <= steps; s++) {
+                                    let curDist = (endDist * s) / steps;
+                                    let jitter = Math.sin(s * 2.3 + time / 200) * 4;
+                                    let curAngle = rayAngle + jitter * 0.05;
+                                    let nx = m.targetX + Math.cos(curAngle) * curDist;
+                                    let ny = m.targetY + Math.sin(curAngle) * curDist;
+
+                                    c.moveTo(lastX, lastY);
+                                    c.lineTo(nx, ny);
+
+                                    // Lateral root tendril split
+                                    if (s === 3) {
+                                      let branchAngle = curAngle + (i % 2 === 0 ? 0.4 : -0.4);
+                                      let bx = nx + Math.cos(branchAngle) * 12 * progress;
+                                      let by = ny + Math.sin(branchAngle) * 12 * progress;
+                                      c.moveTo(nx, ny);
+                                      c.lineTo(bx, by);
+                                    }
+
+                                    lastX = nx;
+                                    lastY = ny;
+                                  }
+                                }
+                                c.stroke();
+
+                                // 4. Bio-luminescent Spore Nodes at Intersection Joints
+                                c.fillStyle = "#a3fd83";
+                                for (let i = 0; i < radRays; i++) {
+                                  let rayAngle = (i * Math.PI * 2) / radRays + (m.id || 0);
+                                  let nodeDist = radius * progress * 0.6;
+                                  let nx = m.targetX + Math.cos(rayAngle) * nodeDist;
+                                  let ny = m.targetY + Math.sin(rayAngle) * nodeDist;
+                                  c.beginPath();
+                                  c.arc(nx, ny, 2.2, 0, Math.PI * 2);
+                                  c.fill();
+                                }
+                              } else if (isIronVault) {
+                                // --- BOSS 3: MOLTEN STEEL SLAM & FISSURE GRID ---
+                                let time = Date.now();
+
+                                // 1. Molten Iron Outer Boundary
+                                c.strokeStyle = `rgba(249, 115, 22, ${0.6 + pulseAlpha * 0.4})`;
+                                c.lineWidth = 3.0;
+                                c.shadowBlur = 12;
+                                c.shadowColor = "#f97316";
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                                c.stroke();
+                                c.shadowBlur = 0;
+
+                                c.strokeStyle = "rgba(254, 240, 138, 0.7)";
+                                c.lineWidth = 1.2;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+                                c.stroke();
+
+                                // 2. Glowing Lava Core Disc
+                                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
+                                fillGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.75})`);
+                                fillGrad.addColorStop(0.5, `rgba(249, 115, 22, ${pulseAlpha * 0.45})`);
+                                fillGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
+
+                                c.fillStyle = fillGrad;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                                c.fill();
+
+                                // 3. Crosshair Lava Fissures (4 Cardinal Fractures)
+                                c.strokeStyle = `rgba(253, 186, 116, ${0.5 + progress * 0.5})`;
+                                c.lineWidth = 2.0;
+                                c.beginPath();
+                                for (let i = 0; i < 4; i++) {
+                                  let ang = (i * Math.PI) / 2;
+                                  let endDist = radius * progress;
+                                  c.moveTo(m.targetX, m.targetY);
+                                  c.lineTo(m.targetX + Math.cos(ang) * endDist, m.targetY + Math.sin(ang) * endDist);
+                                }
+                                c.stroke();
+
+                                // 4. Heat Motes / Ember Sparks
+                                c.fillStyle = "#fef08a";
+                                for (let i = 0; i < 4; i++) {
+                                  let ang = (i * Math.PI) / 2 + (time / 1000);
+                                  let sparkDist = radius * progress * 0.7;
+                                  let sx = m.targetX + Math.cos(ang) * sparkDist;
+                                  let sy = m.targetY + Math.sin(ang) * sparkDist;
+                                  c.beginPath();
+                                  c.arc(sx, sy, 1.8, 0, Math.PI * 2);
+                                  c.fill();
+                                }
+                              } else if (isCorrosive) {
+                                // --- BOSS 4: CAUSTIC SLUDGE SLAM ---
+                                let time = Date.now();
+
+                                // 1. Toxic Bio-Green Outer Ring
+                                c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+                                c.lineWidth = 3.0;
+                                c.shadowBlur = 12;
+                                c.shadowColor = "#2ecc71";
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                                c.stroke();
+                                c.shadowBlur = 0;
+
+                                c.strokeStyle = "rgba(163, 253, 131, 0.7)";
+                                c.lineWidth = 1.2;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+                                c.stroke();
+
+                                // 2. Bubbling Acid Pool Gradient Fill
+                                let acidGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
+                                acidGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.7})`);
+                                acidGrad.addColorStop(0.5, `rgba(46, 204, 113, ${pulseAlpha * 0.4})`);
+                                acidGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
+
+                                c.fillStyle = acidGrad;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                                c.fill();
+
+                                // 3. Toxic Splatter Lines
+                                c.strokeStyle = `rgba(163, 253, 131, ${0.4 + progress * 0.5})`;
+                                c.lineWidth = 1.5;
+                                c.beginPath();
+                                for (let i = 0; i < 6; i++) {
+                                  let ang = (i * Math.PI * 2) / 6 + (time / 1200);
+                                  let endDist = radius * progress;
+                                  c.moveTo(m.targetX, m.targetY);
+                                  c.lineTo(m.targetX + Math.cos(ang) * endDist, m.targetY + Math.sin(ang) * endDist);
+                                }
+                                c.stroke();
+                              } else {
+                                // --- STANDARD SLAM INDICATOR ---
+                                c.strokeStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
+                                c.lineWidth = 3.0;
+                                c.shadowBlur = 10;
+                                c.shadowColor = "#e74c3c";
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                                c.stroke();
+                                c.shadowBlur = 0;
+
+                                c.strokeStyle = "rgba(255, 255, 255, 0.4)";
+                                c.lineWidth = 1.0;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius + 4, 0, Math.PI * 2);
+                                c.stroke();
+
+                                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
+                                fillGrad.addColorStop(0, `rgba(255, 242, 0, ${pulseAlpha * 0.6})`);
+                                fillGrad.addColorStop(0.6, `rgba(231, 76, 60, ${pulseAlpha * 0.4})`);
+                                fillGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
+
+                                c.fillStyle = fillGrad;
+                                c.beginPath();
+                                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                                c.fill();
+
+                                c.strokeStyle = `rgba(231, 76, 60, ${0.15 + progress * 0.45})`;
+                                c.lineWidth = 1.2;
+                                c.beginPath();
+                                for (let i = 0; i < 6; i++) {
+                                  let angle = (i * Math.PI * 2) / 6 + (m.id || 0);
+                                  let startRad = radius * 0.15;
+                                  let endRad = radius * progress;
+                                  let sx = m.targetX + Math.cos(angle) * startRad;
+                                  let sy = m.targetY + Math.sin(angle) * startRad;
+                                  c.moveTo(sx, sy);
+
+                                  let steps = 4;
+                                  for (let s = 1; s <= steps; s++) {
+                                    let segRad = startRad + (endRad - startRad) * (s / steps);
+                                    let jitterAngle = angle + (Math.sin(s * 1.5) * 0.15);
+                                    let jx = m.targetX + Math.cos(jitterAngle) * segRad;
+                                    let jy = m.targetY + Math.sin(jitterAngle) * segRad;
+                                    c.lineTo(jx, jy);
+                                  }
+                                }
+                                c.stroke();
+                              }
+
+                            } else if (m.activeAbility === "charge") {
                 // --- HIGH FIDELITY CHARGE INDICATOR ---
                 let dx = m.targetX - cx;
                 let dy = m.targetY - cy;
@@ -2469,150 +2684,359 @@
                                                             c.stroke();
                                                           }
                                                         } else if (m.activeAbility === "root_snare") {
-                          // --- HIGH FIDELITY ROOT SNARE INDICATOR ---
-                          let radius = 75;
-                          let time = Date.now();
+                                                                        // --- BOSS 1: BIO-LUMINESCENT CREEPING SNARE WEB & ROOT GRID ---
+                                                                        let radius = 75;
+                                                                        let time = Date.now();
 
-                          // Outer pulsing root vine circle
-                          c.strokeStyle = `rgba(46, 204, 113, ${pulseAlpha})`;
-                          c.lineWidth = 2.5;
-                          c.shadowBlur = 10;
-                          c.shadowColor = "#2ecc71";
-                          c.beginPath();
-                          c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                          c.stroke();
-                          c.shadowBlur = 0;
+                                                                        // 1. Connecting Vine Tether from Treant Center to Target Location
+                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.4 + pulseAlpha * 0.3})`;
+                                                                        c.lineWidth = 2.0;
+                                                                        c.setLineDash([6, 4]);
+                                                                        c.beginPath();
+                                                                        c.moveTo(cx, cy);
+                                                                        c.lineTo(m.targetX, m.targetY);
+                                                                        c.stroke();
+                                                                        c.setLineDash([]);
 
-                          // Growing inner green spore circle
-                          c.fillStyle = `rgba(39, 174, 96, ${pulseAlpha * 0.35})`;
-                          c.beginPath();
-                          c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                          c.fill();
+                                                                        // 2. Outer Bio-Luminescent Web Boundary Ring
+                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+                                                                        c.lineWidth = 3.0;
+                                                                        c.shadowBlur = 12;
+                                                                        c.shadowColor = "#2ecc71";
+                                                                        c.beginPath();
+                                                                        c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                                                                        c.stroke();
+                                                                        c.shadowBlur = 0;
 
-                          // High fidelity thorns radiating outwards along the perimeter
-                          let thorns = 8;
-                          c.fillStyle = `rgba(39, 174, 96, ${0.4 + progress * 0.6})`;
-                          c.strokeStyle = "#000000";
-                          c.lineWidth = 1.0;
-                          for (let i = 0; i < thorns; i++) {
-                            let ta = (i * Math.PI * 2) / thorns + (time / 800);
-                            let tx = m.targetX + Math.cos(ta) * radius;
-                            let ty = m.targetY + Math.sin(ta) * radius;
+                                                                        c.strokeStyle = "rgba(0, 255, 204, 0.6)";
+                                                                        c.lineWidth = 1.2;
+                                                                        c.beginPath();
+                                                                        c.arc(m.targetX, m.targetY, radius + 3, 0, Math.PI * 2);
+                                                                        c.stroke();
 
-                            // Draw a small sharp triangular thorn pointing outward
-                            let outX = m.targetX + Math.cos(ta) * (radius + 6);
-                            let outY = m.targetY + Math.sin(ta) * (radius + 6);
-                            let side1X = m.targetX + Math.cos(ta - 0.15) * (radius - 2);
-                            let side1Y = m.targetY + Math.sin(ta - 0.15) * (radius - 2);
-                            let side2X = m.targetX + Math.cos(ta + 0.15) * (radius - 2);
-                            let side2Y = m.targetY + Math.sin(ta + 0.15) * (radius - 2);
+                                                                        // 3. Growing Inner Bio-Spore Web Fill
+                                                                        let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
+                                                                        fillGrad.addColorStop(0, `rgba(0, 255, 204, ${pulseAlpha * 0.5})`);
+                                                                        fillGrad.addColorStop(0.5, `rgba(39, 174, 96, ${pulseAlpha * 0.35})`);
+                                                                        fillGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
 
-                            c.beginPath();
-                            c.moveTo(side1X, side1Y);
-                            c.lineTo(outX, outY);
-                            c.lineTo(side2X, side2Y);
-                            c.closePath();
-                            c.fill();
-                            c.stroke();
-                          }
-                                  } else if (m.activeAbility === "magnetic_pull") {
-                                    // --- HIGH FIDELITY MAGNETIC VORTEX ---
-                                    let ringCount = 3;
-                                    for (let i = 0; i < ringCount; i++) {
-                                      let rProgress = (progress + i / ringCount) % 1.0;
-                                      c.strokeStyle = `rgba(56, 189, 248, ${(1.0 - rProgress) * pulseAlpha})`;
-                                      c.lineWidth = 1.5;
-                                      c.beginPath();
-                                      c.arc(cx, cy, 140 * (1.0 - rProgress), 0, Math.PI * 2);
-                                      c.stroke();
-                                    }
+                                                                        c.fillStyle = fillGrad;
+                                                                        c.beginPath();
+                                                                        c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                                                                        c.fill();
 
-                                    // Heavy central danger impact zone
-                                    c.fillStyle = `rgba(231, 76, 60, ${pulseAlpha * 0.25})`;
-                                    c.beginPath();
-                                    c.arc(cx, cy, 70, 0, Math.PI * 2);
-                                    c.fill();
+                                                                        // 4. Concentric Arachnid Web Rings
+                                                                        let webRings = 4;
+                                                                        c.strokeStyle = `rgba(0, 255, 204, ${0.3 + progress * 0.4})`;
+                                                                        c.lineWidth = 1.4;
+                                                                        for (let r = 1; r <= webRings; r++) {
+                                                                          let ringRad = (radius * progress * r) / webRings;
+                                                                          if (ringRad > 2) {
+                                                                            c.beginPath();
+                                                                            c.arc(m.targetX, m.targetY, ringRad, 0, Math.PI * 2);
+                                                                            c.stroke();
+                                                                          }
+                                                                        }
 
-                                  } else if (m.activeAbility === "boomerang_shield") {
-                                            // --- HIGH FIDELITY BOOMERANG TARGET CHIMES ---
-                                            c.strokeStyle = `rgba(52, 152, 219, ${pulseAlpha})`;
-                                            c.lineWidth = 2.0;
-                                            c.beginPath();
-                                            c.arc(m.targetX, m.targetY, 20 + pulseAlpha * 4, 0, Math.PI * 2);
-                                            c.stroke();
+                                                                        // 5. Radial Root Vine Strands & Bio-Luminescent Nodes
+                                                                        let rays = 8;
+                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.5 + progress * 0.4})`;
+                                                                        c.lineWidth = 1.8;
+                                                                        c.beginPath();
+                                                                        for (let i = 0; i < rays; i++) {
+                                                                          let angle = (i * Math.PI * 2) / rays + (time / 2000);
+                                                                          let endR = radius * progress;
+                                                                          c.moveTo(m.targetX, m.targetY);
+                                                                          c.lineTo(m.targetX + Math.cos(angle) * endR, m.targetY + Math.sin(angle) * endR);
+                                                                        }
+                                                                        c.stroke();
 
-                                            // Dotted trajectory guideline out to target
-                                            c.strokeStyle = `rgba(52, 152, 219, 0.35)`;
-                                            c.lineWidth = 1.2;
-                                            c.setLineDash([4, 4]);
-                                            c.beginPath();
-                                            c.moveTo(cx, cy);
-                                            c.lineTo(m.targetX, m.targetY);
-                                            c.stroke();
-                                            c.setLineDash([]);
-                                          } else if (m.activeAbility === "shield_bash" && m.shieldAngle !== undefined) {
-                                                    // --- HIGH FIDELITY SHIELD BASH CONE ---
-                                                    let radius = 64;
-                                                    c.fillStyle = `rgba(231, 76, 60, ${pulseAlpha * 0.3})`;
-                                                    c.strokeStyle = "#e74c3c";
-                                                    c.lineWidth = 2.0;
+                                                                        // Bio-Luminescent Nodes at Web Intersections
+                                                                        c.fillStyle = "#00ffcc";
+                                                                        for (let r = 1; r <= webRings; r++) {
+                                                                          let ringRad = (radius * progress * r) / webRings;
+                                                                          if (ringRad > 4) {
+                                                                            for (let i = 0; i < rays; i++) {
+                                                                              let angle = (i * Math.PI * 2) / rays + (time / 2000);
+                                                                              let nx = m.targetX + Math.cos(angle) * ringRad;
+                                                                              let ny = m.targetY + Math.sin(angle) * ringRad;
+                                                                              c.beginPath();
+                                                                              c.arc(nx, ny, 1.8, 0, Math.PI * 2);
+                                                                              c.fill();
+                                                                            }
+                                                                          }
+                                                                        }
 
-                                                    c.beginPath();
-                                                    c.moveTo(cx, cy);
-                                                    c.arc(cx, cy, radius, m.shieldAngle - 0.5, m.shieldAngle + 0.5);
-                                                    c.closePath();
-                                                    c.fill();
-                                                    c.stroke();
-                                                  } else if (m.activeAbility === "magma_vents" && m.ventSpawnLocations) {
-                                                            // --- HIGH FIDELITY MAGMA VENT WARNING TARGETS ---
-                                                            m.ventSpawnLocations.forEach((loc) => {
-                                                              c.strokeStyle = `rgba(230, 126, 34, ${pulseAlpha})`;
-                                                              c.lineWidth = 2.0;
-                                                              c.shadowBlur = 10;
-                                                              c.shadowColor = "#e67e22";
-                                                              c.beginPath();
-                                                              c.arc(loc.x, loc.y, 16 + pulseAlpha * 4, 0, Math.PI * 2);
-                                                              c.stroke();
-                                                              c.shadowBlur = 0;
+                                                                        // 6. Perimeter Thorn Teeth
+                                                                        let thorns = 8;
+                                                                        c.fillStyle = `rgba(39, 174, 96, ${0.5 + progress * 0.5})`;
+                                                                        c.strokeStyle = "#000000";
+                                                                        c.lineWidth = 1.0;
+                                                                        for (let i = 0; i < thorns; i++) {
+                                                                          let ta = (i * Math.PI * 2) / thorns + (time / 800);
+                                                                          let outX = m.targetX + Math.cos(ta) * (radius + 6);
+                                                                          let outY = m.targetY + Math.sin(ta) * (radius + 6);
+                                                                          let side1X = m.targetX + Math.cos(ta - 0.15) * (radius - 2);
+                                                                          let side1Y = m.targetY + Math.sin(ta - 0.15) * (radius - 2);
+                                                                          let side2X = m.targetX + Math.cos(ta + 0.15) * (radius - 2);
+                                                                          let side2Y = m.targetY + Math.sin(ta + 0.15) * (radius - 2);
 
-                                                              // Fill growing molten indicator
-                                                              c.fillStyle = `rgba(243, 156, 18, ${pulseAlpha * 0.25})`;
-                                                              c.beginPath();
-                                                              c.arc(loc.x, loc.y, 16 * progress, 0, Math.PI * 2);
-                                                              c.fill();
-                                                            });
-                                                          } else if (m.activeAbility === "dilation_field") {
-                                                                    // --- HIGH FIDELITY TIME DILATION TARGET ---
-                                                                    let radius = 40;
-                                                                    let time = Date.now();
+                                                                          c.beginPath();
+                                                                          c.moveTo(side1X, side1Y);
+                                                                          c.lineTo(outX, outY);
+                                                                          c.lineTo(side2X, side2Y);
+                                                                          c.closePath();
+                                                                          c.fill();
+                                                                          c.stroke();
+                                                                        }
+                                                                      } else if (m.activeAbility === "magnetic_pull") {
+                                                                                                          // --- BOSS 2: SAPPHIRE MAGNETIC VORTEX ---
+                                                                                                          let time = Date.now();
+                                                                                                          let maxRadius = 140;
 
-                                                                    // Outer pulsing gold circle
-                                                                    c.strokeStyle = `rgba(241, 196, 15, ${pulseAlpha})`;
-                                                                    c.lineWidth = 2.5;
-                                                                    c.shadowBlur = 10;
-                                                                    c.shadowColor = "#ffd700";
-                                                                    c.beginPath();
-                                                                    c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
-                                                                    c.stroke();
-                                                                    c.shadowBlur = 0;
+                                                                                                          // 1. Central Impact Hazard Zone
+                                                                                                          let coreGrad = c.createRadialGradient(cx, cy, 2, cx, cy, 70);
+                                                                                                          coreGrad.addColorStop(0, `rgba(0, 210, 255, ${pulseAlpha * 0.7})`);
+                                                                                                          coreGrad.addColorStop(0.5, `rgba(56, 189, 248, ${pulseAlpha * 0.35})`);
+                                                                                                          coreGrad.addColorStop(1, "rgba(5, 12, 24, 0)");
 
-                                                                    // Accretion sweeping warning line
-                                                                    c.fillStyle = `rgba(212, 175, 55, ${pulseAlpha * 0.25})`;
-                                                                    c.beginPath();
-                                                                    c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
-                                                                    c.fill();
+                                                                                                          c.fillStyle = coreGrad;
+                                                                                                          c.beginPath();
+                                                                                                          c.arc(cx, cy, 70, 0, Math.PI * 2);
+                                                                                                          c.fill();
 
-                                                                    // Roman numeral tick markers
-                                                                    c.strokeStyle = "rgba(212, 175, 55, 0.4)";
-                                                                    c.lineWidth = 1.0;
-                                                                    for (let i = 0; i < 4; i++) {
-                                                                      let angle = (i * Math.PI) / 2;
-                                                                      c.beginPath();
-                                                                      c.moveTo(m.targetX + Math.cos(angle) * (radius - 5), m.targetY + Math.sin(angle) * (radius - 5));
-                                                                      c.lineTo(m.targetX + Math.cos(angle) * radius, m.targetY + Math.sin(angle) * radius);
-                                                                      c.stroke();
-                                                                    }
-                                                                  } else if (m.activeAbility === "control_glitch") {
+                                                                                                          c.strokeStyle = `rgba(0, 210, 255, ${0.5 + pulseAlpha * 0.4})`;
+                                                                                                          c.lineWidth = 2.0;
+                                                                                                          c.shadowBlur = 10;
+                                                                                                          c.shadowColor = "#00d2ff";
+                                                                                                          c.beginPath();
+                                                                                                          c.arc(cx, cy, 70, 0, Math.PI * 2);
+                                                                                                          c.stroke();
+                                                                                                          c.shadowBlur = 0;
+
+                                                                                                          // 2. Contracting Spiral Field Rings
+                                                                                                          let ringCount = 4;
+                                                                                                          c.lineWidth = 1.6;
+                                                                                                          for (let i = 0; i < ringCount; i++) {
+                                                                                                            let rProgress = (progress + i / ringCount) % 1.0;
+                                                                                                            let currentR = maxRadius * (1.0 - rProgress);
+
+                                                                                                            c.strokeStyle = `rgba(0, 210, 255, ${(1.0 - rProgress) * (0.4 + pulseAlpha * 0.4)})`;
+                                                                                                            c.beginPath();
+                                                                                                            c.arc(cx, cy, currentR, 0, Math.PI * 2);
+                                                                                                            c.stroke();
+                                                                                                          }
+
+                                                                                                          // 3. Rotating Magnetic Field Vector Spokes
+                                                                                                          let spokes = 6;
+                                                                                                          c.strokeStyle = `rgba(56, 189, 248, ${0.25 + pulseAlpha * 0.25})`;
+                                                                                                          c.lineWidth = 1.2;
+                                                                                                          c.save();
+                                                                                                          c.translate(cx, cy);
+                                                                                                          c.rotate(time / 300);
+                                                                                                          for (let s = 0; s < spokes; s++) {
+                                                                                                            let ang = (s * Math.PI * 2) / spokes;
+                                                                                                            c.beginPath();
+                                                                                                            c.moveTo(Math.cos(ang) * 15, Math.sin(ang) * 15);
+                                                                                                            c.lineTo(Math.cos(ang) * maxRadius, Math.sin(ang) * maxRadius);
+                                                                                                            c.stroke();
+                                                                                                          }
+                                                                                                          c.restore();
+
+                                                                                                        } else if (m.activeAbility === "boomerang_shield") {
+                                                                                                          // --- BOSS 2: SAPPHIRE BOOMERANG TRAJECTORY ---
+                                                                                                          let time = Date.now();
+                                                                                                          c.strokeStyle = `rgba(0, 210, 255, ${0.6 + pulseAlpha * 0.4})`;
+                                                                                                          c.lineWidth = 2.2;
+                                                                                                          c.shadowBlur = 10;
+                                                                                                          c.shadowColor = "#00d2ff";
+
+                                                                                                          // Target Reticle
+                                                                                                          let reticleR = 22 + Math.sin(time / 100) * 3;
+                                                                                                          c.beginPath();
+                                                                                                          c.arc(m.targetX, m.targetY, reticleR, 0, Math.PI * 2);
+                                                                                                          c.stroke();
+                                                                                                          c.shadowBlur = 0;
+
+                                                                                                          // Dual Trajectory Dotted Guidelines
+                                                                                                          let angleToPlayer = Math.atan2(m.targetY - cy, m.targetX - cx);
+                                                                                                          c.strokeStyle = "rgba(56, 189, 248, 0.4)";
+                                                                                                          c.lineWidth = 1.2;
+                                                                                                          c.setLineDash([5, 4]);
+
+                                                                                                          [-0.25, 0.25].forEach((offset) => {
+                                                                                                            let arcAng = angleToPlayer + offset;
+                                                                                                            let tx = cx + Math.cos(arcAng) * 160;
+                                                                                                            let ty = cy + Math.sin(arcAng) * 160;
+                                                                                                            c.beginPath();
+                                                                                                            c.moveTo(cx, cy);
+                                                                                                            c.lineTo(tx, ty);
+                                                                                                            c.stroke();
+                                                                                                          });
+                                                                                                          c.setLineDash([]);
+
+                                                                                                        } else if (m.activeAbility === "shield_bash" && m.shieldAngle !== undefined) {
+                                                                                                          // --- BOSS 2: DIRECTIONAL TOWER SHIELD BASH CONE ---
+                                                                                                          let radius = 68;
+                                                                                                          let arcWidth = 0.55; // Radians to each side of shieldAngle
+
+                                                                                                          // 1. Layered Sector Warning Cone
+                                                                                                          let coneGrad = c.createRadialGradient(cx, cy, 2, cx, cy, radius);
+                                                                                                          coneGrad.addColorStop(0, `rgba(0, 210, 255, ${pulseAlpha * 0.6})`);
+                                                                                                          coneGrad.addColorStop(0.7, `rgba(231, 76, 60, ${pulseAlpha * 0.5})`);
+                                                                                                          coneGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
+
+                                                                                                          c.fillStyle = coneGrad;
+                                                                                                          c.beginPath();
+                                                                                                          c.moveTo(cx, cy);
+                                                                                                          c.arc(cx, cy, radius, m.shieldAngle - arcWidth, m.shieldAngle + arcWidth);
+                                                                                                          c.closePath();
+                                                                                                          c.fill();
+
+                                                                                                          // 2. Heavy Outlined Arc Boundaries
+                                                                                                          c.strokeStyle = "#e74c3c";
+                                                                                                          c.lineWidth = 2.5;
+                                                                                                          c.shadowBlur = 10;
+                                                                                                          c.shadowColor = "#e74c3c";
+                                                                                                          c.beginPath();
+                                                                                                          c.moveTo(cx, cy);
+                                                                                                          c.arc(cx, cy, radius, m.shieldAngle - arcWidth, m.shieldAngle + arcWidth);
+                                                                                                          c.closePath();
+                                                                                                          c.stroke();
+                                                                                                          c.shadowBlur = 0;
+
+                                                                                                          // 3. Sweeping Shockwave Arc expanding with progress
+                                                                                                          let waveR = radius * progress;
+                                                                                                          c.strokeStyle = "#ffffff";
+                                                                                                          c.lineWidth = 2.0;
+                                                                                                          c.beginPath();
+                                                                                                          c.arc(cx, cy, waveR, m.shieldAngle - arcWidth, m.shieldAngle + arcWidth);
+                                                                                                          c.stroke();
+
+                                                                                                          // 4. Sector Directional Rib Lines
+                                                                                                          c.strokeStyle = "rgba(0, 210, 255, 0.4)";
+                                                                                                          c.lineWidth = 1.0;
+                                                                                                          [-0.35, 0, 0.35].forEach((angOffset) => {
+                                                                                                            let subAng = m.shieldAngle + angOffset;
+                                                                                                            c.beginPath();
+                                                                                                            c.moveTo(cx, cy);
+                                                                                                            c.lineTo(cx + Math.cos(subAng) * radius, cy + Math.sin(subAng) * radius);
+                                                                                                            c.stroke();
+                                                                                                          });
+                                                                                                        } else if (m.activeAbility === "magma_vents" && m.ventSpawnLocations) {
+                                                                                                                                                                    // --- BOSS 3: MAGMA VENT FISSURE TARGETS ---
+                                                                                                                                                                    let time = Date.now();
+                                                                                                                                                                    let ventRadius = 18;
+
+                                                                                                                                                                    m.ventSpawnLocations.forEach((loc) => {
+                                                                                                                                                                      // 1. Dual Molten Warning Rings
+                                                                                                                                                                      c.strokeStyle = `rgba(249, 115, 22, ${0.6 + pulseAlpha * 0.4})`;
+                                                                                                                                                                      c.lineWidth = 2.2;
+                                                                                                                                                                      c.shadowBlur = 10;
+                                                                                                                                                                      c.shadowColor = "#f97316";
+                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                      c.arc(loc.x, loc.y, ventRadius + pulseAlpha * 3, 0, Math.PI * 2);
+                                                                                                                                                                      c.stroke();
+                                                                                                                                                                      c.shadowBlur = 0;
+
+                                                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.8)";
+                                                                                                                                                                      c.lineWidth = 1.0;
+                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                      c.arc(loc.x, loc.y, ventRadius + 4, 0, Math.PI * 2);
+                                                                                                                                                                      c.stroke();
+
+                                                                                                                                                                      // 2. Bubbling Lava Core Fill
+                                                                                                                                                                      let lavaGrad = c.createRadialGradient(loc.x, loc.y, 1, loc.x, loc.y, ventRadius);
+                                                                                                                                                                      lavaGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.8})`);
+                                                                                                                                                                      lavaGrad.addColorStop(0.6, `rgba(249, 115, 22, ${pulseAlpha * 0.4})`);
+                                                                                                                                                                      lavaGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
+
+                                                                                                                                                                      c.fillStyle = lavaGrad;
+                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                      c.arc(loc.x, loc.y, ventRadius * progress, 0, Math.PI * 2);
+                                                                                                                                                                      c.fill();
+
+                                                                                                                                                                      // 3. Crosshair Fissure Ticks
+                                                                                                                                                                      c.strokeStyle = `rgba(253, 186, 116, ${0.4 + progress * 0.5})`;
+                                                                                                                                                                      c.lineWidth = 1.5;
+                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                      c.moveTo(loc.x - ventRadius - 4, loc.y);
+                                                                                                                                                                      c.lineTo(loc.x + ventRadius + 4, loc.y);
+                                                                                                                                                                      c.moveTo(loc.x, loc.y - ventRadius - 4);
+                                                                                                                                                                      c.lineTo(loc.x, loc.y + ventRadius + 4);
+                                                                                                                                                                      c.stroke();
+                                                                                                                                                                    });
+                                                                                                                                                                  } else if (m.activeAbility === "dilation_field") {
+                                                                                                                                                                                                                                      // --- BOSS 6: ROMAN NUMERAL CLOCKWORK DILATION FIELD & DIAL SWEEPS ---
+                                                                                                                                                                                                                                      let radius = 42;
+                                                                                                                                                                                                                                      let time = Date.now();
+
+                                                                                                                                                                                                                                      // 1. Outer Brass Gear Teeth Perimeter
+                                                                                                                                                                                                                                      c.save();
+                                                                                                                                                                                                                                      c.translate(m.targetX, m.targetY);
+                                                                                                                                                                                                                                      c.rotate(time / 1200);
+
+                                                                                                                                                                                                                                      c.fillStyle = `rgba(212, 175, 55, ${0.4 + pulseAlpha * 0.3})`;
+                                                                                                                                                                                                                                      c.strokeStyle = "#ffd700";
+                                                                                                                                                                                                                                      c.lineWidth = 1.0;
+                                                                                                                                                                                                                                      let teeth = 12;
+                                                                                                                                                                                                                                      for (let i = 0; i < teeth; i++) {
+                                                                                                                                                                                                                                        let tAng = (i * Math.PI * 2) / teeth;
+                                                                                                                                                                                                                                        c.save();
+                                                                                                                                                                                                                                        c.rotate(tAng);
+                                                                                                                                                                                                                                        c.fillRect(-2, -radius - 3, 4, 3);
+                                                                                                                                                                                                                                        c.restore();
+                                                                                                                                                                                                                                      }
+                                                                                                                                                                                                                                      c.restore();
+
+                                                                                                                                                                                                                                      // 2. Outer Pulsing Gold Dial Ring
+                                                                                                                                                                                                                                      c.strokeStyle = `rgba(241, 196, 15, ${0.7 + pulseAlpha * 0.3})`;
+                                                                                                                                                                                                                                      c.lineWidth = 2.5;
+                                                                                                                                                                                                                                      c.shadowBlur = 10;
+                                                                                                                                                                                                                                      c.shadowColor = "#ffd700";
+                                                                                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                                                                                      c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                                                                                                                                                                                                                                      c.stroke();
+                                                                                                                                                                                                                                      c.shadowBlur = 0;
+
+                                                                                                                                                                                                                                      // 3. Growing Concentric Warning Fill Disc
+                                                                                                                                                                                                                                      let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
+                                                                                                                                                                                                                                      fillGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.7})`);
+                                                                                                                                                                                                                                      fillGrad.addColorStop(0.5, `rgba(212, 175, 55, ${pulseAlpha * 0.4})`);
+                                                                                                                                                                                                                                      fillGrad.addColorStop(1, "rgba(120, 53, 15, 0)");
+
+                                                                                                                                                                                                                                      c.fillStyle = fillGrad;
+                                                                                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                                                                                      c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                                                                                                                                                                                                                                      c.fill();
+
+                                                                                                                                                                                                                                      // 4. 12 Clock Dial Hour Ticks (XII, III, VI, IX)
+                                                                                                                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.8)";
+                                                                                                                                                                                                                                      c.lineWidth = 1.2;
+                                                                                                                                                                                                                                      for (let i = 0; i < 12; i++) {
+                                                                                                                                                                                                                                        let tickAng = (i * Math.PI * 2) / 12;
+                                                                                                                                                                                                                                        let isMajor = i % 3 === 0;
+                                                                                                                                                                                                                                        let innerR = isMajor ? radius - 8 : radius - 4;
+                                                                                                                                                                                                                                        c.beginPath();
+                                                                                                                                                                                                                                        c.moveTo(m.targetX + Math.cos(tickAng) * innerR, m.targetY + Math.sin(tickAng) * innerR);
+                                                                                                                                                                                                                                        c.lineTo(m.targetX + Math.cos(tickAng) * radius, m.targetY + Math.sin(tickAng) * radius);
+                                                                                                                                                                                                                                        c.stroke();
+                                                                                                                                                                                                                                      }
+
+                                                                                                                                                                                                                                      // 5. Sweeping Clock Hand Line (0 to 2*PI in direction of progress)
+                                                                                                                                                                                                                                      let handAng = -Math.PI / 2 + progress * Math.PI * 2;
+                                                                                                                                                                                                                                      c.strokeStyle = "#ffffff";
+                                                                                                                                                                                                                                      c.lineWidth = 2.0;
+                                                                                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                                                                                      c.moveTo(m.targetX, m.targetY);
+                                                                                                                                                                                                                                      c.lineTo(m.targetX + Math.cos(handAng) * (radius - 3), m.targetY + Math.sin(handAng) * (radius - 3));
+                                                                                                                                                                                                                                      c.stroke();
+
+                                                                                                                                                                                                                                      c.fillStyle = "#ffd700";
+                                                                                                                                                                                                                                      c.beginPath();
+                                                                                                                                                                                                                                      c.arc(m.targetX, m.targetY, 2.5, 0, Math.PI * 2);
+                                                                                                                                                                                                                                      c.fill();
+                                                                                                                                                                                                                                    } else if (m.activeAbility === "control_glitch") {
                                                                             // --- HIGH FIDELITY CONTROL GLITCH GRID ---
                                                                             let radius = 180;
                                                                             let time = Date.now();
@@ -2670,127 +3094,249 @@
                                                                               c.fill();
                                                                             });
                                                                           } else if (m.activeAbility === "scarlet_fire") {
-                                                                            // --- HIGH FIDELITY DRAGON FIRE CONE ---
-                                                                            let radius = 110;
-                                                                            let faceAngle = m.facing === -1 ? Math.PI : 0;
+                                                                                                                                      // --- BOSS 7: SCARLET DRAGON FIRE BREATH CONE ---
+                                                                                                                                      let radius = 115;
+                                                                                                                                      let faceAngle = m.facing === -1 ? Math.PI : 0;
+                                                                                                                                      let coneWidth = 0.85;
 
-                                                                            c.fillStyle = `rgba(231, 76, 60, ${pulseAlpha * 0.3})`;
-                                                                            c.strokeStyle = "#ff3300";
-                                                                            c.lineWidth = 2.2;
-                                                                            c.beginPath();
-                                                                            c.moveTo(cx, cy);
-                                                                            c.arc(cx, cy, radius, faceAngle - 0.8, faceAngle + 0.8);
-                                                                            c.closePath();
-                                                                            c.fill();
-                                                                            c.stroke();
+                                                                                                                                      c.save();
 
-                                                                            // Crackling fire sparks in cone
-                                                                            c.strokeStyle = "#ffaa00";
-                                                                            c.lineWidth = 1.0;
-                                                                            c.beginPath();
-                                                                            c.arc(cx, cy, radius * progress, faceAngle - 0.8, faceAngle + 0.8);
-                                                                            c.stroke();
-                                                                          } else if (m.activeAbility === "calamity_slam") {
-                                                                            // --- HIGH FIDELITY EARTH COLLAPSE FAULT LINES ---
-                                                                            c.strokeStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
-                                                                            c.lineWidth = 2.5;
-                                                                            c.shadowBlur = 10;
-                                                                            c.shadowColor = "#ff3300";
-                                                                            c.beginPath();
-                                                                            c.arc(cx, cy, 75, 0, Math.PI * 2);
-                                                                            c.stroke();
-                                                                            c.shadowBlur = 0;
+                                                                                                                                      // 1. Multi-Stop Flame Gradient Fill
+                                                                                                                                      let fireGrad = c.createRadialGradient(cx, cy, 2, cx, cy, radius);
+                                                                                                                                      fireGrad.addColorStop(0, `rgba(255, 255, 255, ${pulseAlpha * 0.85})`);
+                                                                                                                                      fireGrad.addColorStop(0.3, `rgba(254, 240, 138, ${pulseAlpha * 0.7})`);
+                                                                                                                                      fireGrad.addColorStop(0.7, `rgba(255, 85, 0, ${pulseAlpha * 0.5})`);
+                                                                                                                                      fireGrad.addColorStop(1, "rgba(150, 0, 24, 0)");
 
-                                                                            c.fillStyle = `rgba(192, 57, 43, ${pulseAlpha * 0.2})`;
-                                                                            c.beginPath();
-                                                                            c.arc(cx, cy, 75 * progress, 0, Math.PI * 2);
-                                                                            c.fill();
+                                                                                                                                      c.fillStyle = fireGrad;
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.moveTo(cx, cy);
+                                                                                                                                      c.arc(cx, cy, radius * progress, faceAngle - coneWidth, faceAngle + coneWidth);
+                                                                                                                                      c.closePath();
+                                                                                                                                      c.fill();
 
-                                                                            // Inner ground crack guidelines
-                                                                            let cracks = 8;
-                                                                            c.strokeStyle = "rgba(0, 0, 0, 0.4)";
-                                                                            c.lineWidth = 1.8;
-                                                                            c.beginPath();
-                                                                            for (let i = 0; i < cracks; i++) {
-                                                                              let angle = (i * Math.PI * 2) / cracks;
-                                                                              c.moveTo(cx, cy);
-                                                                              c.lineTo(cx + Math.cos(angle) * 75, cy + Math.sin(angle) * 75);
-                                                                            }
-                                                                            c.stroke();
-                                                                          } else if (m.activeAbility === "spore_storm") {
-                                                            // --- HIGH FIDELITY SPORE STORM CONES ---
-                                                            c.strokeStyle = `rgba(46, 204, 113, ${pulseAlpha})`;
-                                                            c.lineWidth = 2.0;
-                                                            c.save();
-                                                            c.translate(cx, cy);
-                                                            c.rotate(time / 600); // Rotating warning guidelines!
+                                                                                                                                      // 2. Outer Dragon Fire Boundary Contour
+                                                                                                                                      c.strokeStyle = "#ff3300";
+                                                                                                                                      c.lineWidth = 2.5;
+                                                                                                                                      c.shadowBlur = 12;
+                                                                                                                                      c.shadowColor = "#ff3300";
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.moveTo(cx, cy);
+                                                                                                                                      c.arc(cx, cy, radius, faceAngle - coneWidth, faceAngle + coneWidth);
+                                                                                                                                      c.closePath();
+                                                                                                                                      c.stroke();
+                                                                                                                                      c.shadowBlur = 0;
 
-                                                            // Draw 3 sweeping warning lines radiating out for the spores
-                                                            for (let i = 0; i < 3; i++) {
-                                                              let angle = (i * Math.PI * 2) / 3;
-                                                              c.beginPath();
-                                                              c.moveTo(0, 0);
-                                                              c.lineTo(Math.cos(angle) * 45, Math.sin(angle) * 45);
-                                                              c.stroke();
-                                                            }
-                                                            c.restore();
+                                                                                                                                      // 3. Advancing Fire Wavefront Arc
+                                                                                                                                      let waveR = radius * progress;
+                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.9)";
+                                                                                                                                      c.lineWidth = 2.0;
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.arc(cx, cy, waveR, faceAngle - coneWidth, faceAngle + coneWidth);
+                                                                                                                                      c.stroke();
 
-                                                            // Core warning circle
-                                                            c.fillStyle = `rgba(39, 174, 96, ${pulseAlpha * 0.25})`;
-                                                            c.beginPath();
-                                                            c.arc(cx, cy, 45, 0, Math.PI * 2);
-                                                            c.fill();
-                                                          } else if (m.activeAbility === "singularity") {
-                                                            // --- HIGH FIDELITY SINGULARITY EVENT HORIZON ---
-                                                            let radius = 90;
-                                                            let time = Date.now();
+                                                                                                                                      // 4. Radial Flame Jet Guidelines
+                                                                                                                                      c.strokeStyle = `rgba(255, 85, 0, ${0.4 + progress * 0.4})`;
+                                                                                                                                      c.lineWidth = 1.2;
+                                                                                                                                      let rays = 5;
+                                                                                                                                      for (let r = 0; r < rays; r++) {
+                                                                                                                                        let rayAng = faceAngle - coneWidth + (r * (coneWidth * 2)) / (rays - 1);
+                                                                                                                                        c.beginPath();
+                                                                                                                                        c.moveTo(cx, cy);
+                                                                                                                                        c.lineTo(cx + Math.cos(rayAng) * radius, cy + Math.sin(rayAng) * radius);
+                                                                                                                                        c.stroke();
+                                                                                                                                      }
 
-                                                            // Outer pulsing Event Horizon boundary
-                                                            c.strokeStyle = `rgba(142, 68, 173, ${pulseAlpha})`;
-                                                            c.lineWidth = 3.0;
-                                                            c.shadowBlur = 15;
-                                                            c.shadowColor = "#8e44ad";
-                                                            c.beginPath();
-                                                            c.arc(cx, cy, radius, 0, Math.PI * 2);
-                                                            c.stroke();
-                                                            c.shadowBlur = 0;
+                                                                                                                                      c.restore();
 
-                                                            // Swirling Accretion Disk guidelines
-                                                            c.strokeStyle = "rgba(232, 67, 147, 0.4)";
-                                                            c.lineWidth = 1.2;
-                                                            c.save();
-                                                            c.translate(cx, cy);
-                                                            c.rotate(-time / 400);
-                                                            c.beginPath();
-                                                            c.ellipse(0, 0, radius * 0.9, radius * 0.3, 0, 0, Math.PI * 2);
-                                                            c.stroke();
-                                                            c.restore();
+                                                                                                                                    } else if (m.activeAbility === "calamity_slam") {
+                                                                                                                                      // --- BOSS 7: FAULT LINE GROUND SHATTER ---
+                                                                                                                                      let time = Date.now();
+                                                                                                                                      let radius = 80;
 
-                                                            // Concentric lines drawing inward to represent gravitation pull
-                                                            let pullRingCount = 3;
-                                                            for (let i = 0; i < pullRingCount; i++) {
-                                                              let ringProgress = (progress + i / pullRingCount) % 1.0;
-                                                              c.strokeStyle = `rgba(142, 68, 173, ${(1.0 - ringProgress) * pulseAlpha * 0.85})`;
-                                                              c.lineWidth = 1.5;
-                                                              c.beginPath();
-                                                              c.arc(cx, cy, radius * (1.0 - ringProgress), 0, Math.PI * 2);
-                                                              c.stroke();
-                                                            }
+                                                                                                                                      // 1. Outer Volcanic Calamity Boundary Ring
+                                                                                                                                      c.strokeStyle = `rgba(255, 51, 0, ${0.7 + pulseAlpha * 0.3})`;
+                                                                                                                                      c.lineWidth = 3.0;
+                                                                                                                                      c.shadowBlur = 14;
+                                                                                                                                      c.shadowColor = "#ff3300";
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.arc(cx, cy, radius, 0, Math.PI * 2);
+                                                                                                                                      c.stroke();
+                                                                                                                                      c.shadowBlur = 0;
 
-                                                            // Dense black hole core warning
-                                                            c.fillStyle = `rgba(12, 1, 26, ${0.4 + progress * 0.45})`;
-                                                            c.beginPath();
-                                                            c.arc(cx, cy, 14 + pulseAlpha * 4, 0, Math.PI * 2);
-                                                            c.fill();
-                                                            c.stroke();
-                                                          }
+                                                                                                                                      c.strokeStyle = "rgba(254, 240, 138, 0.7)";
+                                                                                                                                      c.lineWidth = 1.2;
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+                                                                                                                                      c.stroke();
 
-                                                          c.restore();
-                                                                                                                  }
-                                                          };
+                                                                                                                                      // 2. Inner Collapsing Ground Fill
+                                                                                                                                      let collapseGrad = c.createRadialGradient(cx, cy, 1, cx, cy, radius);
+                                                                                                                                      collapseGrad.addColorStop(0, `rgba(254, 240, 138, ${pulseAlpha * 0.75})`);
+                                                                                                                                      collapseGrad.addColorStop(0.5, `rgba(255, 85, 0, ${pulseAlpha * 0.45})`);
+                                                                                                                                      collapseGrad.addColorStop(1, "rgba(150, 0, 24, 0)");
 
-                                                              // Initialize Draggable Flask Button Engine
-                                                              if (typeof window.initFlaskButtonDrag === "function") {
+                                                                                                                                      c.fillStyle = collapseGrad;
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.arc(cx, cy, radius * progress, 0, Math.PI * 2);
+                                                                                                                                      c.fill();
+
+                                                                                                                                      // 3. Jagged Fault Line Ground Cracks (8 Fractures)
+                                                                                                                                      c.strokeStyle = `rgba(255, 51, 0, ${0.5 + progress * 0.5})`;
+                                                                                                                                      c.lineWidth = 2.0;
+                                                                                                                                      c.beginPath();
+                                                                                                                                      let cracks = 8;
+                                                                                                                                      for (let i = 0; i < cracks; i++) {
+                                                                                                                                        let baseAng = (i * Math.PI * 2) / cracks + (m.id || 0);
+                                                                                                                                        let endDist = radius * progress;
+                                                                                                                                        let steps = 4;
+                                                                                                                                        let lastX = cx;
+                                                                                                                                        let lastY = cy;
+
+                                                                                                                                        for (let s = 1; s <= steps; s++) {
+                                                                                                                                          let curDist = (endDist * s) / steps;
+                                                                                                                                          let jitter = Math.sin(s * 3.1 + time / 180) * 3;
+                                                                                                                                          let curAngle = baseAng + jitter * 0.04;
+                                                                                                                                          let nx = cx + Math.cos(curAngle) * curDist;
+                                                                                                                                          let ny = cy + Math.sin(curAngle) * curDist;
+
+                                                                                                                                          c.moveTo(lastX, lastY);
+                                                                                                                                          c.lineTo(nx, ny);
+                                                                                                                                          lastX = nx;
+                                                                                                                                          lastY = ny;
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                      c.stroke();
+                                                                                                                                    } else if (m.activeAbility === "spore_storm") {
+                                                                                                                                      // --- BOSS 4: ROTATING SPORE VECTOR CONES ---
+                                                                                                                                      let time = Date.now();
+                                                                                                                                      let coneRadius = 55;
+                                                                                                                                      let rotAngle = time / 500;
+
+                                                                                                                                      c.save();
+                                                                                                                                      c.translate(cx, cy);
+
+                                                                                                                                      // 1. 3 Rotating Directional Spore Cones
+                                                                                                                                      let numCones = 3;
+                                                                                                                                      let coneWidth = 0.35; // radians each side
+                                                                                                                                      for (let i = 0; i < numCones; i++) {
+                                                                                                                                        let baseAng = rotAngle + (i * Math.PI * 2) / numCones;
+
+                                                                                                                                        let sporeGrad = c.createRadialGradient(0, 0, 2, 0, 0, coneRadius);
+                                                                                                                                        sporeGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.7})`);
+                                                                                                                                        sporeGrad.addColorStop(0.6, `rgba(46, 204, 113, ${pulseAlpha * 0.35})`);
+                                                                                                                                        sporeGrad.addColorStop(1, "rgba(20, 61, 31, 0)");
+
+                                                                                                                                        c.fillStyle = sporeGrad;
+                                                                                                                                        c.beginPath();
+                                                                                                                                        c.moveTo(0, 0);
+                                                                                                                                        c.arc(0, 0, coneRadius * progress, baseAng - coneWidth, baseAng + coneWidth);
+                                                                                                                                        c.closePath();
+                                                                                                                                        c.fill();
+
+                                                                                                                                        c.strokeStyle = `rgba(46, 204, 113, ${0.6 + pulseAlpha * 0.4})`;
+                                                                                                                                        c.lineWidth = 1.8;
+                                                                                                                                        c.beginPath();
+                                                                                                                                        c.moveTo(0, 0);
+                                                                                                                                        c.arc(0, 0, coneRadius, baseAng - coneWidth, baseAng + coneWidth);
+                                                                                                                                        c.closePath();
+                                                                                                                                        c.stroke();
+                                                                                                                                      }
+
+                                                                                                                                      c.restore();
+
+                                                                                                                                      // 2. Central Toxic Core Circle
+                                                                                                                                      let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, 20);
+                                                                                                                                      coreGrad.addColorStop(0, `rgba(163, 253, 131, ${pulseAlpha * 0.8})`);
+                                                                                                                                      coreGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
+
+                                                                                                                                      c.fillStyle = coreGrad;
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.arc(cx, cy, 20, 0, Math.PI * 2);
+                                                                                                                                      c.fill();
+
+                                                                                                                                      c.strokeStyle = "#2ecc71";
+                                                                                                                                      c.lineWidth = 1.8;
+                                                                                                                                      c.beginPath();
+                                                                                                                                      c.arc(cx, cy, 20, 0, Math.PI * 2);
+                                                                                                                                      c.stroke();
+                                                                                                                                    } else if (m.activeAbility === "singularity") {
+                                                                                                                                                                                                // --- BOSS 5: EVENT HORIZON ACCRETION DISK & GRAVITY VACUUM RINGS ---
+                                                                                                                                                                                                let radius = 90;
+                                                                                                                                                                                                let time = Date.now();
+
+                                                                                                                                                                                                // 1. Outer Pulsing Event Horizon Boundary
+                                                                                                                                                                                                c.strokeStyle = `rgba(232, 67, 147, ${0.7 + pulseAlpha * 0.3})`;
+                                                                                                                                                                                                c.lineWidth = 3.0;
+                                                                                                                                                                                                c.shadowBlur = 16;
+                                                                                                                                                                                                c.shadowColor = "#e84393";
+                                                                                                                                                                                                c.beginPath();
+                                                                                                                                                                                                c.arc(cx, cy, radius, 0, Math.PI * 2);
+                                                                                                                                                                                                c.stroke();
+                                                                                                                                                                                                c.shadowBlur = 0;
+
+                                                                                                                                                                                                c.strokeStyle = "rgba(142, 68, 173, 0.6)";
+                                                                                                                                                                                                c.lineWidth = 1.2;
+                                                                                                                                                                                                c.beginPath();
+                                                                                                                                                                                                c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+                                                                                                                                                                                                c.stroke();
+
+                                                                                                                                                                                                // 2. Counter-Rotating Tilted Accretion Disk Ellipses
+                                                                                                                                                                                                c.save();
+                                                                                                                                                                                                c.translate(cx, cy);
+
+                                                                                                                                                                                                // Outer Accretion Ring (Counter-Clockwise)
+                                                                                                                                                                                                c.save();
+                                                                                                                                                                                                c.rotate(-time / 300);
+                                                                                                                                                                                                c.strokeStyle = "rgba(232, 67, 147, 0.65)";
+                                                                                                                                                                                                c.lineWidth = 1.8;
+                                                                                                                                                                                                c.beginPath();
+                                                                                                                                                                                                c.ellipse(0, 0, radius * 0.95, radius * 0.35, 0, 0, Math.PI * 2);
+                                                                                                                                                                                                c.stroke();
+                                                                                                                                                                                                c.restore();
+
+                                                                                                                                                                                                // Inner Accretion Ring (Clockwise)
+                                                                                                                                                                                                c.save();
+                                                                                                                                                                                                c.rotate(time / 220 + Math.PI / 4);
+                                                                                                                                                                                                c.strokeStyle = "rgba(0, 210, 255, 0.65)";
+                                                                                                                                                                                                c.lineWidth = 1.5;
+                                                                                                                                                                                                c.beginPath();
+                                                                                                                                                                                                c.ellipse(0, 0, radius * 0.75, radius * 0.28, 0, 0, Math.PI * 2);
+                                                                                                                                                                                                c.stroke();
+                                                                                                                                                                                                c.restore();
+
+                                                                                                                                                                                                c.restore();
+
+                                                                                                                                                                                                // 3. Contracting Gravity Vacuum Rings
+                                                                                                                                                                                                let ringCount = 4;
+                                                                                                                                                                                                for (let i = 0; i < ringCount; i++) {
+                                                                                                                                                                                                  let rProgress = (progress + i / ringCount) % 1.0;
+                                                                                                                                                                                                  let curR = radius * (1.0 - rProgress);
+                                                                                                                                                                                                  c.strokeStyle = `rgba(142, 68, 173, ${(1.0 - rProgress) * (0.5 + pulseAlpha * 0.4)})`;
+                                                                                                                                                                                                  c.lineWidth = 1.6;
+                                                                                                                                                                                                  c.beginPath();
+                                                                                                                                                                                                  c.arc(cx, cy, curR, 0, Math.PI * 2);
+                                                                                                                                                                                                  c.stroke();
+                                                                                                                                                                                                }
+
+                                                                                                                                                                                                // 4. Dense Black Hole Core Singularity with Magenta Rim
+                                                                                                                                                                                                                                                                                                                                                                                                let coreR = 14 + pulseAlpha * 4 + progress * 6;
+                                                                                                                                                                                                                                                                                                                                                                                                let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, coreR);
+                                                                                                                                                                                                                                                                                                                                                                                                coreGrad.addColorStop(0, "rgba(232, 67, 147, 0.95)");
+                                                                                                                                                                                                                                                                                                                                                                                                coreGrad.addColorStop(0.5, "rgba(9, 2, 26, 0.98)");
+                                                                                                                                                                                                                                                                                                                                                                                                coreGrad.addColorStop(1, "rgba(9, 2, 26, 0)");
+                                                                                                                                                                                                                                                                                                                                                                                                c.fillStyle = coreGrad;
+                                                                                                                                                                                                                                                                                                                                                                                                c.beginPath();
+                                                                                                                                                                                                                                                                                                                                                                                                c.arc(cx, cy, coreR, 0, Math.PI * 2);
+                                                                                                                                                                                                                                                                                                                                                                                                c.fill();
+
+                                                                                                                                                                                                                                                                                                                                                                                                c.restore();
+                                                                                                                                                                                                                                                                                                                                                                                              }
+                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                          };
+
+                                                                                                                                                                                                                                                              // Initialize Draggable Flask Button Engine
+                                                                                                                                                                                                                                                              if (typeof window.initFlaskButtonDrag === "function") {
           window.initFlaskButtonDrag();
         }
 
@@ -6102,20 +6648,304 @@
       ctx.stroke();
 
       if (item.isMainPylon) {
-        ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(item.x, item.y);
-        ctx.lineTo(item.partnerX, item.partnerY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-    }
-    ctx.restore();
-  };
+                ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(item.x, item.y);
+                ctx.lineTo(item.partnerX, item.partnerY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+              }
+            }
+            ctx.restore();
+          };
 
-  window.destroyBreakableProp = function (prop, worldX, worldY) {
+          window.drawDungeonStructureTile = function (ctx, type, px, py, tileSize) {
+            let time = Date.now();
+            let cx = px + tileSize / 2;
+            let cy = py + tileSize / 2;
+
+            if (type === window.TILE_TYPES.CHEST_SPAWN) {
+              ctx.save();
+
+              // 1. Soft Ambient Occlusion Drop Shadow
+              ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+              ctx.beginPath();
+              ctx.ellipse(cx, cy + 9, 13, 5, 0, 0, Math.PI * 2);
+              ctx.fill();
+
+              // 2. Warm Radial Golden Floor Glow
+              let pulse = Math.sin(time / 200) * 2;
+              let auraGrad = ctx.createRadialGradient(cx, cy + 2, 2, cx, cy + 2, 16 + pulse);
+              auraGrad.addColorStop(0, "rgba(255, 215, 0, 0.4)");
+              auraGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.15)");
+              auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+              ctx.fillStyle = auraGrad;
+              ctx.beginPath();
+              ctx.arc(cx, cy + 2, 16 + pulse, 0, Math.PI * 2);
+              ctx.fill();
+
+              // 3. Chest Lower Body (Rich Beveled Mahogany)
+              let w = 22;
+              let bodyH = 11;
+              let lidH = 6;
+              let x = cx - w / 2;
+              let y = cy - (bodyH + lidH) / 2 + 3;
+
+              let bodyGrad = ctx.createLinearGradient(x, y + lidH, x, y + lidH + bodyH);
+              bodyGrad.addColorStop(0, "#8b4513");
+              bodyGrad.addColorStop(0.4, "#5c2e0b");
+              bodyGrad.addColorStop(1, "#2a1204");
+
+              ctx.fillStyle = bodyGrad;
+              ctx.strokeStyle = "#120701";
+              ctx.lineWidth = 1.5;
+              ctx.fillRect(x, y + lidH, w, bodyH);
+              ctx.strokeRect(x, y + lidH, w, bodyH);
+
+              // 4. Domed Arched Lid (3D Beveled Top)
+              let lidGrad = ctx.createLinearGradient(x, y, x, y + lidH);
+              lidGrad.addColorStop(0, "#a0522d");
+              lidGrad.addColorStop(0.5, "#8b4513");
+              lidGrad.addColorStop(1, "#4a2206");
+
+              ctx.fillStyle = lidGrad;
+              ctx.beginPath();
+              ctx.moveTo(x, y + lidH);
+              ctx.quadraticCurveTo(cx, y - 2, x + w, y + lidH);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              // Lid Top Highlight Strip
+              ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.moveTo(x + 3, y + lidH - 2);
+              ctx.quadraticCurveTo(cx, y + 1, x + w - 3, y + lidH - 2);
+              ctx.stroke();
+
+              // 5. Polished Gold Corner Brackets & Vertical Bands
+              ctx.fillStyle = "#f1c40f";
+              ctx.strokeStyle = "#5e4a02";
+              ctx.lineWidth = 1.0;
+
+              ctx.fillRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+              ctx.strokeRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+
+              ctx.fillRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+              ctx.strokeRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+
+              // Gold Rivets / Bolts
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(x + 4, y + 4, 1, 1);
+              ctx.fillRect(x + 4, y + lidH + 4, 1, 1);
+              ctx.fillRect(x + w - 5, y + 4, 1, 1);
+              ctx.fillRect(x + w - 5, y + lidH + 4, 1, 1);
+
+              // 6. Lid Seam & Lip Line
+              ctx.strokeStyle = "#120701";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(x, y + lidH);
+              ctx.lineTo(x + w, y + lidH);
+              ctx.stroke();
+
+              ctx.strokeStyle = "#ffd700";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.moveTo(x + 1, y + lidH + 1);
+              ctx.lineTo(x + w - 1, y + lidH + 1);
+              ctx.stroke();
+
+              // 7. Golden Shield Lock Plaque & Glowing Keyhole
+              let lockW = 6;
+              let lockH = 7;
+              let lockX = cx - lockW / 2;
+              let lockY = y + lidH - 3;
+
+              let lockGrad = ctx.createLinearGradient(lockX, lockY, lockX, lockY + lockH);
+              lockGrad.addColorStop(0, "#ffe066");
+              lockGrad.addColorStop(1, "#d4af37");
+
+              ctx.fillStyle = lockGrad;
+              ctx.strokeStyle = "#3a2b00";
+              ctx.lineWidth = 1.0;
+              ctx.fillRect(lockX, lockY, lockW, lockH);
+              ctx.strokeRect(lockX, lockY, lockW, lockH);
+
+              // Glowing Keyhole
+              ctx.fillStyle = "#120701";
+              ctx.beginPath();
+              ctx.arc(cx, lockY + 2.5, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillRect(cx - 0.6, lockY + 2.5, 1.2, 2.5);
+
+              ctx.fillStyle = "#fff5a0";
+              ctx.beginPath();
+              ctx.arc(cx, lockY + 2.5, 0.6, 0, Math.PI * 2);
+              ctx.fill();
+
+              // 8. Ambient Rising Gold Sparkle Particles
+              for (let i = 0; i < 3; i++) {
+                let sparkProgress = (time / (700 + i * 250) + i * 0.33) % 1.0;
+                let sx = cx + Math.sin(time / 180 + i * 2.5) * 10;
+                let sy = cy - sparkProgress * 16;
+                let alpha = (1.0 - sparkProgress) * 0.85;
+                ctx.fillStyle = `rgba(255, 235, 150, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+              }
+
+              ctx.restore();
+            } else if (type === window.TILE_TYPES.RECOVERY_CHEST) {
+                          let cx = px + tileSize / 2;
+                          let cy = py + tileSize / 2;
+                          let time = Date.now();
+
+                          ctx.save();
+
+                          // 1. Soft Drop Shadow
+                          ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                          ctx.beginPath();
+                          ctx.ellipse(cx, cy + 9, 14, 5, 0, 0, Math.PI * 2);
+                          ctx.fill();
+
+                          // 2. Pulsing Crimson & Cyan Soul Aura
+                          let auraPulse = 18 + Math.sin(time / 140) * 3;
+                          let auraGrad = ctx.createRadialGradient(cx, cy + 2, 2, cx, cy + 2, auraPulse);
+                          auraGrad.addColorStop(0, "rgba(0, 210, 255, 0.6)");
+                          auraGrad.addColorStop(0.4, "rgba(168, 85, 247, 0.3)");
+                          auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                          ctx.fillStyle = auraGrad;
+                          ctx.beginPath();
+                          ctx.arc(cx, cy + 2, auraPulse, 0, Math.PI * 2);
+                          ctx.fill();
+
+                          // 3. Obsidian Chest Lower Body (3D Dark Steel)
+                          let w = 24;
+                          let bodyH = 12;
+                          let lidH = 6;
+                          let x = cx - w / 2;
+                          let y = cy - (bodyH + lidH) / 2 + 2;
+
+                          let obsGrad = ctx.createLinearGradient(x, y + lidH, x, y + lidH + bodyH);
+                          obsGrad.addColorStop(0, "#2d3748");
+                          obsGrad.addColorStop(0.5, "#1a202c");
+                          obsGrad.addColorStop(1, "#0a0e17");
+
+                          ctx.fillStyle = obsGrad;
+                          ctx.strokeStyle = "#ffd700";
+                          ctx.lineWidth = 1.5;
+                          ctx.fillRect(x, y + lidH, w, bodyH);
+                          ctx.strokeRect(x, y + lidH, w, bodyH);
+
+                          // 4. Domed Obsidian Lid (3D Beveled Top)
+                          let lidGrad = ctx.createLinearGradient(x, y, x, y + lidH);
+                          lidGrad.addColorStop(0, "#4a5568");
+                          lidGrad.addColorStop(0.5, "#2d3748");
+                          lidGrad.addColorStop(1, "#1a202c");
+
+                          ctx.fillStyle = lidGrad;
+                          ctx.beginPath();
+                          ctx.moveTo(x, y + lidH);
+                          ctx.quadraticCurveTo(cx, y - 2, x + w, y + lidH);
+                          ctx.closePath();
+                          ctx.fill();
+                          ctx.stroke();
+
+                          // Specular Top Highlight
+                          ctx.strokeStyle = "rgba(0, 210, 255, 0.4)";
+                          ctx.lineWidth = 1.0;
+                          ctx.beginPath();
+                          ctx.moveTo(x + 3, y + lidH - 2);
+                          ctx.quadraticCurveTo(cx, y + 1, x + w - 3, y + lidH - 2);
+                          ctx.stroke();
+
+                          // 5. Polished Cyan & Gold Corner Brackets
+                          ctx.fillStyle = "#00d2ff";
+                          ctx.strokeStyle = "#005577";
+                          ctx.lineWidth = 1.0;
+
+                          ctx.fillRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+                          ctx.strokeRect(x + 3, y + 2, 3, bodyH + lidH - 2);
+
+                          ctx.fillRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+                          ctx.strokeRect(x + w - 6, y + 2, 3, bodyH + lidH - 2);
+
+                          // Gold Rivets / Bolts
+                          ctx.fillStyle = "#ffd700";
+                          ctx.fillRect(x + 4, y + 4, 1, 1);
+                          ctx.fillRect(x + 4, y + lidH + 4, 1, 1);
+                          ctx.fillRect(x + w - 5, y + 4, 1, 1);
+                          ctx.fillRect(x + w - 5, y + lidH + 4, 1, 1);
+
+                          // 6. Gold Lid Seam & Lip Line
+                          ctx.strokeStyle = "#ffd700";
+                          ctx.lineWidth = 1.2;
+                          ctx.beginPath();
+                          ctx.moveTo(x, y + lidH);
+                          ctx.lineTo(x + w, y + lidH);
+                          ctx.stroke();
+
+                          // 7. Glowing Gold Shield Lock Plaque
+                          let lockW = 6;
+                          let lockH = 7;
+                          let lockX = cx - lockW / 2;
+                          let lockY = y + lidH - 3;
+
+                          ctx.fillStyle = "#ffd700";
+                          ctx.strokeStyle = "#3a2b00";
+                          ctx.lineWidth = 1.0;
+                          ctx.fillRect(lockX, lockY, lockW, lockH);
+                          ctx.strokeRect(lockX, lockY, lockW, lockH);
+
+                          // Glowing Cyan Keyhole
+                          ctx.fillStyle = "#00d2ff";
+                          ctx.beginPath();
+                          ctx.arc(cx, lockY + 2.5, 1.2, 0, Math.PI * 2);
+                          ctx.fill();
+
+                          // 8. Floating Soul Beacon Marker (3D Glowing Diamond)
+                          let floatY = Math.sin(time / 200) * 3;
+                          let beaconY = y - 12 + floatY;
+
+                          ctx.fillStyle = "#ffd700";
+                          ctx.strokeStyle = "#00d2ff";
+                          ctx.lineWidth = 1.2;
+                          ctx.beginPath();
+                          ctx.moveTo(cx, beaconY - 6);
+                          ctx.lineTo(cx + 4, beaconY);
+                          ctx.lineTo(cx, beaconY + 6);
+                          ctx.lineTo(cx - 4, beaconY);
+                          ctx.closePath();
+                          ctx.fill();
+                          ctx.stroke();
+
+                          ctx.fillStyle = "#ffffff";
+                          ctx.beginPath();
+                          ctx.arc(cx, beaconY, 1.2, 0, Math.PI * 2);
+                          ctx.fill();
+
+                          // 9. Rising Ethereal Soul Particles
+                          for (let i = 0; i < 3; i++) {
+                            let sparkProgress = (time / (600 + i * 200) + i * 0.33) % 1.0;
+                            let sx = cx + Math.sin(time / 150 + i * 2) * 10;
+                            let sy = cy - sparkProgress * 20;
+                            let alpha = (1.0 - sparkProgress) * 0.85;
+                            ctx.fillStyle = i % 2 === 0 ? `rgba(0, 210, 255, ${alpha})` : `rgba(255, 215, 0, ${alpha})`;
+                            ctx.beginPath();
+                            ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+                            ctx.fill();
+                          }
+
+                          ctx.restore();
+                        }
+          };
+
+          window.destroyBreakableProp = function (prop, worldX, worldY) {
     if (!prop) return;
 
     let map = window.activeDungeonMap;
@@ -6963,13 +7793,17 @@
                   }
 
                   // Spell Weaving: Shifting between different element casts boosts Spell Power
-                  if (pStats.hasSpellWeaving) {
-                    if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
-                      window.playerStats.spellWeavingStacks = Math.min(4, (window.playerStats.spellWeavingStacks || 0) + 1);
-                      window.playerStats.spellWeavingTimer = 240; // 4 seconds
-                    }
-                    window.playerStats.lastSpellCastType = spellEffectType;
-                  }
+                                    if (pStats.hasSpellWeaving) {
+                                      if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
+                                        let prevStacks = window.playerStats.spellWeavingStacks || 0;
+                                        window.playerStats.spellWeavingStacks = Math.min(4, prevStacks + 1);
+                                        window.playerStats.spellWeavingTimer = 240; // 4 seconds
+                                        if (window.playerStats.spellWeavingStacks > prevStacks && typeof window.spawnFloatingText === "function") {
+                                          window.spawnFloatingText(p.x, p.y - 22, `SPELL WEAVING (${window.playerStats.spellWeavingStacks}/4)`, "#38bdf8", true);
+                                        }
+                                      }
+                                      window.playerStats.lastSpellCastType = spellEffectType;
+                                    }
 
                   // Arcane Syphon: Spell procs restore 1%/2%/3% HP, grant +4%/+8%/+12% INT
                   if (pStats.hasArcaneSyphon) {
@@ -8824,40 +9658,64 @@
             }
 
             // 4. Floating Equipment Symbol
-            let bob = Math.sin(time / 150) * 2.5;
-            let lootY = drawY - 10 + bob;
+                        let bob = Math.sin(time / 150) * 2.5;
+                        let lootY = drawY - 10 + bob;
 
-            let img = window.getCanvasIconImage
-              ? window.getCanvasIconImage(gl.item)
-              : null;
-            if (img && img.complete) {
-              ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
-            } else {
-              ctx.fillStyle = color;
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1.2;
-              ctx.beginPath();
-              ctx.moveTo(drawX, lootY + 4 - 5);
-              ctx.lineTo(drawX + 5, lootY + 4);
-              ctx.lineTo(drawX, lootY + 4 + 5);
-              ctx.lineTo(drawX - 5, lootY + 4);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
+                        let img = window.getCanvasIconImage
+                          ? window.getCanvasIconImage(gl.item)
+                          : null;
+                        if (img && img.complete) {
+                          ctx.drawImage(img, drawX - 10, lootY - 10, 20, 20);
+                        } else {
+                          ctx.fillStyle = color;
+                          ctx.strokeStyle = "#000000";
+                          ctx.lineWidth = 1.2;
+                          ctx.beginPath();
+                          ctx.moveTo(drawX, lootY + 4 - 5);
+                          ctx.lineTo(drawX + 5, lootY + 4);
+                          ctx.lineTo(drawX, lootY + 4 + 5);
+                          ctx.lineTo(drawX - 5, lootY + 4);
+                          ctx.closePath();
+                          ctx.fill();
+                          ctx.stroke();
 
-              ctx.fillStyle = "#ffffff";
-              ctx.beginPath();
-              ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
-              ctx.fill();
-            }
+                          ctx.fillStyle = "#ffffff";
+                          ctx.beginPath();
+                          ctx.arc(drawX - 1.5, lootY + 4 - 1.5, 1.2, 0, Math.PI * 2);
+                          ctx.fill();
+                        }
 
-            ctx.restore();
-          },
-        });
-      });
-    }
+                        ctx.restore();
+                      },
+                    });
+                  });
+                }
 
-    // C. Active Dungeon Mobs (Fog-of-War Culled)
+                // B5. Sector Environmental Decorations (Fog-of-War Culled)
+                    if (!isHub && mapInst && mapInst.decorations && mapInst.decorations.length > 0) {
+                      mapInst.decorations.forEach((dec) => {
+                        let isExplored =
+                          mapInst.exploredGrid &&
+                          mapInst.exploredGrid[dec.y] &&
+                          mapInst.exploredGrid[dec.y][dec.x];
+                        if (!isExplored) return;
+
+                        let isWallProp =
+                          mapInst.grid[dec.y] &&
+                          mapInst.grid[dec.y][dec.x] === window.TILE_TYPES.WALL;
+
+                        depthQueue.push({
+                          yBase: dec.worldY + (isWallProp ? 0 : 8),
+                          draw: () => {
+                            if (window.drawSectorDecoration) {
+                              window.drawSectorDecoration(ctx, dec, tSize);
+                            }
+                          },
+                        });
+                      });
+                    }
+
+                // C. Active Dungeon Mobs (Fog-of-War Culled)
     if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
       window.activeDungeonMobs.forEach((m) => {
         let tileC = Math.floor((m.x + (m.w || 24) / 2) / tSize);

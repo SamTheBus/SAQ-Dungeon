@@ -2733,17 +2733,20 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       }
 
       if (window.SoundManager) window.SoundManager.play("spell");
-      if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-        window.RenderEngine.spawnDamageEffect(
-          p.x,
-          p.y - 22,
-          absorbed,
-          "barrier",
-          false,
-        );
-      }
-    }
-  }
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnParticles(p.x, p.y - 12, 10, "void_orb", 2.5);
+              }
+              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                window.RenderEngine.spawnDamageEffect(
+                  p.x,
+                  p.y - 22,
+                  absorbed,
+                  "barrier",
+                  false,
+                );
+              }
+            }
+          }
 
   let remainingDmg = Math.max(1, rawDmg - absorbed);
   let netDmg = Math.max(1, remainingDmg - (pStats.def || 0));
@@ -2794,64 +2797,78 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-      // Sanguine Rupture Dot explosion detonation on parry
-      if (
-        pStats.hasSanguineRupture &&
-        ((sourceMob.bleedStacks || 0) > 0 || (sourceMob.poisonStacks || 0) > 0)
-      ) {
-        let dotCount =
-          (sourceMob.bleedStacks || 0) + (sourceMob.poisonStacks || 0);
-        let detonationDmg = BigNum.from(pStats.atk || 15)
-          .mul(dotCount)
-          .mul(pStats.sanguineRuptureMult || 1.5);
-        sourceMob.hp = sourceMob.hp.sub(detonationDmg);
-        sourceMob.bleedStacks = 0; // consume
-        sourceMob.poisonStacks = 0; // consume
-        sourceMob.flashTimer = 8;
-        let mobCx = sourceMob.x + sourceMob.w / 2;
-        let mobCy = sourceMob.y + sourceMob.h / 2;
-        if (window.combatVisuals) {
-          window.combatVisuals.spawnDamageEffect(
-            mobCx,
-            mobCy,
-            detonationDmg,
-            "crit",
-            true,
-            sourceMob,
-          );
-          window.combatVisuals.spawnParticles(
-            mobCx,
-            mobCy,
-            20,
-            "magma_elemental",
-            4,
-          );
-        }
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("spell_fire");
-        }
-      }
+          let mobCx = sourceMob.x + (sourceMob.w || 24) / 2;
+          let mobCy = sourceMob.y + (sourceMob.h || 24) / 2;
 
-      let riposteDmg = BigNum.from(pStats.atk || 15).mul(
-        pStats.riposteDamage || 0.8,
-      );
-      sourceMob.hp = sourceMob.hp.sub(riposteDmg);
-      sourceMob.flashTimer = 6;
-      let mobCx = sourceMob.x + sourceMob.w / 2;
-      let mobCy = sourceMob.y + sourceMob.h / 2;
-      if (window.combatVisuals) {
-        window.combatVisuals.spawnDamageEffect(
-          mobCx,
-          mobCy,
-          riposteDmg,
-          "parry_counter",
-          false,
-          sourceMob,
-        );
-      }
+          // Apply Directional Riposte Recoil Impulse
+          let rDx = mobCx - p.x;
+          let rDy = mobCy - p.y;
+          let rDist = Math.hypot(rDx, rDy);
+          if (rDist > 0) {
+            sourceMob.recoilX = (rDx / rDist) * 8;
+            sourceMob.recoilY = (rDy / rDist) * 8;
+          }
+
+          // Sanguine Rupture DoT explosion detonation on parry
+          if (
+            pStats.hasSanguineRupture &&
+            ((sourceMob.bleedStacks || 0) > 0 || (sourceMob.poisonStacks || 0) > 0)
+          ) {
+            let dotCount =
+              (sourceMob.bleedStacks || 0) + (sourceMob.poisonStacks || 0);
+            let detonationDmg = BigNum.from(pStats.atk || 15)
+              .mul(dotCount)
+              .mul(pStats.sanguineRuptureMult || 1.5);
+            sourceMob.hp = sourceMob.hp.sub(detonationDmg);
+            sourceMob.bleedStacks = 0; // consume
+            sourceMob.poisonStacks = 0; // consume
+            sourceMob.flashTimer = 8;
+
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(mobCx, mobCy - 15, "SANGUINE RUPTURE DETONATION!", "#e74c3c");
+            }
+
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnDamageEffect(
+                mobCx,
+                mobCy,
+                detonationDmg,
+                "crit",
+                true,
+                sourceMob,
+              );
+              window.combatVisuals.spawnParticles(
+                mobCx,
+                mobCy,
+                20,
+                "magma_elemental",
+                4,
+              );
+            }
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_fire");
+            }
+          }
+
+          let riposteDmg = BigNum.from(pStats.atk || 15).mul(
+            pStats.riposteDamage || 0.8,
+          );
+          sourceMob.hp = sourceMob.hp.sub(riposteDmg);
+          sourceMob.flashTimer = 6;
+
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnDamageEffect(
+              mobCx,
+              mobCy,
+              riposteDmg,
+              "parry_counter",
+              false,
+              sourceMob,
+            );
+          }
 
       // Dagger Keystone: Viper's Shadow Dance (100% Crit Charges & Bleed Stacks on Parry)
       if (
@@ -2905,17 +2922,20 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 8);
 
     // Fortitude stack acquisition on block / damage
-    if (pStats.fortifiedGuardMultiplier > 0) {
-      window.playerStats.fortitudeStacks = Math.min(
-        5,
-        (window.playerStats.fortitudeStacks || 0) + 1,
-      );
-      window.playerStats.fortitudeTimer = 360; // 6 seconds
-    }
+        if (pStats.fortifiedGuardMultiplier > 0) {
+          let prevStacks = window.playerStats.fortitudeStacks || 0;
+          window.playerStats.fortitudeStacks = Math.min(5, prevStacks + 1);
+          window.playerStats.fortitudeTimer = 360; // 6 seconds
 
-    p.lastDamageTimer = 180;
-    window.playerStats.totalDeflections =
-      (window.playerStats.totalDeflections || 0) + 1;
+          if (window.playerStats.fortitudeStacks > prevStacks && typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(p.x, p.y - 20, `FORTITUDE (${window.playerStats.fortitudeStacks}/5)`, "#38bdf8", true);
+          }
+        }
+
+        window.playerStats.recentBlockTime = Date.now();
+        p.lastDamageTimer = 180;
+        window.playerStats.totalDeflections =
+          (window.playerStats.totalDeflections || 0) + 1;
 
     if (window.SoundManager) window.SoundManager.play("block");
 
@@ -3013,19 +3033,31 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       let reflectDmg = defBash.add(atkBash);
 
       if (reflectDmg.gt(0)) {
-        sourceMob.hp = sourceMob.hp.sub(reflectDmg);
-        sourceMob.flashTimer = 6;
-        if (window.combatVisuals) {
-          window.combatVisuals.spawnDamageEffect(
-            sourceMob.x + sourceMob.w / 2,
-            sourceMob.y + sourceMob.h / 2,
-            reflectDmg,
-            "counter",
-            false,
-            sourceMob,
-          );
-        }
-      }
+              sourceMob.hp = sourceMob.hp.sub(reflectDmg);
+              sourceMob.flashTimer = 6;
+
+              // Apply Bulwark Stagger / Knockback impulse to the attacking monster
+              let mCx = sourceMob.x + (sourceMob.w || 24) / 2;
+              let mCy = sourceMob.y + (sourceMob.h || 24) / 2;
+              let bDx = mCx - p.x;
+              let bDy = mCy - p.y;
+              let bDist = Math.hypot(bDx, bDy);
+              if (bDist > 0) {
+                sourceMob.recoilX = (bDx / bDist) * 12;
+                sourceMob.recoilY = (bDy / bDist) * 12;
+              }
+
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnDamageEffect(
+                  mCx,
+                  mCy,
+                  reflectDmg,
+                  "counter",
+                  false,
+                  sourceMob,
+                );
+              }
+            }
     }
 
     // Shield Keystone: Unbreakable Bulwark AoE Shockwave on Block
