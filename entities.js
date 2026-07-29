@@ -572,72 +572,71 @@
         let time = Date.now();
         let r = p.r + Math.sin(time / 80 + p.pulseOffset) * 1.5;
 
-        if (proj.type === "thorn") {
-          // --- THORN SPIKE / VINE NEEDLE ---
-          ctx.rotate(angle);
-          ctx.fillStyle = "#4a2d18";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.8;
+        if (p.type === "thorn") {
+                  // --- THORN SPIKE / VINE NEEDLE ---
+                  ctx.rotate(angle);
+                  ctx.fillStyle = "#4a2d18";
+                  ctx.strokeStyle = "#000000";
+                  ctx.lineWidth = 1.8;
 
-          ctx.beginPath();
-          ctx.moveTo(r * 2.2, 0);
-          ctx.lineTo(-r * 1.2, -r * 0.65);
-          ctx.lineTo(-r * 0.5, 0);
-          ctx.lineTo(-r * 1.2, r * 0.65);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+                  ctx.beginPath();
+                  ctx.moveTo(r * 2.2, 0);
+                  ctx.lineTo(-r * 1.2, -r * 0.65);
+                  ctx.lineTo(-r * 0.5, 0);
+                  ctx.lineTo(-r * 1.2, r * 0.65);
+                  ctx.closePath();
+                  ctx.fill();
+                  ctx.stroke();
 
-          // Poison Tip Highlight
-          ctx.fillStyle = "#2ecc71";
-          ctx.beginPath();
-          ctx.moveTo(r * 2.2, 0);
-          ctx.lineTo(r * 0.6, -r * 0.35);
-          ctx.lineTo(r * 0.6, r * 0.35);
-          ctx.closePath();
-          ctx.fill();
+                  // Poison Tip Highlight
+                  ctx.fillStyle = "#2ecc71";
+                  ctx.beginPath();
+                  ctx.moveTo(r * 2.2, 0);
+                  ctx.lineTo(r * 0.6, -r * 0.35);
+                  ctx.lineTo(r * 0.6, r * 0.35);
+                  ctx.closePath();
+                  ctx.fill();
 
-          ctx.strokeStyle = "#a3fd83";
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.moveTo(-r * 0.5, 0);
-          ctx.lineTo(r * 2.0, 0);
-          ctx.stroke();
-        } else if (proj.type === "boomerang") {
-          // --- HIGH FIDELITY BOOMERANG SHIELD PROJECTILE ---
-          ctx.translate(proj.x, proj.y);
-          ctx.rotate(time / 80 + (proj.pulseOffset || 0)); // Rapid spinning!
+                  ctx.strokeStyle = "#a3fd83";
+                  ctx.lineWidth = 1.0;
+                  ctx.beginPath();
+                  ctx.moveTo(-r * 0.5, 0);
+                  ctx.lineTo(r * 2.0, 0);
+                  ctx.stroke();
+                } else if (p.type === "boomerang") {
+                  // --- HIGH FIDELITY BOOMERANG SHIELD PROJECTILE ---
+                  ctx.rotate(time / 80 + (p.pulseOffset || 0)); // Rapid spinning!
 
-          // Glowing energy rim
-          ctx.fillStyle = "#2980b9";
-          ctx.strokeStyle = "#00d2ff";
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.arc(0, 0, r + 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
+                  // Glowing energy rim
+                  ctx.fillStyle = "#2980b9";
+                  ctx.strokeStyle = "#00d2ff";
+                  ctx.lineWidth = 1.8;
+                  ctx.beginPath();
+                  ctx.arc(0, 0, r + 2, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.stroke();
 
-          // Inner metallic casing
-          ctx.fillStyle = "#34495e";
-          ctx.beginPath();
-          ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
+                  // Inner metallic casing
+                  ctx.fillStyle = "#34495e";
+                  ctx.beginPath();
+                  ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.stroke();
 
-          // Core sapphire star
-          ctx.fillStyle = "#00ffff";
-          ctx.beginPath();
-          ctx.moveTo(0, -r + 3);
-          ctx.lineTo(2, -1);
-          ctx.lineTo(r - 3, 0);
-          ctx.lineTo(2, 1);
-          ctx.lineTo(0, r - 3);
-          ctx.lineTo(-2, 1);
-          ctx.lineTo(-r + 3, 0);
-          ctx.lineTo(-2, -1);
-          ctx.closePath();
-          ctx.fill();
-        } else if (proj.type === "frost") {
+                  // Core sapphire star
+                  ctx.fillStyle = "#00ffff";
+                  ctx.beginPath();
+                  ctx.moveTo(0, -r + 3);
+                  ctx.lineTo(2, -1);
+                  ctx.lineTo(r - 3, 0);
+                  ctx.lineTo(2, 1);
+                  ctx.lineTo(0, r - 3);
+                  ctx.lineTo(-2, 1);
+                  ctx.lineTo(-r + 3, 0);
+                  ctx.lineTo(-2, -1);
+                  ctx.closePath();
+                  ctx.fill();
+                } else if (p.type === "frost") {
           // --- FACETED ICE CRYSTAL LANCE ---
           ctx.rotate(angle);
           ctx.fillStyle = "#dff9fb";
