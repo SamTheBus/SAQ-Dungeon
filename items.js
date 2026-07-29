@@ -4787,24 +4787,24 @@ Object.assign(window.GameState, {
       oldMaxHp = window.resolvePlayerStats().maxHp;
 
     if (item.type === "artifact") {
-                  window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
-                  if (window.inventory.ARTIFACT.length >= maxBag) {
-                    if (typeof window.pushHeaderToast === "function")
-                      window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
-                    return;
-                  }
-                  window.equippedSlots[slotKey] = null;
-                  window.inventory.ARTIFACT.push(item);
-                } else {
-                  window.inventory.EQUIP = window.inventory.EQUIP || [];
-                  if (window.inventory.EQUIP.length >= maxBag) {
-                    if (typeof window.pushHeaderToast === "function")
-                      window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
-                    return;
-                  }
-                  window.equippedSlots[slotKey] = null;
-                  window.inventory.EQUIP.push(item);
-                }
+      window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+      if (window.inventory.ARTIFACT.length >= maxBag) {
+        if (typeof window.pushHeaderToast === "function")
+          window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
+        return;
+      }
+      window.equippedSlots[slotKey] = null;
+      window.inventory.ARTIFACT.push(item);
+    } else {
+      window.inventory.EQUIP = window.inventory.EQUIP || [];
+      if (window.inventory.EQUIP.length >= maxBag) {
+        if (typeof window.pushHeaderToast === "function")
+          window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
+        return;
+      }
+      window.equippedSlots[slotKey] = null;
+      window.inventory.EQUIP.push(item);
+    }
 
     if (typeof window.invalidatePlayerStats === "function")
       window.invalidatePlayerStats();
@@ -6909,30 +6909,30 @@ window.renderGoldUpgrades = function () {
       iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00d2ff" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/></svg>`,
     },
     {
-          type: "global",
-          title: "GLOBAL EXTRACTION QUALITY",
-          field: "globalQLevel",
-          desc: "Increases baseline item drop quality and star rolls across all dungeon runs.",
-          statBonus: `+${(p.globalQLevel || 0) * 1}% Global Drop Quality`,
-          iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
-        },
-        {
-          type: "flask_capacity",
-          title: "FIELD FLASK CAPACITY",
-          field: "maxFlaskCharges",
-          desc: "Increases maximum emergency health flask charges carried per dungeon run (Cap: 4). Refills on boss defeat.",
-          statBonus: `${p.maxFlaskCharges || 1} / 4 Max Charges`,
-          iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M10 2h4v3l3 6v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V11l3-6V2z"/><line x1="9" y1="11" x2="15" y2="11"/></svg>`,
-        },
-        {
-          type: "flask_potency",
-          title: "FIELD FLASK POTENCY",
-          field: "flaskPotencyLevel",
-          desc: "Increases Instant Max HP restoration percentage when drinking from the Field Flask.",
-          statBonus: `+${Math.round((p.flaskPotency || 0.25) * 100)}% Max HP Restored`,
-          iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,
-        },
-      ];
+      type: "global",
+      title: "GLOBAL EXTRACTION QUALITY",
+      field: "globalQLevel",
+      desc: "Increases baseline item drop quality and star rolls across all dungeon runs.",
+      statBonus: `+${(p.globalQLevel || 0) * 1}% Global Drop Quality`,
+      iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+    },
+    {
+      type: "flask_capacity",
+      title: "FIELD FLASK CAPACITY",
+      field: "maxFlaskCharges",
+      desc: "Increases maximum emergency health flask charges carried per dungeon run (Cap: 4). Refills on boss defeat.",
+      statBonus: `${p.maxFlaskCharges || 1} / 4 Max Charges`,
+      iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M10 2h4v3l3 6v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V11l3-6V2z"/><line x1="9" y1="11" x2="15" y2="11"/></svg>`,
+    },
+    {
+      type: "flask_potency",
+      title: "FIELD FLASK POTENCY",
+      field: "flaskPotencyLevel",
+      desc: "Increases Instant Max HP restoration percentage when drinking from the Field Flask.",
+      statBonus: `+${Math.round((p.flaskPotency || 0.25) * 100)}% Max HP Restored`,
+      iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,
+    },
+  ];
 
   let cardsHtml = sinks
     .map((s) => {
@@ -7088,61 +7088,73 @@ window.buyMysticalItem = function (index) {
 window.buyGoldUpgrade = function (type) {
   let p = window.playerStats;
   if (type === "flask_capacity") {
-      if ((p.maxFlaskCharges || 1) >= 4) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("[!] Max Flask Capacity Reached (4 Charges)!", "#e74c3c");
-        }
-        return;
+    if ((p.maxFlaskCharges || 1) >= 4) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[!] Max Flask Capacity Reached (4 Charges)!",
+          "#e74c3c",
+        );
       }
-      let curCapLvl = (p.maxFlaskCharges || 1) - 1;
-      let costBig = window.getGoldUpgradeCost("flask_capacity", curCapLvl);
-      let coins = BigNum.from(p.coins);
-      if (coins.lt(costBig)) {
-        window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
-        return;
-      }
-      p.coins = coins.sub(costBig);
-      p.maxFlaskCharges = (p.maxFlaskCharges || 1) + 1;
-      p.flaskCharges = p.maxFlaskCharges; // Fill newly added charge
-      window.pushHeaderToast(`✦ Expanded Flask Capacity to ${p.maxFlaskCharges} Charges!`, "#34d399");
-      window.updateUI();
-      window.renderGoldUpgrades();
-      window.saveGame();
       return;
     }
-
-    if (type === "flask_potency") {
-      let curPotLvl = p.flaskPotencyLevel || 0;
-      if (curPotLvl >= 3) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("[!] Max Flask Potency Reached (55% Max HP)!", "#e74c3c");
-        }
-        return;
-      }
-      let costBig = window.getGoldUpgradeCost("flask_potency", curPotLvl);
-      let coins = BigNum.from(p.coins);
-      if (coins.lt(costBig)) {
-        window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
-        return;
-      }
-      p.coins = coins.sub(costBig);
-      p.flaskPotencyLevel = curPotLvl + 1;
-      p.flaskPotency = 0.25 + p.flaskPotencyLevel * 0.10; // 25% -> 35% -> 45% -> 55%
-      window.pushHeaderToast(`✦ Upgraded Flask Potency to +${Math.round(p.flaskPotency * 100)}% Max HP!`, "#34d399");
-      window.updateUI();
-      window.renderGoldUpgrades();
-      window.saveGame();
+    let curCapLvl = (p.maxFlaskCharges || 1) - 1;
+    let costBig = window.getGoldUpgradeCost("flask_capacity", curCapLvl);
+    let coins = BigNum.from(p.coins);
+    if (coins.lt(costBig)) {
+      window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
       return;
     }
+    p.coins = coins.sub(costBig);
+    p.maxFlaskCharges = (p.maxFlaskCharges || 1) + 1;
+    p.flaskCharges = p.maxFlaskCharges; // Fill newly added charge
+    window.pushHeaderToast(
+      `✦ Expanded Flask Capacity to ${p.maxFlaskCharges} Charges!`,
+      "#34d399",
+    );
+    window.updateUI();
+    window.renderGoldUpgrades();
+    window.saveGame();
+    return;
+  }
 
-    let levelField =
-      type === "vending"
-        ? "vendingQLevel"
-        : type === "shop"
-          ? "shopQLevel"
-          : "globalQLevel";
-    let curLvl = p[levelField] || 0;
-    let costBig = window.getGoldUpgradeCost(type, curLvl);
+  if (type === "flask_potency") {
+    let curPotLvl = p.flaskPotencyLevel || 0;
+    if (curPotLvl >= 3) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[!] Max Flask Potency Reached (55% Max HP)!",
+          "#e74c3c",
+        );
+      }
+      return;
+    }
+    let costBig = window.getGoldUpgradeCost("flask_potency", curPotLvl);
+    let coins = BigNum.from(p.coins);
+    if (coins.lt(costBig)) {
+      window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
+      return;
+    }
+    p.coins = coins.sub(costBig);
+    p.flaskPotencyLevel = curPotLvl + 1;
+    p.flaskPotency = 0.25 + p.flaskPotencyLevel * 0.1; // 25% -> 35% -> 45% -> 55%
+    window.pushHeaderToast(
+      `✦ Upgraded Flask Potency to +${Math.round(p.flaskPotency * 100)}% Max HP!`,
+      "#34d399",
+    );
+    window.updateUI();
+    window.renderGoldUpgrades();
+    window.saveGame();
+    return;
+  }
+
+  let levelField =
+    type === "vending"
+      ? "vendingQLevel"
+      : type === "shop"
+        ? "shopQLevel"
+        : "globalQLevel";
+  let curLvl = p[levelField] || 0;
+  let costBig = window.getGoldUpgradeCost(type, curLvl);
 
   let coins = BigNum.from(p.coins);
   if (coins.lt(costBig)) {
@@ -7200,14 +7212,18 @@ window.transmutePotion = function (index) {
 
   window.addUseDrop(recipe.result, 1);
 
-    window.pushHeaderToast(`✦ Brewed ${recipe.result}!`, "#2ecc71");
-    if (window.SoundManager && typeof window.SoundManager.play === "function") {
-      try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("spell"); }
+  window.pushHeaderToast(`✦ Brewed ${recipe.result}!`, "#2ecc71");
+  if (window.SoundManager && typeof window.SoundManager.play === "function") {
+    try {
+      window.SoundManager.play("potion");
+    } catch (e) {
+      window.SoundManager.play("spell");
     }
+  }
 
-    if (window.spawnPurchaseCelebration) {
-      window.spawnPurchaseCelebration("alchemy", recipe.color || "#2ecc71", 3);
-    }
+  if (window.spawnPurchaseCelebration) {
+    window.spawnPurchaseCelebration("alchemy", recipe.color || "#2ecc71", 3);
+  }
 
   window.updateUI();
   window.updateShopHeaderWallet();
@@ -7653,30 +7669,30 @@ function updatePhysics(canvas) {
   }
 
   caps.forEach((c) => {
-      // Always apply natural gravity
-      c.vy += gravity;
+    // Always apply natural gravity
+    c.vy += gravity;
 
-      if (window.gachaState.isSpinning) {
-        // Agitator churns from the bottom crank floor upwards and sideways
-        let distFromFloor = bottomWall - c.radius - c.y;
-        if (distFromFloor < 45) {
-          // Agitator blade impulse near floor
-          let popForce = (1.0 - distFromFloor / 45) * (Math.random() * 4.5 + 2.0);
-          c.vy -= popForce;
-          c.vx += (Math.random() - 0.5) * 5.0;
-        } else {
-          // Swirling air friction in upper chamber
-          c.vx += (Math.random() - 0.5) * 1.5;
-        }
-        c.angle += (Math.random() - 0.5) * 0.3;
+    if (window.gachaState.isSpinning) {
+      // Agitator churns from the bottom crank floor upwards and sideways
+      let distFromFloor = bottomWall - c.radius - c.y;
+      if (distFromFloor < 45) {
+        // Agitator blade impulse near floor
+        let popForce = (1.0 - distFromFloor / 45) * (Math.random() * 4.5 + 2.0);
+        c.vy -= popForce;
+        c.vx += (Math.random() - 0.5) * 5.0;
+      } else {
+        // Swirling air friction in upper chamber
+        c.vx += (Math.random() - 0.5) * 1.5;
       }
+      c.angle += (Math.random() - 0.5) * 0.3;
+    }
 
-      c.vx *= 0.98;
-      c.vy *= 0.98;
-      c.angle += c.vx * 0.02;
+    c.vx *= 0.98;
+    c.vy *= 0.98;
+    c.angle += c.vx * 0.02;
 
-      c.x += c.vx;
-      c.y += c.vy;
+    c.x += c.vx;
+    c.y += c.vy;
 
     // 1. Bottom Flat Wall Collision
     if (c.y > bottomWall - c.radius) {

@@ -170,7 +170,9 @@ body {
   font-weight: 800;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
   cursor: pointer;
-  transition: transform 0.1s ease, border-color 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    border-color 0.15s ease;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -692,7 +694,9 @@ body {
   user-select: none;
   -webkit-user-select: none;
   z-index: 2000;
-  transition: transform 0.12s ease, filter 0.15s ease;
+  transition:
+    transform 0.12s ease,
+    filter 0.15s ease;
   box-shadow:
     0 8px 22px rgba(0, 0, 0, 0.9),
     0 0 14px rgba(52, 211, 153, 0.25);
@@ -709,14 +713,25 @@ body {
   right: -4px;
   bottom: -4px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.35) 0%, rgba(16, 185, 129, 0) 70%);
+  background: radial-gradient(
+    circle,
+    rgba(52, 211, 153, 0.35) 0%,
+    rgba(16, 185, 129, 0) 70%
+  );
   pointer-events: none;
   animation: flaskAuraPulse 2s infinite ease-in-out;
 }
 
 @keyframes flaskAuraPulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
 }
 
 .flask-svg-vessel {
@@ -731,7 +746,9 @@ body {
 }
 
 #hud-flask-fill-rect {
-  transition: y 0.25s ease-out, height 0.25s ease-out;
+  transition:
+    y 0.25s ease-out,
+    height 0.25s ease-out;
 }
 
 #hud-flask-cooldown-ring {
@@ -790,14 +807,21 @@ body {
 }
 
 .hud-flask-container.edit-hud-active {
-  box-shadow: 0 0 22px rgba(241, 196, 15, 0.9), inset 0 0 12px rgba(241, 196, 15, 0.5) !important;
+  box-shadow:
+    0 0 22px rgba(241, 196, 15, 0.9),
+    inset 0 0 12px rgba(241, 196, 15, 0.5) !important;
   animation: hudEditPulse 1.2s infinite ease-in-out;
   cursor: move !important;
 }
 
 @keyframes hudEditPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 .clickable-badge {
@@ -1587,7 +1611,10 @@ summary {
 .modal-card {
   width: 90%;
   max-width: 480px;
-  max-height: calc(100dvh - max(20px, env(safe-area-inset-top, 12px)) - max(20px, env(safe-area-inset-bottom, 12px)));
+  max-height: calc(
+    100dvh - max(20px, env(safe-area-inset-top, 12px)) -
+      max(20px, env(safe-area-inset-bottom, 12px))
+  );
   background: linear-gradient(180deg, #181226 0%, #0c0814 100%);
   border: 3px solid #d4af37;
   outline: 2px solid #5a4325;
@@ -2108,7 +2135,11 @@ summary {
 .sigil-picker-card.selected {
   border-color: #34d399 !important;
   box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(12, 9, 20, 0.9) 100%) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(12, 9, 20, 0.9) 100%
+  ) !important;
 }
 
 .insurance-switch-container input:checked + .insurance-slider {
@@ -2137,19 +2168,19 @@ summary {
 
 @media (orientation: portrait), (max-width: 600px) {
   #hud-overlay {
-      display: flex !important;
-      flex-direction: column !important; /* Stack columns vertically on portrait screen */
-      align-items: stretch !important;
-      gap: 8px !important;
-      background: none !important;
-      border: none !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-      width: calc(100% - 16px) !important;
-      left: 8px !important;
-      right: 8px !important;
-      top: env(safe-area-inset-top, 8px) !important;
-    }
+    display: flex !important;
+    flex-direction: column !important; /* Stack columns vertically on portrait screen */
+    align-items: stretch !important;
+    gap: 8px !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    width: calc(100% - 16px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: env(safe-area-inset-top, 8px) !important;
+  }
 
   .hero-badge-info {
     margin-right: 0 !important;
@@ -2295,7 +2326,10 @@ summary {
   #settings-modal .modal-card {
     width: 96% !important;
     margin: 0 auto !important;
-    height: calc(100dvh - max(8px, env(safe-area-inset-top, 12px)) - max(8px, env(safe-area-inset-bottom, 12px)) - 10px) !important;
+    height: calc(
+      100dvh - max(8px, env(safe-area-inset-top, 12px)) -
+        max(8px, env(safe-area-inset-bottom, 12px)) - 10px
+    ) !important;
     max-height: none !important;
   }
 
@@ -2322,51 +2356,51 @@ summary {
   }
 
   .forge-left-pane,
-    .forge-right-pane,
-    .enchant-left-pane,
-    .enchant-right-pane {
-      max-height: none !important;
-      flex: 1 !important;
-    }
-
-    /* --- LOCK ALL HORIZONTAL BAR FLOWS & ENABLE TOUCH SWIPE FOR TRUNCATED TABS --- */
-    .profile-tab-bar,
-    .satchel-tab-bar,
-    .shop-tab-bar,
-    .gacha-tab-bar,
-    .forge-mode-bar,
-    .ach-filter-bar {
-      display: flex !important;
-      overflow-x: auto !important;
-      white-space: nowrap !important;
-      flex-wrap: nowrap !important;
-      flex-shrink: 0 !important;
-      touch-action: pan-x !important;
-      -webkit-overflow-scrolling: touch !important;
-      padding-bottom: 4px !important;
-    }
-
-    /* Custom subtle indicator line to guide horizontal swipes */
-    .profile-tab-bar::-webkit-scrollbar,
-    .satchel-tab-bar::-webkit-scrollbar,
-    .shop-tab-bar::-webkit-scrollbar,
-    .gacha-tab-bar::-webkit-scrollbar,
-    .forge-mode-bar::-webkit-scrollbar,
-    .ach-filter-bar::-webkit-scrollbar {
-      height: 3px !important;
-      display: block !important;
-    }
-
-    .profile-tab-bar::-webkit-scrollbar-thumb,
-    .satchel-tab-bar::-webkit-scrollbar-thumb,
-    .shop-tab-bar::-webkit-scrollbar-thumb,
-    .gacha-tab-bar::-webkit-scrollbar-thumb,
-    .forge-mode-bar::-webkit-scrollbar-thumb,
-    .ach-filter-bar::-webkit-scrollbar-thumb {
-      background: var(--border-aged-bronze) !important;
-      border-radius: 2px !important;
-    }
+  .forge-right-pane,
+  .enchant-left-pane,
+  .enchant-right-pane {
+    max-height: none !important;
+    flex: 1 !important;
   }
+
+  /* --- LOCK ALL HORIZONTAL BAR FLOWS & ENABLE TOUCH SWIPE FOR TRUNCATED TABS --- */
+  .profile-tab-bar,
+  .satchel-tab-bar,
+  .shop-tab-bar,
+  .gacha-tab-bar,
+  .forge-mode-bar,
+  .ach-filter-bar {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
+    touch-action: pan-x !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Custom subtle indicator line to guide horizontal swipes */
+  .profile-tab-bar::-webkit-scrollbar,
+  .satchel-tab-bar::-webkit-scrollbar,
+  .shop-tab-bar::-webkit-scrollbar,
+  .gacha-tab-bar::-webkit-scrollbar,
+  .forge-mode-bar::-webkit-scrollbar,
+  .ach-filter-bar::-webkit-scrollbar {
+    height: 3px !important;
+    display: block !important;
+  }
+
+  .profile-tab-bar::-webkit-scrollbar-thumb,
+  .satchel-tab-bar::-webkit-scrollbar-thumb,
+  .shop-tab-bar::-webkit-scrollbar-thumb,
+  .gacha-tab-bar::-webkit-scrollbar-thumb,
+  .forge-mode-bar::-webkit-scrollbar-thumb,
+  .ach-filter-bar::-webkit-scrollbar-thumb {
+    background: var(--border-aged-bronze) !important;
+    border-radius: 2px !important;
+  }
+}
 
 /* --- ARCADE GACHAPON STYLES --- */
 .gacha-card {
@@ -4374,7 +4408,11 @@ summary {
 
 .deploy-gear-card.is-insured {
   border-color: rgba(16, 185, 129, 0.8);
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(10, 8, 18, 0.9) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(10, 8, 18, 0.9) 100%
+  );
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
 }
 
@@ -4561,7 +4599,11 @@ summary {
 
 .sigil-vault-card.selected {
   border-color: #34d399 !important;
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.18) 0%, rgba(12, 9, 20, 0.95) 100%) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.18) 0%,
+    rgba(12, 9, 20, 0.95) 100%
+  ) !important;
   box-shadow: 0 0 18px rgba(52, 211, 153, 0.3) !important;
 }
 
@@ -4584,14 +4626,23 @@ summary {
 
 /* --- FIELD FLASK DYNAMIC ANIMATIONS --- */
 .hud-flask-container.flask-drink-pop {
-  animation: flaskDrinkSqueeze 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  animation: flaskDrinkSqueeze 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28)
+    forwards;
 }
 
 @keyframes flaskDrinkSqueeze {
-  0% { transform: scale(1); }
-  30% { transform: scale(0.82) rotate(-8deg); }
-  60% { transform: scale(1.12) rotate(4deg); }
-  100% { transform: scale(1) rotate(0deg); }
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(0.82) rotate(-8deg);
+  }
+  60% {
+    transform: scale(1.12) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 .hud-flask-container.flask-recharged-flash {
@@ -4600,11 +4651,15 @@ summary {
 
 @keyframes flaskRechargeGlow {
   0% {
-    box-shadow: 0 0 35px #34d399, 0 0 20px #ffd700;
+    box-shadow:
+      0 0 35px #34d399,
+      0 0 20px #ffd700;
     transform: scale(1.22);
   }
   100% {
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.9), 0 0 14px rgba(52, 211, 153, 0.25);
+    box-shadow:
+      0 8px 22px rgba(0, 0, 0, 0.9),
+      0 0 14px rgba(52, 211, 153, 0.25);
     transform: scale(1);
   }
 }
@@ -4629,7 +4684,9 @@ summary {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(212, 175, 55, 0.1);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.8),
+    inset 0 0 12px rgba(212, 175, 55, 0.1);
   flex-shrink: 0;
 }
 
@@ -4741,7 +4798,9 @@ summary {
 .ach-card.unlocked {
   border-color: var(--border-gold-filigree);
   background: linear-gradient(180deg, #221938 0%, #0d0918 100%);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(212, 175, 55, 0.08);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.8),
+    inset 0 0 10px rgba(212, 175, 55, 0.08);
 }
 
 .ach-card.locked {
@@ -4852,7 +4911,9 @@ summary {
 
 @keyframes achPulseGlow {
   0% {
-    box-shadow: 0 0 25px #ffd700, inset 0 0 15px #ffd700;
+    box-shadow:
+      0 0 25px #ffd700,
+      inset 0 0 15px #ffd700;
     border-color: #ffffff;
     transform: scale(1.02);
   }
@@ -4882,7 +4943,9 @@ summary {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(212, 175, 55, 0.1);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.8),
+    inset 0 0 12px rgba(212, 175, 55, 0.1);
   flex-shrink: 0;
 }
 
@@ -4994,7 +5057,9 @@ summary {
 .ach-card.unlocked {
   border-color: var(--border-gold-filigree);
   background: linear-gradient(180deg, #221938 0%, #0d0918 100%);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(212, 175, 55, 0.08);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.8),
+    inset 0 0 10px rgba(212, 175, 55, 0.08);
 }
 
 .ach-card.locked {
@@ -5105,7 +5170,9 @@ summary {
 
 @keyframes achPulseGlow {
   0% {
-    box-shadow: 0 0 25px #ffd700, inset 0 0 15px #ffd700;
+    box-shadow:
+      0 0 25px #ffd700,
+      inset 0 0 15px #ffd700;
     border-color: #ffffff;
     transform: scale(1.02);
   }
@@ -5132,20 +5199,27 @@ summary {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), inset 0 0 4px rgba(255, 215, 0, 0.3);
+  box-shadow:
+    0 0 8px rgba(239, 68, 68, 0.8),
+    inset 0 0 4px rgba(255, 215, 0, 0.3);
   animation: badgePulse 1.5s infinite ease-in-out;
   pointer-events: none;
   z-index: 15;
 }
 
 @keyframes badgePulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
-    box-shadow: 0 0 6px rgba(239, 68, 68, 0.6), inset 0 0 4px rgba(255, 215, 0, 0.3);
+    box-shadow:
+      0 0 6px rgba(239, 68, 68, 0.6),
+      inset 0 0 4px rgba(255, 215, 0, 0.3);
   }
   50% {
     transform: scale(1.15);
-    box-shadow: 0 0 14px rgba(239, 68, 68, 1), inset 0 0 6px rgba(255, 215, 0, 0.5);
+    box-shadow:
+      0 0 14px rgba(239, 68, 68, 1),
+      inset 0 0 6px rgba(255, 215, 0, 0.5);
   }
 }
 

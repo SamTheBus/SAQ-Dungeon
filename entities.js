@@ -572,7 +572,7 @@
         let time = Date.now();
         let r = p.r + Math.sin(time / 80 + p.pulseOffset) * 1.5;
 
-        if (p.type === "thorn") {
+        if (proj.type === "thorn") {
           // --- THORN SPIKE / VINE NEEDLE ---
           ctx.rotate(angle);
           ctx.fillStyle = "#4a2d18";
@@ -603,7 +603,41 @@
           ctx.moveTo(-r * 0.5, 0);
           ctx.lineTo(r * 2.0, 0);
           ctx.stroke();
-        } else if (p.type === "frost") {
+        } else if (proj.type === "boomerang") {
+          // --- HIGH FIDELITY BOOMERANG SHIELD PROJECTILE ---
+          ctx.translate(proj.x, proj.y);
+          ctx.rotate(time / 80 + (proj.pulseOffset || 0)); // Rapid spinning!
+
+          // Glowing energy rim
+          ctx.fillStyle = "#2980b9";
+          ctx.strokeStyle = "#00d2ff";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.arc(0, 0, r + 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Inner metallic casing
+          ctx.fillStyle = "#34495e";
+          ctx.beginPath();
+          ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Core sapphire star
+          ctx.fillStyle = "#00ffff";
+          ctx.beginPath();
+          ctx.moveTo(0, -r + 3);
+          ctx.lineTo(2, -1);
+          ctx.lineTo(r - 3, 0);
+          ctx.lineTo(2, 1);
+          ctx.lineTo(0, r - 3);
+          ctx.lineTo(-2, 1);
+          ctx.lineTo(-r + 3, 0);
+          ctx.lineTo(-2, -1);
+          ctx.closePath();
+          ctx.fill();
+        } else if (proj.type === "frost") {
           // --- FACETED ICE CRYSTAL LANCE ---
           ctx.rotate(angle);
           ctx.fillStyle = "#dff9fb";
@@ -942,7 +976,7 @@
           ctx.stroke();
 
           let text = `BARRIER -${this.formatNumber(eff.amount)}`;
-                    ctx.font = "bold 15px monospace";
+          ctx.font = "bold 15px monospace";
           ctx.strokeStyle = "#000000";
           ctx.lineWidth = 3.5;
           ctx.lineJoin = "round";
@@ -1333,42 +1367,54 @@
         ctx.strokeRect(barX, barY, barW, 6);
 
         this.drawStatusDots(
-                  ctx,
-                  barX,
-                  barY - 6,
-                  target.bleedStacks || 0,
-                  "#e74c3c",
-                );
-                this.drawStatusDots(
-                  ctx,
-                  barX,
-                  barY - 12,
-                  target.poisonStacks || 0,
-                  "#2ecc71",
-                );
+          ctx,
+          barX,
+          barY - 6,
+          target.bleedStacks || 0,
+          "#e74c3c",
+        );
+        this.drawStatusDots(
+          ctx,
+          barX,
+          barY - 12,
+          target.poisonStacks || 0,
+          "#2ecc71",
+        );
 
-                // Render 3x Multi-Stack Buff Badges above Mob Healthbar
-                if (target.buffStacks) {
-                  let badgeY = barY - 18;
-                  let badgeParts = [];
-                  if ((target.buffStacks.haste || 0) > 0) badgeParts.push({ text: `Haste ${target.buffStacks.haste}x`, col: "#00d2ff" });
-                  if ((target.buffStacks.def || 0) > 0) badgeParts.push({ text: `Def ${target.buffStacks.def}x`, col: "#3498db" });
-                  if ((target.buffStacks.atk || 0) > 0) badgeParts.push({ text: `Atk ${target.buffStacks.atk}x`, col: "#e74c3c" });
+        // Render 3x Multi-Stack Buff Badges above Mob Healthbar
+        if (target.buffStacks) {
+          let badgeY = barY - 18;
+          let badgeParts = [];
+          if ((target.buffStacks.haste || 0) > 0)
+            badgeParts.push({
+              text: `Haste ${target.buffStacks.haste}x`,
+              col: "#00d2ff",
+            });
+          if ((target.buffStacks.def || 0) > 0)
+            badgeParts.push({
+              text: `Def ${target.buffStacks.def}x`,
+              col: "#3498db",
+            });
+          if ((target.buffStacks.atk || 0) > 0)
+            badgeParts.push({
+              text: `Atk ${target.buffStacks.atk}x`,
+              col: "#e74c3c",
+            });
 
-                  badgeParts.forEach((bp) => {
-                    ctx.font = "bold 8px monospace";
-                    ctx.strokeStyle = "#000000";
-                    ctx.lineWidth = 2.0;
-                    ctx.strokeText(bp.text, barX, badgeY);
-                    ctx.fillStyle = bp.col;
-                    ctx.fillText(bp.text, barX, badgeY);
-                    badgeY -= 9;
-                  });
-                }
-              }
+          badgeParts.forEach((bp) => {
+            ctx.font = "bold 8px monospace";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 2.0;
+            ctx.strokeText(bp.text, barX, badgeY);
+            ctx.fillStyle = bp.col;
+            ctx.fillText(bp.text, barX, badgeY);
+            badgeY -= 9;
+          });
+        }
+      }
 
-              ctx.restore();
-            }
+      ctx.restore();
+    }
 
     drawAegisGoliathBossBar(
       ctx,
@@ -3180,79 +3226,91 @@
     }
 
     // Ground Drop Shadow & Elite Aura Pass
-        c.save();
-        let mCx = m.x + m.w / 2;
-        let mCy = m.y + m.h - 2;
-        let mobShadowW = m.w * 0.45;
-        let mobShadowH = Math.max(3, m.h * 0.15);
+    c.save();
+    let mCx = m.x + m.w / 2;
+    let mCy = m.y + m.h - 2;
+    let mobShadowW = m.w * 0.45;
+    let mobShadowH = Math.max(3, m.h * 0.15);
 
-        c.fillStyle = "rgba(0, 0, 0, 0.35)";
-        c.beginPath();
-        c.ellipse(mCx, mCy, mobShadowW, mobShadowH, 0, 0, Math.PI * 2);
-        c.fill();
+    c.fillStyle = "rgba(0, 0, 0, 0.35)";
+    c.beginPath();
+    c.ellipse(mCx, mCy, mobShadowW, mobShadowH, 0, 0, Math.PI * 2);
+    c.fill();
 
-        // Render Blood Berserker Death Detonation Warning Circle
-        if (m.isDetonating && m.detonationTimer > 0) {
-          let pulse = Math.sin(Date.now() / 50) * 4;
-          c.strokeStyle = "#e74c3c";
-          c.lineWidth = 2.0;
-          c.setLineDash([6, 4]);
+    // Render Blood Berserker Death Detonation Warning Circle
+    if (m.isDetonating && m.detonationTimer > 0) {
+      let pulse = Math.sin(Date.now() / 50) * 4;
+      c.strokeStyle = "#e74c3c";
+      c.lineWidth = 2.0;
+      c.setLineDash([6, 4]);
+      c.beginPath();
+      c.arc(mCx, mCy - m.h / 2, 100 + pulse, 0, Math.PI * 2);
+      c.stroke();
+      c.setLineDash([]);
+
+      c.fillStyle = "rgba(231, 76, 60, 0.12)";
+      c.beginPath();
+      c.arc(mCx, mCy - m.h / 2, 100 + pulse, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    // Render Elite Commander Ground Runic Aura Ring & Laser Tethers
+    if (m.eliteAffix) {
+      let auraColor = "#00d2ff";
+      let buffKey = "haste";
+
+      if (m.eliteAffix === "vitality_weaver") {
+        auraColor = "#2ecc71";
+        buffKey = null;
+      } else if (m.eliteAffix === "iron_citadel") {
+        auraColor = "#3498db";
+        buffKey = "def";
+      } else if (m.eliteAffix === "swift_commander") {
+        auraColor = "#00d2ff";
+        buffKey = "haste";
+      } else if (m.eliteAffix === "blood_berserker") {
+        auraColor = "#e74c3c";
+        buffKey = "atk";
+      } else if (m.eliteAffix === "nullifier") {
+        auraColor = "#a855f7";
+        buffKey = null;
+      }
+
+      let rot = (Date.now() / 400) % (Math.PI * 2);
+      c.strokeStyle = auraColor;
+      c.lineWidth = 1.8;
+      c.setLineDash([4, 4]);
+      c.save();
+      c.translate(mCx, mCy);
+      c.rotate(rot);
+      c.beginPath();
+      c.ellipse(0, 0, m.w * 0.9, m.w * 0.45, 0, 0, Math.PI * 2);
+      c.stroke();
+      c.restore();
+
+      // Draw Translucent Laser Tether Links to Buffed Minion Allies
+      if (buffKey && window.activeDungeonMobs) {
+        c.strokeStyle = auraColor;
+        c.lineWidth = 1.2;
+        c.globalAlpha = 0.35;
+        c.setLineDash([2, 2]);
+
+        window.activeDungeonMobs.forEach((m2) => {
+          if (m2 === m || !m2.buffStacks || (m2.buffStacks[buffKey] || 0) <= 0)
+            return;
+          let m2Cx = m2.x + (m2.w || 24) / 2;
+          let m2Cy = m2.y + (m2.h || 24) / 2;
+
           c.beginPath();
-          c.arc(mCx, mCy - m.h / 2, 100 + pulse, 0, Math.PI * 2);
+          c.moveTo(mCx, mCy - m.h / 2);
+          c.lineTo(m2Cx, m2Cy);
           c.stroke();
-          c.setLineDash([]);
-
-          c.fillStyle = "rgba(231, 76, 60, 0.12)";
-          c.beginPath();
-          c.arc(mCx, mCy - m.h / 2, 100 + pulse, 0, Math.PI * 2);
-          c.fill();
-        }
-
-        // Render Elite Commander Ground Runic Aura Ring & Laser Tethers
-        if (m.eliteAffix) {
-          let auraColor = "#00d2ff";
-          let buffKey = "haste";
-
-          if (m.eliteAffix === "vitality_weaver") { auraColor = "#2ecc71"; buffKey = null; }
-          else if (m.eliteAffix === "iron_citadel") { auraColor = "#3498db"; buffKey = "def"; }
-          else if (m.eliteAffix === "swift_commander") { auraColor = "#00d2ff"; buffKey = "haste"; }
-          else if (m.eliteAffix === "blood_berserker") { auraColor = "#e74c3c"; buffKey = "atk"; }
-          else if (m.eliteAffix === "nullifier") { auraColor = "#a855f7"; buffKey = null; }
-
-          let rot = (Date.now() / 400) % (Math.PI * 2);
-          c.strokeStyle = auraColor;
-          c.lineWidth = 1.8;
-          c.setLineDash([4, 4]);
-          c.save();
-          c.translate(mCx, mCy);
-          c.rotate(rot);
-          c.beginPath();
-          c.ellipse(0, 0, m.w * 0.9, m.w * 0.45, 0, 0, Math.PI * 2);
-          c.stroke();
-          c.restore();
-
-          // Draw Translucent Laser Tether Links to Buffed Minion Allies
-          if (buffKey && window.activeDungeonMobs) {
-            c.strokeStyle = auraColor;
-            c.lineWidth = 1.2;
-            c.globalAlpha = 0.35;
-            c.setLineDash([2, 2]);
-
-            window.activeDungeonMobs.forEach((m2) => {
-              if (m2 === m || !m2.buffStacks || (m2.buffStacks[buffKey] || 0) <= 0) return;
-              let m2Cx = m2.x + (m2.w || 24) / 2;
-              let m2Cy = m2.y + (m2.h || 24) / 2;
-
-              c.beginPath();
-              c.moveTo(mCx, mCy - m.h / 2);
-              c.lineTo(m2Cx, m2Cy);
-              c.stroke();
-            });
-            c.setLineDash([]);
-            c.globalAlpha = 1.0;
-          }
-        }
-        c.restore();
+        });
+        c.setLineDash([]);
+        c.globalAlpha = 1.0;
+      }
+    }
+    c.restore();
 
     let penWidth =
       m.type === "boss" ||
@@ -4047,6 +4105,124 @@
             0,
             Math.PI * 2,
           );
+          c.fill();
+        }
+      } else if (vType === "sprout_cocoon") {
+        // --- HIGH FIDELITY SUMMON COCOON ---
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+        let time = Date.now();
+        let pulse = Math.sin(time / 100) * 1.5;
+
+        // Ground shadow
+        c.fillStyle = "rgba(0, 0, 0, 0.35)";
+        c.beginPath();
+        c.ellipse(cx, cy + 8, 8, 3, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // Outer silk shell
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#fdfdfd";
+        c.strokeStyle = "#000000";
+        c.lineWidth = 1.5;
+        c.beginPath();
+        c.ellipse(cx, cy, 9, 13 + pulse * 0.5, 0, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // Translucent green energy webbing pulsing inside
+        if (m.flashTimer === 0) {
+          c.strokeStyle = "rgba(46, 204, 113, 0.6)";
+          c.lineWidth = 1.0;
+          c.beginPath();
+          c.moveTo(cx - 6, cy - 6);
+          c.lineTo(cx + 6, cy + 6);
+          c.moveTo(cx + 6, cy - 6);
+          c.lineTo(cx - 6, cy + 6);
+          c.stroke();
+
+          // Inner green core glow
+          let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, 6 + pulse);
+          coreGrad.addColorStop(0, "#ffffff");
+          coreGrad.addColorStop(0.5, "#2ecc71");
+          coreGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
+          c.fillStyle = coreGrad;
+          c.beginPath();
+          c.arc(cx, cy, 6 + Math.abs(pulse), 0, Math.PI * 2);
+          c.fill();
+        }
+      } else if (vType === "magma_vent") {
+        // --- HIGH FIDELITY MOLTEN VENT ---
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+        let time = Date.now();
+        let pulse = Math.sin(time / 80) * 2;
+        let r = 10 + pulse;
+
+        // Ground shadow
+        c.fillStyle = "rgba(0, 0, 0, 0.4)";
+        c.beginPath();
+        c.ellipse(cx, cy + 4, r + 2, 3, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // Outer glowing magma rim
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#c0392b";
+        c.strokeStyle = "#ff5500";
+        c.lineWidth = 1.8;
+        c.beginPath();
+        c.arc(cx, cy, r, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // Inner bubbling yellow core
+        if (m.flashTimer === 0) {
+          let coreGrad = c.createRadialGradient(cx, cy, 1, cx, cy, r * 0.7);
+          coreGrad.addColorStop(0, "#ffffff");
+          coreGrad.addColorStop(0.3, "#f1c40f");
+          coreGrad.addColorStop(0.8, "#d35400");
+          coreGrad.addColorStop(1, "rgba(211, 84, 0, 0)");
+          c.fillStyle = coreGrad;
+          c.beginPath();
+          c.arc(cx, cy, r * 0.8, 0, Math.PI * 2);
+          c.fill();
+        }
+      } else if (vType === "toxic_spore") {
+        // --- HIGH FIDELITY TOXIC SPORE MINION ---
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+        let time = Date.now();
+        let pulse = Math.sin(time / 90) * 1.8;
+        let r = 8 + pulse;
+
+        // Ground shadow
+        c.fillStyle = "rgba(0, 0, 0, 0.35)";
+        c.beginPath();
+        c.ellipse(cx, cy + 6, r, 2.5, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // Translucent outer green protective bubble
+        let sporeGrad = c.createRadialGradient(cx, cy, 1, cx, cy, r + 4);
+        sporeGrad.addColorStop(0, "#ffffff");
+        sporeGrad.addColorStop(0.4, "rgba(46, 204, 113, 0.8)");
+        sporeGrad.addColorStop(1, "rgba(39, 174, 96, 0)");
+        c.fillStyle = sporeGrad;
+        c.beginPath();
+        c.arc(cx, cy, r + 4, 0, Math.PI * 2);
+        c.fill();
+
+        // Central biological spore bulb core
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#27ae60";
+        c.strokeStyle = "#000000";
+        c.lineWidth = 1.2;
+        c.beginPath();
+        c.arc(cx, cy, r - 2, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // Glimmer spot
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#ffffff";
+          c.beginPath();
+          c.arc(cx - 2, cy - 2, 1.2, 0, Math.PI * 2);
           c.fill();
         }
       } else if (vType === "thorn_wyrm") {
@@ -6415,8 +6591,150 @@
         let centerBossX = m.x + m.w / 2;
         let centerBossY = m.y + m.h / 2;
         c.translate(centerBossX, centerBossY);
-        c.scale(0.5, 0.5);
+        // Dynamically scale based on whether this is a full Stage Warden (major boss) or a Guard Warden (miniboss)
+        let scaleFactor = m.type === "dungeon_miniboss" ? 0.45 : 0.95;
+        c.scale(scaleFactor, scaleFactor);
         c.translate(-centerBossX, -centerBossY);
+
+        // Draw Eldritch Bark Shield surrounding sphere if active
+        if (m.actionState === "bark_shield") {
+          let time = Date.now();
+          let pulse = Math.sin(time / 120) * 3;
+
+          c.save();
+          c.strokeStyle = "rgba(46, 204, 113, 0.85)";
+          c.lineWidth = 2.0;
+          c.shadowBlur = 15;
+          c.shadowColor = "#2ecc71";
+          c.setLineDash([8, 4]);
+          c.beginPath();
+          c.arc(centerBossX, centerBossY, m.w * 0.75 + pulse, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+        }
+
+        // Draw Cyberspace Cyber Barrier surrounding sphere if active
+        if (m.actionState === "cyber_barrier") {
+          let time = Date.now();
+          let pulse = Math.sin(time / 90) * 2.5;
+
+          c.save();
+          c.strokeStyle = "rgba(255, 0, 127, 0.85)";
+          c.lineWidth = 2.0;
+          c.shadowBlur = 15;
+          c.shadowColor = "#ff007f";
+          c.setLineDash([4, 2]);
+          c.beginPath();
+          c.arc(centerBossX, centerBossY, m.w * 0.75 + pulse, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+        }
+
+        // Draw Aegis Goliath Directional Tower Shield if active (Phase 2)
+        if (
+          m.phase === 2 &&
+          m.bossKey === "aegis_goliath" &&
+          !(m.dazeTimer > 0)
+        ) {
+          let shieldAngle = m.shieldAngle !== undefined ? m.shieldAngle : 0;
+          c.save();
+          c.strokeStyle = "rgba(0, 210, 255, 0.85)";
+          c.lineWidth = 4.0;
+          c.shadowBlur = 10;
+          c.shadowColor = "#00d2ff";
+          c.beginPath();
+          c.arc(
+            centerBossX,
+            centerBossY,
+            m.w * 0.75,
+            shieldAngle - 0.6,
+            shieldAngle + 0.6,
+          );
+          c.stroke();
+          c.restore();
+        }
+
+        // Draw Swirling Dazed Stars if active
+        if (m.dazeTimer > 0) {
+          let time = Date.now();
+          c.save();
+          c.strokeStyle = "#ffd700";
+          c.lineWidth = 1.0;
+          c.beginPath();
+          c.ellipse(centerBossX, m.y - 6, 12, 3, 0, 0, Math.PI * 2);
+          c.stroke();
+
+          c.fillStyle = "#ffffff";
+          for (let i = 0; i < 3; i++) {
+            let starAngle = time / 150 + (i * Math.PI * 2) / 3;
+            let sx = centerBossX + Math.cos(starAngle) * 12;
+            let sy = m.y - 6 + Math.sin(starAngle) * 3;
+            c.fillRect(sx - 1.2, sy - 1.2, 2.4, 2.4);
+          }
+          c.restore();
+        }
+
+        // Draw Chronos Rewind ticking shield bubble if active (Phase 2)
+        if (
+          m.actionState === "chrono_rewind" &&
+          m.bossKey === "chronos_arbitrator"
+        ) {
+          let time = Date.now();
+          let pulse = Math.sin(time / 100) * 2.5;
+
+          // Glowing golden barrier bubble
+          c.save();
+          c.strokeStyle = "rgba(241, 196, 15, 0.85)";
+          c.lineWidth = 2.2;
+          c.shadowBlur = 15;
+          c.shadowColor = "#ffd700";
+          c.setLineDash([6, 3]);
+          c.beginPath();
+          c.arc(centerBossX, centerBossY, m.w * 0.78 + pulse, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+
+          // Golden Clock face ticking above his head
+          c.save();
+          c.translate(centerBossX, m.y - 12);
+          c.fillStyle = "rgba(10, 8, 20, 0.9)";
+          c.strokeStyle = "#ffd700";
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.arc(0, 0, 10, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+
+          let handAngle = (time / 200) % (Math.PI * 2);
+          c.strokeStyle = "#ffffff";
+          c.lineWidth = 1.0;
+          c.lineCap = "round";
+          c.beginPath();
+          c.moveTo(0, 0);
+          c.lineTo(Math.cos(handAngle) * 6, Math.sin(handAngle) * 6);
+          c.stroke();
+          c.restore();
+        }
+
+        // Draw Gilded Vault Keeper Gold Siphon bubble if active (Phase 2)
+        if (
+          m.actionState === "taxation" &&
+          m.bossKey === "gilded_vault_keeper"
+        ) {
+          let time = Date.now();
+          let pulse = Math.sin(time / 100) * 2.5;
+
+          c.save();
+          c.strokeStyle = "rgba(241, 196, 15, 0.85)";
+          c.lineWidth = 2.2;
+          c.shadowBlur = 15;
+          c.shadowColor = "#ffd700";
+          c.setLineDash([5, 5]);
+          c.beginPath();
+          c.arc(centerBossX, centerBossY, m.w * 0.78 + pulse, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+        }
 
         // Background glow layer for Rare targets to immediately signify high-tier spawns
         if (m.isRare) {
@@ -7551,84 +7869,92 @@
   };
 
   window.drawSingleHero = function (
-      ctx,
-      x,
-      y,
-      scale,
-      equippedSlots,
-      playerStats,
-      bounce,
-      options = {},
+    ctx,
+    x,
+    y,
+    scale,
+    equippedSlots,
+    playerStats,
+    bounce,
+    options = {},
+  ) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    let equipped = equippedSlots ? { ...equippedSlots } : {};
+    let stats = playerStats || {};
+
+    // Ground Drop Shadow Pass (Ambient Occlusion)
+    ctx.save();
+    let shadowScale = Math.max(0.65, 1.0 - Math.abs(bounce) * 0.05);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.beginPath();
+    ctx.ellipse(0, 16, 11 * shadowScale, 4.5 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Active Buff & Elixir Ground Aura Ring Pass
+    if (
+      stats &&
+      (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
     ) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(scale, scale);
+      let activeAuras = [];
+      let getAtkCol = (s) =>
+        s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71";
+      let getHpCol = (s) =>
+        s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c";
+      let getDefCol = (s) =>
+        s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db";
+      let getHasteCol = (s) =>
+        s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f";
 
-      let equipped = equippedSlots ? { ...equippedSlots } : {};
-      let stats = playerStats || {};
+      if ((stats.atkPotionRuns || 0) > 0)
+        activeAuras.push(getAtkCol(stats.atkPotionStrength || 0.1));
+      if ((stats.hpPotionRuns || 0) > 0)
+        activeAuras.push(getHpCol(stats.hpPotionStrength || 0.1));
+      if ((stats.defPotionRuns || 0) > 0)
+        activeAuras.push(getDefCol(stats.defPotionStrength || 0.1));
+      if ((stats.hastePotionRuns || 0) > 0)
+        activeAuras.push(getHasteCol(stats.hastePotionStrength || 1));
+      if ((stats.xpPotionRuns || 0) > 0) activeAuras.push("#c084fc");
+      if ((stats.dropPotionRuns || 0) > 0) activeAuras.push("#34d399");
+      if ((stats.qlyPotionRuns || 0) > 0) activeAuras.push("#f472b6");
+      if (stats.frenzyTimer > 0) activeAuras.push("#f1c40f");
+      if (stats.astralAwakeningTimer > 0) activeAuras.push("#00d2ff");
+      if (stats.purifiedAegisTimer > 0) activeAuras.push("#2ecc71");
 
-      // Ground Drop Shadow Pass (Ambient Occlusion)
+      if (activeAuras.length > 0) {
+        ctx.save();
+        let time = Date.now();
+        let auraRot = (time / 400) % (Math.PI * 2);
+
+        activeAuras.forEach((col, idx) => {
+          let rx = 15 + idx * 3;
+          let ry = 7 + idx * 1.5;
+          let pulse = Math.sin(time / 200 + idx) * 1.2;
+
           ctx.save();
-          let shadowScale = Math.max(0.65, 1.0 - Math.abs(bounce) * 0.05);
-          ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+          ctx.translate(0, 16);
+          ctx.rotate(idx % 2 === 0 ? auraRot : -auraRot);
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([5, 3]);
           ctx.beginPath();
-          ctx.ellipse(0, 16, 11 * shadowScale, 4.5 * shadowScale, 0, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.ellipse(0, 0, rx + pulse, ry + pulse * 0.5, 0, 0, Math.PI * 2);
+          ctx.stroke();
           ctx.restore();
-
-          // Active Buff & Elixir Ground Aura Ring Pass
-          if (
-            stats &&
-            (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-          ) {
-          let activeAuras = [];
-          let getAtkCol = (s) => (s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71");
-          let getHpCol = (s) => (s >= 0.35 ? "#ff0055" : s >= 0.2 ? "#f43f5e" : "#e74c3c");
-          let getDefCol = (s) => (s >= 0.35 ? "#38bdf8" : s >= 0.2 ? "#00d2ff" : "#3498db");
-          let getHasteCol = (s) => (s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f");
-
-          if ((stats.atkPotionRuns || 0) > 0) activeAuras.push(getAtkCol(stats.atkPotionStrength || 0.1));
-          if ((stats.hpPotionRuns || 0) > 0) activeAuras.push(getHpCol(stats.hpPotionStrength || 0.1));
-          if ((stats.defPotionRuns || 0) > 0) activeAuras.push(getDefCol(stats.defPotionStrength || 0.1));
-          if ((stats.hastePotionRuns || 0) > 0) activeAuras.push(getHasteCol(stats.hastePotionStrength || 1));
-          if ((stats.xpPotionRuns || 0) > 0) activeAuras.push("#c084fc");
-          if ((stats.dropPotionRuns || 0) > 0) activeAuras.push("#34d399");
-          if ((stats.qlyPotionRuns || 0) > 0) activeAuras.push("#f472b6");
-          if (stats.frenzyTimer > 0) activeAuras.push("#f1c40f");
-          if (stats.astralAwakeningTimer > 0) activeAuras.push("#00d2ff");
-          if (stats.purifiedAegisTimer > 0) activeAuras.push("#2ecc71");
-
-          if (activeAuras.length > 0) {
-            ctx.save();
-            let time = Date.now();
-            let auraRot = (time / 400) % (Math.PI * 2);
-
-            activeAuras.forEach((col, idx) => {
-              let rx = 15 + idx * 3;
-              let ry = 7 + idx * 1.5;
-              let pulse = Math.sin(time / 200 + idx) * 1.2;
-
-              ctx.save();
-              ctx.translate(0, 16);
-              ctx.rotate(idx % 2 === 0 ? auraRot : -auraRot);
-              ctx.strokeStyle = col;
-              ctx.lineWidth = 1.2;
-              ctx.setLineDash([5, 3]);
-              ctx.beginPath();
-              ctx.ellipse(0, 0, rx + pulse, ry + pulse * 0.5, 0, 0, Math.PI * 2);
-              ctx.stroke();
-              ctx.restore();
-            });
-            ctx.restore();
-          }
-        }
+        });
+        ctx.restore();
+      }
+    }
 
     const penHero = 1.8;
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penHero;
-        ctx.lineJoin = "round";
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = penHero;
+    ctx.lineJoin = "round";
 
-        // Phase 4: Spectral Cosmetic Projection Interceptor
+    // Phase 4: Spectral Cosmetic Projection Interceptor
     if (stats.projectSpectralCosmetic && stats.activeSpectralResonance) {
       let resonance = stats.activeSpectralResonance;
       if (resonance === "weapon_staff") {

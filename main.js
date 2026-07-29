@@ -785,12 +785,2012 @@
     });
 
     // Recalculate all existing inventory & equipped items to migrate stats
-        if (typeof window.recalculateAllInventoryItems === "function") {
           window.recalculateAllInventoryItems();
+
+    window.BossAIEngine = {
+      initBoss(m) {
+        if (m.bossInitialized) return;
+        m.bossInitialized = true;
+        m.phase = 1;
+        m.actionState = "idle"; // "idle" | "chase" | "telegraphing" | "channeling" | "dazed"
+        m.staggerShield = BigNum.from(0);
+        m.maxStaggerShield = BigNum.from(0);
+        m.channelTimer = 0;
+        m.maxChannelTimer = 0;
+        m.telegraphTimer = 0;
+        m.maxTelegraphTimer = 65;
+        m.attackCooldown = 60;
+        m.funnyText = "";
+        m.funnyTextTimer = 0;
+        m.activeEffects = [];
+        m.targetX = m.x;
+        m.targetY = m.y;
+
+        // Map boss key name by evaluating visualType, name, or type
+        m.bossKey = this.resolveBossKey(m);
+      },
+
+      resolveBossKey(m) {
+        let nameLower = (m.name || "").toLowerCase();
+        if (m.visualType === "aegis_goliath" || nameLower.includes("aegis")) return "aegis_goliath";
+        if (m.visualType === "chronos_arbitrator" || nameLower.includes("chronos")) return "chronos_arbitrator";
+        if (m.visualType === "nexus_overseer" || nameLower.includes("nexus")) return "nexus_overseer";
+        if (m.visualType === "gilded_vault_keeper" || nameLower.includes("gilded") || nameLower.includes("vault keeper")) return "gilded_vault_keeper";
+        if (m.visualType === "corrosive_abomination" || nameLower.includes("corrosive") || nameLower.includes("abomination")) return "corrosive_abomination";
+        if (m.visualType === "hooktail" || nameLower.includes("hooktail") || nameLower.includes("calamity")) return "hooktail";
+        if (m.visualType === "overlord_iron_vault" || nameLower.includes("iron vault") || nameLower.includes("overlord")) return "overlord_iron_vault";
+
+        // Fallback to active stage biome
+        let tier = typeof window.getStageTier === "function" ? window.getStageTier() : 0;
+        const biomes = [
+          "arachnid_treant", // Zone 1
+          "aegis_goliath",   // Zone 2
+          "overlord_iron_vault", // Zone 3
+          "corrosive_abomination", // Zone 4
+          "void_overseer",   // Zone 5
+          "chronos_arbitrator", // Zone 6
+          "nexus_overseer"   // Zone 7
+        ];
+        return biomes[tier] || "arachnid_treant";
+      },
+
+      update(m) {
+        if (!m || m.hp.lte(0)) return;
+        this.initBoss(m);
+
+        let p = window.player;
+        let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+
+        if (m.flashTimer > 0) m.flashTimer--;
+        if (m.attackCooldown > 0) m.attackCooldown--;
+        if (m.funnyTextTimer > 0) m.funnyTextTimer--;
+
+        // Dampen recoil
+        if (m.recoilX) { m.recoilX *= 0.65; if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0; }
+        if (m.recoilY) { m.recoilY *= 0.65; if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0; }
+
+        let dx = p.x - (m.x + m.w / 2);
+        let dy = p.y - (m.y + m.h / 2);
+        let dist = Math.hypot(dx, dy);
+
+        // Update facing direction
+        if (dx < -1) m.facing = -1;
+        else if (dx > 1) m.facing = 1;
+
+        // Push player back gently on solid overlap
+        let radius = (m.w || 48) * 0.48;
+        let pRadius = p.radius || 9;
+        let bossMinDist = pRadius + radius;
+        if (dist < bossMinDist) {
+          let overlap = bossMinDist - dist;
+          let nx = dist > 0 ? dx / dist : 1;
+          let ny = dist > 0 ? dy / dist : 0;
+          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.35);
+
+          let pushX = -nx * overlap * 0.15;
+          let pushY = -ny * overlap * 0.15;
+          let map = window.activeDungeonMap;
+          if (map && map.grid) {
+            let bx = m.x + m.w / 2;
+            let by = m.y + m.h / 2;
+            if (typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(map, bx + pushX, by, radius)) m.x += pushX;
+            if (typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(map, bx, by + pushY, radius)) m.y += pushY;
+          } else {
+            m.x += pushX;
+            m.y += pushY;
+          }
         }
 
-        // Initialize Draggable Flask Button Engine
-        if (typeof window.initFlaskButtonDrag === "function") {
+        // Route to specific boss strategy execution based on resolved key
+        switch (m.bossKey) {
+          case "arachnid_treant":
+            this.updateArachnidTreant(m, p, pStats, dist, dx, dy);
+            break;
+          case "aegis_goliath":
+            this.updateAegisGoliath(m, p, pStats, dist, dx, dy);
+            break;
+          case "overlord_iron_vault":
+            this.updateOverlordIronVault(m, p, pStats, dist, dx, dy);
+            break;
+          case "corrosive_abomination":
+            this.updateCorrosiveAbomination(m, p, pStats, dist, dx, dy);
+            break;
+          case "void_overseer":
+            this.updateVoidOverseer(m, p, pStats, dist, dx, dy);
+            break;
+          case "chronos_arbitrator":
+            this.updateChronosArbitrator(m, p, pStats, dist, dx, dy);
+            break;
+          case "nexus_overseer":
+            this.updateNexusOverseer(m, p, pStats, dist, dx, dy);
+            break;
+          case "gilded_vault_keeper":
+            this.updateGildedVaultKeeper(m, p, pStats, dist, dx, dy);
+            break;
+          case "hooktail":
+            this.updateHooktail(m, p, pStats, dist, dx, dy);
+            break;
+          default:
+            this.updateStandardFallback(m, p, pStats, dist, dx, dy);
+            break;
+        }
+      },
+
+      // Baseline fallback/standard movements for safety and modular scaling
+      updateStandardFallback(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+
+        if (m.state === "telegraphing" || m.actionState === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 110;
+            let ability = m.activeAbility;
+            if (ability === "slam") {
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                window.damagePlayer(Math.round(m.atk * 1.8), m);
+              }
+            } else if (ability === "nova") {
+              for (let i = 0; i < 8; i++) {
+                let angle = (i * Math.PI * 2) / 8;
+                window.projectiles.push({
+                  x: cx,
+                  y: cy,
+                  vx: Math.cos(angle) * 3.8,
+                  vy: Math.sin(angle) * 3.8,
+                  r: 6,
+                  pulseOffset: i,
+                  type: "boss_nova",
+                  damage: Math.round(m.atk * 1.1),
+                  life: 120
+                });
+              }
+              if (window.SoundManager) window.SoundManager.play("spell_fire");
+            } else if (ability === "charge") {
+              let dX = m.targetX - cx;
+              let dY = m.targetY - cy;
+              let dDist = Math.hypot(dX, dY);
+              if (dDist > 0) {
+                m.x += (dX / dDist) * 75;
+                m.y += (dY / dDist) * 75;
+              }
+              if (Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2)) <= 42) {
+                window.damagePlayer(Math.round(m.atk * 1.5), m);
+              }
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Chase player when within range
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.8;
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
+
+          // Trigger ability cast
+          if (m.attackCooldown <= 0 && dist < 220) {
+            let moves = m.moveset || ["slam", "nova", "charge"];
+            let chosen = moves[Math.floor(Math.random() * moves.length)];
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer = 65;
+            m.targetX = p.x;
+            m.targetY = p.y;
+          } else if (dist < 30 && m.attackCooldown <= 0) {
+            m.attackCooldown = 60;
+            window.damagePlayer(m.atk, m);
+          }
+        }
+      },
+
+      // Subphase placeholders (will be fleshed out progressively with stunning visuals)
+      updateArachnidTreant(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              // --- PHASE 2 TRIGGER: ELDRITCH BARK SHIELD & SUMMONS (UNDER 50% HP) ---
+              let bHp = m.hp.valueOf();
+              let bMaxHp = m.maxHp.valueOf();
+              if (bHp < bMaxHp * 0.5 && !m.phase2Triggered) {
+                m.phase2Triggered = true;
+                m.phase = 2;
+                m.actionState = "bark_shield";
+                m.isStopped = true;
+
+                // Teleport Stage Warden directly to the center of the arena
+                let map = window.activeDungeonMap;
+                let mapW = map ? map.width : 24;
+                let mapH = map ? map.height : 18;
+                let tSize = map ? map.tileSize : 32;
+                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+                cx = m.x + m.w / 2;
+                cy = m.y + m.h / 2;
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(cx, cy, 35, "slag_slime", 4);
+                  window.combatVisuals.triggerScreenShake(8, 15);
+                }
+                if (window.SoundManager) window.SoundManager.play("spell");
+
+                // Spawn 3 Sprout Cocoons surrounding the Warden
+                window.activeDungeonMobs = window.activeDungeonMobs || [];
+                for (let i = 0; i < 3; i++) {
+                  let angle = (i * Math.PI * 2) / 3;
+                  let spawnDist = 54;
+                  let sx = cx + Math.cos(angle) * spawnDist;
+                  let sy = cy + Math.sin(angle) * spawnDist;
+
+                  window.activeDungeonMobs.push({
+                    id: window.idCounter++,
+                    type: "mob",
+                    visualTier: 0,
+                    visualType: "sprout_cocoon",
+                    x: sx - 12,
+                    y: sy - 12,
+                    w: 24,
+                    h: 24,
+                    hp: BigNum.from(60 + m.stageLevel * 20),
+                    maxHp: BigNum.from(60 + m.stageLevel * 20),
+                    atk: 0,
+                    flashTimer: 0,
+                    attackCooldown: 100,
+                    isBossSummon: true,
+                    isCocoon: true,
+                    hatchTimer: 240, // 4 seconds (240 frames)
+                    discovered: true
+                  });
+
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(sx, sy, 10, "slag_slime", 2);
+                  }
+                }
+
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[!] Eldritch Bark Shield active! Slay the hatched minions to break it!", "#e74c3c");
+                }
+              }
+
+              // Processing active Bark Shield & Orbital Web Storm particle effects
+              if (m.actionState === "bark_shield") {
+                let sumCount = window.activeDungeonMobs ? window.activeDungeonMobs.filter(mob => mob.isBossSummon && mob.hp.gt(0)).length : 0;
+
+                if (sumCount === 0) {
+                  // Shield Shatters!
+                  m.actionState = "idle";
+                  m.state = "idle";
+                  m.isStopped = false;
+                  m.attackCooldown = 60;
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(cx, cy, 30, "slag_slime", 4.5);
+                    window.combatVisuals.triggerScreenShake(8, 12);
+                  }
+                  if (window.SoundManager) window.SoundManager.play("block");
+                  if (typeof window.pushHeaderToast === "function") {
+                    window.pushHeaderToast("[✦] Eldritch Bark Shield shattered! Boss is vulnerable!", "#2ecc71");
+                  }
+                } else {
+                  // Emit orbital Web Storm wind particles
+                  if (Math.random() < 0.4) {
+                    let angle = Math.random() * Math.PI * 2;
+                    let orbDist = m.w * 0.75;
+                    let px = cx + Math.cos(angle) * orbDist;
+                    let py = cy + Math.sin(angle) * orbDist;
+                    let rotSpeed = 3.5;
+                    let vx = -Math.sin(angle) * rotSpeed;
+                    let vy = Math.cos(angle) * rotSpeed;
+                    if (window.combatVisuals && window.combatVisuals.particlePool) {
+                      window.combatVisuals.particlePool.get(
+                        px,
+                        py,
+                        vx,
+                        vy,
+                        window.randFloat(1.5, 3),
+                        Math.random() < 0.5 ? "#ffffff" : "#27ae60",
+                        0.8,
+                        30,
+                        0,
+                        true,
+                        0
+                      );
+                    }
+                  }
+                  return; // Skip normal combat movement/attack AI while shielded
+                }
+              }
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+
+                // Creeping vine particles traveling during root snare wind-up
+                if (m.activeAbility === "root_snare" && m.telegraphTimer % 3 === 0) {
+                  let tRatio = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
+                  let vx = cx + (m.targetX - cx) * tRatio;
+                  let vy = cy + (m.targetY - cy) * tRatio;
+                  if (window.combatVisuals && window.combatVisuals.particlePool) {
+                    window.combatVisuals.particlePool.get(
+                      vx + window.randFloat(-4, 4),
+                      vy + window.randFloat(-4, 4),
+                      window.randFloat(-0.2, 0.2),
+                      window.randFloat(-0.2, 0.2),
+                      window.randFloat(1.5, 2.5),
+                      "#27ae60",
+                      0.8,
+                      24,
+                      0,
+                      true,
+                      0
+                    );
+                  }
+                }
+
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 120; // 2s recovery
+
+                  let ability = m.activeAbility;
+                  if (ability === "slam") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(7, 12);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "slag_slime", 3.5);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                      window.damagePlayer(Math.round(m.atk * 1.8), m);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  } else if (ability === "root_snare") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(5, 8);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 20, "slag_slime", 2.2);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 75) {
+                      window.damagePlayer(Math.round(m.atk * 1.3), m);
+                      p.snareTimer = 132; // 2.2s snare slow
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(p.x, p.y - 12, "[SNARED] -60% Speed!", "#2ecc71", true);
+                      }
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player at a slow, heavy treant pace
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = 1.3;
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                  }
+                }
+
+                // Trigger Ability cast or basic close-range strikes
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let chosen = Math.random() < 0.5 ? "slam" : "root_snare";
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+                  m.telegraphTimer = 75;
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+      updateAegisGoliath(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              // --- PHASE 2 TRIGGER: RAISED TOWER SHIELD (UNDER 50% HP) ---
+              let bHp = m.hp.valueOf();
+              let bMaxHp = m.maxHp.valueOf();
+              if (bHp < bMaxHp * 0.5 && m.phase === 1) {
+                m.phase = 2;
+                m.shieldAngle = Math.atan2(p.y - cy, p.x - cx);
+                m.dazeTimer = 0;
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[!] Aegis Goliath raised his Tower Shield! Flank his exposed sides!", "#00d2ff");
+                }
+                if (window.SoundManager) window.SoundManager.play("revive");
+              }
+
+              // Handle Dazed stun sequence
+              if (m.dazeTimer > 0) {
+                m.dazeTimer--;
+                m.isStopped = true;
+                // Spawn little daze stars particles on head occasionally
+                if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(cx, m.y - 4, 3, "gold_dungeon", 1.2);
+                }
+                return; // Frozen and vulnerable while dazed
+              }
+              m.isStopped = false;
+
+              // Lerp shield angle slowly toward the player to allow flanking outmaneuvers
+              if (m.phase === 2 && m.shieldAngle !== undefined && m.activeAbility !== "shield_bash") {
+                let targetAngle = Math.atan2(p.y - cy, p.x - cx);
+                let angleDiff = targetAngle - m.shieldAngle;
+                // Normalize to -PI to PI
+                angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                // Rotate up to 0.038 radians per frame
+                m.shieldAngle += Math.max(-0.038, Math.min(0.038, angleDiff));
+              }
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+
+                // Apply active gravitational magnetic pull
+                if (m.activeAbility === "magnetic_pull") {
+                  let pullForce = 2.2;
+                  let angle = Math.atan2(cy - p.y, cx - p.x);
+                  let testX = p.x + Math.cos(angle) * pullForce;
+                  let testY = p.y + Math.sin(angle) * pullForce;
+
+                  if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, testX, testY, p.radius || 9)) {
+                    p.x = testX;
+                    p.y = testY;
+                  }
+
+                  // Spawn blue gravitational sparks flowing inward
+                  if (m.telegraphTimer % 4 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
+                    window.combatVisuals.particlePool.get(
+                      p.x + window.randFloat(-10, 10),
+                      p.y + window.randFloat(-10, 10),
+                      Math.cos(angle) * 3,
+                      Math.sin(angle) * 3,
+                      window.randFloat(1.2, 2.5),
+                      "#00d2ff",
+                      0.8,
+                      20,
+                      0,
+                      true,
+                      0
+                    );
+                  }
+                }
+
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 110;
+
+                  let ability = m.activeAbility;
+                  if (ability === "magnetic_pull") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(8, 14);
+                      window.combatVisuals.spawnParticles(cx, cy, 25, "aegis_goliath", 4.5);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+
+                    // Ground slam damage check
+                    if (Math.hypot(p.x - cx, p.y - cy) <= 70) {
+                      window.damagePlayer(Math.round(m.atk * 1.6), m);
+                    }
+                  } else if (ability === "boomerang_shield") {
+                    // Spawn dual curving boomerang projectiles
+                    let angleToPlayer = Math.atan2(p.y - cy, p.x - cx);
+                    let speed = 4.5;
+
+                    let angles = [angleToPlayer - 0.25, angleToPlayer + 0.25];
+                    angles.forEach((ang) => {
+                      window.projectiles.push({
+                        x: cx,
+                        y: cy,
+                        vx: Math.cos(ang) * speed,
+                        vy: Math.sin(ang) * speed,
+                        r: 8,
+                        type: "boomerang",
+                        damage: Math.round(m.atk * 0.9),
+                        life: 180,
+                        pulseOffset: Math.random() * 10
+                      });
+                    });
+
+                    if (window.SoundManager) window.SoundManager.play("swing");
+                  } else if (ability === "shield_bash") {
+                    // Executing frontal shield bash
+                    let pAngle = Math.atan2(p.y - cy, p.x - cx);
+                    let angleDiff = Math.abs(Math.atan2(Math.sin(pAngle - m.shieldAngle), Math.cos(pAngle - m.shieldAngle)));
+
+                    if (Math.hypot(p.x - cx, p.y - cy) <= 64 && angleDiff <= 0.5) {
+                      // Player hit!
+                      window.damagePlayer(Math.round(m.atk * 1.7), m);
+                      // Apply knockback
+                      let kx = p.x + Math.cos(m.shieldAngle) * 24;
+                      let ky = p.y + Math.sin(m.shieldAngle) * 24;
+                      if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, kx, ky, p.radius || 9)) {
+                        p.x = kx;
+                        p.y = ky;
+                      }
+                      if (window.combatVisuals) {
+                        window.combatVisuals.triggerScreenShake(6, 10);
+                        window.combatVisuals.spawnParticles(p.x, p.y, 12, "aegis_goliath", 3);
+                      }
+                      if (window.SoundManager) window.SoundManager.play("block");
+                    } else {
+                      // Player evaded! Overcommit and enter DAZED state
+                      m.dazeTimer = 210; // 3.5 seconds
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(cx, m.y - 12, "DAZED!", "#ffd700");
+                      }
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnParticles(cx, m.y - 4, 15, "gold_dungeon", 2.2);
+                        window.combatVisuals.triggerScreenShake(4, 6);
+                      }
+                      if (window.SoundManager) window.SoundManager.play("block");
+                    }
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player at a steady vanguard speed
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = m.phase === 2 ? 1.4 : 1.7; // Slightly heavier and slower while shield raised
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                  }
+                }
+
+                // Trigger Abilities
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let optionsPool = ["magnetic_pull", "boomerang_shield"];
+                  if (m.phase === 2) optionsPool.push("shield_bash");
+
+                  let chosen = optionsPool[Math.floor(Math.random() * optionsPool.length)];
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+
+                  if (chosen === "magnetic_pull") m.telegraphTimer = 90;
+                  else if (chosen === "boomerang_shield") m.telegraphTimer = 60;
+                  else m.telegraphTimer = 75; // shield_bash windup
+
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+      updateOverlordIronVault(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 120; // 2s recovery
+
+                  let ability = m.activeAbility;
+                  if (ability === "slam") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(8, 14);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "magma_elemental", 3.5);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                      window.damagePlayer(Math.round(m.atk * 1.8), m);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  } else if (ability === "magma_vents" && m.ventSpawnLocations) {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(6, 10);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+                    // Spawn 2 growing Magma Vents around the player
+                    window.activeDungeonMobs = window.activeDungeonMobs || [];
+                    m.ventSpawnLocations.forEach((loc) => {
+                      window.activeDungeonMobs.push({
+                        id: window.idCounter++,
+                        type: "mob",
+                        visualTier: 2,
+                        visualType: "magma_vent",
+                        x: loc.x - 12,
+                        y: loc.y - 12,
+                        w: 24,
+                        h: 24,
+                        hp: BigNum.from(1),
+                        maxHp: BigNum.from(1),
+                        parentAtk: m.atk,
+                        flashTimer: 0,
+                        isMagmaVent: true,
+                        ventTimer: 270, // 4.5 seconds
+                        discovered: true
+                      });
+
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnParticles(loc.x, loc.y, 8, "magma_elemental", 1.8);
+                      }
+                    });
+                    m.ventSpawnLocations = null;
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player at a slow, heavy colossus speed
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = 1.35;
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                  }
+                }
+
+                // Trigger Attacks
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let chosen = Math.random() < 0.5 ? "slam" : "magma_vents";
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+                  m.telegraphTimer = 75;
+
+                  if (chosen === "magma_vents") {
+                    // Pre-calculate target spots around the player's current location
+                    m.ventSpawnLocations = [];
+                    for (let i = 0; i < 2; i++) {
+                      let angle = Math.random() * Math.PI * 2;
+                      let spawnDist = window.randFloat(40, 80);
+                      m.ventSpawnLocations.push({
+                        x: p.x + Math.cos(angle) * spawnDist,
+                        y: p.y + Math.sin(angle) * spawnDist
+                      });
+                    }
+                  }
+
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+      updateCorrosiveAbomination(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              // Leave trailing Acid Pools while moving across both phases
+              if (m.isMoving && window.logicClock % 40 === 0) {
+                window.cavernInteractives = window.cavernInteractives || [];
+                window.cavernInteractives.push({
+                  id: window.idCounter++,
+                  type: "acid_pool",
+                  x: cx,
+                  y: cy,
+                  w: 24,
+                  h: 12,
+                  life: 480, // 8 seconds (480 frames)
+                  maxLife: 480
+                });
+              }
+
+              // --- PHASE 2 TRIGGER: TOXIC SPORE NOVA (UNDER 50% HP) ---
+              let bHp = m.hp.valueOf();
+              let bMaxHp = m.maxHp.valueOf();
+              if (bHp < bMaxHp * 0.5 && !m.phase2Triggered) {
+                m.phase2Triggered = true;
+                m.phase = 2;
+                m.attackCooldown = 40;
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[!] Corrosive Abomination has entered Phase 2! Watch out for toxic spore storms!", "#2ecc71");
+                }
+                if (window.SoundManager) window.SoundManager.play("revive");
+              }
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 110;
+
+                  let ability = m.activeAbility;
+                  if (ability === "slam") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(7, 12);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "swamp_basilisk", 3.2);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                      window.damagePlayer(Math.round(m.atk * 1.8), m);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  } else if (ability === "spore_storm") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(6, 10);
+                      window.combatVisuals.spawnParticles(cx, cy, 25, "swamp_basilisk", 3.5);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+                    // Spawn 3 homing toxic spores with a strict 6-second lifetime
+                    window.activeDungeonMobs = window.activeDungeonMobs || [];
+                    for (let i = 0; i < 3; i++) {
+                      let angle = (i * Math.PI * 2) / 3;
+                      let spawnDist = 45;
+                      let sx = cx + Math.cos(angle) * spawnDist;
+                      let sy = cy + Math.sin(angle) * spawnDist;
+
+                      window.activeDungeonMobs.push({
+                        id: window.idCounter++,
+                        type: "mob",
+                        visualTier: 3,
+                        visualType: "toxic_spore",
+                        x: sx - 12,
+                        y: sy - 12,
+                        w: 24,
+                        h: 24,
+                        hp: BigNum.from(1),
+                        maxHp: BigNum.from(1),
+                        atk: Math.round(m.atk * 0.95),
+                        flashTimer: 0,
+                        isSpore: true,
+                        isBossSummon: true,
+                        hatchTimer: 360, // 6s lifetime (360 frames)
+                        discovered: true
+                      });
+                    }
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = 1.6;
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                    m.isMoving = true;
+                  } else {
+                    m.isMoving = false;
+                  }
+                } else {
+                  m.isMoving = false;
+                }
+
+                // Trigger Abilities
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let optionsPool = ["slam"];
+                  if (m.phase === 2) optionsPool.push("spore_storm");
+
+                  let chosen = optionsPool[Math.floor(Math.random() * optionsPool.length)];
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+                  m.telegraphTimer = chosen === "spore_storm" ? 85 : 65;
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+      updateVoidOverseer(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+
+                // Apply active inverse-square gravitational singularity pull
+                if (m.activeAbility === "singularity") {
+                  let tDx = cx - p.x;
+                  let tDy = cy - p.y;
+                  let tDist = Math.hypot(tDx, tDy);
+
+                  if (tDist > 10) {
+                    // Gravity forces increase rapidly the closer you get (inverse square)
+                    let pull = 4500 / (tDist * tDist + 400);
+                    pull = Math.min(4.8, pull); // Cap maximum drag speed
+
+                    let testX = p.x + (tDx / tDist) * pull;
+                    let testY = p.y + (tDy / tDist) * pull;
+
+                    if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, testX, testY, p.radius || 9)) {
+                      p.x = testX;
+                      p.y = testY;
+                    }
+                  }
+
+                  // Spawn space dust vacuum particles flowing inward
+                  if (m.telegraphTimer % 3 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
+                    let pAngle = Math.random() * Math.PI * 2;
+                    let pDist = window.randFloat(40, 150);
+                    let px = cx + Math.cos(pAngle) * pDist;
+                    let py = cy + Math.sin(pAngle) * pDist;
+                    let vx = -Math.cos(pAngle) * (pDist / 15);
+                    let vy = -Math.sin(pAngle) * (pDist / 15);
+                    window.combatVisuals.particlePool.get(
+                      px,
+                      py,
+                      vx,
+                      vy,
+                      window.randFloat(1.5, 3.5),
+                      Math.random() < 0.5 ? "#e84393" : "#8e44ad",
+                      0.8,
+                      15,
+                      0,
+                      true,
+                      -0.05
+                    );
+                  }
+                }
+
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 110;
+
+                  let ability = m.activeAbility;
+                  if (ability === "slam") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(7, 12);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "void_orb", 3.2);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                      window.damagePlayer(Math.round(m.atk * 1.8), m);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  } else if (ability === "singularity") {
+                    // Accretion Core Collapse & Implosion!
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(12, 20);
+                      window.combatVisuals.spawnParticles(cx, cy, 35, "void_orb", 5.5);
+                      window.combatVisuals.spawnBeam(cx, "#e84393", 45, false);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("death");
+
+                    // Hit detection within the 90px Event Horizon radius
+                    if (Math.hypot(p.x - cx, p.y - cy) <= 90) {
+                      window.damagePlayer(Math.round(m.atk * 1.95), m);
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(p.x, p.y - 15, "EVENT HORIZON IMPLOSION!", "#e84393");
+                      }
+                    }
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = 1.6;
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                  }
+                }
+
+                // Trigger Abilities
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let chosen = Math.random() < 0.5 ? "slam" : "singularity";
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+                  m.telegraphTimer = chosen === "singularity" ? 360 : 65; // 6s channel for singularity
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+      updateChronosArbitrator(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              // --- PHASE 2 TRIGGER: CHRONOS REWIND CHANNEL (UNDER 40% HP) ---
+              let bHp = m.hp.valueOf();
+              let bMaxHp = m.maxHp.valueOf();
+              if (bHp < bMaxHp * 0.40 && m.phase === 1) {
+                m.phase = 2;
+                m.actionState = "chrono_rewind";
+                m.isStopped = true;
+                m.channelTimer = 240; // 4 seconds
+                m.staggerShield = m.maxHp.mul(0.15); // 15% Max HP stagger barrier
+
+                // Teleport directly to the center of the arena
+                let map = window.activeDungeonMap;
+                let mapW = map ? map.width : 24;
+                let mapH = map ? map.height : 18;
+                let tSize = map ? map.tileSize : 32;
+                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+                cx = m.x + m.w / 2;
+                cy = m.y + m.h / 2;
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(cx, cy, 30, "gold_dungeon", 4.0);
+                  window.combatVisuals.triggerScreenShake(6, 12);
+                }
+                if (window.SoundManager) window.SoundManager.play("spell");
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[!] Chronos Arbitrator is channeling Chronos Rewind! Shatter his Stagger Shield to interrupt!", "#ffd700");
+                }
+              }
+
+              // Processing active Chronos Rewind channel
+              if (m.actionState === "chrono_rewind") {
+                m.channelTimer--;
+                if (m.channelTimer <= 0) {
+                  // Channel completes! strike XII and heal 20%
+                  let healAmt = m.maxHp.mul(0.20);
+                  m.hp = window.BigNumMin(m.maxHp, m.hp.add(healAmt));
+
+                  if (typeof window.spawnFloatingText === "function") {
+                    window.spawnFloatingText(cx, m.y - 12, `+${window.formatNumber(healAmt)} HP (REWIND)`, "#2ecc71");
+                  }
+                  if (typeof window.pushHeaderToast === "function") {
+                    window.pushHeaderToast("[!] Clock struck XII! Chronos Arbitrator rewound time and healed himself!", "#e74c3c");
+                  }
+                  if (window.SoundManager) window.SoundManager.play("spell");
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(cx, cy, 20, "gold_dungeon", 3.0);
+                  }
+
+                  m.actionState = "idle";
+                  m.state = "idle";
+                  m.isStopped = false;
+                  m.attackCooldown = 110;
+                }
+                return; // Skip normal movements during channel
+              }
+
+              // Handle Dazed stun sequence
+              if (m.dazeTimer > 0) {
+                m.dazeTimer--;
+                m.isStopped = true;
+                if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(cx, m.y - 4, 3, "gold_dungeon", 1.2);
+                }
+                return;
+              }
+              m.isStopped = false;
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 110;
+
+                  let ability = m.activeAbility;
+                  if (ability === "slam") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(7, 12);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "gold_dungeon", 3.2);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                      window.damagePlayer(Math.round(m.atk * 1.8), m);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  } else if (ability === "dilation_field") {
+                    // Spawn a static Time Dilation Field hazard on the ground
+                    window.cavernInteractives = window.cavernInteractives || [];
+                    window.cavernInteractives.push({
+                      id: window.idCounter++,
+                      type: "dilation_field",
+                      x: m.targetX,
+                      y: m.targetY,
+                      w: 40,
+                      h: 18,
+                      life: 420, // 7 seconds (420 frames)
+                      maxLife: 420
+                    });
+
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "gold_dungeon", 2.0);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("spell");
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player at normal speed
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = 1.7;
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                  }
+                }
+
+                // Trigger Abilities
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let chosen = Math.random() < 0.5 ? "slam" : "dilation_field";
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+                  m.telegraphTimer = chosen === "dilation_field" ? 60 : 75;
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+      updateNexusOverseer(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              // --- PHASE 2 TRIGGER: DIGITAL DECOYS SPLIT (UNDER 50% HP) ---
+              let bHp = m.hp.valueOf();
+              let bMaxHp = m.maxHp.valueOf();
+              if (bHp < bMaxHp * 0.50 && m.phase === 1) {
+                m.phase = 2;
+                m.actionState = "cyber_barrier";
+                m.isStopped = true;
+
+                // Teleport directly to the center of the arena
+                let map = window.activeDungeonMap;
+                let mapW = map ? map.width : 24;
+                let mapH = map ? map.height : 18;
+                let tSize = map ? map.tileSize : 32;
+                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+                cx = m.x + m.w / 2;
+                cy = m.y + m.h / 2;
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(cx, cy, 35, "nexus_overseer", 4.0);
+                  window.combatVisuals.triggerScreenShake(8, 12);
+                }
+                if (window.SoundManager) window.SoundManager.play("spell");
+
+                // Spawn 2 Holographic Decoys
+                window.activeDungeonMobs = window.activeDungeonMobs || [];
+                let decoyOffsets = [-48, 48];
+                decoyOffsets.forEach((ox) => {
+                  window.activeDungeonMobs.push({
+                    id: window.idCounter++,
+                    type: "mob",
+                    visualTier: 6,
+                    visualType: "nexus_overseer",
+                    x: cx + ox - 12,
+                    y: cy + 18 - 12,
+                    w: 24,
+                    h: 24,
+                    hp: BigNum.from(120 + m.stageLevel * 25),
+                    maxHp: BigNum.from(120 + m.stageLevel * 25),
+                    atk: Math.round(m.atk * 0.8),
+                    flashTimer: 0,
+                    attackCooldown: 80,
+                    isRanged: true,
+                    projectileType: "void",
+                    isBossSummon: true,
+                    isDecoy: true,
+                    discovered: true
+                  });
+
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(cx + ox, cy + 18, 10, "nexus_overseer", 2);
+                  }
+                });
+
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[!] Cyber Barrier active! Slay the 2 Holographic Decoys to break it!", "#ff007f");
+                }
+              }
+
+              // Processing active Cyber Barrier
+              if (m.actionState === "cyber_barrier") {
+                let decoyCount = window.activeDungeonMobs ? window.activeDungeonMobs.filter(mob => mob.isDecoy && mob.hp.gt(0)).length : 0;
+
+                if (decoyCount === 0) {
+                  // Barrier Shatters!
+                  m.actionState = "idle";
+                  m.state = "idle";
+                  m.isStopped = false;
+                  m.attackCooldown = 60;
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(cx, cy, 30, "nexus_overseer", 4.5);
+                    window.combatVisuals.triggerScreenShake(8, 12);
+                  }
+                  if (window.SoundManager) window.SoundManager.play("block");
+                  if (typeof window.pushHeaderToast === "function") {
+                    window.pushHeaderToast("[✦] Cyber Barrier shattered! Nexus Overseer is vulnerable!", "#00b894");
+                  }
+                } else {
+                  // Emit digital matrix ambient glitch noise
+                  if (Math.random() < 0.3 && window.combatVisuals && window.combatVisuals.particlePool) {
+                    let pAngle = Math.random() * Math.PI * 2;
+                    let orbDist = m.w * 0.75;
+                    let px = cx + Math.cos(pAngle) * orbDist;
+                    let py = cy + Math.sin(pAngle) * orbDist;
+                    window.combatVisuals.particlePool.get(
+                      px,
+                      py,
+                      (Math.random() - 0.5) * 0.8,
+                      (Math.random() - 0.5) * 0.8,
+                      window.randFloat(1.2, 2.5),
+                      "#ff007f",
+                      0.8,
+                      20,
+                      0,
+                      true,
+                      0
+                    );
+                  }
+                  return; // Protected while decoys are active
+                }
+              }
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 110;
+
+                  let ability = m.activeAbility;
+                  if (ability === "slam") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(7, 12);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "nexus_overseer", 3.2);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                      window.damagePlayer(Math.round(m.atk * 1.8), m);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  } else if (ability === "control_glitch") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(5, 8);
+                      window.combatVisuals.spawnParticles(cx, cy, 25, "nexus_overseer", 3.5);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("spell");
+
+                    // Scramble player joystick if caught within 180px
+                    if (dist <= 180) {
+                      p.glitchTimer = 180; // 3.0 seconds (180 frames)
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(p.x, p.y - 12, "[GLITCHED] Inverted Controls!", "#ff007f", true);
+                      }
+                    }
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = 1.7;
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                  }
+                }
+
+                // Trigger Abilities
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let chosen = Math.random() < 0.5 ? "slam" : "control_glitch";
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+                  m.telegraphTimer = chosen === "control_glitch" ? 60 : 75;
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+      updateGildedVaultKeeper(m, p, pStats, dist, dx, dy) {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              // --- PHASE 2 TRIGGER: TAXATION SIPHON (UNDER 50% HP) ---
+              let bHp = m.hp.valueOf();
+              let bMaxHp = m.maxHp.valueOf();
+              if (bHp < bMaxHp * 0.50 && m.phase === 1) {
+                m.phase = 2;
+                m.actionState = "taxation";
+                m.isStopped = true;
+                m.channelTimer = 240; // 4 seconds (240 frames)
+                m.staggerShield = m.maxHp.mul(0.15); // 15% Max HP stagger barrier
+
+                // Teleport directly to the center of the arena
+                let map = window.activeDungeonMap;
+                let mapW = map ? map.width : 24;
+                let mapH = map ? map.height : 18;
+                let tSize = map ? map.tileSize : 32;
+                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+                cx = m.x + m.w / 2;
+                cy = m.y + m.h / 2;
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(cx, cy, 30, "gold_dungeon", 4.0);
+                  window.combatVisuals.triggerScreenShake(6, 12);
+                }
+                if (window.SoundManager) window.SoundManager.play("spell");
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[!] Gilded Vault Keeper is channeling Taxation! Shatter his shield to protect your Gold!", "#ffd700");
+                }
+              }
+
+              // Processing active Gold Siphon channel
+              if (m.actionState === "taxation") {
+                m.channelTimer--;
+
+                // Siphon 10 Gold per frame from the player's wallet to heal himself (5x healing ratio)
+                let playerGold = BigNum.from(window.playerStats.coins || 0);
+                if (playerGold.gt(0)) {
+                  let siphonAmt = BigNum.from(10);
+                  if (playerGold.lt(siphonAmt)) {
+                    siphonAmt = playerGold;
+                  }
+                  window.playerStats.coins = playerGold.sub(siphonAmt);
+
+                  let healVal = siphonAmt.mul(5);
+                  m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
+
+                  // Visual golden siphon lines
+                  if (m.channelTimer % 3 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
+                    let angle = Math.atan2(cy - p.y, cx - p.x);
+                    window.combatVisuals.particlePool.get(
+                      p.x + window.randFloat(-6, 6),
+                      p.y - 4 + window.randFloat(-6, 6),
+                      Math.cos(angle) * 4.5,
+                      Math.sin(angle) * 4.5,
+                      window.randFloat(1.2, 2.8),
+                      "#ffd700",
+                      0.8,
+                      15,
+                      0,
+                      true,
+                      0
+                    );
+                  }
+                }
+
+                if (m.channelTimer <= 0) {
+                  // Siphon completes
+                  m.actionState = "idle";
+                  m.state = "idle";
+                  m.isStopped = false;
+                  m.attackCooldown = 110;
+                  if (typeof window.pushHeaderToast === "function") {
+                    window.pushHeaderToast("[!] Taxation cycle completed. Vault Keeper has recovered health!", "#e74c3c");
+                  }
+                }
+                return;
+              }
+
+              // Handle Stunned sequence
+              if (m.dazeTimer > 0) {
+                m.dazeTimer--;
+                m.isStopped = true;
+                if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(cx, m.y - 4, 3, "gold_dungeon", 1.2);
+                }
+                return;
+              }
+              m.isStopped = false;
+
+              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                m.telegraphTimer--;
+                if (m.telegraphTimer <= 0) {
+                  m.state = "idle";
+                  m.actionState = "idle";
+                  m.attackCooldown = 120;
+
+                  let ability = m.activeAbility;
+                  if (ability === "slam") {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(7, 12);
+                      window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "gold_dungeon", 3.2);
+                    }
+                    if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                      window.damagePlayer(Math.round(m.atk * 1.8), m);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+                  } else if (ability === "gold_fall" && m.goldFallTargets) {
+                    if (window.combatVisuals) {
+                      window.combatVisuals.triggerScreenShake(6, 10);
+                    }
+                    if (window.SoundManager) window.SoundManager.play("block");
+
+                    m.goldFallTargets.forEach((target) => {
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnParticles(target.x, target.y, 10, "gold_dungeon", 2.2);
+                      }
+                      if (Math.hypot(p.x - target.x, p.y - target.y) <= 24) {
+                        window.damagePlayer(Math.round(m.atk * 1.25), m);
+                      }
+                    });
+                    m.goldFallTargets = null;
+                  }
+                  m.activeAbility = null;
+                }
+              } else {
+                // Chase player
+                if (dist < 220 && dist > 14) {
+                  m.hopTimer = (m.hopTimer || 0) + 1;
+                  if (m.hopTimer % 30 < 15) {
+                    let speed = 1.45;
+                    let angle = Math.atan2(dy, dx);
+                    m.x += Math.cos(angle) * speed;
+                    m.y += Math.sin(angle) * speed;
+                  }
+                }
+
+                // Trigger Abilities
+                if (m.attackCooldown <= 0 && dist < 220) {
+                  let chosen = Math.random() < 0.5 ? "slam" : "gold_fall";
+                  m.state = "telegraphing";
+                  m.actionState = "telegraphing";
+                  m.activeAbility = chosen;
+                  m.telegraphTimer = 75;
+
+                  if (chosen === "gold_fall") {
+                    m.goldFallTargets = [];
+                    for (let i = 0; i < 3; i++) {
+                      let angle = Math.random() * Math.PI * 2;
+                      let spawnDist = window.randFloat(30, 75);
+                      m.goldFallTargets.push({
+                        x: p.x + Math.cos(angle) * spawnDist,
+                        y: p.y + Math.sin(angle) * spawnDist
+                      });
+                    }
+                  }
+
+                  m.targetX = p.x;
+                  m.targetY = p.y;
+                } else if (dist < 32 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 50;
+                  window.damagePlayer(m.atk, m);
+                }
+              }
+            },
+            updateHooktail(m, p, pStats, dist, dx, dy) {
+                    let cx = m.x + m.w / 2;
+                    let cy = m.y + m.h / 2;
+
+                    // --- PHASE 2 TRIGGER: CRITICAL ARENA COLLAPSE (UNDER 50% HP) ---
+                    let bHp = m.hp.valueOf();
+                    let bMaxHp = m.maxHp.valueOf();
+                    if (bHp < bMaxHp * 0.50 && m.phase === 1) {
+                      m.phase = 2;
+                      m.attackCooldown = 30;
+                      if (window.combatVisuals) {
+                        window.combatVisuals.triggerScreenShake(15, 30);
+                        window.combatVisuals.spawnParticles(cx, cy, 40, "prestige_boss", 6.0);
+                      }
+                      if (window.SoundManager) window.SoundManager.play("death");
+                      if (typeof window.pushHeaderToast === "function") {
+                        window.pushHeaderToast("[!] Hooktail has unleashed Calamity! The ground is collapsing into the void!", "#ff3300");
+                      }
+                    }
+
+                    // Periodic Abyssal damage ticks if the player steps over collapsed void tiles
+                    let map = window.activeDungeonMap;
+                    if (map && map.grid) {
+                      let pTileX = Math.floor(p.x / map.tileSize);
+                      let pTileY = Math.floor(p.y / map.tileSize);
+                      if (map.grid[pTileY] && map.grid[pTileY][pTileX] === window.TILE_TYPES.VOID) {
+                        if (window.logicClock % 40 === 0) {
+                          let fallDmg = Math.round(p.maxHp * 0.08); // 8% Max HP per tick in the void
+                          p.hp = Math.max(1, p.hp - fallDmg);
+                          window.spawnFloatingText(p.x, p.y - 15, `-${fallDmg} ABYSS DROWNING`, "#ff3300");
+                          if (window.SoundManager) window.SoundManager.play("hit");
+                        }
+                      }
+                    }
+
+                    if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+                      m.telegraphTimer--;
+                      if (m.telegraphTimer <= 0) {
+                        m.state = "idle";
+                        m.actionState = "idle";
+                        m.attackCooldown = 110;
+
+                        let ability = m.activeAbility;
+                        if (ability === "slam") {
+                          if (window.combatVisuals) {
+                            window.combatVisuals.triggerScreenShake(7, 12);
+                            window.combatVisuals.spawnParticles(m.targetX, m.targetY, 15, "prestige_boss", 3.5);
+                          }
+                          if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 64) {
+                            window.damagePlayer(Math.round(m.atk * 1.8), m);
+                          }
+                          if (window.SoundManager) window.SoundManager.play("block");
+                        } else if (ability === "scarlet_fire") {
+                          // Detonate Scarlet Fire Arc breath
+                          if (window.combatVisuals) {
+                            window.combatVisuals.triggerScreenShake(8, 14);
+                            // Spew fire particles
+                            let fAngle = m.facing === -1 ? Math.PI : 0;
+                            for (let k = 0; k < 20; k++) {
+                              let dev = window.randFloat(-0.7, 0.7);
+                              let spAngle = fAngle + dev;
+                              let speed = window.randFloat(3.0, 6.0);
+                              window.combatVisuals.particlePool.get(
+                                cx,
+                                cy,
+                                Math.cos(spAngle) * speed,
+                                Math.sin(spAngle) * speed,
+                                window.randFloat(1.5, 3.8),
+                                "#ff3300",
+                                0.85,
+                                25,
+                                -0.03,
+                                true,
+                                0.05
+                              );
+                            }
+                          }
+                          if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+                          let pAngle = Math.atan2(p.y - cy, p.x - cx);
+                          let faceAngle = m.facing === -1 ? Math.PI : 0;
+                          let angleDiff = Math.abs(Math.atan2(Math.sin(pAngle - faceAngle), Math.cos(pAngle - faceAngle)));
+
+                          if (dist <= 110 && angleDiff <= 0.8) {
+                            window.damagePlayer(Math.round(m.atk * 1.55), m);
+                            if (typeof window.spawnFloatingText === "function") {
+                              window.spawnFloatingText(p.x, p.y - 12, "SCARLET INCINERATION!", "#ff3300");
+                            }
+                          }
+                        } else if (ability === "calamity_slam") {
+                          // Collapse one outer ring of the active floor into the void
+                          if (map && map.grid) {
+                            let collapseRing = m.collapseRing || 0;
+                            let minR = 2 + collapseRing;
+                            let maxR = map.height - 3 - collapseRing;
+                            let minC = 2 + collapseRing;
+                            let maxC = map.width - 3 - collapseRing;
+
+                            if (minR < maxR && minC < maxC) {
+                              for (let cCol = minC; cCol <= maxC; cCol++) {
+                                map.grid[minR][cCol] = window.TILE_TYPES.VOID;
+                                map.grid[maxR][cCol] = window.TILE_TYPES.VOID;
+                              }
+                              for (let rRow = minR; rRow <= maxR; rRow++) {
+                                map.grid[rRow][minC] = window.TILE_TYPES.VOID;
+                                map.grid[rRow][maxC] = window.TILE_TYPES.VOID;
+                              }
+                              m.collapseRing = collapseRing + 1;
+                              map.needsPreRender = true; // FORCE STATIC MAP REDRAW
+
+                              if (window.combatVisuals) {
+                                window.combatVisuals.triggerScreenShake(12, 22);
+                                window.combatVisuals.spawnParticles(cx, cy, 35, "prestige_boss", 4.5);
+                              }
+                              if (window.SoundManager) window.SoundManager.play("death");
+                              if (typeof window.pushHeaderToast === "function") {
+                                window.pushHeaderToast("[!] THE ARENA HAS COLLAPSED! PLAY AREA SHRINKING!", "#ff3300");
+                              }
+                            }
+                          }
+                        }
+                        m.activeAbility = null;
+                      }
+                    } else {
+                      // Chase player
+                      if (dist < 220 && dist > 14) {
+                        m.hopTimer = (m.hopTimer || 0) + 1;
+                        if (m.hopTimer % 30 < 15) {
+                          let speed = m.phase === 2 ? 1.8 : 1.5; // Dragon charges faster in Phase 2
+                          let angle = Math.atan2(dy, dx);
+                          m.x += Math.cos(angle) * speed;
+                          m.y += Math.sin(angle) * speed;
+                        }
+                      }
+
+                      // Trigger Abilities
+                      if (m.attackCooldown <= 0 && dist < 220) {
+                        let pool = ["slam", "scarlet_fire"];
+                        if (m.phase === 2) pool.push("calamity_slam");
+
+                        let chosen = pool[Math.floor(Math.random() * pool.length)];
+                        m.state = "telegraphing";
+                        m.actionState = "telegraphing";
+                        m.activeAbility = chosen;
+                        m.telegraphTimer = chosen === "calamity_slam" ? 85 : chosen === "scarlet_fire" ? 60 : 75;
+                        m.targetX = p.x;
+                        m.targetY = p.y;
+                      } else if (dist < 32 && m.attackCooldown <= 0) {
+                        m.attackCooldown = 50;
+                        window.damagePlayer(m.atk, m);
+                      }
+                    }
+                  },
+
+            renderTelegraph(c, m) {
+              if (!m || !m.activeAbility) return;
+              c.save();
+
+              let progress = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
+              let pulseAlpha = 0.25 + Math.sin(Date.now() / 45) * 0.15;
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
+
+              if (m.activeAbility === "slam") {
+                // --- HIGH FIDELITY SLAM INDICATOR ---
+                let radius = 64;
+
+                // Outer glowing boundaries
+                c.strokeStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
+                c.lineWidth = 3.0;
+                c.shadowBlur = 10;
+                c.shadowColor = "#e74c3c";
+                c.beginPath();
+                c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                c.stroke();
+                c.shadowBlur = 0;
+
+                c.strokeStyle = "rgba(255, 255, 255, 0.4)";
+                c.lineWidth = 1.0;
+                c.beginPath();
+                c.arc(m.targetX, m.targetY, radius + 4, 0, Math.PI * 2);
+                c.stroke();
+
+                // Concentric filling warning disc
+                let fillGrad = c.createRadialGradient(m.targetX, m.targetY, 1, m.targetX, m.targetY, radius);
+                fillGrad.addColorStop(0, `rgba(255, 242, 0, ${pulseAlpha * 0.6})`);
+                fillGrad.addColorStop(0.6, `rgba(231, 76, 60, ${pulseAlpha * 0.4})`);
+                fillGrad.addColorStop(1, "rgba(231, 76, 60, 0)");
+
+                c.fillStyle = fillGrad;
+                c.beginPath();
+                c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                c.fill();
+
+                // Procedural cracked earth ground textures
+                c.strokeStyle = `rgba(231, 76, 60, ${0.15 + progress * 0.45})`;
+                c.lineWidth = 1.2;
+                c.beginPath();
+                for (let i = 0; i < 6; i++) {
+                  let angle = (i * Math.PI * 2) / 6 + (m.id || 0);
+                  let startRad = radius * 0.15;
+                  let endRad = radius * progress;
+                  let sx = m.targetX + Math.cos(angle) * startRad;
+                  let sy = m.targetY + Math.sin(angle) * startRad;
+                  c.moveTo(sx, sy);
+
+                  // Jitter/zig-zag lines out to active threshold
+                  let steps = 4;
+                  for (let s = 1; s <= steps; s++) {
+                    let segRad = startRad + (endRad - startRad) * (s / steps);
+                    let jitterAngle = angle + (Math.sin(s * 1.5) * 0.15);
+                    let jx = m.targetX + Math.cos(jitterAngle) * segRad;
+                    let jy = m.targetY + Math.sin(jitterAngle) * segRad;
+                    c.lineTo(jx, jy);
+                  }
+                }
+                c.stroke();
+
+              } else if (m.activeAbility === "charge") {
+                // --- HIGH FIDELITY CHARGE INDICATOR ---
+                let dx = m.targetX - cx;
+                let dy = m.targetY - cy;
+                let dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                  let nx = dx / dist;
+                  let ny = dy / dist;
+                  let trackW = 18;
+
+                  // Translucent hazard stripe path backing
+                  c.fillStyle = `rgba(231, 76, 60, 0.12)`;
+                  c.save();
+                  c.translate(cx, cy);
+                  c.rotate(Math.atan2(dy, dx));
+                  c.fillRect(0, -trackW / 2, dist, trackW);
+
+                  // Glowing border rails
+                  c.strokeStyle = `rgba(231, 76, 60, ${0.4 + pulseAlpha})`;
+                  c.lineWidth = 2.0;
+                  c.beginPath();
+                  c.moveTo(0, -trackW / 2);
+                  c.lineTo(dist, -trackW / 2);
+                  c.moveTo(0, trackW / 2);
+                  c.lineTo(dist, trackW / 2);
+                  c.stroke();
+
+                  // Sliding Chevron speed indicators
+                  let speed = 6;
+                  let slideOffset = (Date.now() / 15) % 60;
+                  c.strokeStyle = "#ffffff";
+                  c.lineWidth = 2.2;
+                  c.lineCap = "round";
+                  c.lineJoin = "round";
+
+                  for (let d = slideOffset; d < dist; d += 60) {
+                    c.beginPath();
+                    c.moveTo(d - 6, -5);
+                    c.lineTo(d, 0);
+                    c.lineTo(d - 6, 5);
+                    c.stroke();
+                  }
+                  c.restore();
+                }
+
+              } else if (m.activeAbility === "nova") {
+                // --- HIGH FIDELITY NOVA INDICATOR ---
+                c.strokeStyle = `rgba(230, 126, 34, ${0.35 + pulseAlpha * 0.4})`;
+                c.lineWidth = 2.5;
+
+                // Accretion rings expansion effect
+                c.save();
+                c.strokeStyle = `rgba(230, 126, 34, ${pulseAlpha})`;
+                c.shadowBlur = 8;
+                c.shadowColor = "#e67e22";
+                c.beginPath();
+                c.arc(cx, cy, 120 * progress, 0, Math.PI * 2);
+                c.stroke();
+                c.restore();
+
+                // Detailed warning rays radiating outwards
+                for (let i = 0; i < 8; i++) {
+                              let angle = (i * Math.PI * 2) / 8;
+                              let cos = Math.cos(angle);
+                              let sin = Math.sin(angle);
+
+                              // Multi-layered glowing laser guidelines
+                              let rayGrad = c.createLinearGradient(cx, cy, cx + cos * 120, cy + sin * 120);
+                              rayGrad.addColorStop(0, "rgba(255, 242, 0, 0.85)");
+                              rayGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.4)");
+                              rayGrad.addColorStop(1, "rgba(230, 126, 34, 0)");
+
+                              c.strokeStyle = rayGrad;
+                                                            c.lineWidth = 2.0;
+                                                            c.beginPath();
+                                                            c.moveTo(cx + cos * 14, cy + sin * 14);
+                                                            c.lineTo(cx + cos * 120, cy + sin * 120);
+                                                            c.stroke();
+                                                          }
+                                                        } else if (m.activeAbility === "root_snare") {
+                          // --- HIGH FIDELITY ROOT SNARE INDICATOR ---
+                          let radius = 75;
+                          let time = Date.now();
+
+                          // Outer pulsing root vine circle
+                          c.strokeStyle = `rgba(46, 204, 113, ${pulseAlpha})`;
+                          c.lineWidth = 2.5;
+                          c.shadowBlur = 10;
+                          c.shadowColor = "#2ecc71";
+                          c.beginPath();
+                          c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                          c.stroke();
+                          c.shadowBlur = 0;
+
+                          // Growing inner green spore circle
+                          c.fillStyle = `rgba(39, 174, 96, ${pulseAlpha * 0.35})`;
+                          c.beginPath();
+                          c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                          c.fill();
+
+                          // High fidelity thorns radiating outwards along the perimeter
+                          let thorns = 8;
+                          c.fillStyle = `rgba(39, 174, 96, ${0.4 + progress * 0.6})`;
+                          c.strokeStyle = "#000000";
+                          c.lineWidth = 1.0;
+                          for (let i = 0; i < thorns; i++) {
+                            let ta = (i * Math.PI * 2) / thorns + (time / 800);
+                            let tx = m.targetX + Math.cos(ta) * radius;
+                            let ty = m.targetY + Math.sin(ta) * radius;
+
+                            // Draw a small sharp triangular thorn pointing outward
+                            let outX = m.targetX + Math.cos(ta) * (radius + 6);
+                            let outY = m.targetY + Math.sin(ta) * (radius + 6);
+                            let side1X = m.targetX + Math.cos(ta - 0.15) * (radius - 2);
+                            let side1Y = m.targetY + Math.sin(ta - 0.15) * (radius - 2);
+                            let side2X = m.targetX + Math.cos(ta + 0.15) * (radius - 2);
+                            let side2Y = m.targetY + Math.sin(ta + 0.15) * (radius - 2);
+
+                            c.beginPath();
+                            c.moveTo(side1X, side1Y);
+                            c.lineTo(outX, outY);
+                            c.lineTo(side2X, side2Y);
+                            c.closePath();
+                            c.fill();
+                            c.stroke();
+                          }
+                                  } else if (m.activeAbility === "magnetic_pull") {
+                                    // --- HIGH FIDELITY MAGNETIC VORTEX ---
+                                    let ringCount = 3;
+                                    for (let i = 0; i < ringCount; i++) {
+                                      let rProgress = (progress + i / ringCount) % 1.0;
+                                      c.strokeStyle = `rgba(56, 189, 248, ${(1.0 - rProgress) * pulseAlpha})`;
+                                      c.lineWidth = 1.5;
+                                      c.beginPath();
+                                      c.arc(cx, cy, 140 * (1.0 - rProgress), 0, Math.PI * 2);
+                                      c.stroke();
+                                    }
+
+                                    // Heavy central danger impact zone
+                                    c.fillStyle = `rgba(231, 76, 60, ${pulseAlpha * 0.25})`;
+                                    c.beginPath();
+                                    c.arc(cx, cy, 70, 0, Math.PI * 2);
+                                    c.fill();
+
+                                  } else if (m.activeAbility === "boomerang_shield") {
+                                            // --- HIGH FIDELITY BOOMERANG TARGET CHIMES ---
+                                            c.strokeStyle = `rgba(52, 152, 219, ${pulseAlpha})`;
+                                            c.lineWidth = 2.0;
+                                            c.beginPath();
+                                            c.arc(m.targetX, m.targetY, 20 + pulseAlpha * 4, 0, Math.PI * 2);
+                                            c.stroke();
+
+                                            // Dotted trajectory guideline out to target
+                                            c.strokeStyle = `rgba(52, 152, 219, 0.35)`;
+                                            c.lineWidth = 1.2;
+                                            c.setLineDash([4, 4]);
+                                            c.beginPath();
+                                            c.moveTo(cx, cy);
+                                            c.lineTo(m.targetX, m.targetY);
+                                            c.stroke();
+                                            c.setLineDash([]);
+                                          } else if (m.activeAbility === "shield_bash" && m.shieldAngle !== undefined) {
+                                                    // --- HIGH FIDELITY SHIELD BASH CONE ---
+                                                    let radius = 64;
+                                                    c.fillStyle = `rgba(231, 76, 60, ${pulseAlpha * 0.3})`;
+                                                    c.strokeStyle = "#e74c3c";
+                                                    c.lineWidth = 2.0;
+
+                                                    c.beginPath();
+                                                    c.moveTo(cx, cy);
+                                                    c.arc(cx, cy, radius, m.shieldAngle - 0.5, m.shieldAngle + 0.5);
+                                                    c.closePath();
+                                                    c.fill();
+                                                    c.stroke();
+                                                  } else if (m.activeAbility === "magma_vents" && m.ventSpawnLocations) {
+                                                            // --- HIGH FIDELITY MAGMA VENT WARNING TARGETS ---
+                                                            m.ventSpawnLocations.forEach((loc) => {
+                                                              c.strokeStyle = `rgba(230, 126, 34, ${pulseAlpha})`;
+                                                              c.lineWidth = 2.0;
+                                                              c.shadowBlur = 10;
+                                                              c.shadowColor = "#e67e22";
+                                                              c.beginPath();
+                                                              c.arc(loc.x, loc.y, 16 + pulseAlpha * 4, 0, Math.PI * 2);
+                                                              c.stroke();
+                                                              c.shadowBlur = 0;
+
+                                                              // Fill growing molten indicator
+                                                              c.fillStyle = `rgba(243, 156, 18, ${pulseAlpha * 0.25})`;
+                                                              c.beginPath();
+                                                              c.arc(loc.x, loc.y, 16 * progress, 0, Math.PI * 2);
+                                                              c.fill();
+                                                            });
+                                                          } else if (m.activeAbility === "dilation_field") {
+                                                                    // --- HIGH FIDELITY TIME DILATION TARGET ---
+                                                                    let radius = 40;
+                                                                    let time = Date.now();
+
+                                                                    // Outer pulsing gold circle
+                                                                    c.strokeStyle = `rgba(241, 196, 15, ${pulseAlpha})`;
+                                                                    c.lineWidth = 2.5;
+                                                                    c.shadowBlur = 10;
+                                                                    c.shadowColor = "#ffd700";
+                                                                    c.beginPath();
+                                                                    c.arc(m.targetX, m.targetY, radius, 0, Math.PI * 2);
+                                                                    c.stroke();
+                                                                    c.shadowBlur = 0;
+
+                                                                    // Accretion sweeping warning line
+                                                                    c.fillStyle = `rgba(212, 175, 55, ${pulseAlpha * 0.25})`;
+                                                                    c.beginPath();
+                                                                    c.arc(m.targetX, m.targetY, radius * progress, 0, Math.PI * 2);
+                                                                    c.fill();
+
+                                                                    // Roman numeral tick markers
+                                                                    c.strokeStyle = "rgba(212, 175, 55, 0.4)";
+                                                                    c.lineWidth = 1.0;
+                                                                    for (let i = 0; i < 4; i++) {
+                                                                      let angle = (i * Math.PI) / 2;
+                                                                      c.beginPath();
+                                                                      c.moveTo(m.targetX + Math.cos(angle) * (radius - 5), m.targetY + Math.sin(angle) * (radius - 5));
+                                                                      c.lineTo(m.targetX + Math.cos(angle) * radius, m.targetY + Math.sin(angle) * radius);
+                                                                      c.stroke();
+                                                                    }
+                                                                  } else if (m.activeAbility === "control_glitch") {
+                                                                            // --- HIGH FIDELITY CONTROL GLITCH GRID ---
+                                                                            let radius = 180;
+                                                                            let time = Date.now();
+
+                                                                            // Outer pulsing digital wireframe boundary
+                                                                            c.strokeStyle = `rgba(255, 0, 127, ${pulseAlpha})`;
+                                                                            c.lineWidth = 2.5;
+                                                                            c.shadowBlur = 10;
+                                                                            c.shadowColor = "#ff007f";
+                                                                            c.beginPath();
+                                                                            c.arc(cx, cy, radius, 0, Math.PI * 2);
+                                                                            c.stroke();
+                                                                            c.shadowBlur = 0;
+
+                                                                            // Rotating cybernetic grid guidelines
+                                                                            c.strokeStyle = "rgba(0, 240, 255, 0.25)";
+                                                                            c.lineWidth = 1.0;
+                                                                            c.save();
+                                                                            c.translate(cx, cy);
+                                                                            c.rotate(time / 500);
+
+                                                                            // Draw horizontal and vertical grid intersection guides
+                                                                            for (let d = -radius + 30; d < radius; d += 30) {
+                                                                              if (Math.abs(d) >= radius) continue;
+                                                                              let chord = Math.sqrt(radius * radius - d * d);
+                                                                              c.beginPath();
+                                                                              c.moveTo(-chord, d);
+                                                                              c.lineTo(chord, d);
+                                                                              c.moveTo(d, -chord);
+                                                                              c.lineTo(d, chord);
+                                                                              c.stroke();
+                                                                            }
+                                                                            c.restore();
+
+                                                                            // Inner digital core warning
+                                                                            c.fillStyle = `rgba(255, 0, 127, ${pulseAlpha * 0.15})`;
+                                                                            c.beginPath();
+                                                                            c.arc(cx, cy, radius, 0, Math.PI * 2);
+                                                                            c.fill();
+                                                                          } else if (m.activeAbility === "gold_fall" && m.goldFallTargets) {
+                                                                            // --- HIGH FIDELITY GOLD FALL PLATES ---
+                                                                            m.goldFallTargets.forEach((target) => {
+                                                                              c.strokeStyle = `rgba(241, 196, 15, ${pulseAlpha})`;
+                                                                              c.lineWidth = 2.0;
+                                                                              c.shadowBlur = 8;
+                                                                              c.shadowColor = "#ffd700";
+                                                                              c.beginPath();
+                                                                              c.arc(target.x, target.y, 20 + pulseAlpha * 3, 0, Math.PI * 2);
+                                                                              c.stroke();
+                                                                              c.shadowBlur = 0;
+
+                                                                              c.fillStyle = `rgba(181, 135, 0, ${pulseAlpha * 0.22})`;
+                                                                              c.beginPath();
+                                                                              c.arc(target.x, target.y, 20 * progress, 0, Math.PI * 2);
+                                                                              c.fill();
+                                                                            });
+                                                                          } else if (m.activeAbility === "scarlet_fire") {
+                                                                            // --- HIGH FIDELITY DRAGON FIRE CONE ---
+                                                                            let radius = 110;
+                                                                            let faceAngle = m.facing === -1 ? Math.PI : 0;
+
+                                                                            c.fillStyle = `rgba(231, 76, 60, ${pulseAlpha * 0.3})`;
+                                                                            c.strokeStyle = "#ff3300";
+                                                                            c.lineWidth = 2.2;
+                                                                            c.beginPath();
+                                                                            c.moveTo(cx, cy);
+                                                                            c.arc(cx, cy, radius, faceAngle - 0.8, faceAngle + 0.8);
+                                                                            c.closePath();
+                                                                            c.fill();
+                                                                            c.stroke();
+
+                                                                            // Crackling fire sparks in cone
+                                                                            c.strokeStyle = "#ffaa00";
+                                                                            c.lineWidth = 1.0;
+                                                                            c.beginPath();
+                                                                            c.arc(cx, cy, radius * progress, faceAngle - 0.8, faceAngle + 0.8);
+                                                                            c.stroke();
+                                                                          } else if (m.activeAbility === "calamity_slam") {
+                                                                            // --- HIGH FIDELITY EARTH COLLAPSE FAULT LINES ---
+                                                                            c.strokeStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
+                                                                            c.lineWidth = 2.5;
+                                                                            c.shadowBlur = 10;
+                                                                            c.shadowColor = "#ff3300";
+                                                                            c.beginPath();
+                                                                            c.arc(cx, cy, 75, 0, Math.PI * 2);
+                                                                            c.stroke();
+                                                                            c.shadowBlur = 0;
+
+                                                                            c.fillStyle = `rgba(192, 57, 43, ${pulseAlpha * 0.2})`;
+                                                                            c.beginPath();
+                                                                            c.arc(cx, cy, 75 * progress, 0, Math.PI * 2);
+                                                                            c.fill();
+
+                                                                            // Inner ground crack guidelines
+                                                                            let cracks = 8;
+                                                                            c.strokeStyle = "rgba(0, 0, 0, 0.4)";
+                                                                            c.lineWidth = 1.8;
+                                                                            c.beginPath();
+                                                                            for (let i = 0; i < cracks; i++) {
+                                                                              let angle = (i * Math.PI * 2) / cracks;
+                                                                              c.moveTo(cx, cy);
+                                                                              c.lineTo(cx + Math.cos(angle) * 75, cy + Math.sin(angle) * 75);
+                                                                            }
+                                                                            c.stroke();
+                                                                          } else if (m.activeAbility === "spore_storm") {
+                                                            // --- HIGH FIDELITY SPORE STORM CONES ---
+                                                            c.strokeStyle = `rgba(46, 204, 113, ${pulseAlpha})`;
+                                                            c.lineWidth = 2.0;
+                                                            c.save();
+                                                            c.translate(cx, cy);
+                                                            c.rotate(time / 600); // Rotating warning guidelines!
+
+                                                            // Draw 3 sweeping warning lines radiating out for the spores
+                                                            for (let i = 0; i < 3; i++) {
+                                                              let angle = (i * Math.PI * 2) / 3;
+                                                              c.beginPath();
+                                                              c.moveTo(0, 0);
+                                                              c.lineTo(Math.cos(angle) * 45, Math.sin(angle) * 45);
+                                                              c.stroke();
+                                                            }
+                                                            c.restore();
+
+                                                            // Core warning circle
+                                                            c.fillStyle = `rgba(39, 174, 96, ${pulseAlpha * 0.25})`;
+                                                            c.beginPath();
+                                                            c.arc(cx, cy, 45, 0, Math.PI * 2);
+                                                            c.fill();
+                                                          } else if (m.activeAbility === "singularity") {
+                                                            // --- HIGH FIDELITY SINGULARITY EVENT HORIZON ---
+                                                            let radius = 90;
+                                                            let time = Date.now();
+
+                                                            // Outer pulsing Event Horizon boundary
+                                                            c.strokeStyle = `rgba(142, 68, 173, ${pulseAlpha})`;
+                                                            c.lineWidth = 3.0;
+                                                            c.shadowBlur = 15;
+                                                            c.shadowColor = "#8e44ad";
+                                                            c.beginPath();
+                                                            c.arc(cx, cy, radius, 0, Math.PI * 2);
+                                                            c.stroke();
+                                                            c.shadowBlur = 0;
+
+                                                            // Swirling Accretion Disk guidelines
+                                                            c.strokeStyle = "rgba(232, 67, 147, 0.4)";
+                                                            c.lineWidth = 1.2;
+                                                            c.save();
+                                                            c.translate(cx, cy);
+                                                            c.rotate(-time / 400);
+                                                            c.beginPath();
+                                                            c.ellipse(0, 0, radius * 0.9, radius * 0.3, 0, 0, Math.PI * 2);
+                                                            c.stroke();
+                                                            c.restore();
+
+                                                            // Concentric lines drawing inward to represent gravitation pull
+                                                            let pullRingCount = 3;
+                                                            for (let i = 0; i < pullRingCount; i++) {
+                                                              let ringProgress = (progress + i / pullRingCount) % 1.0;
+                                                              c.strokeStyle = `rgba(142, 68, 173, ${(1.0 - ringProgress) * pulseAlpha * 0.85})`;
+                                                              c.lineWidth = 1.5;
+                                                              c.beginPath();
+                                                              c.arc(cx, cy, radius * (1.0 - ringProgress), 0, Math.PI * 2);
+                                                              c.stroke();
+                                                            }
+
+                                                            // Dense black hole core warning
+                                                            c.fillStyle = `rgba(12, 1, 26, ${0.4 + progress * 0.45})`;
+                                                            c.beginPath();
+                                                            c.arc(cx, cy, 14 + pulseAlpha * 4, 0, Math.PI * 2);
+                                                            c.fill();
+                                                            c.stroke();
+                                                          }
+
+                                                          c.restore();
+                                                                                                                  }
+                                                          };
+
+                                                              // Initialize Draggable Flask Button Engine
+                                                              if (typeof window.initFlaskButtonDrag === "function") {
           window.initFlaskButtonDrag();
         }
 
@@ -1484,53 +3484,105 @@
   };
 
   window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
-    let map = window.activeDungeonMap;
-    let tileSize = map ? map.tileSize : 32;
+      let map = window.activeDungeonMap;
+      let tileSize = map ? map.tileSize : 32;
 
-    let depth = window.player.depth || 1;
-    let isMini = bossTier === "mini";
+      let depth = window.player.depth || 1;
+      let isMini = bossTier === "mini";
 
-    let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-    let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
-    let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
+      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+      let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
+      let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
 
-    bossHp = Math.round(bossHp * enemyScale);
-    bossAtk = Math.round(bossAtk * enemyScale);
+      bossHp = Math.round(bossHp * enemyScale);
+      bossAtk = Math.round(bossAtk * enemyScale);
 
-    let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
+      let tier = typeof window.getStageTier === "function" ? window.getStageTier() : 0;
+      let isDungeon = window.playerStats.isDungeonMode;
+      let dType = window.playerStats.currentDungeon || "gold";
 
-    window.mob = {
-      type: isMini ? "dungeon_miniboss" : "dungeon_boss",
-      name: bossName,
-      hp: BigNum.from(bossHp),
-      maxHp: BigNum.from(bossHp),
-      atk: bossAtk,
-      x: tileX * tileSize,
-      y: tileY * tileSize,
-      w: 48,
-      h: 48,
-      flashTimer: 0,
-      isStopped: true,
-      bossTileX: tileX,
-      bossTileY: tileY,
-      state: "idle",
-      telegraphTimer: 0,
-      maxTelegraphTimer: isMini ? 80 : 65,
-      activeAbility: null,
-      targetX: 0,
-      targetY: 0,
-      attackCooldown: 60,
-      moveset: isMini ? ["slam", "charge"] : ["slam", "nova", "charge"],
-      facing: -1,
+      let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
+      let vType = null;
+
+      if (isDungeon) {
+        if (dType === "gold") {
+          bossName = isMini ? "Treasury Guard" : "Gilded Vault Keeper";
+          vType = "gilded_vault_keeper";
+        } else if (dType === "mat") {
+          bossName = isMini ? "Sludge Sentinel" : "Corrosive Abomination";
+          vType = "corrosive_abomination";
+        } else if (dType === "equip") {
+          bossName = isMini ? "Iron Golem" : "Overlord Iron Vault";
+          vType = "overlord_iron_vault";
+        }
+      } else if (window.playerStats.isUberBoss) {
+        let uType = window.playerStats.currentUberBoss || "guardian";
+        if (uType === "guardian") {
+          bossName = "Aegis Goliath";
+          vType = "aegis_goliath";
+        } else if (uType === "chronos" || uType === "arbitrator") {
+          bossName = "Chronos Arbitrator";
+          vType = "chronos_arbitrator";
+        } else if (uType === "nexus") {
+          bossName = "Nexus Overseer";
+          vType = "nexus_overseer";
+        }
+      } else {
+        const names = [
+          "Arachnid Treant",
+          "Aegis Goliath",
+          "Brimstone Colossus",
+          "Corrosive Abomination",
+          "Void Overseer",
+          "Chronos Arbitrator",
+          "Nexus Overseer"
+        ];
+        const types = [
+          "arachnid_treant",
+          "aegis_goliath",
+          "overlord_iron_vault",
+          "corrosive_abomination",
+          "void_overseer",
+          "chronos_arbitrator",
+          "nexus_overseer"
+        ];
+        bossName = isMini ? "Guard " + (names[tier] || "Warden") : (names[tier] || "Dungeon Overlord");
+        vType = types[tier] || "arachnid_treant";
+      }
+
+      window.mob = {
+            type: isMini ? "dungeon_miniboss" : "dungeon_boss",
+            name: bossName,
+            visualType: vType,
+            hp: BigNum.from(bossHp),
+            maxHp: BigNum.from(bossHp),
+            atk: bossAtk,
+            x: tileX * tileSize - (isMini ? 4 : 16),
+            y: tileY * tileSize - (isMini ? 4 : 16),
+            w: isMini ? 40 : 64,
+            h: isMini ? 40 : 64,
+        flashTimer: 0,
+        isStopped: true,
+        bossTileX: tileX,
+        bossTileY: tileY,
+        state: "idle",
+        telegraphTimer: 0,
+        maxTelegraphTimer: isMini ? 80 : 65,
+        activeAbility: null,
+        targetX: 0,
+        targetY: 0,
+        attackCooldown: 60,
+        moveset: isMini ? ["slam", "charge"] : ["slam", "nova", "charge"],
+        facing: -1,
+      };
+
+      window.spawnFloatingText(
+        window.player.x,
+        window.player.y - 25,
+        `${bossName.toUpperCase()} ENGAGED`,
+        isMini ? "#e67e22" : "#e74c3c",
+      );
     };
-
-    window.spawnFloatingText(
-      window.player.x,
-      window.player.y - 25,
-      `${bossName.toUpperCase()} ENGAGED`,
-      isMini ? "#e67e22" : "#e74c3c",
-    );
-  };
 
   window.onBossDefeated = function (tileX, tileY) {
       let map = window.activeDungeonMap;
@@ -2290,12 +4342,17 @@
     }
 
     let p = window.player;
-        if (p.lastDamageTimer && p.lastDamageTimer > 0) {
-          p.lastDamageTimer--;
-        }
-        if (window.playerStats && window.playerStats.flaskCooldownTimer > 0) {
-          window.playerStats.flaskCooldownTimer--;
-        }
+                if (p.lastDamageTimer && p.lastDamageTimer > 0) {
+                  p.lastDamageTimer--;
+                }
+                if (window.playerStats && window.playerStats.flaskCooldownTimer > 0) {
+                  window.playerStats.flaskCooldownTimer--;
+                }
+                if (p.snareTimer && p.snareTimer > 0) {
+                  p.snareTimer--;
+                  p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4);
+                }
+                p.inDilationField = false; // Reset on every frame
 
     let map = window.activeDungeonMap;
     if (!map || !map.grid) return;
@@ -2368,15 +4425,29 @@
           }
 
           p.isMoving = moved;
-          if (!moved) {
-            p.targetX = p.x;
-            p.targetY = p.y;
-          }
-        } else {
-          p.isMoving = false;
-        }
+                    if (!moved) {
+                      p.targetX = p.x;
+                      p.targetY = p.y;
+                    }
+                  } else {
+                    p.isMoving = false;
+                  }
 
-    if (p.isMoving) {
+              // Apply Control Glitch Inversion (Nexus Overseer)
+              if (p.glitchTimer && p.glitchTimer > 0) {
+                p.glitchTimer--;
+                vx = -vx;
+                vy = -vy;
+                p.targetX = p.x + vx;
+                p.targetY = p.y + vy;
+
+                // Spawn glitch digital noise occasionally on player
+                if (p.glitchTimer % 12 === 0 && window.combatVisuals && window.combatVisuals.particlePool) {
+                  window.combatVisuals.particlePool.get(p.x + window.randFloat(-6, 6), p.y - 8 + window.randFloat(-8, 8), 0, -0.2, window.randFloat(1.2, 2.5), "#ff007f", 0.9, 15, 0, true, 0);
+                }
+              }
+
+              if (p.isMoving) {
       p.walkTimer = (p.walkTimer || 0) + 0.18;
     } else {
       p.walkTimer = 0;
@@ -2926,37 +4997,25 @@
           window.inventory.USE[name]--;
           if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
         }
-      if (
-        !window.inventory.USE ||
-        !window.inventory.USE[name] ||
-        window.inventory.USE[name] <= 0
-      ) {
-        if (typeof window.pushHeaderToast === "function")
-          window.pushHeaderToast("None remaining!", "#e74c3c");
-        return;
-      }
 
-      window.inventory.USE[name]--;
-      if (window.inventory.USE[name] <= 0) delete window.inventory.USE[name];
-
-      if (window.SoundManager && typeof window.SoundManager.play === "function") {
-        if (name.includes("Elixir") || name.includes("Potion")) {
-          try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("fairy"); }
-        } else if (name.includes("Scroll")) {
-          window.SoundManager.play("spell");
-        } else if (name.includes("Sack") || name.includes("Crate")) {
-          window.SoundManager.play("revive");
+        if (window.SoundManager && typeof window.SoundManager.play === "function") {
+          if (name.includes("Elixir") || name.includes("Potion")) {
+            try { window.SoundManager.play("potion"); } catch (e) { window.SoundManager.play("fairy"); }
+          } else if (name.includes("Scroll")) {
+            window.SoundManager.play("spell");
+          } else if (name.includes("Sack") || name.includes("Crate")) {
+            window.SoundManager.play("revive");
+          }
         }
-      }
 
-      let p = window.playerStats;
-      let runsGranted = name.includes("Supernal")
-        ? 3
-        : name.includes("Greater")
-          ? 2
-          : 1;
+        let p = window.playerStats;
+        let runsGranted = name.includes("Supernal")
+          ? 3
+          : name.includes("Greater")
+            ? 2
+            : 1;
 
-    if (name.includes("Attack Elixir")) {
+      if (name.includes("Attack Elixir")) {
       let str = name.includes("Supernal")
         ? 0.35
         : name.includes("Greater")
@@ -3420,10 +5479,31 @@
     }
 
     for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
-      let item = window.cavernInteractives[i];
-      item.life--;
+          let item = window.cavernInteractives[i];
+          item.life--;
 
-      if (item.life <= 0) {
+          if (item.type === "acid_pool") {
+                      let dist = Math.hypot(p.x - item.x, p.y - item.y);
+                      if (dist <= pRadius + 12) {
+                        // caustics tick rate (every 45 frames)
+                        if (window.logicClock % 45 === 0) {
+                          let tickDmg = Math.round(p.maxHp * 0.015);
+                          p.hp = Math.max(1, p.hp - tickDmg);
+                          window.spawnFloatingText(p.x, p.y - 12, `-${tickDmg} ACID BURN`, "#2ecc71");
+                          if (window.SoundManager) window.SoundManager.play("hit");
+                        }
+                      }
+                    }
+
+                    if (item.type === "dilation_field") {
+                      let dist = Math.hypot(p.x - item.x, p.y - item.y);
+                      if (dist <= pRadius + 35) {
+                        p.inDilationField = true;
+                        p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.6); // 40% slow
+                      }
+                    }
+
+                    if (item.life <= 0) {
         // Expiration of Void Rupture Core (Failed debuff event triggers damage)
         if (item.type === "rupture_core") {
           let collapseDmg = Math.round(p.maxHp * 0.3);
@@ -3799,28 +5879,83 @@
   };
 
   window.drawCavernInteractive = function (ctx, item) {
-    if (item.type === "lightning_arc") {
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 2.0;
-      ctx.beginPath();
-      ctx.moveTo(item.x, item.y);
-      let dx = item.x2 - item.x;
-      let dy = item.y2 - item.y;
-      let dist = Math.hypot(dx, dy);
-      let steps = Math.floor(dist / 8);
-      for (let s = 1; s < steps; s++) {
-        let progress = s / steps;
-        let jx = item.x + dx * progress + (Math.random() - 0.5) * 6;
-        let jy = item.y + dy * progress + (Math.random() - 0.5) * 6;
-        ctx.lineTo(jx, jy);
+      if (item.type === "lightning_arc") {
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.moveTo(item.x, item.y);
+        let dx = item.x2 - item.x;
+        let dy = item.y2 - item.y;
+        let dist = Math.hypot(dx, dy);
+        let steps = Math.floor(dist / 8);
+        for (let s = 1; s < steps; s++) {
+          let progress = s / steps;
+          let jx = item.x + dx * progress + (Math.random() - 0.5) * 6;
+          let jy = item.y + dy * progress + (Math.random() - 0.5) * 6;
+          ctx.lineTo(jx, jy);
+        }
+        ctx.lineTo(item.x2, item.y2);
+        ctx.stroke();
+        return;
       }
-      ctx.lineTo(item.x2, item.y2);
-      ctx.stroke();
-      return;
-    }
 
-    ctx.save();
-    let pulse = Math.sin(Date.now() / 150) * 1.5;
+      if (item.type === "acid_pool") {
+            let time = Date.now();
+            let pulse = Math.sin(time / 140) * 1.5;
+            ctx.save();
+            // Caustic flat green pool
+            ctx.fillStyle = "rgba(22, 160, 133, 0.35)";
+            ctx.strokeStyle = "rgba(46, 204, 113, 0.65)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.ellipse(item.x, item.y, 14 + pulse, 6 + pulse * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Caustic tiny bubbles popping
+            ctx.fillStyle = "#a3fd83";
+            for (let i = 0; i < 3; i++) {
+              let bubbleProgress = (time / (400 + i * 100) + i * 2) % 1.0;
+              let bx = item.x + Math.sin(i * 12 + time / 500) * (10 * (1 - bubbleProgress));
+              let by = item.y + Math.cos(i * 8 + time / 500) * (4 * (1 - bubbleProgress));
+              ctx.beginPath();
+              ctx.arc(bx, by, 1.2 * (1.0 - bubbleProgress), 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.restore();
+            return;
+          }
+
+          if (item.type === "dilation_field") {
+            let time = Date.now();
+            let pulse = Math.sin(time / 150) * 1.5;
+            ctx.save();
+            // Golden clockwork distortion zone
+            ctx.fillStyle = "rgba(241, 196, 15, 0.12)";
+            ctx.strokeStyle = "rgba(212, 175, 55, 0.55)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.ellipse(item.x, item.y, 40 + pulse, 18 + pulse * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw ticking clock hands inside the zone
+            ctx.translate(item.x, item.y);
+            ctx.rotate(time / 800);
+            ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -12);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(8, 0);
+            ctx.stroke();
+            ctx.restore();
+            return;
+          }
+
+          ctx.save();
+          let pulse = Math.sin(Date.now() / 150) * 1.5;
 
     if (item.type === "anomalous_shard") {
       ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
@@ -4187,11 +6322,11 @@
                       let ty = targetMob.y + (targetMob.h || 24) / 2;
 
                       if (typeof window.spawnFloatingText === "function") {
-                                              window.spawnFloatingText(tx, ty - 15, `+${window.formatNumber(healVal)} HP`, "#2ecc71");
-                                            }
-                                          });
-                                        }
-                                      } else if (m.eliteAffix === "swift_commander") {
+                                                                    window.spawnFloatingText(tx, ty - 15, `+${window.formatNumber(healVal)} HP`, "#2ecc71");
+                                                                  }
+                                                                });
+                                                              }
+                                                            } else if (m.eliteAffix === "swift_commander") {
                                         let radiusSq = 19600; // 140px radius squared
                                         mobs.forEach((m2) => {
                                           if (m2 === m || m2.hp.lte(0)) return;
@@ -5072,14 +7207,123 @@
     }
 
     // Process active room mobs (Standard logic loop)
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
-        let m = window.activeDungeonMobs[i];
-        let dx = p.x - (m.x + m.w / 2);
-        let dy = p.y - (m.y + m.h / 2);
-        let dist = Math.hypot(dx, dy);
+        if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+          for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
+            let m = window.activeDungeonMobs[i];
+            let dx = p.x - (m.x + m.w / 2);
+            let dy = p.y - (m.y + m.h / 2);
+            let dist = Math.hypot(dx, dy);
 
-        // Check Blood Berserker Telegraphed Detonation Countdown
+            // Process Hatching Summons (Sprout Cocoons)
+                    if (m.isCocoon) {
+                      m.hatchTimer--;
+                      m.flashTimer = 0; // prevent red flash unless directly attacked
+                      if (m.hatchTimer <= 0) {
+                        m.isCocoon = false;
+                        m.isRanged = Math.random() < 0.5;
+                        m.visualType = Math.random() < 0.5 ? "slime" : "sprout";
+                        m.visualTier = 0;
+                        m.name = m.visualType === "slime" ? "Hatched Slime" : "Hatched Sprout";
+                        m.atk = Math.round(10 + (window.player.depth || 1) * 3);
+                        m.hp = m.maxHp; // Refill HP for active minion combat
+                        m.projectileType = "thorn";
+                        m.rangedCooldown = 60;
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 15, "slag_slime", 3);
+                        }
+                        if (window.SoundManager) window.SoundManager.play("spell");
+                      }
+                      continue; // Skip standard movement/attack logic while incubating
+                    }
+
+                    // Process Floating Homing Toxic Spores (Swamp Stage Warden)
+                    if (m.isSpore) {
+                      m.hatchTimer--; // Repurpose hatchTimer as spore lifetime
+                      m.flashTimer = 0;
+
+                      // Float slowly toward the player's position
+                      let sDx = p.x - (m.x + m.w / 2);
+                      let sDy = p.y - (m.y + m.h / 2);
+                      let sDist = Math.hypot(sDx, sDy);
+                      if (sDist > 0) {
+                        let speed = 1.0; // Floating speed
+                        m.x += (sDx / sDist) * speed;
+                        m.y += (sDy / sDist) * speed;
+                      }
+
+                      // Detonate on direct contact
+                      if (sDist < m.w / 2 + (p.radius || 9)) {
+                        window.damagePlayer(Math.round(m.atk * 1.25), m);
+                        // Apply 3 stacks of poison
+                        p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 3);
+                        p.poisonTimer = 240; // 4s tick
+
+                        if (window.combatVisuals) {
+                          window.combatVisuals.triggerScreenShake(4, 6);
+                          window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 12, "swamp_basilisk", 2.5);
+                        }
+                        if (window.SoundManager) window.SoundManager.play("block");
+
+                        m.hp = BigNum.from(0); // Mark dead for removal
+                      }
+
+                      // Dissolve harmlessly into steam after 6 seconds (360 frames)
+                      if (m.hatchTimer <= 0 && m.hp.gt(0)) {
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 8, "swamp_basilisk", 1.2);
+                        }
+                        if (window.SoundManager) window.SoundManager.play("block");
+                        m.hp = BigNum.from(0); // Mark dead for removal
+                      }
+                      continue; // Skip standard movement/attack logic while drifting
+                    }
+
+            // Process Pulsating Magma Vents (Inferno Stage Warden)
+            if (m.isMagmaVent) {
+              m.ventTimer--;
+              m.flashTimer = 0;
+
+              // Pulsate scale during active boil countdown
+              let sizePulse = Math.sin(Date.now() / 60) * 3;
+              m.w = 24 + sizePulse;
+              m.h = 24 + sizePulse;
+
+              if (m.ventTimer <= 0) {
+                // Detonate Cross-Shaped Lava Wave!
+                let mcx = m.x + m.w / 2;
+                let mcy = m.y + m.h / 2;
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.triggerScreenShake(5, 8);
+                  // Spawn fiery lava particles along North, South, East, West axes
+                  for (let d = -96; d <= 96; d += 16) {
+                    if (d === 0) continue;
+                    // Horizontal axis
+                    window.combatVisuals.particlePool.get(mcx + d, mcy, 0, -window.randFloat(0.1, 0.5), window.randFloat(2, 4), "#f97316", 0.9, 18, 0, true, 0);
+                    // Vertical axis
+                    window.combatVisuals.particlePool.get(mcx, mcy + d, 0, -window.randFloat(0.1, 0.5), window.randFloat(2, 4), "#f97316", 0.9, 18, 0, true, 0);
+                  }
+                }
+                if (window.SoundManager) window.SoundManager.play("spell_fire");
+
+                // Damage player if caught inside the lava crosshairs
+                let pxDiff = Math.abs(p.x - mcx);
+                let pyDiff = Math.abs(p.y - mcy);
+                let isHit = (pxDiff <= 96 && pyDiff <= 12) || (pyDiff <= 96 && pxDiff <= 12);
+                if (isHit) {
+                  let parentAtk = m.parentAtk || 25;
+                  window.damagePlayer(Math.round(parentAtk * 1.3), null);
+                  if (typeof window.spawnFloatingText === "function") {
+                    window.spawnFloatingText(p.x, p.y - 15, "LAVA ERUPTION!", "#f97316");
+                  }
+                }
+
+                m.hp = BigNum.from(0); // Mark dead for removal
+              }
+              continue; // Skip normal chase/swipe AI for static vents
+            }
+
+            // Check Blood Berserker Telegraphed Detonation Countdown
                 if (m.isDetonating) {
                   m.detonationTimer--;
                   m.flashTimer = 2; // Flashing swell feedback during countdown
@@ -5132,11 +7376,22 @@
                 }
 
                 // Check death state after any potential hit
-                                if (m.hp.lte(0)) {
-                                  window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
-                                  if (m.isRare) {
-                                    window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
-                                  }
+                        if (m.hp.lte(0)) {
+                          // Check Magma Vent & Spore harmless pop bypass
+                          if (m.isMagmaVent || m.isSpore) {
+                            let theme = m.isMagmaVent ? "magma_elemental" : "swamp_basilisk";
+                            if (window.combatVisuals) {
+                              window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 10, theme, 1.8);
+                            }
+                            if (window.SoundManager) window.SoundManager.play("block");
+                            window.activeDungeonMobs.splice(i, 1);
+                            continue;
+                          }
+
+                          window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
+                          if (m.isRare) {
+                            window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
+                          }
 
                                   // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
                   if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
@@ -5327,381 +7582,395 @@
     }
 
     // Process Boss Warden Combat
-    if (window.mob && window.mob.hp) {
-      let bm = window.mob;
-      if (bm.flashTimer > 0) bm.flashTimer--;
-      if (bm.attackCooldown > 0) bm.attackCooldown--;
+        if (window.mob && window.mob.hp) {
+          let bm = window.mob;
+          window.BossAIEngine.update(bm);
 
-      if (bm.recoilX) {
-        bm.recoilX *= 0.65;
-        if (Math.abs(bm.recoilX) < 0.2) bm.recoilX = 0;
-      }
-      if (bm.recoilY) {
-        bm.recoilY *= 0.65;
-        if (Math.abs(bm.recoilY) < 0.2) bm.recoilY = 0;
-      }
+          let dx = p.x - (bm.x + bm.w / 2);
+          let dy = p.y - (bm.y + bm.h / 2);
+          let dist = Math.hypot(dx, dy);
 
-      let dx = p.x - (bm.x + bm.w / 2);
-      let dy = p.y - (bm.y + bm.h / 2);
-      let dist = Math.hypot(dx, dy);
+          if (dist < 48 && p.attackTimer >= 20) {
+            p.attackTimer = 0;
 
-      if (dx < -1) {
-        bm.facing = -1;
-      } else if (dx > 1) {
-        bm.facing = 1;
-      }
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("swing");
+            }
 
-      // Soft Boss Body-Blocking (Allows passing through with speed resistance and gentle push)
-      let bossRadius = (bm.w || 48) * 0.48;
-      let pRadius = p.radius || 9;
-      let bossMinDist = pRadius + bossRadius;
+            let bossCenterX = bm.x + bm.w / 2;
+            // Face the boss being attacked!
+            let dxToBoss = bossCenterX - p.x;
+            if (dxToBoss < -0.1) p.facing = -1;
+            else if (dxToBoss > 0.1) p.facing = 1;
 
-      if (dist < bossMinDist) {
-        let overlap = bossMinDist - dist;
-        let nx = dist > 0 ? dx / dist : 1;
-        let ny = dist > 0 ? dy / dist : 0;
+            let isCrit = Math.random() < (pStats.critChance || 0.05);
+            let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+            let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
-        // Apply heavy speed resistance to player
-        p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.35);
+            // REDUCE DAMAGE BY 90% IF ELDRITCH BARK SHIELD IS ACTIVE!
+            if (bm.actionState === "bark_shield") {
+              pAtk = pAtk.mul(0.1);
+            }
 
-        // Push the boss away gently instead of blocking the player
-        let bossPushX = -nx * overlap * 0.15;
-        let bossPushY = -ny * overlap * 0.15;
+            // CYBER BARRIER (NEXUS OVERSEER) IMMUNITY
+            if (bm.actionState === "cyber_barrier") {
+              pAtk = BigNum.from(0);
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(bm.x + bm.w / 2, bm.y - 12, "SYSTEM IMMUNE", "#ff007f");
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            }
 
-        let map = window.activeDungeonMap;
-        if (map && map.grid) {
-          let bCenterX = bm.x + bm.w / 2;
-          let bCenterY = bm.y + bm.h / 2;
-          if (
-            !checkCollisionAt(map, bCenterX + bossPushX, bCenterY, bossRadius)
-          ) {
-            bm.x += bossPushX;
-          }
-          if (
-            !checkCollisionAt(map, bCenterX, bCenterY + bossPushY, bossRadius)
-          ) {
-            bm.y += bossPushY;
-          }
-        } else {
-          bm.x += bossPushX;
-          bm.y += bossPushY;
-        }
-      }
+            // STAGGER SHIELD ABSORPTION (CHRONOS & GILDED KEEPER)
+            if (bm.actionState === "chrono_rewind" || bm.actionState === "taxation") {
+              let dmgVal = pAtk.valueOf();
+              bm.staggerShield = bm.staggerShield.sub(dmgVal);
 
-      if (dist < 48 && p.attackTimer >= 20) {
-        p.attackTimer = 0;
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnDamageEffect(bm.x + bm.w/2, bm.y + bm.h/2, pAtk, "static", false);
+              }
 
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("swing");
-        }
-
-        let bossCenterX = bm.x + bm.w / 2;
-        // Face the boss being attacked!
-        let dxToBoss = bossCenterX - p.x;
-        if (dxToBoss < -0.1) p.facing = -1;
-        else if (dxToBoss > 0.1) p.facing = 1;
-
-        let isCrit = Math.random() < (pStats.critChance || 0.05);
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
-
-        bm.hp = bm.hp.sub(pAtk);
-                bm.hasTakenDamage = true;
-                bm.flashTimer = 6;
-
-                let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
-                window.playerStats.peakSingleHit = Math.max(window.playerStats.peakSingleHit || 0, rawHitNum);
-
-                let bmMaxHpNum = bm.maxHp.valueOf ? bm.maxHp.valueOf() : Number(bm.maxHp || 1);
-                if (isCrit && bmMaxHpNum > 0 && (rawHitNum / bmMaxHpNum) >= 10) {
-                  window.playerStats.hasTriggeredOverkill = true;
+              if (bm.staggerShield.lte(0)) {
+                bm.staggerShield = BigNum.from(0);
+                bm.actionState = "idle";
+                bm.state = "idle";
+                bm.isStopped = false;
+                bm.dazeTimer = 210; // 3.5s daze stun
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(bm.x + bm.w / 2, bm.y - 12, "SHIELD BROKEN! DAZED!", "#ffd700");
                 }
-
-                let curHr = new Date().getHours();
-                if (curHr >= 0 && curHr < 4) window.playerStats.hasTriggeredNightOwl = true;
-                if (curHr >= 5 && curHr < 8) window.playerStats.hasTriggeredEarlyBird = true;
-                let curDay = new Date().getDay();
-                if (curDay === 0 || curDay === 6) window.playerStats.hasTriggeredWeekendWarrior = true;
-
-                let dirX = dist > 0 ? dx / dist : 1;
-        let dirY = dist > 0 ? dy / dist : 0;
-        bm.recoilX = -dirX * (isCrit ? 10 : 6);
-        bm.recoilY = -dirY * (isCrit ? 10 : 6);
-
-        if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
-          window.RenderEngine.spawnHitSparks(
-            bm.x + bm.w / 2,
-            bm.y + bm.h / 2,
-            isCrit,
-            -dirX,
-            -dirY,
-          );
-        }
-
-        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-          window.RenderEngine.spawnDamageEffect(
-            bm.x + bm.w / 2,
-            bm.y + bm.h / 2,
-            pAtk,
-            "slash",
-            isCrit,
-          );
-        }
-
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.playHitImpact === "function"
-        ) {
-          window.SoundManager.playHitImpact(isCrit);
-        }
-
-        // Define vertical center for boss offhand procs
-        let bossCenterY = bm.y + bm.h / 2;
-
-        // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
-        if (pStats.subType === "dagger") {
-          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-            let offhandHit = BigNum.from(pStats.atk || 15).mul(
-              pStats.offhandDmg || 0.45,
-            );
-            bm.hp = bm.hp.sub(offhandHit);
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 6,
-                offhandHit,
-                "dagger",
-                false,
-              );
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(bm.x + bm.w/2, bm.y + bm.h/2, 25, "gold_dungeon", 3);
+                  window.combatVisuals.triggerScreenShake(8, 12);
+                }
+                if (window.SoundManager) window.SoundManager.play("block");
+              }
+              pAtk = BigNum.from(0); // 0 direct damage to boss HP
             }
-          }
 
-          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-            bm.hp = bm.hp.sub(bleedTick);
+            // DAZED STUN DAMAGE AMPLIFICATION (Takes 50% more damage)
+            if (bm.dazeTimer > 0) {
+              pAtk = pAtk.mul(1.5);
+            }
+
+            // AEGIS GOLIATH DIRECTIONAL SHIELD CALCULATIONS
+            if (bm.bossKey === "aegis_goliath" && bm.phase === 2 && !(bm.dazeTimer > 0)) {
+              if (bm.shieldAngle !== undefined) {
+                let bCenterX = bm.x + bm.w / 2;
+                let bCenterY = bm.y + bm.h / 2;
+                let attackAngle = Math.atan2(p.y - bCenterY, p.x - bCenterX);
+                let angleDiff = Math.abs(Math.atan2(Math.sin(attackAngle - bm.shieldAngle), Math.cos(attackAngle - bm.shieldAngle)));
+
+                // Frontal attack hits his raised Tower Shield!
+                if (angleDiff < 0.6) {
+                  pAtk = BigNum.from(0);
+                  bm.flashTimer = 4;
+                  if (window.SoundManager) window.SoundManager.play("block");
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(bCenterX + Math.cos(bm.shieldAngle) * (bm.w * 0.75), bCenterY + Math.sin(bm.shieldAngle) * (bm.w * 0.75), 8, "aegis_goliath", 2);
+                    window.spawnFloatingText(bm.x + bm.w / 2, bm.y - 12, "BLOCKED!", "#00d2ff");
+                  }
+                }
+              }
+            }
+
+            bm.hp = bm.hp.sub(pAtk);
+            bm.hasTakenDamage = true;
             bm.flashTimer = 6;
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 10,
-                bleedTick,
-                "bleed",
-                false,
+
+            let rawHitNum = pAtk.valueOf ? pAtk.valueOf() : Number(pAtk);
+            window.playerStats.peakSingleHit = Math.max(window.playerStats.peakSingleHit || 0, rawHitNum);
+
+            let bmMaxHpNum = bm.maxHp.valueOf ? bm.maxHp.valueOf() : Number(bm.maxHp || 1);
+            if (isCrit && bmMaxHpNum > 0 && (rawHitNum / bmMaxHpNum) >= 10) {
+              window.playerStats.hasTriggeredOverkill = true;
+            }
+
+            let curHr = new Date().getHours();
+            if (curHr >= 0 && curHr < 4) window.playerStats.hasTriggeredNightOwl = true;
+            if (curHr >= 5 && curHr < 8) window.playerStats.hasTriggeredEarlyBird = true;
+            let curDay = new Date().getDay();
+            if (curDay === 0 || curDay === 6) window.playerStats.hasTriggeredWeekendWarrior = true;
+
+            let dirX = dist > 0 ? dx / dist : 1;
+            let dirY = dist > 0 ? dy / dist : 0;
+            bm.recoilX = -dirX * (isCrit ? 10 : 6);
+            bm.recoilY = -dirY * (isCrit ? 10 : 6);
+
+            if (window.RenderEngine && window.RenderEngine.spawnHitSparks) {
+              window.RenderEngine.spawnHitSparks(
+                bm.x + bm.w / 2,
+                bm.y + bm.h / 2,
+                isCrit,
+                -dirX,
+                -dirY,
               );
             }
-          }
-        }
 
-        // Tome Spell Cast Trigger on Boss
-                let isTomeEquipped =
-                                  pStats.subType === "tome" ||
-                                  (window.equippedSlots &&
-                                    window.equippedSlots.subweapon &&
-                                    (window.equippedSlots.subweapon.subType === "tome" ||
-                                      window.equippedSlots.subweapon.type === "tome"));
-                                let activeSpellChance =
-                                  pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-                                let activeSpellType = pStats.spellType || "tri";
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bm.x + bm.w / 2,
+                bm.y + bm.h / 2,
+                pAtk,
+                "slash",
+                isCrit,
+              );
+            }
 
-                                if (isTomeEquipped && Math.random() < activeSpellChance) {
-                                  // Gain +1 Tome Mastery XP on Spell Proc (Boss)
-                                                    if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.playHitImpact === "function"
+            ) {
+              window.SoundManager.playHitImpact(isCrit);
+            }
 
-                  let spellDmg = BigNum.from(pStats.atk || 15).mul(
-                    pStats.spellPower || 1.5,
+            // Define vertical center for boss offhand procs
+            let bossCenterY = bm.y + bm.h / 2;
+
+            // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
+            if (pStats.subType === "dagger") {
+              if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
+                let offhandHit = BigNum.from(pStats.atk || 15).mul(
+                  pStats.offhandDmg || 0.45,
+                );
+                bm.hp = bm.hp.sub(offhandHit);
+                if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                  window.RenderEngine.spawnDamageEffect(
+                    bossCenterX,
+                    bossCenterY - 6,
+                    offhandHit,
+                    "dagger",
+                    false,
                   );
+                }
+              }
+
+              if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
+                let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
+                bm.hp = bm.hp.sub(bleedTick);
+                bm.flashTimer = 6;
+                if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                  window.RenderEngine.spawnDamageEffect(
+                    bossCenterX,
+                    bossCenterY - 10,
+                    bleedTick,
+                    "bleed",
+                    false,
+                  );
+                }
+              }
+            }
+
+            // Tome Spell Cast Trigger on Boss
+            let isTomeEquipped =
+                              pStats.subType === "tome" ||
+                              (window.equippedSlots &&
+                                window.equippedSlots.subweapon &&
+                                (window.equippedSlots.subweapon.subType === "tome" ||
+                                  window.equippedSlots.subweapon.type === "tome"));
+                            let activeSpellChance =
+                              pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+                            let activeSpellType = pStats.spellType || "tri";
+
+                            if (isTomeEquipped && Math.random() < activeSpellChance) {
+                              // Gain +1 Tome Mastery XP on Spell Proc (Boss)
+                                                if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
+
+              let spellDmg = BigNum.from(pStats.atk || 15).mul(
+                pStats.spellPower || 1.5,
+              );
+              bm.hp = bm.hp.sub(spellDmg);
+              bm.flashTimer = 8;
+
+              let spellEffectType = activeSpellType;
+              if (activeSpellType === "tri") {
+                const triElements = ["fire", "lightning", "frost"];
+                spellEffectType =
+                  triElements[Math.floor(Math.random() * triElements.length)];
+              }
+
+              // Spell Weaving (Boss)
+              if (pStats.hasSpellWeaving) {
+                if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
+                  window.playerStats.spellWeavingStacks = Math.min(4, (window.playerStats.spellWeavingStacks || 0) + 1);
+                  window.playerStats.spellWeavingTimer = 240;
+                }
+                window.playerStats.lastSpellCastType = spellEffectType;
+              }
+
+              // Arcane Syphon (Boss)
+              if (pStats.hasArcaneSyphon) {
+                let healAmt = Math.round(p.maxHp * (pStats.arcaneSyphonLevel * 0.01));
+                p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                window.playerStats.syphonIntStacks = Math.min(3, (window.playerStats.syphonIntStacks || 0) + 1);
+                window.playerStats.syphonIntTimer = 360;
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(p.x, p.y - 12, `+${healAmt} HP (SYPHON)`, "#2ecc71", true);
+                }
+              }
+
+              // Mana Shielding (Restored original Tome heal on spell proc - Boss)
+              if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
+                let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
+                p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(p.x, p.y - 15, `+${healAmt} HP (MANA SHIELD)`, "#2ecc71", true);
+                }
+              }
+
+              // Triad Convergence / Aetheric Overload Check (Boss)
+              let isOverload =
+                window.SkillTreeManager &&
+                window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+                Math.random() < 0.15;
+
+              if (pStats.hasTriadConvergence || isOverload) {
+                const triElements = ["fire", "lightning", "frost"];
+                triElements.forEach((elem, eIdx) => {
                   bm.hp = bm.hp.sub(spellDmg);
-                  bm.flashTimer = 8;
-
-                  let spellEffectType = activeSpellType;
-                  if (activeSpellType === "tri") {
-                    const triElements = ["fire", "lightning", "frost"];
-                    spellEffectType =
-                      triElements[Math.floor(Math.random() * triElements.length)];
+                  if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                    window.RenderEngine.spawnDamageEffect(
+                      bossCenterX + (eIdx - 1) * 12,
+                      bossCenterY - 12 - eIdx * 6,
+                      spellDmg,
+                      elem,
+                      false,
+                    );
                   }
 
-                  // Spell Weaving (Boss)
-                  if (pStats.hasSpellWeaving) {
-                    if (window.playerStats.lastSpellCastType && window.playerStats.lastSpellCastType !== spellEffectType) {
-                      window.playerStats.spellWeavingStacks = Math.min(4, (window.playerStats.spellWeavingStacks || 0) + 1);
-                      window.playerStats.spellWeavingTimer = 240;
-                    }
-                    window.playerStats.lastSpellCastType = spellEffectType;
-                  }
-
-                  // Arcane Syphon (Boss)
-                  if (pStats.hasArcaneSyphon) {
-                    let healAmt = Math.round(p.maxHp * (pStats.arcaneSyphonLevel * 0.01));
-                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                    window.playerStats.syphonIntStacks = Math.min(3, (window.playerStats.syphonIntStacks || 0) + 1);
-                    window.playerStats.syphonIntTimer = 360;
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(p.x, p.y - 12, `+${healAmt} HP (SYPHON)`, "#2ecc71", true);
-                    }
-                  }
-
-                  // Mana Shielding (Restored original Tome heal on spell proc - Boss)
-                  if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
-                    let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
-                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(p.x, p.y - 15, `+${healAmt} HP (MANA SHIELD)`, "#2ecc71", true);
-                    }
-                  }
-
-                  // Triad Convergence / Aetheric Overload Check (Boss)
-                  let isOverload =
-                    window.SkillTreeManager &&
-                    window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-                    Math.random() < 0.15;
-
-                  if (pStats.hasTriadConvergence || isOverload) {
-                    const triElements = ["fire", "lightning", "frost"];
-                    triElements.forEach((elem, eIdx) => {
-                      bm.hp = bm.hp.sub(spellDmg);
-                      if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                        window.RenderEngine.spawnDamageEffect(
-                          bossCenterX + (eIdx - 1) * 12,
-                          bossCenterY - 12 - eIdx * 6,
-                          spellDmg,
-                          elem,
-                          false,
-                        );
-                      }
-
-                      if (pStats.hasElementalOverload) {
-                        if (elem === "fire") {
-                          let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
-                          if (window.activeDungeonMobs) {
-                            window.activeDungeonMobs.forEach((otherMob) => {
-                              let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
-                              if (dist <= 100) {
-                                otherMob.hp = otherMob.hp.sub(splashDmg);
-                                otherMob.flashTimer = 6;
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
-                                }
-                              }
-                            });
-                          }
-                        } else if (elem === "lightning") {
-                          let bouncesLeft = pStats.overloadLevel;
-                          let hitIds = new Set();
-                          let currentTarget = bm;
-                          while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                            let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
-                            if (nextTarget) {
-                              nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                              nextTarget.flashTimer = 6;
-                              hitIds.add(nextTarget.id);
-                              if (window.combatVisuals) {
-                                window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
-                              }
-                              currentTarget = nextTarget;
-                              bouncesLeft--;
-                            } else {
-                              break;
+                  if (pStats.hasElementalOverload) {
+                    if (elem === "fire") {
+                      let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
+                      if (window.activeDungeonMobs) {
+                        window.activeDungeonMobs.forEach((otherMob) => {
+                          let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
+                          if (dist <= 100) {
+                            otherMob.hp = otherMob.hp.sub(splashDmg);
+                            otherMob.flashTimer = 6;
+                            if (window.combatVisuals) {
+                              window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
                             }
                           }
-                        } else if (elem === "frost") {
-                          let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
-                          if (window.activeDungeonMobs) {
-                            window.activeDungeonMobs.forEach((otherMob) => {
-                              if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
-                                otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
-                                }
-                              }
-                            });
+                        });
+                      }
+                    } else if (elem === "lightning") {
+                      let bouncesLeft = pStats.overloadLevel;
+                      let hitIds = new Set();
+                      let currentTarget = bm;
+                      while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                        let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
+                        if (nextTarget) {
+                          nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                          nextTarget.flashTimer = 6;
+                          hitIds.add(nextTarget.id);
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(nextTarget.x + nextTarget.w / 2, nextTarget.y + nextTarget.h / 2, spellDmg, "lightning", false);
                           }
+                          currentTarget = nextTarget;
+                          bouncesLeft--;
+                        } else {
+                          break;
                         }
                       }
-                    });
-                    if (
-                      window.SoundManager &&
-                      typeof window.SoundManager.play === "function"
-                    ) {
-                      window.SoundManager.play("spell_fire");
-                    }
-                  } else {
-                    if (pStats.hasElementalOverload) {
-                      if (spellEffectType === "fire") {
-                        let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
-                        if (window.activeDungeonMobs) {
-                          window.activeDungeonMobs.forEach((otherMob) => {
-                            let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
-                            if (dist <= 100) {
-                              otherMob.hp = otherMob.hp.sub(splashDmg);
-                              otherMob.flashTimer = 6;
-                              if (window.combatVisuals) {
-                                window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
-                              }
+                    } else if (elem === "frost") {
+                      let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
+                      if (window.activeDungeonMobs) {
+                        window.activeDungeonMobs.forEach((otherMob) => {
+                          if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
+                            otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
+                            if (window.combatVisuals) {
+                              window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
                             }
-                          });
+                          }
+                        });
+                      }
+                    }
+                  }
+                });
+                if (
+                  window.SoundManager &&
+                  typeof window.SoundManager.play === "function"
+                ) {
+                  window.SoundManager.play("spell_fire");
+                }
+              } else {
+                if (pStats.hasElementalOverload) {
+                  if (spellEffectType === "fire") {
+                    let splashDmg = spellDmg.mul(pStats.overloadLevel === 1 ? 0.35 : 0.70);
+                    if (window.activeDungeonMobs) {
+                      window.activeDungeonMobs.forEach((otherMob) => {
+                        let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
+                        if (dist <= 100) {
+                          otherMob.hp = otherMob.hp.sub(splashDmg);
+                          otherMob.flashTimer = 6;
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, splashDmg, "fire", false);
+                          }
                         }
-                      } else if (spellEffectType === "lightning") {
-                        let bouncesLeft = pStats.overloadLevel;
-                        let hitIds = new Set();
-                        let currentTarget = bm;
-                        while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                          let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
-                          if (nextTarget) {
-                                                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                                                      nextTarget.flashTimer = 6;
-                                                      hitIds.add(nextTarget.id);
-                                                      if (window.combatVisuals) {
-                                                        window.combatVisuals.spawnDamageEffect(
-                                                          nextTarget.x + nextTarget.w / 2,
-                                                          nextTarget.y + nextTarget.h / 2,
-                                                          spellDmg,
-                                                          "lightning",
-                                                          false
-                                                        );
-                                                      }
-                                                      currentTarget = nextTarget;
-                                                      bouncesLeft--;
-                                                    } else {
-                                                      break;
-                                                    }
+                      });
+                    }
+                  } else if (spellEffectType === "lightning") {
+                    let bouncesLeft = pStats.overloadLevel;
+                    let hitIds = new Set();
+                    let currentTarget = bm;
+                    while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                      let nextTarget = window.activeDungeonMobs.find(other => !hitIds.has(other.id) && Math.hypot(currentTarget.x - other.x, currentTarget.y - other.y) <= 120);
+                      if (nextTarget) {
+                                                  nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                                                  nextTarget.flashTimer = 6;
+                                                  hitIds.add(nextTarget.id);
+                                                  if (window.combatVisuals) {
+                                                    window.combatVisuals.spawnDamageEffect(
+                                                      nextTarget.x + nextTarget.w / 2,
+                                                      nextTarget.y + nextTarget.h / 2,
+                                                      spellDmg,
+                                                      "lightning",
+                                                      false
+                                                    );
                                                   }
-                                                } else if (spellEffectType === "frost") {
-                                                  let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
-                                                  if (window.activeDungeonMobs) {
-                                                    window.activeDungeonMobs.forEach((otherMob) => {
-                                                      if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
-                                                        otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
-                                                        if (window.combatVisuals) {
-                                                          window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
-                                                        }
-                                                      }
-                                                    });
-                                                  }
+                                                  currentTarget = nextTarget;
+                                                  bouncesLeft--;
+                                                } else {
+                                                  break;
                                                 }
                                               }
-
-                                              if (
-                                                window.SoundManager &&
-                                                typeof window.SoundManager.play === "function"
-                                              ) {
-                                                window.SoundManager.play("spell_" + spellEffectType);
-                                              }
-                                              if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                                                window.RenderEngine.spawnDamageEffect(
-                                                  bossCenterX,
-                                                  bossCenterY - 12,
-                                                  spellDmg,
-                                                  spellEffectType,
-                                                  false,
-                                                );
+                                            } else if (spellEffectType === "frost") {
+                                              let slowPct = pStats.overloadLevel === 1 ? 0.20 : 0.40;
+                                              if (window.activeDungeonMobs) {
+                                                window.activeDungeonMobs.forEach((otherMob) => {
+                                                  if (Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100) {
+                                                    otherMob.speedMultiplier = Math.max(0.2, (otherMob.speedMultiplier || 1.0) - slowPct);
+                                                    if (window.combatVisuals) {
+                                                      window.combatVisuals.spawnParticles(otherMob.x + otherMob.w / 2, otherMob.y + otherMob.h / 2, 8, "void_orb", 1);
+                                                    }
+                                                  }
+                                                });
                                               }
                                             }
                                           }
 
-                                  if (bm.hp.lte(0)) {
+                                          if (
+                                            window.SoundManager &&
+                                            typeof window.SoundManager.play === "function"
+                                          ) {
+                                            window.SoundManager.play("spell_" + spellEffectType);
+                                          }
+                                          if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                                            window.RenderEngine.spawnDamageEffect(
+                                              bossCenterX,
+                                              bossCenterY - 12,
+                                              spellDmg,
+                                              spellEffectType,
+                                              false,
+                                            );
+                                          }
+                                        }
+                                      }
+
+                              if (bm.hp.lte(0)) {
                   window.playerStats.totalLifetimeKills = (window.playerStats.totalLifetimeKills || 0) + 1;
                   window.playerStats.rareSpawnsSlain = (window.playerStats.rareSpawnsSlain || 0) + 1;
 
@@ -5936,13 +8205,33 @@
     }
 
     // Update Active Projectiles and Test Player & Wall Hitboxes
-    for (let i = window.projectiles.length - 1; i >= 0; i--) {
-      let proj = window.projectiles[i];
-      proj.life--;
-      proj.x += proj.vx;
-      proj.y += proj.vy;
+        for (let i = window.projectiles.length - 1; i >= 0; i--) {
+          let proj = window.projectiles[i];
+          proj.life--;
 
-      let map = window.activeDungeonMap;
+          // Custom Boomerang Shield Kinematics
+          if (proj.type === "boomerang" && window.mob) {
+            let bm = window.mob;
+            let bCx = bm.x + bm.w / 2;
+            let bCy = bm.y + bm.h / 2;
+            let bdx = bCx - proj.x;
+            let bdy = bCy - proj.y;
+            let bdist = Math.hypot(bdx, bdy);
+            if (bdist > 0) {
+              proj.vx += (bdx / bdist) * 0.24;
+              proj.vy += (bdy / bdist) * 0.24;
+            }
+            let speed = Math.hypot(proj.vx, proj.vy);
+            if (speed > 5.5) {
+              proj.vx = (proj.vx / speed) * 5.5;
+              proj.vy = (proj.vy / speed) * 5.5;
+            }
+          }
+
+          proj.x += proj.vx;
+          proj.y += proj.vy;
+
+          let map = window.activeDungeonMap;
       if (map && map.grid && checkCollisionAt(map, proj.x, proj.y, proj.r)) {
         if (window.combatVisuals) {
           if (
@@ -6647,61 +8936,10 @@
         yBase: bm.y + (bm.h || 48),
         draw: () => {
           if (bm.state === "telegraphing" && bm.activeAbility) {
-            ctx.save();
-            let progress = 1.0 - bm.telegraphTimer / bm.maxTelegraphTimer;
-            let pulseAlpha = 0.2 + Math.sin(Date.now() / 60) * 0.15;
-
-            if (bm.activeAbility === "slam") {
-              ctx.fillStyle = `rgba(231, 76, 60, ${pulseAlpha})`;
-              ctx.strokeStyle = "#e74c3c";
-              ctx.lineWidth = 2.5;
-
-              ctx.beginPath();
-              ctx.arc(bm.targetX, bm.targetY, 64, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
-
-              ctx.beginPath();
-              ctx.arc(bm.targetX, bm.targetY, 64 * progress, 0, Math.PI * 2);
-              ctx.strokeStyle = "#ffffff";
-              ctx.lineWidth = 1.5;
-              ctx.stroke();
-            } else if (bm.activeAbility === "charge") {
-              let bossCx = bm.x + bm.w / 2;
-              let bossCy = bm.y + bm.h / 2;
-
-              ctx.strokeStyle = `rgba(231, 76, 60, ${0.4 + pulseAlpha})`;
-              ctx.lineWidth = 16;
-              ctx.lineCap = "round";
-
-              ctx.beginPath();
-              ctx.moveTo(bossCx, bossCy);
-              ctx.lineTo(bm.targetX, bm.targetY);
-              ctx.stroke();
-
-              ctx.strokeStyle = "#ffffff";
-              ctx.lineWidth = 3;
-              ctx.stroke();
-            } else if (bm.activeAbility === "nova") {
-              let bossCx = bm.x + bm.w / 2;
-              let bossCy = bm.y + bm.h / 2;
-
-              ctx.strokeStyle = `rgba(230, 126, 34, ${0.4 + pulseAlpha})`;
-              ctx.lineWidth = 2;
-
-              for (let i = 0; i < 8; i++) {
-                let angle = (i * Math.PI * 2) / 8;
-                ctx.beginPath();
-                ctx.moveTo(bossCx, bossCy);
-                ctx.lineTo(
-                  bossCx + Math.cos(angle) * 120,
-                  bossCy + Math.sin(angle) * 120,
-                );
-                ctx.stroke();
-              }
-            }
-            ctx.restore();
-          }
+                      if (window.BossAIEngine && typeof window.BossAIEngine.renderTelegraph === "function") {
+                        window.BossAIEngine.renderTelegraph(ctx, bm);
+                      }
+                    }
 
           window.drawSingleMob(ctx, window.mob);
         },
@@ -10028,13 +12266,12 @@ window.navigateToAchievement = function (id) {
       window.attachToastSwipeHandlers(toast, onClick);
 
       toast.dismissTimeout = setTimeout(() => {
-        toast.classList.add("toast-fade-out");
-        setTimeout(() => {
-          if (toast.parentNode) toast.parentNode.removeChild(toast);
-        }, 300);
-      }, 2800);
-    };
-})();
+              toast.classList.add("toast-fade-out");
+              setTimeout(() => {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+              }, 300);
+            }, 2800);
+          };
 
 window.getMobPoolForDepth = function (depth) {
   // Sectors advance every 12 floors (after each Major Boss on Floor 12, 24, 36...)
@@ -10264,8 +12501,8 @@ window.refillFlaskCharges = function (silent = false) {
         };
 
         btn.addEventListener("pointerup", stopDrag);
-        btn.addEventListener("pointercancel", stopDrag);
-      };
+                btn.addEventListener("pointercancel", stopDrag);
+              };
 
       window.resetFlaskButtonPosition = function () {
                 if (window.playerStats) {
@@ -10286,6 +12523,7 @@ window.refillFlaskCharges = function (silent = false) {
           }
 
           if (typeof window.saveGame === "function") {
-            window.saveGame();
-          }
-        };
+                      window.saveGame();
+                    }
+                  };
+          })();

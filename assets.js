@@ -176,7 +176,7 @@ window.AssetCatalog = {
       `;
     },
     liquid(id, color) {
-          return `
+      return `
             <defs>
               <linearGradient id="grad_liq_${id}" x1="0" y1="100%" x2="0" y2="0%">
                 <stop offset="0%" stop-color="rgba(0, 0, 0, 0.55)"/>
@@ -192,7 +192,7 @@ window.AssetCatalog = {
               </radialGradient>
             </defs>
           `;
-        },
+    },
   },
 
   // Blueprints for procedurally rendering generic equipment based on slots
@@ -1065,13 +1065,13 @@ window.AssetCatalog = {
   // Centralized configurations of consumables, scrolls, crates, and sacks
   consumables: {
     potion(uid, color, name = "") {
-          let nameLower = (name || "").toLowerCase();
-          let isSupernal = nameLower.includes("supernal");
-          let isGreater = nameLower.includes("greater");
+      let nameLower = (name || "").toLowerCase();
+      let isSupernal = nameLower.includes("supernal");
+      let isGreater = nameLower.includes("greater");
 
-          if (isSupernal) {
-            // TIER 3: Ornate Royal Celestial Flask with Gold Filigree Casing & Core Rune
-            return `
+      if (isSupernal) {
+        // TIER 3: Ornate Royal Celestial Flask with Gold Filigree Casing & Core Rune
+        return `
               ${window.AssetCatalog.gradients.liquid(uid, color)}
               <!-- Outer Gold Filigree Casing -->
               <path d="M11 5 H21 V9 L27 17 C29 23, 26 29, 21 29 H11 C6 29, 3 23, 5 17 L11 9 Z" fill="#0d0a1a" stroke="#ffd700" stroke-width="2.2" stroke-linejoin="round"/>
@@ -1085,9 +1085,9 @@ window.AssetCatalog = {
               <!-- Glass Specular Arc -->
               <path d="M8 20 C7 23, 8 26, 10 27" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
             `;
-          } else if (isGreater) {
-            // TIER 2: Facet-Cut Crystal Flask with Silver Collar
-            return `
+      } else if (isGreater) {
+        // TIER 2: Facet-Cut Crystal Flask with Silver Collar
+        return `
               ${window.AssetCatalog.gradients.liquid(uid, color)}
               <!-- Faceted Crystal Body -->
               <path d="M12 5 H20 V10 L27 17 L22 28 H10 L5 17 L12 10 Z" fill="#0f172a" stroke="#e2e8f0" stroke-width="2" stroke-linejoin="round"/>
@@ -1099,10 +1099,10 @@ window.AssetCatalog = {
               <!-- Specular Crystal Facet Line -->
               <line x1="8" y1="18" x2="11" y2="26" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
             `;
-          }
+      }
 
-          // TIER 1: Standard Alchemy Glass Sphere Flask
-          return `
+      // TIER 1: Standard Alchemy Glass Sphere Flask
+      return `
             ${window.AssetCatalog.gradients.liquid(uid, color)}
             <!-- Round Spherical Glass Body -->
             <circle cx="16" cy="19" r="10.5" fill="#0f172a" stroke="#000" stroke-width="2"/>
@@ -1118,7 +1118,7 @@ window.AssetCatalog = {
             <!-- Specular Glass Highlight -->
             <path d="M9 14 C7 17, 7 21, 10 25" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.75"/>
           `;
-        },
+    },
     scroll(uid, color) {
       return `
           <path d="M6 10 L26 6 L26 22 L6 26 Z" fill="#fdf6e2" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
@@ -1932,12 +1932,12 @@ window.getIconSvgData = function (itemOrName) {
       ) {
         innerSvg = window.AssetCatalog.consumables.scroll(uid, color);
       } else if (
-              name &&
-              (name.includes("Elixir") || name.includes("Potion")) &&
-              window.AssetCatalog.consumables.potion
-            ) {
-              innerSvg = window.AssetCatalog.consumables.potion(uid, color, name);
-            }
+        name &&
+        (name.includes("Elixir") || name.includes("Potion")) &&
+        window.AssetCatalog.consumables.potion
+      ) {
+        innerSvg = window.AssetCatalog.consumables.potion(uid, color, name);
+      }
     }
   } else {
     let item = itemOrName;

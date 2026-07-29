@@ -32,22 +32,22 @@
     }
 
     getGridDimensions(depth) {
-          let d = Math.max(1, Number(depth) || 1);
-          let cycle = Math.floor((d - 1) / 84);
-          let width = Math.min(
-            110,
-            Math.floor(
-              window.DUNGEON_CONFIG.BASE_WIDTH + 1.5 * Math.sqrt(d) + cycle * 6,
-            ),
-          );
-          let height = Math.min(
-            70,
-            Math.floor(
-              window.DUNGEON_CONFIG.BASE_HEIGHT + 1.0 * Math.sqrt(d) + cycle * 4,
-            ),
-          );
-          return { width, height };
-        }
+      let d = Math.max(1, Number(depth) || 1);
+      let cycle = Math.floor((d - 1) / 84);
+      let width = Math.min(
+        110,
+        Math.floor(
+          window.DUNGEON_CONFIG.BASE_WIDTH + 1.5 * Math.sqrt(d) + cycle * 6,
+        ),
+      );
+      let height = Math.min(
+        70,
+        Math.floor(
+          window.DUNGEON_CONFIG.BASE_HEIGHT + 1.0 * Math.sqrt(d) + cycle * 4,
+        ),
+      );
+      return { width, height };
+    }
 
     generateHub() {
       this.reset();
@@ -281,21 +281,24 @@
       }
 
       this.buildWalls();
-            this.placeSpawnAndExtraction();
-            this.populateEntities();
+      this.placeSpawnAndExtraction();
+      this.populateEntities();
 
-            if (window.checkArtifactTrait && window.checkArtifactTrait("magic_find")) {
-              for (let r = 0; r < this.height; r++) {
-                for (let c = 0; c < this.width; c++) {
-                  if (this.grid[r][c] !== window.TILE_TYPES.VOID) {
-                    this.exploredGrid[r][c] = true;
-                  }
-                }
-              }
+      if (
+        window.checkArtifactTrait &&
+        window.checkArtifactTrait("magic_find")
+      ) {
+        for (let r = 0; r < this.height; r++) {
+          for (let c = 0; c < this.width; c++) {
+            if (this.grid[r][c] !== window.TILE_TYPES.VOID) {
+              this.exploredGrid[r][c] = true;
             }
-
-            return this;
           }
+        }
+      }
+
+      return this;
+    }
 
     splitBSP(node, leaves, currentDepth, maxDepth) {
       if (currentDepth >= maxDepth || (node.w < 12 && node.h < 12)) {
@@ -409,38 +412,38 @@
     }
 
     placeSpawnAndExtraction() {
-          if (this.rooms.length === 0) return;
+      if (this.rooms.length === 0) return;
 
-          let startRoomIndex = Math.floor(Math.random() * this.rooms.length);
-          let startRoom = this.rooms[startRoomIndex];
-          this.spawnRoomId = startRoom.id;
-          this.spawnTile = { x: startRoom.cx, y: startRoom.cy };
-          this.grid[startRoom.cy][startRoom.cx] = window.TILE_TYPES.SPAWN_PLAYER;
+      let startRoomIndex = Math.floor(Math.random() * this.rooms.length);
+      let startRoom = this.rooms[startRoomIndex];
+      this.spawnRoomId = startRoom.id;
+      this.spawnTile = { x: startRoom.cx, y: startRoom.cy };
+      this.grid[startRoom.cy][startRoom.cx] = window.TILE_TYPES.SPAWN_PLAYER;
 
-          let roomDists = this.rooms
-            .filter((r) => r.id !== startRoom.id)
-            .map((r) => ({
-              room: r,
-              dist: Math.hypot(r.cx - startRoom.cx, r.cy - startRoom.cy),
-            }));
+      let roomDists = this.rooms
+        .filter((r) => r.id !== startRoom.id)
+        .map((r) => ({
+          room: r,
+          dist: Math.hypot(r.cx - startRoom.cx, r.cy - startRoom.cy),
+        }));
 
-          if (roomDists.length === 0) return;
+      if (roomDists.length === 0) return;
 
-          let maxDist = Math.max(...roomDists.map((rd) => rd.dist));
-          let minDistThreshold = maxDist * 0.5;
+      let maxDist = Math.max(...roomDists.map((rd) => rd.dist));
+      let minDistThreshold = maxDist * 0.5;
 
-          let eligibleCandidates = roomDists.filter(
-            (rd) => rd.dist >= minDistThreshold,
-          );
-          if (eligibleCandidates.length === 0) eligibleCandidates = roomDists;
+      let eligibleCandidates = roomDists.filter(
+        (rd) => rd.dist >= minDistThreshold,
+      );
+      if (eligibleCandidates.length === 0) eligibleCandidates = roomDists;
 
-          let chosen =
-            eligibleCandidates[
-              Math.floor(Math.random() * eligibleCandidates.length)
-            ].room;
+      let chosen =
+        eligibleCandidates[
+          Math.floor(Math.random() * eligibleCandidates.length)
+        ].room;
 
-          this.extractionTile = { x: chosen.cx, y: chosen.cy };
-          this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
+      this.extractionTile = { x: chosen.cx, y: chosen.cy };
+      this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
 
       // Spawn Recovery Chest in exit room if lost loot matches current floor depth
       let rec = window.playerStats && window.playerStats.recoveryLoot;
@@ -3733,16 +3736,17 @@
   };
 
   window.renderMinimap = function (ctx, canvas) {
-      let map = window.activeDungeonMap;
-      if (!map || !map.grid || map.grid.length === 0) return;
+    let map = window.activeDungeonMap;
+    if (!map || !map.grid || map.grid.length === 0) return;
 
-      let mw = 90;
-      let mh = 50;
-      let mx = canvas.width - mw - 10;
+    let mw = 90;
+    let mh = 50;
+    let mx = canvas.width - mw - 10;
 
-      let isLandscapeMobile = window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
-      let isMobile = window.innerWidth <= 600 || isLandscapeMobile;
-      let my = isMobile ? 120 : 58;
+    let isLandscapeMobile =
+      window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
+    let isMobile = window.innerWidth <= 600 || isLandscapeMobile;
+    let my = isMobile ? 120 : 58;
 
     ctx.save();
     ctx.fillStyle = "rgba(5, 3, 10, 0.88)";
