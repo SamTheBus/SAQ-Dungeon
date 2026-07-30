@@ -252,6 +252,60 @@
           desc: "Adds 40% of total Defense directly to main weapon Attack Power, and Shield Bash reflects 180% Defense on block.",
           getStatText: () => "+40% Def to Attack & 180% Bash Reflect",
         },
+        {
+                  id: "shield_filler_hp_flat",
+                  name: "Bastion's Grace",
+                  iconKey: "shield_hp",
+                  x: 50,
+                  y: 58,
+                  maxRank: 3,
+                  costPerRank: 1,
+                  tier: 2,
+                  prereqs: ["shield_starter"],
+                  desc: "Augments the shield arm with physical conditioning, increasing Maximum HP by +4% and Defense by +3% per rank.",
+                  getStatText: (rank) => `+${rank * 4}% Max HP & +${rank * 3}% Defense`
+                },
+                {
+                  id: "shield_filler_flat_def",
+                  name: "Unyielding Fortitude",
+                  iconKey: "shield_def",
+                  x: 50,
+                  y: 38,
+                  maxRank: 3,
+                  costPerRank: 2,
+                  tier: 3,
+                  prereqs: ["shield_filler_hp_flat"],
+                  desc: "Forges thick defensive resilience, granting +5 flat Defense and +25 flat Max HP per rank.",
+                  getStatText: (rank) => `+${rank * 5} Def & +${rank * 25} Max HP`
+                },
+                {
+                  id: "shield_inf_defense",
+                  name: "Endless Bastion",
+                  iconKey: "shield_def",
+                  x: 35,
+                  y: 3,
+                  maxRank: Infinity,
+                  isInfinite: true,
+                  tier: 5,
+                  getCostForRank: (rank) => Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
+                  prereqs: ["shield_keystone_colossus"],
+                  desc: "Ascend with the Endless Bastion to infinitely compound your total Defense.",
+                  getStatText: (rank) => `x${Math.pow(1.10, rank).toFixed(2)} Compounding Defense (+10% per rank)`
+                },
+                {
+                  id: "shield_inf_bash",
+                  name: "Spike Resonance",
+                  iconKey: "shield_bash",
+                  x: 65,
+                  y: 3,
+                  maxRank: Infinity,
+                  isInfinite: true,
+                  tier: 5,
+                  getCostForRank: (rank) => Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
+                  prereqs: ["shield_keystone_reflect"],
+                  desc: "Ascend with the Spike Resonance to infinitely compound your Shield Bash & Counter-Attack damage.",
+                  getStatText: (rank) => `x${Math.pow(1.12, rank).toFixed(2)} Compounding Shield Bash & Counter damage (+12% per rank)`
+                }
       ],
     },
     dagger: {
@@ -424,6 +478,60 @@
           desc: "Raises Parry Cap to 40%. Parries negate 100% damage AND spawn a Shadow Decoy that attacks alongside you for 4 seconds.",
           getStatText: () => "40% Parry Cap, 100% Negation & Shadow Decoy",
         },
+        {
+                  id: "dagger_filler_haste",
+                  name: "Fleetfoot",
+                  iconKey: "dagger_parry",
+                  x: 50,
+                  y: 58,
+                  maxRank: 3,
+                  costPerRank: 1,
+                  tier: 2,
+                  prereqs: ["dagger_starter"],
+                  desc: "Develops swift offensive movements, increasing Movement Speed by +4 and Parry Rate by +1% per rank.",
+                  getStatText: (rank) => `+${rank * 4} Speed & +${rank}% Parry Rate`
+                },
+                {
+                  id: "dagger_filler_armor_pen",
+                  name: "Serrated Blades",
+                  iconKey: "dagger_crit",
+                  x: 50,
+                  y: 38,
+                  maxRank: 3,
+                  costPerRank: 2,
+                  tier: 3,
+                  prereqs: ["dagger_filler_haste"],
+                  desc: "Sharpens blade edges to locate anatomical weaknesses, increasing Attack Power by +4% and Critical Strike Damage multiplier by +3% per rank.",
+                  getStatText: (rank) => `+${rank * 4}% Attack & +${rank * 3}% Crit Damage`
+                },
+                {
+                  id: "dagger_inf_crit",
+                  name: "Lethal Infinitum",
+                  iconKey: "dagger_crit_dmg",
+                  x: 35,
+                  y: 3,
+                  maxRank: Infinity,
+                  isInfinite: true,
+                  tier: 5,
+                  getCostForRank: (rank) => Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
+                  prereqs: ["dagger_keystone_assassin"],
+                  desc: "Ascend with the Lethal Infinitum to infinitely compound your Critical Strike Damage multiplier.",
+                  getStatText: (rank) => `x${Math.pow(1.12, rank).toFixed(2)} Compounding Critical Strike Damage (+12% per rank)`
+                },
+                {
+                  id: "dagger_inf_poison",
+                  name: "Toxic Osmosis",
+                  iconKey: "dagger_bleed",
+                  x: 65,
+                  y: 3,
+                  maxRank: Infinity,
+                  isInfinite: true,
+                  tier: 5,
+                  getCostForRank: (rank) => Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
+                  prereqs: ["dagger_keystone_duellist"],
+                  desc: "Ascend with the Toxic Osmosis to infinitely compound your Poison and Bleed DoT tick damage.",
+                  getStatText: (rank) => `x${Math.pow(1.10, rank).toFixed(2)} Compounding Poison & Bleed tick damage (+10% per rank)`
+                }
       ],
     },
     tome: {
@@ -594,173 +702,274 @@
           desc: "Arcane Barrier absorbs an absolute 45% of damage. While active, 80% of total INT is added directly to Attack Power.",
           getStatText: () => "45% Fixed Barrier & +80% INT to Atk",
         },
+        {
+                  id: "tome_filler_barrier_regen",
+                  name: "Aether Flow",
+                  iconKey: "tome_barrier",
+                  x: 50,
+                  y: 58,
+                  maxRank: 3,
+                  costPerRank: 1,
+                  tier: 2,
+                  prereqs: ["tome_starter"],
+                  desc: "Refines mana channels to stabilize spell output, increasing Spell Power by +4% and Arcane Barrier by +1% per rank.",
+                  getStatText: (rank) => `+${rank * 4}% Spell Power & +${rank}% Barrier`
+                },
+                {
+                  id: "tome_filler_spell_crit",
+                  name: "Runic Spark",
+                  iconKey: "tome_proc",
+                  x: 50,
+                  y: 38,
+                  maxRank: 3,
+                  costPerRank: 2,
+                  tier: 3,
+                  prereqs: ["tome_filler_barrier_regen"],
+                  desc: "Engraves unstable elemental runes, increasing Critical Strike Chance by +1.5% and Attack Power by +2% per rank.",
+                  getStatText: (rank) => `+${(rank * 1.5).toFixed(1)}% Crit Chance & +${rank * 2}% Attack`
+                },
+                {
+                  id: "tome_inf_spell",
+                  name: "Arcane Singularity",
+                  iconKey: "tome_atk",
+                  x: 35,
+                  y: 3,
+                  maxRank: Infinity,
+                  isInfinite: true,
+                  tier: 5,
+                  getCostForRank: (rank) => Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
+                  prereqs: ["tome_keystone_triad"],
+                  desc: "Ascend with the Arcane Singularity to infinitely compound your overall Spell Power.",
+                  getStatText: (rank) => `x${Math.pow(1.12, rank).toFixed(2)} Compounding Spell Power (+12% per rank)`
+                },
+                {
+                  id: "tome_inf_intel",
+                  name: "Aetheric Infusion",
+                  iconKey: "tome_power",
+                  x: 65,
+                  y: 3,
+                  maxRank: Infinity,
+                  isInfinite: true,
+                  tier: 5,
+                  getCostForRank: (rank) => Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
+                  prereqs: ["tome_keystone_singularity"],
+                  desc: "Ascend with the Aetheric Infusion to infinitely compound your Intelligence & Magic damage.",
+                  getStatText: (rank) => `x${Math.pow(1.10, rank).toFixed(2)} Compounding Intelligence & Magic damage (+10% per rank)`
+                }
       ],
     },
     utility: {
-      id: "utility",
-      name: "Utility & Survival",
-      subtitle: "Explorer & Adventurer",
-      color: "#2ecc71",
-      nodes: [
-        {
-          id: "utility_pioneer",
-          name: "Pioneer's Instinct",
-          iconKey: "utility_pioneer",
-          x: 50,
-          y: 88,
-          currency: "global",
-          maxRank: 1,
-          costPerRank: 1,
-          prereqs: [],
-          desc: "Grants +5% Gold Multiplier and +5% Drop Rate.",
-          getStatText: () => "+5% Gold & +5% Drop Rate",
+          id: "utility",
+          name: "Utility & Survival",
+          subtitle: "Explorer & Adventurer",
+          color: "#2ecc71",
+          nodes: [
+            {
+              id: "utility_pioneer",
+              name: "Pioneer's Instinct",
+              iconKey: "utility_pioneer",
+              x: 50,
+              y: 88,
+              currency: "global",
+              maxRank: 1,
+              costPerRank: 2,
+              prereqs: [],
+              desc: "Grants +5% Gold Multiplier and +5% Drop Rate.",
+              getStatText: () => "+5% Gold & +5% Drop Rate",
+            },
+            {
+              id: "utility_start_weapon",
+              name: "Blade Provisioner",
+              iconKey: "utility_start_weapon",
+              x: 18,
+              y: 68,
+              currency: "global",
+              maxRank: 3,
+              getCostForRank: (rank) => rank * 2 + 1,
+              prereqs: ["utility_pioneer"],
+              desc: "Start dungeon runs with a Main Hand Weapon if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
+              getStatText: (rank) => `Provision ${rank - 1}★ Starter Weapon`,
+            },
+            {
+              id: "utility_start_armor",
+              name: "Armorsmith Provisioner",
+              iconKey: "utility_start_armor",
+              x: 36,
+              y: 68,
+              currency: "global",
+              maxRank: 3,
+              getCostForRank: (rank) => rank * 2 + 1,
+              prereqs: ["utility_pioneer"],
+              desc: "Start dungeon runs with Chest/Overall Armor if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
+              getStatText: (rank) => `Provision ${rank - 1}★ Starter Armor`,
+            },
+            {
+              id: "utility_start_head_feet",
+              name: "Vanguard Helm & Greaves",
+              iconKey: "utility_start_head_feet",
+              x: 64,
+              y: 68,
+              currency: "global",
+              maxRank: 3,
+              getCostForRank: (rank) => rank * 2 + 1,
+              prereqs: ["utility_pioneer"],
+              desc: "Start dungeon runs with Helmet and Boots if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
+              getStatText: (rank) => `Provision ${rank - 1}★ Starter Helm/Boots`,
+            },
+            {
+              id: "utility_start_ring",
+              name: "Signet Provisioner",
+              iconKey: "utility_start_ring",
+              x: 82,
+              y: 68,
+              currency: "global",
+              maxRank: 3,
+              getCostForRank: (rank) => rank * 2 + 1,
+              prereqs: ["utility_pioneer"],
+              desc: "Start dungeon runs with Ring(s) if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
+              getStatText: (rank) => `Provision ${rank - 1}★ Starter Rings`,
+            },
+            {
+              id: "utility_gold",
+              name: "Scavenger's Avarice",
+              iconKey: "utility_gold",
+              x: 22,
+              y: 46,
+              currency: "global",
+              maxRank: 5,
+              costPerRank: 2,
+              prereqs: ["utility_start_weapon", "utility_start_armor"],
+              desc: "Increases Gold Multiplier by +5% per rank.",
+              getStatText: (rank) => `+${rank * 5}% Gold Multiplier`,
+            },
+            {
+              id: "utility_quality",
+              name: "Scavenger's Eye",
+              iconKey: "utility_quality",
+              x: 40,
+              y: 46,
+              currency: "global",
+              maxRank: 5,
+              costPerRank: 2,
+              prereqs: ["utility_start_armor"],
+              desc: "Increases Equipment Drop Quality by +2% per rank.",
+              getStatText: (rank) => `+${rank * 2}% Drop Quality`,
+            },
+            {
+              id: "utility_vitality",
+              name: "Pioneer's Vigor",
+              iconKey: "utility_vitality",
+              x: 60,
+              y: 46,
+              currency: "global",
+              maxRank: 5,
+              costPerRank: 2,
+              prereqs: ["utility_start_head_feet"],
+              desc: "Increases Max Health by +3% and Movement Speed by +2 per rank.",
+              getStatText: (rank) => `+${rank * 3}% Max HP & +${rank * 2} Speed`,
+            },
+            {
+              id: "utility_elixir",
+              name: "Field Medic",
+              iconKey: "utility_elixir",
+              x: 78,
+              y: 46,
+              currency: "global",
+              maxRank: 3,
+              costPerRank: 4,
+              prereqs: ["utility_start_head_feet", "utility_start_ring"],
+              desc: "Start every run with active Basic Elixir effects (+10% Atk/HP/Def/Speed) for the entire run duration.",
+              getStatText: (rank) => `${rank} Active Elixir Effects for Entire Run`,
+            },
+            {
+              id: "utility_bag",
+              name: "Satchel Expansion",
+              iconKey: "utility_bag",
+              x: 32,
+              y: 28,
+              currency: "global",
+              maxRank: 3,
+              costPerRank: 4,
+              prereqs: ["utility_quality"],
+              desc: "Increases carried satchel equipment capacity by +5 slots per rank.",
+              getStatText: (rank) => `+${rank * 5} Satchel Slots`,
+            },
+            {
+              id: "utility_insurance",
+              name: "Insurance Underwriter",
+              iconKey: "utility_insurance",
+              x: 68,
+              y: 28,
+              currency: "global",
+              maxRank: 3,
+              costPerRank: 4,
+              prereqs: ["utility_vitality", "utility_elixir"],
+              desc: "Reduces Gold insurance premium costs by -10% per rank.",
+              getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
+            },
+            {
+              id: "utility_treasure_hunter",
+              name: "Relic Hunter",
+              iconKey: "utility_quality",
+              x: 32,
+              y: 12,
+              currency: "global",
+              maxRank: 3,
+              getCostForRank: (rank) => rank === 1 ? 6 : rank === 2 ? 12 : 20,
+              prereqs: ["utility_bag"],
+              desc: "Increases the chance for chests found in runs to spawn as prestigious Gilded Reliquaries or Astral Vaults.",
+              getStatText: (rank) => {
+                if (rank === 1) return "3% Gilded Reliquary, 0% Astral Vault";
+                if (rank === 2) return "6% Gilded Reliquary, 0.5% Astral Vault";
+                return "9% Gilded Reliquary, 1% Astral Vault";
+              }
+            },
+            {
+              id: "utility_keystone",
+              name: "Fortune's Favor",
+              iconKey: "utility_keystone",
+              x: 50,
+              y: 12,
+              currency: "global",
+              maxRank: 1,
+              costPerRank: 10,
+              isKeystone: true,
+              prereqs: ["utility_treasure_hunter", "utility_insurance"],
+              desc: "Slaying a Rare or Boss monster grants +50% Gold Multiplier for 15 seconds.",
+              getStatText: () => "+50% Gold Multiplier on Rare/Boss Kill",
+            },
+            {
+              id: "utility_inf_gold",
+              name: "Gilded Emperor",
+              iconKey: "utility_gold",
+              x: 35,
+              y: 3,
+              currency: "global",
+              maxRank: Infinity,
+              isInfinite: true,
+              tier: 5,
+              getCostForRank: (rank) => Math.max(3, Math.round(3 * Math.pow(1.18, rank - 1))),
+              prereqs: ["utility_keystone"],
+              desc: "Ascend with the Gilded Emperor to infinitely scale your Gold Multiplier with a soft-cap curve.",
+              getStatText: (rank) => `+${(4.0 * Math.pow(rank, 0.65)).toFixed(1)}% Gold Multiplier`
+            },
+            {
+              id: "utility_inf_drop",
+              name: "Astral Prospector",
+              iconKey: "utility_quality",
+              x: 65,
+              y: 3,
+              currency: "global",
+              maxRank: Infinity,
+              isInfinite: true,
+              tier: 5,
+              getCostForRank: (rank) => Math.max(3, Math.round(3 * Math.pow(1.18, rank - 1))),
+              prereqs: ["utility_keystone"],
+              desc: "Ascend with the Astral Prospector to infinitely scale your overall Drop Quality with a soft-cap curve.",
+              getStatText: (rank) => `+${(1.5 * Math.pow(rank, 0.65)).toFixed(1)}% Drop Quality`
+            }
+          ],
         },
-        {
-          id: "utility_start_weapon",
-          name: "Blade Provisioner",
-          iconKey: "utility_start_weapon",
-          x: 18,
-          y: 68,
-          currency: "global",
-          maxRank: 3,
-          getCostForRank: (rank) => rank + 2,
-          prereqs: ["utility_pioneer"],
-          desc: "Start dungeon runs with a Main Hand Weapon if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
-          getStatText: (rank) => `Provision ${rank - 1}★ Starter Weapon`,
-        },
-        {
-          id: "utility_start_armor",
-          name: "Armorsmith Provisioner",
-          iconKey: "utility_start_armor",
-          x: 36,
-          y: 68,
-          currency: "global",
-          maxRank: 3,
-          getCostForRank: (rank) => rank + 2,
-          prereqs: ["utility_pioneer"],
-          desc: "Start dungeon runs with Chest/Overall Armor if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
-          getStatText: (rank) => `Provision ${rank - 1}★ Starter Armor`,
-        },
-        {
-          id: "utility_start_head_feet",
-          name: "Vanguard Helm & Greaves",
-          iconKey: "utility_start_head_feet",
-          x: 64,
-          y: 68,
-          currency: "global",
-          maxRank: 3,
-          getCostForRank: (rank) => rank + 2,
-          prereqs: ["utility_pioneer"],
-          desc: "Start dungeon runs with Helmet and Boots if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
-          getStatText: (rank) => `Provision ${rank - 1}★ Starter Helm/Boots`,
-        },
-        {
-          id: "utility_start_ring",
-          name: "Signet Provisioner",
-          iconKey: "utility_start_ring",
-          x: 82,
-          y: 68,
-          currency: "global",
-          maxRank: 3,
-          getCostForRank: (rank) => rank + 2,
-          prereqs: ["utility_pioneer"],
-          desc: "Start dungeon runs with Ring(s) if empty (Rank 1: 0★ Common, Rank 2: 1★ Rare, Rank 3: 2★ Magic).",
-          getStatText: (rank) => `Provision ${rank - 1}★ Starter Rings`,
-        },
-        {
-          id: "utility_gold",
-          name: "Scavenger's Avarice",
-          iconKey: "utility_gold",
-          x: 22,
-          y: 46,
-          currency: "global",
-          maxRank: 5,
-          costPerRank: 1,
-          prereqs: ["utility_start_weapon", "utility_start_armor"],
-          desc: "Increases Gold Multiplier by +5% per rank.",
-          getStatText: (rank) => `+${rank * 5}% Gold Multiplier`,
-        },
-        {
-          id: "utility_quality",
-          name: "Scavenger's Eye",
-          iconKey: "utility_quality",
-          x: 40,
-          y: 46,
-          currency: "global",
-          maxRank: 5,
-          costPerRank: 1,
-          prereqs: ["utility_start_armor"],
-          desc: "Increases Equipment Drop Quality by +2% per rank.",
-          getStatText: (rank) => `+${rank * 2}% Drop Quality`,
-        },
-        {
-          id: "utility_vitality",
-          name: "Pioneer's Vigor",
-          iconKey: "utility_vitality",
-          x: 60,
-          y: 46,
-          currency: "global",
-          maxRank: 5,
-          costPerRank: 1,
-          prereqs: ["utility_start_head_feet"],
-          desc: "Increases Max Health by +3% and Movement Speed by +2 per rank.",
-          getStatText: (rank) => `+${rank * 3}% Max HP & +${rank * 2} Speed`,
-        },
-        {
-          id: "utility_elixir",
-          name: "Field Medic",
-          iconKey: "utility_elixir",
-          x: 78,
-          y: 46,
-          currency: "global",
-          maxRank: 3,
-          costPerRank: 2,
-          prereqs: ["utility_start_head_feet", "utility_start_ring"],
-          desc: "Start every run with active Basic Elixir effects (+10% Atk/HP/Def/Speed) for the entire run duration.",
-          getStatText: (rank) => `${rank} Active Elixir Effects for Entire Run`,
-        },
-        {
-          id: "utility_bag",
-          name: "Satchel Expansion",
-          iconKey: "utility_bag",
-          x: 32,
-          y: 28,
-          currency: "global",
-          maxRank: 3,
-          costPerRank: 2,
-          prereqs: ["utility_quality"],
-          desc: "Increases carried satchel equipment capacity by +5 slots per rank.",
-          getStatText: (rank) => `+${rank * 5} Satchel Slots`,
-        },
-        {
-          id: "utility_insurance",
-          name: "Insurance Underwriter",
-          iconKey: "utility_insurance",
-          x: 68,
-          y: 28,
-          currency: "global",
-          maxRank: 3,
-          costPerRank: 2,
-          prereqs: ["utility_vitality", "utility_elixir"],
-          desc: "Reduces Gold insurance premium costs by -10% per rank.",
-          getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
-        },
-        {
-          id: "utility_keystone",
-          name: "Fortune's Favor",
-          iconKey: "utility_keystone",
-          x: 50,
-          y: 12,
-          currency: "global",
-          maxRank: 1,
-          costPerRank: 5,
-          isKeystone: true,
-          prereqs: ["utility_bag", "utility_insurance"],
-          desc: "Slaying a Rare or Boss monster grants +50% Gold Multiplier for 15 seconds.",
-          getStatText: () => "+50% Gold Multiplier on Rare/Boss Kill",
-        },
-      ],
-    },
   };
 
   window.SkillTreeManager = {
@@ -860,29 +1069,28 @@
     },
 
     getTotalEarnedMP() {
-      if (!window.playerStats) return 0;
-      let levelMP = Math.floor((window.playerStats.level || 1) / 3);
-      let floorMP = Math.floor((window.playerStats.maxFloorCleared || 0) / 4);
-      return levelMP + floorMP;
-    },
+          if (!window.playerStats) return 0;
+          let levelMP = (window.playerStats.level || 1) - 1;
+          let floorMP = Math.floor((window.playerStats.maxFloorCleared || 0) / 4);
+          return levelMP + floorMP;
+        },
 
     getTotalSpentMP() {
       return this.getSpentPointsInTree("utility");
     },
 
     getUnspentMP() {
-      let earned = this.getTotalEarnedMP();
-      let spent = this.getTotalSpentMP();
-      return Math.max(0, earned - spent);
-    },
+          if (!window.playerStats) return 0;
+          return window.playerStats.sp || 0;
+        },
 
     getUnspentPointsForTree(treeId) {
-      if (treeId === "utility") {
-        return this.getUnspentMP();
-      }
-      if (!window.playerStats.subweaponMastery) return 0;
-      return window.playerStats.subweaponMastery[treeId]?.sp || 0;
-    },
+          if (treeId === "utility") {
+            return window.playerStats.sp || 0;
+          }
+          if (!window.playerStats.subweaponMastery) return 0;
+          return window.playerStats.subweaponMastery[treeId]?.sp || 0;
+        },
 
     isNodeUnlocked(treeId, node) {
       if (treeId === "utility") {
@@ -891,13 +1099,14 @@
       }
 
       // Mastery SP spend threshold validation
-      let spent = this.getSpentPointsInTree(treeId);
-      let reqSpend = 0;
-      if (node.tier === 2) reqSpend = 3;
-      else if (node.tier === 3) reqSpend = 7;
-      else if (node.tier === 4) reqSpend = 12;
+            let spent = this.getSpentPointsInTree(treeId);
+            let reqSpend = 0;
+            if (node.tier === 2) reqSpend = 3;
+            else if (node.tier === 3) reqSpend = 7;
+            else if (node.tier === 4) reqSpend = 12;
+            else if (node.tier === 5) reqSpend = 15;
 
-      if (spent < reqSpend) return false;
+            if (spent < reqSpend) return false;
 
       // Keystone Mutually Exclusive Check (Tier 4)
       if (node.tier === 4) {
@@ -1241,34 +1450,34 @@
       }
 
       // Render Nodes HTML Overlay Sockets
-      let nodesHtml = activeTree.nodes
-        .map((node) => {
-          let currentRank = this.getSkillLevel(node.id);
-          let isMax = currentRank >= node.maxRank;
-          let isUnlocked = this.isNodeUnlocked(activeTreeId, node);
-          let isSelected = this.selectedNodeId === node.id;
+            let nodesHtml = activeTree.nodes
+              .map((node) => {
+                let currentRank = this.getSkillLevel(node.id);
+                let isMax = node.isInfinite ? false : (currentRank >= node.maxRank);
+                let isUnlocked = this.isNodeUnlocked(activeTreeId, node);
+                let isSelected = this.selectedNodeId === node.id;
 
-          let iconSvg = window.getSkillIconSvg
-            ? window.getSkillIconSvg(node.iconKey, 30)
-            : "";
-          let rgb = window.hexToRgbValues
-            ? window.hexToRgbValues(activeTree.color)
-            : "56, 189, 248";
+                let iconSvg = window.getSkillIconSvg
+                  ? window.getSkillIconSvg(node.iconKey, 30)
+                  : "";
+                let rgb = window.hexToRgbValues
+                  ? window.hexToRgbValues(activeTree.color)
+                  : "56, 189, 248";
 
-          let borderCol = isSelected
-            ? "#ffffff"
-            : isUnlocked
-              ? currentRank > 0
-                ? activeTree.color
-                : "#64748b"
-              : "#1e293b";
-          let bgCol = isUnlocked
-            ? currentRank > 0
-              ? `rgba(${rgb}, 0.35)`
-              : "rgba(15, 23, 42, 0.95)"
-            : "rgba(10, 14, 23, 0.85)";
+                let borderCol = isSelected
+                  ? "#ffffff"
+                  : isUnlocked
+                    ? currentRank > 0
+                      ? activeTree.color
+                      : "#64748b"
+                    : "#1e293b";
+                let bgCol = isUnlocked
+                  ? currentRank > 0
+                    ? `rgba(${rgb}, 0.35)`
+                    : "rgba(15, 23, 42, 0.95)"
+                  : "rgba(10, 14, 23, 0.85)";
 
-          let rankBadge = `${currentRank}/${node.maxRank}`;
+                let rankBadge = node.isInfinite ? `Rank ${currentRank}` : `${currentRank}/${node.maxRank}`;
 
           return `
               <div class="constellation-node ${isSelected ? "selected" : ""} ${node.isKeystone ? "keystone" : ""}" style="left:${node.x}%; top:${node.y}%;" onclick="window.SkillTreeManager.selectNode('${node.id}')">
@@ -1283,14 +1492,14 @@
         .join("");
 
       // Selected Node Detail Dock
-      let selectedNode =
-        activeTree.nodes.find((n) => n.id === this.selectedNodeId) ||
-        activeTree.nodes[0];
-      let selRank = this.getSkillLevel(selectedNode.id);
-      let selUnlocked = this.isNodeUnlocked(activeTreeId, selectedNode);
-      let selMax = selRank >= selectedNode.maxRank;
-      let nextCost = this.getNodeCostForRank(selectedNode, selRank + 1);
-      let selCanAfford = unspentPoints >= nextCost;
+            let selectedNode =
+              activeTree.nodes.find((n) => n.id === this.selectedNodeId) ||
+              activeTree.nodes[0];
+            let selRank = this.getSkillLevel(selectedNode.id);
+            let selUnlocked = this.isNodeUnlocked(activeTreeId, selectedNode);
+            let selMax = selectedNode.isInfinite ? false : (selRank >= selectedNode.maxRank);
+            let nextCost = this.getNodeCostForRank(selectedNode, selRank + 1);
+            let selCanAfford = unspentPoints >= nextCost;
 
       let actionBtnHtml = "";
       if (selectedNode.isStarterToggle) {

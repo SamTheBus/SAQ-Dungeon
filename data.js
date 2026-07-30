@@ -3,7 +3,7 @@
    initial global state, and system utility functions.
    ========================================================================= */
 
-window.GAME_VERSION = 1.01; // Release Version 1.0.01
+window.GAME_VERSION = 1.02; // Release Version 1.0.02 (Sigil & Calamity Overhaul)
 window.MIN_COMPATIBLE_VERSION = 1.0; // Hard reset epoch threshold
 
 window.BigNumMin = function (a, b) {
@@ -1174,7 +1174,7 @@ window.checkAchievements = function () {
 
 window.isCavernEffectActive = function (id) {
   if (
-    window.playerStats.isDungeonMode &&
+    window.currentGameState === window.GAME_STATES.DUNGEON &&
     window.playerStats.activeDungeonSigil
   ) {
     let sig = window.playerStats.activeDungeonSigil;
@@ -1362,14 +1362,17 @@ window.updateUI = function () {
       window.player.hp = Math.min(window.player.hp, newMaxHp);
     }
 
-    window.player.atk =
-      resolved.atk && resolved.atk.valueOf
+    if (resolved.atk)
+      window.player.atk = resolved.atk.valueOf
         ? resolved.atk.valueOf()
         : Number(resolved.atk || 15);
-    window.player.def =
-      resolved.def && resolved.def.valueOf
+    if (resolved.def)
+      window.player.def = resolved.def.valueOf
         ? resolved.def.valueOf()
         : Number(resolved.def || 5);
+    if (resolved.moveSpeed) {
+      window.player.speed = resolved.moveSpeed * 0.38; // Bind actual character movement speed to resolved stats
+    }
   }
 
   if (typeof window.updateHUD === "function") {
@@ -2063,76 +2066,99 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   // Apply Cavern Sigil Active Modifiers (Dungeon Mode)
-  if (
-    window.playerStats.isDungeonMode &&
-    window.playerStats.activeDungeonSigil
-  ) {
-    let activeSig = window.playerStats.activeDungeonSigil;
-    p.qly += activeSig.qualityBoost || 0;
-    p.gold += activeSig.rewardMultiplier || 0;
-    p.drop += activeSig.rewardMultiplier || 0;
+    if (
+      window.playerStats.isDungeonMode &&
+      window.playerStats.activeDungeonSigil
+    ) {
+      let activeSig = window.playerStats.activeDungeonSigil;
+      p.qly += activeSig.qualityBoost || 0;
+      p.gold += activeSig.rewardMultiplier || 0;
+      p.drop += activeSig.rewardMultiplier || 0;
 
-    activeSig.buffs.forEach((b) => {
-      if (b.id === "swift_strikes") {
-        p.idleAttackSpeed = Math.max(10, Math.round(p.idleAttackSpeed / 1.25));
-        p.activeAttackSpeed = Math.max(
-          4,
-          Math.round(p.activeAttackSpeed / 1.25),
-        );
-      } else if (b.id === "giant_might") {
-        p.atk = p.atk.mul(1.3);
-      } else if (b.id === "iron_aegis") {
-        p.def = p.def.mul(1.35);
-      } else if (b.id === "vital_fountain") {
-        p.maxHp = p.maxHp.mul(1.4);
-      } else if (b.id === "unstable_surge") {
-        p.critChance += 0.15;
-      } else if (b.id === "shatter_frenzy") {
-        p.critDamage += 0.5;
-      } else if (b.id === "deflection_vortex") {
-        p.block += 0.1;
-        p.parry += 0.1;
-      } else if (b.id === "arcane_infusion") {
-        p.arcaneBarrier = Math.min(0.5, p.arcaneBarrier + 0.15);
-      } else if (b.id === "treasure_finder") {
-        p.gold += 0.5;
-      } else if (b.id === "lucky_winds") {
-        p.fairySpawn += 0.4;
-      } else if (b.id === "void_call") {
-        p.rareSpawn += 0.5;
-      } else if (b.id === "scavenger_insight") {
-        p.drop += 0.5;
-      } else if (b.id === "artisan_luck") {
-        p.qly += 0.25;
-      }
-    });
-
-    if (!(window.playerStats.purifiedAegisTimer > 0)) {
-      activeSig.debuffs.forEach((d) => {
-        if (d.id === "iron_gaze") {
-          p.idleAttackSpeed = Math.round(p.idleAttackSpeed * 1.2);
-          p.activeAttackSpeed = Math.round(p.activeAttackSpeed * 1.2);
-        } else if (d.id === "shattered_armour") {
-          p.def = p.def.mul(0.75);
-        } else if (d.id === "frail_vessel") {
-          p.maxHp = p.maxHp.mul(0.8);
-        } else if (d.id === "dull_blades") {
-          p.atk = p.atk.mul(0.8);
-        } else if (d.id === "heavy_mist") {
-          p.moveSpeed = Math.max(1.0, p.moveSpeed * 0.7);
-        } else if (d.id === "blind_spot") {
-          p.critChance = Math.max(0.0, p.critChance - 0.1);
-        } else if (d.id === "feeble_mind") {
-          p.arcaneBarrier = 0.0;
-        } else if (d.id === "curse_greed") {
-          p.gold = Math.max(0.1, p.gold - 0.4);
-        } else if (d.id === "lead_boots") {
-          p.block = Math.max(0.0, p.block - 0.08);
-          p.parry = Math.max(0.0, p.parry - 0.08);
+      activeSig.buffs.forEach((b) => {
+        if (b.type === "stat" && b.statKey) {
+          if (b.statKey === "atk") p.atk = p.atk.mul(1 + b.value);
+          else if (b.statKey === "maxHp") p.maxHp = p.maxHp.mul(1 + b.value);
+          else if (b.statKey === "def") p.def = p.def.mul(1 + b.value);
+          else if (b.statKey === "moveSpeed") p.moveSpeed = Math.max(1.0, p.moveSpeed * (1 + b.value));
+          else if (b.statKey === "critChance") p.critChance = Math.max(0.0, p.critChance + b.value);
+          else if (b.statKey === "critDamage") p.critDamage = Math.max(0.0, p.critDamage + b.value);
+          else if (b.statKey === "block") {
+            p.block = Math.max(0.0, p.block + b.value);
+            p.parry = Math.max(0.0, p.parry + b.value);
+          }
+        } else {
+          // Legacy/Event Fallbacks
+          if (b.id === "swift_strikes") {
+            p.idleAttackSpeed = Math.max(10, Math.round(p.idleAttackSpeed / 1.25));
+            p.activeAttackSpeed = Math.max(
+              4,
+              Math.round(p.activeAttackSpeed / 1.25),
+            );
+          } else if (b.id === "giant_might") {
+            p.atk = p.atk.mul(1.3);
+          } else if (b.id === "iron_aegis") {
+            p.def = p.def.mul(1.35);
+          } else if (b.id === "vital_fountain") {
+            p.maxHp = p.maxHp.mul(1.4);
+          } else if (b.id === "unstable_surge") {
+            p.critChance += 0.15;
+          } else if (b.id === "shatter_frenzy") {
+            p.critDamage += 0.5;
+          } else if (b.id === "deflection_vortex") {
+            p.block += 0.1;
+            p.parry += 0.1;
+          } else if (b.id === "arcane_infusion") {
+            p.arcaneBarrier = Math.min(0.5, p.arcaneBarrier + 0.15);
+          } else if (b.id === "treasure_finder") {
+            p.gold += 0.5;
+          } else if (b.id === "lucky_winds") {
+            p.fairySpawn += 0.4;
+          } else if (b.id === "void_call") {
+            p.rareSpawn += 0.5;
+          } else if (b.id === "scavenger_insight") {
+            p.drop += 0.5;
+          } else if (b.id === "artisan_luck") {
+            p.qly += 0.25;
+          }
         }
       });
+
+      if (!(window.playerStats.purifiedAegisTimer > 0)) {
+        activeSig.debuffs.forEach((d) => {
+          if (d.type === "stat" && d.statKey) {
+            if (d.statKey === "atk") p.atk = p.atk.mul(Math.max(0.1, 1 + d.value));
+            else if (d.statKey === "maxHp") p.maxHp = p.maxHp.mul(Math.max(0.1, 1 + d.value));
+            else if (d.statKey === "def") p.def = p.def.mul(Math.max(0.1, 1 + d.value));
+            else if (d.statKey === "moveSpeed") p.moveSpeed = Math.max(1.0, p.moveSpeed * (1 + d.value));
+            else if (d.statKey === "critChance") p.critChance = Math.max(0.0, p.critChance + d.value);
+          } else {
+            // Legacy/Event Fallbacks
+            if (d.id === "iron_gaze") {
+              p.idleAttackSpeed = Math.round(p.idleAttackSpeed * 1.2);
+              p.activeAttackSpeed = Math.round(p.activeAttackSpeed * 1.2);
+            } else if (d.id === "shattered_armour") {
+              p.def = p.def.mul(0.75);
+            } else if (d.id === "frail_vessel") {
+              p.maxHp = p.maxHp.mul(0.8);
+            } else if (d.id === "dull_blades") {
+              p.atk = p.atk.mul(0.8);
+            } else if (d.id === "heavy_mist") {
+              p.moveSpeed = Math.max(1.0, p.moveSpeed * 0.7);
+            } else if (d.id === "blind_spot") {
+              p.critChance = Math.max(0.0, p.critChance - 0.1);
+            } else if (d.id === "feeble_mind") {
+              p.arcaneBarrier = 0.0;
+            } else if (d.id === "curse_greed") {
+              p.gold = Math.max(0.1, p.gold - 0.4);
+            } else if (d.id === "lead_boots") {
+              p.block = Math.max(0.0, p.block - 0.08);
+              p.parry = Math.max(0.0, p.parry - 0.08);
+            }
+          }
+        });
+      }
     }
-  }
 
   let potStrengthMultiplier = 1.0 + effectiveInt * 0.005; // +0.5% Potion Potency per INT point
   if (window.playerStats.unlockedAchievements && window.AchievementsData) {
@@ -2677,6 +2703,24 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     typeof window.resolvePlayerStats === "function"
       ? window.resolvePlayerStats()
       : {};
+
+  // Intercept Specter Doom Instant-Kill Strike
+  if (rawDmg instanceof BigNum && rawDmg.e > 100) {
+    p.hp = 0;
+    window.spawnFloatingText(p.x, p.y - 15, `-${window.formatNumber(rawDmg)}`, "#e74c3c");
+    if (sourceMob) {
+      window.playerStats.killedByMob = { ...sourceMob };
+      window.playerStats.killedBy = sourceMob.name || "Calamity Specter";
+    } else {
+      window.playerStats.killedByMob = null;
+      window.playerStats.killedBy = "Calamity Specter";
+    }
+    window.playerStats.deathCount = (window.playerStats.deathCount || 0) + 1;
+    if (typeof window.startDeathSequence === "function") {
+      window.startDeathSequence();
+    }
+    return 0;
+  }
 
   // Step 1: Arcane Barrier Absorption (Tomes)
   let absorbed = 0;
@@ -4104,16 +4148,87 @@ window.saveGame = function () {
   }
 };
 
-window.loadGame = function () {
-  try {
-    let raw = localStorage.getItem("extraction_crawler_save");
-    if (!raw) return;
+window.hydrateCavernSigils = function() {
+  if (!window.inventory) return;
+  if (!window.inventory.SIGIL) {
+    window.inventory.SIGIL = [];
+  }
+  window.inventory.SIGIL.forEach((sig) => {
+    if (!sig) return;
 
-    let parsed = JSON.parse(raw);
-    if (!parsed) return;
+    if (sig.statsRolled === undefined) {
+      sig.statsRolled = 1;
+    }
 
-    if (parsed.playerStats) {
-      Object.assign(window.playerStats, parsed.playerStats);
+    if (sig.buffs) {
+      sig.buffs = sig.buffs.map((b) => {
+        if (typeof b === "string") {
+          return { id: "giant_might", name: "Giant Might", desc: b, type: "stat", statKey: "atk", value: 0.10, minStars: 0 };
+        }
+        let match = (window.CAVERN_BUFFS || []).find(ref => ref.id === b.id);
+        if (match) {
+          b.type = b.type || match.type;
+          b.statKey = b.statKey || match.statKey;
+          b.minStars = b.minStars !== undefined ? b.minStars : match.minStars;
+          if (b.type === "stat" && b.value === undefined) {
+            b.value = window.rollSigilStatValue ? window.rollSigilStatValue(b.statKey, sig.statsRolled, true) : 0.10;
+          }
+          if (window.formatSigilStatDesc && b.type === "stat") {
+            b.desc = window.formatSigilStatDesc(b.statKey, b.value, true);
+          } else {
+            b.desc = b.desc || match.desc;
+          }
+        }
+        return b;
+      });
+    } else {
+      sig.buffs = [];
+    }
+
+    if (sig.debuffs) {
+      sig.debuffs = sig.debuffs.map((d) => {
+        if (typeof d === "string") {
+          return { id: "dull_blades", name: "Dull Blades", desc: d, type: "stat", statKey: "atk", value: -0.10, minStars: 0, dangerRating: 5 };
+        }
+        let match = (window.CAVERN_DEBUFFS || []).find(ref => ref.id === d.id);
+        if (match) {
+          d.type = d.type || match.type;
+          d.statKey = d.statKey || match.statKey;
+          d.minStars = d.minStars !== undefined ? d.minStars : match.minStars;
+          d.dangerRating = d.dangerRating !== undefined ? d.dangerRating : match.dangerRating;
+          if (d.type === "stat" && d.value === undefined) {
+            d.value = window.rollSigilStatValue ? window.rollSigilStatValue(d.statKey, sig.statsRolled, false) : -0.10;
+          }
+          if (window.formatSigilStatDesc && d.type === "stat") {
+            d.desc = window.formatSigilStatDesc(d.statKey, d.value, false);
+          } else {
+            d.desc = d.desc || match.desc;
+          }
+        }
+        return d;
+      });
+    } else {
+      sig.debuffs = [];
+    }
+
+    if (sig.rewardMultiplier === undefined) {
+          sig.rewardMultiplier = 1.0;
+        }
+        if (sig.qualityBoost === undefined) {
+          sig.qualityBoost = 0.0;
+        }
+      });
+    };
+
+    window.loadGame = function () {
+      try {
+        let saved = localStorage.getItem("extraction_crawler_save");
+        if (!saved) return;
+        let parsed = JSON.parse(saved);
+        if (!parsed) return;
+
+        if (parsed.playerStats) {
+          Object.assign(window.playerStats, parsed.playerStats);
       window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
 
       // Backward Compatibility Migration: convert real-time timers to run charges
@@ -4238,10 +4353,13 @@ window.loadGame = function () {
     }
 
     if (parsed.inventory) {
-      window.inventory = parsed.inventory;
-    }
+          window.inventory = parsed.inventory;
+          if (typeof window.hydrateCavernSigils === "function") {
+            window.hydrateCavernSigils();
+          }
+        }
 
-    // Merge Stash and Inventory EQUIP arrays cleanly to prevent empty array overwrites
+        // Merge Stash and Inventory EQUIP arrays cleanly to prevent empty array overwrites
     let itemMap = new Map();
     let savedEquip = (window.inventory && window.inventory.EQUIP) || [];
     let savedStash = parsed.stash || [];

@@ -988,6 +988,12 @@ body {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
+/* Alternating rows for enhanced stat distinction and readability */
+.stat-line:nth-child(even) {
+  background: linear-gradient(180deg, #221838 0%, #110d22 100%);
+  border-color: #493b58;
+}
+
 .stat-label {
   color: #94a3b8;
 }

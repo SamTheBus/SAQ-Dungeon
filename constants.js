@@ -1970,161 +1970,252 @@ window.COSMETIC_COSTUMES = {
 };
 
 window.CAVERN_BUFFS = [
-  {
-    id: "swift_strikes",
-    name: "Swift Strikes",
-    desc: "Active & Idle Attack Speed increased by +25%",
-  },
+  // --- STAT-BASED BUFFS (Available from Tier 1 up, scaling magnitudes) ---
   {
     id: "giant_might",
     name: "Giant Might",
-    desc: "Attack power increased by +30%",
+    desc: "Attack power increased based on star rating.",
+    type: "stat",
+    statKey: "atk",
+    minStars: 0,
+    dangerRating: 0
   },
-  { id: "iron_aegis", name: "Iron Aegis", desc: "Defense increased by +35%" },
   {
     id: "vital_fountain",
     name: "Vital Fountain",
-    desc: "Max HP increased by +40%",
+    desc: "Maximum health increased based on star rating.",
+    type: "stat",
+    statKey: "maxHp",
+    minStars: 0,
+    dangerRating: 0
+  },
+  {
+    id: "iron_aegis",
+    name: "Iron Aegis",
+    desc: "Armor defense increased based on star rating.",
+    type: "stat",
+    statKey: "def",
+    minStars: 0,
+    dangerRating: 0
+  },
+  {
+    id: "swift_strikes",
+    name: "Swift Strikes",
+    desc: "Movement speed increased based on star rating.",
+    type: "stat",
+    statKey: "moveSpeed",
+    minStars: 1,
+    dangerRating: 0
   },
   {
     id: "unstable_surge",
     name: "Unstable Surge",
-    desc: "Critical Strike Chance increased by +15%",
+    desc: "Critical strike chance increased based on star rating.",
+    type: "stat",
+    statKey: "critChance",
+    minStars: 1,
+    dangerRating: 0
   },
   {
     id: "shatter_frenzy",
     name: "Shatter Frenzy",
-    desc: "Critical Strike Damage increased by +50%",
+    desc: "Critical strike damage increased based on star rating.",
+    type: "stat",
+    statKey: "critDamage",
+    minStars: 2,
+    dangerRating: 0
   },
   {
     id: "deflection_vortex",
     name: "Deflection Vortex",
-    desc: "Block Rate and Parry Rate increased by +10%",
+    desc: "Block and parry rates increased based on star rating.",
+    type: "stat",
+    statKey: "block", // Handled by applying to both block and parry
+    minStars: 2,
+    dangerRating: 0
   },
-  {
-    id: "arcane_infusion",
-    name: "Arcane Infusion",
-    desc: "Spell & Tome absorption increased by +15%",
-  },
-  {
-    id: "sanguine_feast",
-    name: "Sanguine Feast",
-    desc: "Restores 2% Max HP on every Critical Strike",
-  },
-  {
-    id: "treasure_finder",
-    name: "Treasure Finder",
-    desc: "Gold Multiplier increased by +50%",
-  },
-  {
-    id: "lucky_winds",
-    name: "Lucky Winds",
-    desc: "Fairy Spawn Rate increased by +40%",
-  },
-  {
-    id: "void_call",
-    name: "Void Call",
-    desc: "Rare Spawn Rate increased by +50%",
-  },
-  {
-    id: "scavenger_insight",
-    name: "Scavenger Insight",
-    desc: "Equipment Drop Rate increased by +50%",
-  },
-  {
-    id: "artisan_luck",
-    name: "Artisan Logic",
-    desc: "Equipment Drop Quality increased by +25%",
-  },
-  {
-    id: "echoing_step",
-    name: "Echoing Step",
-    desc: "Parry triggers a 100% Attack damage counter-attack",
-  },
+
+  // --- INTERACTIVE BUFFS (Locked to higher rarities) ---
   {
     id: "perfect_strike",
     name: "Perfect Strike",
-    desc: "Concentric reticles appear over monsters. Walk close and strike them in alignment for 5x damage.",
+    desc: "Concentric reticles appear over monsters. Strike them in alignment for 5x damage.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 0
   },
   {
     id: "aetheric_conduit",
     name: "Aetheric Conduit",
-    desc: "Aetheric Conduits appear on the ground. Walk into them to discharge a massive elemental storm.",
-  },
-  {
-    id: "aetheric_spark",
-    name: "Aetheric Spark",
-    desc: "Pulsing sparks appear on the ground. Step on 5 in a row to trigger Astral Awakening.",
+    desc: "Discharging ground pylons casts a chain-lightning storm.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 0
   },
   {
     id: "glimmering_pixie",
     name: "Glimmering Pixie",
-    desc: "Glimmering Pixies flit around. Walk into them to capture a random Supernal Elixir!",
+    desc: "Capturing pixies triggers a random supernal potion elixir.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 0
   },
+  {
+    id: "soul_harvest",
+    name: "Soul Harvest",
+    desc: "Slaying targets has a chance to animate helpful spectral wisps to distract foes.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 0
+  },
+  {
+    id: "aetheric_spark",
+    name: "Aetheric Spark",
+    desc: "Pulsing ground sparks spawn. Step on 5 sequentially to trigger Astral Awakening.",
+    type: "interactive",
+    minStars: 4,
+    dangerRating: 0
+  },
+  {
+    id: "temporal_echo",
+    name: "Temporal Echo",
+    desc: "Slashes/spells leave behind echoes that strike again at 35% power after 1.2 seconds.",
+    type: "interactive",
+    minStars: 4,
+    dangerRating: 0
+  },
+  {
+    id: "astral_conjunction",
+    name: "Astral Conjunction",
+    desc: "Upon room entry, a cosmic laser strikes a random target, spreading fire to adjacent foes.",
+    type: "interactive",
+    minStars: 5,
+    dangerRating: 0
+  }
 ];
 
 window.CAVERN_DEBUFFS = [
+  // --- STAT-BASED PENALTIES (Scale with stars) ---
   {
-    id: "iron_gaze",
-    name: "Iron Gaze",
-    desc: "Active & Idle Attack Speed decreased by -20%",
-  },
-  {
-    id: "shattered_armour",
-    name: "Shattered Armour",
-    desc: "Defense decreased by -25%",
+    id: "dull_blades",
+    name: "Dull Blades",
+    desc: "Decreases Attack Power.",
+    type: "stat",
+    statKey: "atk",
+    minStars: 0,
+    dangerRating: 5
   },
   {
     id: "frail_vessel",
     name: "Frail Vessel",
-    desc: "Max HP decreased by -20%",
+    desc: "Decreases Maximum Health.",
+    type: "stat",
+    statKey: "maxHp",
+    minStars: 0,
+    dangerRating: 5
   },
   {
-    id: "dull_blades",
-    name: "Dull Blades",
-    desc: "Attack power decreased by -20%",
-  },
-  {
-    id: "obsidian_skin",
-    name: "Obsidian Skin",
-    desc: "Enemies have +35% Defense",
-  },
-  {
-    id: "feeble_mind",
-    name: "Feeble Mind",
-    desc: "Spell & Tome absorption completely disabled (0%)",
-  },
-  {
-    id: "curse_greed",
-    name: "Curse of Greed",
-    desc: "Gold Multiplier decreased by -40%",
+    id: "shattered_armour",
+    name: "Shattered Armour",
+    desc: "Decreases Defense Armor.",
+    type: "stat",
+    statKey: "def",
+    minStars: 0,
+    dangerRating: 5
   },
   {
     id: "heavy_mist",
     name: "Heavy Mist",
-    desc: "Movement Speed decreased by -30%",
+    desc: "Decreases Movement Speed.",
+    type: "stat",
+    statKey: "moveSpeed",
+    minStars: 1,
+    dangerRating: 10
   },
   {
     id: "blind_spot",
     name: "Blind Spot",
-    desc: "Critical Strike Chance decreased by -10%",
+    desc: "Decreases Critical Strike Chance.",
+    type: "stat",
+    statKey: "critChance",
+    minStars: 1,
+    dangerRating: 10
   },
-  {
-    id: "lead_boots",
-    name: "Lead Boots",
-    desc: "Dodge, Block, and Parry rates decreased by -8%",
-  },
+
+  // --- INTERACTIVE HAZARDS & DEBUFFS (Locked to higher rarities) ---
   {
     id: "anomalous_shards",
     name: "Anomalous Shards",
-    desc: "Anomalous Shards erupt from the ground, slowing you down. Walk over and smash them to lift the penalty.",
+    desc: "Slowing ground crystals erupt. Walk over and shatter them to lift the penalty.",
+    type: "interactive",
+    minStars: 2,
+    dangerRating: 15
   },
   {
     id: "void_rupture",
     name: "Void Rupture",
-    desc: "A void rupture opens with 3 surrounding orbs. Slay the 3 orbs quickly to gain a Purified Aegis shield!",
+    desc: "Health-draining tears open. Smash their stabilizers to claim a protective shield.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 20
   },
-];
+  {
+    id: "blood_toll",
+    name: "Blood Toll",
+    desc: "Opening chest reliquaries siphons 12% of your current HP.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 15
+  },
+  {
+    id: "shrouded_sight",
+    name: "Shrouded Sight",
+    desc: "Dungeon sight is halved but chest spawn frequencies are doubled.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 20
+  },
+  {
+    id: "unstable_crust",
+    name: "Unstable Crust",
+    desc: "The floor slowly crumbles. Every 20 seconds, random tiles collapse into Void holes.",
+    type: "interactive",
+    minStars: 4,
+    dangerRating: 25
+  },
+  {
+    id: "spreading_fatigue",
+    name: "Spreading Fatigue",
+    desc: "Lose 1.5% speed per second. Slay monsters or break pottery to reset back to full.",
+    type: "interactive",
+    minStars: 5,
+    dangerRating: 30
+  },
+  {
+    id: "molten_slag",
+    name: "Molten Slag",
+    desc: "Movement builds friction charges. Reaching 100 burns you and leaves magma pools.",
+    type: "interactive",
+    minStars: 5,
+    dangerRating: 30
+  },
+  {
+      id: "deaths_hour",
+      name: "Death's Hour",
+      desc: "Unleashes the slow-moving, wall-passing, one-hit-kill Calamity Specter onto the floor.",
+      type: "interactive",
+      minStars: 5,
+      dangerRating: 40
+    },
+    {
+      id: "elite_infestation",
+      name: "Elite Infestation",
+      desc: "Every single spawned monster becomes an Elite with a random support affix.",
+      type: "interactive",
+      minStars: 5,
+      dangerRating: 45
+    }
+  ];
 
 window.ASTRAL_SHOP_STOCK = [
   {
