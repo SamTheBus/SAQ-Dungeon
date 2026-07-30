@@ -503,29 +503,36 @@
               <div class="section-title" id="profile-satchel-title">
                 VAULT SATCHEL (<span id="profile-stash-count">0</span>)
               </div>
-              <div class="satchel-tab-bar">
-                <button
-                  id="stash-tab-equip"
-                  class="satchel-tab-btn active"
-                  onclick="window.switchStashTab('EQUIP')"
-                >
-                  GEAR
-                </button>
-                <button
-                  id="stash-tab-use"
-                  class="satchel-tab-btn"
-                  onclick="window.switchStashTab('USE')"
-                >
-                  CONSUMABLES
-                </button>
-                <button
-                  id="stash-tab-etc"
-                  class="satchel-tab-btn"
-                  onclick="window.switchStashTab('ETC')"
-                >
-                  MATERIALS
-                </button>
-              </div>
+                <div class="satchel-tab-bar">
+                    <button
+                            id="stash-tab-equip"
+                            class="satchel-tab-btn active"
+                            onclick="window.switchStashTab('EQUIP')"
+                    >
+                        GEAR
+                    </button>
+                    <button
+                            id="stash-tab-sigil"
+                            class="satchel-tab-btn"
+                            onclick="window.switchStashTab('SIGIL')"
+                    >
+                        SIGILS
+                    </button>
+                    <button
+                            id="stash-tab-use"
+                            class="satchel-tab-btn"
+                            onclick="window.switchStashTab('USE')"
+                    >
+                        CONSUMABLES
+                    </button>
+                    <button
+                            id="stash-tab-etc"
+                            class="satchel-tab-btn"
+                            onclick="window.switchStashTab('ETC')"
+                    >
+                        MATERIALS
+                    </button>
+                </div>
               <div class="profile-section-body">
                 <div id="profile-stash-list" class="stash-grid">
                   <!-- Dynamic satchel items -->
@@ -755,29 +762,36 @@
               </svg>
             </button>
           </div>
-          <div class="satchel-tab-bar">
-            <button
-              id="bag-tab-equip"
-              class="satchel-tab-btn active"
-              onclick="window.switchBagTab('EQUIP')"
-            >
-              GEAR
-            </button>
-            <button
-              id="bag-tab-use"
-              class="satchel-tab-btn"
-              onclick="window.switchBagTab('USE')"
-            >
-              CONSUMABLES
-            </button>
-            <button
-              id="bag-tab-etc"
-              class="satchel-tab-btn"
-              onclick="window.switchBagTab('ETC')"
-            >
-              MATERIALS
-            </button>
-          </div>
+            <div class="satchel-tab-bar">
+                <button
+                        id="bag-tab-equip"
+                        class="satchel-tab-btn active"
+                        onclick="window.switchBagTab('EQUIP')"
+                >
+                    GEAR
+                </button>
+                <button
+                        id="bag-tab-sigil"
+                        class="satchel-tab-btn"
+                        onclick="window.switchBagTab('SIGIL')"
+                >
+                    SIGILS
+                </button>
+                <button
+                        id="bag-tab-use"
+                        class="satchel-tab-btn"
+                        onclick="window.switchBagTab('USE')"
+                >
+                    CONSUMABLES
+                </button>
+                <button
+                        id="bag-tab-etc"
+                        class="satchel-tab-btn"
+                        onclick="window.switchBagTab('ETC')"
+                >
+                    MATERIALS
+                </button>
+            </div>
           <div id="bag-items-list" class="modal-body">
             <!-- Items rendered dynamically -->
           </div>

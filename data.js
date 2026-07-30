@@ -1463,7 +1463,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   let aT = window.playerStats.cachedAchievementBonusTotals;
 
   p.def = BigNum.from(p.def).add(aT.def);
-  p.moveSpeed += aT.moveSpeed;
+    let flatSpeedBonus = aT.moveSpeed || 0;
   p.critChance += aT.critChance;
   p.critDamage += aT.critDamage;
   p.block += aT.block;
@@ -1554,14 +1554,14 @@ window.resolvePlayerStats = function (useDraft = false) {
         flatGearHp = flatGearHp.add(slotLvl * 30);
       }
       if (key === "boots") {
-        p.moveSpeed += slotLvl * 2;
-      }
+                  flatSpeedBonus += slotLvl * 2;
+                }
 
-      // Flat item stats (safely handled regardless of source type)
-      flatGearAtk = flatGearAtk.add(BigNum.from(item.atk || 0).mul(slotMult));
-      flatGearHp = flatGearHp.add(BigNum.from(item.maxHp || 0).mul(slotMult));
-      flatGearDef = flatGearDef.add(BigNum.from(item.def || 0).mul(slotMult));
-      p.moveSpeed += (item.moveSpeed || 0) * slotMult;
+                // Flat item stats (safely handled regardless of source type)
+                flatGearAtk = flatGearAtk.add(BigNum.from(item.atk || 0).mul(slotMult));
+                flatGearHp = flatGearHp.add(BigNum.from(item.maxHp || 0).mul(slotMult));
+                flatGearDef = flatGearDef.add(BigNum.from(item.def || 0).mul(slotMult));
+                flatSpeedBonus += (item.moveSpeed || 0) * slotMult;
 
       let itemIdleSpeed = item.idleAttackSpeed || 0;
       if (itemIdleSpeed < 0) itemIdleSpeed = Math.abs(itemIdleSpeed) * 0.05;
@@ -1661,8 +1661,8 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   p.atk = p.atk.add(BigNum.from(setCtx.atk));
-  p.maxHp = p.maxHp.add(BigNum.from(setCtx.maxHp));
-  p.moveSpeed += setCtx.moveSpeed;
+    p.maxHp = p.maxHp.add(BigNum.from(setCtx.maxHp));
+    flatSpeedBonus += setCtx.moveSpeed || 0;
   idleSpeedPct += setCtx.idleSpeedPct;
   activeSpeedPct += setCtx.activeSpeedPct;
   p.critChance += setCtx.critChance;
@@ -1694,9 +1694,9 @@ window.resolvePlayerStats = function (useDraft = false) {
   let effectiveInt = Math.max(0, p.int - 5);
 
   // Apply Dexterity Attribute Matrix points to Move Speed, Crit Chance, and Crit Multiplier
-  p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
-  p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
-  p.moveSpeed += effectiveDex * 1.0; // +1 Move Speed per point
+    p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
+    p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
+    flatSpeedBonus += effectiveDex * 1.0; // +1% Speed per point
 
   // Dynamically adjust offensive percentage scaling based on equipped subweapon archetype
   let activeSubForPct = window.equippedSlots
@@ -1760,10 +1760,9 @@ window.resolvePlayerStats = function (useDraft = false) {
 
   // Suffixes multipliers applied on total flat base
   p.atk = p.atk.mul(1.0 + itemAtkPct).mul(achAtkPct);
-  p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
-  p.moveSpeed =
-    p.moveSpeed *
-    (achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0));
+    p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
+    p.moveSpeed = window.playerStats.baseMoveSpeed * (1 + flatSpeedBonus / 100) *
+      (achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0));
 
   // Calculate Arcane Barrier for Inspected Player holding a Tome
   let insSub = window.equippedSlots.subweapon;
@@ -1983,10 +1982,10 @@ window.resolvePlayerStats = function (useDraft = false) {
     if (qualityRank > 0) p.qly += qualityRank * 0.02;
 
     let utilityVitalityRank = st.getSkillLevel("utility_vitality");
-    if (utilityVitalityRank > 0) {
-      p.maxHpPct = (p.maxHpPct || 0) + utilityVitalityRank * 0.03;
-      p.moveSpeed += utilityVitalityRank * 2.0;
-    }
+        if (utilityVitalityRank > 0) {
+          p.maxHpPct = (p.maxHpPct || 0) + utilityVitalityRank * 0.03;
+          flatSpeedBonus += utilityVitalityRank * 2.0;
+        }
 
     let bagRank = st.getSkillLevel("utility_bag");
     if (bagRank > 0) {
@@ -2224,11 +2223,11 @@ window.resolvePlayerStats = function (useDraft = false) {
     );
 
   if (hasHastePot) {
-    let tier = window.playerStats.hastePotionStrength || 1;
-    p.moveSpeed += Math.ceil(3 * tier * potStrengthMultiplier);
-    activeSpeedPct += 0.1 * tier * potStrengthMultiplier;
-    idleSpeedPct += 0.1 * tier * potStrengthMultiplier;
-  }
+        let tier = window.playerStats.hastePotionStrength || 1;
+        flatSpeedBonus += Math.ceil(3 * tier * potStrengthMultiplier);
+        activeSpeedPct += 0.1 * tier * potStrengthMultiplier;
+        idleSpeedPct += 0.1 * tier * potStrengthMultiplier;
+      }
 
   if (hasDropPot) {
     p.drop += 1.0 * potStrengthMultiplier;
@@ -2237,7 +2236,7 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.qly += 0.5 * potStrengthMultiplier;
   }
 
-  if (window.checkArtifactTrait("move_speed")) p.moveSpeed += 10;
+  if (window.checkArtifactTrait("move_speed")) flatSpeedBonus += 10;
   if (window.checkArtifactTrait("gold_hoard")) p.gold += 0.5;
   if (window.checkArtifactTrait("idle_spd")) idleSpeedPct += 0.35;
   if (window.checkArtifactTrait("active_spd")) activeSpeedPct += 0.25;

@@ -13809,7 +13809,7 @@
 
   window.switchBagTab = function (tabKey) {
     window.activeBagTab = tabKey;
-    ["EQUIP", "USE", "ETC"].forEach((t) => {
+    ["EQUIP", "SIGIL", "USE", "ETC"].forEach((t) => {
       let btn = document.getElementById(`bag-tab-${t.toLowerCase()}`);
       if (btn) btn.classList.toggle("active", t === tabKey);
     });
@@ -13818,7 +13818,7 @@
 
   window.switchStashTab = function (tabKey) {
     window.activeStashTab = tabKey;
-    ["EQUIP", "USE", "ETC"].forEach((t) => {
+    ["EQUIP", "SIGIL", "USE", "ETC"].forEach((t) => {
       let btn = document.getElementById(`stash-tab-${t.toLowerCase()}`);
       if (btn) btn.classList.toggle("active", t === tabKey);
     });
@@ -14492,83 +14492,136 @@
       .join("");
 
     // 3. Render Right Panel (Vault & Satchel with Categories)
-    let stashTab = window.activeStashTab || "EQUIP";
-    let sectionHeaderEl = document.getElementById("profile-satchel-title");
+        let stashTab = window.activeStashTab || "EQUIP";
+        let sectionHeaderEl = document.getElementById("profile-satchel-title");
 
-    if (stashTab === "EQUIP") {
-      let displayList = isHub
-        ? window.inventory.EQUIP || []
-        : window.player.bag || [];
-      if (sectionHeaderEl) {
-        sectionHeaderEl.innerHTML = `${isHub ? "EQUIPMENT VAULT" : "CARRIED GEAR"} (<span id="profile-stash-count">${displayList.length}</span>)`;
-      }
+        if (stashTab === "EQUIP") {
+          let rawList = isHub
+            ? window.inventory.EQUIP || []
+            : window.player.bag || [];
+          let displayList = rawList.filter(item => item.type !== "sigil");
 
-      if (displayList.length === 0) {
-        stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">${isHub ? "Storage vault is empty.<br>Extract loot from dungeon runs to store items here!" : "No items collected yet on this run.<br>Defeat monsters and open chests to find loot!"}</div>`;
-      } else {
-        stashListEl.innerHTML = displayList
-          .map((item, idx) => {
-            let col = window.getTierColor
-              ? window.getTierColor(item.statsRolled)
-              : "#00d2ff";
-            let typeLabel = (item.subType || item.type || "ITEM").toUpperCase();
-            let starsLabel =
-              item.statsRolled === "UNIQUE"
-                ? "UNIQUE"
-                : `${item.statsRolled || 0} STAR`;
-            let iconHtml = window.getItemIconSvg
-              ? window.getItemIconSvg(item, 28)
-              : "";
-            let isInsured = !!item.locked;
+          if (sectionHeaderEl) {
+            sectionHeaderEl.innerHTML = `${isHub ? "EQUIPMENT VAULT" : "CARRIED GEAR"} (<span id="profile-stash-count">${displayList.length}</span>)`;
+          }
 
-            let statPreview = [];
-            if (item.atk)
-              statPreview.push(
-                `ATK +${window.formatNumber ? window.formatNumber(item.atk) : item.atk}`,
-              );
-            if (item.def)
-              statPreview.push(
-                `DEF +${window.formatNumber ? window.formatNumber(item.def) : item.def}`,
-              );
-            if (item.maxHp)
-              statPreview.push(
-                `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
-              );
-            let statStr =
-              statPreview.length > 0
-                ? statPreview.join(" | ")
-                : `${starsLabel}`;
+          if (displayList.length === 0) {
+            stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">${isHub ? "Storage vault is empty.<br>Extract loot from dungeon runs to store items here!" : "No items collected yet on this run.<br>Defeat monsters and open chests to find loot!"}</div>`;
+          } else {
+            stashListEl.innerHTML = displayList
+              .map((item) => {
+                let col = window.getTierColor
+                  ? window.getTierColor(item.statsRolled)
+                  : "#00d2ff";
+                let typeLabel = (item.subType || item.type || "ITEM").toUpperCase();
+                let starsLabel =
+                  item.statsRolled === "UNIQUE"
+                    ? "UNIQUE"
+                    : `${item.statsRolled || 0} STAR`;
+                let iconHtml = window.getItemIconSvg
+                  ? window.getItemIconSvg(item, 28)
+                  : "";
+                let isInsured = !!item.locked;
 
-            let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderProfileModal();">SALVAGE</button>`;
+                let statPreview = [];
+                if (item.atk)
+                  statPreview.push(
+                    `ATK +${window.formatNumber ? window.formatNumber(item.atk) : item.atk}`,
+                  );
+                if (item.def)
+                  statPreview.push(
+                    `DEF +${window.formatNumber ? window.formatNumber(item.def) : item.def}`,
+                  );
+                if (item.maxHp)
+                  statPreview.push(
+                    `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
+                  );
+                let statStr =
+                  statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
 
-            let actionsHtml = isHub
-              ? `
-                                    <button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[ BOUND ]" : "SOUL BIND"}</button>
-                                    <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromStash(${item.id})">EQUIP</button>
-                                    ${salvageBtn}
-                                  `
-              : `
-                                    <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
-                                    ${salvageBtn}
-                                  `;
+                let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderProfileModal();">SALVAGE</button>`;
 
-            return `
-                                      <div class="stash-card" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, ${isHub ? "window.inventory.EQUIP" : "window.player.bag"}[${idx}])">
-                                        ${iconHtml}
-                        <div class="item-info">
-                          <span class="item-title" style="color:${col};">${item.name}</span>
-                          <span class="item-sub">${typeLabel} • LV.${item.stageLevel || 1}</span>
-                          <span class="item-sub" style="color:#2ecc71;">${statStr}</span>
-                        </div>
-                        <div class="item-actions">
-                          ${actionsHtml}
-                        </div>
-                      </div>
-                    `;
-          })
-          .join("");
-      }
-    } else if (stashTab === "USE") {
+                let actionsHtml = isHub
+                  ? `
+                                        <button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[ BOUND ]" : "SOUL BIND"}</button>
+                                        <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromStash(${item.id})">EQUIP</button>
+                                        ${salvageBtn}
+                                      `
+                  : `
+                                        <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
+                                        ${salvageBtn}
+                                      `;
+
+                let actualIdx = isHub
+                  ? window.inventory.EQUIP.findIndex(i => i.id === item.id)
+                  : window.player.bag.findIndex(i => i.id === item.id);
+
+                return `
+                                          <div class="stash-card" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, ${isHub ? "window.inventory.EQUIP" : "window.player.bag"}[${actualIdx}])">
+                                            ${iconHtml}
+                            <div class="item-info">
+                              <span class="item-title" style="color:${col};">${item.name}</span>
+                              <span class="item-sub">${typeLabel} • LV.${item.stageLevel || 1}</span>
+                              <span class="item-sub" style="color:#2ecc71;">${statStr}</span>
+                            </div>
+                            <div class="item-actions">
+                              ${actionsHtml}
+                            </div>
+                          </div>
+                        `;
+              })
+              .join("");
+          }
+        } else if (stashTab === "SIGIL") {
+          let displayList = isHub
+            ? window.inventory.SIGIL || []
+            : (window.player.bag || []).filter(item => item.type === "sigil");
+
+          if (sectionHeaderEl) {
+            sectionHeaderEl.innerHTML = `${isHub ? "SIGIL VAULT" : "CARRIED SIGILS"} (<span id="profile-stash-count">${displayList.length}</span>)`;
+          }
+
+          if (displayList.length === 0) {
+            stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">${isHub ? "Sigil vault is empty.<br>Extract sigils from dungeon runs to store them here!" : "No sigils collected yet on this run."}</div>`;
+          } else {
+            stashListEl.innerHTML = displayList
+              .map((item, idx) => {
+                let col = window.getTierColor ? window.getTierColor(item.statsRolled) : "#00d2ff";
+                let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 28) : "";
+                let isInsured = !!item.locked;
+
+                let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderProfileModal();">SALVAGE</button>`;
+
+                let arrayName = isHub ? "window.inventory.SIGIL" : "window.player.bag";
+                let tooltipIdx = isHub ? idx : window.player.bag.findIndex(i => i.id === item.id);
+
+                let boundTag = isInsured ? `<span style="font-size:8px; color:#34d399; font-family:monospace; font-weight:bold;">[BOUND]</span>` : "";
+                let actionsHtml = isHub
+                  ? `
+                    <button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[ BOUND ]" : "SOUL BIND"}</button>
+                    ${salvageBtn}
+                  `
+                  : `
+                    ${salvageBtn}
+                  `;
+
+                return `
+                  <div class="stash-card" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, ${arrayName}[${tooltipIdx}])">
+                    ${iconHtml}
+                    <div class="item-info">
+                      <span class="item-title" style="color:${col};">${item.name}</span>
+                      <span class="item-sub">SIGIL • LV.${item.stageLevel || 1}</span>
+                      <span class="item-sub" style="color:#a855f7;">Focus: +${((item.rewardMultiplier || 0) * 100).toFixed(0)}% Rewards</span>
+                    </div>
+                    <div class="item-actions">
+                      ${actionsHtml}
+                    </div>
+                  </div>
+                `;
+              })
+              .join("");
+          }
+        } else if (stashTab === "USE") {
       let useObj = window.inventory.USE || {};
       let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
 
@@ -15249,66 +15302,99 @@
     }
 
     if (tab === "EQUIP") {
-      if (displayList.length === 0) {
-        listEl.innerHTML = `<div style="font-size:10.5px; color:#64748b; font-style:italic; padding:24px; text-align:center; background:rgba(0,0,0,0.3); border:1px dashed #1e293b; border-radius:6px;">Satchel has no carried gear.<br>Defeat monsters and open chests in the dungeon to gather equipment!</div>`;
-        return;
-      }
-      listEl.innerHTML = displayList
-        .map((item, idx) => {
-          let col = window.getTierColor
-            ? window.getTierColor(item.statsRolled)
-            : "#00d2ff";
-          let typeLabel = (item.subType || item.type || "ITEM").toUpperCase();
-          let starsLabel =
-            item.statsRolled === "UNIQUE"
-              ? "UNIQUE"
-              : `${item.statsRolled || 0} STAR`;
-          let iconHtml = window.getItemIconSvg
-            ? window.getItemIconSvg(item, 32)
-            : "";
-          let isInsured = !!item.locked;
+        let filteredList = displayList.filter(item => item.type !== "sigil");
+        if (filteredList.length === 0) {
+          listEl.innerHTML = `<div style="font-size:10.5px; color:#64748b; font-style:italic; padding:24px; text-align:center; background:rgba(0,0,0,0.3); border:1px dashed #1e293b; border-radius:6px;">Satchel has no carried gear.<br>Defeat monsters and open chests in the dungeon to gather equipment!</div>`;
+          return;
+        }
+        listEl.innerHTML = filteredList
+          .map((item) => {
+            let col = window.getTierColor
+              ? window.getTierColor(item.statsRolled)
+              : "#00d2ff";
+            let typeLabel = (item.subType || item.type || "ITEM").toUpperCase();
+            let starsLabel =
+              item.statsRolled === "UNIQUE"
+                ? "UNIQUE"
+                : `${item.statsRolled || 0} STAR`;
+            let iconHtml = window.getItemIconSvg
+              ? window.getItemIconSvg(item, 32)
+              : "";
+            let isInsured = !!item.locked;
 
-          let statPreview = [];
-          if (item.atk)
-            statPreview.push(
-              `ATK +${window.formatNumber ? window.formatNumber(item.atk) : item.atk}`,
-            );
-          if (item.def)
-            statPreview.push(
-              `DEF +${window.formatNumber ? window.formatNumber(item.def) : item.def}`,
-            );
-          if (item.maxHp)
-            statPreview.push(
-              `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
-            );
-          let statStr =
-            statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
+            let statPreview = [];
+            if (item.atk)
+              statPreview.push(
+                `ATK +${window.formatNumber ? window.formatNumber(item.atk) : item.atk}`,
+              );
+            if (item.def)
+              statPreview.push(
+                `DEF +${window.formatNumber ? window.formatNumber(item.def) : item.def}`,
+              );
+            if (item.maxHp)
+              statPreview.push(
+                `HP +${window.formatNumber ? window.formatNumber(item.maxHp) : item.maxHp}`,
+              );
+            let statStr =
+              statPreview.length > 0 ? statPreview.join(" | ") : `${starsLabel}`;
 
-          let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderBagModalContent();">SALVAGE</button>`;
-          let boundTag = isInsured
-            ? `<span style="font-size:8px; color:#34d399; font-family:monospace; font-weight:bold;">[BOUND]</span>`
-            : "";
+            let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderBagModalContent();">SALVAGE</button>`;
+            let boundTag = isInsured
+              ? `<span style="font-size:8px; color:#34d399; font-family:monospace; font-weight:bold;">[BOUND]</span>`
+              : "";
 
-          return `
-                        <div class="stash-card" style="border-left: 3.5px solid ${col}; cursor: pointer; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.player.bag[${idx}])">
-                          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                            ${iconHtml}
-                            <div class="item-info" style="display: flex; flex-direction: column; min-width: 0;">
-                              <span class="item-title" style="color:${col}; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
-                              <span class="item-sub" style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${typeLabel} • LV.${item.stageLevel || 1}</span>
-                              <span class="item-sub" style="font-size: 8.5px; color: #2ecc71; font-family: monospace; font-weight: bold;">${statStr}</span>
+            let actualIdx = window.player.bag.findIndex(i => i.id === item.id);
+
+            return `
+                          <div class="stash-card" style="border-left: 3.5px solid ${col}; cursor: pointer; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.player.bag[${actualIdx}])">
+                            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                              ${iconHtml}
+                              <div class="item-info" style="display: flex; flex-direction: column; min-width: 0;">
+                                <span class="item-title" style="color:${col}; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+                                <span class="item-sub" style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">${typeLabel} • LV.${item.stageLevel || 1}</span>
+                                <span class="item-sub" style="font-size: 8.5px; color: #2ecc71; font-family: monospace; font-weight: bold;">${statStr}</span>
+                              </div>
+                            </div>
+                            <div class="item-actions" style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                              ${boundTag}
+                              <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
+                              ${salvageBtn}
                             </div>
                           </div>
-                          <div class="item-actions" style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                            ${boundTag}
-                            <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.equipFromBag(${item.id})">EQUIP</button>
-                            ${salvageBtn}
-                          </div>
-                        </div>
-                      `;
-        })
-        .join("");
-    } else if (tab === "USE") {
+                        `;
+          })
+          .join("");
+      } else if (tab === "SIGIL") {
+        let filteredList = displayList.filter(item => item.type === "sigil");
+        if (filteredList.length === 0) {
+          listEl.innerHTML = `<div style="font-size:10.5px; color:#64748b; font-style:italic; padding:24px; text-align:center; background:rgba(0,0,0,0.3); border:1px dashed #1e293b; border-radius:6px;">Satchel has no carried sigils.<br>Slay floor bosses or open chests to find run sigils!</div>`;
+          return;
+        }
+        listEl.innerHTML = filteredList
+          .map((item) => {
+            let col = window.getTierColor ? window.getTierColor(item.statsRolled) : "#00d2ff";
+            let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 32) : "";
+            let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderBagModalContent();">SALVAGE</button>`;
+            let actualIdx = window.player.bag.findIndex(i => i.id === item.id);
+
+            return `
+              <div class="stash-card" style="border-left: 3.5px solid ${col}; cursor: pointer; padding: 6px 10px; background: rgba(15, 23, 42, 0.85); border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;" onclick="window.showItemTooltip(event, window.player.bag[${actualIdx}])">
+                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                  ${iconHtml}
+                  <div class="item-info" style="display: flex; flex-direction: column; min-width: 0;">
+                    <span class="item-title" style="color:${col}; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+                    <span class="item-sub" style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">SIGIL • LV.${item.stageLevel || 1}</span>
+                    <span class="item-sub" style="font-size: 8.5px; color: #a855f7; font-family: monospace; font-weight: bold;">Focus: +${((item.rewardMultiplier || 0) * 100).toFixed(0)}% Rewards</span>
+                  </div>
+                </div>
+                <div class="item-actions" style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                  ${salvageBtn}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      } else if (tab === "USE") {
       let useObj = window.inventory.USE || {};
       let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
 
@@ -16254,11 +16340,11 @@
     }
 
     // 2. Dagger Tree Fillers
-    let daggerFiller1 = getLevel("dagger_filler_haste");
-    if (daggerFiller1 > 0) {
-      stats.moveSpeed = (stats.moveSpeed || 100) + daggerFiller1 * 4;
-      stats.parry = (stats.parry || 0.0) + daggerFiller1 * 0.01;
-    }
+                      let daggerFiller1 = getLevel("dagger_filler_haste");
+                      if (daggerFiller1 > 0) {
+                        stats.moveSpeed = (stats.moveSpeed || window.playerStats.baseMoveSpeed) * (1 + (daggerFiller1 * 4) / 100);
+                        stats.parry = (stats.parry || 0.0) + daggerFiller1 * 0.01;
+                      }
     let daggerFiller2 = getLevel("dagger_filler_armor_pen");
     if (daggerFiller2 > 0) {
       stats.atk = (stats.atk || 15) * (1 + daggerFiller2 * 0.04);

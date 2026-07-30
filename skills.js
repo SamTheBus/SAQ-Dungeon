@@ -27,20 +27,48 @@
   };
 
   window.gainSubweaponXp = function (subType, amount) {
-    if (!window.playerStats || !window.playerStats.subweaponMastery) return;
-    let mast = window.playerStats.subweaponMastery[subType];
-    if (!mast) return;
+      if (!window.playerStats || !window.playerStats.subweaponMastery) return;
+      let mast = window.playerStats.subweaponMastery[subType];
+      if (!mast) return;
 
-    if (mast.level >= 40) {
-      mast.xp = 0;
-      return;
-    }
+      if (mast.level >= 40) {
+        mast.xp = 0;
+        return;
+      }
 
-    mast.xp += amount;
-    let req = window.getSubweaponXpRequired(mast.level);
-    let leveledUp = false;
+      // Determine equivalent current floor played
+      let playerLevel = window.playerStats.level || 1;
+      let currentFloor = 1;
+      if (window.playerStats.isDungeonMode && window.player) {
+        currentFloor = window.player.depth || 1;
+      } else {
+        // Map campaign stages (1-500+) to equivalent floor level (1 floor per 5 stages)
+        currentFloor = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
+      }
 
-    while (mast.xp >= req && mast.level < 40) {
+      // Calculate level-range asymmetrical exponential decay
+      let levelDiff = currentFloor - playerLevel;
+      let multiplier = 1.0;
+      if (levelDiff < 0) {
+        multiplier = Math.max(0.05, Math.exp(levelDiff / 5.0));
+      }
+
+      let scaledAmount = amount * multiplier;
+
+      // Accumulate fractional XP to prevent precision drift
+      mast.fractionalXp = (mast.fractionalXp || 0) + scaledAmount;
+      let integerXp = Math.floor(mast.fractionalXp);
+      if (integerXp > 0) {
+        mast.xp += integerXp;
+        mast.fractionalXp -= integerXp;
+      } else {
+        return; // Safe exit: insufficient fractional XP accumulated
+      }
+
+      let req = window.getSubweaponXpRequired(mast.level);
+      let leveledUp = false;
+
+      while (mast.xp >= req && mast.level < 40) {
       mast.xp -= req;
       mast.level++;
       mast.sp++;
