@@ -1099,17 +1099,23 @@
     },
 
     getUnspentMP() {
-      if (!window.playerStats) return 0;
-      return window.playerStats.sp || 0;
-    },
+          if (!window.playerStats) return 0;
+          let total = window.playerStats.usp || 0;
+          if (window.playerStats.subweaponMastery) {
+            total += window.playerStats.subweaponMastery.shield?.sp || 0;
+            total += window.playerStats.subweaponMastery.dagger?.sp || 0;
+            total += window.playerStats.subweaponMastery.tome?.sp || 0;
+          }
+          return total;
+        },
 
     getUnspentPointsForTree(treeId) {
-      if (treeId === "utility") {
-        return window.playerStats.sp || 0;
-      }
-      if (!window.playerStats.subweaponMastery) return 0;
-      return window.playerStats.subweaponMastery[treeId]?.sp || 0;
-    },
+          if (treeId === "utility") {
+            return window.playerStats.usp || 0;
+          }
+          if (!window.playerStats.subweaponMastery) return 0;
+          return window.playerStats.subweaponMastery[treeId]?.sp || 0;
+        },
 
     isNodeUnlocked(treeId, node) {
       if (treeId === "utility") {
@@ -1189,12 +1195,9 @@
       }
 
       if (targetTreeId === "utility") {
-        window.playerStats.sp -= nextRankCost;
-        if (window.draftSP !== undefined && window.draftSP !== null) {
-          window.draftSP = window.playerStats.sp;
-        }
-        window.playerStats.skillTree[nodeId] = currentRank + 1;
-      } else {
+              window.playerStats.usp = Math.max(0, (window.playerStats.usp || 0) - nextRankCost);
+              window.playerStats.skillTree[nodeId] = currentRank + 1;
+            } else {
         let mast = window.playerStats.subweaponMastery[targetTreeId];
         mast.sp -= nextRankCost;
         mast.spentSp += nextRankCost;
@@ -1261,15 +1264,12 @@
         "#a855f7",
         () => {
           if (treeId === "utility") {
-            let tree = window.SKILL_TREE_DATA.utility;
-            tree.nodes.forEach((node) => {
-              window.playerStats.skillTree[node.id] = 0;
-            });
-            window.playerStats.sp += spent;
-            if (window.draftSP !== undefined && window.draftSP !== null) {
-              window.draftSP = window.playerStats.sp;
-            }
-          } else {
+                      let tree = window.SKILL_TREE_DATA.utility;
+                      tree.nodes.forEach((node) => {
+                        window.playerStats.skillTree[node.id] = 0;
+                      });
+                      window.playerStats.usp = (window.playerStats.usp || 0) + spent;
+                    } else {
             let mast = window.playerStats.subweaponMastery[treeId];
             let tree = window.SKILL_TREE_DATA[treeId];
             tree.nodes.forEach((node) => {
@@ -1437,7 +1437,7 @@
                 <div class="skill-tree-mp-banner">
             <div class="mp-info-group">
               <span class="mp-label">UTILITY SKILL POINTS BALANCE</span>
-              <span class="mp-balance"><strong style="color:#2ecc71;">${unspentPoints} SP</strong> AVAILABLE <span style="color:#94a3b8; font-size:9px;">(${spentMP} / ${earnedMP} Spent)</span></span>
+              <span class="mp-balance"><strong style="color:#2ecc71;">${unspentPoints} USP</strong> AVAILABLE <span style="color:#94a3b8; font-size:9px;">(${spentMP} / ${earnedMP} Spent)</span></span>
             </div>
             <button class="action-btn-sm action-btn-salvage" onclick="window.SkillTreeManager.resetSkillTree('utility')">RESET UTILITY</button>
           </div>
@@ -1731,3 +1731,19 @@
     },
   };
 })();
+
+// Retroactive migration for separate Utility SP (USP)
+if (window.playerStats && window.playerStats.usp === undefined) {
+  let maxLvl = Math.max(1, window.playerStats.maxLevel || 1, window.playerStats.level || 1);
+  let spentUtility = window.SkillTreeManager.getSpentPointsInTree("utility");
+  window.playerStats.usp = Math.max(0, (maxLvl - 1) * 1 - spentUtility);
+
+  let spentAttribute = (window.playerStats.spAllocations?.spStr || 0) +
+                       (window.playerStats.spAllocations?.spDex || 0) +
+                       (window.playerStats.spAllocations?.spInt || 0);
+  window.playerStats.sp = Math.max(0, (maxLvl - 1) * 3 - spentAttribute);
+
+  if (typeof window.saveGame === "function") {
+      window.saveGame();
+    }
+  }

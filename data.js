@@ -699,13 +699,14 @@ Object.assign(window.GameState, {
       );
 
       if (window.playerStats.level > window.playerStats.maxLevel) {
-        window.playerStats.maxLevel = window.playerStats.level;
-        window.playerStats.sp += 3; // Award 3 SP per peak level
+              window.playerStats.maxLevel = window.playerStats.level;
+              window.playerStats.sp += 3; // Award 3 Attribute SP per peak level
+              window.playerStats.usp = (window.playerStats.usp || 0) + 1; // Award 1 Utility SP per peak level
 
-        if (window.draftSP !== undefined && window.draftSP !== null) {
-          window.draftSP += 3;
-        }
-      }
+              if (window.draftSP !== undefined && window.draftSP !== null) {
+                window.draftSP += 3;
+              }
+            }
 
       // Calculate next xpReq safely using BigNum exponential power scaling
       xpReq = BigNum.from(600).mul(
@@ -818,42 +819,42 @@ Object.assign(window.GameState, {
       }
 
       if (window.SoundManager) window.SoundManager.play("revive");
-      if (typeof window.pushLog === "function") {
-        window.pushLog(
-          `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 SP)</strong>`,
-        );
-      }
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast(
-          `Level Up! Reached Level ${window.playerStats.level}! (+3 SP)`,
-          "#d946ef",
-        );
-      }
-      if (typeof window.spawnFloatingText === "function" && window.player) {
-        let px = window.player.x;
-        let py = window.player.y;
-        window.spawnFloatingText(
-          px,
-          py - 20,
-          `LEVEL UP! (LV.${window.playerStats.level})`,
-          "#d946ef",
-          true,
-        );
-        window.spawnFloatingText(
-          px,
-          py - 32,
-          "+15 HP  +3 ATK  +1.5 DEF",
-          "#2ecc71",
-          true,
-        );
-        window.spawnFloatingText(
-          px,
-          py - 44,
-          "+3 SP AVAILABLE",
-          "#00d2ff",
-          true,
-        );
-      }
+            if (typeof window.pushLog === "function") {
+              window.pushLog(
+                `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 Attribute SP, +1 Utility SP)</strong>`,
+              );
+            }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                `Level Up! Reached Level ${window.playerStats.level}! (+3 Attribute SP, +1 Utility SP)`,
+                "#d946ef",
+              );
+            }
+            if (typeof window.spawnFloatingText === "function" && window.player) {
+              let px = window.player.x;
+              let py = window.player.y;
+              window.spawnFloatingText(
+                px,
+                py - 20,
+                `LEVEL UP! (LV.${window.playerStats.level})`,
+                "#d946ef",
+                true,
+              );
+              window.spawnFloatingText(
+                px,
+                py - 32,
+                "+15 HP  +3 ATK  +1.5 DEF",
+                "#2ecc71",
+                true,
+              );
+              window.spawnFloatingText(
+                px,
+                py - 44,
+                "+3 ASP / +1 USP AVAILABLE",
+                "#00d2ff",
+                true,
+              );
+            }
       if (typeof window.checkAchievements === "function") {
         window.checkAchievements();
       }
@@ -3469,9 +3470,10 @@ window.playerStats = {
   hasRefundedLegacyTempers: false,
   level: 1,
   xp: new BigNum(0, 0),
-  xpReq: new BigNum(350, 0),
-  sp: 0,
-  spAllocations: {
+    xpReq: new BigNum(350, 0),
+    sp: 0,
+    usp: 0, // Separate Utility Skill Points
+    spAllocations: {
     spHp: 0,
     spAtk: 0,
     spDef: 0,
@@ -4307,8 +4309,13 @@ window.loadGame = function () {
         overlord_iron_vault: 0,
       };
 
-      // Fallback initializers for Field Flask properties
-      if (window.playerStats.maxFlaskCharges === undefined)
+      // Fallback initializers for separate Utility SP
+            if (window.playerStats.usp === undefined) {
+              window.playerStats.usp = 0;
+            }
+
+            // Fallback initializers for Field Flask properties
+            if (window.playerStats.maxFlaskCharges === undefined)
         window.playerStats.maxFlaskCharges = 1;
       if (window.playerStats.flaskCharges === undefined)
         window.playerStats.flaskCharges = window.playerStats.maxFlaskCharges;
