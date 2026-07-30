@@ -782,30 +782,27 @@
     canvas.addEventListener("pointercancel", stopJoystick);
 
     // Allow tapping backdrop overlays to dismiss open modal windows
-    document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-      overlay.addEventListener("pointerdown", function (e) {
-        if (e.target === overlay) {
-          e.stopPropagation();
-          if (overlay.id === "summary-modal") {
-            window.lastModalCloseTime = Date.now();
-            window.loadHub();
-          } else if (overlay.id === "portal-modal") {
-            // Require explicit user action (Descend or Extract)
-            return;
-          } else {
-            overlay.style.display = "none";
-            window.lastModalCloseTime = Date.now();
-            if (
-              overlay.id === "mastery-modal" &&
-              window.SkillTreeManager &&
-              typeof window.SkillTreeManager.stopAnimationLoop === "function"
-            ) {
-              window.SkillTreeManager.stopAnimationLoop();
+        document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+          overlay.addEventListener("pointerdown", function (e) {
+            if (e.target === overlay) {
+              e.stopPropagation();
+              if (overlay.id === "summary-modal") {
+                window.lastModalCloseTime = Date.now();
+                window.loadHub();
+              } else {
+                overlay.style.display = "none";
+                window.lastModalCloseTime = Date.now();
+                if (
+                  overlay.id === "mastery-modal" &&
+                  window.SkillTreeManager &&
+                  typeof window.SkillTreeManager.stopAnimationLoop === "function"
+                ) {
+                  window.SkillTreeManager.stopAnimationLoop();
+                }
+              }
+              if (typeof window.hideTooltip === "function") window.hideTooltip();
             }
-          }
-          if (typeof window.hideTooltip === "function") window.hideTooltip();
-        }
-      });
+          });
       overlay.addEventListener("click", function (e) {
         if (e.target === overlay) {
           e.stopPropagation();
@@ -1049,21 +1046,25 @@
             }
           }
 
-          // Trigger ability cast
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let moves = m.moveset || ["slam", "nova", "charge"];
-            let chosen = moves[Math.floor(Math.random() * moves.length)];
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = 65;
-            m.maxTelegraphTimer = 65;
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 30 && m.attackCooldown <= 0) {
-            m.attackCooldown = 60;
-            window.damagePlayer(m.atk, m);
-          }
+          // Trigger basic close-range quick strike first
+                      if (dist < 32 && m.attackCooldown <= 0) {
+                        m.attackCooldown = 60;
+                        window.damagePlayer(m.atk, m);
+                      } else if (m.attackCooldown <= 0 && dist < 220) {
+                        let moves = m.moveset || ["slam", "nova", "charge"];
+                        let chosen = moves[Math.floor(Math.random() * moves.length)];
+                        // Bias heavily towards slam when close
+                        if (dist < 64 && moves.includes("slam") && Math.random() < 0.8) {
+                          chosen = "slam";
+                        }
+                        m.state = "telegraphing";
+                        m.actionState = "telegraphing";
+                        m.activeAbility = chosen;
+                        m.telegraphTimer = 65;
+                        m.maxTelegraphTimer = 65;
+                        m.targetX = p.x;
+                        m.targetY = p.y;
+                      }
         }
       },
 
@@ -1294,20 +1295,24 @@
             }
           }
 
-          // Trigger Ability cast or basic close-range strikes
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let chosen = Math.random() < 0.5 ? "slam" : "root_snare";
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = 75;
-            m.maxTelegraphTimer = 75;
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let chosen = Math.random() < 0.5 ? "slam" : "root_snare";
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer = 75;
+                          m.maxTelegraphTimer = 75;
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateAegisGoliath(m, p, pStats, dist, dx, dy) {
@@ -1537,28 +1542,32 @@
             }
           }
 
-          // Trigger Abilities
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let optionsPool = ["magnetic_pull", "boomerang_shield"];
-            if (m.phase === 2) optionsPool.push("shield_bash");
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let optionsPool = ["magnetic_pull", "boomerang_shield"];
+                          if (m.phase === 2) optionsPool.push("shield_bash");
 
-            let chosen =
-              optionsPool[Math.floor(Math.random() * optionsPool.length)];
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
+                          let chosen =
+                            optionsPool[Math.floor(Math.random() * optionsPool.length)];
+                          // Bias heavily towards shield_bash when close and in Phase 2
+                          if (dist < 64 && m.phase === 2 && Math.random() < 0.8) {
+                            chosen = "shield_bash";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
 
-            if (chosen === "magnetic_pull") m.telegraphTimer = 90;
-            else if (chosen === "boomerang_shield") m.telegraphTimer = 60;
-            else m.telegraphTimer = 75; // shield_bash windup
-            m.maxTelegraphTimer = m.telegraphTimer;
+                          if (chosen === "magnetic_pull") m.telegraphTimer = 90;
+                          else if (chosen === "boomerang_shield") m.telegraphTimer = 60;
+                          else m.telegraphTimer = 75; // shield_bash windup
+                          m.maxTelegraphTimer = m.telegraphTimer;
 
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateOverlordIronVault(m, p, pStats, dist, dx, dy) {
@@ -1641,34 +1650,38 @@
             }
           }
 
-          // Trigger Attacks
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let chosen = Math.random() < 0.5 ? "slam" : "magma_vents";
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = 75;
-            m.maxTelegraphTimer = 75;
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let chosen = Math.random() < 0.5 ? "slam" : "magma_vents";
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer = 75;
+                          m.maxTelegraphTimer = 75;
 
-            if (chosen === "magma_vents") {
-              // Pre-calculate target spots around the player's current location
-              m.ventSpawnLocations = [];
-              for (let i = 0; i < 2; i++) {
-                let angle = Math.random() * Math.PI * 2;
-                let spawnDist = window.randFloat(40, 80);
-                m.ventSpawnLocations.push({
-                  x: p.x + Math.cos(angle) * spawnDist,
-                  y: p.y + Math.sin(angle) * spawnDist,
-                });
-              }
-            }
+                          if (chosen === "magma_vents") {
+                            // Pre-calculate target spots around the player's current location
+                            m.ventSpawnLocations = [];
+                            for (let i = 0; i < 2; i++) {
+                              let angle = Math.random() * Math.PI * 2;
+                              let spawnDist = window.randFloat(40, 80);
+                              m.ventSpawnLocations.push({
+                                x: p.x + Math.cos(angle) * spawnDist,
+                                y: p.y + Math.sin(angle) * spawnDist,
+                              });
+                            }
+                          }
 
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateCorrosiveAbomination(m, p, pStats, dist, dx, dy) {
@@ -1807,24 +1820,28 @@
             m.isMoving = false;
           }
 
-          // Trigger Abilities
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let optionsPool = ["slam"];
-            if (m.phase === 2) optionsPool.push("spore_storm");
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let optionsPool = ["slam"];
+                          if (m.phase === 2) optionsPool.push("spore_storm");
 
-            let chosen =
-              optionsPool[Math.floor(Math.random() * optionsPool.length)];
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = chosen === "spore_storm" ? 85 : 65;
-            m.maxTelegraphTimer = m.telegraphTimer;
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+                          let chosen =
+                            optionsPool[Math.floor(Math.random() * optionsPool.length)];
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer = chosen === "spore_storm" ? 85 : 65;
+                          m.maxTelegraphTimer = m.telegraphTimer;
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateVoidOverseer(m, p, pStats, dist, dx, dy) {
@@ -1954,20 +1971,24 @@
             }
           }
 
-          // Trigger Abilities
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let chosen = Math.random() < 0.5 ? "slam" : "singularity";
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = chosen === "singularity" ? 360 : 65; // 6s channel for singularity
-            m.maxTelegraphTimer = m.telegraphTimer;
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let chosen = Math.random() < 0.5 ? "slam" : "singularity";
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer = chosen === "singularity" ? 360 : 65; // 6s channel for singularity
+                          m.maxTelegraphTimer = m.telegraphTimer;
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateChronosArbitrator(m, p, pStats, dist, dx, dy) {
@@ -2141,20 +2162,24 @@
             }
           }
 
-          // Trigger Abilities
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let chosen = Math.random() < 0.5 ? "slam" : "dilation_field";
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = chosen === "dilation_field" ? 60 : 75;
-            m.maxTelegraphTimer = m.telegraphTimer;
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let chosen = Math.random() < 0.5 ? "slam" : "dilation_field";
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer = chosen === "dilation_field" ? 60 : 75;
+                          m.maxTelegraphTimer = m.telegraphTimer;
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateNexusOverseer(m, p, pStats, dist, dx, dy) {
@@ -2368,20 +2393,24 @@
             }
           }
 
-          // Trigger Abilities
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let chosen = Math.random() < 0.5 ? "slam" : "control_glitch";
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = chosen === "control_glitch" ? 60 : 75;
-            m.maxTelegraphTimer = m.telegraphTimer;
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let chosen = Math.random() < 0.5 ? "slam" : "control_glitch";
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer = chosen === "control_glitch" ? 60 : 75;
+                          m.maxTelegraphTimer = m.telegraphTimer;
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateGildedVaultKeeper(m, p, pStats, dist, dx, dy) {
@@ -2566,33 +2595,37 @@
             }
           }
 
-          // Trigger Abilities
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let chosen = Math.random() < 0.5 ? "slam" : "gold_fall";
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer = 75;
-            m.maxTelegraphTimer = 75;
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let chosen = Math.random() < 0.5 ? "slam" : "gold_fall";
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer = 75;
+                          m.maxTelegraphTimer = 75;
 
-            if (chosen === "gold_fall") {
-              m.goldFallTargets = [];
-              for (let i = 0; i < 3; i++) {
-                let angle = Math.random() * Math.PI * 2;
-                let spawnDist = window.randFloat(30, 75);
-                m.goldFallTargets.push({
-                  x: p.x + Math.cos(angle) * spawnDist,
-                  y: p.y + Math.sin(angle) * spawnDist,
-                });
-              }
-            }
+                          if (chosen === "gold_fall") {
+                            m.goldFallTargets = [];
+                            for (let i = 0; i < 3; i++) {
+                              let angle = Math.random() * Math.PI * 2;
+                              let spawnDist = window.randFloat(30, 75);
+                              m.goldFallTargets.push({
+                                x: p.x + Math.cos(angle) * spawnDist,
+                                y: p.y + Math.sin(angle) * spawnDist,
+                              });
+                            }
+                          }
 
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
       updateHooktail(m, p, pStats, dist, dx, dy) {
@@ -2780,28 +2813,32 @@
             }
           }
 
-          // Trigger Abilities
-          if (m.attackCooldown <= 0 && dist < 220) {
-            let pool = ["slam", "scarlet_fire"];
-            if (m.phase === 2) pool.push("calamity_slam");
+          // Trigger basic close-range quick strike first
+                        if (dist < 32 && m.attackCooldown <= 0) {
+                          m.attackCooldown = 50;
+                          window.damagePlayer(m.atk, m);
+                        } else if (m.attackCooldown <= 0 && dist < 220) {
+                          let pool = ["slam", "scarlet_fire"];
+                          if (m.phase === 2) pool.push("calamity_slam");
 
-            let chosen = pool[Math.floor(Math.random() * pool.length)];
-            m.state = "telegraphing";
-            m.actionState = "telegraphing";
-            m.activeAbility = chosen;
-            m.telegraphTimer =
-              chosen === "calamity_slam"
-                ? 85
-                : chosen === "scarlet_fire"
-                  ? 60
-                  : 75;
-            m.maxTelegraphTimer = m.telegraphTimer;
-            m.targetX = p.x;
-            m.targetY = p.y;
-          } else if (dist < 32 && m.attackCooldown <= 0) {
-            m.attackCooldown = 50;
-            window.damagePlayer(m.atk, m);
-          }
+                          let chosen = pool[Math.floor(Math.random() * pool.length)];
+                          // Bias heavily towards slam when close
+                          if (dist < 64 && Math.random() < 0.8) {
+                            chosen = "slam";
+                          }
+                          m.state = "telegraphing";
+                          m.actionState = "telegraphing";
+                          m.activeAbility = chosen;
+                          m.telegraphTimer =
+                            chosen === "calamity_slam"
+                              ? 85
+                              : chosen === "scarlet_fire"
+                                ? 60
+                                : 75;
+                          m.maxTelegraphTimer = m.telegraphTimer;
+                          m.targetX = p.x;
+                          m.targetY = p.y;
+                        }
         }
       },
 
@@ -3951,19 +3988,20 @@
   });
 
   window.checkOrientation = function () {
-      let overlay = document.getElementById("rotate-device-overlay");
-      if (overlay) overlay.style.display = "none";
-    };
+        let overlay = document.getElementById("rotate-device-overlay");
+        if (overlay) overlay.style.display = "none";
+      };
 
-    window.drawPortraitBossHealthBar = function (ctx, m, canvas) {
-      if (!m || !m.hp || !m.maxHp) return;
+      window.drawPortraitBossHealthBar = function (ctx, m, canvas) {
+        if (!m || !m.hp || !m.maxHp) return;
 
-      ctx.save();
+        ctx.save();
 
-      let barW = Math.min(canvas.width - 40, 280);
-      let barH = 10;
-      let barX = (canvas.width - barW) / 2;
-      let barY = 82;
+        let barW = Math.min(canvas.width - 40, 280);
+        let barH = 10;
+        let barX = (canvas.width - barW) / 2;
+        // Adjusted to 160 to prevent overlap with the stacked top HUD on notched/island devices in portrait mode
+        let barY = 160;
 
       let bHp = BigNum.from(m.hp);
       let bMaxHp = BigNum.from(m.maxHp);

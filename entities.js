@@ -8068,14 +8068,14 @@
       let isChronicle = equipped.subweapon.isUniqueChronicle;
 
       if (subType === "shield") {
-        // Heavy defensive arm sway rotation
-        let sway = Math.sin(Date.now() / 320) * 0.05;
+              // Heavy defensive arm sway rotation
+              let sway = Math.sin(Date.now() / 320) * 0.05;
 
-        ctx.save();
-        ctx.translate(16, 2 + bounce);
-        ctx.rotate(-sway + 0.1); // Held forward with heroic clearance
+              ctx.save();
+              ctx.translate(6, 4 + bounce);
+              ctx.rotate(-sway + 0.15); // Held securely on the front of the body
 
-        let shieldItem = equipped.subweapon;
+              let shieldItem = equipped.subweapon;
         let noun =
           shieldItem && shieldItem.noun ? shieldItem.noun.toLowerCase() : "";
         let tierColor = window.getTierColor(
@@ -8224,14 +8224,14 @@
         ctx.restore();
 
         // Orbiting Void Sparks (Aegis Unique only)
-        if (
-          isAegis &&
-          (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-        ) {
-          ctx.save();
-          ctx.translate(16, 2 + bounce);
-          ctx.rotate(-sway + 0.1);
-          let orbitTime = Date.now() / 250;
+                if (
+                  isAegis &&
+                  (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+                ) {
+                  ctx.save();
+                  ctx.translate(6, 4 + bounce);
+                  ctx.rotate(-sway + 0.15); // Aligned to follow the updated shield position
+                  let orbitTime = Date.now() / 250;
           ctx.fillStyle = "#110221";
           ctx.strokeStyle = "#8e44ad";
           ctx.lineWidth = 1.0;
