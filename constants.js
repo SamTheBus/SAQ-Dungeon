@@ -1978,7 +1978,7 @@ window.CAVERN_BUFFS = [
     type: "stat",
     statKey: "atk",
     minStars: 0,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "vital_fountain",
@@ -1987,7 +1987,7 @@ window.CAVERN_BUFFS = [
     type: "stat",
     statKey: "maxHp",
     minStars: 0,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "iron_aegis",
@@ -1996,7 +1996,7 @@ window.CAVERN_BUFFS = [
     type: "stat",
     statKey: "def",
     minStars: 0,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "swift_strikes",
@@ -2005,7 +2005,7 @@ window.CAVERN_BUFFS = [
     type: "stat",
     statKey: "moveSpeed",
     minStars: 1,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "unstable_surge",
@@ -2014,7 +2014,7 @@ window.CAVERN_BUFFS = [
     type: "stat",
     statKey: "critChance",
     minStars: 1,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "shatter_frenzy",
@@ -2023,7 +2023,7 @@ window.CAVERN_BUFFS = [
     type: "stat",
     statKey: "critDamage",
     minStars: 2,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "deflection_vortex",
@@ -2032,7 +2032,7 @@ window.CAVERN_BUFFS = [
     type: "stat",
     statKey: "block", // Handled by applying to both block and parry
     minStars: 2,
-    dangerRating: 0
+    dangerRating: 0,
   },
 
   // --- INTERACTIVE BUFFS (Locked to higher rarities) ---
@@ -2042,7 +2042,7 @@ window.CAVERN_BUFFS = [
     desc: "Concentric reticles appear over monsters. Strike them in alignment for 5x damage.",
     type: "interactive",
     minStars: 3,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "aetheric_conduit",
@@ -2050,7 +2050,7 @@ window.CAVERN_BUFFS = [
     desc: "Discharging ground pylons casts a chain-lightning storm.",
     type: "interactive",
     minStars: 3,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "glimmering_pixie",
@@ -2058,7 +2058,7 @@ window.CAVERN_BUFFS = [
     desc: "Capturing pixies triggers a random supernal potion elixir.",
     type: "interactive",
     minStars: 3,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "soul_harvest",
@@ -2066,7 +2066,7 @@ window.CAVERN_BUFFS = [
     desc: "Slaying targets has a chance to animate helpful spectral wisps to distract foes.",
     type: "interactive",
     minStars: 3,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "aetheric_spark",
@@ -2074,7 +2074,7 @@ window.CAVERN_BUFFS = [
     desc: "Pulsing ground sparks spawn. Step on 5 sequentially to trigger Astral Awakening.",
     type: "interactive",
     minStars: 4,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "temporal_echo",
@@ -2082,7 +2082,7 @@ window.CAVERN_BUFFS = [
     desc: "Slashes/spells leave behind echoes that strike again at 35% power after 1.2 seconds.",
     type: "interactive",
     minStars: 4,
-    dangerRating: 0
+    dangerRating: 0,
   },
   {
     id: "astral_conjunction",
@@ -2090,8 +2090,8 @@ window.CAVERN_BUFFS = [
     desc: "Upon room entry, a cosmic laser strikes a random target, spreading fire to adjacent foes.",
     type: "interactive",
     minStars: 5,
-    dangerRating: 0
-  }
+    dangerRating: 0,
+  },
 ];
 
 window.CAVERN_DEBUFFS = [
@@ -2103,7 +2103,7 @@ window.CAVERN_DEBUFFS = [
     type: "stat",
     statKey: "atk",
     minStars: 0,
-    dangerRating: 5
+    dangerRating: 5,
   },
   {
     id: "frail_vessel",
@@ -2112,7 +2112,7 @@ window.CAVERN_DEBUFFS = [
     type: "stat",
     statKey: "maxHp",
     minStars: 0,
-    dangerRating: 5
+    dangerRating: 5,
   },
   {
     id: "shattered_armour",
@@ -2121,7 +2121,7 @@ window.CAVERN_DEBUFFS = [
     type: "stat",
     statKey: "def",
     minStars: 0,
-    dangerRating: 5
+    dangerRating: 5,
   },
   {
     id: "heavy_mist",
@@ -2130,7 +2130,7 @@ window.CAVERN_DEBUFFS = [
     type: "stat",
     statKey: "moveSpeed",
     minStars: 1,
-    dangerRating: 10
+    dangerRating: 10,
   },
   {
     id: "blind_spot",
@@ -2139,7 +2139,7 @@ window.CAVERN_DEBUFFS = [
     type: "stat",
     statKey: "critChance",
     minStars: 1,
-    dangerRating: 10
+    dangerRating: 10,
   },
 
   // --- INTERACTIVE HAZARDS & DEBUFFS (Locked to higher rarities) ---
@@ -2149,7 +2149,7 @@ window.CAVERN_DEBUFFS = [
     desc: "Slowing ground crystals erupt. Walk over and shatter them to lift the penalty.",
     type: "interactive",
     minStars: 2,
-    dangerRating: 15
+    dangerRating: 15,
   },
   {
     id: "void_rupture",
@@ -2157,7 +2157,7 @@ window.CAVERN_DEBUFFS = [
     desc: "Health-draining tears open. Smash their stabilizers to claim a protective shield.",
     type: "interactive",
     minStars: 3,
-    dangerRating: 20
+    dangerRating: 20,
   },
   {
     id: "blood_toll",
@@ -2165,7 +2165,7 @@ window.CAVERN_DEBUFFS = [
     desc: "Opening chest reliquaries siphons 12% of your current HP.",
     type: "interactive",
     minStars: 3,
-    dangerRating: 15
+    dangerRating: 15,
   },
   {
     id: "shrouded_sight",
@@ -2173,7 +2173,7 @@ window.CAVERN_DEBUFFS = [
     desc: "Dungeon sight is halved but chest spawn frequencies are doubled.",
     type: "interactive",
     minStars: 3,
-    dangerRating: 20
+    dangerRating: 20,
   },
   {
     id: "unstable_crust",
@@ -2181,7 +2181,7 @@ window.CAVERN_DEBUFFS = [
     desc: "The floor slowly crumbles. Every 20 seconds, random tiles collapse into Void holes.",
     type: "interactive",
     minStars: 4,
-    dangerRating: 25
+    dangerRating: 25,
   },
   {
     id: "spreading_fatigue",
@@ -2189,7 +2189,7 @@ window.CAVERN_DEBUFFS = [
     desc: "Lose 1.5% speed per second. Slay monsters or break pottery to reset back to full.",
     type: "interactive",
     minStars: 5,
-    dangerRating: 30
+    dangerRating: 30,
   },
   {
     id: "molten_slag",
@@ -2197,25 +2197,25 @@ window.CAVERN_DEBUFFS = [
     desc: "Movement builds friction charges. Reaching 100 burns you and leaves magma pools.",
     type: "interactive",
     minStars: 5,
-    dangerRating: 30
+    dangerRating: 30,
   },
   {
-      id: "deaths_hour",
-      name: "Death's Hour",
-      desc: "Unleashes the slow-moving, wall-passing, one-hit-kill Calamity Specter onto the floor.",
-      type: "interactive",
-      minStars: 5,
-      dangerRating: 40
-    },
-    {
-      id: "elite_infestation",
-      name: "Elite Infestation",
-      desc: "Every single spawned monster becomes an Elite with a random support affix.",
-      type: "interactive",
-      minStars: 5,
-      dangerRating: 45
-    }
-  ];
+    id: "deaths_hour",
+    name: "Death's Hour",
+    desc: "Unleashes the slow-moving, wall-passing, one-hit-kill Calamity Specter onto the floor.",
+    type: "interactive",
+    minStars: 5,
+    dangerRating: 40,
+  },
+  {
+    id: "elite_infestation",
+    name: "Elite Infestation",
+    desc: "Every single spawned monster becomes an Elite with a random support affix.",
+    type: "interactive",
+    minStars: 5,
+    dangerRating: 45,
+  },
+];
 
 window.ASTRAL_SHOP_STOCK = [
   {
@@ -2603,7 +2603,7 @@ window.player = {
   targetX: 0,
   targetY: 0,
   radius: 9,
-  speed: 3.8,
+  speed: 3.0,
   hp: 100,
   maxHp: 100,
   atk: 15,

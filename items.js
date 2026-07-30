@@ -196,33 +196,46 @@ window.generateItemCardHtml = function (
   }
 
   if (item.type === "sigil") {
-      let color = window.getTierColor(item.statsRolled);
-      let buffDescs = (item.buffs || [])
-        .map(
-          (b) => {
-            let isStat = b.type === "stat";
-            let badge = isStat ? "STAT" : "EVENT";
-            let badgeCol = isStat ? "#2ecc71" : "#10b981";
-            return `<div style="color:#2ecc71; font-size:10.5px; margin-bottom:5px; line-height:1.35;">• <strong>${b.name}</strong> <span style="background:${badgeCol}15; border:1px solid ${badgeCol}33; color:${badgeCol}; font-size:7.5px; font-family:monospace; padding:1px 4px; border-radius:2px; margin-left:3px; vertical-align:middle;">${badge}</span><br><span style="color:#cbd5e1; font-size:9.5px; padding-left:10px; display:block;">${b.desc}</span></div>`;
-          }
-        )
-        .join("");
-      let debuffDescs = (item.debuffs || [])
-        .map(
-          (d) => {
-            let isStat = d.type === "stat";
-            let badge = isStat ? "PENALTY" : "HAZARD";
-            let badgeCol = isStat ? "#e74c3c" : "#fb7175";
-            return `<div style="color:#ff7675; font-size:10.5px; margin-bottom:5px; line-height:1.35;">• <strong>${d.name}</strong> <span style="background:${badgeCol}15; border:1px solid ${badgeCol}33; color:${badgeCol}; font-size:7.5px; font-family:monospace; padding:1px 4px; border-radius:2px; margin-left:3px; vertical-align:middle;">${badge}</span><br><span style="color:#cbd5e1; font-size:9.5px; padding-left:10px; display:block;">${d.desc}</span></div>`;
-          }
-        )
-        .join("");
+    let color = window.getTierColor(item.statsRolled);
+    let buffDescs = (item.buffs || [])
+      .map((b) => {
+        let isStat = b.type === "stat";
+        let badge = isStat ? "STAT" : "EVENT";
+        let badgeCol = isStat ? "#2ecc71" : "#10b981";
+        return `<div style="color:#2ecc71; font-size:10.5px; margin-bottom:5px; line-height:1.35;">• <strong>${b.name}</strong> <span style="background:${badgeCol}15; border:1px solid ${badgeCol}33; color:${badgeCol}; font-size:7.5px; font-family:monospace; padding:1px 4px; border-radius:2px; margin-left:3px; vertical-align:middle;">${badge}</span><br><span style="color:#cbd5e1; font-size:9.5px; padding-left:10px; display:block;">${b.desc}</span></div>`;
+      })
+      .join("");
+    let debuffDescs = (item.debuffs || [])
+      .map((d) => {
+        let isStat = d.type === "stat";
+        let badge = isStat ? "PENALTY" : "HAZARD";
+        let badgeCol = isStat ? "#e74c3c" : "#fb7175";
+        return `<div style="color:#ff7675; font-size:10.5px; margin-bottom:5px; line-height:1.35;">• <strong>${d.name}</strong> <span style="background:${badgeCol}15; border:1px solid ${badgeCol}33; color:${badgeCol}; font-size:7.5px; font-family:monospace; padding:1px 4px; border-radius:2px; margin-left:3px; vertical-align:middle;">${badge}</span><br><span style="color:#cbd5e1; font-size:9.5px; padding-left:10px; display:block;">${d.desc}</span></div>`;
+      })
+      .join("");
 
-      let dangerSum = (item.debuffs || []).reduce((sum, d) => sum + (d.dangerRating || 0), 0);
-      let riskLabel = dangerSum >= 60 ? "CALAMITY" : dangerSum >= 35 ? "EXTREME" : dangerSum >= 15 ? "MODERATE" : "LOW";
-      let riskColor = dangerSum >= 60 ? "#ef4444" : dangerSum >= 35 ? "#fb923c" : dangerSum >= 15 ? "#f1c40f" : "#34d399";
+    let dangerSum = (item.debuffs || []).reduce(
+      (sum, d) => sum + (d.dangerRating || 0),
+      0,
+    );
+    let riskLabel =
+      dangerSum >= 60
+        ? "CALAMITY"
+        : dangerSum >= 35
+          ? "EXTREME"
+          : dangerSum >= 15
+            ? "MODERATE"
+            : "LOW";
+    let riskColor =
+      dangerSum >= 60
+        ? "#ef4444"
+        : dangerSum >= 35
+          ? "#fb923c"
+          : dangerSum >= 15
+            ? "#f1c40f"
+            : "#34d399";
 
-      return `
+    return `
         <div class="tt-title" style="color:${color}; white-space:normal;">${item.name}${lockTag}</div>
         <div style="text-align:center; margin: 12px 0;">${window.getEquipIconHtml ? window.getEquipIconHtml(item, 56) : ""}</div>
         <div class="tt-subtitle">CAVERN SIGIL | <span style="color:${color}; font-weight:bold;">${item.statsRolled}★ ${window.getTierName(item.statsRolled)}</span></div>
@@ -246,7 +259,7 @@ window.generateItemCardHtml = function (
           </div>
         </div>
       `;
-    }
+  }
 
   let isUnique = window.isItemUnique(item);
   let uniqueStyle = window.getUniqueItemStyle
@@ -2867,22 +2880,26 @@ Object.assign(window.ItemFactory, {
 window.getUniqueItemStyle = (item) =>
   window.ItemFactory.getUniqueItemStyle(item);
 
-window.rollSigilStatValue = function(statKey, stars, isBuff) {
+window.rollSigilStatValue = function (statKey, stars, isBuff) {
   let variance = 0.8 + Math.random() * 0.4; // +/-20% random variance
   let baseVal = 0;
   let tier = stars <= 1 ? 0 : stars <= 3 ? 1 : 2;
 
   if (statKey === "atk" || statKey === "maxHp" || statKey === "def") {
-    let baseTiers = [0.10, 0.25, 0.55];
+    let baseTiers = [0.1, 0.25, 0.55];
     baseVal = baseTiers[tier] * variance;
   } else if (statKey === "moveSpeed") {
     let baseTiers = [0.04, 0.09, 0.18];
     baseVal = baseTiers[tier] * variance;
-  } else if (statKey === "critChance" || statKey === "block" || statKey === "parry") {
+  } else if (
+    statKey === "critChance" ||
+    statKey === "block" ||
+    statKey === "parry"
+  ) {
     let baseTiers = [0.03, 0.06, 0.12];
     baseVal = baseTiers[tier] * variance;
   } else if (statKey === "critDamage") {
-    let baseTiers = [0.12, 0.25, 0.50];
+    let baseTiers = [0.12, 0.25, 0.5];
     baseVal = baseTiers[tier] * variance;
   }
 
@@ -2892,7 +2909,7 @@ window.rollSigilStatValue = function(statKey, stars, isBuff) {
   return parseFloat(baseVal.toFixed(4));
 };
 
-window.formatSigilStatDesc = function(statKey, val, isBuff) {
+window.formatSigilStatDesc = function (statKey, val, isBuff) {
   let absPct = Math.round(Math.abs(val) * 100) + "%";
   let direction = isBuff ? "increased" : "decreased";
   let statLabels = {
@@ -2902,13 +2919,13 @@ window.formatSigilStatDesc = function(statKey, val, isBuff) {
     moveSpeed: "Movement Speed",
     critChance: "Critical Strike Chance",
     critDamage: "Critical Strike Damage",
-    block: "Block and Parry Rates"
+    block: "Block and Parry Rates",
   };
   let label = statLabels[statKey] || statKey;
   return `${label} ${direction} by ${isBuff ? "+" : "-"}${absPct}.`;
 };
 
-window.generateCavernSigilName = function(item) {
+window.generateCavernSigilName = function (item) {
   let stars = item.statsRolled;
   let buffPrefixes = {
     giant_might: "Might",
@@ -2924,25 +2941,25 @@ window.generateCavernSigilName = function(item) {
     soul_harvest: "Necrotic",
     aetheric_spark: "Awakened",
     temporal_echo: "Temporal",
-    astral_conjunction: "Celestial"
+    astral_conjunction: "Celestial",
   };
 
   let debuffSuffixes = {
-      dull_blades: "of the Blunt Edge",
-      frail_vessel: "of Frailty",
-      shattered_armour: "of Shattered Steel",
-      heavy_mist: "of the Heavy Shroud",
-      blind_spot: "of the Blind Eye",
-      anomalous_shards: "of Crushing Shards",
-      void_rupture: "of Void Tears",
-      blood_toll: "of the Blood Tax",
-      shrouded_sight: "of Claustrophobia",
-      unstable_crust: "of the Crumbling Earth",
-      spreading_fatigue: "of Suffocation",
-      molten_slag: "of the Burning Floor",
-      deaths_hour: "of the Calamity Reaper",
-      elite_infestation: "of Elite Infestation"
-    };
+    dull_blades: "of the Blunt Edge",
+    frail_vessel: "of Frailty",
+    shattered_armour: "of Shattered Steel",
+    heavy_mist: "of the Heavy Shroud",
+    blind_spot: "of the Blind Eye",
+    anomalous_shards: "of Crushing Shards",
+    void_rupture: "of Void Tears",
+    blood_toll: "of the Blood Tax",
+    shrouded_sight: "of Claustrophobia",
+    unstable_crust: "of the Crumbling Earth",
+    spreading_fatigue: "of Suffocation",
+    molten_slag: "of the Burning Floor",
+    deaths_hour: "of the Calamity Reaper",
+    elite_infestation: "of Elite Infestation",
+  };
 
   let prefix = "Cavern";
   if (item.buffs && item.buffs.length > 0) {
@@ -2953,7 +2970,8 @@ window.generateCavernSigilName = function(item) {
   let suffix = "";
   if (item.debuffs && item.debuffs.length > 0) {
     let primeDebuff = item.debuffs[0];
-    suffix = " " + (debuffSuffixes[primeDebuff.id] || `(Lv. ${item.stageLevel})`);
+    suffix =
+      " " + (debuffSuffixes[primeDebuff.id] || `(Lv. ${item.stageLevel})`);
   } else {
     suffix = ` (Lv. ${item.stageLevel})`;
   }
@@ -3124,56 +3142,79 @@ Object.assign(window.ItemFactory, {
     }
 
     if (chosenType === "sigil") {
-          let stars = statLinesCount;
-          let buffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
-          let debuffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
+      let stars = statLinesCount;
+      let buffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
+      let debuffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
 
-          let eligibleBuffs = (window.CAVERN_BUFFS || []).filter(b => b.minStars <= stars);
-          let eligibleDebuffs = (window.CAVERN_DEBUFFS || []).filter(d => d.minStars <= stars);
+      let eligibleBuffs = (window.CAVERN_BUFFS || []).filter(
+        (b) => b.minStars <= stars,
+      );
+      let eligibleDebuffs = (window.CAVERN_DEBUFFS || []).filter(
+        (d) => d.minStars <= stars,
+      );
 
-          let selectedBuffs = [];
-          while (selectedBuffs.length < buffsCount && eligibleBuffs.length > 0) {
-            let randIdx = Math.floor(Math.random() * eligibleBuffs.length);
-            let baseBuff = eligibleBuffs.splice(randIdx, 1)[0];
-            let buffInstance = JSON.parse(JSON.stringify(baseBuff));
+      let selectedBuffs = [];
+      while (selectedBuffs.length < buffsCount && eligibleBuffs.length > 0) {
+        let randIdx = Math.floor(Math.random() * eligibleBuffs.length);
+        let baseBuff = eligibleBuffs.splice(randIdx, 1)[0];
+        let buffInstance = JSON.parse(JSON.stringify(baseBuff));
 
-            if (buffInstance.type === "stat") {
-              let rolledVal = window.rollSigilStatValue(buffInstance.statKey, stars, true);
-              buffInstance.value = rolledVal;
-              buffInstance.desc = window.formatSigilStatDesc(buffInstance.statKey, rolledVal, true);
-            }
-            selectedBuffs.push(buffInstance);
-          }
-
-          let selectedDebuffs = [];
-          let dangerSum = 0;
-          while (selectedDebuffs.length < debuffsCount && eligibleDebuffs.length > 0) {
-            let randIdx = Math.floor(Math.random() * eligibleDebuffs.length);
-            let baseDebuff = eligibleDebuffs.splice(randIdx, 1)[0];
-            let debuffInstance = JSON.parse(JSON.stringify(baseDebuff));
-
-            if (debuffInstance.type === "stat") {
-              let rolledVal = window.rollSigilStatValue(debuffInstance.statKey, stars, false);
-              debuffInstance.value = rolledVal;
-              debuffInstance.desc = window.formatSigilStatDesc(debuffInstance.statKey, rolledVal, false);
-            }
-            dangerSum += debuffInstance.dangerRating || 0;
-            selectedDebuffs.push(debuffInstance);
-          }
-
-          let dangerBonus = dangerSum * 0.005; // 1 danger rating point = +0.5% gold/drop rate bonus
-          let rewardMult = 0.15 + (stars * 0.20) + dangerBonus;
-          let qlyBoost = stars >= 3 ? (stars - 2) * 0.15 : 0.0;
-
-          item.statsRolled = stars;
-          item.buffs = selectedBuffs;
-          item.debuffs = selectedDebuffs;
-          item.rewardMultiplier = parseFloat(rewardMult.toFixed(4));
-          item.qualityBoost = parseFloat(qlyBoost.toFixed(4));
-          item.name = window.generateCavernSigilName(item);
-
-          return item;
+        if (buffInstance.type === "stat") {
+          let rolledVal = window.rollSigilStatValue(
+            buffInstance.statKey,
+            stars,
+            true,
+          );
+          buffInstance.value = rolledVal;
+          buffInstance.desc = window.formatSigilStatDesc(
+            buffInstance.statKey,
+            rolledVal,
+            true,
+          );
         }
+        selectedBuffs.push(buffInstance);
+      }
+
+      let selectedDebuffs = [];
+      let dangerSum = 0;
+      while (
+        selectedDebuffs.length < debuffsCount &&
+        eligibleDebuffs.length > 0
+      ) {
+        let randIdx = Math.floor(Math.random() * eligibleDebuffs.length);
+        let baseDebuff = eligibleDebuffs.splice(randIdx, 1)[0];
+        let debuffInstance = JSON.parse(JSON.stringify(baseDebuff));
+
+        if (debuffInstance.type === "stat") {
+          let rolledVal = window.rollSigilStatValue(
+            debuffInstance.statKey,
+            stars,
+            false,
+          );
+          debuffInstance.value = rolledVal;
+          debuffInstance.desc = window.formatSigilStatDesc(
+            debuffInstance.statKey,
+            rolledVal,
+            false,
+          );
+        }
+        dangerSum += debuffInstance.dangerRating || 0;
+        selectedDebuffs.push(debuffInstance);
+      }
+
+      let dangerBonus = dangerSum * 0.005; // 1 danger rating point = +0.5% gold/drop rate bonus
+      let rewardMult = 0.15 + stars * 0.2 + dangerBonus;
+      let qlyBoost = stars >= 3 ? (stars - 2) * 0.15 : 0.0;
+
+      item.statsRolled = stars;
+      item.buffs = selectedBuffs;
+      item.debuffs = selectedDebuffs;
+      item.rewardMultiplier = parseFloat(rewardMult.toFixed(4));
+      item.qualityBoost = parseFloat(qlyBoost.toFixed(4));
+      item.name = window.generateCavernSigilName(item);
+
+      return item;
+    }
 
     if (chosenType === "artifact") {
       let filterPool = window.ARTIFACT_POOL;
@@ -4926,6 +4967,8 @@ Object.assign(window.GameState, {
     if (typeof window.resolvePlayerStats === "function")
       oldMaxHp = window.resolvePlayerStats().maxHp;
 
+    let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
+
     if (item.type === "artifact") {
       window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
       if (window.inventory.ARTIFACT.length >= maxBag) {
@@ -4936,14 +4979,25 @@ Object.assign(window.GameState, {
       window.equippedSlots[slotKey] = null;
       window.inventory.ARTIFACT.push(item);
     } else {
-      window.inventory.EQUIP = window.inventory.EQUIP || [];
-      if (window.inventory.EQUIP.length >= maxBag) {
-        if (typeof window.pushHeaderToast === "function")
-          window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
-        return;
+      if (inDungeonRun) {
+        window.player.bag = window.player.bag || [];
+        if (window.player.bag.length >= maxBag) {
+          if (typeof window.pushHeaderToast === "function")
+            window.pushHeaderToast(`Satchel Full!`, "#e74c3c");
+          return;
+        }
+        window.equippedSlots[slotKey] = null;
+        window.player.bag.push(item);
+      } else {
+        window.inventory.EQUIP = window.inventory.EQUIP || [];
+        if (window.inventory.EQUIP.length >= maxBag) {
+          if (typeof window.pushHeaderToast === "function")
+            window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
+          return;
+        }
+        window.equippedSlots[slotKey] = null;
+        window.inventory.EQUIP.push(item);
       }
-      window.equippedSlots[slotKey] = null;
-      window.inventory.EQUIP.push(item);
     }
 
     if (typeof window.invalidatePlayerStats === "function")
