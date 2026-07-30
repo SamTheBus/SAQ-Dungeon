@@ -576,11 +576,11 @@
           }
 
           if (this.grid[py] && this.grid[py][px] === window.TILE_TYPES.FLOOR) {
-            this.grid[py][px] = window.TILE_TYPES.POTTERY_SPAWN;
-            let chosenProp =
-              propTypes[Math.floor(Math.random() * propTypes.length)];
-            let hp = chosenProp === "wooden_barrel" ? 2 : 1;
-            this.breakables.push({
+                      this.grid[py][px] = window.TILE_TYPES.POTTERY_SPAWN;
+                      let chosenProp =
+                        propTypes[Math.floor(Math.random() * propTypes.length)];
+                      let hp = 1; // All props break in 1 satisfying hit
+                      this.breakables.push({
               id: window.idCounter++,
               type: chosenProp,
               x: px,

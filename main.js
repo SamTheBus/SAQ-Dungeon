@@ -8345,35 +8345,63 @@
     ];
 
     if (window.particles && window.ParticlePool) {
-      for (let i = 0; i < 16; i++) {
-        let angle = Math.random() * Math.PI * 2;
-        let speed = window.randFloat(1.5, 4.5);
-        let life = window.randInt(20, 35);
+                    // 1. Spurt/Fling Shards (16 pieces, fly fast, fall, shrink and fade quickly)
+                    for (let i = 0; i < 16; i++) {
+                      let angle = Math.random() * Math.PI * 2;
+                      let speed = window.randFloat(2.0, 5.0);
+                      let life = window.randInt(20, 35);
 
-        let pt = window.ParticlePool.get(
-          worldX,
-          worldY,
-          Math.cos(angle) * speed,
-          Math.sin(angle) * speed - window.randFloat(1, 2.5),
-          window.randFloat(1.5, 3.5),
-          colors[Math.floor(Math.random() * colors.length)],
-          1.0,
-          life,
-          life,
-          0.25,
-          true,
-        );
+                      let pt = window.ParticlePool.get(
+                        worldX,
+                        worldY,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed - window.randFloat(1.5, 3.5),
+                        window.randFloat(1.5, 3.5),
+                        colors[Math.floor(Math.random() * colors.length)],
+                        1.0,
+                        life,
+                        life,
+                        0.28, // gravity pulls them down
+                        true,
+                        0.94, // realistic air resistance
+                      );
 
-        // Upgrade to high-fidelity rotating wooden splinters / pottery shards! (Subphase C.1)
-        pt.style = "polygon";
-        pt.angle = Math.random() * Math.PI * 2;
-        pt.spinSpeed = window.randFloat(-0.25, 0.25);
-        pt.scaleDecay = 0.02; // shrink smoothly
-        pt.drag = 0.95; // apply realistic air resistance
+                      pt.style = "polygon";
+                      pt.angle = Math.random() * Math.PI * 2;
+                      pt.spinSpeed = window.randFloat(-0.3, 0.3);
+                      pt.scaleDecay = 0.02; // shrink smoothly
+                      window.particles.push(pt);
+                    }
 
-        window.particles.push(pt);
-      }
-    }
+                    // 2. Lingering Ground Debris/Rubble (5-8 pieces, slide and settle flat, linger for 4-5 seconds)
+                    let rubbleCount = window.randInt(5, 8);
+                    for (let i = 0; i < rubbleCount; i++) {
+                      let angle = Math.random() * Math.PI * 2;
+                      let speed = window.randFloat(0.5, 2.2);
+                      let life = window.randInt(240, 300); // 4-5 seconds at 60 FPS
+
+                      let pt = window.ParticlePool.get(
+                        worldX,
+                        worldY + window.randFloat(-3, 3), // spread offset
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed * 0.5, // flat ellipse scatter
+                        window.randFloat(2.0, 3.5),
+                        colors[Math.floor(Math.random() * colors.length)],
+                        1.0,
+                        life,
+                        life,
+                        0, // no gravity, they lay flat on the floor
+                        true, // slowly fade out at the end
+                        0.86, // rapid deceleration to settle quickly
+                      );
+
+                      pt.style = "polygon";
+                      pt.angle = Math.random() * Math.PI * 2;
+                      pt.spinSpeed = window.randFloat(-0.05, 0.05); // slow rotation as they slide
+                      pt.scaleDecay = 0.0; // do not shrink, stay as flat rubble on the ground
+                      window.particles.push(pt);
+                    }
+                  }
 
     if (window.combatVisuals) {
       window.combatVisuals.triggerScreenShake(2, 6);

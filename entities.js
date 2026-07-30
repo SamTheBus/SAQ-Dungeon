@@ -1159,26 +1159,47 @@
         let barX = (ctx.canvas.width - barW) / 2;
         let barY = 52;
 
-        let isAegis =
-          target.type === "aegis_goliath" ||
-          target.visualType === "aegis_goliath" ||
-          (target.name && target.name.toLowerCase().includes("aegis"));
+        let isTreant =
+                  target.type === "arachnid_treant" ||
+                  target.visualType === "arachnid_treant" ||
+                  (target.name && target.name.toLowerCase().includes("treant"));
 
-        if (isAegis) {
-          this.drawAegisGoliathBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
+                if (isTreant) {
+                  this.drawArachnidTreantBossBar(
+                    ctx,
+                    target,
+                    hpPct,
+                    bHp,
+                    bMaxHp,
+                    barX,
+                    barY,
+                    barW,
+                    barH,
+                  );
+                  ctx.restore();
+                  return;
+                }
+
+                let isAegis =
+                  target.type === "aegis_goliath" ||
+                  target.visualType === "aegis_goliath" ||
+                  (target.name && target.name.toLowerCase().includes("aegis"));
+
+                if (isAegis) {
+                  this.drawAegisGoliathBossBar(
+                    ctx,
+                    target,
+                    hpPct,
+                    bHp,
+                    bMaxHp,
+                    barX,
+                    barY,
+                    barW,
+                    barH,
+                  );
+                  ctx.restore();
+                  return;
+                }
 
         let isChronos =
           target.type === "chronos_arbitrator" ||
@@ -1392,17 +1413,171 @@
       ctx.restore();
     }
 
-    drawAegisGoliathBossBar(
-      ctx,
-      target,
-      hpPct,
-      bHp,
-      bMaxHp,
-      barX,
-      barY,
-      barW,
-      barH,
-    ) {
+    drawArachnidTreantBossBar(
+          ctx,
+          target,
+          hpPct,
+          bHp,
+          bMaxHp,
+          barX,
+          barY,
+          barW,
+          barH,
+        ) {
+          let time = Date.now();
+          let isLowHp = hpPct < 0.2;
+          let tremorX = isLowHp
+            ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+            : 0;
+          let tremorY = isLowHp
+            ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+            : 0;
+
+          ctx.save();
+          ctx.translate(tremorX, tremorY);
+
+          let theme = {
+            title: "ARACHNID TREANT",
+            subtitle: "ELDRITCH BARK WARDEN",
+            primaryColor: "#2ecc71",
+            secondaryColor: "#27ae60",
+          };
+
+          let pulse = Math.sin(time / 140) * 0.15 + 0.85;
+          ctx.shadowBlur = 12 * pulse;
+          ctx.shadowColor = theme.primaryColor;
+
+          ctx.fillStyle = "#0c1a10";
+          ctx.strokeStyle = theme.primaryColor;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+          ctx.fill();
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          [-14, barW + 6].forEach((offsetX) => {
+            let bracketX = barX + offsetX;
+            ctx.fillStyle = "#1e3f20";
+            ctx.strokeStyle = theme.primaryColor;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(bracketX, barY - 1);
+            ctx.lineTo(bracketX + 8, barY + barH / 2);
+            ctx.lineTo(bracketX, barY + barH + 1);
+            ctx.lineTo(bracketX - 4, barY + barH / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = "#a3fd83";
+            ctx.beginPath();
+            ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          ctx.fillStyle = "#145a32";
+          let fillWidth = Math.max(0, barW * hpPct);
+          let trailingWidth = Math.max(0, barW * target.trailingPct);
+          if (trailingWidth > 0) {
+            ctx.beginPath();
+            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+            ctx.fill();
+          }
+
+          if (fillWidth > 0) {
+            let fillGrad = ctx.createLinearGradient(
+              barX,
+              barY,
+              barX + fillWidth,
+              barY,
+            );
+            fillGrad.addColorStop(0, "#a3fd83");
+            fillGrad.addColorStop(0.5, "#2ecc71");
+            fillGrad.addColorStop(1, "#1e824c");
+            ctx.fillStyle = fillGrad;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+            ctx.fill();
+
+            let scanX = barX + ((time / 6) % fillWidth);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.fillRect(scanX, barY + 1, 6, barH - 2);
+          }
+
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+          ctx.lineWidth = 2.0;
+          [0.25, 0.5, 0.75].forEach((pct) => {
+            let notchX = barX + barW * pct;
+            ctx.beginPath();
+            ctx.moveTo(notchX, barY + 1);
+            ctx.lineTo(notchX, barY + barH - 1);
+            ctx.stroke();
+
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(notchX - 1, barY - 1, 2, 2);
+            ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
+          });
+
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.font = "900 12px monospace";
+
+          let bossTitle = (target.name || theme.title).toUpperCase();
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+          ctx.fillStyle = "#2ecc71";
+          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+          ctx.font = "bold 9px monospace";
+          ctx.textBaseline = "top";
+          let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
+          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+          ctx.fillStyle = "#a3fd83";
+          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+          if (target.funnyTextTimer > 0 && target.funnyText) {
+            target.funnyTextTimer--;
+            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 3.5;
+            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+            ctx.fillStyle = "#00ffcc";
+            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+          }
+
+          this.drawStatusDots(
+            ctx,
+            barX + (barW - 55) / 2,
+            barY + barH + 16,
+            target.bleedStacks || 0,
+            "#e74c3c",
+          );
+          this.drawStatusDots(
+            ctx,
+            barX + (barW - 55) / 2,
+            barY + barH + 24,
+            target.poisonStacks || 0,
+            "#2ecc71",
+          );
+
+          ctx.restore();
+        }
+
+        drawAegisGoliathBossBar(
+          ctx,
+          target,
+          hpPct,
+          bHp,
+          bMaxHp,
+          barX,
+          barY,
+          barW,
+          barH,
+        ) {
       let time = Date.now();
       let isLowHp = hpPct < 0.2;
       let tremorX = isLowHp
@@ -6171,14 +6346,14 @@
       }
       c.restore();
     } else if (
-      m.type === "dungeon_boss" ||
-      m.type === "gilded_vault_keeper" ||
-      m.type === "corrosive_abomination" ||
-      m.type === "overlord_iron_vault" ||
-      m.visualType === "gilded_vault_keeper" ||
-      m.visualType === "corrosive_abomination" ||
-      m.visualType === "overlord_iron_vault"
-    ) {
+          (m.type === "dungeon_boss" && window.playerStats.isDungeonMode) ||
+          m.type === "gilded_vault_keeper" ||
+          m.type === "corrosive_abomination" ||
+          m.type === "overlord_iron_vault" ||
+          m.visualType === "gilded_vault_keeper" ||
+          m.visualType === "corrosive_abomination" ||
+          m.visualType === "overlord_iron_vault"
+        ) {
       let bounce = 0;
       let coreColor = "#9b59b6";
       let glowColor = "#e84393";

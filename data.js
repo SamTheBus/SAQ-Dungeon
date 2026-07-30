@@ -2983,8 +2983,8 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       window.playerStats.adrenalineTimer = 360;
     }
 
-    // Gain +8 Shield Mastery XP on Block
-    if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 8);
+    // Gain +16 Shield Mastery XP on Block
+        if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
 
     // Fortitude stack acquisition on block / damage
     if (pStats.fortifiedGuardMultiplier > 0) {
@@ -3097,8 +3097,8 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       );
 
     if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-      // Gain +5 Shield Mastery XP on Shield Bash reflect
-      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 5);
+      // Gain +10 Shield Mastery XP on Shield Bash reflect
+            if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
 
       let defBash = BigNum.from(pStats.def || 5).mul(
         pStats.reflectDamage || 1.0,
