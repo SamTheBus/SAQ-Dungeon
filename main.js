@@ -5501,18 +5501,24 @@
   };
 
   window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
-    let map = window.activeDungeonMap;
-    let tileSize = map ? map.tileSize : 32;
+      let map = window.activeDungeonMap;
+      let tileSize = map ? map.tileSize : 32;
 
-    let depth = window.player.depth || 1;
-    let isMini = bossTier === "mini";
+      let depth = window.player.depth || 1;
+      let isMini = bossTier === "mini";
 
-    let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-    let bossHp = isMini ? 350 + depth * 120 : 600 + depth * 250;
-    let bossAtk = isMini ? 16 + depth * 5 : 24 + depth * 8;
+      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
-    bossHp = Math.round(bossHp * enemyScale);
-    bossAtk = Math.round(bossAtk * enemyScale);
+      // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+      let repStage = window.getEffectiveStage(depth * 5);
+      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+      let repScale = Math.pow(repGrowth, repStage * 0.95);
+
+      let bossHp = isMini ? 300 * repScale : 500 * repScale;
+      let bossAtk = isMini ? 15 * repScale : 22 * repScale;
+
+      bossHp = Math.round(bossHp * enemyScale);
+      bossAtk = Math.round(bossAtk * enemyScale);
 
     let tier =
       typeof window.getStageTier === "function" ? window.getStageTier() : 0;
@@ -5685,11 +5691,15 @@
       let cy = Math.floor(map.height / 2);
       window.spawnBossEncounter(cx, cy, "mini");
     } else if (map.mobSpawns) {
-      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-      let mobHpVal = Math.floor(
-        (40 + depth * 18 + Math.pow(depth, 1.3) * 5) * enemyScale,
-      );
-      let mobAtkVal = Math.floor((8 + depth * 3.5) * enemyScale);
+              let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+
+              // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+              let repStage = window.getEffectiveStage(depth * 5);
+              let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+              let repScale = Math.pow(repGrowth, repStage * 0.95);
+
+              let mobHpVal = Math.floor(40 * repScale * enemyScale);
+              let mobAtkVal = Math.floor(8 * repScale * enemyScale);
 
       let pStats =
         typeof window.resolvePlayerStats === "function"

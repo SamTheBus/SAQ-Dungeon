@@ -2809,7 +2809,13 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   let remainingDmg = Math.max(1, rawDmg - absorbed);
-  let netDmg = Math.max(1, remainingDmg - (pStats.def || 0));
+
+    // Soft-capped asymptotic damage reduction based on Defense to prevent 1-damage trivialization exploits
+    let currentFloor = window.player ? (window.player.depth || 1) : 1;
+    let defenseConstant = 15 + currentFloor * 5;
+    let defenseDR = (pStats.def || 0) / ((pStats.def || 0) + defenseConstant);
+    defenseDR = Math.min(0.85, defenseDR); // Cap armor damage reduction at 85% maximum
+    let netDmg = Math.max(1, remainingDmg * (1 - defenseDR));
 
   // Step 2: Parry Check (Daggers)
   if (pStats.parry && Math.random() < pStats.parry) {
