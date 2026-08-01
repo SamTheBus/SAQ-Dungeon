@@ -1155,14 +1155,32 @@
         target.type === "overlord_iron_vault"
       ) {
         let barW = Math.min(420, ctx.canvas.width * 0.5);
-        let barH = 12;
-        let barX = (ctx.canvas.width - barW) / 2;
-        let barY = 52;
+                    let barH = 12;
+                    let barX = (ctx.canvas.width - barW) / 2;
+                    let barY = 52;
 
-        let isTreant =
-                  target.type === "arachnid_treant" ||
-                  target.visualType === "arachnid_treant" ||
-                  (target.name && target.name.toLowerCase().includes("treant"));
+                    // Direct smaller Guard Wardens (minibosses) to the standard boss bar
+                    // to reserve the highly customized layout exclusively for the final Overlords
+                    if (target.type === "dungeon_miniboss") {
+                      this.drawStandardBossBar(
+                        ctx,
+                        target,
+                        hpPct,
+                        bHp,
+                        bMaxHp,
+                        barX,
+                        barY,
+                        barW,
+                        barH,
+                      );
+                      ctx.restore();
+                      return;
+                    }
+
+                    let isTreant =
+                              target.type === "arachnid_treant" ||
+                              target.visualType === "arachnid_treant" ||
+                              (target.name && target.name.toLowerCase().includes("treant"));
 
                 if (isTreant) {
                   this.drawArachnidTreantBossBar(
@@ -7304,753 +7322,659 @@
       let bounce = 0;
 
       if (currentTier === 0) {
-        c.save();
-        let centerBossX = m.x + m.w / 2;
-        let centerBossY = m.y + m.h / 2;
-        c.translate(centerBossX, centerBossY);
-        // Dynamically scale based on whether this is a full Stage Warden (major boss) or a Guard Warden (miniboss)
-        let scaleFactor = m.type === "dungeon_miniboss" ? 0.45 : 0.95;
-        c.scale(scaleFactor, scaleFactor);
-        c.translate(-centerBossX, -centerBossY);
+              let rMob = m;
+              let drawVisageOnTop = false;
 
-        // Draw Eldritch Bark Shield surrounding sphere if active
-        if (m.actionState === "bark_shield") {
-          let time = Date.now();
-          let pulse = Math.sin(time / 120) * 3;
+              if (m.type === "dungeon_miniboss") {
+                // --- MINIBOSS: Keep the shrunken head-and-legs look you like ---
+                c.save();
+                let centerBossX = m.x + m.w / 2;
+                let centerBossY = m.y + m.h / 2;
+                c.translate(centerBossX, centerBossY);
+                c.scale(0.45, 0.45);
+                c.translate(-centerBossX, -centerBossY);
+              } else {
+                // --- FULL BOSS: Aspect-Ratio Decoupled & Towering Proportions ---
+                drawVisageOnTop = true;
+                c.save();
 
-          c.save();
-          c.strokeStyle = "rgba(46, 204, 113, 0.85)";
-          c.lineWidth = 2.0;
-          c.shadowBlur = 15;
-          c.shadowColor = "#2ecc71";
-          c.setLineDash([8, 4]);
-          c.beginPath();
-          c.arc(centerBossX, centerBossY, m.w * 0.75 + pulse, 0, Math.PI * 2);
-          c.stroke();
-          c.restore();
-        }
+                // Pivot the scaled transform at the bottom-center of the mob box (standing on ground)
+                let groundX = m.x + m.w / 2;
+                let groundY = m.y + m.h;
+                c.translate(groundX, groundY);
 
-        // Draw Cyberspace Cyber Barrier surrounding sphere if active
-        if (m.actionState === "cyber_barrier") {
-          let time = Date.now();
-          let pulse = Math.sin(time / 90) * 2.5;
+                // Standard native design dimension envelope for the Treant:
+                let baseW = 80;
+                let baseH = 120;
 
-          c.save();
-          c.strokeStyle = "rgba(255, 0, 127, 0.85)";
-          c.lineWidth = 2.0;
-          c.shadowBlur = 15;
-          c.shadowColor = "#ff007f";
-          c.setLineDash([4, 2]);
-          c.beginPath();
-          c.arc(centerBossX, centerBossY, m.w * 0.75 + pulse, 0, Math.PI * 2);
-          c.stroke();
-          c.restore();
-        }
+                // Scale proportionally based on a majestic target width of 125px
+                let targetWidth = 125;
+                let scaleFactor = targetWidth / baseW;
+                c.scale(scaleFactor, scaleFactor);
 
-        // Draw Aegis Goliath Directional Tower Shield if active (Phase 2)
-        if (
-          m.phase === 2 &&
-          m.bossKey === "aegis_goliath" &&
-          !(m.dazeTimer > 0)
-        ) {
-          let shieldAngle = m.shieldAngle !== undefined ? m.shieldAngle : 0;
-          c.save();
-          c.strokeStyle = "rgba(0, 210, 255, 0.85)";
-          c.lineWidth = 4.0;
-          c.shadowBlur = 10;
-          c.shadowColor = "#00d2ff";
-          c.beginPath();
-          c.arc(
-            centerBossX,
-            centerBossY,
-            m.w * 0.75,
-            shieldAngle - 0.6,
-            shieldAngle + 0.6,
-          );
-          c.stroke();
-          c.restore();
-        }
+                // Center the drawing space on the pivot coordinate
+                c.translate(-baseW / 2, -baseH);
 
-        // Draw Swirling Dazed Stars if active
-        if (m.dazeTimer > 0) {
-          let time = Date.now();
-          c.save();
-          c.strokeStyle = "#ffd700";
-          c.lineWidth = 1.0;
-          c.beginPath();
-          c.ellipse(centerBossX, m.y - 6, 12, 3, 0, 0, Math.PI * 2);
-          c.stroke();
+                // Proxy reference redirecting coordinates to the localized space
+                rMob = {
+                  ...m,
+                  x: 0,
+                  y: 0,
+                  w: baseW,
+                  h: baseH
+                };
+              }
 
-          c.fillStyle = "#ffffff";
-          for (let i = 0; i < 3; i++) {
-            let starAngle = time / 150 + (i * Math.PI * 2) / 3;
-            let sx = centerBossX + Math.cos(starAngle) * 12;
-            let sy = m.y - 6 + Math.sin(starAngle) * 3;
-            c.fillRect(sx - 1.2, sy - 1.2, 2.4, 2.4);
-          }
-          c.restore();
-        }
+              // Background glow layer for Rare targets to immediately signify high-tier spawns
+              if (rMob.isRare) {
+                c.save();
+                let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
+                let auraGrad = c.createRadialGradient(
+                  rMob.x + rMob.w / 2,
+                  rMob.y + rMob.h / 2,
+                  2,
+                  rMob.x + rMob.w / 2,
+                  rMob.y + rMob.h / 2,
+                  Math.max(rMob.w, rMob.h) * 1.15 * auraPulse,
+                );
+                auraGrad.addColorStop(0, "rgba(241, 196, 15, 0.45)");
+                auraGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.18)");
+                auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                c.fillStyle = auraGrad;
+                c.beginPath();
+                c.arc(
+                  rMob.x + rMob.w / 2,
+                  rMob.y + rMob.h / 2,
+                  Math.max(rMob.w, rMob.h) * 1.15 * auraPulse,
+                  0,
+                  Math.PI * 2,
+                );
+                c.fill();
+                c.restore();
+              }
 
-        // Draw Chronos Rewind ticking shield bubble if active (Phase 2)
-        if (
-          m.actionState === "chrono_rewind" &&
-          m.bossKey === "chronos_arbitrator"
-        ) {
-          let time = Date.now();
-          let pulse = Math.sin(time / 100) * 2.5;
+              // Wrap with a pivot coordinate space to organic-sway and breathe from the root base
+              c.save();
+              let ox = rMob.x + rMob.w / 2;
+              let oy = rMob.y + rMob.h;
+              let sway = Math.sin(Date.now() / 240) * 0.035;
+              let breatheW = 1 + Math.sin(Date.now() / 150) * 0.015;
+              let breatheH = 1 + Math.cos(Date.now() / 150) * 0.008;
 
-          // Glowing golden barrier bubble
-          c.save();
-          c.strokeStyle = "rgba(241, 196, 15, 0.85)";
-          c.lineWidth = 2.2;
-          c.shadowBlur = 15;
-          c.shadowColor = "#ffd700";
-          c.setLineDash([6, 3]);
-          c.beginPath();
-          c.arc(centerBossX, centerBossY, m.w * 0.78 + pulse, 0, Math.PI * 2);
-          c.stroke();
-          c.restore();
+              c.translate(ox, oy);
+              c.rotate(sway);
+              c.scale(breatheW, breatheH);
+              c.translate(-ox, -oy);
 
-          // Golden Clock face ticking above his head
-          c.save();
-          c.translate(centerBossX, m.y - 12);
-          c.fillStyle = "rgba(10, 8, 20, 0.9)";
-          c.strokeStyle = "#ffd700";
-          c.lineWidth = 1.5;
-          c.beginPath();
-          c.arc(0, 0, 10, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
+              // ==========================================
+              // 1. HORRIFIC JAGGED ARACHNOID TREANT LEGS (ROOT OVERHAUL)
+              // ==========================================
+              let legColorDark = rMob.flashTimer > 0 ? "#ffffff" : "#221105";
+              let legColorMid = rMob.flashTimer > 0 ? "#ffffff" : "#3b1e0a";
+              let legColorHighlight = rMob.flashTimer > 0 ? "#ffffff" : "#512c14";
 
-          let handAngle = (time / 200) % (Math.PI * 2);
-          c.strokeStyle = "#ffffff";
-          c.lineWidth = 1.0;
-          c.lineCap = "round";
-          c.beginPath();
-          c.moveTo(0, 0);
-          c.lineTo(Math.cos(handAngle) * 6, Math.sin(handAngle) * 6);
-          c.stroke();
-          c.restore();
-        }
+              c.strokeStyle = "#000000";
+              c.lineWidth = 2.4;
 
-        // Draw Gilded Vault Keeper Gold Siphon bubble if active (Phase 2)
-        if (
-          m.actionState === "taxation" &&
-          m.bossKey === "gilded_vault_keeper"
-        ) {
-          let time = Date.now();
-          let pulse = Math.sin(time / 100) * 2.5;
+              let legYBase = rMob.y + rMob.h - 10;
+              let legOffsets = [
+                { dx: -12, stretchX: -36, kneeY: -15, tipY: 10, col: legColorDark },
+                { dx: -6, stretchX: -26, kneeY: -25, tipY: 10, col: legColorMid },
+                { dx: 6, stretchX: 26, kneeY: -25, tipY: 10, col: legColorHighlight },
+                { dx: 12, stretchX: 36, kneeY: -15, tipY: 10, col: legColorDark },
+                { dx: -16, stretchX: -46, kneeY: -5, tipY: 10, col: legColorDark },
+                { dx: 16, stretchX: 46, kneeY: -5, tipY: 10, col: legColorDark },
+              ];
 
-          c.save();
-          c.strokeStyle = "rgba(241, 196, 15, 0.85)";
-          c.lineWidth = 2.2;
-          c.shadowBlur = 15;
-          c.shadowColor = "#ffd700";
-          c.setLineDash([5, 5]);
-          c.beginPath();
-          c.arc(centerBossX, centerBossY, m.w * 0.78 + pulse, 0, Math.PI * 2);
-          c.stroke();
-          c.restore();
-        }
+              legOffsets.forEach((leg, index) => {
+                let legRootX = rMob.x + rMob.w / 2 + leg.dx;
+                let kneeX = legRootX + leg.stretchX * 0.6;
+                let kneeY =
+                  legYBase + leg.kneeY + Math.sin(Date.now() / 120 + index) * 3;
+                let tipX = legRootX + leg.stretchX;
+                let tipY = rMob.y + rMob.h + leg.tipY;
 
-        // Background glow layer for Rare targets to immediately signify high-tier spawns
-        if (m.isRare) {
-          c.save();
-          let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
-          let auraGrad = c.createRadialGradient(
-            m.x + m.w / 2,
-            m.y + m.h / 2,
-            2,
-            m.x + m.w / 2,
-            m.y + m.h / 2,
-            Math.max(m.w, m.h) * 1.15 * auraPulse,
-          );
-          auraGrad.addColorStop(0, "rgba(241, 196, 15, 0.45)");
-          auraGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.18)");
-          auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-          c.fillStyle = auraGrad;
-          c.beginPath();
-          c.arc(
-            m.x + m.w / 2,
-            m.y + m.h / 2,
-            Math.max(m.w, m.h) * 1.15 * auraPulse,
-            0,
-            Math.PI * 2,
-          );
-          c.fill();
-          c.restore();
-        }
-
-        // Wrap with a pivot coordinate space to organic-sway and breathe from the root base
-        c.save();
-        let ox = m.x + m.w / 2;
-        let oy = m.y + m.h;
-        let sway = Math.sin(Date.now() / 240) * 0.035;
-        let breatheW = 1 + Math.sin(Date.now() / 150) * 0.015;
-        let breatheH = 1 + Math.cos(Date.now() / 150) * 0.008;
-
-        c.translate(ox, oy);
-        c.rotate(sway);
-        c.scale(breatheW, breatheH);
-        c.translate(-ox, -oy);
-
-        // ==========================================
-        // 1. HORRIFIC JAGGED ARACHNOID TREANT LEGS (ROOT OVERHAUL)
-        // ==========================================
-        let legColorDark = m.flashTimer > 0 ? "#ffffff" : "#221105";
-        let legColorMid = m.flashTimer > 0 ? "#ffffff" : "#3b1e0a";
-        let legColorHighlight = m.flashTimer > 0 ? "#ffffff" : "#512c14";
-
-        c.strokeStyle = "#000000";
-        c.lineWidth = 2.4;
-
-        let legYBase = m.y + m.h - 10;
-        let legOffsets = [
-          { dx: -12, stretchX: -36, kneeY: -15, tipY: 10, col: legColorDark },
-          { dx: -6, stretchX: -26, kneeY: -25, tipY: 10, col: legColorMid },
-          { dx: 6, stretchX: 26, kneeY: -25, tipY: 10, col: legColorHighlight },
-          { dx: 12, stretchX: 36, kneeY: -15, tipY: 10, col: legColorDark },
-          { dx: -16, stretchX: -46, kneeY: -5, tipY: 10, col: legColorDark },
-          { dx: 16, stretchX: 46, kneeY: -5, tipY: 10, col: legColorDark },
-        ];
-
-        legOffsets.forEach((leg, index) => {
-          let legRootX = m.x + m.w / 2 + leg.dx;
-          let kneeX = legRootX + leg.stretchX * 0.6;
-          let kneeY =
-            legYBase + leg.kneeY + Math.sin(Date.now() / 120 + index) * 3;
-          let tipX = legRootX + leg.stretchX;
-          let tipY = m.y + m.h + leg.tipY;
-
-          c.fillStyle = leg.col;
-          c.beginPath();
-          c.moveTo(legRootX, legYBase);
-          c.quadraticCurveTo(
-            kneeX - 4 * Math.sign(leg.stretchX),
-            kneeY - 4,
-            kneeX,
-            kneeY,
-          );
-          c.lineTo(tipX, tipY);
-          c.lineTo(tipX - 5 * Math.sign(leg.stretchX), tipY);
-          c.lineTo(kneeX - 4 * Math.sign(leg.stretchX), kneeY + 4);
-          c.lineTo(legRootX, legYBase + 8);
-          c.closePath();
-          c.fill();
-          c.stroke();
-        });
-
-        // Dangling silk cocoon swaying beneath the lower canopy
-        if (m.flashTimer === 0) {
-          c.save();
-          let cocoonSway = Math.sin(Date.now() / 180) * 0.12;
-          c.translate(m.x + m.w * 0.25, m.y + m.h * 0.25);
-          c.rotate(cocoonSway);
-
-          c.strokeStyle = "rgba(255, 255, 255, 0.45)";
-          c.lineWidth = 1.2;
-          c.beginPath();
-          c.moveTo(0, 0);
-          c.lineTo(0, 18);
-          c.stroke();
-
-          c.fillStyle = "rgba(235, 235, 240, 0.9)";
-          c.strokeStyle = "#222";
-          c.lineWidth = 1;
-          c.beginPath();
-          c.ellipse(0, 26, 6, 10, 0, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-
-          c.strokeStyle = "rgba(255, 255, 255, 0.75)";
-          c.beginPath();
-          c.moveTo(-4, 20);
-          c.lineTo(4, 32);
-          c.moveTo(4, 20);
-          c.lineTo(-4, 32);
-          c.stroke();
-          c.restore();
-        }
-
-        // ==========================================
-        // 2. TWISTED ANCIENT TRUNK & STRIATIONS
-        // ==========================================
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#462810";
-        c.beginPath();
-        c.moveTo(m.x + m.w * 0.32, m.y + m.h * 0.3); // Left shoulder
-        c.quadraticCurveTo(
-          m.x + m.w * 0.2,
-          m.y + m.h * 0.6,
-          m.x + m.w * 0.12,
-          m.y + m.h - 12,
-        ); // Left flare
-        c.lineTo(m.x + m.w * 0.88, m.y + m.h - 12); // Right base flare
-        c.quadraticCurveTo(
-          m.x + m.w * 0.8,
-          m.y + m.h * 0.6,
-          m.x + m.w * 0.68,
-          m.y + m.h * 0.3,
-        ); // Right shoulder
-        c.closePath();
-        c.fill();
-        c.stroke();
-
-        if (m.flashTimer === 0) {
-          c.fillStyle = "#5d381b"; // Midtone wood plates
-          c.beginPath();
-          c.moveTo(m.x + m.w * 0.35, m.y + m.h * 0.35);
-          c.bezierCurveTo(
-            m.x + m.w * 0.25,
-            m.y + m.h * 0.6,
-            m.x + m.w * 0.3,
-            m.y + m.h * 0.75,
-            m.x + m.w * 0.22,
-            m.y + m.h - 13,
-          );
-          c.lineTo(m.x + m.w * 0.78, m.y + m.h - 13);
-          c.bezierCurveTo(
-            m.x + m.w * 0.7,
-            m.y + m.h * 0.75,
-            m.x + m.w * 0.75,
-            m.y + m.h * 0.6,
-            m.x + m.w * 0.65,
-            m.y + m.h * 0.32,
-          );
-          c.closePath();
-          c.fill();
-          c.stroke();
-
-          c.strokeStyle = "#251205";
-          c.lineWidth = 2.4;
-          c.beginPath();
-          c.moveTo(m.x + m.w * 0.44, m.y + m.h * 0.32);
-          c.quadraticCurveTo(
-            m.x + m.w * 0.38,
-            m.y + m.h * 0.55,
-            m.x + m.w * 0.42,
-            m.y + m.h - 14,
-          );
-          c.moveTo(m.x + m.w * 0.56, m.y + m.h * 0.32);
-          c.quadraticCurveTo(
-            m.x + m.w * 0.62,
-            m.y + m.h * 0.58,
-            m.x + m.w * 0.58,
-            m.y + m.h - 14,
-          );
-          c.moveTo(m.x + m.w * 0.25, m.y + m.h * 0.52);
-          c.quadraticCurveTo(
-            m.x + m.w * 0.18,
-            m.y + m.h * 0.75,
-            m.x + m.w * 0.26,
-            m.y + m.h - 14,
-          );
-          c.stroke();
-
-          c.strokeStyle = "#1b7a43";
-          c.lineWidth = 1.8;
-          c.beginPath();
-          c.moveTo(m.x + m.w * 0.28, m.y + m.h * 0.75);
-          c.quadraticCurveTo(
-            m.x + m.w * 0.5,
-            m.y + m.h * 0.68,
-            m.x + m.w * 0.72,
-            m.y + m.h * 0.72,
-          );
-          c.stroke();
-        }
-
-        // ==========================================
-        // 3. GLOWING GREEN RIFT RUNES & COBWEBS
-        // ==========================================
-        if (m.flashTimer === 0) {
-          let runeGlow = Math.abs(Math.sin(Date.now() / 250)) * 0.7 + 0.3;
-          c.save();
-          c.strokeStyle = `rgba(0, 255, 136, ${runeGlow})`;
-          c.lineWidth = 2.2;
-          c.shadowBlur = 10;
-          c.shadowColor = "#00ff88";
-          c.beginPath();
-          c.moveTo(m.x + m.w * 0.25, m.y + m.h * 0.65);
-          c.lineTo(m.x + m.w * 0.2, m.y + m.h * 0.72);
-          c.lineTo(m.x + m.w * 0.27, m.y + m.h * 0.77);
-          c.moveTo(m.x + m.w * 0.75, m.y + m.h * 0.65);
-          c.lineTo(m.x + m.w * 0.8, m.y + m.h * 0.72);
-          c.lineTo(m.x + m.w * 0.73, m.y + m.h * 0.77);
-          c.stroke();
-          c.restore();
-
-          // Webbing strands around the trunk body
-          c.strokeStyle = "rgba(255, 255, 255, 0.12)";
-          c.lineWidth = 1.5;
-          c.beginPath();
-          c.moveTo(m.x + m.w * 0.18, m.y + m.h * 0.45);
-          c.quadraticCurveTo(
-            m.x + m.w * 0.3,
-            m.y + m.h * 0.48,
-            m.x + m.w * 0.24,
-            m.y + m.h * 0.6,
-          );
-          c.moveTo(m.x + m.w * 0.82, m.y + m.h * 0.45);
-          c.quadraticCurveTo(
-            m.x + m.w * 0.7,
-            m.y + m.h * 0.48,
-            m.x + m.w * 0.76,
-            m.y + m.h * 0.6,
-          );
-          c.stroke();
-        }
-
-        // ==========================================
-        // 4. CLAW BRACKETS (ARMS)
-        // ==========================================
-        let armColor = m.flashTimer > 0 ? "#ffffff" : "#462810";
-
-        c.fillStyle = armColor;
-        c.beginPath();
-        c.moveTo(m.x + m.w * 0.28, m.y + m.h * 0.32);
-        c.quadraticCurveTo(
-          m.x - 22,
-          m.y + m.h * 0.28,
-          m.x - 28,
-          m.y + m.h * 0.5,
-        ); // Elbow joint
-        c.lineTo(m.x - 18, m.y + m.h * 0.52);
-        c.quadraticCurveTo(
-          m.x - 8,
-          m.y + m.h * 0.34,
-          m.x + m.w * 0.28,
-          m.y + m.h * 0.38,
-        );
-        c.closePath();
-        c.fill();
-        c.stroke();
-
-        c.beginPath();
-        c.moveTo(m.x - 28, m.y + m.h * 0.5);
-        c.lineTo(m.x - 34, m.y + m.h * 0.64);
-        c.lineTo(m.x - 24, m.y + m.h * 0.52);
-        c.lineTo(m.x - 18, m.y + m.h * 0.67);
-        c.lineTo(m.x - 15, m.y + m.h * 0.51);
-        c.closePath();
-        c.fill();
-        c.stroke();
-
-        c.beginPath();
-        c.moveTo(m.x + m.w * 0.72, m.y + m.h * 0.32);
-        c.quadraticCurveTo(
-          m.x + m.w + 22,
-          m.y + m.h * 0.24,
-          m.x + m.w + 28,
-          m.y + m.h * 0.15,
-        ); // Elbow joint
-        c.lineTo(m.x + m.w + 19, m.y + m.h * 0.12);
-        c.quadraticCurveTo(
-          m.x + m.w + 10,
-          m.y + m.h * 0.28,
-          m.x + m.w * 0.72,
-          m.y + m.h * 0.38,
-        );
-        c.closePath();
-        c.fill();
-        c.stroke();
-
-        c.beginPath();
-        c.moveTo(m.x + m.w + 28, m.y + m.h * 0.15);
-        c.lineTo(m.x + m.w + 36, m.y + m.h * 0.08);
-        c.lineTo(m.x + m.w + 24, m.y + m.h * 0.12);
-        c.lineTo(m.x + m.w + 30, m.y + m.h * 0.2);
-        c.lineTo(m.x + m.w + 19, m.y + m.h * 0.14);
-        c.closePath();
-        c.fill();
-        c.stroke();
-
-        // ==========================================
-        // 5. SPIDER-TREANT VISAGE (8 GLOWING Crimson EYES & DRIFTING VENOM)
-        // ==========================================
-        let eyeCenterY = m.y + m.h * 0.38;
-        let mouthCenterY = m.y + m.h * 0.52;
-
-        // 8 Glowing Crimson Spider Eyes in an arachnid cluster layout
-        if (m.flashTimer === 0) {
-          c.save();
-          c.fillStyle = "#ff0055"; // Arachnid crimson glow
-          c.shadowBlur = 10;
-          c.shadowColor = "#ff0055";
-
-          let eyeCluster = [
-            { dx: -10, dy: -2, rx: 4, ry: 4, rot: 0 },
-            { dx: 10, dy: -2, rx: 4, ry: 4, rot: 0 },
-            { dx: -4, dy: -6, rx: 2.2, ry: 2.2, rot: 0 },
-            { dx: 4, dy: -6, rx: 2.2, ry: 2.2, rot: 0 },
-            { dx: -15, dy: 3, rx: 1.8, ry: 1.8, rot: 0 },
-            { dx: 15, dy: 3, rx: 1.8, ry: 1.8, rot: 0 },
-            { dx: -6, dy: 1, rx: 1.5, ry: 1.5, rot: 0 },
-            { dx: 6, dy: 1, rx: 1.5, ry: 1.5, rot: 0 },
-          ];
-
-          eyeCluster.forEach((eye) => {
-            c.beginPath();
-            c.ellipse(
-              m.x + m.w * 0.5 + eye.dx,
-              eyeCenterY + eye.dy,
-              eye.rx,
-              eye.ry,
-              eye.rot,
-              0,
-              Math.PI * 2,
-            );
-            c.fill();
-          });
-          c.restore();
-
-          c.strokeStyle = "#150802";
-          c.lineWidth = 3.0;
-          c.beginPath();
-          c.moveTo(m.x + m.w * 0.32, eyeCenterY - 10);
-          c.quadraticCurveTo(
-            m.x + m.w * 0.5,
-            eyeCenterY - 4,
-            m.x + m.w * 0.68,
-            eyeCenterY - 10,
-          );
-          c.stroke();
-        }
-
-        // Gaping Jagged Mouth Hollow (Glowing Green Rift Core)
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#1a0802"; // Void interior
-        c.beginPath();
-        c.ellipse(
-          m.x + m.w * 0.5,
-          mouthCenterY,
-          m.w * 0.22,
-          m.h * 0.09,
-          0,
-          0,
-          Math.PI * 2,
-        );
-        c.fill();
-        c.stroke();
-
-        if (m.flashTimer === 0) {
-          c.save();
-          let mouthPulse = 1.0 + Math.sin(Date.now() / 100) * 0.08;
-          let mouthGrad = c.createRadialGradient(
-            m.x + m.w * 0.5,
-            mouthCenterY,
-            2,
-            m.x + m.w * 0.5,
-            mouthCenterY,
-            m.w * 0.22 * mouthPulse,
-          );
-          mouthGrad.addColorStop(0, "#ffffff");
-          mouthGrad.addColorStop(0.4, "#00ff88");
-          mouthGrad.addColorStop(0.8, "#2ecc71");
-          mouthGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
-          c.fillStyle = mouthGrad;
-          c.shadowBlur = 15;
-          c.shadowColor = "#00ff88";
-
-          c.beginPath();
-          c.ellipse(
-            m.x + m.w * 0.5,
-            mouthCenterY,
-            m.w * 0.22,
-            m.h * 0.09,
-            0,
-            0,
-            Math.PI * 2,
-          );
-          c.fill();
-          c.restore();
-
-          // Broken trunk teeth
-          c.fillStyle = "#2d1607";
-          c.strokeStyle = "#000000";
-          c.lineWidth = 1.5;
-
-          let tX = m.x + m.w * 0.5;
-          let tY = mouthCenterY;
-          let mW = m.w * 0.22;
-          let mH = m.h * 0.09;
-
-          let upperTeeth = [
-            { ox: -mW * 0.7, oy: -mH * 0.3, len: 6 },
-            { ox: -mW * 0.3, oy: -mH * 0.6, len: 10 },
-            { ox: 0, oy: -mH * 0.8, len: 11 },
-            { ox: mW * 0.3, oy: -mH * 0.6, len: 10 },
-            { ox: mW * 0.7, oy: -mH * 0.3, len: 6 },
-          ];
-          upperTeeth.forEach((tooth) => {
-            c.beginPath();
-            c.moveTo(tX + tooth.ox - 3, tY + tooth.oy);
-            c.lineTo(tX + tooth.ox, tY + tooth.oy + tooth.len);
-            c.lineTo(tX + tooth.ox + 3, tY + tooth.oy);
-            c.closePath();
-            c.fill();
-            c.stroke();
-          });
-
-          let lowerTeeth = [
-            { ox: -mW * 0.5, oy: mH * 0.4, len: 8 },
-            { ox: -mW * 0.15, oy: mH * 0.7, len: 10 },
-            { ox: mW * 0.15, oy: mH * 0.7, len: 10 },
-            { ox: mW * 0.5, oy: mH * 0.4, len: 8 },
-          ];
-          lowerTeeth.forEach((tooth) => {
-            c.beginPath();
-            c.moveTo(tX + tooth.ox - 3, tY + tooth.oy);
-            c.lineTo(tX + tooth.ox, tY + tooth.oy - tooth.len);
-            c.lineTo(tX + tooth.ox + 3, tY + tooth.oy);
-            c.closePath();
-            c.fill();
-            c.stroke();
-          });
-
-          // Dripping Green Slime/Venom droplets
-          let venomOffset = (Date.now() / 8) % 35;
-          c.fillStyle = "#00ff88";
-          c.beginPath();
-          c.ellipse(tX - 8, tY + 4 + venomOffset, 1.2, 3, 0, 0, Math.PI * 2);
-          c.ellipse(
-            tX + 10,
-            tY + 2 + venomOffset * 0.8,
-            1.0,
-            2.5,
-            0,
-            0,
-            Math.PI * 2,
-          );
-          c.fill();
-        }
-
-        // 6. Multi-Layer Foliage Canopy (Isolated sub-paths to prevent intersecting connecting lines)
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h * 0.08;
-        let r = m.w * 0.9;
-
-        let drawCleanClump = (x, y, radius, color) => {
-          c.fillStyle = m.flashTimer > 0 ? "#ffffff" : color;
-          c.beginPath();
-          c.arc(x, y, radius, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-        };
-
-        // Layer 1: Base Deep Forest Green
-        let color1 = "#1a461e";
-        drawCleanClump(cx, cy, r, color1);
-        drawCleanClump(cx - r * 0.5, cy - r * 0.2, r * 0.75, color1);
-        drawCleanClump(cx + r * 0.5, cy - r * 0.2, r * 0.75, color1);
-        drawCleanClump(cx, cy - r * 0.5, r * 0.85, color1);
-
-        // Layer 2: Vibrant Mid-Green
-        let color2 = "#2ecc71";
-        drawCleanClump(cx, cy, r * 0.8, color2);
-        drawCleanClump(cx - r * 0.4, cy - r * 0.5, r * 0.6, color2);
-        drawCleanClump(cx + r * 0.4, cy - r * 0.5, r * 0.6, color2);
-
-        // Layer 3: Highlighted vibrant light-green (Adds foliage depth)
-        let color3 = "#52be80";
-        drawCleanClump(cx - r * 0.2, cy - r * 0.3, r * 0.4, color3);
-        drawCleanClump(cx + r * 0.2, cy - r * 0.3, r * 0.4, color3);
-
-        // 7. Hanging moss/ivy strands swaying dynamically
-        if (m.flashTimer === 0) {
-          c.fillStyle = "#164d1f";
-          for (let i = 0; i < 5; i++) {
-            let ivyOffset = -r * 0.6 + i * r * 0.3;
-            let ivyX = cx + ivyOffset;
-            let ivyY = cy + r * 0.3;
-            let ivySway = Math.sin(Date.now() / 200 + i) * 4;
-            c.beginPath();
-            c.moveTo(ivyX - 3.5, ivyY);
-            c.quadraticCurveTo(
-              ivyX + ivySway,
-              ivyY + 16,
-              ivyX + ivySway + 1,
-              ivyY + 24,
-            );
-            c.quadraticCurveTo(
-              ivyX + 4.5 + ivySway,
-              ivyY + 16,
-              ivyX + 3.5,
-              ivyY,
-            );
-            c.closePath();
-            c.fill();
-            c.stroke();
-          }
-        }
-
-        // 8. Glowing Eldritch "Forest-Eye" Fruits (Pulsing glowing eyes peering from leaves)
-        if (m.flashTimer === 0) {
-          if (!m.appleOffsets) {
-            m.appleOffsets = [];
-            let count = window.randInt(4, 7);
-            for (let i = 0; i < count; i++) {
-              let angle = window.randFloat(0, Math.PI * 2);
-              let dist = window.randFloat(0, r * 0.8);
-              m.appleOffsets.push({
-                dx: Math.cos(angle) * dist,
-                dy: Math.sin(angle) * dist - r * 0.1,
-                sizeMod: window.randFloat(0.9, 1.25),
-                eyeRot: window.randFloat(-Math.PI / 10, Math.PI / 10),
+                c.fillStyle = leg.col;
+                c.beginPath();
+                c.moveTo(legRootX, legYBase);
+                c.quadraticCurveTo(
+                  kneeX - 4 * Math.sign(leg.stretchX),
+                  kneeY - 4,
+                  kneeX,
+                  kneeY,
+                );
+                c.lineTo(tipX, tipY);
+                c.lineTo(tipX - 5 * Math.sign(leg.stretchX), tipY);
+                c.lineTo(kneeX - 4 * Math.sign(leg.stretchX), kneeY + 4);
+                c.lineTo(legRootX, legYBase + 8);
+                c.closePath();
+                c.fill();
+                c.stroke();
               });
-            }
-          }
-          c.save();
-          c.shadowBlur = 12;
-          c.shadowColor = "#ff2200";
 
-          let eyePulse = 1 + Math.sin(Date.now() / 150) * 0.08;
+              // Dangling silk cocoon swaying beneath the lower canopy
+              if (rMob.flashTimer === 0) {
+                c.save();
+                let cocoonSway = Math.sin(Date.now() / 180) * 0.12;
+                c.translate(rMob.x + rMob.w * 0.25, rMob.y + rMob.h * 0.25);
+                c.rotate(cocoonSway);
 
-          m.appleOffsets.forEach((ap) => {
-            let appleX = cx + ap.dx;
-            let appleY = cy + ap.dy;
-            let rRadius = m.w * 0.11 * ap.sizeMod * eyePulse;
+                c.strokeStyle = "rgba(255, 255, 255, 0.45)";
+                c.lineWidth = 1.2;
+                c.beginPath();
+                c.moveTo(0, 0);
+                c.lineTo(0, 18);
+                c.stroke();
 
-            c.save();
-            c.translate(appleX, appleY);
-            c.rotate(ap.eyeRot);
+                c.fillStyle = "rgba(235, 235, 240, 0.9)";
+                c.strokeStyle = "#222";
+                c.lineWidth = 1;
+                c.beginPath();
+                c.ellipse(0, 26, 6, 10, 0, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
 
-            // Dual-color Eldritch Eye radial gradient (Glow center to crimson edge)
-            let fruitGrad = c.createRadialGradient(0, 0, 1, 0, 0, rRadius);
-            fruitGrad.addColorStop(0, "#ffffff");
-            fruitGrad.addColorStop(0.3, "#f1c40f"); // Yellow iris ring
-            fruitGrad.addColorStop(0.7, "#d35400"); // Rich orange boundary
-            fruitGrad.addColorStop(1, "#c0392b"); // Crimson base
-            c.fillStyle = fruitGrad;
+                c.strokeStyle = "rgba(255, 255, 255, 0.75)";
+                c.beginPath();
+                c.moveTo(-4, 20);
+                c.lineTo(4, 32);
+                c.moveTo(4, 20);
+                c.lineTo(-4, 32);
+                c.stroke();
+                c.restore();
+              }
 
-            c.beginPath();
-            c.arc(0, 0, rRadius, 0, Math.PI * 2);
-            c.fill();
-            c.stroke();
+              // ==========================================
+              // 2. TWISTED ANCIENT TRUNK & STRIATIONS
+              // ==========================================
+              c.fillStyle = rMob.flashTimer > 0 ? "#ffffff" : "#462810";
+              c.beginPath();
+              c.moveTo(rMob.x + rMob.w * 0.32, rMob.y + rMob.h * 0.3); // Left shoulder
+              c.quadraticCurveTo(
+                rMob.x + rMob.w * 0.2,
+                rMob.y + rMob.h * 0.6,
+                rMob.x + rMob.w * 0.12,
+                rMob.y + rMob.h - 12,
+              ); // Left flare
+              c.lineTo(rMob.x + rMob.w * 0.88, rMob.y + rMob.h - 12); // Right base flare
+              c.quadraticCurveTo(
+                rMob.x + rMob.w * 0.8,
+                rMob.y + rMob.h * 0.6,
+                rMob.x + rMob.w * 0.68,
+                rMob.y + rMob.h * 0.3,
+              ); // Right shoulder
+              c.closePath();
+              c.fill();
+              c.stroke();
 
-            // Menacing black reptilian slit pupil right in the center!
-            c.fillStyle = "#000000";
-            c.beginPath();
-            c.ellipse(0, 0, rRadius * 0.2, rRadius * 0.7, 0, 0, Math.PI * 2);
-            c.fill();
+              if (rMob.flashTimer === 0) {
+                c.fillStyle = "#5d381b"; // Midtone wood plates
+                c.beginPath();
+                c.moveTo(rMob.x + rMob.w * 0.35, rMob.y + rMob.h * 0.35);
+                c.bezierCurveTo(
+                  rMob.x + rMob.w * 0.25,
+                  rMob.y + rMob.h * 0.6,
+                  rMob.x + rMob.w * 0.3,
+                  rMob.y + rMob.h * 0.75,
+                  rMob.x + rMob.w * 0.22,
+                  rMob.y + rMob.h - 13,
+                );
+                c.lineTo(rMob.x + rMob.w * 0.78, rMob.y + rMob.h - 13);
+                c.bezierCurveTo(
+                  rMob.x + rMob.w * 0.7,
+                  rMob.y + rMob.h * 0.75,
+                  rMob.x + rMob.w * 0.75,
+                  rMob.y + rMob.h * 0.6,
+                  rMob.x + rMob.w * 0.65,
+                  rMob.y + rMob.h * 0.32,
+                );
+                c.closePath();
+                c.fill();
+                c.stroke();
 
-            // Micro white specular highlight reflecting light
-            c.fillStyle = "#ffffff";
-            c.beginPath();
-            c.arc(
-              -rRadius * 0.25,
-              -rRadius * 0.25,
-              rRadius * 0.15,
-              0,
-              Math.PI * 2,
-            );
-            c.fill();
+                c.strokeStyle = "#251205";
+                c.lineWidth = 2.4;
+                c.beginPath();
+                c.moveTo(rMob.x + rMob.w * 0.44, rMob.y + rMob.h * 0.32);
+                c.quadraticCurveTo(
+                  rMob.x + rMob.w * 0.38,
+                  rMob.y + rMob.h * 0.55,
+                  rMob.x + rMob.w * 0.42,
+                  rMob.y + rMob.h - 14,
+                );
+                c.moveTo(rMob.x + rMob.w * 0.56, rMob.y + rMob.h * 0.32);
+                c.quadraticCurveTo(
+                  rMob.x + rMob.w * 0.62,
+                  rMob.y + rMob.h * 0.58,
+                  rMob.x + rMob.w * 0.58,
+                  rMob.y + rMob.h - 14,
+                );
+                c.moveTo(rMob.x + rMob.w * 0.25, rMob.y + rMob.h * 0.52);
+                c.quadraticCurveTo(
+                  rMob.x + rMob.w * 0.18,
+                  rMob.y + rMob.h * 0.75,
+                  rMob.x + rMob.w * 0.26,
+                  rMob.y + rMob.h - 14,
+                );
+                c.stroke();
 
-            c.restore();
-          });
-          c.restore();
-        }
-        c.restore();
-        c.restore(); // Close master 50% boss scale transform
-      } else if (currentTier === 1) {
+                c.strokeStyle = "#1b7a43";
+                c.lineWidth = 1.8;
+                c.beginPath();
+                c.moveTo(rMob.x + rMob.w * 0.28, rMob.y + rMob.h * 0.75);
+                c.quadraticCurveTo(
+                  rMob.x + rMob.w * 0.5,
+                  rMob.y + rMob.h * 0.68,
+                  rMob.x + rMob.w * 0.72,
+                  rMob.y + rMob.h * 0.72,
+                );
+                c.stroke();
+              }
+
+              // ==========================================
+              // 3. GLOWING GREEN RIFT RUNES & COBWEBS
+              // ==========================================
+              if (rMob.flashTimer === 0) {
+                let runeGlow = Math.abs(Math.sin(Date.now() / 250)) * 0.7 + 0.3;
+                c.save();
+                c.strokeStyle = `rgba(0, 255, 136, ${runeGlow})`;
+                c.lineWidth = 2.2;
+                c.shadowBlur = 10;
+                c.shadowColor = "#00ff88";
+                c.beginPath();
+                c.moveTo(rMob.x + rMob.w * 0.25, rMob.y + rMob.h * 0.65);
+                c.lineTo(rMob.x + rMob.w * 0.2, rMob.y + rMob.h * 0.72);
+                c.lineTo(rMob.x + rMob.w * 0.27, rMob.y + rMob.h * 0.77);
+                c.moveTo(rMob.x + rMob.w * 0.75, rMob.y + rMob.h * 0.65);
+                c.lineTo(rMob.x + rMob.w * 0.8, rMob.y + rMob.h * 0.72);
+                c.lineTo(rMob.x + rMob.w * 0.73, rMob.y + rMob.h * 0.77);
+                c.stroke();
+                c.restore();
+
+                // Webbing strands around the trunk body
+                c.strokeStyle = "rgba(255, 255, 255, 0.12)";
+                c.lineWidth = 1.5;
+                c.beginPath();
+                c.moveTo(rMob.x + rMob.w * 0.18, rMob.y + rMob.h * 0.45);
+                c.quadraticCurveTo(
+                  rMob.x + rMob.w * 0.3,
+                  rMob.y + rMob.h * 0.48,
+                  rMob.x + rMob.w * 0.24,
+                  rMob.y + rMob.h * 0.6,
+                );
+                c.moveTo(rMob.x + rMob.w * 0.82, rMob.y + rMob.h * 0.45);
+                c.quadraticCurveTo(
+                  rMob.x + rMob.w * 0.7,
+                  rMob.y + rMob.h * 0.48,
+                  rMob.x + rMob.w * 0.76,
+                  rMob.y + rMob.h * 0.6,
+                );
+                c.stroke();
+              }
+
+              // ==========================================
+              // 4. CLAW BRACKETS (ARMS)
+              // ==========================================
+              let armColor = rMob.flashTimer > 0 ? "#ffffff" : "#462810";
+
+              c.fillStyle = armColor;
+              c.beginPath();
+              c.moveTo(rMob.x + rMob.w * 0.28, rMob.y + rMob.h * 0.32);
+              c.quadraticCurveTo(
+                rMob.x - 22,
+                rMob.y + rMob.h * 0.28,
+                rMob.x - 28,
+                rMob.y + rMob.h * 0.5,
+              ); // Elbow joint
+              c.lineTo(rMob.x - 18, rMob.y + rMob.h * 0.52);
+              c.quadraticCurveTo(
+                rMob.x - 8,
+                rMob.y + rMob.h * 0.34,
+                rMob.x + rMob.w * 0.28,
+                rMob.y + rMob.h * 0.38,
+              );
+              c.closePath();
+              c.fill();
+              c.stroke();
+
+              c.beginPath();
+              c.moveTo(rMob.x - 28, rMob.y + rMob.h * 0.5);
+              c.lineTo(m.x - 34, rMob.y + rMob.h * 0.64);
+              c.lineTo(rMob.x - 24, rMob.y + rMob.h * 0.52);
+              c.lineTo(rMob.x - 18, rMob.y + rMob.h * 0.67);
+              c.lineTo(rMob.x - 15, rMob.y + rMob.h * 0.51);
+              c.closePath();
+              c.fill();
+              c.stroke();
+
+              c.beginPath();
+              c.moveTo(rMob.x + rMob.w * 0.72, rMob.y + rMob.h * 0.32);
+              c.quadraticCurveTo(
+                rMob.x + rMob.w + 22,
+                rMob.y + rMob.h * 0.24,
+                rMob.x + rMob.w + 28,
+                rMob.y + rMob.h * 0.15,
+              ); // Elbow joint
+              c.lineTo(rMob.x + rMob.w + 19, rMob.y + rMob.h * 0.12);
+              c.quadraticCurveTo(
+                rMob.x + rMob.w + 10,
+                rMob.y + rMob.h * 0.28,
+                rMob.x + rMob.w * 0.72,
+                rMob.y + rMob.h * 0.38,
+              );
+              c.closePath();
+              c.fill();
+              c.stroke();
+
+              c.beginPath();
+              c.moveTo(rMob.x + rMob.w + 28, rMob.y + rMob.h * 0.15);
+              c.lineTo(rMob.x + rMob.w + 36, rMob.y + rMob.h * 0.08);
+              c.lineTo(rMob.x + rMob.w + 24, rMob.y + rMob.h * 0.12);
+              c.lineTo(rMob.x + rMob.w + 30, rMob.y + rMob.h * 0.2);
+              c.lineTo(rMob.x + rMob.w + 19, rMob.y + rMob.h * 0.14);
+              c.closePath();
+              c.fill();
+              c.stroke();
+
+              // ==========================================
+              // 5. SPIDER-TREANT VISAGE (8 GLOWING Crimson EYES & DRIFTING VENOM)
+              // ==========================================
+              let drawVisage = () => {
+                let eyeCenterY = rMob.y + rMob.h * 0.38;
+                let mouthCenterY = rMob.y + rMob.h * 0.52;
+
+                // 8 Glowing Crimson Spider Eyes in an arachnid cluster layout
+                if (rMob.flashTimer === 0) {
+                  c.save();
+                  c.fillStyle = "#ff0055"; // Arachnid crimson glow
+                  c.shadowBlur = 10;
+                  c.shadowColor = "#ff0055";
+
+                  let eyeCluster = [
+                    { dx: -10, dy: -2, rx: 4, ry: 4, rot: 0 },
+                    { dx: 10, dy: -2, rx: 4, ry: 4, rot: 0 },
+                    { dx: -4, dy: -6, rx: 2.2, ry: 2.2, rot: 0 },
+                    { dx: 4, dy: -6, rx: 2.2, ry: 2.2, rot: 0 },
+                    { dx: -15, dy: 3, rx: 1.8, ry: 1.8, rot: 0 },
+                    { dx: 15, dy: 3, rx: 1.8, ry: 1.8, rot: 0 },
+                    { dx: -6, dy: 1, rx: 1.5, ry: 1.5, rot: 0 },
+                    { dx: 6, dy: 1, rx: 1.5, ry: 1.5, rot: 0 },
+                  ];
+
+                  eyeCluster.forEach((eye) => {
+                    c.beginPath();
+                    c.ellipse(
+                      rMob.x + rMob.w * 0.5 + eye.dx,
+                      eyeCenterY + eye.dy,
+                      eye.rx,
+                      eye.ry,
+                      eye.rot,
+                      0,
+                      Math.PI * 2,
+                    );
+                    c.fill();
+                  });
+                  c.restore();
+
+                  c.strokeStyle = "#150802";
+                  c.lineWidth = 3.0;
+                  c.beginPath();
+                  c.moveTo(rMob.x + rMob.w * 0.32, eyeCenterY - 10);
+                  c.quadraticCurveTo(
+                    rMob.x + rMob.w * 0.5,
+                    eyeCenterY - 4,
+                    rMob.x + rMob.w * 0.68,
+                    eyeCenterY - 10,
+                  );
+                  c.stroke();
+                }
+
+                // Gaping Jagged Mouth Hollow (Glowing Green Rift Core)
+                c.fillStyle = rMob.flashTimer > 0 ? "#ffffff" : "#1a0802"; // Void interior
+                c.beginPath();
+                c.ellipse(
+                  rMob.x + rMob.w * 0.5,
+                  mouthCenterY,
+                  rMob.w * 0.22,
+                  rMob.h * 0.09,
+                  0,
+                  0,
+                  Math.PI * 2,
+                );
+                c.fill();
+                c.stroke();
+
+                if (rMob.flashTimer === 0) {
+                  c.save();
+                  let mouthPulse = 1.0 + Math.sin(Date.now() / 100) * 0.08;
+                  let mouthGrad = c.createRadialGradient(
+                    rMob.x + rMob.w * 0.5,
+                    mouthCenterY,
+                    2,
+                    rMob.x + rMob.w * 0.5,
+                    mouthCenterY,
+                    rMob.w * 0.22 * mouthPulse,
+                  );
+                  mouthGrad.addColorStop(0, "#ffffff");
+                  mouthGrad.addColorStop(0.4, "#00ff88");
+                  mouthGrad.addColorStop(0.8, "#2ecc71");
+                  mouthGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
+                  c.fillStyle = mouthGrad;
+                  c.shadowBlur = 15;
+                  c.shadowColor = "#00ff88";
+
+                  c.beginPath();
+                  c.ellipse(
+                    rMob.x + rMob.w * 0.5,
+                    mouthCenterY,
+                    rMob.w * 0.22,
+                    rMob.h * 0.09,
+                    0,
+                    0,
+                    Math.PI * 2,
+                  );
+                  c.fill();
+                  c.restore();
+
+                  // Broken trunk teeth
+                  c.fillStyle = "#2d1607";
+                  c.strokeStyle = "#000000";
+                  c.lineWidth = 1.5;
+
+                  let tX = rMob.x + rMob.w * 0.5;
+                  let tY = mouthCenterY;
+                  let mW = rMob.w * 0.22;
+                  let mH = rMob.h * 0.09;
+
+                  let upperTeeth = [
+                    { ox: -mW * 0.7, oy: -mH * 0.3, len: 6 },
+                    { ox: -mW * 0.3, oy: -mH * 0.6, len: 10 },
+                    { ox: 0, oy: -mH * 0.8, len: 11 },
+                    { ox: mW * 0.3, oy: -mH * 0.6, len: 10 },
+                    { ox: mW * 0.7, oy: -mH * 0.3, len: 6 },
+                  ];
+                  upperTeeth.forEach((tooth) => {
+                    c.beginPath();
+                    c.moveTo(tX + tooth.ox - 3, tY + tooth.oy);
+                    c.lineTo(tX + tooth.ox, tY + tooth.oy + tooth.len);
+                    c.lineTo(tX + tooth.ox + 3, tY + tooth.oy);
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+                  });
+
+                  let lowerTeeth = [
+                    { ox: -mW * 0.5, oy: mH * 0.4, len: 8 },
+                    { ox: -mW * 0.15, oy: mH * 0.7, len: 10 },
+                    { ox: mW * 0.15, oy: mH * 0.7, len: 10 },
+                    { ox: mW * 0.5, oy: mH * 0.4, len: 8 },
+                  ];
+                  lowerTeeth.forEach((tooth) => {
+                    c.beginPath();
+                    c.moveTo(tX + tooth.ox - 3, tY + tooth.oy);
+                    c.lineTo(tX + tooth.ox, tY + tooth.oy - tooth.len);
+                    c.lineTo(tX + tooth.ox + 3, tY + tooth.oy);
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+                  });
+
+                  // Dripping Green Slime/Venom droplets
+                  let venomOffset = (Date.now() / 8) % 35;
+                  c.fillStyle = "#00ff88";
+                  c.beginPath();
+                  c.ellipse(tX - 8, tY + 4 + venomOffset, 1.2, 3, 0, 0, Math.PI * 2);
+                  c.ellipse(
+                    tX + 10,
+                    tY + 2 + venomOffset * 0.8,
+                    1.0,
+                    2.5,
+                    0,
+                    0,
+                    Math.PI * 2,
+                  );
+                  c.fill();
+                }
+              };
+
+              // Draw Visage on bottom layer only if NOT a full Boss
+              if (!drawVisageOnTop) {
+                drawVisage();
+              }
+
+              // 6. Multi-Layer Foliage Canopy (Isolated sub-paths to prevent intersecting connecting lines)
+              let cx = rMob.x + rMob.w / 2;
+              let cy = rMob.y + rMob.h * 0.08;
+              let r = rMob.w * 0.9;
+
+              let drawCleanClump = (x, y, radius, color) => {
+                c.fillStyle = rMob.flashTimer > 0 ? "#ffffff" : color;
+                c.beginPath();
+                c.arc(x, y, radius, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+              };
+
+              // Layer 1: Base Deep Forest Green
+              let color1 = "#1a461e";
+              drawCleanClump(cx, cy, r, color1);
+              drawCleanClump(cx - r * 0.5, cy - r * 0.2, r * 0.75, color1);
+              drawCleanClump(cx + r * 0.5, cy - r * 0.2, r * 0.75, color1);
+              drawCleanClump(cx, cy - r * 0.5, r * 0.85, color1);
+
+              // Layer 2: Vibrant Mid-Green
+              let color2 = "#2ecc71";
+              drawCleanClump(cx, cy, r * 0.8, color2);
+              drawCleanClump(cx - r * 0.4, cy - r * 0.5, r * 0.6, color2);
+              drawCleanClump(cx + r * 0.4, cy - r * 0.5, r * 0.6, color2);
+
+              // Layer 3: Highlighted vibrant light-green (Adds foliage depth)
+              let color3 = "#52be80";
+              drawCleanClump(cx - r * 0.2, cy - r * 0.3, r * 0.4, color3);
+              drawCleanClump(cx + r * 0.2, cy - r * 0.3, r * 0.4, color3);
+
+              // 7. Hanging moss/ivy strands swaying dynamically
+              if (rMob.flashTimer === 0) {
+                c.fillStyle = "#164d1f";
+                for (let i = 0; i < 5; i++) {
+                  let ivyOffset = -r * 0.6 + i * r * 0.3;
+                  let ivyX = cx + ivyOffset;
+                  let ivyY = cy + r * 0.3;
+                  let ivySway = Math.sin(Date.now() / 200 + i) * 4;
+                  c.beginPath();
+                  c.moveTo(ivyX - 3.5, ivyY);
+                  c.quadraticCurveTo(
+                    ivyX + ivySway,
+                    ivyY + 16,
+                    ivyX + ivySway + 1,
+                    ivyY + 24,
+                  );
+                  c.quadraticCurveTo(
+                    ivyX + 4.5 + ivySway,
+                    ivyY + 16,
+                    ivyX + 3.5,
+                    ivyY,
+                  );
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+                }
+              }
+
+              // Draw Visage on top of Canopy only if it is a full Boss!
+              if (drawVisageOnTop) {
+                drawVisage();
+              }
+
+              // 8. Glowing Eldritch "Forest-Eye" Fruits (Pulsing glowing eyes peering from leaves)
+              if (rMob.flashTimer === 0) {
+                if (!m.appleOffsets) {
+                  m.appleOffsets = [];
+                  let count = window.randInt(4, 7);
+                  for (let i = 0; i < count; i++) {
+                    let angle = window.randFloat(0, Math.PI * 2);
+                    let dist = window.randFloat(0, r * 0.8);
+                    m.appleOffsets.push({
+                      dx: Math.cos(angle) * dist,
+                      dy: Math.sin(angle) * dist - r * 0.1,
+                      sizeMod: window.randFloat(0.9, 1.25),
+                      eyeRot: window.randFloat(-Math.PI / 10, Math.PI / 10),
+                    });
+                  }
+                }
+                c.save();
+                c.shadowBlur = 12;
+                c.shadowColor = "#ff2200";
+
+                let eyePulse = 1 + Math.sin(Date.now() / 150) * 0.08;
+
+                m.appleOffsets.forEach((ap) => {
+                  let appleX = cx + ap.dx;
+                  let appleY = cy + ap.dy;
+                  let rRadius = rMob.w * 0.11 * ap.sizeMod * eyePulse;
+
+                  c.save();
+                  c.translate(appleX, appleY);
+                  c.rotate(ap.eyeRot);
+
+                  // Dual-color Eldritch Eye radial gradient (Glow center to crimson edge)
+                  let fruitGrad = c.createRadialGradient(0, 0, 1, 0, 0, rRadius);
+                  fruitGrad.addColorStop(0, "#ffffff");
+                  fruitGrad.addColorStop(0.3, "#f1c40f"); // Yellow iris ring
+                  fruitGrad.addColorStop(0.7, "#d35400"); // Rich orange boundary
+                  fruitGrad.addColorStop(1, "#c0392b"); // Crimson base
+                  c.fillStyle = fruitGrad;
+
+                  c.beginPath();
+                  c.arc(0, 0, rRadius, 0, Math.PI * 2);
+                  c.fill();
+                  c.stroke();
+
+                  // Menacing black reptilian slit pupil right in the center!
+                  c.fillStyle = "#000000";
+                  c.beginPath();
+                  c.ellipse(0, 0, rRadius * 0.2, rRadius * 0.7, 0, 0, Math.PI * 2);
+                  c.fill();
+
+                  // Micro white specular highlight reflecting light
+                  c.fillStyle = "#ffffff";
+                  c.beginPath();
+                  c.arc(
+                    -rRadius * 0.25,
+                    -rRadius * 0.25,
+                    rRadius * 0.15,
+                    0,
+                    Math.PI * 2,
+                  );
+                  c.fill();
+
+                  c.restore();
+                });
+                c.restore();
+              }
+              c.restore();
+              c.restore(); // Close master transform
+            } else if (currentTier === 1) {
         let bounceOffset = Math.sin(Date.now() / 200) * 3;
         let blockColor = m.flashTimer > 0 ? "#ffffff" : "#3b3f46";
         let shadowColor = m.flashTimer > 0 ? "#ffffff" : "#1f2126";

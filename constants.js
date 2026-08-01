@@ -117,6 +117,14 @@ window.etcDex = {
 };
 
 window.useDex = {
+  "Astral Singularity Cache": {
+    desc: "A locked container vibrating with concentrated void energy. Unboxes a guaranteed 5★ Uber Unique weapon, offhand, or armor scaled to your lifetime peak stage.",
+    color: "#a855f7",
+  },
+  "Astral Artifact Cache": {
+    desc: "A pristine crystalline box containing a guaranteed random Unique Artifact, plus 2 to 4 Catalyst Cores.",
+    color: "#1abc9c",
+  },
   "Weekly Clan Supply Crate": {
     desc: "A special supply crate issued weekly to active guild members. Can be upgraded through the Clan Skills 'Supply Depot' research card to unlock massive bonus rewards like Catalyst Cores, Ancient Cores, and guaranteed high-rarity item rolls!",
     color: "#ffaa00",
@@ -2219,6 +2227,18 @@ window.CAVERN_DEBUFFS = [
 
 window.ASTRAL_SHOP_STOCK = [
   {
+    name: "Astral Singularity Cache",
+    cost: 7500,
+    color: "#a855f7",
+    desc: "A locked container vibrating with concentrated void energy. Unboxes a guaranteed 5★ Uber Unique item scaled to your lifetime peak stage.",
+  },
+  {
+    name: "Astral Artifact Cache",
+    cost: 4500,
+    color: "#1abc9c",
+    desc: "A pristine crystalline box containing a guaranteed random Unique Artifact, plus 2-4 Catalyst Cores.",
+  },
+  {
     name: "Catalyst Core",
     cost: 120,
     color: "#2ecc71",
@@ -2577,10 +2597,11 @@ window.TILE_TYPES = {
   STATION_ENCHANT: 12,
   STATION_INN: 13,
   STATION_GACHAPON: 14,
-  RECOVERY_CHEST: 15,
-  POTTERY_SPAWN: 16,
-  STATION_SHOP: 17,
-};
+    RECOVERY_CHEST: 15,
+    POTTERY_SPAWN: 16,
+    STATION_SHOP: 17,
+    DUNGEON_MERCHANT: 18,
+  };
 
 window.DUNGEON_CONFIG = {
   BASE_WIDTH: 40,

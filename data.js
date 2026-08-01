@@ -872,28 +872,53 @@ Object.assign(window.GameState, {
   },
 
   addCoins(amount) {
-    let amt = BigNum.from(amount);
-    if (amt.lte(0)) return;
-    window.playerStats.coins = BigNum.from(window.playerStats.coins).add(amt);
-    window.playerStats.totalGoldEarned = BigNum.from(
-      window.playerStats.totalGoldEarned || 0,
-    ).add(amt);
-    if (typeof window.updateUI === "function") window.updateUI();
-  },
+      let amt = BigNum.from(amount);
+      if (amt.lte(0)) return;
+      window.playerStats.coins = BigNum.from(window.playerStats.coins).add(amt);
+      window.playerStats.totalGoldEarned = BigNum.from(
+        window.playerStats.totalGoldEarned || 0,
+      ).add(amt);
+      if (typeof window.updateUI === "function") window.updateUI();
+    },
 
-  spendCoins(amount) {
-    let amt = BigNum.from(amount);
-    if (amt.lte(0)) return false;
-    let coins = BigNum.from(window.playerStats.coins);
-    if (coins.lt(amt)) return false;
-    window.playerStats.coins = coins.sub(amt);
-    if (window.playerStats.coins.eq(0)) {
-      window.playerStats.hasTriggeredExactChange = true;
-    }
-    if (typeof window.updateUI === "function") window.updateUI();
-    return true;
-  },
-});
+    spendCoins(amount) {
+      let amt = BigNum.from(amount);
+      if (amt.lte(0)) return false;
+      let coins = BigNum.from(window.playerStats.coins);
+      if (coins.lt(amt)) return false;
+      window.playerStats.coins = coins.sub(amt);
+      if (window.playerStats.coins.eq(0)) {
+        window.playerStats.hasTriggeredExactChange = true;
+      }
+      if (typeof window.updateUI === "function") window.updateUI();
+      return true;
+    },
+
+    spendRunOrVaultGold(amount) {
+      let amt = BigNum.from(amount);
+      if (amt.lte(0)) return false;
+      let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
+
+      if (inDungeonRun) {
+        let pocket = BigNum.from(window.playerStats.runGold || 0);
+        if (pocket.lt(amt)) return false;
+        window.playerStats.runGold = pocket.sub(amt);
+        if (window.playerStats.runGold.eq(0)) {
+          window.playerStats.hasTriggeredExactChange = true;
+        }
+      } else {
+        let coins = BigNum.from(window.playerStats.coins || 0);
+        if (coins.lt(amt)) return false;
+        window.playerStats.coins = coins.sub(amt);
+        if (window.playerStats.coins.eq(0)) {
+          window.playerStats.hasTriggeredExactChange = true;
+        }
+      }
+
+      if (typeof window.updateUI === "function") window.updateUI();
+      return true;
+    },
+  });
 
 // Legacy Compatibility Aliases to protect references
 window.gainXp = (amount, isOffline) =>
@@ -909,18 +934,16 @@ window.absorbGoldParticle = function (amount, isDungeon, isCrucible) {
     window.playerStats.crucibleAccumulatedGold =
       (window.playerStats.crucibleAccumulatedGold || 0) + amount;
   } else {
-    window.playerStats.coins = BigNum.from(window.playerStats.coins).add(amt);
     window.playerStats.totalGoldEarned = BigNum.from(
       window.playerStats.totalGoldEarned || 0,
     ).add(amt);
 
     if (isDungeon) {
+      window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0).add(amt);
       window.playerStats.dungeonAccumulatedGold =
         (window.playerStats.dungeonAccumulatedGold || 0) + amount;
-    }
-
-    if (window.playerStats.runGold !== undefined) {
-      window.playerStats.runGold += amount;
+    } else {
+      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(amt);
     }
 
     if (typeof window.progressMission === "function") {
@@ -1505,16 +1528,16 @@ window.resolvePlayerStats = function (useDraft = false) {
   achDexPct *= paragonMult;
   achIntPct *= paragonMult;
 
-  // Apply active run-only Crucible Draft deck modifiers
-  if (
-    window.playerStats.isCrucibleMode &&
-    window.playerStats.crucibleDraftDeck
-  ) {
-    window.playerStats.crucibleDraftDeck.forEach((cardId) => {
-      let card = window.CRUCIBLE_DRAFT_POOL.find((c) => c.id === cardId);
-      if (card) card.apply(p);
-    });
-  }
+  // Apply active run-only Crucible Draft deck modifiers (Capped at 10)
+    if (
+      window.playerStats.isCrucibleMode &&
+      window.playerStats.crucibleDraftDeck
+    ) {
+      window.playerStats.crucibleDraftDeck.slice(0, 10).forEach((cardId) => {
+        let card = window.CRUCIBLE_DRAFT_POOL.find((c) => c.id === cardId);
+        if (card) card.apply(p);
+      });
+    }
 
   let flatGearAtk = BigNum.from(0);
   let flatGearHp = BigNum.from(0);
@@ -3266,146 +3289,174 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
 // --- INITIAL GLOBAL STATE ---
 
 window.CRUCIBLE_DRAFT_POOL = [
+  // --- STANDARD UPGRADES (Infinite Stacking) ---
   {
-    id: "overcharge",
-    name: "Overcharge",
-    desc: "+20% Crit Multiplier, +2.5% Crit Chance",
+    id: "steel_resolve",
+    name: "Steel Resolve",
+    desc: "Permanently fortifies your physical armor, adding +15% to your Defense.",
     apply: (p) => {
-      p.critDamage = (p.critDamage || 0) + 0.2;
-      p.critChance = (p.critChance || 0) + 0.025;
+      p.defPctBonus = (p.defPctBonus || 0) + 0.15;
     },
+    modifiersDisplay: { buff: "15% Defense" }
   },
   {
-    id: "sanguine_tide",
-    name: "Sanguine Tide",
-    desc: "Heal 1.5% Max HP on every Critical Strike hit",
+    id: "sharpened_edge",
+    name: "Sharpened Edge",
+    desc: "Sharpens weapon precision, adding +15% to your Attack Power.",
     apply: (p) => {
-      p.crucibleCritHeal = (p.crucibleCritHeal || 0) + 0.015;
+      p.atkPctBonus = (p.atkPctBonus || 0) + 0.15;
     },
+    modifiersDisplay: { buff: "15% Attack" }
   },
   {
-    id: "phantom_echo",
-    name: "Phantom Echo",
-    desc: "+15% chance to trigger secondary Phantom Strike (deals 35% damage)",
+    id: "hearty_const",
+    name: "Hearty Constitution",
+    desc: "Increases structural stamina, adding +15% to your Maximum HP.",
     apply: (p) => {
-      p.crucibleEchoChance = (p.crucibleEchoChance || 0) + 0.15;
+      p.maxHpPctBonus = (p.maxHpPctBonus || 0) + 0.15;
     },
+    modifiersDisplay: { buff: "15% Max HP" }
   },
   {
-    id: "titans_wall",
-    name: "Titan's Wall",
-    desc: "+8% base armor and +3% Block/Parry cap limits",
+    id: "swift_foot",
+    name: "Swift Footwork",
+    desc: "Increases Movement Speed by +10% and adds +3% base Parry Rate.",
     apply: (p) => {
-      p.defPctBonus = (p.defPctBonus || 0) + 0.08;
-      p.crucibleCapBonus = (p.crucibleCapBonus || 0) + 0.03;
+      p.moveSpeedPctBonus = (p.moveSpeedPctBonus || 0) + 0.10;
+      p.parry = (p.parry || 0) + 0.03;
     },
-  },
-  {
-    id: "temporal_accel",
-    name: "Temporal Acceleration",
-    desc: "+15% Active & Idle Attack Speed multipliers",
-    apply: (p) => {
-      p.activeSpeedPct = (p.activeSpeedPct || 0) + 0.15;
-      p.idleSpeedPct = (p.idleSpeedPct || 0) + 0.15;
-    },
+    modifiersDisplay: { buff: "10% Speed / 3% Parry" }
   },
   {
     id: "astral_attune",
     name: "Astral Attunement",
-    desc: "Earn +25% Astral Shards from this run",
+    desc: "Attunes your matrix, gaining +25% bonus Astral Shards on wave clears.",
     apply: (p) => {
       p.crucibleShardMult = (p.crucibleShardMult || 1.0) + 0.25;
     },
+    modifiersDisplay: { buff: "25% Shards" }
+  },
+
+  // --- CORRUPTED UPGRADES (Max 3 Stacks, High-Risk / High-Return) ---
+  {
+    id: "glass_cannon",
+    name: "Glass Cannon",
+    desc: "Increases Attack Power by +45%, but slashes your Max HP by -15%.",
+    isCorrupted: true,
+    apply: (p) => {
+      p.atkPctBonus = (p.atkPctBonus || 0) + 0.45;
+      p.maxHpPctBonus = (p.maxHpPctBonus || 0) - 0.15;
+    },
+    modifiersDisplay: { buff: "45% Attack", debuff: "15% Max HP" }
   },
   {
-    id: "slot_weapon",
-    name: "Bladesmith's Touch",
-    desc: "+15% to all stats of the equipped Weapon slot for this run",
+    id: "lead_sentinel",
+    name: "Lead Sentinel",
+    desc: "Increases Defense by +40% and Block by +5%, but slows you by -12%.",
+    isCorrupted: true,
     apply: (p) => {
-      p.crucibleSlotBonuses.weapon = (p.crucibleSlotBonuses.weapon || 0) + 0.15;
+      p.defPctBonus = (p.defPctBonus || 0) + 0.40;
+      p.block = (p.block || 0) + 0.05;
+      p.moveSpeedPctBonus = (p.moveSpeedPctBonus || 0) - 0.12;
     },
+    modifiersDisplay: { buff: "40% Defense / 5% Block", debuff: "12% Speed" }
   },
   {
-    id: "slot_subweapon",
-    name: "Aegis Convergence",
-    desc: "+15% to all stats of the equipped Subweapon (Offhand) slot for this run",
+    id: "vampiric_pact",
+    name: "Vampiric Pact",
+    desc: "Heals you for 1.0% of damage dealt on hit, but you take +15% more damage from all sources.",
+    isCorrupted: true,
     apply: (p) => {
-      p.crucibleSlotBonuses.subweapon =
-        (p.crucibleSlotBonuses.subweapon || 0) + 0.15;
+      p.crucibleCritHeal = (p.crucibleCritHeal || 0) + 0.01;
+      p.crucibleSelfDmgReduction = (p.crucibleSelfDmgReduction || 1.0) * 1.15;
     },
+    modifiersDisplay: { buff: "1.0% Lifesteal", debuff: "15% Damage Taken" }
   },
   {
-    id: "slot_helmet",
-    name: "Crown Alignment",
-    desc: "+15% to all stats of the equipped Helmet slot for this run",
+    id: "brittle_goliath",
+    name: "Brittle Goliath",
+    desc: "Increases Max HP by +50%, but decreases your total Defense by -50%.",
+    isCorrupted: true,
     apply: (p) => {
-      p.crucibleSlotBonuses.helmet = (p.crucibleSlotBonuses.helmet || 0) + 0.15;
+      p.maxHpPctBonus = (p.maxHpPctBonus || 0) + 0.50;
+      p.defPctBonus = (p.defPctBonus || 0) - 0.50;
     },
+    modifiersDisplay: { buff: "50% Max HP", debuff: "50% Defense" }
   },
   {
-    id: "slot_torso",
-    name: "Fortress Plate",
-    desc: "+15% to all stats of equipped Chest and Overall slots for this run",
+    id: "unstable_comb",
+    name: "Unstable Combustion",
+    desc: "Critical strikes trigger a 150% Attack splash blast, but you take 1% of the dealt damage as self-backlash.",
+    isCorrupted: true,
     apply: (p) => {
-      p.crucibleSlotBonuses.chest = (p.crucibleSlotBonuses.chest || 0) + 0.15;
-      p.crucibleSlotBonuses.overall =
-        (p.crucibleSlotBonuses.overall || 0) + 0.15;
+      p.crucibleCritSplash = (p.crucibleCritSplash || 0) + 1.5;
+      p.crucibleBacklash = (p.crucibleBacklash || 0) + 0.01;
     },
+    modifiersDisplay: { buff: "150% Splash on Crit", debuff: "1% Backlash Damage" }
+  },
+
+  // --- MYTHIC / SINGULAR UPGRADES (Max 1 Stack, Game-Changers) ---
+  {
+    id: "brimstone_core",
+    name: "Brimstone Core",
+    desc: "Emits a fire aura dealing 50% Attack/sec to adjacent foes, but caps your maximum Movement Speed at 6.",
+    isMythic: true,
+    isSingular: true,
+    apply: (p) => {
+      p.hasBrimstoneCore = true;
+      p.moveSpeedLimit = 6;
+    },
+    modifiersDisplay: { buff: "50% Fire Aura/sec", debuff: "Speed Capped at 6" }
   },
   {
-    id: "slot_leggings",
-    name: "Reinforced Chausses",
-    desc: "+15% to all stats of the equipped Leggings slot for this run",
+    id: "mirage_array",
+    name: "Mirage Array",
+    desc: "A permanent spectral clone mimics your slashes at 40% damage, but you can no longer Block or Parry.",
+    isMythic: true,
+    isSingular: true,
     apply: (p) => {
-      p.crucibleSlotBonuses.leggings =
-        (p.crucibleSlotBonuses.leggings || 0) + 0.15;
+      p.hasMirageArray = true;
+      p.block = 0;
+      p.parry = 0;
     },
+    modifiersDisplay: { buff: "+40% Ghost Slashes", debuff: "Block & Parry Disabled" }
   },
   {
-    id: "slot_boots",
-    name: "Mercury Wings",
-    desc: "+15% to all stats of the equipped Boots slot for this run",
+    id: "thunder_backlash",
+    name: "Thunderlord's Backlash",
+    desc: "Every 10th attack strikes up to 3 targets for 400% damage, but you take 5% of the dealt damage as feedback.",
+    isMythic: true,
+    isSingular: true,
     apply: (p) => {
-      p.crucibleSlotBonuses.boots = (p.crucibleSlotBonuses.boots || 0) + 0.15;
+      p.hasThunderBacklash = true;
     },
+    modifiersDisplay: { buff: "400% Bolt / 10 hits", debuff: "5% Feedback Damage" }
   },
   {
-    id: "aegis_bastion",
-    name: "Stalwart Bastion",
-    desc: "+3% Block & Parry Rate, and +5% Max HP. HP bonus is doubled (+10% total) if wielding a Shield.",
+    id: "alchemical_catalyst",
+    name: "Alchemical Catalyst",
+    desc: "Active elixir strengths are doubled (+100% bonus), but your Field Flask is disabled.",
+    isMythic: true,
+    isSingular: true,
     apply: (p) => {
-      p.block = (p.block || 0) + 0.03;
-      p.parry = (p.parry || 0) + 0.03;
-      let hpBonus =
-        window.equippedSlots.subweapon?.subType === "shield" ? 0.1 : 0.05;
-      p.maxHpPctBonus = (p.maxHpPctBonus || 0) + hpBonus;
+      p.potStrengthPct = (p.potStrengthPct || 0) + 1.0;
+      p.maxFlaskCharges = 0;
+      p.flaskCharges = 0;
     },
-  },
-  {
-    id: "poison_tip",
-    name: "Viper's Precision",
-    desc: "+4% Crit Chance. Your critical hits apply 1 stack of Sanguine Bleed. Applied stacks are doubled to 2 if wielding a Dagger.",
-    apply: (p) => {
-      p.critChance = (p.critChance || 0) + 0.04;
-      let bleedAmt =
-        window.equippedSlots.subweapon?.subType === "dagger" ? 2 : 1;
-      p.crucibleDaggerBleed = (p.crucibleDaggerBleed || 0) + bleedAmt;
-    },
-  },
-  {
-    id: "catalyst_resonance",
-    name: "Aetheric Focus",
-    desc: "+8% Spell & Tome damage. Wielding a Tome also increases Arcane Barrier absorption by +5% and extends barrier caps.",
-    apply: (p) => {
-      p.crucibleSpellChanceBonus = (p.crucibleSpellChanceBonus || 0) + 0.08;
-      if (window.equippedSlots.subweapon?.subType === "tome") {
-        p.arcaneBarrier = (p.arcaneBarrier || 0) + 0.05;
-      }
-    },
-  },
+    modifiersDisplay: { buff: "2x Potion Potency", debuff: "Flask Disabled" }
+  }
 ];
 
 window.playerStats = {
+  hasTriggeredOnslaughtUnlock: false,
+  isCrucibleMode: false,
+  crucibleWave: 1,
+  cruciblePeak: 0,
+  crucibleDraftDeck: [],
+  astralShards: 0,
+  crucibleAccumulatedShards: 0,
+  crucibleAccumulatedCores: 0,
+  crucibleAccumulatedLoot: [],
   subweaponMastery: {
     shield: { xp: 0, level: 1, sp: 0, spentSp: 0 },
     dagger: { xp: 0, level: 1, sp: 0, spentSp: 0 },
@@ -4073,6 +4124,7 @@ window.activeFairies = [];
 window.damageHistory = [];
 window.projectiles = [];
 window.goldParticles = [];
+window.heartOrbs = [];
 window.groundLoot = [];
 window.groundMaterials = [];
 window.groundScroll = 0;
@@ -4121,49 +4173,60 @@ window.saveGame = function () {
     }
 
     let saveData = {
-      playerStats: { ...window.playerStats },
-      equippedSlots: window.equippedSlots || {},
-      inventory: window.inventory || {
-        EQUIP: [],
-        ARTIFACT: [],
-        SIGIL: [],
-        ETC: {},
-        USE: {},
-      },
-      stash: window.player && window.player.stash ? window.player.stash : [],
-      bag: window.player && window.player.bag ? window.player.bag : [],
-      pendingScraps:
-        window.player && window.player.pendingScraps
-          ? window.player.pendingScraps
-          : {},
-      version: window.GAME_VERSION || 1.0,
-    };
+          playerStats: { ...window.playerStats },
+          equippedSlots: window.equippedSlots || {},
+          inventory: window.inventory || {
+            EQUIP: [],
+            ARTIFACT: [],
+            SIGIL: [],
+            ETC: {},
+            USE: {},
+          },
+          stash: window.player && window.player.stash ? window.player.stash : [],
+          bag: window.player && window.player.bag ? window.player.bag : [],
+          pendingScraps:
+            window.player && window.player.pendingScraps
+              ? window.player.pendingScraps
+              : {},
+          version: window.GAME_VERSION || 1.0,
+        };
 
-    if (saveData.playerStats.xp)
-      saveData.playerStats.xp = {
-        m: saveData.playerStats.xp.m,
-        e: saveData.playerStats.xp.e,
-      };
-    if (saveData.playerStats.xpReq)
-      saveData.playerStats.xpReq = {
-        m: saveData.playerStats.xpReq.m,
-        e: saveData.playerStats.xpReq.e,
-      };
-    if (saveData.playerStats.currentHp)
-      saveData.playerStats.currentHp = {
-        m: saveData.playerStats.currentHp.m,
-        e: saveData.playerStats.currentHp.e,
-      };
-    if (saveData.playerStats.coins)
-      saveData.playerStats.coins = {
-        m: saveData.playerStats.coins.m,
-        e: saveData.playerStats.coins.e,
-      };
-    if (saveData.playerStats.totalGoldEarned)
-      saveData.playerStats.totalGoldEarned = {
-        m: saveData.playerStats.totalGoldEarned.m,
-        e: saveData.playerStats.totalGoldEarned.e,
-      };
+        if (saveData.playerStats.xp)
+          saveData.playerStats.xp = {
+            m: saveData.playerStats.xp.m,
+            e: saveData.playerStats.xp.e,
+          };
+        if (saveData.playerStats.xpReq)
+          saveData.playerStats.xpReq = {
+            m: saveData.playerStats.xpReq.m,
+            e: saveData.playerStats.xpReq.e,
+          };
+        if (saveData.playerStats.currentHp)
+          saveData.playerStats.currentHp = {
+            m: saveData.playerStats.currentHp.m,
+            e: saveData.playerStats.currentHp.e,
+          };
+        if (saveData.playerStats.coins)
+          saveData.playerStats.coins = {
+            m: saveData.playerStats.coins.m,
+            e: saveData.playerStats.coins.e,
+          };
+        if (saveData.playerStats.runGold)
+          saveData.playerStats.runGold = {
+            m: saveData.playerStats.runGold.m,
+            e: saveData.playerStats.runGold.e,
+          };
+        if (saveData.playerStats.totalGoldEarned)
+          saveData.playerStats.totalGoldEarned = {
+            m: saveData.playerStats.totalGoldEarned.m,
+            e: saveData.playerStats.totalGoldEarned.e,
+          };
+        if (saveData.playerStats.recoveryLoot && saveData.playerStats.recoveryLoot.gold) {
+          saveData.playerStats.recoveryLoot.gold = {
+            m: saveData.playerStats.recoveryLoot.gold.m,
+            e: saveData.playerStats.recoveryLoot.gold.e,
+          };
+        }
 
     localStorage.setItem("extraction_crawler_save", JSON.stringify(saveData));
   } catch (err) {
@@ -4275,8 +4338,20 @@ window.loadGame = function () {
     if (!parsed) return;
 
     if (parsed.playerStats) {
-      Object.assign(window.playerStats, parsed.playerStats);
-      window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
+              Object.assign(window.playerStats, parsed.playerStats);
+              window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
+              window.playerStats.hasTriggeredOnslaughtUnlock = parsed.playerStats.hasTriggeredOnslaughtUnlock || false;
+              window.playerStats.isCrucibleMode = parsed.playerStats.isCrucibleMode || false;
+              window.playerStats.crucibleWave = parsed.playerStats.crucibleWave || 1;
+              window.playerStats.cruciblePeak = parsed.playerStats.cruciblePeak || 0;
+              window.playerStats.crucibleDraftDeck = parsed.playerStats.crucibleDraftDeck || [];
+              window.playerStats.astralShards = parsed.playerStats.astralShards || 0;
+              window.playerStats.crucibleAccumulatedShards = parsed.playerStats.crucibleAccumulatedShards || 0;
+              window.playerStats.crucibleAccumulatedCores = parsed.playerStats.crucibleAccumulatedCores || 0;
+              window.playerStats.crucibleAccumulatedLoot = parsed.playerStats.crucibleAccumulatedLoot || [];
+              window.playerStats.crucibleStartWave = parsed.playerStats.crucibleStartWave || 1;
+              window.playerStats.crucibleActiveTab = parsed.playerStats.crucibleActiveTab || "setup";
+              window.playerStats.pendingCrucibleDrafts = parsed.playerStats.pendingCrucibleDrafts || 0;
 
       // Backward Compatibility Migration: convert real-time timers to run charges
       const potKeys = ["atk", "hp", "def", "haste", "xp", "drop", "qly"];
@@ -4295,13 +4370,18 @@ window.loadGame = function () {
       });
 
       window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
-      window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
-      window.playerStats.currentHp = BigNum.from(
-        window.playerStats.currentHp || 100,
-      );
-      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
+            window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
+            window.playerStats.currentHp = BigNum.from(
+              window.playerStats.currentHp || 100,
+            );
+            window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
+            window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
 
-      // Fallback initializer for Boss Kill progress tracking
+            if (window.playerStats.recoveryLoot && window.playerStats.recoveryLoot.gold) {
+              window.playerStats.recoveryLoot.gold = BigNum.from(window.playerStats.recoveryLoot.gold);
+            }
+
+            // Fallback initializer for Boss Kill progress tracking
       window.playerStats.bossKillRegistry = window.playerStats
         .bossKillRegistry || {
         arachnid_treant: 0,
@@ -4471,3 +4551,176 @@ window.loadGame = function () {
 
 // Auto-load saved state on boot
 window.loadGame();
+
+window.calculateCumulativeOnslaughtShards = function (startWave) {
+  let totalShards = 0;
+  let totalGold = 0;
+  let totalXp = 0;
+
+  for (let w = 1; w < startWave; w++) {
+    totalShards += Math.floor(5 * Math.pow(w, 1.15));
+    totalGold += Math.floor(100 * Math.pow(w, 1.25));
+    totalXp += Math.floor(250 * Math.pow(w, 1.1));
+  }
+
+  return {
+    shards: Math.floor(totalShards * 0.70),
+    gold: Math.floor(totalGold * 0.70),
+    xp: Math.floor(totalXp * 0.70),
+  };
+};window.changeOnslaughtStartWave = function (waveVal) {
+      window.playerStats.crucibleStartWave = parseInt(waveVal, 10) || 1;
+      window.renderDeploymentModal();
+    };
+
+    window.renderDeploymentModal = function () {
+      let selectorsPanel = document.getElementById("deployment-selectors-panel");
+      if (selectorsPanel) {
+        let isCrucible = window.playerStats.isCrucibleMode;
+
+        if (isCrucible) {
+          let maxPeak = window.playerStats.cruciblePeak || 1;
+          let selectedWave = window.playerStats.crucibleStartWave || 1;
+
+          let waveOptions = [];
+          waveOptions.push(1);
+          for (let wave = 5; wave <= maxPeak; wave += 5) {
+            waveOptions.push(wave);
+          }
+          waveOptions = Array.from(new Set(waveOptions)).sort((a, b) => a - b);
+
+          let optionsMarkup = waveOptions.map((w) => {
+            let isSelected = w === selectedWave ? "selected" : "";
+            let tag = w === 1 ? "Initiation Wave" : `Milestone Wave`;
+            return `<option value="${w}" ${isSelected}>Wave ${w} (${tag})</option>`;
+          }).join("");
+
+          let dividend = window.calculateCumulativeOnslaughtShards(selectedWave);
+
+          selectorsPanel.innerHTML = `
+            <div class="deploy-pane-header">
+              <span>ONSLAUGHT PARAMETERS</span>
+              <span class="deploy-risk-tag" style="border-color:#a855f7; color:#a855f7; background:rgba(168,85,247,0.1);">ARENA</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. STARTING WAVE MILESTONE</label>
+                <select id="deploy-wave-select" class="wave-milestone-select" onchange="window.changeOnslaughtStartWave(this.value)">
+                  ${optionsMarkup}
+                </select>
+              </div>
+
+              ${selectedWave > 1 ? `
+              <div style="background: rgba(168, 85, 247, 0.1); border: 1.5px dashed #a855f7; border-radius: 6px; padding: 10px; text-align: left; font-family: monospace; font-size: 9.5px; line-height: 1.4; color: #e9d5ff;">
+                <strong style="color: #ffd700; display: block; margin-bottom: 4px;">[70% SKIP DIVIDEND REWARD]</strong>
+                <span>Bypassing Waves 1 to ${selectedWave - 1} instantly awards:</span>
+                <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 2px;">
+                  <div style="color: #00ffff;">+ ${dividend.shards.toLocaleString()} Astral Shards</div>
+                  <div style="color: #ffd700;">+ ${window.formatNumber(dividend.gold)} Gold</div>
+                  <div style="color: #c084fc;">+ ${window.formatNumber(dividend.xp)} Experience (XP)</div>
+                </div>
+              </div>
+              ` : ""}
+            </div>
+          `;
+        } else {
+          let checkpoints = window.playerStats.unlockedCheckpoints || [1];
+          let selectedFloor = window.state.deploymentFloor || 1;
+          let rec = window.playerStats && window.playerStats.recoveryLoot;
+
+          let floorOptions = checkpoints
+            .map((startFloor) => {
+              let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
+              let isSelected = startFloor === selectedFloor ? "selected" : "";
+              let recBadge =
+                rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
+
+              let tag =
+                startFloor === 1
+                  ? "Start"
+                  : (startFloor - 1) % 12 === 0
+                    ? `Sector ${sectorNum} Start`
+                    : `Post Mini-Boss`;
+              return `<option value="${startFloor}" ${isSelected}>Floor ${startFloor} (${tag})${recBadge}</option>`;
+            })
+            .join("");
+
+          let recBannerHtml = "";
+          if (rec && rec.items && rec.items.length > 0) {
+            recBannerHtml = `
+                          <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
+                            <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
+                            <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
+                          </div>
+                        `;
+          }
+
+          let selectedSigilId = window.state.selectedDeploymentSigilId;
+          let activeSigil = selectedSigilId
+            ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
+            : null;
+
+          let sigilSlotHtml = "";
+          if (activeSigil) {
+            let col = window.getTierColor(activeSigil.statsRolled);
+            let buffPills = (activeSigil.buffs || [])
+              .map(
+                (b) =>
+                  `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">+ ${b.name}</span>`,
+              )
+              .join(" ");
+            let debuffPills = (activeSigil.debuffs || [])
+              .map(
+                (d) =>
+                  `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">- ${d.name}</span>`,
+              )
+              .join(" ");
+
+            sigilSlotHtml = `
+                <div class="deploy-sigil-card-slot" onclick="window.openSigilPickerModal()" style="border-color:${col}; cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                      ${window.getEquipIconHtml(activeSigil, 24)}
+                      <div style="display:flex; flex-direction:column; min-width:0;">
+                        <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${activeSigil.name}</span>
+                        <span style="color:#aaa; font-size:8px; font-family:monospace;">${activeSigil.statsRolled}★ ${window.getTierName(activeSigil.statsRolled)}</span>
+                      </div>
+                    </div>
+                    <button class="action-btn-sm" style="background:#3b0764; border-color:#a855f7; color:#df9ffb; font-size:8px; padding:3px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">SWAP</button>
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:3px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:4px;">
+                    ${buffPills} ${debuffPills}
+                  </div>
+                </div>
+              `;
+          } else {
+            sigilSlotHtml = `
+                <div class="deploy-sigil-card-slot empty" onclick="window.openSigilPickerModal()" style="cursor:pointer; padding:12px 10px;">
+                  <span style="color:#64748b; font-size:10px; font-weight:bold; font-style:italic;">[ NO SIGIL INFUSED ]</span>
+                  <button class="action-btn-sm" style="background:#0284c7; border-color:#38bdf8; color:#fff; font-size:8px; padding:4px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">INFUSE SIGIL</button>
+                </div>
+            `;
+          }
+
+          selectorsPanel.innerHTML = `
+                      ${recBannerHtml}
+                      <div class="deploy-pane-header">
+                        <span>EXPEDITION & SIGIL SETUP</span>
+                        <span class="deploy-risk-tag" style="border-color:#f1c40f; color:#f1c40f; background:rgba(241,196,15,0.1);">DESTINATION</span>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
+                          <select id="deploy-floor-select" style="background: #1e293b; color: #ffd700; border: 1px solid #334155; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentFloor(this.value)">
+                            ${floorOptions}
+                          </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                                                  <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">2. CAVERN SIGIL ALTAR</label>
+                                                  ${sigilSlotHtml}
+                                                </div>
+                                              </div>
+                                            `;
+                                }
+                              }
+                            };

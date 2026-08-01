@@ -10,6 +10,10 @@ window.SoundManager = {
   masterGain: null,
   sfxGain: null,
   cachedNoiseBuffer: null, // Cached to prevent real-time GC stutters on iOS
+  gainPool: [],
+  filterPool: [],
+  gainPoolSize: 30,
+  filterPoolSize: 15,
 
   init() {
     // Force iOS AudioSession to "playback" category to bypass physical silent switch
@@ -28,17 +32,37 @@ window.SoundManager = {
         this.ctx = new AudioContextClass();
         this.masterGain = this.ctx.createGain();
         this.sfxGain = this.ctx.createGain();
+
+        // Subphase 1.1 Dynamics Stage: Master Limiter (Threshold -12 dB, Ratio 20:1, Knee 12 dB, Attack 3ms, Release 100ms)
+        this.limiter = this.ctx.createDynamicsCompressor();
+        this.limiter.threshold.setValueAtTime(-12, this.ctx.currentTime);
+        this.limiter.ratio.setValueAtTime(20.0, this.ctx.currentTime);
+        this.limiter.knee.setValueAtTime(12.0, this.ctx.currentTime);
+        this.limiter.attack.setValueAtTime(0.003, this.ctx.currentTime);
+        this.limiter.release.setValueAtTime(0.100, this.ctx.currentTime);
+
         this.sfxGain.connect(this.masterGain);
+        this.masterGain.connect(this.limiter);
+        this.limiter.connect(this.ctx.destination);
 
-        const compressor = this.ctx.createDynamicsCompressor();
-        compressor.threshold.setValueAtTime(-18, this.ctx.currentTime);
-        compressor.knee.setValueAtTime(20, this.ctx.currentTime);
-        compressor.ratio.setValueAtTime(10, this.ctx.currentTime);
-        compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
-        compressor.release.setValueAtTime(0.08, this.ctx.currentTime);
+        // Subphase 1.2: Pre-allocate Reusable GainNodes
+        this.gainPool = [];
+        for (let i = 0; i < this.gainPoolSize; i++) {
+          let gNode = this.ctx.createGain();
+          gNode.freeAt = 0;
+          // Pre-connect all pooled GainNodes to sfxGain so we never allocate connections to destination at runtime
+          gNode.connect(this.sfxGain);
+          this.gainPool.push(gNode);
+        }
 
-        this.masterGain.connect(compressor);
-        compressor.connect(this.ctx.destination);
+        // Subphase 1.2: Pre-allocate Reusable BiquadFilterNodes
+        this.filterPool = [];
+        for (let i = 0; i < this.filterPoolSize; i++) {
+          let fNode = this.ctx.createBiquadFilter();
+          fNode.freeAt = 0;
+          this.filterPool.push(fNode);
+        }
+
         this.updateVolumes();
 
         // Pre-create 2 seconds of high-fidelity white noise to eliminate iOS allocation crackle
@@ -102,720 +126,1479 @@ window.SoundManager = {
     }
   },
 
-  play(type) {
-    if (window.playerStats.mute) return;
-    if (!this.init()) return;
-    if (this.activeChannelCount >= this.maxConcurrent) return;
-    this.activeChannelCount++;
-    const now = this.ctx.currentTime;
-    const dest = this.sfxGain;
-    switch (type) {
-      case "swing":
-      case "hover":
-        this.synthesizeSwing(now, dest);
-        break;
-      case "hit":
-        this.synthesizeHit(now, dest, false);
-        break;
-      case "crit":
-        this.synthesizeHit(now, dest, true);
-        break;
-      case "block":
-        this.synthesizeBlock(now, dest);
-        break;
-      case "parry":
-        this.synthesizeParry(now, dest);
-        break;
-      case "spell":
-        this.synthesizeSpell(now, dest);
-        break;
-      case "spell_fire":
-        this.synthesizeSpellFire(now, dest);
-        break;
-      case "spell_lightning":
-        this.synthesizeSpellLightning(now, dest);
-        break;
-      case "spell_frost":
-        this.synthesizeSpellFrost(now, dest);
-        break;
-      case "fairy":
-        this.synthesizeFairy(now, dest);
-        break;
-      case "death":
-        this.synthesizeDeath(now, dest);
-        break;
-      case "defeat":
-        this.synthesizeDefeat(now, dest);
-        break;
-      case "revive":
-        this.synthesizeRevive(now, dest);
-        break;
+  // Subphase 1.2: Pool Acquisition Helpers
+  acquireGainNode(now, duration) {
+    const releaseTime = now + duration;
+    for (let i = 0; i < this.gainPool.length; i++) {
+      let node = this.gainPool[i];
+      if (now >= node.freeAt) {
+        node.freeAt = releaseTime;
+        node.gain.cancelScheduledValues(now);
+        node.gain.setValueAtTime(0, now);
+        return node;
+      }
     }
+    // Graceful fallback if pool is fully saturated under heavy load
+    let fallback = this.ctx.createGain();
+    fallback.freeAt = releaseTime;
+    fallback.connect(this.sfxGain);
+    return fallback;
   },
 
-  synthesizeSwing(now, dest) {
-    const duration = window.randFloat(0.08, 0.12);
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.32, now + 0.008);
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
-
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
-
-    const noiseFilter = this.ctx.createBiquadFilter();
-    noiseFilter.type = "bandpass";
-    noiseFilter.frequency.setValueAtTime(window.randFloat(1100, 1500), now);
-    noiseFilter.frequency.linearRampToValueAtTime(
-      window.randFloat(300, 450),
-      now + duration,
-    );
-    noiseFilter.Q.setValueAtTime(3.5, now);
-    noiseSource.connect(noiseFilter);
-    noiseFilter.connect(gainNode);
-
-    const osc = this.ctx.createOscillator();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(window.randFloat(240, 310), now);
-    osc.frequency.linearRampToValueAtTime(
-      window.randFloat(70, 95),
-      now + duration,
-    );
-    const oscGain = this.ctx.createGain();
-    oscGain.gain.setValueAtTime(0, now);
-    oscGain.gain.linearRampToValueAtTime(0.12, now + 0.006);
-    oscGain.gain.linearRampToValueAtTime(0, now + duration * 0.85);
-
-    osc.connect(oscGain);
-    oscGain.connect(gainNode);
-    gainNode.connect(dest);
-
-    noiseSource.start(now);
-    osc.start(now);
-    noiseSource.stop(now + duration);
-    osc.stop(now + duration);
-
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
+  acquireFilterNode(now, duration) {
+    const releaseTime = now + duration;
+    for (let i = 0; i < this.filterPool.length; i++) {
+      let node = this.filterPool[i];
+      if (now >= node.freeAt) {
+        node.freeAt = releaseTime;
+        try {
+          node.disconnect();
+        } catch (e) {}
+        node.frequency.cancelScheduledValues(now);
+        node.Q.cancelScheduledValues(now);
+        node.gain.cancelScheduledValues(now);
+        node.type = "lowpass";
+        return node;
+      }
+    }
+    let fallback = this.ctx.createBiquadFilter();
+    fallback.freeAt = releaseTime;
+    return fallback;
   },
 
-  synthesizeHit(now, dest, isCrit = false) {
-    const duration = isCrit ? 0.22 : 0.14;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(isCrit ? 0.38 : 0.26, now + 0.004);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  play(type) {
+              if (window.playerStats.mute) return;
+              if (!this.init()) return;
+              if (this.activeChannelCount >= this.maxConcurrent) return;
+              this.activeChannelCount++;
+              const now = this.ctx.currentTime;
+              const dest = this.sfxGain;
+              switch (type) {
+                case "swing":
+                  this.playWeaponSwing(now, dest);
+                  break;
+                case "hover":
+                  this.synthesizeSwing(now, dest);
+                  break;
+        case "hit":
+          this.synthesizeHit(now, dest, false);
+          break;
+        case "crit":
+          this.synthesizeHit(now, dest, true);
+          break;
+        case "block":
+          this.synthesizeBlock(now, dest);
+          break;
+        case "parry":
+          this.synthesizeParry(now, dest);
+          break;
+        case "spell":
+          this.synthesizeSpell(now, dest);
+          break;
+        case "spell_fire":
+          this.synthesizeSpellFire(now, dest);
+          break;
+        case "spell_lightning":
+          this.synthesizeSpellLightning(now, dest);
+          break;
+        case "spell_frost":
+          this.synthesizeSpellFrost(now, dest);
+          break;
+        case "fairy":
+          this.synthesizeFairy(now, dest);
+          break;
+        case "death":
+          this.synthesizeDeath(now, dest);
+          break;
+        case "defeat":
+          this.synthesizeDefeat(now, dest);
+          break;
+        case "revive":
+                    this.synthesizeRevive(now, dest);
+                    break;
+                }
+              },
 
-    // 1. Sub-Bass Thud
-    const subOsc = this.ctx.createOscillator();
-    subOsc.type = "triangle";
-    let startFreq = isCrit ? 220 : 160;
-    let endFreq = isCrit ? 45 : 30;
-    subOsc.frequency.setValueAtTime(startFreq, now);
-    subOsc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.08);
+              playWeaponSwing(now, dest) {
+                      let weapon = window.equippedSlots ? window.equippedSlots.weapon : null;
+                      let noun = weapon && weapon.noun ? weapon.noun.toLowerCase() : "";
 
-    const subGain = this.ctx.createGain();
-    subGain.gain.setValueAtTime(0.25, now);
-    subGain.gain.linearRampToValueAtTime(0.001, now + 0.09);
-    subOsc.connect(subGain);
-    subGain.connect(gainNode);
+                      // Dynamic dispatch based on equipped weapon class (Phase 2 Roadmap)
+                      if (weapon && (weapon.isUniqueStaff || noun.includes("staff") || noun.includes("wand"))) {
+                        this.synthesizeStaffSwing(now, dest); // Subphase 2.4: The Staff Swing
+                      } else if (weapon && (weapon.isUniqueViper || noun.includes("dagger") || noun.includes("stiletto") || noun.includes("kris") || noun.includes("baselard") || noun.includes("dirk") || noun.includes("gauche"))) {
+                        this.synthesizeDaggerSwing(now, dest); // Subphase 2.2: The Dagger Swing
+                      } else if (weapon && (noun.includes("warhammer") || noun.includes("mace") || noun.includes("axe") || noun.includes("halberd"))) {
+                        this.synthesizeBluntSwing(now, dest); // Subphase 2.3: The Blunt Swing
+                      } else {
+                        this.synthesizeSwordSwing(now, dest); // Subphase 2.1: The Sword Swing
+                      }
+                    },
 
-    // 2. Flesh/Armor Impact Noise Transient
-    if (this.cachedNoiseBuffer) {
+              synthesizeSwordSwing(now, dest) {
+                              const duration = 0.18;
+                              const gainNode = this.acquireGainNode(now, duration);
+                              gainNode.gain.setValueAtTime(0, now);
+                              gainNode.gain.linearRampToValueAtTime(0.25, now + 0.005);
+                              gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                              const noiseSource = this.ctx.createBufferSource();
+                              noiseSource.buffer = this.cachedNoiseBuffer;
+
+                              const noiseFilter = this.acquireFilterNode(now, duration);
+                              noiseFilter.type = "bandpass";
+                              noiseFilter.Q.setValueAtTime(5.0, now);
+                              noiseFilter.frequency.setValueAtTime(1800, now);
+                              noiseFilter.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+
+                              const noiseGain = this.acquireGainNode(now, duration);
+                              noiseGain.gain.setValueAtTime(0.20, now);
+                              noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+                              noiseSource.connect(noiseFilter);
+                              noiseFilter.connect(noiseGain);
+                              noiseGain.connect(gainNode);
+
+                              const bladeOsc = this.ctx.createOscillator();
+                              bladeOsc.type = "triangle";
+                              bladeOsc.frequency.setValueAtTime(430, now);
+                              bladeOsc.frequency.exponentialRampToValueAtTime(110, now + 0.15);
+
+                              const bladeGain = this.acquireGainNode(now, duration);
+                              bladeGain.gain.setValueAtTime(0.08, now);
+                              bladeGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+                              bladeOsc.connect(bladeGain);
+                              bladeGain.connect(gainNode);
+
+                              noiseSource.start(now);
+                              bladeOsc.start(now);
+
+                              noiseSource.stop(now + duration);
+                              bladeOsc.stop(now + duration);
+
+                              setTimeout(() => {
+                                this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                              }, duration * 1000 + 40);
+                            },
+
+                            synthesizeDaggerSwing(now, dest) {
+                              const duration = 0.08;
+                              const gainNode = this.acquireGainNode(now, duration);
+                              gainNode.gain.setValueAtTime(0, now);
+                              gainNode.gain.linearRampToValueAtTime(0.22, now + 0.003);
+                              gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                              const noiseSource = this.ctx.createBufferSource();
+                              noiseSource.buffer = this.cachedNoiseBuffer;
+
+                              const noiseFilter = this.acquireFilterNode(now, duration);
+                              noiseFilter.type = "highpass";
+                              noiseFilter.Q.setValueAtTime(1.0, now);
+                              noiseFilter.frequency.setValueAtTime(4500, now);
+
+                              const noiseGain = this.acquireGainNode(now, duration);
+                              noiseGain.gain.setValueAtTime(0.18, now);
+                              noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+
+                              noiseSource.connect(noiseFilter);
+                              noiseFilter.connect(noiseGain);
+                              gainNode.connect(dest);
+
+                              const tickOsc = this.ctx.createOscillator();
+                              tickOsc.type = "sine";
+                              tickOsc.frequency.setValueAtTime(2200, now);
+                              tickOsc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+
+                              const tickGain = this.acquireGainNode(now, duration);
+                              tickGain.gain.setValueAtTime(0.04, now);
+                              tickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+
+                              tickOsc.connect(tickGain);
+                              tickGain.connect(gainNode);
+
+                              noiseSource.start(now);
+                              tickOsc.start(now);
+
+                              noiseSource.stop(now + duration);
+                              tickOsc.stop(now + duration);
+
+                              setTimeout(() => {
+                                this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                              }, duration * 1000 + 40);
+                            },
+
+                            synthesizeBluntSwing(now, dest) {
+                              const duration = 0.26;
+                              const gainNode = this.acquireGainNode(now, duration);
+                              gainNode.gain.setValueAtTime(0, now);
+                              gainNode.gain.linearRampToValueAtTime(0.24, now + 0.015);
+                              gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                              const noiseSource = this.ctx.createBufferSource();
+                              noiseSource.buffer = this.cachedNoiseBuffer;
+
+                              const noiseFilter = this.acquireFilterNode(now, duration);
+                              noiseFilter.type = "lowpass";
+                              noiseFilter.Q.setValueAtTime(1.8, now);
+                              noiseFilter.frequency.setValueAtTime(350, now);
+                              noiseFilter.frequency.exponentialRampToValueAtTime(70, now + 0.22);
+
+                              const noiseGain = this.acquireGainNode(now, duration);
+                              noiseGain.gain.setValueAtTime(0.30, now);
+                              noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+                              noiseSource.connect(noiseFilter);
+                              noiseFilter.connect(noiseGain);
+                              gainNode.connect(dest);
+
+                              const thudOsc = this.ctx.createOscillator();
+                              thudOsc.type = "triangle";
+                              thudOsc.frequency.setValueAtTime(130, now);
+                              thudOsc.frequency.exponentialRampToValueAtTime(30, now + 0.18);
+
+                              const thudGain = this.acquireGainNode(now, duration);
+                              thudGain.gain.setValueAtTime(0.22, now);
+                              thudGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.20);
+
+                              thudOsc.connect(thudGain);
+                              thudGain.connect(gainNode);
+
+                              noiseSource.start(now);
+                              thudOsc.start(now);
+
+                              noiseSource.stop(now + duration);
+                              thudOsc.stop(now + duration);
+
+                              setTimeout(() => {
+                                this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                              }, duration * 1000 + 40);
+                            },
+
+                                      synthesizeStaffSwing(now, dest) {
+                                        const duration = 0.15;
+                                        const gainNode = this.acquireGainNode(now, duration);
+                                        gainNode.gain.setValueAtTime(0, now);
+                                        gainNode.gain.linearRampToValueAtTime(0.15, now + 0.01);
+                                        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                                        // 1. Gentle Airy Resonant Tail (Bandpass Filtered white noise)
+                                        const noiseSource = this.ctx.createBufferSource();
+                                        noiseSource.buffer = this.cachedNoiseBuffer;
+
+                                        const noiseFilter = this.acquireFilterNode(now, duration);
+                                        noiseFilter.type = "bandpass";
+                                        noiseFilter.Q.setValueAtTime(2.5, now);
+                                        noiseFilter.frequency.setValueAtTime(1500, now);
+
+                                        const noiseGain = this.acquireGainNode(now, duration);
+                                        noiseGain.gain.setValueAtTime(0.08, now);
+                                        noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+                                        noiseSource.connect(noiseFilter);
+                                        noiseFilter.connect(noiseGain);
+                                        noiseGain.connect(gainNode);
+
+                                        // 2. Aeolian Vortex Whistle (Clean Sine Wave)
+                                        const whistleOsc = this.ctx.createOscillator();
+                                        whistleOsc.type = "sine";
+                                        whistleOsc.frequency.setValueAtTime(1100, now);
+                                        whistleOsc.frequency.exponentialRampToValueAtTime(500, now + 0.12);
+
+                                        const whistleGain = this.acquireGainNode(now, duration);
+                                        whistleGain.gain.setValueAtTime(0.15, now);
+                                        whistleGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                                        whistleOsc.connect(whistleGain);
+                                        whistleGain.connect(gainNode);
+
+                                        noiseSource.start(now);
+                                        whistleOsc.start(now);
+
+                                        noiseSource.stop(now + duration);
+                                                whistleOsc.stop(now + duration);
+
+                                                setTimeout(() => {
+                                                  this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                                                }, duration * 1000 + 40);
+                                              },
+
+                                              playChestOpen(tier = "iron_bound") {
+                                                      if (window.playerStats && window.playerStats.mute) return;
+                                                      if (!this.init()) return;
+                                                      if (this.activeChannelCount >= this.maxConcurrent) return;
+                                                      this.activeChannelCount++;
+                                                      const now = this.ctx.currentTime;
+                                                      const dest = this.sfxGain;
+
+                                                      if (tier === "iron_bound") {
+                                                        this.synthesizeIronChestOpen(now, dest);
+                                                      } else if (tier === "gilded") {
+                                                        this.synthesizeGildedChestOpen(now, dest);
+                                                      } else if (tier === "astral") {
+                                                        this.synthesizeAstralChestOpen(now, dest);
+                                                      } else {
+                                                        this.synthesizeIronChestOpen(now, dest);
+                                                      }
+                                                    },
+
+                                              synthesizeIronChestOpen(now, dest) {
+                                                const duration = 0.50;
+                                                const masterGain = this.acquireGainNode(now, duration);
+                                                masterGain.gain.setValueAtTime(1.0, now);
+                                                masterGain.connect(dest);
+
+                                                // 1. Iron Latch Pop (Start of open: t = 0.0s)
+                                                const latchOsc1 = this.ctx.createOscillator();
+                                                latchOsc1.type = "sine";
+                                                latchOsc1.frequency.setValueAtTime(480, now);
+
+                                                const latchOsc2 = this.ctx.createOscillator();
+                                                latchOsc2.type = "triangle";
+                                                latchOsc2.frequency.setValueAtTime(710, now);
+
+                                                const latchGain = this.acquireGainNode(now, 0.08);
+                                                latchGain.gain.setValueAtTime(0, now);
+                                                latchGain.gain.linearRampToValueAtTime(0.22, now + 0.003);
+                                                latchGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+
+                                                latchOsc1.connect(latchGain);
+                                                latchOsc2.connect(latchGain);
+                                                latchGain.connect(masterGain);
+
+                                                // 2. Gritty Wood Creak (Starts at t = 0.05s)
+                                                const creakTime = now + 0.05;
+                                                const creakDuration = 0.45;
+
+                                                const noiseSource = this.ctx.createBufferSource();
+                                                noiseSource.buffer = this.cachedNoiseBuffer;
+
+                                                const creakFilter = this.acquireFilterNode(creakTime, creakDuration);
+                                                creakFilter.type = "lowpass";
+                                                creakFilter.Q.setValueAtTime(4.5, creakTime);
+                                                creakFilter.frequency.setValueAtTime(250, creakTime);
+
+                                                // Modulate filter frequency with a low-frequency oscillator to model gritty wooden friction
+                                                const lfo = this.ctx.createOscillator();
+                                                lfo.type = "triangle";
+                                                lfo.frequency.setValueAtTime(14, creakTime);
+
+                                                const lfoGain = this.ctx.createGain();
+                                                lfoGain.gain.setValueAtTime(110, creakTime);
+
+                                                lfo.connect(lfoGain);
+                                                lfoGain.connect(creakFilter.frequency);
+
+                                                const creakGain = this.acquireGainNode(creakTime, creakDuration);
+                                                creakGain.gain.setValueAtTime(0, creakTime);
+                                                creakGain.gain.linearRampToValueAtTime(0.20, creakTime + 0.05);
+                                                creakGain.gain.exponentialRampToValueAtTime(0.0001, creakTime + creakDuration);
+
+                                                noiseSource.connect(creakFilter);
+                                                creakFilter.connect(creakGain);
+                                                creakGain.connect(masterGain);
+
+                                                latchOsc1.start(now);
+                                                latchOsc2.start(now);
+                                                noiseSource.start(creakTime);
+                                                lfo.start(creakTime);
+
+                                                latchOsc1.stop(now + 0.08);
+                                                        latchOsc2.stop(now + 0.08);
+                                                        noiseSource.stop(creakTime + creakDuration);
+                                                        lfo.stop(creakTime + creakDuration);
+
+                                                        setTimeout(() => {
+                                                          try {
+                                                            lfo.disconnect();
+                                                            lfoGain.disconnect();
+                                                          } catch (e) {}
+                                                          this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                                                        }, duration * 1000 + 40);
+                                                      },
+
+                                                      synthesizeGildedChestOpen(now, dest) {
+                                                        const duration = 1.0;
+                                                        const masterGain = this.acquireGainNode(now, duration);
+                                                        masterGain.gain.setValueAtTime(1.0, now);
+                                                        masterGain.connect(dest);
+
+                                                        // 1. Polished Wood Friction Creak (Starts at t = 0.0s)
+                                                        const creakDuration = 0.40;
+                                                        const noiseSource = this.ctx.createBufferSource();
+                                                        noiseSource.buffer = this.cachedNoiseBuffer;
+
+                                                        const creakFilter = this.acquireFilterNode(now, creakDuration);
+                                                        creakFilter.type = "lowpass";
+                                                        creakFilter.Q.setValueAtTime(2.0, now);
+                                                        creakFilter.frequency.setValueAtTime(350, now);
+
+                                                        // Modulate with a smoother, slower LFO (8Hz, 40Hz depth)
+                                                        const lfo = this.ctx.createOscillator();
+                                                        lfo.type = "sine";
+                                                        lfo.frequency.setValueAtTime(8, now);
+
+                                                        const lfoGain = this.ctx.createGain();
+                                                        lfoGain.gain.setValueAtTime(40, now);
+
+                                                        lfo.connect(lfoGain);
+                                                        lfoGain.connect(creakFilter.frequency);
+
+                                                        const creakGain = this.acquireGainNode(now, creakDuration);
+                                                        creakGain.gain.setValueAtTime(0, now);
+                                                        creakGain.gain.linearRampToValueAtTime(0.15, now + 0.05);
+                                                        creakGain.gain.exponentialRampToValueAtTime(0.0001, now + creakDuration);
+
+                                                        noiseSource.connect(creakFilter);
+                                                        creakFilter.connect(creakGain);
+                                                        creakGain.connect(masterGain);
+
+                                                        noiseSource.start(now);
+                                                        lfo.start(now);
+                                                        noiseSource.stop(now + creakDuration);
+                                                        lfo.stop(now + creakDuration);
+
+                                                        // 2. Bright Major-Triad Gold Chime (Arpeggio: C5, E5, G5, C6)
+                                                        const chimeNotes = [523.25, 659.25, 783.99, 1046.50];
+                                                        const chimeDelay = 0.055;
+                                                        const chimeDuration = 0.55;
+                                                        const chimeOscillators = [];
+
+                                                        chimeNotes.forEach((freq, idx) => {
+                                                          let timeOffset = now + 0.08 + idx * chimeDelay;
+                                                          let osc = this.ctx.createOscillator();
+                                                          osc.type = "sine";
+                                                          osc.frequency.setValueAtTime(freq, timeOffset);
+
+                                                          let gNode = this.acquireGainNode(timeOffset, chimeDuration);
+                                                          gNode.gain.setValueAtTime(0, timeOffset);
+                                                          gNode.gain.linearRampToValueAtTime(0.06, timeOffset + 0.01);
+                                                          gNode.gain.exponentialRampToValueAtTime(0.0001, timeOffset + chimeDuration);
+
+                                                          osc.connect(gNode);
+                                                          gNode.connect(masterGain);
+
+                                                          osc.start(timeOffset);
+                                                          osc.stop(timeOffset + chimeDuration);
+                                                          chimeOscillators.push(osc);
+                                                        });
+
+                                                        // 3. Coin-Rattle Cascade
+                                                                                                                const coinFreqs = [1800, 2400, 2900, 3200];
+                                                                                                                const coinDelay = 0.04;
+                                                                                                                const coinOscillators = [];
+
+                                                                                                                coinFreqs.forEach((freq, idx) => {
+                                                                                                                  let timeOffset = now + 0.18 + idx * coinDelay;
+                                                                                                                  let osc = this.ctx.createOscillator();
+                                                                                                                  osc.type = "sine";
+                                                                                                                  osc.frequency.setValueAtTime(freq, timeOffset);
+
+                                                                                                                  let gNode = this.acquireGainNode(timeOffset, 0.05);
+                                                                                                                  gNode.gain.setValueAtTime(0, timeOffset);
+                                                                                                                  gNode.gain.linearRampToValueAtTime(0.08, timeOffset + 0.002);
+                                                                                                                  gNode.gain.exponentialRampToValueAtTime(0.0001, timeOffset + 0.04);
+
+                                                                                                                  osc.connect(gNode);
+                                                                                                                  gNode.connect(masterGain);
+
+                                                                                                                  osc.start(timeOffset);
+                                                                                                                  osc.stop(timeOffset + 0.05);
+                                                                                                                  coinOscillators.push(osc);
+                                                                                                                });
+
+                                                                                                                setTimeout(() => {
+                                                                                                                  try {
+                                                                                                                    lfo.disconnect();
+                                                                                                                    lfoGain.disconnect();
+                                                                                                                  } catch (e) {}
+                                                                                                                  coinOscillators.forEach((osc) => {
+                                                                                                                    try {
+                                                                                                                      osc.disconnect();
+                                                                                                                    } catch (e) {}
+                                                                                                                  });
+                                                                                                                  this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                                                                                                                }, duration * 1000 + 40);
+                                                                                                              },
+
+                                                                                                              synthesizeAstralChestOpen(now, dest) {
+                                                                                                                const duration = 1.4;
+                                                                                                                const masterGain = this.acquireGainNode(now, duration);
+                                                                                                                masterGain.gain.setValueAtTime(1.0, now);
+                                                                                                                masterGain.connect(dest);
+
+                                                                                                                // 1. FM Frequency Riser
+                                                                                                                const modOsc = this.ctx.createOscillator();
+                                                                                                                const modGain = this.ctx.createGain();
+                                                                                                                modOsc.frequency.setValueAtTime(15, now);
+                                                                                                                modGain.gain.setValueAtTime(150, now);
+
+                                                                                                                const carrierOsc = this.ctx.createOscillator();
+                                                                                                                carrierOsc.type = "sine";
+                                                                                                                carrierOsc.frequency.setValueAtTime(120, now);
+                                                                                                                carrierOsc.frequency.exponentialRampToValueAtTime(800, now + 0.8);
+
+                                                                                                                modOsc.connect(modGain);
+                                                                                                                modGain.connect(carrierOsc.frequency);
+
+                                                                                                                const fmGain = this.acquireGainNode(now, 0.8);
+                                                                                                                fmGain.gain.setValueAtTime(0, now);
+                                                                                                                fmGain.gain.linearRampToValueAtTime(0.15, now + 0.05);
+                                                                                                                fmGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+
+                                                                                                                carrierOsc.connect(fmGain);
+                                                                                                                fmGain.connect(masterGain);
+
+                                                                                                                modOsc.start(now);
+                                                                                                                carrierOsc.start(now);
+                                                                                                                modOsc.stop(now + 0.8);
+                                                                                                                carrierOsc.stop(now + 0.8);
+
+                                                                                                                // 2. Crystal Sweep (Glimmering Major Triad)
+                                                                                                                const sweepNotes = [1046.50, 1318.51, 1567.98, 2093.00];
+                                                                                                                const sweepDelay = 0.08;
+                                                                                                                const sweepDuration = 0.7;
+                                                                                                                const sweepOscillators = [];
+
+                                                                                                                sweepNotes.forEach((freq, idx) => {
+                                                                                                                  let timeOffset = now + 0.3 + idx * sweepDelay;
+                                                                                                                  let osc = this.ctx.createOscillator();
+                                                                                                                  osc.type = "sine";
+                                                                                                                  osc.frequency.setValueAtTime(freq, timeOffset);
+                                                                                                                  osc.frequency.exponentialRampToValueAtTime(freq * 1.5, timeOffset + sweepDuration);
+
+                                                                                                                  let gNode = this.acquireGainNode(timeOffset, sweepDuration);
+                                                                                                                  gNode.gain.setValueAtTime(0, timeOffset);
+                                                                                                                  gNode.gain.linearRampToValueAtTime(0.06, timeOffset + 0.02);
+                                                                                                                  gNode.gain.exponentialRampToValueAtTime(0.0001, timeOffset + sweepDuration);
+
+                                                                                                                  osc.connect(gNode);
+                                                                                                                  gNode.connect(masterGain);
+
+                                                                                                                  osc.start(timeOffset);
+                                                                                                                  osc.stop(timeOffset + sweepDuration);
+                                                                                                                  sweepOscillators.push(osc);
+                                                                                                                });
+
+                                                                                                                // 3. Deep Sub-Bass Hum
+                                                                                                                const subOsc = this.ctx.createOscillator();
+                                                                                                                subOsc.type = "triangle";
+                                                                                                                subOsc.frequency.setValueAtTime(65, now + 0.1);
+                                                                                                                subOsc.frequency.linearRampToValueAtTime(45, now + duration);
+
+                                                                                                                const subGain = this.acquireGainNode(now, duration);
+                                                                                                                subGain.gain.setValueAtTime(0, now + 0.1);
+                                                                                                                subGain.gain.linearRampToValueAtTime(0.25, now + 0.3);
+                                                                                                                subGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                                                                                                                subOsc.connect(subGain);
+                                                                                                                subGain.connect(masterGain);
+
+                                                                                                                subOsc.start(now + 0.1);
+                                                                                                                subOsc.stop(now + duration);
+
+                                                                                                                setTimeout(() => {
+                                                                                                                  try {
+                                                                                                                    modOsc.disconnect();
+                                                                                                                    modGain.disconnect();
+                                                                                                                    carrierOsc.disconnect();
+                                                                                                                    subOsc.disconnect();
+                                                                                                                  } catch (e) {}
+                                                                                                                  sweepOscillators.forEach((osc) => {
+                                                                                                                    try {
+                                                                                                                      osc.disconnect();
+                                                                                                                    } catch (e) {}
+                                                                                                                  });
+                                                                                                                  this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                                                                                                                }, duration * 1000 + 40);
+                                                                                                              },
+
+                                                                                                              synthesizeHit(now, dest, isCrit = false) {
+                                                                                                                const duration = isCrit ? 0.16 : window.randFloat(0.08, 0.12);
+                                                                                                                const gainNode = this.acquireGainNode(now, duration);
+                                                                                                                gainNode.gain.setValueAtTime(0, now);
+                                                                                                                gainNode.gain.linearRampToValueAtTime(isCrit ? 0.45 : 0.32, now + 0.008);
+                                                                                                                gainNode.gain.linearRampToValueAtTime(0, now + duration);
+
+                                                                                                                const noiseSource = this.ctx.createBufferSource();
+                                                                                                                noiseSource.buffer = this.cachedNoiseBuffer;
+
+                                                                                                                const noiseFilter = this.acquireFilterNode(now, duration);
+                                                                                                                noiseFilter.type = "bandpass";
+                                                                                                                noiseFilter.frequency.setValueAtTime(window.randFloat(1100, 1500), now);
+                                                                                                                noiseFilter.frequency.linearRampToValueAtTime(
+                                                                                                                  window.randFloat(300, 450),
+                                                                                                                  now + duration,
+                                                                                                                );
+                                                                                                                noiseFilter.Q.setValueAtTime(3.5, now);
+                                                                                                                noiseSource.connect(noiseFilter);
+                                                                                                                noiseFilter.connect(gainNode);
+
+                                                                                                                const osc = this.ctx.createOscillator();
+                                                                                                                osc.type = "triangle";
+                                                                                                                osc.frequency.setValueAtTime(window.randFloat(240, 310), now);
+                                                                                                                osc.frequency.linearRampToValueAtTime(
+                                                                                                                  window.randFloat(70, 95),
+                                                                                                                  now + duration,
+                                                                                                                );
+                                                                                                                const oscGain = this.acquireGainNode(now, duration);
+                                                                                                                oscGain.gain.setValueAtTime(0, now);
+                                                                                                                oscGain.gain.linearRampToValueAtTime(isCrit ? 0.20 : 0.12, now + 0.006);
+                                                                                                                oscGain.gain.linearRampToValueAtTime(0, now + duration * 0.85);
+
+                                                                                                                osc.connect(oscGain);
+                                                                                                                oscGain.connect(gainNode);
+
+                                                                                                                noiseSource.start(now);
+                                                                                                                osc.start(now);
+                                                                                                                noiseSource.stop(now + duration);
+                                                                                                                osc.stop(now + duration);
+
+                                                                                                                setTimeout(
+                                                                                                                  () =>
+                                                                                                                    (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
+                                                                                                                  duration * 1000 + 40,
+                                                                                                                );
+                                                                                                              },
+
+  synthesizeFleshImpact(now, dest, isCrit = false, pitchFactor = 1.0) {
+      const duration = isCrit ? 0.20 : 0.12;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(isCrit ? 0.35 : 0.22, now + 0.004);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      // 1. Low Thud Transient (Triangle wave thwack)
+      const thudOsc = this.ctx.createOscillator();
+      thudOsc.type = "triangle";
+      thudOsc.frequency.setValueAtTime(150 * pitchFactor, now);
+      thudOsc.frequency.exponentialRampToValueAtTime(50 * pitchFactor, now + 0.06);
+
+      const thudGain = this.acquireGainNode(now, duration);
+      thudGain.gain.setValueAtTime(0.24, now);
+      thudGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+      thudOsc.connect(thudGain);
+      thudGain.connect(gainNode);
+
+      // 2. Low-Mid Bandpass Noise Burst (Meaty impact squish)
       const noiseSource = this.ctx.createBufferSource();
       noiseSource.buffer = this.cachedNoiseBuffer;
 
-      const noiseFilter = this.ctx.createBiquadFilter();
+      const noiseFilter = this.acquireFilterNode(now, duration);
       noiseFilter.type = "bandpass";
-      noiseFilter.frequency.setValueAtTime(isCrit ? 1800 : 1200, now);
-      noiseFilter.frequency.exponentialRampToValueAtTime(300, now + 0.05);
-      noiseFilter.Q.setValueAtTime(2.5, now);
+      noiseFilter.Q.setValueAtTime(2.0, now);
+      noiseFilter.frequency.setValueAtTime(600 * pitchFactor, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(250 * pitchFactor, now + 0.08);
 
-      const noiseGain = this.ctx.createGain();
-      noiseGain.gain.setValueAtTime(0, now);
-      noiseGain.gain.linearRampToValueAtTime(isCrit ? 0.22 : 0.15, now + 0.002);
-      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(isCrit ? 0.25 : 0.15, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.10);
 
       noiseSource.connect(noiseFilter);
       noiseFilter.connect(noiseGain);
       noiseGain.connect(gainNode);
 
-      noiseSource.start(now);
-      noiseSource.stop(now + 0.06);
-    }
+      // 3. High-Register Critical Splat ring (Critical hit only)
+      if (isCrit) {
+        const splatOsc = this.ctx.createOscillator();
+        splatOsc.type = "sine";
+        splatOsc.frequency.setValueAtTime(950 * pitchFactor, now);
+        splatOsc.frequency.exponentialRampToValueAtTime(450 * pitchFactor, now + 0.12);
 
-    // 3. High-Register Critical Strike Ring
-    if (isCrit) {
-      const pingOsc = this.ctx.createOscillator();
-      pingOsc.type = "sine";
-      pingOsc.frequency.setValueAtTime(1400, now);
-      pingOsc.frequency.exponentialRampToValueAtTime(800, now + 0.12);
+        const splatGain = this.acquireGainNode(now, duration);
+        splatGain.gain.setValueAtTime(0.12, now);
+        splatGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
 
-      const pingGain = this.ctx.createGain();
-      pingGain.gain.setValueAtTime(0, now);
-      pingGain.gain.linearRampToValueAtTime(0.18, now + 0.003);
-      pingGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+        splatOsc.connect(splatGain);
+        splatGain.connect(gainNode);
 
-      pingOsc.connect(pingGain);
-      pingGain.connect(gainNode);
-      pingOsc.start(now);
-      pingOsc.stop(now + 0.13);
-    }
+        splatOsc.start(now);
+        splatOsc.stop(now + duration);
+      }
 
-    gainNode.connect(dest);
-    subOsc.start(now);
-    subOsc.stop(now + duration);
+      thudOsc.start(now);
+              noiseSource.start(now);
 
-    setTimeout(
-      () => {
-        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
-      },
-      duration * 1000 + 40,
-    );
-  },
+              thudOsc.stop(now + duration);
+              noiseSource.stop(now + duration);
 
-  playHitImpact(isCrit = false) {
-    if (window.playerStats && window.playerStats.mute) return;
-    if (!this.init()) return;
-    if (this.activeChannelCount >= this.maxConcurrent) return;
-    this.activeChannelCount++;
-    const now = this.ctx.currentTime;
-    this.synthesizeHit(now, this.sfxGain, isCrit);
-  },
+              setTimeout(() => {
+                this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+              }, duration * 1000 + 40);
+            },
+
+            synthesizeMetalImpact(now, dest, isCrit = false, pitchFactor = 1.0) {
+                    const duration = isCrit ? 0.32 : 0.24;
+                    const gainNode = this.acquireGainNode(now, duration);
+                    gainNode.gain.setValueAtTime(0, now);
+                    gainNode.gain.linearRampToValueAtTime(isCrit ? 0.32 : 0.18, now + 0.005);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                    // 1. Sharp Hard-Surface Impact Transient (Highpass white noise)
+                    const noiseSource = this.ctx.createBufferSource();
+                    noiseSource.buffer = this.cachedNoiseBuffer;
+
+                    const noiseFilter = this.acquireFilterNode(now, duration);
+                    noiseFilter.type = "highpass";
+                    noiseFilter.frequency.setValueAtTime(3500 * pitchFactor, now);
+
+                    const noiseGain = this.acquireGainNode(now, duration);
+                    noiseGain.gain.setValueAtTime(isCrit ? 0.22 : 0.12, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+
+                    noiseSource.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(gainNode);
+
+                    // 2. High-Q Inharmonic Metal Ring (Dual-oscillators)
+                    const metalFilter = this.acquireFilterNode(now, duration);
+                    metalFilter.type = "bandpass";
+                    metalFilter.Q.setValueAtTime(8.0, now); // high resonance
+                    metalFilter.frequency.setValueAtTime(1400 * pitchFactor, now);
+                    metalFilter.frequency.linearRampToValueAtTime(1200 * pitchFactor, now + duration);
+
+                    const osc1 = this.ctx.createOscillator();
+                    osc1.type = "sine";
+                    osc1.frequency.setValueAtTime(1400 * pitchFactor, now);
+
+                    const osc2 = this.ctx.createOscillator();
+                    osc2.type = "sine";
+                    osc2.frequency.setValueAtTime(1980 * pitchFactor, now);
+
+              const chimeGain = this.acquireGainNode(now, duration);
+              chimeGain.gain.setValueAtTime(0.24, now);
+              chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + duration * 0.95);
+
+              osc1.connect(metalFilter);
+              osc2.connect(metalFilter);
+              metalFilter.connect(chimeGain);
+              chimeGain.connect(gainNode);
+
+              noiseSource.start(now);
+              osc1.start(now);
+              osc2.start(now);
+
+              noiseSource.stop(now + duration);
+                      osc1.stop(now + duration);
+                      osc2.stop(now + duration);
+
+                      setTimeout(() => {
+                        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                      }, duration * 1000 + 40);
+                    },
+
+                    synthesizeShatterImpact(now, dest, isCrit = false, pitchFactor = 1.0) {
+                            const duration = isCrit ? 0.22 : 0.14;
+                            const gainNode = this.acquireGainNode(now, duration);
+                            gainNode.gain.setValueAtTime(0, now);
+                            gainNode.gain.linearRampToValueAtTime(isCrit ? 0.30 : 0.18, now + 0.003);
+                            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                            // 1. Clay-Cracking Noise Burst (Bandpass noise)
+                            const noiseSource = this.ctx.createBufferSource();
+                            noiseSource.buffer = this.cachedNoiseBuffer;
+
+                            const noiseFilter = this.acquireFilterNode(now, duration);
+                            noiseFilter.type = "bandpass";
+                            noiseFilter.Q.setValueAtTime(1.2, now);
+                            noiseFilter.frequency.setValueAtTime(1000 * pitchFactor, now);
+                            noiseFilter.frequency.exponentialRampToValueAtTime(400 * pitchFactor, now + 0.08);
+
+                            const noiseGain = this.acquireGainNode(now, duration);
+                            noiseGain.gain.setValueAtTime(isCrit ? 0.28 : 0.16, now);
+                            noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+                            noiseSource.connect(noiseFilter);
+                            noiseFilter.connect(noiseGain);
+                            gainNode.connect(dest);
+
+                            // 2. High-Register Shard Resonances (Random-pitched sine pings)
+                            const pingsCount = isCrit ? 3 : 1;
+                            const pingOscillators = [];
+                            const pingGains = [];
+
+                            for (let i = 0; i < pingsCount; i++) {
+                              let delay = i * 0.015;
+                              let pingFreq = (1200 + Math.random() * 2300) * pitchFactor; // 1200Hz to 3500Hz
+                              let pingDur = 0.04 + Math.random() * 0.04; // 40ms to 80ms
+
+                        let osc = this.ctx.createOscillator();
+                        osc.type = "sine";
+                        osc.frequency.setValueAtTime(pingFreq, now + delay);
+
+                        let gNode = this.acquireGainNode(now, duration);
+                        gNode.gain.setValueAtTime(0, now);
+                        gNode.gain.setValueAtTime(0, now + delay);
+                        gNode.gain.linearRampToValueAtTime(0.08, now + delay + 0.002);
+                        gNode.gain.exponentialRampToValueAtTime(0.0001, now + delay + pingDur);
+
+                        osc.connect(gNode);
+                        gNode.connect(gainNode);
+
+                        osc.start(now + delay);
+                        osc.stop(now + delay + pingDur + 0.05);
+
+                        pingOscillators.push(osc);
+                        pingGains.push(gNode);
+                      }
+
+                      noiseSource.start(now);
+                      noiseSource.stop(now + duration);
+
+                      setTimeout(() => {
+                        pingOscillators.forEach((osc) => {
+                          try {
+                            osc.disconnect();
+                          } catch (e) {}
+                        });
+                        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+                      }, duration * 1000 + 40);
+                    },
+
+                playHitImpact(isCrit = false, targetType = "flesh") {
+                    if (window.playerStats && window.playerStats.mute) return;
+                    if (!this.init()) return;
+                    if (this.activeChannelCount >= this.maxConcurrent) return;
+                    this.activeChannelCount++;
+                    const now = this.ctx.currentTime;
+                    const dest = this.sfxGain;
+
+                    // Subphase 3.4 Asymptotic Combo Pitch-Compressor Tracking
+                    const nowMs = Date.now();
+                    const lastHit = this.lastHitTime || 0;
+                    if (nowMs - lastHit < 1200) {
+                      this.comboCount = Math.min(8, (this.comboCount || 0) + 1);
+                    } else {
+                      this.comboCount = 0;
+                    }
+                    this.lastHitTime = nowMs;
+
+                    // Asymptotic multiplier curve: P(combo) = 1.0 + (0.25 * combo) / (combo + 3)
+                    let pitchFactor = 1.0 + (0.25 * this.comboCount) / (this.comboCount + 3.0);
+                    // Subtle +/- 1.5% micro-detuning prevents auditory repetition patterns and prevents neurological listening fatigue
+                    pitchFactor *= (1.0 + (Math.random() - 0.5) * 0.03);
+
+                    if (targetType === "flesh") {
+                      this.synthesizeFleshImpact(now, dest, isCrit, pitchFactor);
+                    } else if (targetType === "metal") {
+                      this.synthesizeMetalImpact(now, dest, isCrit, pitchFactor);
+                    } else if (targetType === "shatter") {
+                      this.synthesizeShatterImpact(now, dest, isCrit, pitchFactor);
+                    } else {
+                      this.synthesizeFleshImpact(now, dest, isCrit, pitchFactor);
+                    }
+                  },
 
   synthesizeBlock(now, dest) {
-    const duration = 0.16;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.28, now + 0.004); // Boosted from 0.11
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+      const duration = 0.16;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.28, now + 0.004); // Boosted from 0.11
+      gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
-    const baseOsc = this.ctx.createOscillator();
-    baseOsc.type = "triangle";
-    baseOsc.frequency.setValueAtTime(130, now);
-    baseOsc.frequency.linearRampToValueAtTime(45, now + 0.09);
-    const baseGain = this.ctx.createGain();
-    baseGain.gain.setValueAtTime(0, now);
-    baseGain.gain.linearRampToValueAtTime(0.14, now + 0.005); // Boosted from 0.06
-    baseGain.gain.linearRampToValueAtTime(0, now + 0.09);
-    baseOsc.connect(baseGain);
-    baseGain.connect(gainNode);
+      const baseOsc = this.ctx.createOscillator();
+      baseOsc.type = "triangle";
+      baseOsc.frequency.setValueAtTime(130, now);
+      baseOsc.frequency.linearRampToValueAtTime(45, now + 0.09);
+      const baseGain = this.acquireGainNode(now, duration);
+      baseGain.gain.setValueAtTime(0, now);
+      baseGain.gain.linearRampToValueAtTime(0.14, now + 0.005); // Boosted from 0.06
+      baseGain.gain.linearRampToValueAtTime(0, now + 0.09);
+      baseOsc.connect(baseGain);
+      baseGain.connect(gainNode);
 
-    const ironChime1 = this.ctx.createOscillator();
-    ironChime1.type = "sine";
-    ironChime1.frequency.setValueAtTime(440, now);
-    const ironChime2 = this.ctx.createOscillator();
-    ironChime2.type = "sine";
-    ironChime2.frequency.setValueAtTime(659.25, now);
-    const chimeGain = this.ctx.createGain();
-    chimeGain.gain.setValueAtTime(0, now);
-    chimeGain.gain.linearRampToValueAtTime(0.09, now + 0.005); // Boosted from 0.03
-    chimeGain.gain.linearRampToValueAtTime(0, now + duration);
-    ironChime1.connect(chimeGain);
-    ironChime2.connect(chimeGain);
-    chimeGain.connect(gainNode);
+      const ironChime1 = this.ctx.createOscillator();
+      ironChime1.type = "sine";
+      ironChime1.frequency.setValueAtTime(440, now);
+      const ironChime2 = this.ctx.createOscillator();
+      ironChime2.type = "sine";
+      ironChime2.frequency.setValueAtTime(659.25, now);
+      const chimeGain = this.acquireGainNode(now, duration);
+      chimeGain.gain.setValueAtTime(0, now);
+      chimeGain.gain.linearRampToValueAtTime(0.09, now + 0.005); // Boosted from 0.03
+      chimeGain.gain.linearRampToValueAtTime(0, now + duration);
+      ironChime1.connect(chimeGain);
+      ironChime2.connect(chimeGain);
+      chimeGain.connect(gainNode);
 
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
 
-    const noiseFilter = this.ctx.createBiquadFilter();
-    noiseFilter.type = "highpass";
-    noiseFilter.frequency.setValueAtTime(1400, now);
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.005); // Boosted from 0.02
-    noiseGain.gain.linearRampToValueAtTime(0, now + 0.06);
-    noiseSource.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(gainNode);
+      const noiseFilter = this.acquireFilterNode(now, duration);
+      noiseFilter.type = "highpass";
+      noiseFilter.frequency.setValueAtTime(1400, now);
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.005); // Boosted from 0.02
+      noiseGain.gain.linearRampToValueAtTime(0, now + 0.06);
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
 
-    gainNode.connect(dest);
+      baseOsc.start(now);
+      ironChime1.start(now);
+      ironChime2.start(now);
+      noiseSource.start(now);
+      baseOsc.stop(now + duration);
+      ironChime1.stop(now + duration);
+      ironChime2.stop(now + duration);
+      noiseSource.stop(now + duration);
 
-    baseOsc.start(now);
-    ironChime1.start(now);
-    ironChime2.start(now);
-    noiseSource.start(now);
-    baseOsc.stop(now + duration);
-    ironChime1.stop(now + duration);
-    ironChime2.stop(now + duration);
-    noiseSource.stop(now + duration);
-
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+      setTimeout(
+        () =>
+          (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
+        duration * 1000 + 40,
+      );
+    },
 
   synthesizeParry(now, dest) {
-    const duration = 0.45;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.24, now + 0.004); // Boosted from 0.09
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+      const duration = 0.45;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.24, now + 0.004); // Boosted from 0.09
+      gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
-    const frequencies = [880, 1046.5, 1318.5, 1760];
-    const oscillators = [];
-    const metalGain = this.ctx.createGain();
-    metalGain.gain.setValueAtTime(0, now);
-    metalGain.gain.linearRampToValueAtTime(0.12, now + 0.005); // Boosted from 0.04
-    metalGain.gain.linearRampToValueAtTime(0, now + 0.32);
-    frequencies.forEach((f) => {
-      const osc = this.ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(f, now);
-      osc.frequency.linearRampToValueAtTime(
-        f + window.randFloat(-10, 10),
-        now + 0.18,
+      const frequencies = [880, 1046.5, 1318.5, 1760];
+      const oscillators = [];
+      const metalGain = this.acquireGainNode(now, duration);
+      metalGain.gain.setValueAtTime(0, now);
+      metalGain.gain.linearRampToValueAtTime(0.12, now + 0.005); // Boosted from 0.04
+      metalGain.gain.linearRampToValueAtTime(0, now + 0.32);
+      frequencies.forEach((f) => {
+        const osc = this.ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, now);
+        osc.frequency.linearRampToValueAtTime(
+          f + window.randFloat(-10, 10),
+          now + 0.18,
+        );
+        osc.connect(metalGain);
+        oscillators.push(osc);
+      });
+
+      const pingOsc = this.ctx.createOscillator();
+      pingOsc.type = "triangle";
+      pingOsc.frequency.setValueAtTime(2400, now);
+      pingOsc.frequency.linearRampToValueAtTime(1100, now + 0.045);
+      const pingGain = this.acquireGainNode(now, duration);
+      pingGain.gain.setValueAtTime(0, now);
+      pingGain.gain.linearRampToValueAtTime(0.14, now + 0.003); // Boosted from 0.05
+      pingGain.gain.linearRampToValueAtTime(0, now + 0.045);
+      pingOsc.connect(pingGain);
+      pingGain.connect(gainNode);
+
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
+
+      const noiseFilter = this.acquireFilterNode(now, duration);
+      noiseFilter.type = "bandpass";
+      noiseFilter.frequency.setValueAtTime(3200, now);
+      noiseFilter.Q.setValueAtTime(3.5, now);
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(0.05, now + 0.005); // Boosted from 0.018
+      noiseGain.gain.linearRampToValueAtTime(0, now + duration);
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
+
+      metalGain.connect(gainNode);
+
+      oscillators.forEach((o) => o.start(now));
+      pingOsc.start(now);
+      noiseSource.start(now);
+      oscillators.forEach((o) => o.stop(now + duration));
+      pingOsc.stop(now + duration);
+      noiseSource.stop(now + duration);
+
+      setTimeout(
+        () =>
+          (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
+        duration * 1000 + 40,
       );
-      osc.connect(metalGain);
-      oscillators.push(osc);
-    });
-
-    const pingOsc = this.ctx.createOscillator();
-    pingOsc.type = "triangle";
-    pingOsc.frequency.setValueAtTime(2400, now);
-    pingOsc.frequency.linearRampToValueAtTime(1100, now + 0.045);
-    const pingGain = this.ctx.createGain();
-    pingGain.gain.setValueAtTime(0, now);
-    pingGain.gain.linearRampToValueAtTime(0.14, now + 0.003); // Boosted from 0.05
-    pingGain.gain.linearRampToValueAtTime(0, now + 0.045);
-    pingOsc.connect(pingGain);
-    pingGain.connect(gainNode);
-
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
-
-    const noiseFilter = this.ctx.createBiquadFilter();
-    noiseFilter.type = "bandpass";
-    noiseFilter.frequency.setValueAtTime(3200, now);
-    noiseFilter.Q.setValueAtTime(3.5, now);
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(0.05, now + 0.005); // Boosted from 0.018
-    noiseGain.gain.linearRampToValueAtTime(0, now + duration);
-    noiseSource.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(gainNode);
-
-    metalGain.connect(gainNode);
-    gainNode.connect(dest);
-
-    oscillators.forEach((o) => o.start(now));
-    pingOsc.start(now);
-    noiseSource.start(now);
-    oscillators.forEach((o) => o.stop(now + duration));
-    pingOsc.stop(now + duration);
-    noiseSource.stop(now + duration);
-
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+    },
 
   synthesizeSpell(now, dest) {
-    const duration = 0.45;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.24, now + 0.05); // Boosted from 0.09
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+      const duration = 0.55;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.24, now + 0.04);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    const freqs = [329.63, 392.0, 493.88, 587.33];
-    const oscillators = [];
-    const chordGain = this.ctx.createGain();
-    chordGain.gain.setValueAtTime(0, now);
-    chordGain.gain.linearRampToValueAtTime(0.12, now + 0.08); // Boosted from 0.035
-    chordGain.gain.linearRampToValueAtTime(0, now + duration);
+      // 1. Shifting Chord (Detuned chorus/unison effect)
+      const freqs = [329.63, 392.0, 493.88, 587.33];
+      const oscillators = [];
+      const chordGain = this.acquireGainNode(now, duration);
+      chordGain.gain.setValueAtTime(0.15, now);
+      chordGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    const bpFilter = this.ctx.createBiquadFilter();
-    bpFilter.type = "bandpass";
-    bpFilter.frequency.setValueAtTime(300, now);
-    bpFilter.frequency.linearRampToValueAtTime(3000, now + duration);
-    bpFilter.Q.setValueAtTime(4.0, now);
-    freqs.forEach((f, idx) => {
-      const osc = this.ctx.createOscillator();
-      osc.type = idx % 2 === 0 ? "triangle" : "sine";
-      osc.frequency.setValueAtTime(f, now);
-      osc.frequency.linearRampToValueAtTime(f * 1.015, now + duration);
-      osc.connect(bpFilter);
-      oscillators.push(osc);
-    });
-    bpFilter.connect(chordGain);
-    chordGain.connect(gainNode);
+      const bpFilter = this.acquireFilterNode(now, duration);
+      bpFilter.type = "bandpass";
+      bpFilter.frequency.setValueAtTime(400, now);
+      bpFilter.frequency.exponentialRampToValueAtTime(3200, now + 0.45);
+      bpFilter.Q.setValueAtTime(6.0, now);
 
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
+      // Filter frequency modulation (Arcane Swirl LFO)
+      const lfo = this.ctx.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.setValueAtTime(14, now);
+      const lfoGain = this.ctx.createGain();
+      lfoGain.gain.setValueAtTime(150, now);
 
-    const hpFilter = this.ctx.createBiquadFilter();
-    hpFilter.type = "highpass";
-    hpFilter.frequency.setValueAtTime(4000, now);
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.01); // Boosted from 0.02
-    noiseGain.gain.linearRampToValueAtTime(0, now + 0.15);
-    noiseSource.connect(hpFilter);
-    hpFilter.connect(noiseGain);
-    noiseGain.connect(gainNode);
+      lfo.connect(lfoGain);
+      lfoGain.connect(bpFilter.frequency);
 
-    gainNode.connect(dest);
+      freqs.forEach((f, idx) => {
+        const osc = this.ctx.createOscillator();
+        osc.type = idx % 2 === 0 ? "triangle" : "sine";
+        osc.frequency.setValueAtTime(f + (idx * 2 - 3), now);
+        osc.frequency.exponentialRampToValueAtTime(f * 1.5, now + duration);
+        osc.connect(bpFilter);
+        oscillators.push(osc);
+      });
 
-    oscillators.forEach((osc) => osc.start(now));
-    noiseSource.start(now);
-    oscillators.forEach((osc) => osc.stop(now + duration));
-    noiseSource.stop(now + duration);
+      bpFilter.connect(chordGain);
+      chordGain.connect(gainNode);
 
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+      // 2. High-Frequency Shimmer Sparkles
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
 
-  synthesizeSpellFire(now, dest) {
-    const duration = 0.38;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.24, now + 0.02);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      const noiseFilter = this.acquireFilterNode(now, duration);
+      noiseFilter.type = "bandpass";
+      noiseFilter.Q.setValueAtTime(8.0, now);
+      noiseFilter.frequency.setValueAtTime(6000, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(1500, now + 0.4);
 
-    // Low explosion thud
-    const boomOsc = this.ctx.createOscillator();
-    boomOsc.type = "triangle";
-    boomOsc.frequency.setValueAtTime(160, now);
-    boomOsc.frequency.exponentialRampToValueAtTime(30, now + 0.18);
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(0.08, now + 0.02);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
 
-    const boomGain = this.ctx.createGain();
-    boomGain.gain.setValueAtTime(0.18, now);
-    boomGain.gain.linearRampToValueAtTime(0, now + 0.22);
-    boomOsc.connect(boomGain);
-    boomGain.connect(gainNode);
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
 
-    // Combustion white noise crackle
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
+      lfo.start(now);
+      oscillators.forEach((osc) => osc.start(now));
+      noiseSource.start(now);
 
-    const lpFilter = this.ctx.createBiquadFilter();
-    lpFilter.type = "lowpass";
-    lpFilter.frequency.setValueAtTime(800, now);
-    lpFilter.frequency.exponentialRampToValueAtTime(150, now + duration);
+      lfo.stop(now + duration);
+      oscillators.forEach((osc) => osc.stop(now + duration));
+      noiseSource.stop(now + duration);
 
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(0.14, now + 0.015);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      setTimeout(() => {
+        try {
+          lfo.disconnect();
+          lfoGain.disconnect();
+        } catch (e) {}
+        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+      }, duration * 1000 + 40);
+    },
 
-    noiseSource.connect(lpFilter);
-    lpFilter.connect(noiseGain);
-    noiseGain.connect(gainNode);
+    synthesizeSpellFire(now, dest) {
+      const duration = 0.50;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.28, now + 0.015);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    gainNode.connect(dest);
+      // 1. Molten Core Expansion (Dual low-register pitch dropping thuds)
+      const boomOsc1 = this.ctx.createOscillator();
+      boomOsc1.type = "triangle";
+      boomOsc1.frequency.setValueAtTime(140, now);
+      boomOsc1.frequency.exponentialRampToValueAtTime(30, now + 0.25);
 
-    boomOsc.start(now);
-    noiseSource.start(now);
-    boomOsc.stop(now + duration);
-    noiseSource.stop(now + duration);
+      const boomOsc2 = this.ctx.createOscillator();
+      boomOsc2.type = "sawtooth";
+      boomOsc2.frequency.setValueAtTime(85, now);
+      boomOsc2.frequency.exponentialRampToValueAtTime(25, now + 0.20);
 
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+      const boomFilter = this.acquireFilterNode(now, duration);
+      boomFilter.type = "lowpass";
+      boomFilter.frequency.setValueAtTime(160, now);
 
-  synthesizeSpellLightning(now, dest) {
-    const duration = 0.22;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.22, now + 0.005);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      const boomGain = this.acquireGainNode(now, duration);
+      boomGain.gain.setValueAtTime(0.22, now);
+      boomGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
 
-    // Sharp electrical zap
-    const zapOsc = this.ctx.createOscillator();
-    zapOsc.type = "sawtooth";
-    zapOsc.frequency.setValueAtTime(2200, now);
-    zapOsc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+      boomOsc1.connect(boomFilter);
+      boomOsc2.connect(boomFilter);
+      boomFilter.connect(boomGain);
+      boomGain.connect(gainNode);
 
-    const zapGain = this.ctx.createGain();
-    zapGain.gain.setValueAtTime(0.12, now);
-    zapGain.gain.linearRampToValueAtTime(0, now + 0.12);
-    zapOsc.connect(zapGain);
-    zapGain.connect(gainNode);
+      // 2. Embers Combustion & Hiss
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
 
-    // Static highpass noise discharge
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
+      const noiseFilter = this.acquireFilterNode(now, duration);
+      noiseFilter.type = "lowpass";
+      noiseFilter.frequency.setValueAtTime(1200, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(100, now + duration);
 
-    const hpFilter = this.ctx.createBiquadFilter();
-    hpFilter.type = "highpass";
-    hpFilter.frequency.setValueAtTime(1500, now);
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(0.18, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(0.18, now + 0.005);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
 
-    noiseSource.connect(hpFilter);
-    hpFilter.connect(noiseGain);
-    noiseGain.connect(gainNode);
+      // 3. Popping Crackles (Micro transient bursts)
+      const crackleCount = 4;
+      const crackleOscillators = [];
+      for (let i = 0; i < crackleCount; i++) {
+        let offset = now + 0.05 + i * 0.08 + Math.random() * 0.04;
+        let osc = this.ctx.createOscillator();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(1800 + Math.random() * 600, offset);
 
-    gainNode.connect(dest);
+        let gNode = this.acquireGainNode(offset, 0.02);
+        gNode.gain.setValueAtTime(0, offset);
+        gNode.gain.linearRampToValueAtTime(0.06, offset + 0.001);
+        gNode.gain.exponentialRampToValueAtTime(0.0001, offset + 0.015);
 
-    zapOsc.start(now);
-    noiseSource.start(now);
-    zapOsc.stop(now + duration);
-    noiseSource.stop(now + duration);
+        osc.connect(gNode);
+        gNode.connect(gainNode);
 
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+        osc.start(offset);
+        osc.stop(offset + 0.02);
+        crackleOscillators.push(osc);
+      }
 
-  synthesizeSpellFrost(now, dest) {
-    const duration = 0.5;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.2, now + 0.015);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      boomOsc1.start(now);
+      boomOsc2.start(now);
+      noiseSource.start(now);
 
-    // Crystalline major triad sweep
-    const freqs = [1046.5, 1318.51, 1567.98, 2093.0]; // C6, E6, G6, C7
-    const oscillators = [];
+      boomOsc1.stop(now + 0.3);
+      boomOsc2.stop(now + 0.3);
+      noiseSource.stop(now + duration);
 
-    const chimeGain = this.ctx.createGain();
-    chimeGain.gain.setValueAtTime(0.08, now);
-    chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      setTimeout(() => {
+        try {
+          boomOsc1.disconnect();
+          boomOsc2.disconnect();
+          boomFilter.disconnect();
+          noiseFilter.disconnect();
+        } catch (e) {}
+        crackleOscillators.forEach((osc) => {
+          try { osc.disconnect(); } catch (e) {}
+        });
+        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+      }, duration * 1000 + 40);
+    },
 
-    freqs.forEach((f) => {
-      const osc = this.ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(f, now);
-      osc.frequency.linearRampToValueAtTime(f * 0.98, now + duration);
-      osc.connect(chimeGain);
-      oscillators.push(osc);
-    });
-    chimeGain.connect(gainNode);
+    synthesizeSpellLightning(now, dest) {
+      const duration = 0.28;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.26, now + 0.003);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    // Glacial frost friction noise
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
+      // 1. Sawtooth Electrical Zap with AM Modulator
+      const zapOsc = this.ctx.createOscillator();
+      zapOsc.type = "sawtooth";
+      zapOsc.frequency.setValueAtTime(1600, now);
+      zapOsc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
 
-    const bpFilter = this.ctx.createBiquadFilter();
-    bpFilter.type = "bandpass";
-    bpFilter.frequency.setValueAtTime(3200, now);
-    bpFilter.Q.setValueAtTime(5.0, now);
+      const zapGain = this.acquireGainNode(now, duration);
+      zapGain.gain.setValueAtTime(0.14, now);
+      zapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
 
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.02);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration * 0.7);
+      const AMMod = this.ctx.createOscillator();
+      AMMod.type = "square";
+      AMMod.frequency.setValueAtTime(32, now);
+      const AMGain = this.ctx.createGain();
+      AMGain.gain.setValueAtTime(0.6, now);
 
-    noiseSource.connect(bpFilter);
-    bpFilter.connect(noiseGain);
-    noiseGain.connect(gainNode);
+      AMMod.connect(AMGain);
+      AMGain.connect(zapGain.gain);
 
-    gainNode.connect(dest);
+      zapOsc.connect(zapGain);
+      zapGain.connect(gainNode);
 
-    oscillators.forEach((o) => o.start(now));
-    noiseSource.start(now);
-    oscillators.forEach((o) => o.stop(now + duration));
-    noiseSource.stop(now + duration);
+      // 2. Highpass Static Crackle Discharge
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
 
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+      const noiseFilter = this.acquireFilterNode(now, duration);
+      noiseFilter.type = "highpass";
+      noiseFilter.frequency.setValueAtTime(2200, now);
+
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(0.24, now + 0.003);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
+
+      zapOsc.start(now);
+      AMMod.start(now);
+      noiseSource.start(now);
+
+      zapOsc.stop(now + 0.2);
+      AMMod.stop(now + 0.2);
+      noiseSource.stop(now + duration);
+
+      setTimeout(() => {
+        try {
+          zapOsc.disconnect();
+          AMMod.disconnect();
+          AMGain.disconnect();
+          noiseFilter.disconnect();
+        } catch (e) {}
+        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+      }, duration * 1000 + 40);
+    },
+
+    synthesizeSpellFrost(now, dest) {
+      const duration = 0.65;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.22, now + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      // 1. Shimmering Glacial Triad Sweep
+      const freqs = [1046.50, 1318.51, 1567.98, 2093.00];
+      const oscillators = [];
+
+      const chimeGain = this.acquireGainNode(now, duration);
+      chimeGain.gain.setValueAtTime(0.08, now);
+      chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      freqs.forEach((f, idx) => {
+        const osc = this.ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f + (idx * 4 - 6), now);
+        osc.frequency.linearRampToValueAtTime(f * 0.94, now + duration);
+        osc.connect(chimeGain);
+        oscillators.push(osc);
+      });
+      chimeGain.connect(gainNode);
+
+      // 2. Glacial Wind Frost Friction
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
+
+      const noiseFilter = this.acquireFilterNode(now, duration);
+      noiseFilter.type = "bandpass";
+      noiseFilter.frequency.setValueAtTime(2800, now);
+      noiseFilter.Q.setValueAtTime(4.5, now);
+
+      const windLFO = this.ctx.createOscillator();
+      windLFO.type = "sine";
+      windLFO.frequency.setValueAtTime(5, now);
+      const windLFOGain = this.ctx.createGain();
+      windLFOGain.gain.setValueAtTime(300, now);
+
+      windLFO.connect(windLFOGain);
+      windLFOGain.connect(noiseFilter.frequency);
+
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(0.12, now + 0.025);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration * 0.85);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
+
+      oscillators.forEach((o) => o.start(now));
+      windLFO.start(now);
+      noiseSource.start(now);
+
+      oscillators.forEach((o) => o.stop(now + duration));
+      windLFO.stop(now + duration);
+      noiseSource.stop(now + duration);
+
+      setTimeout(() => {
+        try {
+          windLFO.disconnect();
+          windLFOGain.disconnect();
+          noiseFilter.disconnect();
+        } catch (e) {}
+        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+      }, duration * 1000 + 40);
+    },
 
   synthesizeFairy(now, dest) {
-    const notes = [987.77, 1318.51, 1975.53];
-    const noteLength = 0.05;
-    notes.forEach((freq, idx) => {
-      const noteTime = now + idx * 0.045;
-      const osc = this.ctx.createOscillator();
-      const noteGain = this.ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, noteTime);
-      noteGain.gain.setValueAtTime(0, noteTime);
-      noteGain.gain.linearRampToValueAtTime(0.18, noteTime + 0.005); // Boosted from 0.06
-      noteGain.gain.linearRampToValueAtTime(0, noteTime + noteLength);
-      osc.connect(noteGain);
-      noteGain.connect(dest);
-      osc.start(noteTime);
-      osc.stop(noteTime + noteLength);
-    });
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      250,
-    );
-  },
+      const notes = [987.77, 1318.51, 1975.53];
+      const noteLength = 0.05;
+      notes.forEach((freq, idx) => {
+        const noteTime = now + idx * 0.045;
+        const osc = this.ctx.createOscillator();
+        const noteGain = this.acquireGainNode(noteTime, noteLength);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, noteTime);
+        noteGain.gain.setValueAtTime(0, noteTime);
+        noteGain.gain.linearRampToValueAtTime(0.18, noteTime + 0.005); // Boosted from 0.06
+        noteGain.gain.linearRampToValueAtTime(0, noteTime + noteLength);
+        osc.connect(noteGain);
+        osc.start(noteTime);
+        osc.stop(noteTime + noteLength);
+      });
+      setTimeout(
+        () =>
+          (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
+        250,
+      );
+    },
 
-  synthesizeDeath(now, dest) {
-    const duration = 0.35;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.24, now + 0.01); // Boosted from 0.09
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+    synthesizeDeath(now, dest) {
+      const duration = 0.35;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.24, now + 0.01); // Boosted from 0.09
+      gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
-    const lowOsc = this.ctx.createOscillator();
-    lowOsc.type = "triangle";
-    lowOsc.frequency.setValueAtTime(120, now);
-    lowOsc.frequency.linearRampToValueAtTime(25, now + 0.12);
-    const lowGain = this.ctx.createGain();
-    lowGain.gain.setValueAtTime(0, now);
-    lowGain.gain.linearRampToValueAtTime(0.14, now + 0.01); // Boosted from 0.05
-    lowGain.gain.linearRampToValueAtTime(0, now + 0.15);
-    lowOsc.connect(lowGain);
-    lowGain.connect(gainNode);
+      const lowOsc = this.ctx.createOscillator();
+      lowOsc.type = "triangle";
+      lowOsc.frequency.setValueAtTime(120, now);
+      lowOsc.frequency.linearRampToValueAtTime(25, now + 0.12);
+      const lowGain = this.acquireGainNode(now, duration);
+      lowGain.gain.setValueAtTime(0, now);
+      lowGain.gain.linearRampToValueAtTime(0.14, now + 0.01); // Boosted from 0.05
+      lowGain.gain.linearRampToValueAtTime(0, now + 0.15);
+      lowOsc.connect(lowGain);
+      lowGain.connect(gainNode);
 
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = this.cachedNoiseBuffer;
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = this.cachedNoiseBuffer;
 
-    const lpFilter = this.ctx.createBiquadFilter();
-    lpFilter.type = "lowpass";
-    lpFilter.frequency.setValueAtTime(600, now);
-    lpFilter.frequency.linearRampToValueAtTime(80, now + duration);
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(0.12, now + 0.01); // Boosted from 0.04
-    noiseGain.gain.linearRampToValueAtTime(0, now + duration);
-    noiseSource.connect(lpFilter);
-    lpFilter.connect(noiseGain);
-    noiseGain.connect(gainNode);
+      const lpFilter = this.acquireFilterNode(now, duration);
+      lpFilter.type = "lowpass";
+      lpFilter.frequency.setValueAtTime(600, now);
+      lpFilter.frequency.linearRampToValueAtTime(80, now + duration);
+      const noiseGain = this.acquireGainNode(now, duration);
+      noiseGain.gain.setValueAtTime(0, now);
+      noiseGain.gain.linearRampToValueAtTime(0.12, now + 0.01); // Boosted from 0.04
+      noiseGain.gain.linearRampToValueAtTime(0, now + duration);
+      noiseSource.connect(lpFilter);
+      lpFilter.connect(noiseGain);
+      noiseGain.connect(gainNode);
 
-    const soulOsc = this.ctx.createOscillator();
-    soulOsc.type = "sine";
-    soulOsc.frequency.setValueAtTime(800, now);
-    soulOsc.frequency.linearRampToValueAtTime(100, now + duration);
-    const soulGain = this.ctx.createGain();
-    soulGain.gain.setValueAtTime(0, now);
-    soulGain.gain.linearRampToValueAtTime(0.04, now + 0.01); // Boosted from 0.015
-    soulGain.gain.linearRampToValueAtTime(0, now + duration);
-    soulOsc.connect(soulGain);
-    soulGain.connect(gainNode);
+      const soulOsc = this.ctx.createOscillator();
+      soulOsc.type = "sine";
+      soulOsc.frequency.setValueAtTime(800, now);
+      soulOsc.frequency.linearRampToValueAtTime(100, now + duration);
+      const soulGain = this.acquireGainNode(now, duration);
+      soulGain.gain.setValueAtTime(0, now);
+      soulGain.gain.linearRampToValueAtTime(0.04, now + 0.01); // Boosted from 0.015
+      soulGain.gain.linearRampToValueAtTime(0, now + duration);
+      soulOsc.connect(soulGain);
+      soulGain.connect(gainNode);
 
-    gainNode.connect(dest);
+      lowOsc.start(now);
+      noiseSource.start(now);
+      soulOsc.start(now);
+      lowOsc.stop(now + duration);
+      noiseSource.stop(now + duration);
+      soulOsc.stop(now + duration);
 
-    lowOsc.start(now);
-    noiseSource.start(now);
-    soulOsc.start(now);
-    lowOsc.stop(now + duration);
-    noiseSource.stop(now + duration);
-    soulOsc.stop(now + duration);
+      setTimeout(
+        () =>
+          (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
+        duration * 1000 + 40,
+      );
+    },
 
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+    synthesizeDefeat(now, dest) {
+      const duration = 1.6;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.36, now + 0.05); // Boosted from 0.18
+      gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
-  synthesizeDefeat(now, dest) {
-    const duration = 1.6;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.36, now + 0.05); // Boosted from 0.18
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+      const freqs = [87.31, 110.0, 130.81, 174.61];
+      const oscillators = [];
+      const lowpass = this.acquireFilterNode(now, duration);
+      lowpass.type = "lowpass";
+      lowpass.frequency.setValueAtTime(350, now);
+      lowpass.frequency.linearRampToValueAtTime(80, now + duration);
+      freqs.forEach((f) => {
+        const osc = this.ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(f, now);
+        osc.frequency.linearRampToValueAtTime(f * 0.99, now + duration);
+        osc.connect(lowpass);
+        oscillators.push(osc);
+      });
 
-    const freqs = [87.31, 110.0, 130.81, 174.61];
-    const oscillators = [];
-    const lowpass = this.ctx.createBiquadFilter();
-    lowpass.type = "lowpass";
-    lowpass.frequency.setValueAtTime(350, now);
-    lowpass.frequency.linearRampToValueAtTime(80, now + duration);
-    freqs.forEach((f) => {
-      const osc = this.ctx.createOscillator();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(f, now);
-      osc.frequency.linearRampToValueAtTime(f * 0.99, now + duration);
-      osc.connect(lowpass);
-      oscillators.push(osc);
-    });
+      const subOsc = this.ctx.createOscillator();
+      subOsc.type = "triangle";
+      subOsc.frequency.setValueAtTime(43.65, now);
+      const subGain = this.acquireGainNode(now, 0.8);
+      subGain.gain.setValueAtTime(0, now);
+      subGain.gain.linearRampToValueAtTime(0.24, now + 0.02); // Boosted from 0.1
+      subGain.gain.linearRampToValueAtTime(0, now + 0.8);
+      subOsc.connect(subGain);
+      subGain.connect(gainNode);
 
-    const subOsc = this.ctx.createOscillator();
-    subOsc.type = "triangle";
-    subOsc.frequency.setValueAtTime(43.65, now);
-    const subGain = this.ctx.createGain();
-    subGain.gain.setValueAtTime(0, now);
-    subGain.gain.linearRampToValueAtTime(0.24, now + 0.02); // Boosted from 0.1
-    subGain.gain.linearRampToValueAtTime(0, now + 0.8);
-    subOsc.connect(subGain);
-    subGain.connect(gainNode);
+      lowpass.connect(gainNode);
 
-    lowpass.connect(gainNode);
-    gainNode.connect(dest);
+      oscillators.forEach((o) => o.start(now));
+      subOsc.start(now);
+      oscillators.forEach((o) => o.stop(now + duration));
+      subOsc.stop(now + duration);
 
-    oscillators.forEach((o) => o.start(now));
-    subOsc.start(now);
-    oscillators.forEach((o) => o.stop(now + duration));
-    subOsc.stop(now + duration);
+      setTimeout(
+        () =>
+          (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
+        duration * 1000 + 40,
+      );
+    },
 
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+    synthesizeRevive(now, dest) {
+      const duration = 1.8;
+      const gainNode = this.acquireGainNode(now, duration);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.32, now + 0.15); // Boosted from 0.15
+      gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
-  synthesizeRevive(now, dest) {
-    const duration = 1.8;
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.32, now + 0.15); // Boosted from 0.15
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+      const chord = [261.63, 329.63, 392.0, 523.25, 659.25, 783.99, 1046.5];
+      chord.forEach((freq, idx) => {
+        const delay = idx * 0.08;
+        const noteTime = now + delay;
+        const chimeOsc = this.ctx.createOscillator();
+        chimeOsc.type = "sine";
+        chimeOsc.frequency.setValueAtTime(freq, noteTime);
+        const chimeGain = this.acquireGainNode(noteTime, 0.6);
+        chimeGain.gain.setValueAtTime(0, noteTime);
+        chimeGain.gain.linearRampToValueAtTime(0.12, noteTime + 0.01); // Boosted from 0.035
+        chimeGain.gain.linearRampToValueAtTime(0, noteTime + 0.6);
+        chimeOsc.connect(chimeGain);
+        chimeGain.connect(gainNode);
+        chimeOsc.start(noteTime);
+        chimeOsc.stop(noteTime + 0.65);
+      });
 
-    const chord = [261.63, 329.63, 392.0, 523.25, 659.25, 783.99, 1046.5];
-    chord.forEach((freq, idx) => {
-      const delay = idx * 0.08;
-      const noteTime = now + delay;
-      const chimeOsc = this.ctx.createOscillator();
-      chimeOsc.type = "sine";
-      chimeOsc.frequency.setValueAtTime(freq, noteTime);
-      const chimeGain = this.ctx.createGain();
-      chimeGain.gain.setValueAtTime(0, noteTime);
-      chimeGain.gain.linearRampToValueAtTime(0.12, noteTime + 0.01); // Boosted from 0.035
-      chimeGain.gain.linearRampToValueAtTime(0, noteTime + 0.6);
-      chimeOsc.connect(chimeGain);
-      chimeGain.connect(gainNode);
-      chimeOsc.start(noteTime);
-      chimeOsc.stop(noteTime + 0.65);
-    });
+      const padOsc1 = this.ctx.createOscillator();
+      padOsc1.type = "triangle";
+      padOsc1.frequency.setValueAtTime(130.81, now);
+      const padOsc2 = this.ctx.createOscillator();
+      padOsc2.type = "triangle";
+      padOsc2.frequency.setValueAtTime(164.81, now);
+      const padGain = this.acquireGainNode(now, duration);
+      padGain.gain.setValueAtTime(0, now);
+      padGain.gain.linearRampToValueAtTime(0.14, now + 0.4); // Boosted from 0.06
+      padGain.gain.linearRampToValueAtTime(0, now + duration);
+      padOsc1.connect(padGain);
+      padOsc2.connect(padGain);
 
-    const padOsc1 = this.ctx.createOscillator();
-    padOsc1.type = "triangle";
-    padOsc1.frequency.setValueAtTime(130.81, now);
-    const padOsc2 = this.ctx.createOscillator();
-    padOsc2.type = "triangle";
-    padOsc2.frequency.setValueAtTime(164.81, now);
-    const padGain = this.ctx.createGain();
-    padGain.gain.setValueAtTime(0, now);
-    padGain.gain.linearRampToValueAtTime(0.14, now + 0.4); // Boosted from 0.06
-    padGain.gain.linearRampToValueAtTime(0, now + duration);
-    padOsc1.connect(padGain);
-    padOsc2.connect(padGain);
-    gainNode.connect(dest);
+      padOsc1.start(now);
+      padOsc2.start(now);
+      padOsc1.stop(now + duration);
+      padOsc2.stop(now + duration);
 
-    gainNode.connect(dest);
-
-    padOsc1.start(now);
-    padOsc2.start(now);
-    padOsc1.stop(now + duration);
-    padOsc2.stop(now + duration);
-
-    setTimeout(
-      () =>
-        (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
-      duration * 1000 + 40,
-    );
-  },
+      setTimeout(
+        () =>
+          (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
+        duration * 1000 + 40,
+      );
+    },
 
   playCoinCollect() {
     if (!this.init()) return;
@@ -1550,26 +2333,41 @@ window.SoundManager.initTactileFeedback = function () {
       return;
     }
 
-    // D. Detect Normal Action Clicks (Tabs, Selectors, Slots, General Buttons)
+    // D. Detect Normal Action Clicks (Tabs, Selectors, Slots, General Buttons, and any standard interactive elements)
     let clickTarget = e.target.closest(
-      ".btn-action, .tab-btn, .sub-tab-btn, .slots-card, .forge-anvil-button, .custom-select-trigger, .custom-select-option",
+      "button, [class*='btn'], .btn-action, .tab-btn, .sub-tab-btn, .slots-card, .forge-anvil-button, .custom-select-trigger, .custom-select-option",
     );
     if (clickTarget) {
       window.SoundManager.playClick();
     }
   });
 
-  // Listen globally for hover focus on bags, cards, and shop entries
+  // Listen globally using pointerover for delegated hover tracking with deduplication
   document.addEventListener(
-    "pointerenter",
+    "pointerover",
     function (e) {
       if (!e.target || typeof e.target.closest !== "function") return;
 
       let target = e.target.closest(
-        ".bag-item, .slots-card, .tab-btn, .sub-tab-btn, .shop-row, .active-effect-badge, .hub-card, .bestiary-card-item",
+        "button, [class*='btn'], .bag-item, .slots-card, .tab-btn, .sub-tab-btn, .shop-row, .active-effect-badge, .hub-card, .bestiary-card-item",
       );
-      if (target) {
+      if (target && target !== window.SoundManager.lastHoveredElement) {
+        window.SoundManager.lastHoveredElement = target;
         window.SoundManager.playHover();
+      }
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "pointerout",
+    function (e) {
+      if (!e.target || typeof e.target.closest !== "function") return;
+      let target = e.target.closest(
+        "button, [class*='btn'], .bag-item, .slots-card, .tab-btn, .sub-tab-btn, .shop-row, .active-effect-badge, .hub-card, .bestiary-card-item",
+      );
+      if (target && target === window.SoundManager.lastHoveredElement) {
+        window.SoundManager.lastHoveredElement = null;
       }
     },
     true,

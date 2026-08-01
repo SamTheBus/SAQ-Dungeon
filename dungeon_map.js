@@ -27,11 +27,14 @@
       this.shrooms = [];
       this.portalDiscovered = false;
       this.spawnRoomId = null;
-      this.needsPreRender = true;
-      this.preRenderCanvas = null;
-      this.chestTiers = {};
-      this.chestAnimations = {};
-    }
+          this.extractionRoomId = null;
+          this.merchantTile = null;
+          this.merchantStock = [];
+          this.needsPreRender = true;
+          this.preRenderCanvas = null;
+          this.chestTiers = {};
+          this.chestAnimations = {};
+        }
 
     getGridDimensions(depth) {
       let d = Math.max(1, Number(depth) || 1);
@@ -101,11 +104,11 @@
           y: 12,
         },
         {
-          type: window.TILE_TYPES.STATION_INN,
-          label: "RECOVERY INN",
-          x: 19,
-          y: cy,
-        },
+                  type: window.TILE_TYPES.STATION_INN,
+                  label: "ONSLAUGHT ALTAR",
+                  x: 19,
+                  y: cy,
+                },
         {
           type: window.TILE_TYPES.STATION_GACHAPON,
           label: "GACHAPON VENDING",
@@ -172,119 +175,149 @@
       this.mobSpawns = [];
 
       // Check if Recovery Chest belongs on this Boss Floor
-      let rec = window.playerStats && window.playerStats.recoveryLoot;
-      if (
-        rec &&
-        rec.floor === this.depth &&
-        rec.items &&
-        rec.items.length > 0
-      ) {
-        let rcX = cx - 4;
-        let rcY = 3;
-        this.grid[rcY][rcX] = window.TILE_TYPES.RECOVERY_CHEST;
-      }
+            let rec = window.playerStats && window.playerStats.recoveryLoot;
+            if (
+              rec &&
+              rec.floor === this.depth &&
+              rec.items &&
+              rec.items.length > 0
+            ) {
+              let rcX = cx - 4;
+              let rcY = 3;
+              this.grid[rcY][rcX] = window.TILE_TYPES.RECOVERY_CHEST;
+            }
 
-      return this;
-    }
+            return this;
+          }
+
+          generateOnslaughtArena() {
+            this.reset();
+            this.width = 24;
+            this.height = 18;
+
+            this.grid = Array.from({ length: this.height }, () =>
+              Array(this.width).fill(window.TILE_TYPES.WALL),
+            );
+            this.exploredGrid = Array.from({ length: this.height }, () =>
+              Array(this.width).fill(true),
+            );
+
+            // Carve out a perfect open battle arena inside the perimeter walls
+            for (let y = 2; y < this.height - 2; y++) {
+              for (let x = 2; x < this.width - 2; x++) {
+                this.grid[y][x] = window.TILE_TYPES.FLOOR;
+              }
+            }
+
+            let cx = Math.floor(this.width / 2);
+            let cy = Math.floor(this.height / 2);
+
+            // Spawn player exactly in the dead center
+            this.spawnTile = { x: cx, y: cy };
+            this.grid[cy][cx] = window.TILE_TYPES.SPAWN_PLAYER;
+
+            return this;
+          }
 
     generate(depth) {
-      this.reset();
-      this.depth = depth || 1;
+        this.reset();
+        this.depth = depth || 1;
 
-      let dims = this.getGridDimensions(depth);
-      this.width = dims.width;
-      this.height = dims.height;
+        let dims = this.getGridDimensions(depth);
+        this.width = dims.width;
+        this.height = dims.height;
 
-      this.grid = Array.from({ length: this.height }, () =>
-        Array(this.width).fill(window.TILE_TYPES.VOID),
-      );
-      this.exploredGrid = Array.from({ length: this.height }, () =>
-        Array(this.width).fill(false),
-      );
-
-      let rootNode = {
-        x: 2,
-        y: 2,
-        w: this.width - 4,
-        h: this.height - 4,
-        left: null,
-        right: null,
-      };
-
-      let leaves = [];
-      this.splitBSP(rootNode, leaves, 0, 4);
-
-      leaves.forEach((leaf, idx) => {
-        let roomW = window.randInt(
-          window.DUNGEON_CONFIG.MIN_ROOM_SIZE,
-          Math.min(window.DUNGEON_CONFIG.MAX_ROOM_SIZE, leaf.w - 2),
+        this.grid = Array.from({ length: this.height }, () =>
+          Array(this.width).fill(window.TILE_TYPES.VOID),
         );
-        let roomH = window.randInt(
-          window.DUNGEON_CONFIG.MIN_ROOM_SIZE,
-          Math.min(window.DUNGEON_CONFIG.MAX_ROOM_SIZE, leaf.h - 2),
+        this.exploredGrid = Array.from({ length: this.height }, () =>
+          Array(this.width).fill(false),
         );
-        let roomX = window.randInt(leaf.x + 1, leaf.x + leaf.w - roomW - 1);
-        let roomY = window.randInt(leaf.y + 1, leaf.y + leaf.h - roomH - 1);
 
-        let room = {
-          id: idx,
-          x: roomX,
-          y: roomY,
-          w: roomW,
-          h: roomH,
-          cx: Math.floor(roomX + roomW / 2),
-          cy: Math.floor(roomY + roomH / 2),
+        let rootNode = {
+          x: 2,
+          y: 2,
+          w: this.width - 4,
+          h: this.height - 4,
+          left: null,
+          right: null,
         };
 
-        this.rooms.push(room);
-        this.carveRoom(room);
-      });
+        let leaves = [];
+        this.splitBSP(rootNode, leaves, 0, 4);
 
-      let connected = new Set([0]);
-      let unconnected = new Set(this.rooms.map((_, i) => i).slice(1));
+        leaves.forEach((leaf, idx) => {
+          let roomW = window.randInt(
+            window.DUNGEON_CONFIG.MIN_ROOM_SIZE,
+            Math.min(window.DUNGEON_CONFIG.MAX_ROOM_SIZE, leaf.w - 2),
+          );
+          let roomH = window.randInt(
+            window.DUNGEON_CONFIG.MIN_ROOM_SIZE,
+            Math.min(window.DUNGEON_CONFIG.MAX_ROOM_SIZE, leaf.h - 2),
+          );
+          let roomX = window.randInt(leaf.x + 1, leaf.x + leaf.w - roomW - 1);
+          let roomY = window.randInt(leaf.y + 1, leaf.y + leaf.h - roomH - 1);
 
-      while (unconnected.size > 0) {
-        let bestDist = Infinity;
-        let bestA = null;
-        let bestB = null;
+          let room = {
+            id: idx,
+            x: roomX,
+            y: roomY,
+            w: roomW,
+            h: roomH,
+            cx: Math.floor(roomX + roomW / 2),
+            cy: Math.floor(roomY + roomH / 2),
+          };
 
-        connected.forEach((aIdx) => {
-          let rA = this.rooms[aIdx];
-          unconnected.forEach((bIdx) => {
-            let rB = this.rooms[bIdx];
-            let dist = Math.hypot(rA.cx - rB.cx, rA.cy - rB.cy);
-            if (dist < bestDist) {
-              bestDist = dist;
-              bestA = rA;
-              bestB = rB;
-            }
-          });
+          this.rooms.push(room);
+          this.carveRoom(room);
         });
 
-        if (bestA && bestB) {
-          this.connectRooms(bestA, bestB);
-          connected.add(bestB.id);
-          unconnected.delete(bestB.id);
-        } else {
-          break;
-        }
-      }
+        let connected = new Set([0]);
+        let unconnected = new Set(this.rooms.map((_, i) => i).slice(1));
 
-      for (let i = 0; i < this.rooms.length; i++) {
-        for (let j = i + 1; j < this.rooms.length; j++) {
-          let dist = Math.hypot(
-            this.rooms[i].cx - this.rooms[j].cx,
-            this.rooms[i].cy - this.rooms[j].cy,
-          );
-          if (dist < 18 && Math.random() < 0.25) {
-            this.connectRooms(this.rooms[i], this.rooms[j]);
+        while (unconnected.size > 0) {
+          let bestDist = Infinity;
+          let bestA = null;
+          let bestB = null;
+
+          connected.forEach((aIdx) => {
+            let rA = this.rooms[aIdx];
+            unconnected.forEach((bIdx) => {
+              let rB = this.rooms[bIdx];
+              let dist = Math.hypot(rA.cx - rB.cx, rA.cy - rB.cy);
+              if (dist < bestDist) {
+                bestDist = dist;
+                bestA = rA;
+                bestB = rB;
+              }
+            });
+          });
+
+          if (bestA && bestB) {
+            this.connectRooms(bestA, bestB);
+            connected.add(bestB.id);
+            unconnected.delete(bestB.id);
+          } else {
+            break;
           }
         }
-      }
 
-      this.buildWalls();
-      this.placeSpawnAndExtraction();
-      this.populateEntities();
+        for (let i = 0; i < this.rooms.length; i++) {
+          for (let j = i + 1; j < this.rooms.length; j++) {
+            let dist = Math.hypot(
+              this.rooms[i].cx - this.rooms[j].cx,
+              this.rooms[i].cy - this.rooms[j].cy,
+            );
+            if (dist < 18 && Math.random() < 0.25) {
+              this.connectRooms(this.rooms[i], this.rooms[j]);
+            }
+          }
+        }
+
+        this.buildWalls();
+        this.placeSpawnAndExtraction();
+        this.placeDungeonMerchant();
+        this.populateEntities();
 
       if (
         window.checkArtifactTrait &&
@@ -440,12 +473,13 @@
       if (eligibleCandidates.length === 0) eligibleCandidates = roomDists;
 
       let chosen =
-        eligibleCandidates[
-          Math.floor(Math.random() * eligibleCandidates.length)
-        ].room;
+              eligibleCandidates[
+                Math.floor(Math.random() * eligibleCandidates.length)
+              ].room;
 
-      this.extractionTile = { x: chosen.cx, y: chosen.cy };
-      this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
+            this.extractionTile = { x: chosen.cx, y: chosen.cy };
+            this.extractionRoomId = chosen.id;
+            this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
 
       // Spawn Recovery Chest in exit room if lost loot matches current floor depth
       let rec = window.playerStats && window.playerStats.recoveryLoot;
@@ -468,15 +502,99 @@
           }
         }
         if (candidateTiles.length > 0) {
-          candidateTiles.sort((a, b) => b.dist - a.dist);
-          let targetTile = candidateTiles[0]; // Tile farthest from portal inside exit room
-          this.grid[targetTile.y][targetTile.x] =
-            window.TILE_TYPES.RECOVERY_CHEST;
-        }
-      }
-    }
+                candidateTiles.sort((a, b) => b.dist - a.dist);
+                let targetTile = candidateTiles[0]; // Tile farthest from portal inside exit room
+                this.grid[targetTile.y][targetTile.x] =
+                  window.TILE_TYPES.RECOVERY_CHEST;
+              }
+            }
+          }
 
-    populateEntities() {
+          placeDungeonMerchant() {
+              let isMiniBoss = this.depth % 12 === 4 || this.depth % 12 === 8;
+              let isMajorBoss = this.depth % 12 === 0;
+              if (isMiniBoss || isMajorBoss || window.playerStats.isCrucibleMode || window.currentGameState === window.GAME_STATES.HUB) {
+                return;
+              }
+
+              // Balance: Enforce 20% flat chance per standard floor (rare, lucky encounter)
+              if (Math.random() > 0.20) {
+                return;
+              }
+
+              let eligibleRooms = this.rooms.filter(
+              (r) => r.id !== this.spawnRoomId && r.id !== this.extractionRoomId
+            );
+            if (eligibleRooms.length === 0) return;
+
+            let chosenRoom = eligibleRooms[Math.floor(Math.random() * eligibleRooms.length)];
+            let cornerTiles = [];
+            let fallbackTiles = [];
+
+            for (let y = chosenRoom.y; y < chosenRoom.y + chosenRoom.h; y++) {
+              for (let x = chosenRoom.x; x < chosenRoom.x + chosenRoom.w; x++) {
+                if (this.grid[y][x] === window.TILE_TYPES.FLOOR) {
+                  let wallCount = 0;
+                  const cardinalDirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+                  cardinalDirs.forEach(([dx, dy]) => {
+                    let ny = y + dy;
+                    let nx = x + dx;
+                    if (ny >= 0 && ny < this.height && nx >= 0 && nx < this.width) {
+                      if (this.grid[ny][nx] === window.TILE_TYPES.WALL || this.grid[ny][nx] === window.TILE_TYPES.VOID) {
+                        wallCount++;
+                      }
+                    }
+                  });
+
+                  if (wallCount >= 2) {
+                    cornerTiles.push({ x, y });
+                  } else {
+                    fallbackTiles.push({ x, y });
+                  }
+                }
+              }
+            }
+
+            let targetTile = null;
+            if (cornerTiles.length > 0) {
+              targetTile = cornerTiles[Math.floor(Math.random() * cornerTiles.length)];
+            } else if (fallbackTiles.length > 0) {
+              targetTile = fallbackTiles[Math.floor(Math.random() * fallbackTiles.length)];
+            }
+
+            if (targetTile) {
+              this.grid[targetTile.y][targetTile.x] = window.TILE_TYPES.DUNGEON_MERCHANT;
+              this.merchantTile = { x: targetTile.x, y: targetTile.y };
+              this.generateMerchantStock();
+            }
+          }
+
+          generateMerchantStock() {
+            this.merchantStock = [];
+            let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+            let stageScale = this.depth;
+            let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+            let playerQuality = pStats.qly || 1.0;
+
+            for (let i = 0; i < 3; i++) {
+              let chosenType = types[Math.floor(Math.random() * types.length)];
+              let rolledRarity = window.rollItemRarity(
+                window.playerStats.maxFloorCleared || 0,
+                playerQuality,
+                false
+              );
+              let item = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
+
+              let costMult = 150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
+              item.cost = BigNum.from(Math.ceil(costMult));
+              item.purchased = false;
+
+              this.merchantStock.push(item);
+              window.frozenItemDb[item.id] = window.cloneItemForTooltip(item);
+            }
+          }
+
+          populateEntities() {
       this.chests = [];
       this.mobSpawns = [];
       this.breakables = [];
@@ -1208,27 +1326,42 @@
                 pCtx.fillRect(px + 2, py + tileSize - 4, 2, 2);
                 pCtx.fillRect(px + tileSize - 4, py + tileSize - 4, 2, 2);
               } else if (stationTile.type === window.TILE_TYPES.STATION_INN) {
-                pCtx.fillStyle = isAlt ? "#0a3328" : "#06241a";
-                pCtx.fillRect(px, py, tileSize, tileSize);
+                                            // Deep void-purple and obsidian floor slabs
+                                            pCtx.fillStyle = isAlt ? "#0a0412" : "#05020a";
+                                            pCtx.fillRect(px, py, tileSize, tileSize);
 
-                pCtx.strokeStyle = "rgba(16, 185, 129, 0.35)";
-                pCtx.lineWidth = 1;
-                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+                                            // Fractured obsidian flagstone sub-structure
+                                            pCtx.fillStyle = isAlt ? "#110626" : "#0d041c";
+                                            pCtx.fillRect(px + 2, py + 2, tileSize - 4, tileSize - 4);
 
-                if (tileHash > 0.4) {
-                  pCtx.fillStyle = "rgba(16, 185, 129, 0.25)";
-                  pCtx.beginPath();
-                  pCtx.arc(px + 4, py + 4, 3, 0, Math.PI * 2);
-                  pCtx.arc(
-                    px + tileSize - 4,
-                    py + tileSize - 4,
-                    2.5,
-                    0,
-                    Math.PI * 2,
-                  );
-                  pCtx.fill();
-                }
-              } else if (
+                                            pCtx.fillStyle = "rgba(168, 85, 247, 0.05)";
+                                            pCtx.fillRect(px + 3, py + 3, tileSize - 6, 2);
+                                            pCtx.fillRect(px + 3, py + 3, 2, tileSize - 6);
+
+                                            // Translucent violet runic outlines
+                                            pCtx.strokeStyle = "rgba(168, 85, 247, 0.35)";
+                                            pCtx.lineWidth = 1.2;
+                                            pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+
+                                            // Render dynamic runic outline arcs matching relative footprint coordinates
+                                            if (tileHash > 0.3) {
+                                              pCtx.strokeStyle = "rgba(168, 85, 247, 0.45)";
+                                              pCtx.lineWidth = 1;
+                                              pCtx.beginPath();
+                                              if (dx === -1 && dy === -1) {
+                                                pCtx.arc(px + tileSize - 6, py + tileSize - 6, 4, 0, Math.PI / 2);
+                                              } else if (dx === 1 && dy === -1) {
+                                                pCtx.arc(px + 6, py + tileSize - 6, 4, Math.PI / 2, Math.PI);
+                                              } else if (dx === -1 && dy === 1) {
+                                                pCtx.arc(px + tileSize - 6, py + 6, 4, Math.PI * 1.5, Math.PI * 2);
+                                              } else if (dx === 1 && dy === 1) {
+                                                pCtx.arc(px + 6, py + 6, 4, Math.PI, Math.PI * 1.5);
+                                              } else {
+                                                pCtx.arc(px + tileSize / 2, py + tileSize / 2, 6, 0, Math.PI * 2);
+                                              }
+                                              pCtx.stroke();
+                                            }
+                                          } else if (
                 stationTile.type === window.TILE_TYPES.STATION_GACHAPON
               ) {
                 pCtx.fillStyle = isAlt ? "#1f1d15" : "#191710";
@@ -1240,18 +1373,20 @@
               }
 
               pCtx.strokeStyle =
-                stationTile.type === window.TILE_TYPES.STATION_FORGE
-                  ? "#ea580c"
-                  : stationTile.type === window.TILE_TYPES.STATION_PORTAL
-                    ? "#9333ea"
-                    : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
-                      ? "#00d2ff"
-                      : stationTile.type === window.TILE_TYPES.STATION_STASH
-                        ? "#0284c7"
-                        : stationTile.type ===
-                            window.TILE_TYPES.STATION_GACHAPON
-                          ? "#f1c40f"
-                          : "#059669";
+                              stationTile.type === window.TILE_TYPES.STATION_FORGE
+                                ? "#ea580c"
+                                : stationTile.type === window.TILE_TYPES.STATION_PORTAL
+                                  ? "#9333ea"
+                                  : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
+                                    ? "#00d2ff"
+                                    : stationTile.type === window.TILE_TYPES.STATION_STASH
+                                      ? "#0284c7"
+                                      : stationTile.type ===
+                                          window.TILE_TYPES.STATION_GACHAPON
+                                        ? "#f1c40f"
+                                        : stationTile.type === window.TILE_TYPES.STATION_INN
+                                          ? "#a855f7"
+                                          : "#059669";
               pCtx.lineWidth = 1.5;
 
               if (dx === -1) {
@@ -3507,134 +3642,328 @@
 
         ctx.restore();
       } else if (tileType === window.TILE_TYPES.STATION_INN) {
-        let cx = px + tileSize / 2;
-        let cy = py + tileSize / 2;
-        let time = Date.now();
+                                  let cx = px + tileSize / 2;
+                                  let cy = py + tileSize / 2;
+                                  let time = Date.now();
 
-        ctx.save();
+                                  ctx.save();
 
-        ctx.fillStyle = "#5c2e16";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.8;
+                                  // 1. Stepped octagonal stone base platform (Void-Black/Obsidian Gothic theme)
+                                  let steps = [
+                                    { rx: 38, ry: 17, fill: "#030206", stroke: "#2e124d", width: 2.5 },
+                                    { rx: 32, ry: 13, fill: "#080512", stroke: "#3d1466", width: 1.8 },
+                                    { rx: 25, ry: 10, fill: "#110724", stroke: "#5c1e99", width: 1.2 }
+                                  ];
 
-        ctx.beginPath();
-        ctx.roundRect(cx - 34, cy - 12, 10, 26, [3]);
-        ctx.fill();
-        ctx.stroke();
+                                  steps.forEach((step, idx) => {
+                                    ctx.fillStyle = step.fill;
+                                    ctx.strokeStyle = step.stroke;
+                                    ctx.lineWidth = step.width;
+                                    ctx.beginPath();
+                                    for (let i = 0; i < 8; i++) {
+                                      let angle = (i * Math.PI) / 4 + Math.PI / 8;
+                                      let rx = cx + Math.cos(angle) * step.rx;
+                                      let ry = cy + 4 - idx * 3 + Math.sin(angle) * step.ry; // stepped vertical offset
+                                      ctx.lineTo(rx, ry);
+                                    }
+                                    ctx.closePath();
+                                    ctx.fill();
+                                    ctx.stroke();
 
-        ctx.fillStyle = "#047857";
-        ctx.fillRect(cx - 32, cy - 10, 6, 22);
+                                    // Gothic decorative stone notches
+                                    ctx.fillStyle = "rgba(168, 85, 247, 0.15)";
+                                    for (let i = 0; i < 8; i += 2) {
+                                      let angle = (i * Math.PI) / 4 + Math.PI / 8;
+                                      let rx = cx + Math.cos(angle) * (step.rx - 2);
+                                      let ry = cy + 4 - idx * 3 + Math.sin(angle) * (step.ry - 1);
+                                      ctx.beginPath();
+                                      ctx.arc(rx, ry, 1.5, 0, Math.PI * 2);
+                                      ctx.fill();
+                                    }
+                                  });
 
-        ctx.fillStyle = "#5c2e16";
-        ctx.beginPath();
-        ctx.roundRect(cx + 24, cy - 12, 10, 26, [3]);
-        ctx.fill();
-        ctx.stroke();
+                                  // 2. Flanking Towering Jagged Monolith Spires with Glowing Runic Fissures (Left & Right)
+                                  [-30, 30].forEach((ox) => {
+                                    let pxOffset = cx + ox;
+                                    let pyOffset = cy - 4;
 
-        ctx.fillStyle = "#047857";
-        ctx.fillRect(cx + 26, cy - 10, 6, 22);
+                                    // Ground shadow
+                                    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                                    ctx.beginPath();
+                                    ctx.ellipse(pxOffset, pyOffset + 12, 10, 4, 0, 0, Math.PI * 2);
+                                    ctx.fill();
 
-        ctx.fillStyle = "#d4af37";
-        ctx.fillRect(cx - 34, cy - 12, 3, 3);
-        ctx.fillRect(cx - 34, cy + 11, 3, 3);
-        ctx.fillRect(cx + 31, cy - 12, 3, 3);
-        ctx.fillRect(cx + 31, cy + 11, 3, 3);
+                                    // Spires (gothic jagged monolith style)
+                                    ctx.fillStyle = "#05020a";
+                                    ctx.strokeStyle = "#49177a";
+                                    ctx.lineWidth = 2.2;
+                                    ctx.beginPath();
+                                    ctx.moveTo(pxOffset - 7, pyOffset + 12);
+                                    ctx.lineTo(pxOffset - 9, pyOffset - 28);
+                                    ctx.lineTo(pxOffset - 3, pyOffset - 36);
+                                    ctx.lineTo(pxOffset, pyOffset - 42); // jagged peak
+                                    ctx.lineTo(pxOffset + 4, pyOffset - 32);
+                                    ctx.lineTo(pxOffset + 7, pyOffset + 12);
+                                    ctx.closePath();
+                                    ctx.fill();
+                                    ctx.stroke();
 
-        ctx.fillStyle = "#1e293b";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2.2;
+                                    // Inner obsidian facet shading
+                                    ctx.fillStyle = "rgba(168, 85, 247, 0.05)";
+                                    ctx.beginPath();
+                                    ctx.moveTo(pxOffset, pyOffset - 42);
+                                    ctx.lineTo(pxOffset - 3, pyOffset - 36);
+                                    ctx.lineTo(pxOffset - 7, pyOffset + 12);
+                                    ctx.lineTo(pxOffset, pyOffset + 12);
+                                    ctx.closePath();
+                                    ctx.fill();
 
-        ctx.beginPath();
-        ctx.arc(cx, cy + 4, 24, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+                                    // Active glowing runic fissure (crackle pulse)
+                                    let crackPulse = 0.35 + Math.sin(time / 120 + ox) * 0.45;
+                                    ctx.strokeStyle = `rgba(232, 121, 249, ${crackPulse})`;
+                                    ctx.lineWidth = 1.8;
+                                    ctx.beginPath();
+                                    ctx.moveTo(pxOffset - 1, pyOffset + 8);
+                                    ctx.lineTo(pxOffset + 2, pyOffset - 2);
+                                    // Jagged branching runic crackle lines
+                                    ctx.lineTo(pxOffset - 2, pyOffset - 14);
+                                    ctx.lineTo(pxOffset + 3, pyOffset - 24);
+                                    ctx.lineTo(pxOffset - 1, pyOffset - 34);
+                                    ctx.stroke();
 
-        ctx.fillStyle = "#334155";
-        ctx.beginPath();
-        ctx.arc(cx, cy + 4, 20, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+                                    // Iron Reinforcing Bands
+                                    ctx.fillStyle = "#1e1b29";
+                                    ctx.strokeStyle = "#000000";
+                                    ctx.lineWidth = 1.0;
+                                    ctx.fillRect(pxOffset - 8, pyOffset - 16, 16, 3.5);
+                                    ctx.strokeRect(pxOffset - 8, pyOffset - 16, 16, 3.5);
+                                    ctx.fillRect(pxOffset - 8, pyOffset + 2, 16, 3.5);
+                                    ctx.strokeRect(pxOffset - 8, pyOffset + 2, 16, 3.5);
+                                  });
 
-        let waterGrad = ctx.createRadialGradient(cx, cy + 4, 2, cx, cy + 4, 17);
-        waterGrad.addColorStop(0, "#34d399");
-        waterGrad.addColorStop(0.5, "#059669");
-        waterGrad.addColorStop(1, "#044e3a");
+                                  // 3. Central Swirling Accretion Void Vortex (Outer Glow + Dual Counter-Rotating Ellipses)
+                                  let vortexX = cx;
+                                  let vortexY = cy - 7;
+                                  let vortexR = 23 + Math.sin(time / 140) * 1.5;
 
-        ctx.fillStyle = waterGrad;
-        ctx.beginPath();
-        ctx.arc(cx, cy + 4, 17, 0, Math.PI * 2);
-        ctx.fill();
+                                  // Swirling Vortex Glow
+                                  let vortexGrad = ctx.createRadialGradient(vortexX, vortexY, 1, vortexX, vortexY, vortexR);
+                                  vortexGrad.addColorStop(0, "#ffffff");
+                                  vortexGrad.addColorStop(0.25, "rgba(232, 121, 249, 0.9)");
+                                  vortexGrad.addColorStop(0.65, "rgba(142, 68, 173, 0.75)");
+                                  vortexGrad.addColorStop(0.9, "rgba(59, 7, 100, 0.45)");
+                                  vortexGrad.addColorStop(1, "rgba(12, 5, 26, 0)");
+                                  ctx.fillStyle = vortexGrad;
+                                  ctx.beginPath();
+                                  ctx.arc(vortexX, vortexY, vortexR, 0, Math.PI * 2);
+                                  ctx.fill();
 
-        for (let r = 0; r < 2; r++) {
-          let rippleRad = ((time / 35 + r * 8) % 15) + 2;
-          let rippleAlpha = 0.5 * (1.0 - rippleRad / 17);
+                                  // Dual Counter-Rotating Orbital Ellipses
+                                  ctx.save();
+                                  ctx.translate(vortexX, vortexY);
 
-          ctx.strokeStyle = `rgba(167, 243, 208, ${rippleAlpha})`;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.arc(cx, cy + 4, rippleRad, 0, Math.PI * 2);
-          ctx.stroke();
-        }
+                                  // Ellipse 1 (Clockwise)
+                                  ctx.save();
+                                  ctx.rotate(time / 450);
+                                  ctx.strokeStyle = "rgba(168, 85, 247, 0.75)";
+                                  ctx.lineWidth = 1.8;
+                                  ctx.beginPath();
+                                  ctx.ellipse(0, 0, vortexR * 0.95, vortexR * 0.45, 0, 0, Math.PI * 2);
+                                  ctx.stroke();
+                                  ctx.restore();
 
-        let floatY = Math.sin(time / 220) * 4;
-        let crystalSpin = Math.sin(time / 180) * 4;
+                                  // Ellipse 2 (Counter-Clockwise)
+                                  ctx.save();
+                                  ctx.rotate(-time / 280 + Math.PI / 4);
+                                  ctx.strokeStyle = "rgba(0, 210, 255, 0.85)";
+                                  ctx.lineWidth = 1.5;
+                                  ctx.beginPath();
+                                  ctx.ellipse(0, 0, vortexR * 0.75, vortexR * 0.32, 0, 0, Math.PI * 2);
+                                  ctx.stroke();
+                                  ctx.restore();
 
-        let haloRad = 16 + Math.sin(time / 140) * 2;
-        let haloGrad = ctx.createRadialGradient(
-          cx,
-          cy - 14 + floatY,
-          2,
-          cx,
-          cy - 14 + floatY,
-          haloRad,
-        );
-        haloGrad.addColorStop(0, "rgba(52, 211, 153, 0.7)");
-        haloGrad.addColorStop(0.6, "rgba(16, 185, 129, 0.25)");
-        haloGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                                  ctx.restore();
 
-        ctx.fillStyle = haloGrad;
-        ctx.beginPath();
-        ctx.arc(cx, cy - 14 + floatY, haloRad, 0, Math.PI * 2);
-        ctx.fill();
+                                  // 4. Levitating Core Prism (Aetheric Octahedron Core)
+                                  let floatY = Math.sin(time / 220) * 4.2;
+                                  let coreY = cy - 16 + floatY;
 
-        ctx.fillStyle = "#34d399";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - 24 + floatY);
-        ctx.lineTo(cx + 8 + crystalSpin * 0.2, cy - 14 + floatY);
-        ctx.lineTo(cx, cy - 4 + floatY);
-        ctx.lineTo(cx - 8 - crystalSpin * 0.2, cy - 14 + floatY);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+                                  ctx.save();
+                                  ctx.translate(cx, coreY);
 
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - 24 + floatY);
-        ctx.lineTo(cx + crystalSpin * 0.5, cy - 14 + floatY);
-        ctx.lineTo(cx, cy - 4 + floatY);
-        ctx.stroke();
+                                  // Orbiting runic sub-ring
+                                  ctx.rotate(-time / 320);
+                                  ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
+                                  ctx.lineWidth = 1.0;
+                                  ctx.setLineDash([2, 2]);
+                                  ctx.beginPath();
+                                  ctx.ellipse(0, 0, 14, 5, 0, 0, Math.PI * 2);
+                                  ctx.stroke();
+                                  ctx.setLineDash([]);
 
-        for (let i = 0; i < 6; i++) {
-          let seed = i * 71.4;
-          let progress = (time / 650 + seed) % 1.0;
-          let sporeX = cx + Math.sin(time / 140 + seed) * 14;
-          let sporeY = cy + 4 - progress * 28;
-          let sporeAlpha = (1.0 - progress) * 0.85;
-          let sporeSize = 1.8 * (1.0 - progress * 0.3);
+                                  // Faceted floating core prism
+                                  let cpW = 8 + Math.sin(time / 100) * 0.8;
+                                  let cpH = 15;
 
-          ctx.fillStyle =
-            i % 2 === 0
-              ? `rgba(167, 243, 208, ${sporeAlpha})`
-              : `rgba(52, 211, 153, ${sporeAlpha})`;
-          ctx.beginPath();
-          ctx.arc(sporeX, sporeY, sporeSize, 0, Math.PI * 2);
-          ctx.fill();
-        }
+                                  ctx.fillStyle = "#ffffff";
+                                  ctx.strokeStyle = "#a855f7";
+                                  ctx.lineWidth = 1.2;
 
-        ctx.restore();
+                                  // Upper Pyramid
+                                  ctx.beginPath();
+                                  ctx.moveTo(0, -cpH / 2);
+                                  ctx.lineTo(cpW / 2, 0);
+                                  ctx.lineTo(0, cpH * 0.1);
+                                  ctx.lineTo(-cpW / 2, 0);
+                                  ctx.closePath();
+                                  ctx.fill();
+                                  ctx.stroke();
+
+                                  // Lower Pyramid
+                                  ctx.fillStyle = "#a855f7";
+                                  ctx.beginPath();
+                                  ctx.moveTo(0, cpH / 2);
+                                  ctx.lineTo(cpW / 2, 0);
+                                  ctx.lineTo(0, cpH * 0.1);
+                                  ctx.lineTo(-cpW / 2, 0);
+                                  ctx.closePath();
+                                  ctx.fill();
+                                  ctx.stroke();
+
+                                  // Facet shine
+                                  ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+                                  ctx.beginPath();
+                                  ctx.moveTo(0, -cpH / 2);
+                                  ctx.lineTo(cpW / 2, 0);
+                                  ctx.lineTo(0, cpH * 0.1);
+                                  ctx.closePath();
+                                  ctx.fill();
+
+                                  ctx.restore();
+
+                                  // 5. Real-Time Electric Plasma Discharges
+                                  ctx.lineWidth = 1.0;
+                                  ctx.shadowBlur = 4;
+                                  ctx.shadowColor = "#e879f9";
+
+                                  let drawPlasmaArc = (startX, startY, endX, endY, color) => {
+                                    ctx.strokeStyle = color;
+                                    ctx.beginPath();
+                                    ctx.moveTo(startX, startY);
+                                    let dx = endX - startX;
+                                    let dy = endY - startY;
+                                    let dist = Math.hypot(dx, dy);
+                                    let segments = Math.floor(dist / 6);
+                                    for (let s = 1; s < segments; s++) {
+                                      let progress = s / segments;
+                                      let jx = startX + dx * progress + (Math.random() - 0.5) * 4.5;
+                                      let jy = startY + dy * progress + (Math.random() - 0.5) * 4.5;
+                                      ctx.lineTo(jx, jy);
+                                    }
+                                    ctx.lineTo(endX, endY);
+                                    ctx.stroke();
+                                  };
+
+                                  if (Math.random() < 0.2) {
+                                    drawPlasmaArc(cx - 30, cy - 20, cx, coreY, "#00ffff");
+                                  }
+                                  if (Math.random() < 0.2) {
+                                    drawPlasmaArc(cx + 30, cy - 20, cx, coreY, "#e879f9");
+                                  }
+                                  ctx.shadowBlur = 0;
+
+                                  // 6. Up-Drifting Void Sparks (Deterministic Particle Emitters)
+                                  for (let i = 0; i < 6; i++) {
+                                    let seed = i * 73.4;
+                                    let progress = (time / 850 + seed) % 1.0;
+                                    let spX = cx + Math.sin(time / 160 + seed) * 18;
+                                    let spY = cy - 6 - progress * 34;
+                                    let spAlpha = (1.0 - progress) * 0.85;
+                                    let size = 1.6 * (1.0 - progress * 0.3);
+
+                                    ctx.fillStyle = i % 2 === 0 ? `rgba(232, 121, 249, ${spAlpha})` : `rgba(0, 210, 255, ${spAlpha})`;
+                                    ctx.beginPath();
+                                    ctx.arc(spX, spY, size, 0, Math.PI * 2);
+                                    ctx.fill();
+                                  }
+
+                                  ctx.restore();
+
+                            // ==========================================
+                            // GATED SEALS LAYER: Floating Purple Chains & Padlock
+                            // ==========================================
+                            let isUnlocked = (window.playerStats.maxFloorCleared || 0) >= 36;
+                            if (!isUnlocked) {
+                              let bobY = Math.sin(time / 350) * 3.0;
+                              let glowBlur = 8 + Math.sin(time / 180) * 4.5;
+                              let glowAlpha = 0.65 + Math.sin(time / 180) * 0.2;
+
+                              ctx.save();
+
+                              // Configure glowing canvas properties
+                              ctx.strokeStyle = "rgba(168, 85, 247, " + glowAlpha + ")";
+                              ctx.shadowColor = "#a855f7";
+                              ctx.shadowBlur = glowBlur;
+                              ctx.lineWidth = 1.8;
+
+                              // Draw Segmented Diagonals (X-Chains) with 3D wrapping drapes
+                              let drawChain = (x1, y1, x2, y2, links, sag) => {
+                                let getChainPoint = (t) => {
+                                  let lx = x1 + (x2 - x1) * t;
+                                  let ly = y1 + (y2 - y1) * t + bobY + Math.sin(t * Math.PI) * sag;
+                                  return { x: lx, y: ly };
+                                };
+                                for (let i = 0; i <= links; i++) {
+                                  let t = i / links;
+                                  let pt = getChainPoint(t);
+                                  let nextPt = getChainPoint(Math.min(1.0, t + 0.02));
+                                  let angle = Math.atan2(nextPt.y - pt.y, nextPt.x - pt.x);
+                                  ctx.save();
+                                  ctx.translate(pt.x, pt.y);
+                                  ctx.rotate(angle);
+                                  ctx.beginPath();
+                                  if (i % 2 === 0) {
+                                    ctx.ellipse(0, 0, 4.8, 2.2, 0, 0, Math.PI * 2);
+                                  } else {
+                                    ctx.ellipse(0, 0, 2.2, 4.5, 0, 0, Math.PI * 2);
+                                  }
+                                  ctx.stroke();
+                                  ctx.restore();
+                                }
+                              };
+
+                              drawChain(cx - 24, cy - 14, cx + 24, cy + 10, 12, 16);
+                              drawChain(cx + 24, cy - 14, cx - 24, cy + 10, 12, 16);
+
+                              // Draw central floating Padlock matching the draped crossing point
+                              let lockY = cy + 14 + bobY;
+                ctx.save();
+                ctx.translate(cx, lockY);
+
+                // Padlock Shackle
+                ctx.beginPath();
+                ctx.arc(0, -3, 6, Math.PI, 0);
+                ctx.stroke();
+
+                // Padlock Body
+                ctx.fillStyle = "#0a0515";
+                ctx.strokeStyle = "#a855f7";
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.roundRect(-8, -3, 16, 13, [2]);
+                ctx.fill();
+                ctx.stroke();
+
+                // Glowing Keyhole
+                ctx.fillStyle = "#c084fc";
+                ctx.beginPath();
+                ctx.arc(0, 1, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillRect(-1.0, 1, 2.0, 5);
+
+                ctx.restore();
+                ctx.restore();
+              }
       } else if (tileType === window.TILE_TYPES.STATION_SHOP) {
         let cx = px + tileSize / 2;
         let cy = py + tileSize / 2;
@@ -4087,27 +4416,203 @@
 
         // 5. Floating Ambient Neon Spark Particles
         for (let i = 0; i < 5; i++) {
-          let seed = i * 53.4;
-          let progress = (time / 750 + seed) % 1.0;
-          let sparkX = cx + Math.sin(time / 150 + seed) * 20;
-          let sparkY = cabY + cabH - progress * 32;
-          let alpha = (1.0 - progress) * 0.85;
-          let size = 1.8 * (1.0 - progress * 0.3);
+                    let seed = i * 53.4;
+                    let progress = (time / 750 + seed) % 1.0;
+                    let sparkX = cx + Math.sin(time / 150 + seed) * 20;
+                    let sparkY = cabY + cabH - progress * 32;
+                    let alpha = (1.0 - progress) * 0.85;
+                    let size = 1.8 * (1.0 - progress * 0.3);
 
-          ctx.fillStyle =
-            i % 2 === 0
-              ? `rgba(0, 210, 255, ${alpha})`
-              : `rgba(232, 121, 249, ${alpha})`;
-          ctx.beginPath();
-          ctx.arc(sparkX, sparkY, size, 0, Math.PI * 2);
-          ctx.fill();
-        }
+                    ctx.fillStyle =
+                      i % 2 === 0
+                        ? `rgba(0, 210, 255, ${alpha})`
+                        : `rgba(232, 121, 249, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(sparkX, sparkY, size, 0, Math.PI * 2);
+                    ctx.fill();
+                  }
 
-        ctx.restore();
-      }
-    };
+                  ctx.restore();
+                } else if (tileType === window.TILE_TYPES.DUNGEON_MERCHANT) {
+                  let cx = px + tileSize / 2;
+                  let cy = py + tileSize / 2;
+                  let time = Date.now();
 
-    // PASS 2.5: Environmental Props (Wall Torches, Guild Banners & Bioluminescent Mushrooms)
+                  ctx.save();
+
+                  // 1. Soft Floor Shadow under Rug
+                  ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                  ctx.beginPath();
+                  ctx.ellipse(cx, cy + 4, 28, 14, 0, 0, Math.PI * 2);
+                  ctx.fill();
+
+                  // 2. Main Rug Body (Crimson velvet)
+                  ctx.fillStyle = "#781c1c";
+                  ctx.strokeStyle = "#450a0a";
+                  ctx.lineWidth = 1.5;
+                  ctx.beginPath();
+                  ctx.ellipse(cx, cy + 2, 26, 12, 0, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.stroke();
+
+                  // 3. Ornate Gold Filigree Inlay Ring
+                  ctx.strokeStyle = "#d4af37";
+                  ctx.lineWidth = 1.0;
+                  ctx.beginPath();
+                  ctx.ellipse(cx, cy + 2, 21, 9, 0, 0, Math.PI * 2);
+                  ctx.stroke();
+
+                  // 4. Moving Tattered Gold Tassels (Fringes)
+                  ctx.strokeStyle = "#b59845";
+                  ctx.lineWidth = 1.2;
+                  for (let i = -6; i <= 6; i += 3) {
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 26, cy + 2 + i);
+                    ctx.lineTo(cx - 29, cy + 2 + i + Math.sin(time / 150 + i) * 0.5);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx + 26, cy + 2 + i);
+                    ctx.lineTo(cx + 29, cy + 2 + i + Math.sin(time / 150 - i) * 0.5);
+                    ctx.stroke();
+                  }
+
+                  // 5. Central Geometric Runic Diamond Accent
+                            ctx.fillStyle = "#4a154b"; // Void purple weave
+                            ctx.strokeStyle = "#d4af37";
+                            ctx.lineWidth = 0.8;
+                            ctx.beginPath();
+                            ctx.moveTo(cx, cy - 3);
+                            ctx.lineTo(cx + 8, cy + 2);
+                            ctx.lineTo(cx, cy + 7);
+                            ctx.lineTo(cx - 8, cy + 2);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+
+                            // 6. Merchant Silhouette (Sitting cross-legged at the back)
+                            let merchantY = cy - 4;
+
+                            // Merchant drop shadow on the rug
+                            ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+                            ctx.beginPath();
+                            ctx.ellipse(cx, merchantY + 8, 11, 3.5, 0, 0, Math.PI * 2);
+                            ctx.fill();
+
+                            // Draped Cloak Base (Crossed legs)
+                            ctx.fillStyle = "#1e152a";
+                            ctx.strokeStyle = "#000000";
+                            ctx.lineWidth = 1.5;
+                            ctx.beginPath();
+                            ctx.moveTo(cx - 13, merchantY + 8);
+                            ctx.quadraticCurveTo(cx, merchantY + 11, cx + 13, merchantY + 8);
+                            ctx.lineTo(cx + 10, merchantY);
+                            ctx.lineTo(cx - 10, merchantY);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+
+                            // Cloak Torso
+                            ctx.fillStyle = "#130d22";
+                            ctx.beginPath();
+                            ctx.moveTo(cx - 8, merchantY);
+                            ctx.lineTo(cx + 8, merchantY);
+                            ctx.lineTo(cx + 5, merchantY - 12);
+                            ctx.lineTo(cx - 5, merchantY - 12);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+
+                            // Gold Clasp
+                            ctx.fillStyle = "#ffd700";
+                            ctx.beginPath();
+                            ctx.arc(cx, merchantY - 10, 1.8, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.stroke();
+
+                            // Hooded Cowl
+                            ctx.fillStyle = "#1e152a";
+                            ctx.beginPath();
+                            ctx.moveTo(cx - 5, merchantY - 12);
+                            ctx.quadraticCurveTo(cx - 8, merchantY - 21, cx, merchantY - 23);
+                            ctx.quadraticCurveTo(cx + 8, merchantY - 21, cx + 5, merchantY - 12);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+
+                            // Deep Hood Void (Face Cavity)
+                            ctx.fillStyle = "#05040a";
+                            ctx.beginPath();
+                            ctx.ellipse(cx, merchantY - 17, 3.5, 4.5, 0, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.stroke();
+
+                            // Pulsing Golden Eyes
+                                      let eyePulse = 0.75 + Math.sin(time / 160) * 0.25;
+                                      ctx.fillStyle = `rgba(251, 197, 49, ${eyePulse})`;
+                                      ctx.beginPath();
+                                      ctx.arc(cx - 1.5, merchantY - 17, 0.7, 0, Math.PI * 2);
+                                      ctx.arc(cx + 1.5, merchantY - 17, 0.7, 0, Math.PI * 2);
+                                      ctx.fill();
+
+                                      // 7. Render 3 Floating Wares (Laid out horizontally across the front edge)
+                                      let map = window.activeDungeonMap;
+                                      if (map && map.merchantStock && map.merchantStock.length > 0) {
+                                        let itemXOffsets = [-15, 0, 15];
+
+                                        map.merchantStock.forEach((item, idx) => {
+                                          if (item.purchased) return; // Hide if sold out
+
+                                          let itemX = cx + itemXOffsets[idx];
+                                          let itemYBase = cy + 4;
+                                          let itemBob = Math.sin(time / 200 + idx * 1.5) * 1.8;
+                                          let itemY = itemYBase + itemBob;
+
+                                          ctx.save();
+
+                                          // Drop shadow on the rug (shrinks as item floats higher)
+                                          let shadowScale = 1.0 - (itemBob / 6);
+                                          ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                                          ctx.beginPath();
+                                          ctx.ellipse(itemX, itemYBase + 3, 4.5 * shadowScale, 1.8 * shadowScale, 0, 0, Math.PI * 2);
+                                          ctx.fill();
+
+                                          // Rarity-colored glowing aura underlay
+                                          let color = window.getTierColor ? window.getTierColor(item.statsRolled) : "#ffffff";
+                                          let rGlow = 8 + Math.sin(time / 100 + idx) * 1.2;
+                                          let glowGrad = ctx.createRadialGradient(itemX, itemY, 1, itemX, itemY, rGlow);
+                                          glowGrad.addColorStop(0, color);
+                                          glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                                          ctx.fillStyle = glowGrad;
+                                          ctx.globalAlpha = 0.45;
+                                          ctx.beginPath();
+                                          ctx.arc(itemX, itemY, rGlow, 0, Math.PI * 2);
+                                          ctx.fill();
+                                          ctx.globalAlpha = 1.0;
+
+                                          // Render Item Icon Graphics
+                                          let img = window.getCanvasIconImage ? window.getCanvasIconImage(item) : null;
+                                          if (img && img.complete) {
+                                            ctx.drawImage(img, itemX - 6, itemY - 6, 12, 12);
+                                          } else {
+                                            ctx.fillStyle = color;
+                                            ctx.strokeStyle = "#000000";
+                                            ctx.lineWidth = 1.0;
+                                            ctx.beginPath();
+                                            ctx.arc(itemX, itemY, 3, 0, Math.PI * 2);
+                                            ctx.fill();
+                                            ctx.stroke();
+                                          }
+
+                                          ctx.restore();
+                                                                                  });
+                                                                                }
+
+                                                                                ctx.restore();
+                                                                              }
+                                                                            };
+
+                                                                          // PASS 2.5: Environmental Props (Wall Torches, Guild Banners & Bioluminescent Mushrooms)
     let time = Date.now();
 
     // Render Guild Banners on North Wall (Adventurer's Hub)

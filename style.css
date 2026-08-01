@@ -5253,3 +5253,179 @@ summary {
   max-height: none !important;
   flex: 1;
 }
+
+/* --- DEPLOY MODAL SETUP/EXCHANGE TABS --- */
+.deploy-tab-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  background: rgba(10, 8, 18, 0.85);
+  border: 1px solid var(--border-aged-bronze);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.deploy-tab-btn {
+  flex: 1;
+  background: linear-gradient(180deg, #1c1528 0%, #0f0c18 100%);
+  color: #94a3b8;
+  border: 1.5px solid var(--border-cold-iron);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+
+.deploy-tab-btn:hover {
+  border-color: var(--border-gold-filigree);
+  color: #f1f5f9;
+}
+
+.deploy-tab-btn.active {
+  background: linear-gradient(180deg, #b45309 0%, #78350f 100%) !important;
+  color: #ffffff !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 12px rgba(241, 196, 15, 0.35) !important;
+  text-shadow: 0 1px 2px #000000;
+}
+
+/* --- WAVE MILESTONE SELECT --- */
+.wave-milestone-select {
+  background: #1a1523;
+  border: 2px solid #581c87;
+  color: #e9d5ff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.wave-milestone-select:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+/* --- REPLACE MATRIX CARDS DECK --- */
+.replace-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.replace-card-row {
+  background: #120a1c;
+  border: 1px solid #49287a;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.2s;
+}
+
+.replace-card-row:hover {
+  transform: translateY(-2px);
+  border-color: #a855f7;
+  background: #1f1130;
+}
+
+/* --- ASTRAL SHOP LAYOUT --- */
+.astral-shop-header {
+  background: #0d0615;
+  border: 1px solid #4a1d6d;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 11px;
+  color: #d8b4fe;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: monospace;
+}
+
+.astral-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.astral-shop-card {
+  background: #120a1c;
+  border: 1px solid #49287a;
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.astral-shop-card:hover {
+  border-color: #a855f7;
+  background: #1a0f2b;
+}
+
+.astral-shop-card h4 {
+  margin: 0 0 6px 0;
+  color: #e9d5ff;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.astral-shop-card p {
+  margin: 0 0 10px 0;
+  font-size: 10px;
+  color: #a78bfa;
+  line-height: 1.35;
+}
+
+.astral-shop-cost {
+  font-weight: bold;
+  color: #f59e0b;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.astral-buy-btn {
+  background: #581c87;
+  border: 1px solid #7c3aed;
+  color: #f3e8ff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 10px;
+  transition: background-color 0.15s;
+  text-transform: uppercase;
+}
+
+.astral-buy-btn:hover {
+  background: #7c3aed;
+}
+
+.astral-buy-btn:disabled {
+  background: #2e1065;
+  border-color: #4c1d95;
+  color: #701a75;
+  cursor: not-allowed;
+}
