@@ -5335,7 +5335,9 @@ summary {
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: transform 0.1s, border-color 0.2s;
+  transition:
+    transform 0.1s,
+    border-color 0.2s;
 }
 
 .replace-card-row:hover {
@@ -5376,7 +5378,9 @@ summary {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
 .astral-shop-card:hover {

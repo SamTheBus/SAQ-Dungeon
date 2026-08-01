@@ -27,48 +27,51 @@
   };
 
   window.gainSubweaponXp = function (subType, amount) {
-      if (!window.playerStats || !window.playerStats.subweaponMastery) return;
-      let mast = window.playerStats.subweaponMastery[subType];
-      if (!mast) return;
+    if (!window.playerStats || !window.playerStats.subweaponMastery) return;
+    let mast = window.playerStats.subweaponMastery[subType];
+    if (!mast) return;
 
-      if (mast.level >= 40) {
-        mast.xp = 0;
-        return;
-      }
+    if (mast.level >= 40) {
+      mast.xp = 0;
+      return;
+    }
 
-      // Determine equivalent current floor played
-      let playerLevel = window.playerStats.level || 1;
-      let currentFloor = 1;
-      if (window.playerStats.isDungeonMode && window.player) {
-        currentFloor = window.player.depth || 1;
-      } else {
-        // Map campaign stages (1-500+) to equivalent floor level (1 floor per 5 stages)
-        currentFloor = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-      }
+    // Determine equivalent current floor played
+    let playerLevel = window.playerStats.level || 1;
+    let currentFloor = 1;
+    if (window.playerStats.isDungeonMode && window.player) {
+      currentFloor = window.player.depth || 1;
+    } else {
+      // Map campaign stages (1-500+) to equivalent floor level (1 floor per 5 stages)
+      currentFloor = Math.max(
+        1,
+        Math.floor((window.playerStats.stage || 1) / 5),
+      );
+    }
 
-      // Calculate level-range asymmetrical exponential decay
-      let levelDiff = currentFloor - playerLevel;
-      let multiplier = 1.0;
-      if (levelDiff < 0) {
-        multiplier = Math.max(0.05, Math.exp(levelDiff / 5.0));
-      }
+    // Calculate level-range asymmetrical exponential decay
+    let levelDiff = currentFloor - playerLevel;
+    let multiplier = 1.0;
+    if (levelDiff < 0) {
+      multiplier = Math.max(0.05, Math.exp(levelDiff / 5.0));
+    }
 
-      let scaledAmount = amount * multiplier;
+    let scaledAmount = amount * multiplier;
 
-      // Accumulate fractional XP to prevent precision drift
-      mast.fractionalXp = (mast.fractionalXp || 0) + scaledAmount;
-      let integerXp = Math.floor(mast.fractionalXp);
-      if (integerXp > 0) {
-        mast.xp += integerXp;
-        mast.fractionalXp -= integerXp;
-      } else {
-        return; // Safe exit: insufficient fractional XP accumulated
-      }
+    // Accumulate fractional XP to prevent precision drift
+    mast.fractionalXp = (mast.fractionalXp || 0) + scaledAmount;
+    let integerXp = Math.floor(mast.fractionalXp);
+    if (integerXp > 0) {
+      mast.xp += integerXp;
+      mast.fractionalXp -= integerXp;
+    } else {
+      return; // Safe exit: insufficient fractional XP accumulated
+    }
 
-      let req = window.getSubweaponXpRequired(mast.level);
-      let leveledUp = false;
+    let req = window.getSubweaponXpRequired(mast.level);
+    let leveledUp = false;
 
-      while (mast.xp >= req && mast.level < 40) {
+    while (mast.xp >= req && mast.level < 40) {
       mast.xp -= req;
       mast.level++;
       mast.sp++;
@@ -1127,23 +1130,23 @@
     },
 
     getUnspentMP() {
-          if (!window.playerStats) return 0;
-          let total = window.playerStats.usp || 0;
-          if (window.playerStats.subweaponMastery) {
-            total += window.playerStats.subweaponMastery.shield?.sp || 0;
-            total += window.playerStats.subweaponMastery.dagger?.sp || 0;
-            total += window.playerStats.subweaponMastery.tome?.sp || 0;
-          }
-          return total;
-        },
+      if (!window.playerStats) return 0;
+      let total = window.playerStats.usp || 0;
+      if (window.playerStats.subweaponMastery) {
+        total += window.playerStats.subweaponMastery.shield?.sp || 0;
+        total += window.playerStats.subweaponMastery.dagger?.sp || 0;
+        total += window.playerStats.subweaponMastery.tome?.sp || 0;
+      }
+      return total;
+    },
 
     getUnspentPointsForTree(treeId) {
-          if (treeId === "utility") {
-            return window.playerStats.usp || 0;
-          }
-          if (!window.playerStats.subweaponMastery) return 0;
-          return window.playerStats.subweaponMastery[treeId]?.sp || 0;
-        },
+      if (treeId === "utility") {
+        return window.playerStats.usp || 0;
+      }
+      if (!window.playerStats.subweaponMastery) return 0;
+      return window.playerStats.subweaponMastery[treeId]?.sp || 0;
+    },
 
     isNodeUnlocked(treeId, node) {
       if (treeId === "utility") {
@@ -1223,9 +1226,12 @@
       }
 
       if (targetTreeId === "utility") {
-              window.playerStats.usp = Math.max(0, (window.playerStats.usp || 0) - nextRankCost);
-              window.playerStats.skillTree[nodeId] = currentRank + 1;
-            } else {
+        window.playerStats.usp = Math.max(
+          0,
+          (window.playerStats.usp || 0) - nextRankCost,
+        );
+        window.playerStats.skillTree[nodeId] = currentRank + 1;
+      } else {
         let mast = window.playerStats.subweaponMastery[targetTreeId];
         mast.sp -= nextRankCost;
         mast.spentSp += nextRankCost;
@@ -1292,12 +1298,12 @@
         "#a855f7",
         () => {
           if (treeId === "utility") {
-                      let tree = window.SKILL_TREE_DATA.utility;
-                      tree.nodes.forEach((node) => {
-                        window.playerStats.skillTree[node.id] = 0;
-                      });
-                      window.playerStats.usp = (window.playerStats.usp || 0) + spent;
-                    } else {
+            let tree = window.SKILL_TREE_DATA.utility;
+            tree.nodes.forEach((node) => {
+              window.playerStats.skillTree[node.id] = 0;
+            });
+            window.playerStats.usp = (window.playerStats.usp || 0) + spent;
+          } else {
             let mast = window.playerStats.subweaponMastery[treeId];
             let tree = window.SKILL_TREE_DATA[treeId];
             tree.nodes.forEach((node) => {
@@ -1762,16 +1768,21 @@
 
 // Retroactive migration for separate Utility SP (USP)
 if (window.playerStats && window.playerStats.usp === undefined) {
-  let maxLvl = Math.max(1, window.playerStats.maxLevel || 1, window.playerStats.level || 1);
+  let maxLvl = Math.max(
+    1,
+    window.playerStats.maxLevel || 1,
+    window.playerStats.level || 1,
+  );
   let spentUtility = window.SkillTreeManager.getSpentPointsInTree("utility");
   window.playerStats.usp = Math.max(0, (maxLvl - 1) * 1 - spentUtility);
 
-  let spentAttribute = (window.playerStats.spAllocations?.spStr || 0) +
-                       (window.playerStats.spAllocations?.spDex || 0) +
-                       (window.playerStats.spAllocations?.spInt || 0);
+  let spentAttribute =
+    (window.playerStats.spAllocations?.spStr || 0) +
+    (window.playerStats.spAllocations?.spDex || 0) +
+    (window.playerStats.spAllocations?.spInt || 0);
   window.playerStats.sp = Math.max(0, (maxLvl - 1) * 3 - spentAttribute);
 
   if (typeof window.saveGame === "function") {
-      window.saveGame();
-    }
+    window.saveGame();
   }
+}

@@ -4,7 +4,7 @@
    ========================================================================= */
 window.getRarityMultiplier = function (stars) {
   if (stars === "UNIQUE" || stars === "unique") return 2.25;
-  const multipliers = [1.0, 1.15, 1.30, 1.50, 1.75, 2.00];
+  const multipliers = [1.0, 1.15, 1.3, 1.5, 1.75, 2.0];
   return multipliers[stars] || 1.0;
 };
 
@@ -134,28 +134,28 @@ window.buildGeneralTooltipHtml = function (item, isBagItem = false) {
   }
 
   if (isBagItem && item.type === "ring") {
-      let otherSlot =
-        ((window.state && window.state.preferredRingComparisonSlot) ||
-          "ring1") === "ring1"
-          ? "ring2"
-          : "ring1";
-      let otherLabel = otherSlot === "ring1" ? "Ring Slot 1" : "Ring Slot 2";
-      html += `
+    let otherSlot =
+      ((window.state && window.state.preferredRingComparisonSlot) ||
+        "ring1") === "ring1"
+        ? "ring2"
+        : "ring1";
+    let otherLabel = otherSlot === "ring1" ? "Ring Slot 1" : "Ring Slot 2";
+    html += `
         <div style="width: 100%; text-align: center; margin-top: 8px; border-top: 1px dashed #333; padding-top: 8px; z-index: 50100; position: relative;">
           <button class="btn-action" style="background: #9b59b6; font-size: 10px; padding: 4px 10px;" onpointerdown="event.stopPropagation();" ontouchstart="event.stopPropagation();" onclick="window.toggleRingComparisonSlot(event, ${item.id})">
             ⟲ Compare with ${otherLabel}
           </button>
         </div>
       `;
-    }
+  }
 
-    if (item.isDungeonShop && !item.purchased) {
-      let costText = window.formatNumber(item.cost);
-      let playerGold = BigNum.from(window.playerStats.runGold || 0);
-      let canAfford = playerGold.gte(item.cost);
-      let btnClass = canAfford ? "affordable" : "unaffordable";
+  if (item.isDungeonShop && !item.purchased) {
+    let costText = window.formatNumber(item.cost);
+    let playerGold = BigNum.from(window.playerStats.runGold || 0);
+    let canAfford = playerGold.gte(item.cost);
+    let btnClass = canAfford ? "affordable" : "unaffordable";
 
-      html += `
+    html += `
         <div style="width: 100%; text-align: center; margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; z-index: 50100; position: relative;">
           <button class="shop-buy-btn ${btnClass}" style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 6px 12px; font-size: 10.5px; border-radius: 4px;" onpointerdown="event.stopPropagation();" onclick="window.buyDungeonMerchantItem(event, ${item.id})">
             <svg width="12" height="12" viewBox="0 0 12 12" style="vertical-align:middle; margin-right:4px;"><circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8"/><circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6"/></svg>
@@ -163,10 +163,10 @@ window.buildGeneralTooltipHtml = function (item, isBagItem = false) {
           </button>
         </div>
       `;
-    }
+  }
 
-    return `<div class="tooltip-flex-container" style="flex-wrap: wrap;">${html}</div>`;
-  };
+  return `<div class="tooltip-flex-container" style="flex-wrap: wrap;">${html}</div>`;
+};
 
 // --- ITEM CARD TEMPLATE HTML GENERATOR ---
 window.generateItemCardHtml = function (
@@ -6754,58 +6754,64 @@ window.refreshShopStock = function (force = false) {
   let stock = [];
 
   for (let i = 0; i < 4; i++) {
-      let chosenType = types[Math.floor(Math.random() * types.length)];
-      let probs = window.calculateRarityProbabilities(
-        1.0 + shopLvl * 0.02,
-        false,
-        stageScale,
-      );
-      let roll = Math.random() * 100;
-      let cumulative = 0;
-      let stars = 0;
-
-      for (let s = 5; s >= 0; s--) {
-        cumulative += probs[s];
-        if (roll <= cumulative) {
-          stars = s;
-          break;
-        }
-      }
-
-      let item = window.createItemObject(chosenType, stars, stageScale, 0);
-      let costMult = 250 * (1 + stageScale * 0.65) * Math.pow(1.65, stars);
-      item.cost = BigNum.from(Math.ceil(costMult));
-      item.purchased = false;
-      stock.push(item);
-    }
-
-    // Generate 5th item: The premium "Item of the Day" with elevated baseline quality (+50% bonus) & 20% price markup
-    let chosenTypeDaily = types[Math.floor(Math.random() * types.length)];
-    let probsDaily = window.calculateRarityProbabilities(
-      1.5 + shopLvl * 0.02,
+    let chosenType = types[Math.floor(Math.random() * types.length)];
+    let probs = window.calculateRarityProbabilities(
+      1.0 + shopLvl * 0.02,
       false,
       stageScale,
     );
-    let rollDaily = Math.random() * 100;
-    let cumulativeDaily = 0;
-    let starsDaily = 0;
+    let roll = Math.random() * 100;
+    let cumulative = 0;
+    let stars = 0;
 
     for (let s = 5; s >= 0; s--) {
-      cumulativeDaily += probsDaily[s];
-      if (rollDaily <= cumulativeDaily) {
-        starsDaily = s;
+      cumulative += probs[s];
+      if (roll <= cumulative) {
+        stars = s;
         break;
       }
     }
 
-    let dailyItemObj = window.createItemObject(chosenTypeDaily, starsDaily, stageScale, 0);
-    let costMultDaily = 250 * (1 + stageScale * 0.65) * Math.pow(1.65, starsDaily) * 1.2;
-    dailyItemObj.cost = BigNum.from(Math.ceil(costMultDaily));
-    dailyItemObj.purchased = false;
-    dailyItemObj.isItemOfTheDay = true;
-    stock.push(dailyItemObj);
+    let item = window.createItemObject(chosenType, stars, stageScale, 0);
+    let costMult = 250 * (1 + stageScale * 0.65) * Math.pow(1.65, stars);
+    item.cost = BigNum.from(Math.ceil(costMult));
+    item.purchased = false;
+    stock.push(item);
+  }
 
-    window.playerStats.shopItems = stock;
+  // Generate 5th item: The premium "Item of the Day" with elevated baseline quality (+50% bonus) & 20% price markup
+  let chosenTypeDaily = types[Math.floor(Math.random() * types.length)];
+  let probsDaily = window.calculateRarityProbabilities(
+    1.5 + shopLvl * 0.02,
+    false,
+    stageScale,
+  );
+  let rollDaily = Math.random() * 100;
+  let cumulativeDaily = 0;
+  let starsDaily = 0;
+
+  for (let s = 5; s >= 0; s--) {
+    cumulativeDaily += probsDaily[s];
+    if (rollDaily <= cumulativeDaily) {
+      starsDaily = s;
+      break;
+    }
+  }
+
+  let dailyItemObj = window.createItemObject(
+    chosenTypeDaily,
+    starsDaily,
+    stageScale,
+    0,
+  );
+  let costMultDaily =
+    250 * (1 + stageScale * 0.65) * Math.pow(1.65, starsDaily) * 1.2;
+  dailyItemObj.cost = BigNum.from(Math.ceil(costMultDaily));
+  dailyItemObj.purchased = false;
+  dailyItemObj.isItemOfTheDay = true;
+  stock.push(dailyItemObj);
+
+  window.playerStats.shopItems = stock;
   window.playerStats.shopRefreshTime = now + 3600000; // 1 hour
   if (typeof window.saveGame === "function") window.saveGame();
 };
@@ -6874,29 +6880,29 @@ window.renderMarketShop = function () {
 
       if (diffAtk > 0)
         deltaParts.push(
-          `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffAtk)} ATK</span>`
+          `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffAtk)} ATK</span>`,
         );
       else if (diffAtk < 0)
         deltaParts.push(
-          `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffAtk)} ATK</span>`
+          `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffAtk)} ATK</span>`,
         );
 
       if (diffDef > 0)
         deltaParts.push(
-          `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffDef)} DEF</span>`
+          `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffDef)} DEF</span>`,
         );
       else if (diffDef < 0)
         deltaParts.push(
-          `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffDef)} DEF</span>`
+          `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffDef)} DEF</span>`,
         );
 
       if (diffHp > 0)
         deltaParts.push(
-          `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffHp)} HP</span>`
+          `<span style="color:#2ecc71;">▲ +${window.formatNumber(diffHp)} HP</span>`,
         );
       else if (diffHp < 0)
         deltaParts.push(
-          `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffHp)} HP</span>`
+          `<span style="color:#e74c3c;">▼ ${window.formatNumber(diffHp)} HP</span>`,
         );
 
       if (deltaParts.length > 0) {
@@ -6907,19 +6913,19 @@ window.renderMarketShop = function () {
     let statSummary = [];
     if (dailyItem.atk > 0)
       statSummary.push(
-        `${window.getUiIconSvg("atk", 10)} +${window.formatNumber(dailyItem.atk)}`
+        `${window.getUiIconSvg("atk", 10)} +${window.formatNumber(dailyItem.atk)}`,
       );
     if (dailyItem.def > 0)
       statSummary.push(
-        `${window.getUiIconSvg("def", 10)} +${window.formatNumber(dailyItem.def)}`
+        `${window.getUiIconSvg("def", 10)} +${window.formatNumber(dailyItem.def)}`,
       );
     if (dailyItem.maxHp > 0)
       statSummary.push(
-        `${window.getUiIconSvg("maxHp", 10)} +${window.formatNumber(dailyItem.maxHp)}`
+        `${window.getUiIconSvg("maxHp", 10)} +${window.formatNumber(dailyItem.maxHp)}`,
       );
     if (dailyItem.critChance > 0)
       statSummary.push(
-        `${window.getUiIconSvg("critChance", 10)} +${Math.round(dailyItem.critChance * 100)}%`
+        `${window.getUiIconSvg("critChance", 10)} +${Math.round(dailyItem.critChance * 100)}%`,
       );
 
     let btnHtml = isPurchased
@@ -7095,7 +7101,7 @@ window.renderMarketShop = function () {
           ${itemsHtml || '<div style="color:#64748b; font-style:italic; text-align:center; padding:25px;">Merchant Marcus is restocking his display counter...</div>'}
         </div>
       `;
-    };
+};
 
 window.renderMysticalShop = function () {
   let content = document.getElementById("shop-content-panel");
@@ -8355,7 +8361,8 @@ window.buyDungeonMerchantItem = function (event, itemId) {
     return;
   }
 
-  let maxBag = typeof window.getMaxBagSlots === "function" ? window.getMaxBagSlots() : 20;
+  let maxBag =
+    typeof window.getMaxBagSlots === "function" ? window.getMaxBagSlots() : 20;
   window.player.bag = window.player.bag || [];
   if (window.player.bag.length >= maxBag) {
     if (typeof window.pushHeaderToast === "function") {
@@ -8395,76 +8402,92 @@ window.buyDungeonMerchantItem = function (event, itemId) {
   }
 
   if (typeof window.spawnPurchaseCelebration === "function") {
-    let tierColor = window.getTierColor ? window.getTierColor(item.statsRolled) : "#ffd700";
+    let tierColor = window.getTierColor
+      ? window.getTierColor(item.statsRolled)
+      : "#ffd700";
     window.spawnPurchaseCelebration("upgrade", tierColor, item.statsRolled);
   }
 
   if (typeof window.pushHeaderToast === "function") {
-      window.pushHeaderToast(`✦ Purchased ${item.name}!`, "#2ecc71");
-    }
-    if (typeof window.pushLog === "function") {
-      window.pushLog(
-        `<span style="color:#2ecc71;">[MERCHANT]</span> Purchased <span style="color:${window.getTierColor(item.statsRolled)}; font-weight:bold;">${item.name}</span> for ${window.formatNumber(item.cost)} Gold!`,
-      );
-    }
+    window.pushHeaderToast(`✦ Purchased ${item.name}!`, "#2ecc71");
+  }
+  if (typeof window.pushLog === "function") {
+    window.pushLog(
+      `<span style="color:#2ecc71;">[MERCHANT]</span> Purchased <span style="color:${window.getTierColor(item.statsRolled)}; font-weight:bold;">${item.name}</span> for ${window.formatNumber(item.cost)} Gold!`,
+    );
+  }
 
-    if (typeof window.updateUI === "function") window.updateUI();
-    if (typeof window.saveGame === "function") window.saveGame();
-  };
+  if (typeof window.updateUI === "function") window.updateUI();
+  if (typeof window.saveGame === "function") window.saveGame();
+};
 
-  window.calculateDungeonSellValue = function (item) {
-    if (!item) return BigNum.from(0);
-    let stars = item.statsRolled === "UNIQUE" ? 5 : (item.statsRolled ?? 0);
-    let stageScale = item.stageLevel || 1;
-    let baseCost = 150 * (1 + stageScale * 0.65) * Math.pow(1.65, stars) * 0.85;
-    let sellValue = baseCost * 0.40; // 40% buyback rate
-    return BigNum.from(Math.ceil(sellValue));
-  };
+window.calculateDungeonSellValue = function (item) {
+  if (!item) return BigNum.from(0);
+  let stars = item.statsRolled === "UNIQUE" ? 5 : (item.statsRolled ?? 0);
+  let stageScale = item.stageLevel || 1;
+  let baseCost = 150 * (1 + stageScale * 0.65) * Math.pow(1.65, stars) * 0.85;
+  let sellValue = baseCost * 0.4; // 40% buyback rate
+  return BigNum.from(Math.ceil(sellValue));
+};
 
-  window.sellItemToDungeonMerchant = function (itemId) {
-    if (typeof window.hideTooltip === "function") window.hideTooltip();
+window.sellItemToDungeonMerchant = function (itemId) {
+  if (typeof window.hideTooltip === "function") window.hideTooltip();
 
-    let bag = window.player.bag || [];
-    let idx = bag.findIndex((i) => i.id === itemId);
-    if (idx === -1) return;
+  let bag = window.player.bag || [];
+  let idx = bag.findIndex((i) => i.id === itemId);
+  if (idx === -1) return;
 
-    let item = bag[idx];
-    if (item.locked) {
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast("❌ Cannot sell a Locked item!", "#e74c3c");
-      }
-      return;
-    }
-
-    let sellValue = window.calculateDungeonSellValue(item);
-
-    // Remove from bag
-    bag.splice(idx, 1);
-
-    // Add to volatile runGold pocket
-    window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0).add(sellValue);
-
-    // Sound/VFX
-    if (window.SoundManager && typeof window.SoundManager.playCoinCollect === "function") {
-      window.SoundManager.playCoinCollect();
-    }
-    if (window.combatVisuals) {
-      window.combatVisuals.spawnParticles(window.player.x, window.player.y, 8, "gold_dungeon", 2);
-    }
-
+  let item = bag[idx];
+  if (item.locked) {
     if (typeof window.pushHeaderToast === "function") {
-      window.pushHeaderToast(`✦ Sold ${item.name} for +${window.formatNumber(sellValue)} Gold!`, "#2ecc71");
+      window.pushHeaderToast("❌ Cannot sell a Locked item!", "#e74c3c");
     }
-    if (typeof window.pushLog === "function") {
-      window.pushLog(
-        `<span style="color:#d97706;">[MERCHANT]</span> Sold <span style="color:${window.getTierColor(item.statsRolled)}; font-weight:bold;">${item.name}</span> for +${window.formatNumber(sellValue)} Gold!`,
-      );
-    }
+    return;
+  }
 
-    // Re-render Satchel
-    if (typeof window.renderBagModalContent === "function") {
-      window.renderBagModalContent();
-    }
-    if (typeof window.updateUI === "function") window.updateUI();
-    if (typeof window.saveGame === "function") window.saveGame();
-  };
+  let sellValue = window.calculateDungeonSellValue(item);
+
+  // Remove from bag
+  bag.splice(idx, 1);
+
+  // Add to volatile runGold pocket
+  window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0).add(
+    sellValue,
+  );
+
+  // Sound/VFX
+  if (
+    window.SoundManager &&
+    typeof window.SoundManager.playCoinCollect === "function"
+  ) {
+    window.SoundManager.playCoinCollect();
+  }
+  if (window.combatVisuals) {
+    window.combatVisuals.spawnParticles(
+      window.player.x,
+      window.player.y,
+      8,
+      "gold_dungeon",
+      2,
+    );
+  }
+
+  if (typeof window.pushHeaderToast === "function") {
+    window.pushHeaderToast(
+      `✦ Sold ${item.name} for +${window.formatNumber(sellValue)} Gold!`,
+      "#2ecc71",
+    );
+  }
+  if (typeof window.pushLog === "function") {
+    window.pushLog(
+      `<span style="color:#d97706;">[MERCHANT]</span> Sold <span style="color:${window.getTierColor(item.statsRolled)}; font-weight:bold;">${item.name}</span> for +${window.formatNumber(sellValue)} Gold!`,
+    );
+  }
+
+  // Re-render Satchel
+  if (typeof window.renderBagModalContent === "function") {
+    window.renderBagModalContent();
+  }
+  if (typeof window.updateUI === "function") window.updateUI();
+  if (typeof window.saveGame === "function") window.saveGame();
+};

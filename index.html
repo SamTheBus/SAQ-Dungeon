@@ -503,36 +503,36 @@
               <div class="section-title" id="profile-satchel-title">
                 VAULT SATCHEL (<span id="profile-stash-count">0</span>)
               </div>
-                <div class="satchel-tab-bar">
-                    <button
-                            id="stash-tab-equip"
-                            class="satchel-tab-btn active"
-                            onclick="window.switchStashTab('EQUIP')"
-                    >
-                        GEAR
-                    </button>
-                    <button
-                            id="stash-tab-sigil"
-                            class="satchel-tab-btn"
-                            onclick="window.switchStashTab('SIGIL')"
-                    >
-                        SIGILS
-                    </button>
-                    <button
-                            id="stash-tab-use"
-                            class="satchel-tab-btn"
-                            onclick="window.switchStashTab('USE')"
-                    >
-                        CONSUMABLES
-                    </button>
-                    <button
-                            id="stash-tab-etc"
-                            class="satchel-tab-btn"
-                            onclick="window.switchStashTab('ETC')"
-                    >
-                        MATERIALS
-                    </button>
-                </div>
+              <div class="satchel-tab-bar">
+                <button
+                  id="stash-tab-equip"
+                  class="satchel-tab-btn active"
+                  onclick="window.switchStashTab('EQUIP')"
+                >
+                  GEAR
+                </button>
+                <button
+                  id="stash-tab-sigil"
+                  class="satchel-tab-btn"
+                  onclick="window.switchStashTab('SIGIL')"
+                >
+                  SIGILS
+                </button>
+                <button
+                  id="stash-tab-use"
+                  class="satchel-tab-btn"
+                  onclick="window.switchStashTab('USE')"
+                >
+                  CONSUMABLES
+                </button>
+                <button
+                  id="stash-tab-etc"
+                  class="satchel-tab-btn"
+                  onclick="window.switchStashTab('ETC')"
+                >
+                  MATERIALS
+                </button>
+              </div>
               <div class="profile-section-body">
                 <div id="profile-stash-list" class="stash-grid">
                   <!-- Dynamic satchel items -->
@@ -762,36 +762,36 @@
               </svg>
             </button>
           </div>
-            <div class="satchel-tab-bar">
-                <button
-                        id="bag-tab-equip"
-                        class="satchel-tab-btn active"
-                        onclick="window.switchBagTab('EQUIP')"
-                >
-                    GEAR
-                </button>
-                <button
-                        id="bag-tab-sigil"
-                        class="satchel-tab-btn"
-                        onclick="window.switchBagTab('SIGIL')"
-                >
-                    SIGILS
-                </button>
-                <button
-                        id="bag-tab-use"
-                        class="satchel-tab-btn"
-                        onclick="window.switchBagTab('USE')"
-                >
-                    CONSUMABLES
-                </button>
-                <button
-                        id="bag-tab-etc"
-                        class="satchel-tab-btn"
-                        onclick="window.switchBagTab('ETC')"
-                >
-                    MATERIALS
-                </button>
-            </div>
+          <div class="satchel-tab-bar">
+            <button
+              id="bag-tab-equip"
+              class="satchel-tab-btn active"
+              onclick="window.switchBagTab('EQUIP')"
+            >
+              GEAR
+            </button>
+            <button
+              id="bag-tab-sigil"
+              class="satchel-tab-btn"
+              onclick="window.switchBagTab('SIGIL')"
+            >
+              SIGILS
+            </button>
+            <button
+              id="bag-tab-use"
+              class="satchel-tab-btn"
+              onclick="window.switchBagTab('USE')"
+            >
+              CONSUMABLES
+            </button>
+            <button
+              id="bag-tab-etc"
+              class="satchel-tab-btn"
+              onclick="window.switchBagTab('ETC')"
+            >
+              MATERIALS
+            </button>
+          </div>
           <div id="bag-items-list" class="modal-body">
             <!-- Items rendered dynamically -->
           </div>
@@ -1546,127 +1546,138 @@
           class="modal-card deploy-modal-card"
           onpointerdown="event.stopPropagation()"
         >
-            <!-- Dungeon Expedition Header -->
-            <div class="deploy-header-banner">
-                <div class="deploy-title-group">
-                    <div class="deploy-badge-icon">
-                        <svg
-                                width="22"
-                                height="22"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="#ffd700"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                        >
-                            <path
-                                    d="M5 22V10C5 6.13401 8.13401 3 12 3C15.866 3 19 6.13401 19 10V22"
-                            ></path>
-                            <path d="M12 3V22"></path>
-                            <circle cx="12" cy="12" r="3" fill="#ffd700"></circle>
-                        </svg>
-                    </div>
-                    <div class="deploy-text-group">
-                        <span id="deploy-modal-title" class="deploy-main-title">DUNGEON EXPEDITION ALTAR</span>
-                        <span id="deploy-modal-subtitle" class="deploy-sub-title"
-                        >PREPARE FOR DUNGEON DESCENT</span
-                        >
-                    </div>
-                </div>
-                <button
-                        class="close-btn"
-                        onpointerdown="event.stopPropagation();"
-                        onclick="
+          <!-- Dungeon Expedition Header -->
+          <div class="deploy-header-banner">
+            <div class="deploy-title-group">
+              <div class="deploy-badge-icon">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffd700"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M5 22V10C5 6.13401 8.13401 3 12 3C15.866 3 19 6.13401 19 10V22"
+                  ></path>
+                  <path d="M12 3V22"></path>
+                  <circle cx="12" cy="12" r="3" fill="#ffd700"></circle>
+                </svg>
+              </div>
+              <div class="deploy-text-group">
+                <span id="deploy-modal-title" class="deploy-main-title"
+                  >DUNGEON EXPEDITION ALTAR</span
+                >
+                <span id="deploy-modal-subtitle" class="deploy-sub-title"
+                  >PREPARE FOR DUNGEON DESCENT</span
+                >
+              </div>
+            </div>
+            <button
+              class="close-btn"
+              onpointerdown="event.stopPropagation();"
+              onclick="
                 event.stopPropagation();
                 window.closeDeploymentModal();
               "
-                        title="Return to Hub"
-                >
-                    <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                    >
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Tab Selector Bar -->
-            <div class="deploy-tab-bar">
-                <button
-                        id="deploy-tab-btn-setup"
-                        class="deploy-tab-btn active"
-                        onclick="window.switchDeployTab('setup')"
-                >
-                    EXPEDITION SETUP
-                </button>
-                <button
-                        id="deploy-tab-btn-exchange"
-                        class="deploy-tab-btn"
-                        onclick="window.switchDeployTab('exchange')"
-                >
-                    ASTRAL EXCHANGE
-                </button>
-            </div>
-
-            <!-- Wrapper for the Expedition Setup content -->
-            <div id="deploy-setup-content" class="deploy-content-view">
-                <!-- Dual-Pane Expedition Body Layout -->
-                <div class="deploy-terminal-layout">
-            <!-- Left Column: Destination & Sigils -->
-            <div
-              id="deployment-selectors-panel"
-              class="deploy-pane deploy-left-pane"
+              title="Return to Hub"
             >
-              <!-- Rendered dynamically (Checkpoint & Sigil Chamber) -->
-            </div>
-
-            <!-- Right Column: Loadout & Protection -->
-            <div class="deploy-pane deploy-right-pane">
-              <div class="deploy-pane-header">
-                <span>EQUIPMENT PROTECTION</span>
-                <span class="deploy-risk-tag">SOUL BINDING</span>
-              </div>
-              <div id="deployment-gear-list" class="deploy-gear-list">
-                <!-- Rendered dynamically -->
-              </div>
-            </div>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
 
-                <!-- Expedition Summary & Launch Footer -->
-                <div id="deployment-stats-panel" class="deploy-footer-panel">
-                    <!-- Updated dynamically -->
-                </div>
+          <!-- Tab Selector Bar -->
+          <div class="deploy-tab-bar">
+            <button
+              id="deploy-tab-btn-setup"
+              class="deploy-tab-btn active"
+              onclick="window.switchDeployTab('setup')"
+            >
+              EXPEDITION SETUP
+            </button>
+            <button
+              id="deploy-tab-btn-exchange"
+              class="deploy-tab-btn"
+              onclick="window.switchDeployTab('exchange')"
+            >
+              ASTRAL EXCHANGE
+            </button>
+          </div>
 
-                <div class="deploy-launch-bar">
-                    <button
-                            id="btn-deploy-secure"
-                            class="deploy-launch-btn"
-                            onclick="window.executeDeployment()"
-                    >
-                        ENTER DUNGEON
-                    </button>
-                </div>
-            </div> <!-- Close deploy-setup-content -->
+          <!-- Wrapper for the Expedition Setup content -->
+          <div id="deploy-setup-content" class="deploy-content-view">
+            <!-- Dual-Pane Expedition Body Layout -->
+            <div class="deploy-terminal-layout">
+              <!-- Left Column: Destination & Sigils -->
+              <div
+                id="deployment-selectors-panel"
+                class="deploy-pane deploy-left-pane"
+              >
+                <!-- Rendered dynamically (Checkpoint & Sigil Chamber) -->
+              </div>
 
-            <!-- Wrapper for the Astral Exchange Shop content -->
-            <div id="deploy-exchange-content" class="deploy-content-view hidden" style="display: none;">
-                <div class="astral-shop-header">
-                    <span>ASTRAL SHARDS:</span>
-                    <span id="astral-shards-display" style="font-weight: bold; color: #a855f7;">0</span>
+              <!-- Right Column: Loadout & Protection -->
+              <div class="deploy-pane deploy-right-pane">
+                <div class="deploy-pane-header">
+                  <span>EQUIPMENT PROTECTION</span>
+                  <span class="deploy-risk-tag">SOUL BINDING</span>
                 </div>
-                <div id="astral-shop-grid" class="astral-shop-grid">
-                    <!-- Programmatically populated from window.ASTRAL_SHOP_STOCK in main.js -->
+                <div id="deployment-gear-list" class="deploy-gear-list">
+                  <!-- Rendered dynamically -->
                 </div>
+              </div>
             </div>
+
+            <!-- Expedition Summary & Launch Footer -->
+            <div id="deployment-stats-panel" class="deploy-footer-panel">
+              <!-- Updated dynamically -->
+            </div>
+
+            <div class="deploy-launch-bar">
+              <button
+                id="btn-deploy-secure"
+                class="deploy-launch-btn"
+                onclick="window.executeDeployment()"
+              >
+                ENTER DUNGEON
+              </button>
+            </div>
+          </div>
+          <!-- Close deploy-setup-content -->
+
+          <!-- Wrapper for the Astral Exchange Shop content -->
+          <div
+            id="deploy-exchange-content"
+            class="deploy-content-view hidden"
+            style="display: none"
+          >
+            <div class="astral-shop-header">
+              <span>ASTRAL SHARDS:</span>
+              <span
+                id="astral-shards-display"
+                style="font-weight: bold; color: #a855f7"
+                >0</span
+              >
+            </div>
+            <div id="astral-shop-grid" class="astral-shop-grid">
+              <!-- Programmatically populated from window.ASTRAL_SHOP_STOCK in main.js -->
+            </div>
+          </div>
         </div>
       </div>
 

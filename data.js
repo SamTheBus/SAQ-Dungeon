@@ -699,14 +699,14 @@ Object.assign(window.GameState, {
       );
 
       if (window.playerStats.level > window.playerStats.maxLevel) {
-              window.playerStats.maxLevel = window.playerStats.level;
-              window.playerStats.sp += 3; // Award 3 Attribute SP per peak level
-              window.playerStats.usp = (window.playerStats.usp || 0) + 1; // Award 1 Utility SP per peak level
+        window.playerStats.maxLevel = window.playerStats.level;
+        window.playerStats.sp += 3; // Award 3 Attribute SP per peak level
+        window.playerStats.usp = (window.playerStats.usp || 0) + 1; // Award 1 Utility SP per peak level
 
-              if (window.draftSP !== undefined && window.draftSP !== null) {
-                window.draftSP += 3;
-              }
-            }
+        if (window.draftSP !== undefined && window.draftSP !== null) {
+          window.draftSP += 3;
+        }
+      }
 
       // Calculate next xpReq safely using BigNum exponential power scaling
       xpReq = BigNum.from(600).mul(
@@ -819,42 +819,42 @@ Object.assign(window.GameState, {
       }
 
       if (window.SoundManager) window.SoundManager.play("revive");
-            if (typeof window.pushLog === "function") {
-              window.pushLog(
-                `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 Attribute SP, +1 Utility SP)</strong>`,
-              );
-            }
-            if (typeof window.pushHeaderToast === "function") {
-              window.pushHeaderToast(
-                `Level Up! Reached Level ${window.playerStats.level}! (+3 Attribute SP, +1 Utility SP)`,
-                "#d946ef",
-              );
-            }
-            if (typeof window.spawnFloatingText === "function" && window.player) {
-              let px = window.player.x;
-              let py = window.player.y;
-              window.spawnFloatingText(
-                px,
-                py - 20,
-                `LEVEL UP! (LV.${window.playerStats.level})`,
-                "#d946ef",
-                true,
-              );
-              window.spawnFloatingText(
-                px,
-                py - 32,
-                "+15 HP  +3 ATK  +1.5 DEF",
-                "#2ecc71",
-                true,
-              );
-              window.spawnFloatingText(
-                px,
-                py - 44,
-                "+3 ASP / +1 USP AVAILABLE",
-                "#00d2ff",
-                true,
-              );
-            }
+      if (typeof window.pushLog === "function") {
+        window.pushLog(
+          `<strong style="color:#d946ef;">LEVEL UP! Reached Level ${window.playerStats.level}! (+3 Attribute SP, +1 Utility SP)</strong>`,
+        );
+      }
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          `Level Up! Reached Level ${window.playerStats.level}! (+3 Attribute SP, +1 Utility SP)`,
+          "#d946ef",
+        );
+      }
+      if (typeof window.spawnFloatingText === "function" && window.player) {
+        let px = window.player.x;
+        let py = window.player.y;
+        window.spawnFloatingText(
+          px,
+          py - 20,
+          `LEVEL UP! (LV.${window.playerStats.level})`,
+          "#d946ef",
+          true,
+        );
+        window.spawnFloatingText(
+          px,
+          py - 32,
+          "+15 HP  +3 ATK  +1.5 DEF",
+          "#2ecc71",
+          true,
+        );
+        window.spawnFloatingText(
+          px,
+          py - 44,
+          "+3 ASP / +1 USP AVAILABLE",
+          "#00d2ff",
+          true,
+        );
+      }
       if (typeof window.checkAchievements === "function") {
         window.checkAchievements();
       }
@@ -872,53 +872,53 @@ Object.assign(window.GameState, {
   },
 
   addCoins(amount) {
-      let amt = BigNum.from(amount);
-      if (amt.lte(0)) return;
-      window.playerStats.coins = BigNum.from(window.playerStats.coins).add(amt);
-      window.playerStats.totalGoldEarned = BigNum.from(
-        window.playerStats.totalGoldEarned || 0,
-      ).add(amt);
-      if (typeof window.updateUI === "function") window.updateUI();
-    },
+    let amt = BigNum.from(amount);
+    if (amt.lte(0)) return;
+    window.playerStats.coins = BigNum.from(window.playerStats.coins).add(amt);
+    window.playerStats.totalGoldEarned = BigNum.from(
+      window.playerStats.totalGoldEarned || 0,
+    ).add(amt);
+    if (typeof window.updateUI === "function") window.updateUI();
+  },
 
-    spendCoins(amount) {
-      let amt = BigNum.from(amount);
-      if (amt.lte(0)) return false;
-      let coins = BigNum.from(window.playerStats.coins);
+  spendCoins(amount) {
+    let amt = BigNum.from(amount);
+    if (amt.lte(0)) return false;
+    let coins = BigNum.from(window.playerStats.coins);
+    if (coins.lt(amt)) return false;
+    window.playerStats.coins = coins.sub(amt);
+    if (window.playerStats.coins.eq(0)) {
+      window.playerStats.hasTriggeredExactChange = true;
+    }
+    if (typeof window.updateUI === "function") window.updateUI();
+    return true;
+  },
+
+  spendRunOrVaultGold(amount) {
+    let amt = BigNum.from(amount);
+    if (amt.lte(0)) return false;
+    let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
+
+    if (inDungeonRun) {
+      let pocket = BigNum.from(window.playerStats.runGold || 0);
+      if (pocket.lt(amt)) return false;
+      window.playerStats.runGold = pocket.sub(amt);
+      if (window.playerStats.runGold.eq(0)) {
+        window.playerStats.hasTriggeredExactChange = true;
+      }
+    } else {
+      let coins = BigNum.from(window.playerStats.coins || 0);
       if (coins.lt(amt)) return false;
       window.playerStats.coins = coins.sub(amt);
       if (window.playerStats.coins.eq(0)) {
         window.playerStats.hasTriggeredExactChange = true;
       }
-      if (typeof window.updateUI === "function") window.updateUI();
-      return true;
-    },
+    }
 
-    spendRunOrVaultGold(amount) {
-      let amt = BigNum.from(amount);
-      if (amt.lte(0)) return false;
-      let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
-
-      if (inDungeonRun) {
-        let pocket = BigNum.from(window.playerStats.runGold || 0);
-        if (pocket.lt(amt)) return false;
-        window.playerStats.runGold = pocket.sub(amt);
-        if (window.playerStats.runGold.eq(0)) {
-          window.playerStats.hasTriggeredExactChange = true;
-        }
-      } else {
-        let coins = BigNum.from(window.playerStats.coins || 0);
-        if (coins.lt(amt)) return false;
-        window.playerStats.coins = coins.sub(amt);
-        if (window.playerStats.coins.eq(0)) {
-          window.playerStats.hasTriggeredExactChange = true;
-        }
-      }
-
-      if (typeof window.updateUI === "function") window.updateUI();
-      return true;
-    },
-  });
+    if (typeof window.updateUI === "function") window.updateUI();
+    return true;
+  },
+});
 
 // Legacy Compatibility Aliases to protect references
 window.gainXp = (amount, isOffline) =>
@@ -939,11 +939,15 @@ window.absorbGoldParticle = function (amount, isDungeon, isCrucible) {
     ).add(amt);
 
     if (isDungeon) {
-      window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0).add(amt);
+      window.playerStats.runGold = BigNum.from(
+        window.playerStats.runGold || 0,
+      ).add(amt);
       window.playerStats.dungeonAccumulatedGold =
         (window.playerStats.dungeonAccumulatedGold || 0) + amount;
     } else {
-      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(amt);
+      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(
+        amt,
+      );
     }
 
     if (typeof window.progressMission === "function") {
@@ -1486,7 +1490,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   let aT = window.playerStats.cachedAchievementBonusTotals;
 
   p.def = BigNum.from(p.def).add(aT.def);
-    let flatSpeedBonus = aT.moveSpeed || 0;
+  let flatSpeedBonus = aT.moveSpeed || 0;
   p.critChance += aT.critChance;
   p.critDamage += aT.critDamage;
   p.block += aT.block;
@@ -1529,15 +1533,15 @@ window.resolvePlayerStats = function (useDraft = false) {
   achIntPct *= paragonMult;
 
   // Apply active run-only Crucible Draft deck modifiers (Capped at 10)
-    if (
-      window.playerStats.isCrucibleMode &&
-      window.playerStats.crucibleDraftDeck
-    ) {
-      window.playerStats.crucibleDraftDeck.slice(0, 10).forEach((cardId) => {
-        let card = window.CRUCIBLE_DRAFT_POOL.find((c) => c.id === cardId);
-        if (card) card.apply(p);
-      });
-    }
+  if (
+    window.playerStats.isCrucibleMode &&
+    window.playerStats.crucibleDraftDeck
+  ) {
+    window.playerStats.crucibleDraftDeck.slice(0, 10).forEach((cardId) => {
+      let card = window.CRUCIBLE_DRAFT_POOL.find((c) => c.id === cardId);
+      if (card) card.apply(p);
+    });
+  }
 
   let flatGearAtk = BigNum.from(0);
   let flatGearHp = BigNum.from(0);
@@ -1577,14 +1581,14 @@ window.resolvePlayerStats = function (useDraft = false) {
         flatGearHp = flatGearHp.add(slotLvl * 30);
       }
       if (key === "boots") {
-                  flatSpeedBonus += slotLvl * 2;
-                }
+        flatSpeedBonus += slotLvl * 2;
+      }
 
-                // Flat item stats (safely handled regardless of source type)
-                flatGearAtk = flatGearAtk.add(BigNum.from(item.atk || 0).mul(slotMult));
-                flatGearHp = flatGearHp.add(BigNum.from(item.maxHp || 0).mul(slotMult));
-                flatGearDef = flatGearDef.add(BigNum.from(item.def || 0).mul(slotMult));
-                flatSpeedBonus += (item.moveSpeed || 0) * slotMult;
+      // Flat item stats (safely handled regardless of source type)
+      flatGearAtk = flatGearAtk.add(BigNum.from(item.atk || 0).mul(slotMult));
+      flatGearHp = flatGearHp.add(BigNum.from(item.maxHp || 0).mul(slotMult));
+      flatGearDef = flatGearDef.add(BigNum.from(item.def || 0).mul(slotMult));
+      flatSpeedBonus += (item.moveSpeed || 0) * slotMult;
 
       let itemIdleSpeed = item.idleAttackSpeed || 0;
       if (itemIdleSpeed < 0) itemIdleSpeed = Math.abs(itemIdleSpeed) * 0.05;
@@ -1684,8 +1688,8 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   p.atk = p.atk.add(BigNum.from(setCtx.atk));
-    p.maxHp = p.maxHp.add(BigNum.from(setCtx.maxHp));
-    flatSpeedBonus += setCtx.moveSpeed || 0;
+  p.maxHp = p.maxHp.add(BigNum.from(setCtx.maxHp));
+  flatSpeedBonus += setCtx.moveSpeed || 0;
   idleSpeedPct += setCtx.idleSpeedPct;
   activeSpeedPct += setCtx.activeSpeedPct;
   p.critChance += setCtx.critChance;
@@ -1717,9 +1721,9 @@ window.resolvePlayerStats = function (useDraft = false) {
   let effectiveInt = Math.max(0, p.int - 5);
 
   // Apply Dexterity Attribute Matrix points to Move Speed, Crit Chance, and Crit Multiplier
-    p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
-    p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
-    flatSpeedBonus += effectiveDex * 1.0; // +1% Speed per point
+  p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
+  p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
+  flatSpeedBonus += effectiveDex * 1.0; // +1% Speed per point
 
   // Dynamically adjust offensive percentage scaling based on equipped subweapon archetype
   let activeSubForPct = window.equippedSlots
@@ -1783,9 +1787,11 @@ window.resolvePlayerStats = function (useDraft = false) {
 
   // Suffixes multipliers applied on total flat base
   p.atk = p.atk.mul(1.0 + itemAtkPct).mul(achAtkPct);
-    p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
-    p.moveSpeed = window.playerStats.baseMoveSpeed * (1 + flatSpeedBonus / 100) *
-      (achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0));
+  p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
+  p.moveSpeed =
+    window.playerStats.baseMoveSpeed *
+    (1 + flatSpeedBonus / 100) *
+    (achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0));
 
   // Calculate Arcane Barrier for Inspected Player holding a Tome
   let insSub = window.equippedSlots.subweapon;
@@ -2005,10 +2011,10 @@ window.resolvePlayerStats = function (useDraft = false) {
     if (qualityRank > 0) p.qly += qualityRank * 0.02;
 
     let utilityVitalityRank = st.getSkillLevel("utility_vitality");
-        if (utilityVitalityRank > 0) {
-          p.maxHpPct = (p.maxHpPct || 0) + utilityVitalityRank * 0.03;
-          flatSpeedBonus += utilityVitalityRank * 2.0;
-        }
+    if (utilityVitalityRank > 0) {
+      p.maxHpPct = (p.maxHpPct || 0) + utilityVitalityRank * 0.03;
+      flatSpeedBonus += utilityVitalityRank * 2.0;
+    }
 
     let bagRank = st.getSkillLevel("utility_bag");
     if (bagRank > 0) {
@@ -2246,11 +2252,11 @@ window.resolvePlayerStats = function (useDraft = false) {
     );
 
   if (hasHastePot) {
-        let tier = window.playerStats.hastePotionStrength || 1;
-        flatSpeedBonus += Math.ceil(3 * tier * potStrengthMultiplier);
-        activeSpeedPct += 0.1 * tier * potStrengthMultiplier;
-        idleSpeedPct += 0.1 * tier * potStrengthMultiplier;
-      }
+    let tier = window.playerStats.hastePotionStrength || 1;
+    flatSpeedBonus += Math.ceil(3 * tier * potStrengthMultiplier);
+    activeSpeedPct += 0.1 * tier * potStrengthMultiplier;
+    idleSpeedPct += 0.1 * tier * potStrengthMultiplier;
+  }
 
   if (hasDropPot) {
     p.drop += 1.0 * potStrengthMultiplier;
@@ -2833,12 +2839,12 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
 
   let remainingDmg = Math.max(1, rawDmg - absorbed);
 
-    // Soft-capped asymptotic damage reduction based on Defense to prevent 1-damage trivialization exploits
-    let currentFloor = window.player ? (window.player.depth || 1) : 1;
-    let defenseConstant = 15 + currentFloor * 5;
-    let defenseDR = (pStats.def || 0) / ((pStats.def || 0) + defenseConstant);
-    defenseDR = Math.min(0.85, defenseDR); // Cap armor damage reduction at 85% maximum
-    let netDmg = Math.max(1, remainingDmg * (1 - defenseDR));
+  // Soft-capped asymptotic damage reduction based on Defense to prevent 1-damage trivialization exploits
+  let currentFloor = window.player ? window.player.depth || 1 : 1;
+  let defenseConstant = 15 + currentFloor * 5;
+  let defenseDR = (pStats.def || 0) / ((pStats.def || 0) + defenseConstant);
+  defenseDR = Math.min(0.85, defenseDR); // Cap armor damage reduction at 85% maximum
+  let netDmg = Math.max(1, remainingDmg * (1 - defenseDR));
 
   // Step 2: Parry Check (Daggers)
   if (pStats.parry && Math.random() < pStats.parry) {
@@ -3013,7 +3019,7 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     // Gain +16 Shield Mastery XP on Block
-        if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
+    if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
 
     // Fortitude stack acquisition on block / damage
     if (pStats.fortifiedGuardMultiplier > 0) {
@@ -3127,7 +3133,7 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
 
     if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
       // Gain +10 Shield Mastery XP on Shield Bash reflect
-            if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
+      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
 
       let defBash = BigNum.from(pStats.def || 5).mul(
         pStats.reflectDamage || 1.0,
@@ -3297,7 +3303,7 @@ window.CRUCIBLE_DRAFT_POOL = [
     apply: (p) => {
       p.defPctBonus = (p.defPctBonus || 0) + 0.15;
     },
-    modifiersDisplay: { buff: "15% Defense" }
+    modifiersDisplay: { buff: "15% Defense" },
   },
   {
     id: "sharpened_edge",
@@ -3306,7 +3312,7 @@ window.CRUCIBLE_DRAFT_POOL = [
     apply: (p) => {
       p.atkPctBonus = (p.atkPctBonus || 0) + 0.15;
     },
-    modifiersDisplay: { buff: "15% Attack" }
+    modifiersDisplay: { buff: "15% Attack" },
   },
   {
     id: "hearty_const",
@@ -3315,17 +3321,17 @@ window.CRUCIBLE_DRAFT_POOL = [
     apply: (p) => {
       p.maxHpPctBonus = (p.maxHpPctBonus || 0) + 0.15;
     },
-    modifiersDisplay: { buff: "15% Max HP" }
+    modifiersDisplay: { buff: "15% Max HP" },
   },
   {
     id: "swift_foot",
     name: "Swift Footwork",
     desc: "Increases Movement Speed by +10% and adds +3% base Parry Rate.",
     apply: (p) => {
-      p.moveSpeedPctBonus = (p.moveSpeedPctBonus || 0) + 0.10;
+      p.moveSpeedPctBonus = (p.moveSpeedPctBonus || 0) + 0.1;
       p.parry = (p.parry || 0) + 0.03;
     },
-    modifiersDisplay: { buff: "10% Speed / 3% Parry" }
+    modifiersDisplay: { buff: "10% Speed / 3% Parry" },
   },
   {
     id: "astral_attune",
@@ -3334,7 +3340,7 @@ window.CRUCIBLE_DRAFT_POOL = [
     apply: (p) => {
       p.crucibleShardMult = (p.crucibleShardMult || 1.0) + 0.25;
     },
-    modifiersDisplay: { buff: "25% Shards" }
+    modifiersDisplay: { buff: "25% Shards" },
   },
 
   // --- CORRUPTED UPGRADES (Max 3 Stacks, High-Risk / High-Return) ---
@@ -3347,7 +3353,7 @@ window.CRUCIBLE_DRAFT_POOL = [
       p.atkPctBonus = (p.atkPctBonus || 0) + 0.45;
       p.maxHpPctBonus = (p.maxHpPctBonus || 0) - 0.15;
     },
-    modifiersDisplay: { buff: "45% Attack", debuff: "15% Max HP" }
+    modifiersDisplay: { buff: "45% Attack", debuff: "15% Max HP" },
   },
   {
     id: "lead_sentinel",
@@ -3355,11 +3361,11 @@ window.CRUCIBLE_DRAFT_POOL = [
     desc: "Increases Defense by +40% and Block by +5%, but slows you by -12%.",
     isCorrupted: true,
     apply: (p) => {
-      p.defPctBonus = (p.defPctBonus || 0) + 0.40;
+      p.defPctBonus = (p.defPctBonus || 0) + 0.4;
       p.block = (p.block || 0) + 0.05;
       p.moveSpeedPctBonus = (p.moveSpeedPctBonus || 0) - 0.12;
     },
-    modifiersDisplay: { buff: "40% Defense / 5% Block", debuff: "12% Speed" }
+    modifiersDisplay: { buff: "40% Defense / 5% Block", debuff: "12% Speed" },
   },
   {
     id: "vampiric_pact",
@@ -3370,7 +3376,7 @@ window.CRUCIBLE_DRAFT_POOL = [
       p.crucibleCritHeal = (p.crucibleCritHeal || 0) + 0.01;
       p.crucibleSelfDmgReduction = (p.crucibleSelfDmgReduction || 1.0) * 1.15;
     },
-    modifiersDisplay: { buff: "1.0% Lifesteal", debuff: "15% Damage Taken" }
+    modifiersDisplay: { buff: "1.0% Lifesteal", debuff: "15% Damage Taken" },
   },
   {
     id: "brittle_goliath",
@@ -3378,10 +3384,10 @@ window.CRUCIBLE_DRAFT_POOL = [
     desc: "Increases Max HP by +50%, but decreases your total Defense by -50%.",
     isCorrupted: true,
     apply: (p) => {
-      p.maxHpPctBonus = (p.maxHpPctBonus || 0) + 0.50;
-      p.defPctBonus = (p.defPctBonus || 0) - 0.50;
+      p.maxHpPctBonus = (p.maxHpPctBonus || 0) + 0.5;
+      p.defPctBonus = (p.defPctBonus || 0) - 0.5;
     },
-    modifiersDisplay: { buff: "50% Max HP", debuff: "50% Defense" }
+    modifiersDisplay: { buff: "50% Max HP", debuff: "50% Defense" },
   },
   {
     id: "unstable_comb",
@@ -3392,7 +3398,10 @@ window.CRUCIBLE_DRAFT_POOL = [
       p.crucibleCritSplash = (p.crucibleCritSplash || 0) + 1.5;
       p.crucibleBacklash = (p.crucibleBacklash || 0) + 0.01;
     },
-    modifiersDisplay: { buff: "150% Splash on Crit", debuff: "1% Backlash Damage" }
+    modifiersDisplay: {
+      buff: "150% Splash on Crit",
+      debuff: "1% Backlash Damage",
+    },
   },
 
   // --- MYTHIC / SINGULAR UPGRADES (Max 1 Stack, Game-Changers) ---
@@ -3406,7 +3415,10 @@ window.CRUCIBLE_DRAFT_POOL = [
       p.hasBrimstoneCore = true;
       p.moveSpeedLimit = 6;
     },
-    modifiersDisplay: { buff: "50% Fire Aura/sec", debuff: "Speed Capped at 6" }
+    modifiersDisplay: {
+      buff: "50% Fire Aura/sec",
+      debuff: "Speed Capped at 6",
+    },
   },
   {
     id: "mirage_array",
@@ -3419,7 +3431,10 @@ window.CRUCIBLE_DRAFT_POOL = [
       p.block = 0;
       p.parry = 0;
     },
-    modifiersDisplay: { buff: "+40% Ghost Slashes", debuff: "Block & Parry Disabled" }
+    modifiersDisplay: {
+      buff: "+40% Ghost Slashes",
+      debuff: "Block & Parry Disabled",
+    },
   },
   {
     id: "thunder_backlash",
@@ -3430,7 +3445,10 @@ window.CRUCIBLE_DRAFT_POOL = [
     apply: (p) => {
       p.hasThunderBacklash = true;
     },
-    modifiersDisplay: { buff: "400% Bolt / 10 hits", debuff: "5% Feedback Damage" }
+    modifiersDisplay: {
+      buff: "400% Bolt / 10 hits",
+      debuff: "5% Feedback Damage",
+    },
   },
   {
     id: "alchemical_catalyst",
@@ -3443,8 +3461,8 @@ window.CRUCIBLE_DRAFT_POOL = [
       p.maxFlaskCharges = 0;
       p.flaskCharges = 0;
     },
-    modifiersDisplay: { buff: "2x Potion Potency", debuff: "Flask Disabled" }
-  }
+    modifiersDisplay: { buff: "2x Potion Potency", debuff: "Flask Disabled" },
+  },
 ];
 
 window.playerStats = {
@@ -3526,10 +3544,10 @@ window.playerStats = {
   hasRefundedLegacyTempers: false,
   level: 1,
   xp: new BigNum(0, 0),
-    xpReq: new BigNum(350, 0),
-    sp: 0,
-    usp: 0, // Separate Utility Skill Points
-    spAllocations: {
+  xpReq: new BigNum(350, 0),
+  sp: 0,
+  usp: 0, // Separate Utility Skill Points
+  spAllocations: {
     spHp: 0,
     spAtk: 0,
     spDef: 0,
@@ -4173,60 +4191,63 @@ window.saveGame = function () {
     }
 
     let saveData = {
-          playerStats: { ...window.playerStats },
-          equippedSlots: window.equippedSlots || {},
-          inventory: window.inventory || {
-            EQUIP: [],
-            ARTIFACT: [],
-            SIGIL: [],
-            ETC: {},
-            USE: {},
-          },
-          stash: window.player && window.player.stash ? window.player.stash : [],
-          bag: window.player && window.player.bag ? window.player.bag : [],
-          pendingScraps:
-            window.player && window.player.pendingScraps
-              ? window.player.pendingScraps
-              : {},
-          version: window.GAME_VERSION || 1.0,
-        };
+      playerStats: { ...window.playerStats },
+      equippedSlots: window.equippedSlots || {},
+      inventory: window.inventory || {
+        EQUIP: [],
+        ARTIFACT: [],
+        SIGIL: [],
+        ETC: {},
+        USE: {},
+      },
+      stash: window.player && window.player.stash ? window.player.stash : [],
+      bag: window.player && window.player.bag ? window.player.bag : [],
+      pendingScraps:
+        window.player && window.player.pendingScraps
+          ? window.player.pendingScraps
+          : {},
+      version: window.GAME_VERSION || 1.0,
+    };
 
-        if (saveData.playerStats.xp)
-          saveData.playerStats.xp = {
-            m: saveData.playerStats.xp.m,
-            e: saveData.playerStats.xp.e,
-          };
-        if (saveData.playerStats.xpReq)
-          saveData.playerStats.xpReq = {
-            m: saveData.playerStats.xpReq.m,
-            e: saveData.playerStats.xpReq.e,
-          };
-        if (saveData.playerStats.currentHp)
-          saveData.playerStats.currentHp = {
-            m: saveData.playerStats.currentHp.m,
-            e: saveData.playerStats.currentHp.e,
-          };
-        if (saveData.playerStats.coins)
-          saveData.playerStats.coins = {
-            m: saveData.playerStats.coins.m,
-            e: saveData.playerStats.coins.e,
-          };
-        if (saveData.playerStats.runGold)
-          saveData.playerStats.runGold = {
-            m: saveData.playerStats.runGold.m,
-            e: saveData.playerStats.runGold.e,
-          };
-        if (saveData.playerStats.totalGoldEarned)
-          saveData.playerStats.totalGoldEarned = {
-            m: saveData.playerStats.totalGoldEarned.m,
-            e: saveData.playerStats.totalGoldEarned.e,
-          };
-        if (saveData.playerStats.recoveryLoot && saveData.playerStats.recoveryLoot.gold) {
-          saveData.playerStats.recoveryLoot.gold = {
-            m: saveData.playerStats.recoveryLoot.gold.m,
-            e: saveData.playerStats.recoveryLoot.gold.e,
-          };
-        }
+    if (saveData.playerStats.xp)
+      saveData.playerStats.xp = {
+        m: saveData.playerStats.xp.m,
+        e: saveData.playerStats.xp.e,
+      };
+    if (saveData.playerStats.xpReq)
+      saveData.playerStats.xpReq = {
+        m: saveData.playerStats.xpReq.m,
+        e: saveData.playerStats.xpReq.e,
+      };
+    if (saveData.playerStats.currentHp)
+      saveData.playerStats.currentHp = {
+        m: saveData.playerStats.currentHp.m,
+        e: saveData.playerStats.currentHp.e,
+      };
+    if (saveData.playerStats.coins)
+      saveData.playerStats.coins = {
+        m: saveData.playerStats.coins.m,
+        e: saveData.playerStats.coins.e,
+      };
+    if (saveData.playerStats.runGold)
+      saveData.playerStats.runGold = {
+        m: saveData.playerStats.runGold.m,
+        e: saveData.playerStats.runGold.e,
+      };
+    if (saveData.playerStats.totalGoldEarned)
+      saveData.playerStats.totalGoldEarned = {
+        m: saveData.playerStats.totalGoldEarned.m,
+        e: saveData.playerStats.totalGoldEarned.e,
+      };
+    if (
+      saveData.playerStats.recoveryLoot &&
+      saveData.playerStats.recoveryLoot.gold
+    ) {
+      saveData.playerStats.recoveryLoot.gold = {
+        m: saveData.playerStats.recoveryLoot.gold.m,
+        e: saveData.playerStats.recoveryLoot.gold.e,
+      };
+    }
 
     localStorage.setItem("extraction_crawler_save", JSON.stringify(saveData));
   } catch (err) {
@@ -4338,20 +4359,29 @@ window.loadGame = function () {
     if (!parsed) return;
 
     if (parsed.playerStats) {
-              Object.assign(window.playerStats, parsed.playerStats);
-              window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
-              window.playerStats.hasTriggeredOnslaughtUnlock = parsed.playerStats.hasTriggeredOnslaughtUnlock || false;
-              window.playerStats.isCrucibleMode = parsed.playerStats.isCrucibleMode || false;
-              window.playerStats.crucibleWave = parsed.playerStats.crucibleWave || 1;
-              window.playerStats.cruciblePeak = parsed.playerStats.cruciblePeak || 0;
-              window.playerStats.crucibleDraftDeck = parsed.playerStats.crucibleDraftDeck || [];
-              window.playerStats.astralShards = parsed.playerStats.astralShards || 0;
-              window.playerStats.crucibleAccumulatedShards = parsed.playerStats.crucibleAccumulatedShards || 0;
-              window.playerStats.crucibleAccumulatedCores = parsed.playerStats.crucibleAccumulatedCores || 0;
-              window.playerStats.crucibleAccumulatedLoot = parsed.playerStats.crucibleAccumulatedLoot || [];
-              window.playerStats.crucibleStartWave = parsed.playerStats.crucibleStartWave || 1;
-              window.playerStats.crucibleActiveTab = parsed.playerStats.crucibleActiveTab || "setup";
-              window.playerStats.pendingCrucibleDrafts = parsed.playerStats.pendingCrucibleDrafts || 0;
+      Object.assign(window.playerStats, parsed.playerStats);
+      window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
+      window.playerStats.hasTriggeredOnslaughtUnlock =
+        parsed.playerStats.hasTriggeredOnslaughtUnlock || false;
+      window.playerStats.isCrucibleMode =
+        parsed.playerStats.isCrucibleMode || false;
+      window.playerStats.crucibleWave = parsed.playerStats.crucibleWave || 1;
+      window.playerStats.cruciblePeak = parsed.playerStats.cruciblePeak || 0;
+      window.playerStats.crucibleDraftDeck =
+        parsed.playerStats.crucibleDraftDeck || [];
+      window.playerStats.astralShards = parsed.playerStats.astralShards || 0;
+      window.playerStats.crucibleAccumulatedShards =
+        parsed.playerStats.crucibleAccumulatedShards || 0;
+      window.playerStats.crucibleAccumulatedCores =
+        parsed.playerStats.crucibleAccumulatedCores || 0;
+      window.playerStats.crucibleAccumulatedLoot =
+        parsed.playerStats.crucibleAccumulatedLoot || [];
+      window.playerStats.crucibleStartWave =
+        parsed.playerStats.crucibleStartWave || 1;
+      window.playerStats.crucibleActiveTab =
+        parsed.playerStats.crucibleActiveTab || "setup";
+      window.playerStats.pendingCrucibleDrafts =
+        parsed.playerStats.pendingCrucibleDrafts || 0;
 
       // Backward Compatibility Migration: convert real-time timers to run charges
       const potKeys = ["atk", "hp", "def", "haste", "xp", "drop", "qly"];
@@ -4370,18 +4400,23 @@ window.loadGame = function () {
       });
 
       window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
-            window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
-            window.playerStats.currentHp = BigNum.from(
-              window.playerStats.currentHp || 100,
-            );
-            window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
-            window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
+      window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
+      window.playerStats.currentHp = BigNum.from(
+        window.playerStats.currentHp || 100,
+      );
+      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
+      window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
 
-            if (window.playerStats.recoveryLoot && window.playerStats.recoveryLoot.gold) {
-              window.playerStats.recoveryLoot.gold = BigNum.from(window.playerStats.recoveryLoot.gold);
-            }
+      if (
+        window.playerStats.recoveryLoot &&
+        window.playerStats.recoveryLoot.gold
+      ) {
+        window.playerStats.recoveryLoot.gold = BigNum.from(
+          window.playerStats.recoveryLoot.gold,
+        );
+      }
 
-            // Fallback initializer for Boss Kill progress tracking
+      // Fallback initializer for Boss Kill progress tracking
       window.playerStats.bossKillRegistry = window.playerStats
         .bossKillRegistry || {
         arachnid_treant: 0,
@@ -4395,12 +4430,12 @@ window.loadGame = function () {
       };
 
       // Fallback initializers for separate Utility SP
-            if (window.playerStats.usp === undefined) {
-              window.playerStats.usp = 0;
-            }
+      if (window.playerStats.usp === undefined) {
+        window.playerStats.usp = 0;
+      }
 
-            // Fallback initializers for Field Flask properties
-            if (window.playerStats.maxFlaskCharges === undefined)
+      // Fallback initializers for Field Flask properties
+      if (window.playerStats.maxFlaskCharges === undefined)
         window.playerStats.maxFlaskCharges = 1;
       if (window.playerStats.flaskCharges === undefined)
         window.playerStats.flaskCharges = window.playerStats.maxFlaskCharges;
@@ -4564,40 +4599,43 @@ window.calculateCumulativeOnslaughtShards = function (startWave) {
   }
 
   return {
-    shards: Math.floor(totalShards * 0.70),
-    gold: Math.floor(totalGold * 0.70),
-    xp: Math.floor(totalXp * 0.70),
+    shards: Math.floor(totalShards * 0.7),
+    gold: Math.floor(totalGold * 0.7),
+    xp: Math.floor(totalXp * 0.7),
   };
-};window.changeOnslaughtStartWave = function (waveVal) {
-      window.playerStats.crucibleStartWave = parseInt(waveVal, 10) || 1;
-      window.renderDeploymentModal();
-    };
+};
+window.changeOnslaughtStartWave = function (waveVal) {
+  window.playerStats.crucibleStartWave = parseInt(waveVal, 10) || 1;
+  window.renderDeploymentModal();
+};
 
-    window.renderDeploymentModal = function () {
-      let selectorsPanel = document.getElementById("deployment-selectors-panel");
-      if (selectorsPanel) {
-        let isCrucible = window.playerStats.isCrucibleMode;
+window.renderDeploymentModal = function () {
+  let selectorsPanel = document.getElementById("deployment-selectors-panel");
+  if (selectorsPanel) {
+    let isCrucible = window.playerStats.isCrucibleMode;
 
-        if (isCrucible) {
-          let maxPeak = window.playerStats.cruciblePeak || 1;
-          let selectedWave = window.playerStats.crucibleStartWave || 1;
+    if (isCrucible) {
+      let maxPeak = window.playerStats.cruciblePeak || 1;
+      let selectedWave = window.playerStats.crucibleStartWave || 1;
 
-          let waveOptions = [];
-          waveOptions.push(1);
-          for (let wave = 5; wave <= maxPeak; wave += 5) {
-            waveOptions.push(wave);
-          }
-          waveOptions = Array.from(new Set(waveOptions)).sort((a, b) => a - b);
+      let waveOptions = [];
+      waveOptions.push(1);
+      for (let wave = 5; wave <= maxPeak; wave += 5) {
+        waveOptions.push(wave);
+      }
+      waveOptions = Array.from(new Set(waveOptions)).sort((a, b) => a - b);
 
-          let optionsMarkup = waveOptions.map((w) => {
-            let isSelected = w === selectedWave ? "selected" : "";
-            let tag = w === 1 ? "Initiation Wave" : `Milestone Wave`;
-            return `<option value="${w}" ${isSelected}>Wave ${w} (${tag})</option>`;
-          }).join("");
+      let optionsMarkup = waveOptions
+        .map((w) => {
+          let isSelected = w === selectedWave ? "selected" : "";
+          let tag = w === 1 ? "Initiation Wave" : `Milestone Wave`;
+          return `<option value="${w}" ${isSelected}>Wave ${w} (${tag})</option>`;
+        })
+        .join("");
 
-          let dividend = window.calculateCumulativeOnslaughtShards(selectedWave);
+      let dividend = window.calculateCumulativeOnslaughtShards(selectedWave);
 
-          selectorsPanel.innerHTML = `
+      selectorsPanel.innerHTML = `
             <div class="deploy-pane-header">
               <span>ONSLAUGHT PARAMETERS</span>
               <span class="deploy-risk-tag" style="border-color:#a855f7; color:#a855f7; background:rgba(168,85,247,0.1);">ARENA</span>
@@ -4610,7 +4648,9 @@ window.calculateCumulativeOnslaughtShards = function (startWave) {
                 </select>
               </div>
 
-              ${selectedWave > 1 ? `
+              ${
+                selectedWave > 1
+                  ? `
               <div style="background: rgba(168, 85, 247, 0.1); border: 1.5px dashed #a855f7; border-radius: 6px; padding: 10px; text-align: left; font-family: monospace; font-size: 9.5px; line-height: 1.4; color: #e9d5ff;">
                 <strong style="color: #ffd700; display: block; margin-bottom: 4px;">[70% SKIP DIVIDEND REWARD]</strong>
                 <span>Bypassing Waves 1 to ${selectedWave - 1} instantly awards:</span>
@@ -4620,63 +4660,65 @@ window.calculateCumulativeOnslaughtShards = function (startWave) {
                   <div style="color: #c084fc;">+ ${window.formatNumber(dividend.xp)} Experience (XP)</div>
                 </div>
               </div>
-              ` : ""}
+              `
+                  : ""
+              }
             </div>
           `;
-        } else {
-          let checkpoints = window.playerStats.unlockedCheckpoints || [1];
-          let selectedFloor = window.state.deploymentFloor || 1;
-          let rec = window.playerStats && window.playerStats.recoveryLoot;
+    } else {
+      let checkpoints = window.playerStats.unlockedCheckpoints || [1];
+      let selectedFloor = window.state.deploymentFloor || 1;
+      let rec = window.playerStats && window.playerStats.recoveryLoot;
 
-          let floorOptions = checkpoints
-            .map((startFloor) => {
-              let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
-              let isSelected = startFloor === selectedFloor ? "selected" : "";
-              let recBadge =
-                rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
+      let floorOptions = checkpoints
+        .map((startFloor) => {
+          let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
+          let isSelected = startFloor === selectedFloor ? "selected" : "";
+          let recBadge =
+            rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
 
-              let tag =
-                startFloor === 1
-                  ? "Start"
-                  : (startFloor - 1) % 12 === 0
-                    ? `Sector ${sectorNum} Start`
-                    : `Post Mini-Boss`;
-              return `<option value="${startFloor}" ${isSelected}>Floor ${startFloor} (${tag})${recBadge}</option>`;
-            })
-            .join("");
+          let tag =
+            startFloor === 1
+              ? "Start"
+              : (startFloor - 1) % 12 === 0
+                ? `Sector ${sectorNum} Start`
+                : `Post Mini-Boss`;
+          return `<option value="${startFloor}" ${isSelected}>Floor ${startFloor} (${tag})${recBadge}</option>`;
+        })
+        .join("");
 
-          let recBannerHtml = "";
-          if (rec && rec.items && rec.items.length > 0) {
-            recBannerHtml = `
+      let recBannerHtml = "";
+      if (rec && rec.items && rec.items.length > 0) {
+        recBannerHtml = `
                           <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
                             <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
                             <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
                           </div>
                         `;
-          }
+      }
 
-          let selectedSigilId = window.state.selectedDeploymentSigilId;
-          let activeSigil = selectedSigilId
-            ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
-            : null;
+      let selectedSigilId = window.state.selectedDeploymentSigilId;
+      let activeSigil = selectedSigilId
+        ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
+        : null;
 
-          let sigilSlotHtml = "";
-          if (activeSigil) {
-            let col = window.getTierColor(activeSigil.statsRolled);
-            let buffPills = (activeSigil.buffs || [])
-              .map(
-                (b) =>
-                  `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">+ ${b.name}</span>`,
-              )
-              .join(" ");
-            let debuffPills = (activeSigil.debuffs || [])
-              .map(
-                (d) =>
-                  `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">- ${d.name}</span>`,
-              )
-              .join(" ");
+      let sigilSlotHtml = "";
+      if (activeSigil) {
+        let col = window.getTierColor(activeSigil.statsRolled);
+        let buffPills = (activeSigil.buffs || [])
+          .map(
+            (b) =>
+              `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">+ ${b.name}</span>`,
+          )
+          .join(" ");
+        let debuffPills = (activeSigil.debuffs || [])
+          .map(
+            (d) =>
+              `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">- ${d.name}</span>`,
+          )
+          .join(" ");
 
-            sigilSlotHtml = `
+        sigilSlotHtml = `
                 <div class="deploy-sigil-card-slot" onclick="window.openSigilPickerModal()" style="border-color:${col}; cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;">
                   <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; gap:6px; min-width:0;">
@@ -4693,16 +4735,16 @@ window.calculateCumulativeOnslaughtShards = function (startWave) {
                   </div>
                 </div>
               `;
-          } else {
-            sigilSlotHtml = `
+      } else {
+        sigilSlotHtml = `
                 <div class="deploy-sigil-card-slot empty" onclick="window.openSigilPickerModal()" style="cursor:pointer; padding:12px 10px;">
                   <span style="color:#64748b; font-size:10px; font-weight:bold; font-style:italic;">[ NO SIGIL INFUSED ]</span>
                   <button class="action-btn-sm" style="background:#0284c7; border-color:#38bdf8; color:#fff; font-size:8px; padding:4px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">INFUSE SIGIL</button>
                 </div>
             `;
-          }
+      }
 
-          selectorsPanel.innerHTML = `
+      selectorsPanel.innerHTML = `
                       ${recBannerHtml}
                       <div class="deploy-pane-header">
                         <span>EXPEDITION & SIGIL SETUP</span>
@@ -4721,6 +4763,6 @@ window.calculateCumulativeOnslaughtShards = function (startWave) {
                                                 </div>
                                               </div>
                                             `;
-                                }
-                              }
-                            };
+    }
+  }
+};
