@@ -439,14 +439,14 @@
     }
 
     if (tile === window.TILE_TYPES.RECOVERY_CHEST) {
-      if (!window.isChestOpened(currentTileX, currentTileY)) {
-        window.setChestOpened(currentTileX, currentTileY);
+      if (!window.isChestOpened(tx, ty)) {
+        window.setChestOpened(tx, ty);
         window.playerStats.hasTriggeredRecovery = true;
 
         if (typeof window.spawnChestEruptionParticles === "function") {
           window.spawnChestEruptionParticles(
-            currentTileX * tileSize + tileSize / 2,
-            currentTileY * tileSize + tileSize / 2,
+            tx * tileSize + tileSize / 2,
+            ty * tileSize + tileSize / 2,
             true,
           );
         }
@@ -1145,8 +1145,15 @@
     window.resizeCanvas();
     window.addEventListener("resize", window.resizeCanvas);
 
-    if (window.SoundManager && typeof window.SoundManager.init === "function") {
-      window.SoundManager.init();
+    if (window.SoundManager) {
+      if (typeof window.SoundManager.synthesizeSwing !== "function") {
+        window.SoundManager.synthesizeSwing = function () {
+          // Safe silent fallback to prevent character attribute allocation crashes
+        };
+      }
+      if (typeof window.SoundManager.init === "function") {
+        window.SoundManager.init();
+      }
     }
 
     // Prevent document-level elastic bouncing unless the touch originates inside a scrollable container
@@ -4660,6 +4667,185 @@
     // Start inside Adventurer's Hub
     window.loadHub();
 
+    // Decorate damagePlayer globally to monitor and trigger defensive counters
+    const originalDamagePlayer = window.damagePlayer;
+    window.damagePlayer = function (amount, attacker) {
+      let prevBlockTime =
+        (window.playerStats && window.playerStats.recentBlockTime) || 0;
+      let prevParryTime =
+        (window.playerStats && window.playerStats.recentParryTime) || 0;
+
+      let result = originalDamagePlayer
+        ? originalDamagePlayer.call(this, amount, attacker)
+        : null;
+
+      let postBlockTime =
+        (window.playerStats && window.playerStats.recentBlockTime) || 0;
+      let postParryTime =
+        (window.playerStats && window.playerStats.recentParryTime) || 0;
+
+      if (postBlockTime > prevBlockTime) {
+        window.handleVanguardBlockTrigger(attacker);
+      }
+      if (postParryTime > prevParryTime) {
+        window.handleVanguardParryTrigger(attacker);
+      }
+
+      return result;
+    };
+
+    window.handleVanguardBlockTrigger = function (attacker) {
+      let p = window.player;
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      let aegisLevel = window.SkillTreeManager
+        ? window.SkillTreeManager.getSkillLevel("shield_impact_tremor")
+        : 0;
+
+      if (aegisLevel > 0) {
+        let procChance = aegisLevel * 0.2;
+        if (Math.random() < procChance) {
+          if (window.spawnResonantAegisRipple) {
+            window.spawnResonantAegisRipple(p.x, p.y);
+          }
+
+          let defVal = pStats.def || p.def || 5;
+          let dmg = BigNum.from(defVal).mul(1.2);
+          let range = 45;
+
+          if (window.activeDungeonMobs) {
+            window.activeDungeonMobs.forEach((m) => {
+              if (m.hp.gt(0) && !m.isFriendlyWisp) {
+                let mCx = m.x + (m.w || 24) / 2;
+                let mCy = m.y + (m.h || 24) / 2;
+                let dist = Math.hypot(p.x - mCx, p.y - mCy);
+                if (dist <= range) {
+                  m.hp = m.hp.sub(dmg);
+                  m.flashTimer = 8;
+                  m.hasTakenDamage = true;
+
+                  if (!m.isBoss) {
+                    let pushAngle = Math.atan2(mCy - p.y, mCx - p.x);
+                    let pushDist = 14;
+                    let targetX = m.x + Math.cos(pushAngle) * pushDist;
+                    let targetY = m.y + Math.sin(pushAngle) * pushDist;
+                    if (
+                      window.activeDungeonMap &&
+                      typeof window.checkCollisionAt === "function" &&
+                      !window.checkCollisionAt(
+                        window.activeDungeonMap,
+                        targetX + 12,
+                        targetY + 12,
+                        12,
+                      )
+                    ) {
+                      m.x = targetX;
+                      m.y = targetY;
+                    }
+                  }
+
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnDamageEffect(
+                      mCx,
+                      mCy,
+                      dmg,
+                      "counter",
+                      false,
+                      m,
+                    );
+                  }
+                }
+              }
+            });
+          }
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("block");
+          }
+        }
+      }
+    };
+
+    window.handleVanguardParryTrigger = function (attacker) {
+      let parryFlurryLevel = window.SkillTreeManager
+        ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
+        : 0;
+      if (parryFlurryLevel > 0 && attacker) {
+        window.triggerWindRazorStrike(attacker);
+      }
+    };
+
+    window.checkAndSpawnNoxiousBloom = function (m, x, y) {
+      let bloomLevel = window.SkillTreeManager
+        ? window.SkillTreeManager.getSkillLevel("dagger_noxious_bloom")
+        : 0;
+      if (bloomLevel > 0) {
+        let hasDebuff =
+          (m.bleedStacks && m.bleedStacks > 0) ||
+          (m.poisonStacks && m.poisonStacks > 0);
+        if (hasDebuff) {
+          window.cavernInteractives = window.cavernInteractives || [];
+          let pStats =
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : {};
+          let baseAtk = pStats.atk || window.player.atk || 15;
+          let tickDmg = BigNum.from(baseAtk).mul(0.15 * bloomLevel);
+
+          window.cavernInteractives.push({
+            id: window.idCounter++,
+            type: "noxious_bloom",
+            x: x,
+            y: y,
+            w: 80,
+            h: 36,
+            life: 240,
+            maxLife: 240,
+            tickDamage: tickDmg,
+          });
+
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(x, y, 15, "swamp_basilisk", 3);
+          }
+        }
+      }
+    };
+
+    window.triggerWindRazorStrike = function (targetMob) {
+      let p = window.player;
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      let windLevel = window.SkillTreeManager
+        ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
+        : 0;
+
+      if (windLevel > 0 && targetMob) {
+        let tCx = targetMob.x + (targetMob.w || 24) / 2;
+        let tCy = targetMob.y + (targetMob.h || 24) / 2;
+        let angle = Math.atan2(tCy - p.y, tCx - p.x);
+
+        let baseAtk = pStats.atk || p.atk || 15;
+        let windDmg = BigNum.from(baseAtk).mul(0.4 * (1 + windLevel * 0.2));
+
+        if (window.spawnWindRazor) {
+          window.spawnWindRazor(p.x, p.y - 8, angle, windDmg);
+        }
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("spell_frost"); // Play high-pitch slash sound
+        }
+      }
+    };
+
     // Start 60 FPS Engine Loop
     requestAnimationFrame(gameLoop);
   });
@@ -7222,75 +7408,85 @@
     }
 
     // --- DUNGEON MERCHANT PROXIMITY CHECK ---
-          let pObj = window.player;
-          let mapInstObj = window.activeDungeonMap;
-          let closestShopItem = null;
-          let closestShopDist = Infinity;
-          let closestItemIdx = -1;
+    let pObj = window.player;
+    let mapInstObj = window.activeDungeonMap;
+    let closestShopItem = null;
+    let closestShopDist = Infinity;
+    let closestItemIdx = -1;
 
-          if (
-            window.currentGameState === window.GAME_STATES.DUNGEON &&
-            mapInstObj &&
-            mapInstObj.merchantTile &&
-            mapInstObj.merchantStock &&
-            mapInstObj.merchantStock.length > 0
-          ) {
-            let mcx = mapInstObj.merchantTile.x * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-            let mcy = mapInstObj.merchantTile.y * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-            let itemXOffsets = [-15, 0, 15];
+    if (
+      window.currentGameState === window.GAME_STATES.DUNGEON &&
+      mapInstObj &&
+      mapInstObj.merchantTile &&
+      mapInstObj.merchantStock &&
+      mapInstObj.merchantStock.length > 0
+    ) {
+      let mcx =
+        mapInstObj.merchantTile.x * mapInstObj.tileSize +
+        mapInstObj.tileSize / 2;
+      let mcy =
+        mapInstObj.merchantTile.y * mapInstObj.tileSize +
+        mapInstObj.tileSize / 2;
+      let itemXOffsets = [-15, 0, 15];
 
-            mapInstObj.merchantStock.forEach((item, idx) => {
-              if (item.purchased) return;
-              let itemX = mcx + itemXOffsets[idx];
-              let itemY = mcy + 4;
-              let ware = mapInstObj.merchantWares && mapInstObj.merchantWares[idx];
-              if (ware) {
-                itemX = ware.x * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-                itemY = ware.y * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-              }
-              let dist = Math.hypot(pObj.x - itemX, pObj.y - itemY);
+      mapInstObj.merchantStock.forEach((item, idx) => {
+        if (item.purchased) return;
+        let itemX = mcx + itemXOffsets[idx];
+        let itemY = mcy + 4;
+        let ware = mapInstObj.merchantWares && mapInstObj.merchantWares[idx];
+        if (ware) {
+          itemX = ware.x * mapInstObj.tileSize + mapInstObj.tileSize / 2;
+          itemY = ware.y * mapInstObj.tileSize + mapInstObj.tileSize / 2;
+        }
+        let dist = Math.hypot(pObj.x - itemX, pObj.y - itemY);
 
-              if (dist <= 20 && dist < closestShopDist) { // 20px interaction radius feels ideal on independent tiles
-                closestShopDist = dist;
-                closestShopItem = item;
-                closestItemIdx = idx;
-              }
-            });
-          }
+        if (dist <= 20 && dist < closestShopDist) {
+          // 20px interaction radius feels ideal on independent tiles
+          closestShopDist = dist;
+          closestShopItem = item;
+          closestItemIdx = idx;
+        }
+      });
+    }
 
-          if (closestShopItem) {
-                  if (window.activeDungeonMerchantItem !== closestShopItem) {
-                    window.activeDungeonMerchantItem = closestShopItem;
+    if (closestShopItem) {
+      if (window.activeDungeonMerchantItem !== closestShopItem) {
+        window.activeDungeonMerchantItem = closestShopItem;
 
-                    let mcx = mapInstObj.merchantTile.x * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-                    let mcy = mapInstObj.merchantTile.y * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-                    let itemXOffsets = [-15, 0, 15];
-                    let itemX = mcx + itemXOffsets[closestItemIdx];
-                    let itemY = mcy + 4;
-                    let ware = mapInstObj.merchantWares && mapInstObj.merchantWares[closestItemIdx];
-                    if (ware) {
-                      itemX = ware.x * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-                      itemY = ware.y * mapInstObj.tileSize + mapInstObj.tileSize / 2;
-                    }
+        let mcx =
+          mapInstObj.merchantTile.x * mapInstObj.tileSize +
+          mapInstObj.tileSize / 2;
+        let mcy =
+          mapInstObj.merchantTile.y * mapInstObj.tileSize +
+          mapInstObj.tileSize / 2;
+        let itemXOffsets = [-15, 0, 15];
+        let itemX = mcx + itemXOffsets[closestItemIdx];
+        let itemY = mcy + 4;
+        let ware =
+          mapInstObj.merchantWares && mapInstObj.merchantWares[closestItemIdx];
+        if (ware) {
+          itemX = ware.x * mapInstObj.tileSize + mapInstObj.tileSize / 2;
+          itemY = ware.y * mapInstObj.tileSize + mapInstObj.tileSize / 2;
+        }
 
-                    let cam = window.DungeonCamera;
-                    let zoom = cam ? cam.zoom : 1.6;
-                    let screenX = (itemX - cam.x) * zoom;
-                    let screenY = (itemY - cam.y) * zoom;
+        let cam = window.DungeonCamera;
+        let zoom = cam ? cam.zoom : 1.6;
+        let screenX = (itemX - cam.x) * zoom;
+        let screenY = (itemY - cam.y) * zoom;
 
-                    let mockEvent = {
-                      clientX: screenX,
-                      clientY: screenY
-                    };
+        let mockEvent = {
+          clientX: screenX,
+          clientY: screenY,
+        };
 
-                    window.showItemTooltip(mockEvent, closestShopItem);
-                  }
-                } else {
-                  if (window.activeDungeonMerchantItem) {
-                    window.activeDungeonMerchantItem = null;
-                    window.hideTooltip(true);
-                  }
-                }
+        window.showItemTooltip(mockEvent, closestShopItem);
+      }
+    } else {
+      if (window.activeDungeonMerchantItem) {
+        window.activeDungeonMerchantItem = null;
+        window.hideTooltip(true);
+      }
+    }
 
     // Tick active chest animations
     let currentMap = window.activeDungeonMap;
@@ -8616,6 +8812,49 @@
       let item = window.cavernInteractives[i];
       item.life--;
 
+      if (item.type === "noxious_bloom") {
+        if (window.logicClock % 45 === 0) {
+          let range = 40; // matches 40px radius (80px diameter)
+          let applyDamage = (targetMob) => {
+            let mCx = targetMob.x + (targetMob.w || 24) / 2;
+            let mCy = targetMob.y + (targetMob.h || 24) / 2;
+            let dist = Math.hypot(item.x - mCx, item.y - mCy);
+            if (
+              dist <= range &&
+              targetMob.hp.gt(0) &&
+              !targetMob.isFriendlyWisp
+            ) {
+              let tickDmg = item.tickDamage || BigNum.from(5);
+              targetMob.hp = targetMob.hp.sub(tickDmg);
+              targetMob.flashTimer = 5;
+              targetMob.hasTakenDamage = true;
+
+              // Apply armor/defense shred (3s duration)
+              targetMob.buffTimers.def = 180;
+              targetMob.buffStacks.def = -1; // negative stack shreds 15% armor
+
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnDamageEffect(
+                  mCx,
+                  mCy,
+                  tickDmg,
+                  "poison",
+                  false,
+                  targetMob,
+                );
+              }
+            }
+          };
+
+          if (window.activeDungeonMobs) {
+            window.activeDungeonMobs.forEach(applyDamage);
+          }
+          if (window.mob) {
+            applyDamage(window.mob);
+          }
+        }
+      }
+
       if (item.type === "acid_pool") {
         let dist = Math.hypot(p.x - item.x, p.y - item.y);
         if (dist <= pRadius + 12) {
@@ -9035,6 +9274,65 @@
       }
       ctx.lineTo(item.x2, item.y2);
       ctx.stroke();
+      return;
+    }
+
+    if (item.type === "noxious_bloom") {
+      let time = Date.now();
+      let pulse = Math.sin(time / 120) * 3;
+      let alpha = item.life / item.maxLife;
+      ctx.save();
+
+      // 1. Swirling radial green toxic gradient mist
+      let grad = ctx.createRadialGradient(
+        item.x,
+        item.y,
+        2,
+        item.x,
+        item.y,
+        Math.max(0.1, 40 + pulse),
+      );
+      grad.addColorStop(0, "rgba(46, 204, 113, 0.25)");
+      grad.addColorStop(0.6, "rgba(39, 174, 96, 0.1)");
+      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(
+        item.x,
+        item.y,
+        Math.max(0.1, 40 + pulse),
+        Math.max(0.1, 18 + pulse * 0.4),
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+
+      // 2. Dashed outer warning ring
+      ctx.strokeStyle = `rgba(39, 174, 96, ${alpha * 0.5})`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.ellipse(item.x, item.y, 40, 18, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 3. Floating poison bubbles that drift and lift upwards
+      ctx.fillStyle = "rgba(163, 253, 131, 0.6)";
+      for (let i = 0; i < 4; i++) {
+        let progress = (time / (400 + i * 150) + i * 0.25) % 1.0;
+        let bx =
+          item.x + Math.sin(i * 20 + time / 400) * (30 * (1.0 - progress));
+        let by =
+          item.y +
+          Math.cos(i * 15 + time / 400) * (12 * (1.0 - progress)) -
+          progress * 15;
+        ctx.beginPath();
+        ctx.arc(bx, by, Math.max(0.1, 3.2 * (1.0 - progress)), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
       return;
     }
 
@@ -10329,6 +10627,107 @@
         m.hasTakenDamage = true;
         m.flashTimer = 6;
 
+        // Track Critical Streaks for Wind-Razor Flurry
+        let windFlurryLevel = window.SkillTreeManager
+          ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
+          : 0;
+        if (windFlurryLevel > 0) {
+          if (isCrit) {
+            window.playerStats.critStreak =
+              (window.playerStats.critStreak || 0) + 1;
+            if (window.playerStats.critStreak >= 3) {
+              window.playerStats.critStreak = 0;
+              window.triggerWindRazorStrike(m);
+            }
+          } else {
+            window.playerStats.critStreak = 0; // Reset streak on non-crit
+          }
+        }
+
+        // --- Earth-Breaker Bash Cone Splash ---
+        let bashLevel = window.SkillTreeManager
+          ? window.SkillTreeManager.getSkillLevel("shield_earth_breaker_bash")
+          : 0;
+        let isShield =
+          pStats.subType === "shield" ||
+          (window.equippedSlots &&
+            window.equippedSlots.subweapon &&
+            window.equippedSlots.subweapon.subType === "shield");
+
+        if (isShield && bashLevel > 0) {
+          let attackAngle = Math.atan2(
+            m.y + (m.h || 24) / 2 - p.y,
+            m.x + (m.w || 24) / 2 - p.x,
+          );
+          if (window.spawnEarthBreakerBashVisual) {
+            window.spawnEarthBreakerBashVisual(p.x, p.y, attackAngle);
+          }
+
+          let coneWidth = 0.45; // ~25 degrees each side (~50 degree cone)
+          let range = 60;
+          let splashDmg = pAtk.mul(0.5); // Deals 50% splash damage inside the cone
+
+          if (window.activeDungeonMobs) {
+            window.activeDungeonMobs.forEach((otherMob) => {
+              if (
+                otherMob.id !== m.id &&
+                otherMob.hp.gt(0) &&
+                !otherMob.isFriendlyWisp
+              ) {
+                let omCx = otherMob.x + (otherMob.w || 24) / 2;
+                let omCy = otherMob.y + (otherMob.h || 24) / 2;
+                let dist = Math.hypot(p.x - omCx, p.y - omCy);
+                if (dist <= range) {
+                  let targetAngle = Math.atan2(omCy - p.y, omCx - p.x);
+                  let angleDiff = Math.abs(
+                    Math.atan2(
+                      Math.sin(targetAngle - attackAngle),
+                      Math.cos(targetAngle - attackAngle),
+                    ),
+                  );
+                  if (angleDiff <= coneWidth) {
+                    otherMob.hp = otherMob.hp.sub(splashDmg);
+                    otherMob.flashTimer = 6;
+                    otherMob.hasTakenDamage = true;
+
+                    // Apply Stun Chance (15% per rank) to non-bosses
+                    let stunChance = bashLevel * 0.15;
+                    if (Math.random() < stunChance && !otherMob.isBoss) {
+                      otherMob.speedMultiplier = 0;
+                      otherMob.stunTimer = 90; // 1.5s stun
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(
+                          omCx,
+                          otherMob.y - 12,
+                          "STUNNED!",
+                          "#38bdf8",
+                        );
+                      }
+                    }
+
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        omCx,
+                        omCy,
+                        splashDmg,
+                        "counter",
+                        false,
+                        otherMob,
+                      );
+                    }
+                  }
+                }
+              }
+            });
+          }
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("block");
+          }
+        }
+
         if (
           window.isCavernEffectActive &&
           window.isCavernEffectActive("temporal_echo")
@@ -10815,6 +11214,12 @@
             const triElements = ["fire", "lightning", "frost"];
             spellEffectType =
               triElements[Math.floor(Math.random() * triElements.length)];
+          } else if (activeSpellType === "dual_fire_lightning") {
+            spellEffectType = Math.random() < 0.5 ? "fire" : "lightning";
+          } else if (activeSpellType === "dual_fire_frost") {
+            spellEffectType = Math.random() < 0.5 ? "fire" : "frost";
+          } else if (activeSpellType === "dual_lightning_frost") {
+            spellEffectType = Math.random() < 0.5 ? "lightning" : "frost";
           }
 
           // Trigger actual visual spells
@@ -11602,6 +12007,11 @@
           let mobCenterX = m.x + m.w / 2;
           let mobCenterY = m.y + m.h / 2;
 
+          // Trigger Noxious Bloom on qualified death
+          if (window.checkAndSpawnNoxiousBloom) {
+            window.checkAndSpawnNoxiousBloom(m, mobCenterX, mobCenterY);
+          }
+
           if (
             window.isCavernEffectActive &&
             window.isCavernEffectActive("soul_harvest") &&
@@ -11873,6 +12283,23 @@
         let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
         let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
+        // Track Critical Streaks for Wind-Razor Flurry (Boss)
+        let windFlurryLevel = window.SkillTreeManager
+          ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
+          : 0;
+        if (windFlurryLevel > 0) {
+          if (isCrit) {
+            window.playerStats.critStreak =
+              (window.playerStats.critStreak || 0) + 1;
+            if (window.playerStats.critStreak >= 3) {
+              window.playerStats.critStreak = 0;
+              window.triggerWindRazorStrike(bm);
+            }
+          } else {
+            window.playerStats.critStreak = 0; // Reset streak on non-crit
+          }
+        }
+
         // REDUCE DAMAGE BY 90% IF ELDRITCH BARK SHIELD IS ACTIVE!
         if (bm.actionState === "bark_shield") {
           pAtk = pAtk.mul(0.1);
@@ -12137,6 +12564,12 @@
             const triElements = ["fire", "lightning", "frost"];
             spellEffectType =
               triElements[Math.floor(Math.random() * triElements.length)];
+          } else if (activeSpellType === "dual_fire_lightning") {
+            spellEffectType = Math.random() < 0.5 ? "fire" : "lightning";
+          } else if (activeSpellType === "dual_fire_frost") {
+            spellEffectType = Math.random() < 0.5 ? "fire" : "frost";
+          } else if (activeSpellType === "dual_lightning_frost") {
+            spellEffectType = Math.random() < 0.5 ? "lightning" : "frost";
           }
 
           // Trigger actual visual spells (Boss)
@@ -12446,6 +12879,14 @@
           window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
           window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
 
+          let bossCenterX = bm.x + bm.w / 2;
+          let bossCenterY = bm.y + bm.h / 2;
+
+          // Trigger Noxious Bloom on Boss death
+          if (window.checkAndSpawnNoxiousBloom) {
+            window.checkAndSpawnNoxiousBloom(bm, bossCenterX, bossCenterY);
+          }
+
           // Guaranteed 1-3 healing hearts on Boss defeat
           if (typeof window.spawnHomingHearts === "function") {
             let heartHeal = Math.round(p.maxHp * 0.15);
@@ -12460,7 +12901,6 @@
           }
 
           // Boss Material Payload
-          let bossCenterY = bm.y + bm.h / 2;
           let soulCount = Math.floor(Math.random() * 4) + 3;
           window.addDungeonRunScrap(
             "Monster Soul",
@@ -12962,14 +13402,14 @@
       );
 
       for (let r = startRow; r <= endRow; r++) {
-                    for (let c = startCol; c <= endCol; c++) {
-                      let tType = mapInst.grid[r][c];
-                      if (
-                        tType === window.TILE_TYPES.CHEST_SPAWN ||
-                        tType === window.TILE_TYPES.RECOVERY_CHEST ||
-                        tType === window.TILE_TYPES.DUNGEON_MERCHANT ||
-                        tType === window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL
-                      ) {
+        for (let c = startCol; c <= endCol; c++) {
+          let tType = mapInst.grid[r][c];
+          if (
+            tType === window.TILE_TYPES.CHEST_SPAWN ||
+            tType === window.TILE_TYPES.RECOVERY_CHEST ||
+            tType === window.TILE_TYPES.DUNGEON_MERCHANT ||
+            tType === window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL
+          ) {
             let isExplored =
               isHub ||
               (mapInst.exploredGrid &&
@@ -16893,15 +17333,15 @@
       }
 
       let map = window.activeDungeonMap;
-                let isNearMerchant = false;
-                if (map && map.merchantTile && window.player) {
-                  let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
-                  let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
-                  let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
-                  if (dist <= 110) {
-                    isNearMerchant = true;
-                  }
-                }
+      let isNearMerchant = false;
+      if (map && map.merchantTile && window.player) {
+        let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
+        let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
+        let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
+        if (dist <= 110) {
+          isNearMerchant = true;
+        }
+      }
 
       listEl.innerHTML = filteredList
         .map((item) => {
@@ -16975,15 +17415,15 @@
       }
 
       let map = window.activeDungeonMap;
-                let isNearMerchant = false;
-                if (map && map.merchantTile && window.player) {
-                  let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
-                  let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
-                  let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
-                  if (dist <= 110) {
-                    isNearMerchant = true;
-                  }
-                }
+      let isNearMerchant = false;
+      if (map && map.merchantTile && window.player) {
+        let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
+        let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
+        let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
+        if (dist <= 110) {
+          isNearMerchant = true;
+        }
+      }
 
       listEl.innerHTML = filteredList
         .map((item) => {
@@ -18328,6 +18768,101 @@
       }
     }
   };
+
+  // --- DYNAMIC TOME PROGRESSION & MULTICAST GENERATION ---
+  window.rollTomeSpells = function (item, stageScale, rarity) {
+    let spellType = "fire"; // Default single-target starter spell
+
+    if (stageScale >= 13) {
+      if (rarity === 0 || rarity === 1) {
+        const options = ["fire", "lightning", "frost"];
+        spellType = options[Math.floor(Math.random() * options.length)];
+      } else if (rarity === 2 || rarity === 3) {
+        if (Math.random() < 0.3) {
+          const dualOptions = [
+            "dual_fire_lightning",
+            "dual_fire_frost",
+            "dual_lightning_frost",
+          ];
+          spellType =
+            dualOptions[Math.floor(Math.random() * dualOptions.length)];
+        } else {
+          const options = ["fire", "lightning", "frost"];
+          spellType = options[Math.floor(Math.random() * options.length)];
+        }
+      } else {
+        let roll = Math.random();
+        if (roll < 0.2) {
+          spellType = "tri";
+        } else if (roll < 0.6) {
+          const dualOptions = [
+            "dual_fire_lightning",
+            "dual_fire_frost",
+            "dual_lightning_frost",
+          ];
+          spellType =
+            dualOptions[Math.floor(Math.random() * dualOptions.length)];
+        } else {
+          const options = ["fire", "lightning", "frost"];
+          spellType = options[Math.floor(Math.random() * options.length)];
+        }
+      }
+    }
+
+    item.spellType = spellType;
+
+    let spellName = "";
+    let spellDesc = "";
+
+    if (spellType === "fire") {
+      spellName = "Infernal Fireball";
+      spellDesc =
+        "Emits powerful single-target Fireballs dealing highly concentrated fire damage.";
+    } else if (spellType === "lightning") {
+      spellName = "Chain Lightning";
+      spellDesc =
+        "Emits electrical surges that chain to 1 additional adjacent target for moderate lightning damage.";
+    } else if (spellType === "frost") {
+      spellName = "Glacial Frost Nova";
+      spellDesc =
+        "Emits sub-zero Frost Novas dealing area-of-effect frost damage and slowing enemies.";
+    } else if (spellType === "dual_fire_lightning") {
+      spellName = "Stormfire Catalyst";
+      spellDesc =
+        "Alternates between single-target Fireballs and chaining Lightning Bolts.";
+    } else if (spellType === "dual_fire_frost") {
+      spellName = "Frostburn Catalyst";
+      spellDesc =
+        "Alternates between concentrated Fireballs and slows targets with compact Frost Novas.";
+    } else if (spellType === "dual_lightning_frost") {
+      spellName = "Tundra Conduit";
+      spellDesc =
+        "Alternates between chaining Lightning Bolts and slows targets with compact Frost Novas.";
+    } else if (spellType === "tri") {
+      spellName = "Triad Convergence";
+      spellDesc =
+        "Continuously cycles between Fire, Lightning, and Frost spells for ultimate versatility.";
+    }
+
+    item.desc = `✦ ${spellName} & Barrier:\n${spellDesc}\nAbsorbs 20%-35% of incoming damage before Defense (scales with INT).`;
+  };
+
+  // Decorator Hook for createItemObject
+  const originalCreateItemObject = window.createItemObject;
+  window.createItemObject = function (type, rarity, stageScale, ...args) {
+    let item = originalCreateItemObject
+      ? originalCreateItemObject.call(this, type, rarity, stageScale, ...args)
+      : null;
+    if (
+      item &&
+      (item.type === "tome" ||
+        item.subType === "tome" ||
+        (item.name && item.name.toLowerCase().includes("lexicon")))
+    ) {
+      window.rollTomeSpells(item, stageScale, rarity);
+    }
+    return item;
+  };
 })();
 
 (function () {
@@ -18339,9 +18874,36 @@
     let getLevel = (id) =>
       window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel(id) : 0;
 
+    // Apply Tome Spell Scaling & Type mapping
+    if (window.equippedSlots && window.equippedSlots.subweapon) {
+      let sub = window.equippedSlots.subweapon;
+      if (
+        sub.type === "tome" ||
+        sub.subType === "tome" ||
+        (sub.name && sub.name.toLowerCase().includes("lexicon"))
+      ) {
+        stats.spellType = sub.spellType || "fire";
+
+        let basePower = stats.spellPower || 1.5;
+        if (stats.spellType === "tri") {
+          stats.spellPower = basePower * 0.8; // Balanced 1.2x modifier for full triad convergence
+        } else if (stats.spellType.startsWith("dual_")) {
+          stats.spellPower = basePower * 0.9; // 1.35x modifier for dual catalysts
+        } else {
+          stats.spellPower = basePower; // Concentrated 1.5x modifier for single element channels
+        }
+      }
+    }
+
     // --- STANDARD FILLER SKILLS RESOLUTION ---
 
     // 1. Shield Tree Fillers
+    let stalwartBastionLvl = getLevel("shield_stalwart_bastion");
+    if (stalwartBastionLvl > 0) {
+      stats.blockMitigation =
+        (stats.blockMitigation || 0.7) + stalwartBastionLvl * 0.05;
+    }
+
     let shieldFiller1 = getLevel("shield_filler_hp_flat");
     if (shieldFiller1 > 0) {
       stats.maxHp = (stats.maxHp || 100) * (1 + shieldFiller1 * 0.04);

@@ -511,81 +511,87 @@
     }
 
     placeDungeonMerchant() {
-                let isMiniBoss = this.depth % 12 === 4 || this.depth % 12 === 8;
-                let isMajorBoss = this.depth % 12 === 0;
-                if (isMiniBoss || isMajorBoss || window.playerStats.isCrucibleMode || window.currentGameState === window.GAME_STATES.HUB) {
-                  return;
-                }
+      let isMiniBoss = this.depth % 12 === 4 || this.depth % 12 === 8;
+      let isMajorBoss = this.depth % 12 === 0;
+      if (
+        isMiniBoss ||
+        isMajorBoss ||
+        window.playerStats.isCrucibleMode ||
+        window.currentGameState === window.GAME_STATES.HUB
+      ) {
+        return;
+      }
 
-                // Balance: Enforce 20% flat chance per standard floor (rare, lucky encounter)
-                if (Math.random() > 0.20) {
-                  return;
-                }
+      // Balance: Enforce 20% flat chance per standard floor (rare, lucky encounter)
+      if (Math.random() > 0.2) {
+        return;
+      }
 
-                let eligibleRooms = this.rooms.filter(
-                  (r) => r.id !== this.spawnRoomId && r.id !== this.extractionRoomId
-                );
-                if (eligibleRooms.length === 0) return;
+      let eligibleRooms = this.rooms.filter(
+        (r) => r.id !== this.spawnRoomId && r.id !== this.extractionRoomId,
+      );
+      if (eligibleRooms.length === 0) return;
 
-                let chosenRoom = eligibleRooms[Math.floor(Math.random() * eligibleRooms.length)];
+      let chosenRoom =
+        eligibleRooms[Math.floor(Math.random() * eligibleRooms.length)];
 
-                // Place the merchant at the north-center of the room against the wall
-                let merchantX = chosenRoom.cx;
-                let merchantY = chosenRoom.y + 1;
+      // Place the merchant at the north-center of the room against the wall
+      let merchantX = chosenRoom.cx;
+      let merchantY = chosenRoom.y + 1;
 
-                this.grid[merchantY][merchantX] = window.TILE_TYPES.DUNGEON_MERCHANT;
-                this.merchantTile = { x: merchantX, y: merchantY };
+      this.grid[merchantY][merchantX] = window.TILE_TYPES.DUNGEON_MERCHANT;
+      this.merchantTile = { x: merchantX, y: merchantY };
 
-                // Place 3 separate pedestal tiles directly in front of him (spread horizontally)
-                this.merchantWares = [
-                  { x: merchantX - 1, y: merchantY + 1, itemIdx: 0 },
-                  { x: merchantX,     y: merchantY + 1, itemIdx: 1 },
-                  { x: merchantX + 1, y: merchantY + 1, itemIdx: 2 }
-                ];
+      // Place 3 separate pedestal tiles directly in front of him (spread horizontally)
+      this.merchantWares = [
+        { x: merchantX - 1, y: merchantY + 1, itemIdx: 0 },
+        { x: merchantX, y: merchantY + 1, itemIdx: 1 },
+        { x: merchantX + 1, y: merchantY + 1, itemIdx: 2 },
+      ];
 
-                // Register these tiles into the grid so other entities/decorations don't spawn on them
-                this.merchantWares.forEach(w => {
-                  this.grid[w.y][w.x] = window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL;
-                });
+      // Register these tiles into the grid so other entities/decorations don't spawn on them
+      this.merchantWares.forEach((w) => {
+        this.grid[w.y][w.x] = window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL;
+      });
 
-                this.generateMerchantStock();
-              }
+      this.generateMerchantStock();
+    }
 
     generateMerchantStock() {
-          this.merchantStock = [];
-          let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-          let stageScale = this.depth;
-          let pStats =
-            typeof window.resolvePlayerStats === "function"
-              ? window.resolvePlayerStats()
-              : {};
-          let playerQuality = pStats.qly || 1.0;
+      this.merchantStock = [];
+      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+      let stageScale = this.depth;
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      let playerQuality = pStats.qly || 1.0;
 
-          for (let i = 0; i < 3; i++) {
-            let chosenType = types[Math.floor(Math.random() * types.length)];
-            let rolledRarity = window.rollItemRarity(
-              window.playerStats.maxFloorCleared || 0,
-              playerQuality,
-              false,
-            );
-            let item = window.createItemObject(
-              chosenType,
-              rolledRarity,
-              stageScale,
-              0,
-            );
+      for (let i = 0; i < 3; i++) {
+        let chosenType = types[Math.floor(Math.random() * types.length)];
+        let rolledRarity = window.rollItemRarity(
+          window.playerStats.maxFloorCleared || 0,
+          playerQuality,
+          false,
+        );
+        let item = window.createItemObject(
+          chosenType,
+          rolledRarity,
+          stageScale,
+          0,
+        );
 
-            let costMult =
-              150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
-            item.cost = BigNum.from(Math.ceil(costMult));
-            item.purchased = false;
-            item.isDungeonShop = true;
+        let costMult =
+          150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
+        item.cost = BigNum.from(Math.ceil(costMult));
+        item.purchased = false;
+        item.isDungeonShop = true;
 
-            this.merchantStock.push(item);
-          }
-        }
+        this.merchantStock.push(item);
+      }
+    }
 
-        populateEntities() {
+    populateEntities() {
       this.chests = [];
       this.mobSpawns = [];
       this.breakables = [];
@@ -4459,224 +4465,245 @@
 
         ctx.restore();
       } else if (tileType === window.TILE_TYPES.DUNGEON_MERCHANT) {
-                        let cx = px + tileSize / 2;
-                        let cy = py + tileSize / 2;
-                        let time = Date.now();
+        let cx = px + tileSize / 2;
+        let cy = py + tileSize / 2;
+        let time = Date.now();
 
-                        ctx.save();
+        ctx.save();
 
-                        // 1. Soft Floor Shadow under Rug
-                        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-                        ctx.beginPath();
-                        ctx.ellipse(cx, cy + 4, 28, 14, 0, 0, Math.PI * 2);
-                        ctx.fill();
+        // 1. Soft Floor Shadow under Rug
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 4, 28, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-                        // 2. Main Rug Body (Crimson velvet)
-                        ctx.fillStyle = "#781c1c";
-                        ctx.strokeStyle = "#450a0a";
-                        ctx.lineWidth = 1.5;
-                        ctx.beginPath();
-                        ctx.ellipse(cx, cy + 2, 26, 12, 0, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.stroke();
+        // 2. Main Rug Body (Crimson velvet)
+        ctx.fillStyle = "#781c1c";
+        ctx.strokeStyle = "#450a0a";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 2, 26, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
-                        // 3. Ornate Gold Filigree Inlay Ring
-                        ctx.strokeStyle = "#d4af37";
-                        ctx.lineWidth = 1.0;
-                        ctx.beginPath();
-                        ctx.ellipse(cx, cy + 2, 21, 9, 0, 0, Math.PI * 2);
-                        ctx.stroke();
+        // 3. Ornate Gold Filigree Inlay Ring
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 2, 21, 9, 0, 0, Math.PI * 2);
+        ctx.stroke();
 
-                        // 4. Moving Tattered Gold Tassels (Fringes)
-                        ctx.strokeStyle = "#b59845";
-                        ctx.lineWidth = 1.2;
-                        for (let i = -6; i <= 6; i += 3) {
-                          ctx.beginPath();
-                          ctx.moveTo(cx - 26, cy + 2 + i);
-                          ctx.lineTo(cx - 29, cy + 2 + i + Math.sin(time / 150 + i) * 0.5);
-                          ctx.stroke();
+        // 4. Moving Tattered Gold Tassels (Fringes)
+        ctx.strokeStyle = "#b59845";
+        ctx.lineWidth = 1.2;
+        for (let i = -6; i <= 6; i += 3) {
+          ctx.beginPath();
+          ctx.moveTo(cx - 26, cy + 2 + i);
+          ctx.lineTo(cx - 29, cy + 2 + i + Math.sin(time / 150 + i) * 0.5);
+          ctx.stroke();
 
-                          ctx.beginPath();
-                          ctx.moveTo(cx + 26, cy + 2 + i);
-                          ctx.lineTo(cx + 29, cy + 2 + i + Math.sin(time / 150 - i) * 0.5);
-                          ctx.stroke();
-                        }
+          ctx.beginPath();
+          ctx.moveTo(cx + 26, cy + 2 + i);
+          ctx.lineTo(cx + 29, cy + 2 + i + Math.sin(time / 150 - i) * 0.5);
+          ctx.stroke();
+        }
 
-                        // 5. Central Geometric Runic Diamond Accent
-                        ctx.fillStyle = "#4a154b"; // Void purple weave
-                        ctx.strokeStyle = "#d4af37";
-                        ctx.lineWidth = 0.8;
-                        ctx.beginPath();
-                        ctx.moveTo(cx, cy - 3);
-                        ctx.lineTo(cx + 8, cy + 2);
-                        ctx.lineTo(cx, cy + 7);
-                        ctx.lineTo(cx - 8, cy + 2);
-                        ctx.closePath();
-                        ctx.fill();
-                        ctx.stroke();
+        // 5. Central Geometric Runic Diamond Accent
+        ctx.fillStyle = "#4a154b"; // Void purple weave
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 3);
+        ctx.lineTo(cx + 8, cy + 2);
+        ctx.lineTo(cx, cy + 7);
+        ctx.lineTo(cx - 8, cy + 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-                        // 6. Merchant Silhouette (Sitting cross-legged at the back)
-                        let merchantY = cy - 4;
+        // 6. Merchant Silhouette (Sitting cross-legged at the back)
+        let merchantY = cy - 4;
 
-                        // Merchant drop shadow on the rug
-                        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-                        ctx.beginPath();
-                        ctx.ellipse(cx, merchantY + 8, 11, 3.5, 0, 0, Math.PI * 2);
-                        ctx.fill();
+        // Merchant drop shadow on the rug
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+        ctx.beginPath();
+        ctx.ellipse(cx, merchantY + 8, 11, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-                        // Draped Cloak Base (Crossed legs)
-                        ctx.fillStyle = "#1e152a";
-                        ctx.strokeStyle = "#000000";
-                        ctx.lineWidth = 1.5;
-                        ctx.beginPath();
-                        ctx.moveTo(cx - 13, merchantY + 8);
-                        ctx.quadraticCurveTo(cx, merchantY + 11, cx + 13, merchantY + 8);
-                        ctx.lineTo(cx + 10, merchantY);
-                        ctx.lineTo(cx - 10, merchantY);
-                        ctx.closePath();
-                        ctx.fill();
-                        ctx.stroke();
+        // Draped Cloak Base (Crossed legs)
+        ctx.fillStyle = "#1e152a";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - 13, merchantY + 8);
+        ctx.quadraticCurveTo(cx, merchantY + 11, cx + 13, merchantY + 8);
+        ctx.lineTo(cx + 10, merchantY);
+        ctx.lineTo(cx - 10, merchantY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-                        // Cloak Torso
-                        ctx.fillStyle = "#130d22";
-                        ctx.beginPath();
-                        ctx.moveTo(cx - 8, merchantY);
-                        ctx.lineTo(cx + 8, merchantY);
-                        ctx.lineTo(cx + 5, merchantY - 12);
-                        ctx.lineTo(cx - 5, merchantY - 12);
-                        ctx.closePath();
-                        ctx.fill();
-                        ctx.stroke();
+        // Cloak Torso
+        ctx.fillStyle = "#130d22";
+        ctx.beginPath();
+        ctx.moveTo(cx - 8, merchantY);
+        ctx.lineTo(cx + 8, merchantY);
+        ctx.lineTo(cx + 5, merchantY - 12);
+        ctx.lineTo(cx - 5, merchantY - 12);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-                        // Gold Clasp
-                        ctx.fillStyle = "#ffd700";
-                        ctx.beginPath();
-                        ctx.arc(cx, merchantY - 10, 1.8, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.stroke();
+        // Gold Clasp
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath();
+        ctx.arc(cx, merchantY - 10, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
-                        // Hooded Cowl
-                        ctx.fillStyle = "#1e152a";
-                        ctx.beginPath();
-                        ctx.moveTo(cx - 5, merchantY - 12);
-                        ctx.quadraticCurveTo(cx - 8, merchantY - 21, cx, merchantY - 23);
-                        ctx.quadraticCurveTo(cx + 8, merchantY - 21, cx + 5, merchantY - 12);
-                        ctx.closePath();
-                        ctx.fill();
-                        ctx.stroke();
+        // Hooded Cowl
+        ctx.fillStyle = "#1e152a";
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, merchantY - 12);
+        ctx.quadraticCurveTo(cx - 8, merchantY - 21, cx, merchantY - 23);
+        ctx.quadraticCurveTo(cx + 8, merchantY - 21, cx + 5, merchantY - 12);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-                        // Deep Hood Void (Face Cavity)
-                        ctx.fillStyle = "#05040a";
-                        ctx.beginPath();
-                        ctx.ellipse(cx, merchantY - 17, 3.5, 4.5, 0, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.stroke();
+        // Deep Hood Void (Face Cavity)
+        ctx.fillStyle = "#05040a";
+        ctx.beginPath();
+        ctx.ellipse(cx, merchantY - 17, 3.5, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
-                        // Pulsing Golden Eyes
-                        let eyePulse = 0.75 + Math.sin(time / 160) * 0.25;
-                        ctx.fillStyle = `rgba(251, 197, 49, ${eyePulse})`;
-                        ctx.beginPath();
-                        ctx.arc(cx - 1.5, merchantY - 17, 0.7, 0, Math.PI * 2);
-                        ctx.arc(cx + 1.5, merchantY - 17, 0.7, 0, Math.PI * 2);
-                        ctx.fill();
+        // Pulsing Golden Eyes
+        let eyePulse = 0.75 + Math.sin(time / 160) * 0.25;
+        ctx.fillStyle = `rgba(251, 197, 49, ${eyePulse})`;
+        ctx.beginPath();
+        ctx.arc(cx - 1.5, merchantY - 17, 0.7, 0, Math.PI * 2);
+        ctx.arc(cx + 1.5, merchantY - 17, 0.7, 0, Math.PI * 2);
+        ctx.fill();
 
-                        ctx.restore();
-                      } else if (tileType === window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL) {
-                        let cx = px + tileSize / 2;
-                        let cy = py + tileSize / 2;
-                        let time = Date.now();
-                        let map = window.activeDungeonMap;
+        ctx.restore();
+      } else if (tileType === window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL) {
+        let cx = px + tileSize / 2;
+        let cy = py + tileSize / 2;
+        let time = Date.now();
+        let map = window.activeDungeonMap;
 
-                        ctx.save();
+        ctx.save();
 
-                        // 1. Soft Floor Shadow under Pedestal
-                        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-                        ctx.beginPath();
-                        ctx.ellipse(cx, cy + 6, 12, 5, 0, 0, Math.PI * 2);
-                        ctx.fill();
+        // 1. Soft Floor Shadow under Pedestal
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 6, 12, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-                        // 2. Pedestal base (Polished dark mahogany wood)
-                        ctx.fillStyle = "#3d1d0b";
-                        ctx.strokeStyle = "#1a0b02";
-                        ctx.lineWidth = 1.5;
-                        ctx.beginPath();
-                        ctx.roundRect(cx - 10, cy + 2, 20, 6, [2]);
-                        ctx.fill();
-                        ctx.stroke();
+        // 2. Pedestal base (Polished dark mahogany wood)
+        ctx.fillStyle = "#3d1d0b";
+        ctx.strokeStyle = "#1a0b02";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(cx - 10, cy + 2, 20, 6, [2]);
+        ctx.fill();
+        ctx.stroke();
 
-                        // 3. Pedestal pillar (Gilded gold accents)
-                        ctx.fillStyle = "#d4af37";
-                        ctx.fillRect(cx - 6, cy - 3, 12, 5);
-                        ctx.strokeRect(cx - 6, cy - 3, 12, 5);
+        // 3. Pedestal pillar (Gilded gold accents)
+        ctx.fillStyle = "#d4af37";
+        ctx.fillRect(cx - 6, cy - 3, 12, 5);
+        ctx.strokeRect(cx - 6, cy - 3, 12, 5);
 
-                        // 4. Cushion on top (Crimson velvet pillow)
-                        ctx.fillStyle = "#a93226";
-                        ctx.strokeStyle = "#510808";
-                        ctx.lineWidth = 1.5;
-                        ctx.beginPath();
-                        ctx.roundRect(cx - 11, cy - 6, 22, 5, [3]);
-                        ctx.fill();
-                        ctx.stroke();
+        // 4. Cushion on top (Crimson velvet pillow)
+        ctx.fillStyle = "#a93226";
+        ctx.strokeStyle = "#510808";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(cx - 11, cy - 6, 22, 5, [3]);
+        ctx.fill();
+        ctx.stroke();
 
-                        // Golden tassels on cushion corners
-                        ctx.fillStyle = "#ffd700";
-                        ctx.fillRect(cx - 11, cy - 3, 2, 2);
-                        ctx.fillRect(cx + 9, cy - 3, 2, 2);
+        // Golden tassels on cushion corners
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(cx - 11, cy - 3, 2, 2);
+        ctx.fillRect(cx + 9, cy - 3, 2, 2);
 
-                        // 5. Draw the specific item floating above this pedestal
-                        if (map && map.merchantWares && map.merchantStock) {
-                          let tileC = Math.floor(px / tileSize);
-                          let tileR = Math.floor(py / tileSize);
-                          let ware = map.merchantWares.find(w => w.x === tileC && w.y === tileR);
-                          if (ware) {
-                            let item = map.merchantStock[ware.itemIdx];
-                            if (item && !item.purchased) {
-                              let itemBob = Math.sin(time / 200 + ware.itemIdx * 1.5) * 1.8;
-                              let itemY = cy - 12 + itemBob;
+        // 5. Draw the specific item floating above this pedestal
+        if (map && map.merchantWares && map.merchantStock) {
+          let tileC = Math.floor(px / tileSize);
+          let tileR = Math.floor(py / tileSize);
+          let ware = map.merchantWares.find(
+            (w) => w.x === tileC && w.y === tileR,
+          );
+          if (ware) {
+            let item = map.merchantStock[ware.itemIdx];
+            if (item && !item.purchased) {
+              let itemBob = Math.sin(time / 200 + ware.itemIdx * 1.5) * 1.8;
+              let itemY = cy - 12 + itemBob;
 
-                              ctx.save();
+              ctx.save();
 
-                              // Small shadow on the cushion
-                              let shadowScale = 1.0 - (itemBob / 6);
-                              ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-                              ctx.beginPath();
-                              ctx.ellipse(cx, cy - 5, 5 * shadowScale, 2 * shadowScale, 0, 0, Math.PI * 2);
-                              ctx.fill();
+              // Small shadow on the cushion
+              let shadowScale = 1.0 - itemBob / 6;
+              ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+              ctx.beginPath();
+              ctx.ellipse(
+                cx,
+                cy - 5,
+                5 * shadowScale,
+                2 * shadowScale,
+                0,
+                0,
+                Math.PI * 2,
+              );
+              ctx.fill();
 
-                              // Rarity-colored glowing aura underlay
-                              let color = window.getTierColor ? window.getTierColor(item.statsRolled) : "#ffffff";
-                              let rGlow = 8 + Math.sin(time / 100 + ware.itemIdx) * 1.2;
-                              let glowGrad = ctx.createRadialGradient(cx, itemY, 1, cx, itemY, rGlow);
-                              glowGrad.addColorStop(0, color);
-                              glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-                              ctx.fillStyle = glowGrad;
-                              ctx.globalAlpha = 0.45;
-                              ctx.beginPath();
-                              ctx.arc(cx, itemY, rGlow, 0, Math.PI * 2);
-                              ctx.fill();
-                              ctx.globalAlpha = 1.0;
+              // Rarity-colored glowing aura underlay
+              let color = window.getTierColor
+                ? window.getTierColor(item.statsRolled)
+                : "#ffffff";
+              let rGlow = 8 + Math.sin(time / 100 + ware.itemIdx) * 1.2;
+              let glowGrad = ctx.createRadialGradient(
+                cx,
+                itemY,
+                1,
+                cx,
+                itemY,
+                rGlow,
+              );
+              glowGrad.addColorStop(0, color);
+              glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+              ctx.fillStyle = glowGrad;
+              ctx.globalAlpha = 0.45;
+              ctx.beginPath();
+              ctx.arc(cx, itemY, rGlow, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.globalAlpha = 1.0;
 
-                              // Render Item Icon Graphics
-                              let img = window.getCanvasIconImage ? window.getCanvasIconImage(item) : null;
-                              if (img && img.complete) {
-                                ctx.drawImage(img, cx - 7, itemY - 7, 14, 14);
-                              } else {
-                                ctx.fillStyle = color;
-                                ctx.strokeStyle = "#000000";
-                                ctx.lineWidth = 1.0;
-                                ctx.beginPath();
-                                ctx.arc(cx, itemY, 3.5, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.stroke();
-                              }
+              // Render Item Icon Graphics
+              let img = window.getCanvasIconImage
+                ? window.getCanvasIconImage(item)
+                : null;
+              if (img && img.complete) {
+                ctx.drawImage(img, cx - 7, itemY - 7, 14, 14);
+              } else {
+                ctx.fillStyle = color;
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 1.0;
+                ctx.beginPath();
+                ctx.arc(cx, itemY, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+              }
 
-                              ctx.restore();
-                            }
-                          }
-                        }
+              ctx.restore();
+            }
+          }
+        }
 
-                        ctx.restore();
-                      }
+        ctx.restore();
+      }
     };
 
     // PASS 2.5: Environmental Props (Wall Torches, Guild Banners & Bioluminescent Mushrooms)

@@ -141,7 +141,7 @@
           name: "Ironclad Resilience",
           iconKey: "shield_hp",
           x: 25,
-          y: 70,
+          y: 72,
           tier: 1,
           maxRank: 3,
           costPerRank: 1,
@@ -154,7 +154,7 @@
           name: "Heavy Plating",
           iconKey: "shield_def",
           x: 75,
-          y: 70,
+          y: 72,
           tier: 1,
           maxRank: 3,
           costPerRank: 1,
@@ -180,7 +180,7 @@
           id: "shield_fortified_guard",
           name: "Fortified Guard",
           iconKey: "shield_def",
-          x: 38,
+          x: 35,
           y: 48,
           tier: 2,
           maxRank: 3,
@@ -191,16 +191,16 @@
         },
         {
           id: "shield_impact_tremor",
-          name: "Impact Tremor",
+          name: "Resonant Aegis",
           iconKey: "shield_starter",
-          x: 62,
+          x: 65,
           y: 48,
           tier: 2,
           maxRank: 2,
           costPerRank: 1,
           prereqs: ["shield_def"],
-          desc: "Blocking has 20%/40% chance to trigger a shockwave dealing 120% Defense as AoE physical damage and pushing enemies back.",
-          getStatText: (rank) => `${rank * 20}% Shockwave Chance`,
+          desc: "Blocking has a 20%/40% chance to trigger Resonant Aegis, releasing a vibrational ring dealing 120% Defense as AoE physical damage and pushing enemies back.",
+          getStatText: (rank) => `${rank * 20}% Vibrational Ring Chance`,
         },
         {
           id: "shield_fortitude",
@@ -219,7 +219,7 @@
           id: "shield_retaliatory_strike",
           name: "Retaliatory Strike",
           iconKey: "shield_fortitude",
-          x: 20,
+          x: 15,
           y: 28,
           tier: 3,
           maxRank: 1,
@@ -232,20 +232,33 @@
           id: "shield_aegis_pulse",
           name: "Aegis Pulse",
           iconKey: "shield_hp",
-          x: 50,
+          x: 35,
+          y: 28,
+          tier: 3,
+          maxRank: 2,
+          costPerRank: 2,
+          prereqs: ["shield_fortified_guard"],
+          desc: "Every 5th successful block emits a wave restoring 3%/6% Max HP.",
+          getStatText: (rank) => `Heal ${rank * 3}% Max HP on 5th Block`,
+        },
+        {
+          id: "shield_earth_breaker_bash",
+          name: "Earth-Breaker Bash",
+          iconKey: "shield_bash",
+          x: 65,
           y: 28,
           tier: 3,
           maxRank: 2,
           costPerRank: 2,
           prereqs: ["shield_impact_tremor"],
-          desc: "Every 5th successful block emits a wave restoring 3%/6% Max HP.",
-          getStatText: (rank) => `Heal ${rank * 3}% Max HP on 5th Block`,
+          desc: "Shield Bashes trigger ground tremors, expanding your bash into a 45-degree frontal cone and granting a 15%/30% chance to stun enemies for 1.5s.",
+          getStatText: (rank) => `Cone Area & +${rank * 15}% Stun Chance`,
         },
         {
           id: "shield_retaliation",
           name: "Spike Retaliation",
           iconKey: "shield_bash",
-          x: 80,
+          x: 85,
           y: 28,
           tier: 3,
           maxRank: 3,
@@ -256,10 +269,23 @@
             `+${rank * 15}% Bash Dmg & +${rank * 12}% Def-scaling`,
         },
         {
+          id: "shield_stalwart_bastion",
+          name: "Stalwart Bastion",
+          iconKey: "shield_block",
+          x: 50,
+          y: 28,
+          tier: 3,
+          maxRank: 3,
+          costPerRank: 2,
+          prereqs: ["shield_fortified_guard", "shield_impact_tremor"],
+          desc: "Increases base Block Mitigation by +5% per rank (base block mitigation increases from 70% up to 85%).",
+          getStatText: (rank) => `+${rank * 5}% Block Mitigation`,
+        },
+        {
           id: "shield_keystone_colossus",
           name: "Bulwark Colossus",
           iconKey: "shield_keystone",
-          x: 35,
+          x: 30,
           y: 12,
           tier: 4,
           maxRank: 1,
@@ -273,13 +299,13 @@
           id: "shield_keystone_reflect",
           name: "Reflective Singularity",
           iconKey: "shield_keystone",
-          x: 65,
+          x: 70,
           y: 12,
           tier: 4,
           maxRank: 1,
           costPerRank: 3,
           isKeystone: true,
-          prereqs: ["shield_aegis_pulse"],
+          prereqs: ["shield_earth_breaker_bash"],
           desc: "Adds 40% of total Defense directly to main weapon Attack Power, and Shield Bash reflects 180% Defense on block.",
           getStatText: () => "+40% Def to Attack & 180% Bash Reflect",
         },
@@ -313,7 +339,7 @@
           id: "shield_inf_defense",
           name: "Endless Bastion",
           iconKey: "shield_def",
-          x: 35,
+          x: 30,
           y: 3,
           maxRank: Infinity,
           isInfinite: true,
@@ -329,7 +355,7 @@
           id: "shield_inf_bash",
           name: "Spike Resonance",
           iconKey: "shield_bash",
-          x: 65,
+          x: 70,
           y: 3,
           maxRank: Infinity,
           isInfinite: true,
@@ -368,7 +394,7 @@
           name: "Lethal Precision",
           iconKey: "dagger_crit",
           x: 25,
-          y: 70,
+          y: 72,
           tier: 1,
           maxRank: 3,
           costPerRank: 1,
@@ -381,7 +407,7 @@
           name: "Savage Ferocity",
           iconKey: "dagger_crit_dmg",
           x: 75,
-          y: 70,
+          y: 72,
           tier: 1,
           maxRank: 3,
           costPerRank: 1,
@@ -407,7 +433,7 @@
           id: "dagger_vipers_coating",
           name: "Viper's Coating",
           iconKey: "dagger_bleed",
-          x: 38,
+          x: 35,
           y: 48,
           tier: 2,
           maxRank: 3,
@@ -421,7 +447,7 @@
           id: "dagger_parry",
           name: "Nimble Reflexes",
           iconKey: "dagger_parry",
-          x: 62,
+          x: 65,
           y: 48,
           tier: 2,
           maxRank: 3,
@@ -448,7 +474,7 @@
           id: "dagger_shadow_flurry",
           name: "Shadow Flurry",
           iconKey: "dagger_riposte",
-          x: 20,
+          x: 15,
           y: 28,
           tier: 3,
           maxRank: 1,
@@ -461,7 +487,7 @@
           id: "dagger_shadow_step",
           name: "Shadow Step",
           iconKey: "dagger_parry",
-          x: 50,
+          x: 35,
           y: 28,
           tier: 3,
           maxRank: 2,
@@ -472,10 +498,23 @@
             `+${rank * 15}% Spd, +${rank * 10}% Atk Spd & +${rank * 20}% Riposte`,
         },
         {
+          id: "dagger_noxious_bloom",
+          name: "Noxious Bloom",
+          iconKey: "dagger_bleed",
+          x: 50,
+          y: 28,
+          tier: 3,
+          maxRank: 2,
+          costPerRank: 2,
+          prereqs: ["dagger_vipers_coating", "dagger_parry"],
+          desc: "Slaying an enemy suffering from Bleed or Poison triggers a Noxious Bloom, releasing a toxic gas cloud that reduces adjacent enemy Defenses by 15% and ticks damage.",
+          getStatText: (rank) => `Vapor Area & +${rank * 15}% Cloud Damage`,
+        },
+        {
           id: "dagger_sanguine_rupture",
           name: "Sanguine Rupture",
           iconKey: "dagger_bleed",
-          x: 80,
+          x: 65,
           y: 28,
           tier: 3,
           maxRank: 2,
@@ -486,10 +525,24 @@
             `Detonate DoTs for ${rank * 150}% remaining Dmg`,
         },
         {
+          id: "dagger_wind_razor_flurry",
+          name: "Wind-Razor Flurry",
+          iconKey: "dagger_riposte",
+          x: 85,
+          y: 28,
+          tier: 3,
+          maxRank: 2,
+          costPerRank: 2,
+          prereqs: ["dagger_parry"],
+          desc: "Landing 3 critical strikes in a row or executing a perfect parry unleashes a forward-flying Crescent Wind Razor that pierces through all enemies.",
+          getStatText: (rank) =>
+            `Crescent Piercing Waves & +${rank * 20}% Wind Damage`,
+        },
+        {
           id: "dagger_keystone_assassin",
           name: "Shadow Assassin",
           iconKey: "dagger_keystone",
-          x: 35,
+          x: 30,
           y: 12,
           tier: 4,
           maxRank: 1,
@@ -503,7 +556,7 @@
           id: "dagger_keystone_duellist",
           name: "Master Duellist",
           iconKey: "dagger_keystone",
-          x: 65,
+          x: 70,
           y: 12,
           tier: 4,
           maxRank: 1,
@@ -544,7 +597,7 @@
           id: "dagger_inf_crit",
           name: "Lethal Infinitum",
           iconKey: "dagger_crit_dmg",
-          x: 35,
+          x: 30,
           y: 3,
           maxRank: Infinity,
           isInfinite: true,
@@ -560,7 +613,7 @@
           id: "dagger_inf_poison",
           name: "Toxic Osmosis",
           iconKey: "dagger_bleed",
-          x: 65,
+          x: 70,
           y: 3,
           maxRank: Infinity,
           isInfinite: true,
@@ -1027,54 +1080,35 @@
     animFrameId: null,
     panX: 0,
     panY: 0,
+    zoom: 0.75,
+    minZoom: 0.35,
+    maxZoom: 1.8,
+    initializedPosition: false,
     isPanning: false,
     dragStartX: 0,
     dragStartY: 0,
     hasPanned: false,
 
+    centerOnStarter() {
+      let viewport = document.querySelector(".constellation-viewport");
+      if (!viewport) return;
+      let w = viewport.clientWidth;
+      let h = viewport.clientHeight;
+
+      // Targets the virtual coordinates of the starter node (600, 880)
+      this.zoom = 0.75;
+      this.panX = w / 2 - 600 * this.zoom;
+      this.panY = h * 0.7 - 880 * this.zoom;
+      this.updatePanTransform();
+    },
+
     getSkillLevel(nodeId) {
       if (!window.playerStats) return 0;
 
-      const isSubweaponNode = [
-        "shield_starter",
-        "shield_hp",
-        "shield_def",
-        "shield_iron_wall",
-        "shield_fortified_guard",
-        "shield_impact_tremor",
-        "shield_fortitude",
-        "shield_retaliatory_strike",
-        "shield_aegis_pulse",
-        "shield_retaliation",
-        "shield_keystone_colossus",
-        "shield_keystone_reflect",
-
-        "dagger_starter",
-        "dagger_crit",
-        "dagger_crit_dmg",
-        "dagger_lethal_precision",
-        "dagger_vipers_coating",
-        "dagger_parry",
-        "dagger_expose_weakness",
-        "dagger_shadow_flurry",
-        "dagger_shadow_step",
-        "dagger_sanguine_rupture",
-        "dagger_keystone_assassin",
-        "dagger_keystone_duellist",
-
-        "tome_starter",
-        "tome_atk",
-        "tome_exp",
-        "tome_empowered_catalysts",
-        "tome_runic_barrier",
-        "tome_elemental_overload",
-        "tome_arcane_syphon",
-        "tome_barrier_shatter",
-        "tome_spell_weaving",
-        "tome_resilience",
-        "tome_keystone_triad",
-        "tome_keystone_singularity",
-      ].includes(nodeId);
+      const isSubweaponNode =
+        nodeId.startsWith("shield_") ||
+        nodeId.startsWith("dagger_") ||
+        nodeId.startsWith("tome_");
 
       if (isSubweaponNode) {
         if (!window.playerStats.subweaponMastery) {
@@ -1341,8 +1375,7 @@
 
     switchSkillTreeTab(treeId) {
       window.activeSkillTreeTab = treeId;
-      this.panX = 0;
-      this.panY = 0;
+      this.initializedPosition = false; // Reset to force re-centering
       this.hasPanned = false;
       let tree = window.SKILL_TREE_DATA[treeId];
       if (tree && tree.nodes.length > 0) {
@@ -1371,6 +1404,9 @@
       if (!viewport || viewport.dataset.panInitialized) return;
       viewport.dataset.panInitialized = "true";
 
+      this.activePointers = [];
+      this.lastPinchDist = null;
+
       viewport.addEventListener("pointerdown", (e) => {
         if (
           e.target.closest(".selected-node-dock") ||
@@ -1378,10 +1414,22 @@
         )
           return;
 
+        this.activePointers.push(e);
         this.isPanning = true;
         this.hasPanned = false;
-        this.dragStartX = e.clientX;
-        this.dragStartY = e.clientY;
+
+        if (this.activePointers.length === 1) {
+          this.dragStartX = e.clientX;
+          this.dragStartY = e.clientY;
+        } else if (this.activePointers.length === 2) {
+          let p1 = this.activePointers[0];
+          let p2 = this.activePointers[1];
+          this.lastPinchDist = Math.hypot(
+            p1.clientX - p2.clientX,
+            p1.clientY - p2.clientY,
+          );
+        }
+
         try {
           viewport.setPointerCapture(e.pointerId);
         } catch (err) {}
@@ -1389,38 +1437,111 @@
 
       viewport.addEventListener("pointermove", (e) => {
         if (!this.isPanning) return;
-        let dx = e.clientX - this.dragStartX;
-        let dy = e.clientY - this.dragStartY;
 
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-          this.hasPanned = true;
+        let idx = this.activePointers.findIndex(
+          (p) => p.pointerId === e.pointerId,
+        );
+        if (idx !== -1) {
+          this.activePointers[idx] = e;
         }
 
-        this.panX += dx;
-        this.panY += dy;
-        this.dragStartX = e.clientX;
-        this.dragStartY = e.clientY;
+        let rect = viewport.getBoundingClientRect();
 
-        this.updatePanTransform();
+        if (this.activePointers.length === 2) {
+          let p1 = this.activePointers[0];
+          let p2 = this.activePointers[1];
+          let dist = Math.hypot(
+            p1.clientX - p2.clientX,
+            p1.clientY - p2.clientY,
+          );
+
+          if (this.lastPinchDist) {
+            let ratio = dist / this.lastPinchDist;
+            let midX = (p1.clientX + p2.clientX) / 2;
+            let midY = (p1.clientY + p2.clientY) / 2;
+
+            let virtualX = (midX - rect.left - this.panX) / this.zoom;
+            let virtualY = (midY - rect.top - this.panY) / this.zoom;
+
+            this.zoom = Math.max(
+              this.minZoom,
+              Math.min(this.maxZoom, this.zoom * ratio),
+            );
+
+            this.panX = midX - rect.left - virtualX * this.zoom;
+            this.panY = midY - rect.top - virtualY * this.zoom;
+
+            this.hasPanned = true;
+            this.updatePanTransform();
+          }
+          this.lastPinchDist = dist;
+        } else if (this.activePointers.length === 1) {
+          let dx = e.clientX - this.dragStartX;
+          let dy = e.clientY - this.dragStartY;
+
+          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+            this.hasPanned = true;
+          }
+
+          this.panX += dx;
+          this.panY += dy;
+          this.dragStartX = e.clientX;
+          this.dragStartY = e.clientY;
+
+          this.updatePanTransform();
+        }
       });
 
       const stopPan = (e) => {
-        if (this.isPanning) {
-          this.isPanning = false;
-          try {
-            viewport.releasePointerCapture(e.pointerId);
-          } catch (err) {}
+        this.activePointers = this.activePointers.filter(
+          (p) => p.pointerId !== e.pointerId,
+        );
+        if (this.activePointers.length < 2) {
+          this.lastPinchDist = null;
         }
+        if (this.activePointers.length === 0) {
+          this.isPanning = false;
+        }
+        try {
+          viewport.releasePointerCapture(e.pointerId);
+        } catch (err) {}
       };
 
       viewport.addEventListener("pointerup", stopPan);
       viewport.addEventListener("pointercancel", stopPan);
+
+      viewport.addEventListener(
+        "wheel",
+        (e) => {
+          e.preventDefault();
+
+          let rect = viewport.getBoundingClientRect();
+          let mouseX = e.clientX - rect.left;
+          let mouseY = e.clientY - rect.top;
+
+          let virtualX = (mouseX - this.panX) / this.zoom;
+          let virtualY = (mouseY - this.panY) / this.zoom;
+
+          let zoomFactor = 1.12;
+          let nextZoom =
+            e.deltaY < 0 ? this.zoom * zoomFactor : this.zoom / zoomFactor;
+
+          this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, nextZoom));
+
+          this.panX = mouseX - virtualX * this.zoom;
+          this.panY = mouseY - virtualY * this.zoom;
+
+          this.updatePanTransform();
+        },
+        { passive: false },
+      );
     },
 
     updatePanTransform() {
       let nodesLayer = document.querySelector(".constellation-nodes-layer");
       if (nodesLayer) {
-        nodesLayer.style.transform = `translate(${this.panX}px, ${this.panY}px)`;
+        nodesLayer.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        nodesLayer.style.transformOrigin = "0 0";
       }
       let activeTreeId = window.activeSkillTreeTab || "shield";
       let activeTree = window.SKILL_TREE_DATA[activeTreeId];
@@ -1534,15 +1655,19 @@
             ? `Rank ${currentRank}`
             : `${currentRank}/${node.maxRank}`;
 
+          // Map percentages into an uncrowded 1200px x 1000px virtual canvas
+          let vx = (node.x / 100) * 1200;
+          let vy = (node.y / 100) * 1000;
+
           return `
-              <div class="constellation-node ${isSelected ? "selected" : ""} ${node.isKeystone ? "keystone" : ""}" style="left:${node.x}%; top:${node.y}%;" onclick="window.SkillTreeManager.selectNode('${node.id}')">
-                <div class="node-icon-socket" style="border-color:${borderCol}; background:${bgCol}; ${isSelected ? `box-shadow: 0 0 16px ${activeTree.color};` : ""}">
-                  ${iconSvg}
-                  <span class="node-rank-tag" style="background:${currentRank > 0 ? activeTree.color : "#1e293b"}; color:#ffffff;">${rankBadge}</span>
-                </div>
-                <span class="node-label-title" style="color:${isUnlocked ? (currentRank > 0 ? "#ffffff" : "#94a3b8") : "#475569"};">${node.name}</span>
-              </div>
-            `;
+                        <div class="constellation-node ${isSelected ? "selected" : ""} ${node.isKeystone ? "keystone" : ""}" style="left:${vx}px; top:${vy}px; position: absolute; transform: translate(-50%, -50%); pointer-events: auto;" onclick="window.SkillTreeManager.selectNode('${node.id}')">
+                          <div class="node-icon-socket" style="border-color:${borderCol}; background:${bgCol}; ${isSelected ? `box-shadow: 0 0 16px ${activeTree.color};` : ""}">
+                            ${iconSvg}
+                            <span class="node-rank-tag" style="background:${currentRank > 0 ? activeTree.color : "#1e293b"}; color:#ffffff;">${rankBadge}</span>
+                          </div>
+                          <span class="node-label-title" style="color:${isUnlocked ? (currentRank > 0 ? "#ffffff" : "#94a3b8") : "#475569"};">${node.name}</span>
+                        </div>
+                      `;
         })
         .join("");
 
@@ -1619,23 +1744,29 @@
         `;
 
       container.innerHTML = `
-          <div class="skill-tree-wrapper">
-            ${headerHtml}
-            <div class="tree-selector-bar">
-              ${treeTabsHtml}
-            </div>
-            <div class="constellation-viewport">
-              <canvas id="skill-constellation-canvas"></canvas>
-              <div class="constellation-nodes-layer" style="transform: translate(${this.panX}px, ${this.panY}px);">
-                ${nodesHtml}
-              </div>
-              ${detailDockHtml}
-            </div>
-          </div>
-        `;
+                <div class="skill-tree-wrapper">
+                  ${headerHtml}
+                  <div class="tree-selector-bar">
+                    ${treeTabsHtml}
+                  </div>
+                  <div class="constellation-viewport" style="position: relative; overflow: hidden; width: 100%; height: 100%; touch-action: none;">
+                    <canvas id="skill-constellation-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                    <div class="constellation-nodes-layer" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1000px; transform: translate(${this.panX}px, ${this.panY}px) scale(${this.zoom}); transform-origin: 0 0; pointer-events: none;">
+                      ${nodesHtml}
+                    </div>
+                    ${detailDockHtml}
+                  </div>
+                </div>
+              `;
 
       setTimeout(() => {
         this.initViewportPan();
+        if (!this.initializedPosition) {
+          this.centerOnStarter();
+          this.initializedPosition = true;
+        } else {
+          this.updatePanTransform();
+        }
         this.startAnimationLoop();
       }, 20);
     },
@@ -1702,6 +1833,11 @@
       // 2. Render Constellation Branch Lines translated by Pan Offset
       ctx.save();
       ctx.translate(this.panX, this.panY);
+      ctx.scale(this.zoom, this.zoom);
+
+      let rgb = window.hexToRgbValues
+        ? window.hexToRgbValues(activeTree.color)
+        : "56, 189, 248";
 
       activeTree.nodes.forEach((node) => {
         if (node.prereqs && node.prereqs.length > 0) {
@@ -1709,10 +1845,11 @@
             let parentNode = activeTree.nodes.find((n) => n.id === pId);
             if (!parentNode) return;
 
-            let x1 = (parentNode.x / 100) * w;
-            let y1 = (parentNode.y / 100) * h;
-            let x2 = (node.x / 100) * w;
-            let y2 = (node.y / 100) * h;
+            // Map drawing coordinates to match the spacious 1200x1000 virtual layout
+            let x1 = (parentNode.x / 100) * 1200;
+            let y1 = (parentNode.y / 100) * 1000;
+            let x2 = (node.x / 100) * 1200;
+            let y2 = (node.y / 100) * 1000;
 
             let parentRank = this.getSkillLevel(parentNode.id);
             let childRank = this.getSkillLevel(node.id);
@@ -1739,18 +1876,18 @@
               ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
               ctx.fill();
             } else if (parentRank > 0) {
-              // Available Branch
-              ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-              ctx.lineWidth = 1.8;
+              // Available Branch (Highly visible solid themed line)
+              ctx.strokeStyle = `rgba(${rgb}, 0.55)`;
+              ctx.lineWidth = 2.0;
               ctx.beginPath();
               ctx.moveTo(x1, y1);
               ctx.lineTo(x2, y2);
               ctx.stroke();
             } else {
-              // Locked Branch
-              ctx.strokeStyle = "rgba(51, 65, 85, 0.4)";
-              ctx.lineWidth = 1.2;
-              ctx.setLineDash([4, 4]);
+              // Locked Branch (Themed clearly-visible dashed guidelines)
+              ctx.strokeStyle = `rgba(${rgb}, 0.28)`;
+              ctx.lineWidth = 1.6;
+              ctx.setLineDash([6, 5]);
               ctx.beginPath();
               ctx.moveTo(x1, y1);
               ctx.lineTo(x2, y2);

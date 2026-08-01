@@ -2974,62 +2974,62 @@
   window.activeSpellLights = [];
 
   window.spawnVisualSpell = function (type, startX, startY, targets) {
-      if (type === "fire") {
-        let main = targets[0];
-        if (!main) return;
-        let angle = Math.atan2(main.y - startY, main.x - startX);
-        window.activeSpellAnims.push({
-          type: "fireball",
-          startX: startX,
-          startY: startY,
-          targetX: main.x,
-          targetY: main.y,
-          x: startX,
-          y: startY,
-          angle: angle,
-          progress: 0,
-          speed: 7.5,
-          splashTargets: targets.slice(1),
-          life: 1,
-          maxLife: 1,
-        });
-      } else if (type === "lightning") {
-        let chainPoints = [{ x: startX, y: startY }];
-        targets.forEach((t) => {
-          chainPoints.push({ x: t.x, y: t.y });
-        });
+    if (type === "fire") {
+      let main = targets[0];
+      if (!main) return;
+      let angle = Math.atan2(main.y - startY, main.x - startX);
+      window.activeSpellAnims.push({
+        type: "fireball",
+        startX: startX,
+        startY: startY,
+        targetX: main.x,
+        targetY: main.y,
+        x: startX,
+        y: startY,
+        angle: angle,
+        progress: 0,
+        speed: 7.5,
+        splashTargets: targets.slice(1),
+        life: 1,
+        maxLife: 1,
+      });
+    } else if (type === "lightning") {
+      let chainPoints = [{ x: startX, y: startY }];
+      targets.forEach((t) => {
+        chainPoints.push({ x: t.x, y: t.y });
+      });
 
-        window.activeSpellAnims.push({
-          type: "chain_lightning",
-          points: chainPoints,
-          life: 15,
-          maxLife: 15,
-          flickerSeed: Math.random() * 100,
-        });
+      window.activeSpellAnims.push({
+        type: "chain_lightning",
+        points: chainPoints,
+        life: 15,
+        maxLife: 15,
+        flickerSeed: Math.random() * 100,
+      });
 
-        chainPoints.forEach((pt, idx) => {
-          window.spawnSpellLight(
-            pt.x,
-            pt.y,
-            110,
-            "rgba(0, 240, 255, 0.95)",
-            "rgba(0, 100, 255, 0)",
-            12,
-          );
-        });
-      } else if (type === "frost") {
-        let center = targets[0] || { x: startX, y: startY };
-        window.activeSpellAnims.push({
-          type: "frost_nova",
-          x: center.x,
-          y: center.y,
-          radius: 4,
-          maxRadius: 28, // Concentrates effect tightly on the target
-          life: 25,
-          maxLife: 25,
-        });
-      }
-    };
+      chainPoints.forEach((pt, idx) => {
+        window.spawnSpellLight(
+          pt.x,
+          pt.y,
+          110,
+          "rgba(0, 240, 255, 0.95)",
+          "rgba(0, 100, 255, 0)",
+          12,
+        );
+      });
+    } else if (type === "frost") {
+      let center = targets[0] || { x: startX, y: startY };
+      window.activeSpellAnims.push({
+        type: "frost_nova",
+        x: center.x,
+        y: center.y,
+        radius: 4,
+        maxRadius: 11, // Scaled down so the needle tips wrap tightly around single targets
+        life: 25,
+        maxLife: 25,
+      });
+    }
+  };
 
   window.spawnSpellLight = function (
     x,
@@ -3047,6 +3047,50 @@
       outerColor: outerColor,
       life: duration,
       maxLife: duration,
+    });
+  };
+
+  window.spawnResonantAegisRipple = function (x, y) {
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
+      type: "resonant_aegis",
+      x: x,
+      y: y,
+      radius: 4,
+      maxRadius: 45, // Dynamic vibrational boundary limit
+      life: 20,
+      maxLife: 20,
+    });
+  };
+
+  window.spawnEarthBreakerBashVisual = function (x, y, angle) {
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
+      type: "earth_breaker_bash",
+      x: x,
+      y: y,
+      angle: angle,
+      radius: 4,
+      maxRadius: 60, // Forward tremor range
+      life: 18,
+      maxLife: 18,
+    });
+  };
+
+  window.spawnWindRazor = function (x, y, angle, damage) {
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
+      type: "wind_razor",
+      x: x,
+      y: y,
+      vx: Math.cos(angle) * 8.5,
+      vy: Math.sin(angle) * 8.5,
+      angle: angle,
+      damage: damage,
+      hitIds: new Set(), // Keeps track of already pierced enemies to prevent double hitting
+      life: 25,
+      maxLife: 25,
+      radius: 18, // Swept collision width
     });
   };
 
@@ -3155,315 +3199,570 @@
         let anim = window.activeSpellAnims[i];
 
         if (anim.type === "fireball") {
-                  let dx = anim.targetX - anim.x;
-                  let dy = anim.targetY - anim.y;
-                  let dist = Math.hypot(dx, dy);
+          let dx = anim.targetX - anim.x;
+          let dy = anim.targetY - anim.y;
+          let dist = Math.hypot(dx, dy);
 
-                  if (dist < anim.speed) {
-                    window.spawnSpellLight(
-                      anim.targetX,
-                      anim.targetY,
-                      150,
-                      "rgba(255, 180, 50, 0.95)",
-                      "rgba(230, 80, 10, 0)",
-                      15,
+          if (dist < anim.speed) {
+            window.spawnSpellLight(
+              anim.targetX,
+              anim.targetY,
+              150,
+              "rgba(255, 180, 50, 0.95)",
+              "rgba(230, 80, 10, 0)",
+              15,
+            );
+
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnProjectileImpact(
+                anim.targetX,
+                anim.targetY,
+                "fireball",
+              );
+              window.combatVisuals.triggerScreenShake(4, 8);
+            }
+
+            if (anim.splashTargets && anim.splashTargets.length > 0) {
+              anim.splashTargets.forEach((st) => {
+                let subAngle = Math.atan2(
+                  st.y - anim.targetY,
+                  st.x - anim.targetX,
+                );
+                window.activeSpellAnims.push({
+                  type: "fireball_sub",
+                  startX: anim.targetX,
+                  startY: anim.targetY,
+                  targetX: st.x,
+                  targetY: st.y,
+                  x: anim.targetX,
+                  y: anim.targetY,
+                  angle: subAngle,
+                  progress: 0,
+                  speed: 8.5,
+                  life: 1,
+                  maxLife: 1,
+                });
+              });
+            }
+
+            window.activeSpellAnims.splice(i, 1);
+          } else {
+            anim.x += (dx / dist) * anim.speed;
+            anim.y += (dy / dist) * anim.speed;
+            anim.angle = Math.atan2(dy, dx);
+
+            if (window.ParticlePool && Math.random() < 0.6) {
+              let pt = window.ParticlePool.get(
+                anim.x,
+                anim.y,
+                -(dx / dist) * 1.5 + window.randFloat(-0.5, 0.5),
+                -(dy / dist) * 1.5 + window.randFloat(-0.5, 0.5),
+                window.randFloat(1.5, 3.5),
+                Math.random() < 0.5 ? "#f97316" : "#fef08a",
+                0.9,
+                15,
+                -0.05,
+                true,
+              );
+              pt.style = "streak";
+              window.particles.push(pt);
+            }
+          }
+        } else if (anim.type === "fireball_sub") {
+          let dx = anim.targetX - anim.x;
+          let dy = anim.targetY - anim.y;
+          let dist = Math.hypot(dx, dy);
+
+          if (dist < anim.speed) {
+            window.spawnSpellLight(
+              anim.targetX,
+              anim.targetY,
+              80,
+              "rgba(249, 115, 22, 0.9)",
+              "rgba(234, 88, 12, 0)",
+              10,
+            );
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnProjectileImpact(
+                anim.targetX,
+                anim.targetY,
+                "fireball",
+              );
+            }
+            window.activeSpellAnims.splice(i, 1);
+          } else {
+            anim.x += (dx / dist) * anim.speed;
+            anim.y += (dy / dist) * anim.speed;
+            anim.angle = Math.atan2(dy, dx);
+
+            if (window.ParticlePool && Math.random() < 0.5) {
+              let pt = window.ParticlePool.get(
+                anim.x,
+                anim.y,
+                -(dx / dist) * 1.0 + window.randFloat(-0.4, 0.4),
+                -(dy / dist) * 1.0 + window.randFloat(-0.4, 0.4),
+                window.randFloat(1.0, 2.5),
+                "#ea580c",
+                0.85,
+                10,
+                -0.03,
+                true,
+              );
+              pt.style = "circle";
+              window.particles.push(pt);
+            }
+          }
+        } else if (anim.type === "chain_lightning") {
+          anim.life--;
+          if (anim.life <= 0) {
+            window.activeSpellAnims.splice(i, 1);
+          } else {
+            if (window.ParticlePool && Math.random() < 0.4) {
+              let ptIdx = Math.floor(Math.random() * anim.points.length);
+              let pt = anim.points[ptIdx];
+              if (pt) {
+                let spark = window.ParticlePool.get(
+                  pt.x + window.randFloat(-5, 5),
+                  pt.y + window.randFloat(-5, 5),
+                  window.randFloat(-1, 1),
+                  window.randFloat(-1, 1),
+                  window.randFloat(1.2, 2.8),
+                  "#00ffff",
+                  0.95,
+                  12,
+                  0,
+                  true,
+                );
+                spark.style = "sparkle_star";
+                window.particles.push(spark);
+              }
+            }
+          }
+        } else if (anim.type === "frost_nova") {
+          anim.life--;
+          if (anim.life <= 0) {
+            window.activeSpellAnims.splice(i, 1);
+          } else {
+            let tRatio = 1.0 - anim.life / anim.maxLife;
+            anim.radius = anim.maxRadius * tRatio;
+
+            window.spawnSpellLight(
+              anim.x,
+              anim.y,
+              anim.radius + 6, // Shrinks the light glow to match the new spell size
+              "rgba(224, 242, 254, 0.35)",
+              "rgba(56, 189, 248, 0)",
+              3,
+            );
+
+            let stepCount = 6; // Reduced to match the 6 crystalline spikes
+            for (let s = 0; s < stepCount; s++) {
+              let angle = (s * Math.PI * 2) / stepCount + tRatio * Math.PI;
+              let sx = anim.x + Math.cos(angle) * anim.radius;
+              let sy = anim.y + Math.sin(angle) * anim.radius;
+
+              if (window.ParticlePool) {
+                let pt = window.ParticlePool.get(
+                  sx,
+                  sy,
+                  Math.cos(angle) * 0.5,
+                  Math.sin(angle) * 0.5,
+                  window.randFloat(1.2, 2.6),
+                  Math.random() < 0.5 ? "#e0f2fe" : "#38bdf8",
+                  0.9,
+                  15,
+                  0.05,
+                  true,
+                );
+                pt.style = "polygon";
+                window.particles.push(pt);
+              }
+            }
+          }
+        } else if (anim.type === "resonant_aegis") {
+          anim.life--;
+          if (anim.life <= 0) {
+            window.activeSpellAnims.splice(i, 1);
+          } else {
+            let tRatio = 1.0 - anim.life / anim.maxLife;
+            anim.radius = anim.maxRadius * tRatio;
+
+            // Emit a few trailing golden sparks from the ring
+            if (window.ParticlePool && Math.random() < 0.4) {
+              let angle = Math.random() * Math.PI * 2;
+              let sx = anim.x + Math.cos(angle) * anim.radius;
+              let sy = anim.y + Math.sin(angle) * anim.radius;
+              let pt = window.ParticlePool.get(
+                sx,
+                sy,
+                Math.cos(angle) * 0.8,
+                Math.sin(angle) * 0.8,
+                window.randFloat(1.0, 2.2),
+                "#ffd700",
+                0.9,
+                12,
+                0,
+                true,
+              );
+              pt.style = "sparkle_star";
+              window.particles.push(pt);
+            }
+          }
+        } else if (anim.type === "earth_breaker_bash") {
+          anim.life--;
+          if (anim.life <= 0) {
+            window.activeSpellAnims.splice(i, 1);
+          } else {
+            let tRatio = 1.0 - anim.life / anim.maxLife;
+            anim.radius = anim.maxRadius * tRatio;
+
+            // Emit dusty stone chunks within the forward shockwave cone
+            if (window.ParticlePool && Math.random() < 0.6) {
+              let spread = 0.4; // +/- 23 degrees spread
+              let pAngle = anim.angle + window.randFloat(-spread, spread);
+              let sx = anim.x + Math.cos(pAngle) * anim.radius;
+              let sy = anim.y + Math.sin(pAngle) * anim.radius;
+              let pt = window.ParticlePool.get(
+                sx,
+                sy,
+                Math.cos(pAngle) * window.randFloat(0.5, 1.8),
+                Math.sin(pAngle) * window.randFloat(0.5, 1.8),
+                window.randFloat(1.5, 3.2),
+                Math.random() < 0.4 ? "#78350f" : "#dca04c", // Earthy dirt colors
+                0.85,
+                15,
+                0.1, // Gravity pulls debris down
+                true,
+              );
+              pt.style = "polygon";
+              window.particles.push(pt);
+            }
+          }
+        } else if (anim.type === "wind_razor") {
+          anim.life--;
+          if (anim.life <= 0) {
+            window.activeSpellAnims.splice(i, 1);
+          } else {
+            anim.x += anim.vx;
+            anim.y += anim.vy;
+
+            // Spawn aerodynamic wind current streaks
+            if (window.ParticlePool && Math.random() < 0.6) {
+              let perpAngle = anim.angle + Math.PI / 2;
+              let offset = window.randFloat(-12, 12);
+              let px = anim.x + Math.cos(perpAngle) * offset;
+              let py = anim.y + Math.sin(perpAngle) * offset;
+
+              let pt = window.ParticlePool.get(
+                px,
+                py,
+                -anim.vx * 0.2 + window.randFloat(-0.2, 0.2),
+                -anim.vy * 0.2 + window.randFloat(-0.2, 0.2),
+                window.randFloat(1.0, 2.0),
+                Math.random() < 0.5 ? "#22d3ee" : "#ffffff", // Cyan wind currents & white streaks
+                0.85,
+                12,
+                0,
+                true,
+              );
+              pt.style = "streak";
+              window.particles.push(pt);
+            }
+
+            // Piercing swept collision against active mobs & bosses
+            let range = anim.radius;
+            let applyDamage = (targetMob) => {
+              if (
+                targetMob.hp.gt(0) &&
+                !targetMob.isFriendlyWisp &&
+                !anim.hitIds.has(targetMob.id)
+              ) {
+                let mCx = targetMob.x + (targetMob.w || 24) / 2;
+                let mCy = targetMob.y + (targetMob.h || 24) / 2;
+                let dist = Math.hypot(anim.x - mCx, anim.y - mCy);
+                if (dist <= range + (targetMob.w || 24) / 2) {
+                  anim.hitIds.add(targetMob.id);
+                  targetMob.hp = targetMob.hp.sub(anim.damage);
+                  targetMob.flashTimer = 5;
+                  targetMob.hasTakenDamage = true;
+
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnDamageEffect(
+                      mCx,
+                      mCy,
+                      anim.damage,
+                      "echo", // custom wind pierce text style
+                      false,
+                      targetMob,
                     );
-
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnProjectileImpact(
-                        anim.targetX,
-                        anim.targetY,
-                        "fireball",
-                      );
-                      window.combatVisuals.triggerScreenShake(4, 8);
-                    }
-
-                    if (anim.splashTargets && anim.splashTargets.length > 0) {
-                      anim.splashTargets.forEach((st) => {
-                        let subAngle = Math.atan2(st.y - anim.targetY, st.x - anim.targetX);
-                        window.activeSpellAnims.push({
-                          type: "fireball_sub",
-                          startX: anim.targetX,
-                          startY: anim.targetY,
-                          targetX: st.x,
-                          targetY: st.y,
-                          x: anim.targetX,
-                          y: anim.targetY,
-                          angle: subAngle,
-                          progress: 0,
-                          speed: 8.5,
-                          life: 1,
-                          maxLife: 1,
-                        });
-                      });
-                    }
-
-                    window.activeSpellAnims.splice(i, 1);
-                  } else {
-                    anim.x += (dx / dist) * anim.speed;
-                    anim.y += (dy / dist) * anim.speed;
-                    anim.angle = Math.atan2(dy, dx);
-
-                    if (window.ParticlePool && Math.random() < 0.6) {
-                      let pt = window.ParticlePool.get(
-                        anim.x,
-                        anim.y,
-                        -(dx / dist) * 1.5 + window.randFloat(-0.5, 0.5),
-                        -(dy / dist) * 1.5 + window.randFloat(-0.5, 0.5),
-                        window.randFloat(1.5, 3.5),
-                        Math.random() < 0.5 ? "#f97316" : "#fef08a",
-                        0.9,
-                        15,
-                        -0.05,
-                        true,
-                      );
-                      pt.style = "streak";
-                      window.particles.push(pt);
-                    }
-                  }
-                } else if (anim.type === "fireball_sub") {
-                  let dx = anim.targetX - anim.x;
-                  let dy = anim.targetY - anim.y;
-                  let dist = Math.hypot(dx, dy);
-
-                  if (dist < anim.speed) {
-                    window.spawnSpellLight(
-                      anim.targetX,
-                      anim.targetY,
-                      80,
-                      "rgba(249, 115, 22, 0.9)",
-                      "rgba(234, 88, 12, 0)",
-                      10,
+                    window.combatVisuals.spawnParticles(
+                      mCx,
+                      mCy,
+                      6,
+                      "wyrmling",
+                      1.8,
                     );
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnProjectileImpact(
-                        anim.targetX,
-                        anim.targetY,
-                        "fireball",
-                      );
-                    }
-                    window.activeSpellAnims.splice(i, 1);
-                  } else {
-                    anim.x += (dx / dist) * anim.speed;
-                    anim.y += (dy / dist) * anim.speed;
-                    anim.angle = Math.atan2(dy, dx);
-
-                    if (window.ParticlePool && Math.random() < 0.5) {
-                      let pt = window.ParticlePool.get(
-                        anim.x,
-                        anim.y,
-                        -(dx / dist) * 1.0 + window.randFloat(-0.4, 0.4),
-                        -(dy / dist) * 1.0 + window.randFloat(-0.4, 0.4),
-                        window.randFloat(1.0, 2.5),
-                        "#ea580c",
-                        0.85,
-                        10,
-                        -0.03,
-                        true,
-                      );
-                      pt.style = "circle";
-                      window.particles.push(pt);
-                    }
-                  }
-                } else if (anim.type === "chain_lightning") {
-                  anim.life--;
-                  if (anim.life <= 0) {
-                    window.activeSpellAnims.splice(i, 1);
-                  } else {
-                    if (window.ParticlePool && Math.random() < 0.4) {
-                      let ptIdx = Math.floor(Math.random() * anim.points.length);
-                      let pt = anim.points[ptIdx];
-                      if (pt) {
-                        let spark = window.ParticlePool.get(
-                          pt.x + window.randFloat(-5, 5),
-                          pt.y + window.randFloat(-5, 5),
-                          window.randFloat(-1, 1),
-                          window.randFloat(-1, 1),
-                          window.randFloat(1.2, 2.8),
-                          "#00ffff",
-                          0.95,
-                          12,
-                          0,
-                          true,
-                        );
-                        spark.style = "sparkle_star";
-                        window.particles.push(spark);
-                      }
-                    }
-                  }
-                } else if (anim.type === "frost_nova") {
-                  anim.life--;
-                  if (anim.life <= 0) {
-                    window.activeSpellAnims.splice(i, 1);
-                  } else {
-                    let tRatio = 1.0 - anim.life / anim.maxLife;
-                    anim.radius = anim.maxRadius * tRatio;
-
-                    window.spawnSpellLight(
-                      anim.x,
-                      anim.y,
-                      anim.radius + 15,
-                      "rgba(224, 242, 254, 0.35)",
-                      "rgba(56, 189, 248, 0)",
-                      3,
-                    );
-
-                    let stepCount = 6; // Reduced to match the 6 crystalline spikes
-                    for (let s = 0; s < stepCount; s++) {
-                      let angle = (s * Math.PI * 2) / stepCount + tRatio * Math.PI;
-                      let sx = anim.x + Math.cos(angle) * anim.radius;
-                      let sy = anim.y + Math.sin(angle) * anim.radius;
-
-                      if (window.ParticlePool) {
-                        let pt = window.ParticlePool.get(
-                          sx,
-                          sy,
-                          Math.cos(angle) * 0.5,
-                          Math.sin(angle) * 0.5,
-                          window.randFloat(1.2, 2.6),
-                          Math.random() < 0.5 ? "#e0f2fe" : "#38bdf8",
-                          0.9,
-                          15,
-                          0.05,
-                          true,
-                        );
-                        pt.style = "polygon";
-                        window.particles.push(pt);
-                      }
-                    }
                   }
                 }
+              }
+            };
+
+            if (window.activeDungeonMobs) {
+              window.activeDungeonMobs.forEach(applyDamage);
+            }
+            if (window.mob) {
+              applyDamage(window.mob);
+            }
+          }
+        }
       }
     }
   };
 
   window.renderSpellAnimations = function (ctx) {
-      if (!window.activeSpellAnims) return;
+    if (!window.activeSpellAnims) return;
 
-      window.activeSpellAnims.forEach((anim) => {
-        if (anim.type === "fireball" || anim.type === "fireball_sub") {
-          ctx.save();
-          ctx.translate(anim.x, anim.y);
+    window.activeSpellAnims.forEach((anim) => {
+      if (anim.type === "fireball" || anim.type === "fireball_sub") {
+        ctx.save();
+        ctx.translate(anim.x, anim.y);
 
-          let angle = anim.angle || Math.atan2(anim.targetY - anim.y, anim.targetX - anim.x);
-          ctx.rotate(angle + Math.PI); // Orient the flame tail facing backwards
+        let angle =
+          anim.angle ||
+          Math.atan2(anim.targetY - anim.y, anim.targetX - anim.x);
+        ctx.rotate(angle + Math.PI); // Orient the flame tail facing backwards
 
-          let pulse = Math.sin(Date.now() / 40) * 1.2;
-          let r = (anim.type === "fireball" ? 7.5 : 4.5) + pulse;
+        let pulse = Math.sin(Date.now() / 40) * 1.2;
+        let r = (anim.type === "fireball" ? 7.5 : 4.5) + pulse;
 
-          // Render 3 layered flickering organic flame shapes
-          let drawFlameTongue = (radius, scaleX, scaleY, color) => {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(-radius * 1.2, 0);
-            ctx.quadraticCurveTo(-radius * 0.5, -radius * 0.8 * scaleY, radius * scaleX, -radius * 0.4);
-            let flickerOffset = Math.sin(Date.now() / 30 + radius) * 2.5;
-            ctx.quadraticCurveTo(radius * 1.3 * scaleX, flickerOffset, radius * scaleX, radius * 0.4);
-            ctx.quadraticCurveTo(-radius * 0.5, radius * 0.8 * scaleY, -radius * 1.2, 0);
-            ctx.closePath();
-            ctx.fill();
-          };
-
-          ctx.shadowBlur = anim.type === "fireball" ? 14 : 7;
-          ctx.shadowColor = "#f97316";
-
-          // Layer 1: Outer glowing red mantle
-          drawFlameTongue(r * 1.5, 1.6, 1.2, "#dc2626");
-
-          ctx.shadowBlur = 0; // Disable heavy glow on inner layers for clean crisp shapes
-
-          // Layer 2: Middle bright orange
-          drawFlameTongue(r * 1.1, 1.3, 1.0, "#f97316");
-
-          // Layer 3: Inner white-hot yellow-white cores
-          drawFlameTongue(r * 0.7, 1.0, 0.8, "#fef08a");
-          drawFlameTongue(r * 0.4, 0.7, 0.6, "#ffffff");
-
-          ctx.restore();
-        } else if (anim.type === "chain_lightning") {
-          ctx.save();
-          let alpha = anim.life / anim.maxLife;
-
-          for (let pIdx = 0; pIdx < anim.points.length - 1; pIdx++) {
-            let p1 = anim.points[pIdx];
-            let p2 = anim.points[pIdx + 1];
-            let displace = 18;
-
-            ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
-            ctx.lineWidth = 6.0;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#00f0ff";
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
-            ctx.lineWidth = 2.8;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
-            ctx.stroke();
-
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
-            ctx.stroke();
-          }
-          ctx.restore();
-        } else if (anim.type === "frost_nova") {
-          ctx.save();
-          let pulse = Math.sin(Date.now() / 100) * 1.5;
-          let r = anim.radius;
-
-          // Concentrated outer frosty frost ring
-          ctx.strokeStyle = "rgba(0, 210, 255, 0.85)";
-          ctx.lineWidth = 2.0;
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = "#38bdf8";
-
+        // Render 3 layered flickering organic flame shapes
+        let drawFlameTongue = (radius, scaleX, scaleY, color) => {
+          ctx.fillStyle = color;
           ctx.beginPath();
-          ctx.arc(anim.x, anim.y, Math.max(0.1, r), 0, Math.PI * 2);
+          ctx.moveTo(-radius * 1.2, 0);
+          ctx.quadraticCurveTo(
+            -radius * 0.5,
+            -radius * 0.8 * scaleY,
+            radius * scaleX,
+            -radius * 0.4,
+          );
+          let flickerOffset = Math.sin(Date.now() / 30 + radius) * 2.5;
+          ctx.quadraticCurveTo(
+            radius * 1.3 * scaleX,
+            flickerOffset,
+            radius * scaleX,
+            radius * 0.4,
+          );
+          ctx.quadraticCurveTo(
+            -radius * 0.5,
+            radius * 0.8 * scaleY,
+            -radius * 1.2,
+            0,
+          );
+          ctx.closePath();
+          ctx.fill();
+        };
+
+        ctx.shadowBlur = anim.type === "fireball" ? 14 : 7;
+        ctx.shadowColor = "#f97316";
+
+        // Layer 1: Outer glowing red mantle
+        drawFlameTongue(r * 1.5, 1.6, 1.2, "#dc2626");
+
+        ctx.shadowBlur = 0; // Disable heavy glow on inner layers for clean crisp shapes
+
+        // Layer 2: Middle bright orange
+        drawFlameTongue(r * 1.1, 1.3, 1.0, "#f97316");
+
+        // Layer 3: Inner white-hot yellow-white cores
+        drawFlameTongue(r * 0.7, 1.0, 0.8, "#fef08a");
+        drawFlameTongue(r * 0.4, 0.7, 0.6, "#ffffff");
+
+        ctx.restore();
+      } else if (anim.type === "chain_lightning") {
+        ctx.save();
+        let alpha = anim.life / anim.maxLife;
+
+        for (let pIdx = 0; pIdx < anim.points.length - 1; pIdx++) {
+          let p1 = anim.points[pIdx];
+          let p2 = anim.points[pIdx + 1];
+          let displace = 18;
+
+          ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+          ctx.lineWidth = 6.0;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "#00f0ff";
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
           ctx.stroke();
           ctx.shadowBlur = 0;
 
-          // Draw 6 sharp geometric ice crystal spokes pointing outward
-          ctx.fillStyle = "rgba(224, 242, 254, 0.4)";
-          ctx.strokeStyle = "#e0f2fe";
-          ctx.lineWidth = 1.2;
-          let shards = 6;
-          for (let i = 0; i < shards; i++) {
-            let angle = (i * Math.PI * 2) / shards + (r * 0.05); // Subtle ice rotation spin
-            ctx.save();
-            ctx.translate(anim.x, anim.y);
-            ctx.rotate(angle);
-
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-r * 0.25, -r * 0.4);
-            ctx.lineTo(0, -r * 1.1); // Diamond point
-            ctx.lineTo(r * 0.25, -r * 0.4);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-          }
-
-          // Concentric inner spinning dashed ring (guarded against negative radius)
-          ctx.strokeStyle = "rgba(224, 242, 254, 0.5)";
-          ctx.lineWidth = 1.0;
-          ctx.setLineDash([3, 3]);
+          ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
+          ctx.lineWidth = 2.8;
           ctx.beginPath();
-          ctx.arc(anim.x, anim.y, Math.max(0.1, r * 0.6 + pulse), 0, Math.PI * 2);
+          ctx.moveTo(p1.x, p1.y);
+          window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
           ctx.stroke();
-          ctx.setLineDash([]);
+
+          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else if (anim.type === "frost_nova") {
+        ctx.save();
+        let pulse = Math.sin(Date.now() / 100) * 1.5;
+        let r = anim.radius;
+
+        // Concentrated outer frosty frost ring
+        ctx.strokeStyle = "rgba(0, 210, 255, 0.85)";
+        ctx.lineWidth = 2.0;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#38bdf8";
+
+        ctx.beginPath();
+        ctx.arc(anim.x, anim.y, Math.max(0.1, r), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Draw 6 sharp geometric ice crystal spokes pointing outward
+        ctx.fillStyle = "rgba(224, 242, 254, 0.4)";
+        ctx.strokeStyle = "#e0f2fe";
+        ctx.lineWidth = 1.2;
+        let shards = 6;
+        for (let i = 0; i < shards; i++) {
+          let angle = (i * Math.PI * 2) / shards + r * 0.05; // Subtle ice rotation spin
+          ctx.save();
+          ctx.translate(anim.x, anim.y);
+          ctx.rotate(angle);
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-r * 0.25, -r * 0.4);
+          ctx.lineTo(0, -r * 1.1); // Diamond point
+          ctx.lineTo(r * 0.25, -r * 0.4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
           ctx.restore();
         }
-      });
-    };
+
+        // Concentric inner spinning dashed ring (guarded against negative radius!)
+        ctx.strokeStyle = "rgba(224, 242, 254, 0.5)";
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.arc(anim.x, anim.y, Math.max(0.1, r * 0.5 + pulse), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      } else if (anim.type === "resonant_aegis") {
+        ctx.save();
+        let alpha = anim.life / anim.maxLife;
+        let r = anim.radius;
+
+        // Pulsing Gold Outer Ring
+        ctx.strokeStyle = `rgba(241, 196, 15, ${alpha * 0.85})`;
+        ctx.lineWidth = 2.2;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "#f1c40f";
+
+        ctx.beginPath();
+        ctx.arc(anim.x, anim.y, Math.max(0.1, r), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Translucent Gold Inner Ring
+        ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.45})`;
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.arc(anim.x, anim.y, Math.max(0.1, r * 0.65), 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+      } else if (anim.type === "earth_breaker_bash") {
+        ctx.save();
+        let alpha = anim.life / anim.maxLife;
+        let r = anim.radius;
+        let coneWidth = 0.45; // ~25 degrees on each side (~50 total cone)
+
+        // 1. Draw a translucent directional warning/tremor area cone
+        ctx.fillStyle = `rgba(220, 160, 76, ${alpha * 0.12})`;
+        ctx.strokeStyle = `rgba(120, 53, 15, ${alpha * 0.65})`;
+        ctx.lineWidth = 1.8;
+
+        ctx.beginPath();
+        ctx.moveTo(anim.x, anim.y);
+        ctx.arc(
+          anim.x,
+          anim.y,
+          Math.max(0.1, r),
+          anim.angle - coneWidth,
+          anim.angle + coneWidth,
+        );
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 2. Render 3 distinct jagged fissures bursting outward from origin
+        let cracksCount = 3;
+        ctx.strokeStyle = `rgba(40, 20, 10, ${alpha * 0.95})`;
+        ctx.lineWidth = 2.2;
+        ctx.lineJoin = "round";
+
+        for (let k = 0; k < cracksCount; k++) {
+          let subAngle =
+            anim.angle - coneWidth + (k * (coneWidth * 2)) / (cracksCount - 1);
+          let segments = 4;
+          let lastX = anim.x;
+          let lastY = anim.y;
+
+          ctx.beginPath();
+          ctx.moveTo(lastX, lastY);
+          for (let s = 1; s <= segments; s++) {
+            let curDist = (r * s) / segments;
+            // Jitter creates organic branching cracks
+            let jitterX = (Math.random() - 0.5) * 6 * (s / segments);
+            let jitterY = (Math.random() - 0.5) * 6 * (s / segments);
+            let nextX = anim.x + Math.cos(subAngle) * curDist + jitterX;
+            let nextY = anim.y + Math.sin(subAngle) * curDist + jitterY;
+            ctx.lineTo(nextX, nextY);
+          }
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      } else if (anim.type === "wind_razor") {
+        ctx.save();
+        ctx.translate(anim.x, anim.y);
+        ctx.rotate(anim.angle);
+
+        let alpha = anim.life / anim.maxLife;
+        let size = 16 * (0.4 + alpha * 0.6); // Slightly tapers at its tail end of life
+
+        // Draw a sharp glowing crescent blade curving backwards
+        ctx.strokeStyle = `rgba(34, 211, 238, ${alpha * 0.95})`; // Cyan neon edge
+        ctx.fillStyle = `rgba(224, 242, 254, ${alpha * 0.35})`; // Translucent light blue fill
+        ctx.lineWidth = 2.0;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#06b6d4";
+
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.quadraticCurveTo(-size * 0.6, 0, 0, size);
+        ctx.quadraticCurveTo(-size * 1.1, 0, 0, -size);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    });
+  };
 
   window.drawJaggedLine = function (
     ctx,
@@ -3493,13 +3792,17 @@
   };
 
   // Initialize central RenderEngine Namespace
-      window.RenderEngine = {
-        getStageTier() {
-          if (window.currentGameState === "DUNGEON" && window.player && window.player.depth) {
-            return Math.floor((window.player.depth - 1) / 12);
-          }
-          let st = window.playerStats.stage;
-          if (st <= 100) return 0; // Forest (Stages 1-100)
+  window.RenderEngine = {
+    getStageTier() {
+      if (
+        window.currentGameState === "DUNGEON" &&
+        window.player &&
+        window.player.depth
+      ) {
+        return Math.floor((window.player.depth - 1) / 12);
+      }
+      let st = window.playerStats.stage;
+      if (st <= 100) return 0; // Forest (Stages 1-100)
       if (st <= 200) return 1; // Peaks/Ruins (Stages 101-200)
       if (st <= 300) return 2; // Inferno (Stages 201-300)
       if (st <= 400) return 3; // Swamp (Stages 301-400)
@@ -7392,7 +7695,7 @@
           let baseH = 120;
 
           // Scale proportionally based on a majestic target width of 125px
-                        let targetWidth = 72;
+          let targetWidth = 72;
           let scaleFactor = targetWidth / baseW;
           c.scale(scaleFactor, scaleFactor);
 
