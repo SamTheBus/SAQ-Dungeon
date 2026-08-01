@@ -16893,15 +16893,15 @@
       }
 
       let map = window.activeDungeonMap;
-      let isNearMerchant = false;
-      if (map && map.merchantTile && window.player) {
-        let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
-        let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
-        let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
-        if (dist <= 48) {
-          isNearMerchant = true;
-        }
-      }
+                let isNearMerchant = false;
+                if (map && map.merchantTile && window.player) {
+                  let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
+                  let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
+                  let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
+                  if (dist <= 110) {
+                    isNearMerchant = true;
+                  }
+                }
 
       listEl.innerHTML = filteredList
         .map((item) => {
@@ -16975,15 +16975,15 @@
       }
 
       let map = window.activeDungeonMap;
-      let isNearMerchant = false;
-      if (map && map.merchantTile && window.player) {
-        let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
-        let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
-        let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
-        if (dist <= 48) {
-          isNearMerchant = true;
-        }
-      }
+                let isNearMerchant = false;
+                if (map && map.merchantTile && window.player) {
+                  let mcx = map.merchantTile.x * map.tileSize + map.tileSize / 2;
+                  let mcy = map.merchantTile.y * map.tileSize + map.tileSize / 2;
+                  let dist = Math.hypot(window.player.x - mcx, window.player.y - mcy);
+                  if (dist <= 110) {
+                    isNearMerchant = true;
+                  }
+                }
 
       listEl.innerHTML = filteredList
         .map((item) => {

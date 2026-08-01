@@ -552,40 +552,40 @@
               }
 
     generateMerchantStock() {
-      this.merchantStock = [];
-      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-      let stageScale = this.depth;
-      let pStats =
-        typeof window.resolvePlayerStats === "function"
-          ? window.resolvePlayerStats()
-          : {};
-      let playerQuality = pStats.qly || 1.0;
+          this.merchantStock = [];
+          let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+          let stageScale = this.depth;
+          let pStats =
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : {};
+          let playerQuality = pStats.qly || 1.0;
 
-      for (let i = 0; i < 3; i++) {
-        let chosenType = types[Math.floor(Math.random() * types.length)];
-        let rolledRarity = window.rollItemRarity(
-          window.playerStats.maxFloorCleared || 0,
-          playerQuality,
-          false,
-        );
-        let item = window.createItemObject(
-          chosenType,
-          rolledRarity,
-          stageScale,
-          0,
-        );
+          for (let i = 0; i < 3; i++) {
+            let chosenType = types[Math.floor(Math.random() * types.length)];
+            let rolledRarity = window.rollItemRarity(
+              window.playerStats.maxFloorCleared || 0,
+              playerQuality,
+              false,
+            );
+            let item = window.createItemObject(
+              chosenType,
+              rolledRarity,
+              stageScale,
+              0,
+            );
 
-        let costMult =
-          150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
-        item.cost = BigNum.from(Math.ceil(costMult));
-        item.purchased = false;
+            let costMult =
+              150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
+            item.cost = BigNum.from(Math.ceil(costMult));
+            item.purchased = false;
+            item.isDungeonShop = true;
 
-        this.merchantStock.push(item);
-        window.frozenItemDb[item.id] = window.cloneItemForTooltip(item);
-      }
-    }
+            this.merchantStock.push(item);
+          }
+        }
 
-    populateEntities() {
+        populateEntities() {
       this.chests = [];
       this.mobSpawns = [];
       this.breakables = [];

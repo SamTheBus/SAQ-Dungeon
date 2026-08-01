@@ -2974,60 +2974,62 @@
   window.activeSpellLights = [];
 
   window.spawnVisualSpell = function (type, startX, startY, targets) {
-    if (type === "fire") {
-      let main = targets[0];
-      if (!main) return;
-      window.activeSpellAnims.push({
-        type: "fireball",
-        startX: startX,
-        startY: startY,
-        targetX: main.x,
-        targetY: main.y,
-        x: startX,
-        y: startY,
-        progress: 0,
-        speed: 7.5,
-        splashTargets: targets.slice(1),
-        life: 1,
-        maxLife: 1,
-      });
-    } else if (type === "lightning") {
-      let chainPoints = [{ x: startX, y: startY }];
-      targets.forEach((t) => {
-        chainPoints.push({ x: t.x, y: t.y });
-      });
+      if (type === "fire") {
+        let main = targets[0];
+        if (!main) return;
+        let angle = Math.atan2(main.y - startY, main.x - startX);
+        window.activeSpellAnims.push({
+          type: "fireball",
+          startX: startX,
+          startY: startY,
+          targetX: main.x,
+          targetY: main.y,
+          x: startX,
+          y: startY,
+          angle: angle,
+          progress: 0,
+          speed: 7.5,
+          splashTargets: targets.slice(1),
+          life: 1,
+          maxLife: 1,
+        });
+      } else if (type === "lightning") {
+        let chainPoints = [{ x: startX, y: startY }];
+        targets.forEach((t) => {
+          chainPoints.push({ x: t.x, y: t.y });
+        });
 
-      window.activeSpellAnims.push({
-        type: "chain_lightning",
-        points: chainPoints,
-        life: 15,
-        maxLife: 15,
-        flickerSeed: Math.random() * 100,
-      });
+        window.activeSpellAnims.push({
+          type: "chain_lightning",
+          points: chainPoints,
+          life: 15,
+          maxLife: 15,
+          flickerSeed: Math.random() * 100,
+        });
 
-      chainPoints.forEach((pt, idx) => {
-        window.spawnSpellLight(
-          pt.x,
-          pt.y,
-          110,
-          "rgba(0, 240, 255, 0.95)",
-          "rgba(0, 100, 255, 0)",
-          12,
-        );
-      });
-    } else if (type === "frost") {
-      let center = targets[0] || { x: startX, y: startY };
-      window.activeSpellAnims.push({
-        type: "frost_nova",
-        x: center.x,
-        y: center.y,
-        radius: 4,
-        maxRadius: 95,
-        life: 25,
-        maxLife: 25,
-      });
-    }
-  };
+        chainPoints.forEach((pt, idx) => {
+          window.spawnSpellLight(
+            pt.x,
+            pt.y,
+            110,
+            "rgba(0, 240, 255, 0.95)",
+            "rgba(0, 100, 255, 0)",
+            12,
+          );
+        });
+      } else if (type === "frost") {
+        let center = targets[0] || { x: startX, y: startY };
+        window.activeSpellAnims.push({
+          type: "frost_nova",
+          x: center.x,
+          y: center.y,
+          radius: 4,
+          maxRadius: 28, // Concentrates effect tightly on the target
+          life: 25,
+          maxLife: 25,
+        });
+      }
+    };
 
   window.spawnSpellLight = function (
     x,
@@ -3153,276 +3155,315 @@
         let anim = window.activeSpellAnims[i];
 
         if (anim.type === "fireball") {
-          let dx = anim.targetX - anim.x;
-          let dy = anim.targetY - anim.y;
-          let dist = Math.hypot(dx, dy);
+                  let dx = anim.targetX - anim.x;
+                  let dy = anim.targetY - anim.y;
+                  let dist = Math.hypot(dx, dy);
 
-          if (dist < anim.speed) {
-            window.spawnSpellLight(
-              anim.targetX,
-              anim.targetY,
-              150,
-              "rgba(255, 180, 50, 0.95)",
-              "rgba(230, 80, 10, 0)",
-              15,
-            );
+                  if (dist < anim.speed) {
+                    window.spawnSpellLight(
+                      anim.targetX,
+                      anim.targetY,
+                      150,
+                      "rgba(255, 180, 50, 0.95)",
+                      "rgba(230, 80, 10, 0)",
+                      15,
+                    );
 
-            if (window.combatVisuals) {
-              window.combatVisuals.spawnProjectileImpact(
-                anim.targetX,
-                anim.targetY,
-                "fireball",
-              );
-              window.combatVisuals.triggerScreenShake(4, 8);
-            }
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnProjectileImpact(
+                        anim.targetX,
+                        anim.targetY,
+                        "fireball",
+                      );
+                      window.combatVisuals.triggerScreenShake(4, 8);
+                    }
 
-            if (anim.splashTargets && anim.splashTargets.length > 0) {
-              anim.splashTargets.forEach((st) => {
-                window.activeSpellAnims.push({
-                  type: "fireball_sub",
-                  startX: anim.targetX,
-                  startY: anim.targetY,
-                  targetX: st.x,
-                  targetY: st.y,
-                  x: anim.targetX,
-                  y: anim.targetY,
-                  progress: 0,
-                  speed: 8.5,
-                  life: 1,
-                  maxLife: 1,
-                });
-              });
-            }
+                    if (anim.splashTargets && anim.splashTargets.length > 0) {
+                      anim.splashTargets.forEach((st) => {
+                        let subAngle = Math.atan2(st.y - anim.targetY, st.x - anim.targetX);
+                        window.activeSpellAnims.push({
+                          type: "fireball_sub",
+                          startX: anim.targetX,
+                          startY: anim.targetY,
+                          targetX: st.x,
+                          targetY: st.y,
+                          x: anim.targetX,
+                          y: anim.targetY,
+                          angle: subAngle,
+                          progress: 0,
+                          speed: 8.5,
+                          life: 1,
+                          maxLife: 1,
+                        });
+                      });
+                    }
 
-            window.activeSpellAnims.splice(i, 1);
-          } else {
-            anim.x += (dx / dist) * anim.speed;
-            anim.y += (dy / dist) * anim.speed;
+                    window.activeSpellAnims.splice(i, 1);
+                  } else {
+                    anim.x += (dx / dist) * anim.speed;
+                    anim.y += (dy / dist) * anim.speed;
+                    anim.angle = Math.atan2(dy, dx);
 
-            if (window.ParticlePool && Math.random() < 0.6) {
-              let pt = window.ParticlePool.get(
-                anim.x,
-                anim.y,
-                -(dx / dist) * 1.5 + window.randFloat(-0.5, 0.5),
-                -(dy / dist) * 1.5 + window.randFloat(-0.5, 0.5),
-                window.randFloat(1.5, 3.5),
-                Math.random() < 0.5 ? "#f97316" : "#fef08a",
-                0.9,
-                15,
-                -0.05,
-                true,
-              );
-              pt.style = "streak";
-              window.particles.push(pt);
-            }
-          }
-        } else if (anim.type === "fireball_sub") {
-          let dx = anim.targetX - anim.x;
-          let dy = anim.targetY - anim.y;
-          let dist = Math.hypot(dx, dy);
+                    if (window.ParticlePool && Math.random() < 0.6) {
+                      let pt = window.ParticlePool.get(
+                        anim.x,
+                        anim.y,
+                        -(dx / dist) * 1.5 + window.randFloat(-0.5, 0.5),
+                        -(dy / dist) * 1.5 + window.randFloat(-0.5, 0.5),
+                        window.randFloat(1.5, 3.5),
+                        Math.random() < 0.5 ? "#f97316" : "#fef08a",
+                        0.9,
+                        15,
+                        -0.05,
+                        true,
+                      );
+                      pt.style = "streak";
+                      window.particles.push(pt);
+                    }
+                  }
+                } else if (anim.type === "fireball_sub") {
+                  let dx = anim.targetX - anim.x;
+                  let dy = anim.targetY - anim.y;
+                  let dist = Math.hypot(dx, dy);
 
-          if (dist < anim.speed) {
-            window.spawnSpellLight(
-              anim.targetX,
-              anim.targetY,
-              80,
-              "rgba(249, 115, 22, 0.9)",
-              "rgba(234, 88, 12, 0)",
-              10,
-            );
-            if (window.combatVisuals) {
-              window.combatVisuals.spawnProjectileImpact(
-                anim.targetX,
-                anim.targetY,
-                "fireball",
-              );
-            }
-            window.activeSpellAnims.splice(i, 1);
-          } else {
-            anim.x += (dx / dist) * anim.speed;
-            anim.y += (dy / dist) * anim.speed;
+                  if (dist < anim.speed) {
+                    window.spawnSpellLight(
+                      anim.targetX,
+                      anim.targetY,
+                      80,
+                      "rgba(249, 115, 22, 0.9)",
+                      "rgba(234, 88, 12, 0)",
+                      10,
+                    );
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnProjectileImpact(
+                        anim.targetX,
+                        anim.targetY,
+                        "fireball",
+                      );
+                    }
+                    window.activeSpellAnims.splice(i, 1);
+                  } else {
+                    anim.x += (dx / dist) * anim.speed;
+                    anim.y += (dy / dist) * anim.speed;
+                    anim.angle = Math.atan2(dy, dx);
 
-            if (window.ParticlePool && Math.random() < 0.5) {
-              let pt = window.ParticlePool.get(
-                anim.x,
-                anim.y,
-                -(dx / dist) * 1.0 + window.randFloat(-0.4, 0.4),
-                -(dy / dist) * 1.0 + window.randFloat(-0.4, 0.4),
-                window.randFloat(1.0, 2.5),
-                "#ea580c",
-                0.85,
-                10,
-                -0.03,
-                true,
-              );
-              pt.style = "circle";
-              window.particles.push(pt);
-            }
-          }
-        } else if (anim.type === "chain_lightning") {
-          anim.life--;
-          if (anim.life <= 0) {
-            window.activeSpellAnims.splice(i, 1);
-          } else {
-            if (window.ParticlePool && Math.random() < 0.4) {
-              let ptIdx = Math.floor(Math.random() * anim.points.length);
-              let pt = anim.points[ptIdx];
-              if (pt) {
-                let spark = window.ParticlePool.get(
-                  pt.x + window.randFloat(-5, 5),
-                  pt.y + window.randFloat(-5, 5),
-                  window.randFloat(-1, 1),
-                  window.randFloat(-1, 1),
-                  window.randFloat(1.2, 2.8),
-                  "#00ffff",
-                  0.95,
-                  12,
-                  0,
-                  true,
-                );
-                spark.style = "sparkle_star";
-                window.particles.push(spark);
-              }
-            }
-          }
-        } else if (anim.type === "frost_nova") {
-          anim.life--;
-          if (anim.life <= 0) {
-            window.activeSpellAnims.splice(i, 1);
-          } else {
-            let tRatio = 1.0 - anim.life / anim.maxLife;
-            anim.radius = anim.maxRadius * tRatio;
+                    if (window.ParticlePool && Math.random() < 0.5) {
+                      let pt = window.ParticlePool.get(
+                        anim.x,
+                        anim.y,
+                        -(dx / dist) * 1.0 + window.randFloat(-0.4, 0.4),
+                        -(dy / dist) * 1.0 + window.randFloat(-0.4, 0.4),
+                        window.randFloat(1.0, 2.5),
+                        "#ea580c",
+                        0.85,
+                        10,
+                        -0.03,
+                        true,
+                      );
+                      pt.style = "circle";
+                      window.particles.push(pt);
+                    }
+                  }
+                } else if (anim.type === "chain_lightning") {
+                  anim.life--;
+                  if (anim.life <= 0) {
+                    window.activeSpellAnims.splice(i, 1);
+                  } else {
+                    if (window.ParticlePool && Math.random() < 0.4) {
+                      let ptIdx = Math.floor(Math.random() * anim.points.length);
+                      let pt = anim.points[ptIdx];
+                      if (pt) {
+                        let spark = window.ParticlePool.get(
+                          pt.x + window.randFloat(-5, 5),
+                          pt.y + window.randFloat(-5, 5),
+                          window.randFloat(-1, 1),
+                          window.randFloat(-1, 1),
+                          window.randFloat(1.2, 2.8),
+                          "#00ffff",
+                          0.95,
+                          12,
+                          0,
+                          true,
+                        );
+                        spark.style = "sparkle_star";
+                        window.particles.push(spark);
+                      }
+                    }
+                  }
+                } else if (anim.type === "frost_nova") {
+                  anim.life--;
+                  if (anim.life <= 0) {
+                    window.activeSpellAnims.splice(i, 1);
+                  } else {
+                    let tRatio = 1.0 - anim.life / anim.maxLife;
+                    anim.radius = anim.maxRadius * tRatio;
 
-            window.spawnSpellLight(
-              anim.x,
-              anim.y,
-              anim.radius + 20,
-              "rgba(224, 242, 254, 0.35)",
-              "rgba(56, 189, 248, 0)",
-              3,
-            );
+                    window.spawnSpellLight(
+                      anim.x,
+                      anim.y,
+                      anim.radius + 15,
+                      "rgba(224, 242, 254, 0.35)",
+                      "rgba(56, 189, 248, 0)",
+                      3,
+                    );
 
-            let stepCount = 12;
-            for (let s = 0; s < stepCount; s++) {
-              let angle = (s * Math.PI * 2) / stepCount + tRatio * Math.PI;
-              let sx = anim.x + Math.cos(angle) * anim.radius;
-              let sy = anim.y + Math.sin(angle) * anim.radius;
+                    let stepCount = 6; // Reduced to match the 6 crystalline spikes
+                    for (let s = 0; s < stepCount; s++) {
+                      let angle = (s * Math.PI * 2) / stepCount + tRatio * Math.PI;
+                      let sx = anim.x + Math.cos(angle) * anim.radius;
+                      let sy = anim.y + Math.sin(angle) * anim.radius;
 
-              if (window.ParticlePool) {
-                let pt = window.ParticlePool.get(
-                  sx,
-                  sy,
-                  Math.cos(angle) * 0.5,
-                  Math.sin(angle) * 0.5,
-                  window.randFloat(1.5, 3.2),
-                  Math.random() < 0.5 ? "#e0f2fe" : "#38bdf8",
-                  0.9,
-                  15,
-                  0.05,
-                  true,
-                );
-                pt.style = "polygon";
-                window.particles.push(pt);
-              }
-            }
-          }
-        }
+                      if (window.ParticlePool) {
+                        let pt = window.ParticlePool.get(
+                          sx,
+                          sy,
+                          Math.cos(angle) * 0.5,
+                          Math.sin(angle) * 0.5,
+                          window.randFloat(1.2, 2.6),
+                          Math.random() < 0.5 ? "#e0f2fe" : "#38bdf8",
+                          0.9,
+                          15,
+                          0.05,
+                          true,
+                        );
+                        pt.style = "polygon";
+                        window.particles.push(pt);
+                      }
+                    }
+                  }
+                }
       }
     }
   };
 
   window.renderSpellAnimations = function (ctx) {
-    if (!window.activeSpellAnims) return;
+      if (!window.activeSpellAnims) return;
 
-    window.activeSpellAnims.forEach((anim) => {
-      if (anim.type === "fireball" || anim.type === "fireball_sub") {
-        ctx.save();
-        let pulse = Math.sin(Date.now() / 60) * 1.5;
-        let r = (anim.type === "fireball" ? 6.5 : 4.0) + pulse;
+      window.activeSpellAnims.forEach((anim) => {
+        if (anim.type === "fireball" || anim.type === "fireball_sub") {
+          ctx.save();
+          ctx.translate(anim.x, anim.y);
 
-        let fireGrad = ctx.createRadialGradient(
-          anim.x,
-          anim.y,
-          1,
-          anim.x,
-          anim.y,
-          r * 1.8,
-        );
-        fireGrad.addColorStop(0, "#ffffff");
-        fireGrad.addColorStop(0.3, "#fef08a");
-        fireGrad.addColorStop(0.7, "#f97316");
-        fireGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
+          let angle = anim.angle || Math.atan2(anim.targetY - anim.y, anim.targetX - anim.x);
+          ctx.rotate(angle + Math.PI); // Orient the flame tail facing backwards
 
-        ctx.fillStyle = fireGrad;
-        ctx.beginPath();
-        ctx.arc(anim.x, anim.y, r * 1.8, 0, Math.PI * 2);
-        ctx.fill();
+          let pulse = Math.sin(Date.now() / 40) * 1.2;
+          let r = (anim.type === "fireball" ? 7.5 : 4.5) + pulse;
 
-        ctx.strokeStyle = "#e65100";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(anim.x, anim.y, r, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      } else if (anim.type === "chain_lightning") {
-        ctx.save();
-        let alpha = anim.life / anim.maxLife;
+          // Render 3 layered flickering organic flame shapes
+          let drawFlameTongue = (radius, scaleX, scaleY, color) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(-radius * 1.2, 0);
+            ctx.quadraticCurveTo(-radius * 0.5, -radius * 0.8 * scaleY, radius * scaleX, -radius * 0.4);
+            let flickerOffset = Math.sin(Date.now() / 30 + radius) * 2.5;
+            ctx.quadraticCurveTo(radius * 1.3 * scaleX, flickerOffset, radius * scaleX, radius * 0.4);
+            ctx.quadraticCurveTo(-radius * 0.5, radius * 0.8 * scaleY, -radius * 1.2, 0);
+            ctx.closePath();
+            ctx.fill();
+          };
 
-        for (let pIdx = 0; pIdx < anim.points.length - 1; pIdx++) {
-          let p1 = anim.points[pIdx];
-          let p2 = anim.points[pIdx + 1];
-          let displace = 18;
+          ctx.shadowBlur = anim.type === "fireball" ? 14 : 7;
+          ctx.shadowColor = "#f97316";
 
-          ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
-          ctx.lineWidth = 6.0;
+          // Layer 1: Outer glowing red mantle
+          drawFlameTongue(r * 1.5, 1.6, 1.2, "#dc2626");
+
+          ctx.shadowBlur = 0; // Disable heavy glow on inner layers for clean crisp shapes
+
+          // Layer 2: Middle bright orange
+          drawFlameTongue(r * 1.1, 1.3, 1.0, "#f97316");
+
+          // Layer 3: Inner white-hot yellow-white cores
+          drawFlameTongue(r * 0.7, 1.0, 0.8, "#fef08a");
+          drawFlameTongue(r * 0.4, 0.7, 0.6, "#ffffff");
+
+          ctx.restore();
+        } else if (anim.type === "chain_lightning") {
+          ctx.save();
+          let alpha = anim.life / anim.maxLife;
+
+          for (let pIdx = 0; pIdx < anim.points.length - 1; pIdx++) {
+            let p1 = anim.points[pIdx];
+            let p2 = anim.points[pIdx + 1];
+            let displace = 18;
+
+            ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+            ctx.lineWidth = 6.0;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00f0ff";
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
+            ctx.stroke();
+
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
+            ctx.stroke();
+          }
+          ctx.restore();
+        } else if (anim.type === "frost_nova") {
+          ctx.save();
+          let pulse = Math.sin(Date.now() / 100) * 1.5;
+          let r = anim.radius;
+
+          // Concentrated outer frosty frost ring
+          ctx.strokeStyle = "rgba(0, 210, 255, 0.85)";
+          ctx.lineWidth = 2.0;
           ctx.shadowBlur = 10;
-          ctx.shadowColor = "#00f0ff";
+          ctx.shadowColor = "#38bdf8";
+
           ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
+          ctx.arc(anim.x, anim.y, Math.max(0.1, r), 0, Math.PI * 2);
           ctx.stroke();
           ctx.shadowBlur = 0;
 
-          ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
-          ctx.lineWidth = 2.8;
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
-          ctx.stroke();
-
-          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+          // Draw 6 sharp geometric ice crystal spokes pointing outward
+          ctx.fillStyle = "rgba(224, 242, 254, 0.4)";
+          ctx.strokeStyle = "#e0f2fe";
           ctx.lineWidth = 1.2;
+          let shards = 6;
+          for (let i = 0; i < shards; i++) {
+            let angle = (i * Math.PI * 2) / shards + (r * 0.05); // Subtle ice rotation spin
+            ctx.save();
+            ctx.translate(anim.x, anim.y);
+            ctx.rotate(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-r * 0.25, -r * 0.4);
+            ctx.lineTo(0, -r * 1.1); // Diamond point
+            ctx.lineTo(r * 0.25, -r * 0.4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // Concentric inner spinning dashed ring (guarded against negative radius)
+          ctx.strokeStyle = "rgba(224, 242, 254, 0.5)";
+          ctx.lineWidth = 1.0;
+          ctx.setLineDash([3, 3]);
           ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          window.drawJaggedLine(ctx, p1.x, p1.y, p2.x, p2.y, displace);
+          ctx.arc(anim.x, anim.y, Math.max(0.1, r * 0.6 + pulse), 0, Math.PI * 2);
           ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
         }
-        ctx.restore();
-      } else if (anim.type === "frost_nova") {
-        ctx.save();
-        let pulse = Math.sin(Date.now() / 100) * 1.5;
-        let r = anim.radius;
-
-        ctx.strokeStyle = "rgba(0, 210, 255, 0.65)";
-        ctx.lineWidth = 2.5;
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = "#38bdf8";
-        ctx.beginPath();
-        ctx.arc(anim.x, anim.y, r, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        ctx.strokeStyle = "rgba(224, 242, 254, 0.4)";
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.arc(anim.x, anim.y, r - 4 + pulse, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.restore();
-      }
-    });
-  };
+      });
+    };
 
   window.drawJaggedLine = function (
     ctx,
@@ -3452,10 +3493,13 @@
   };
 
   // Initialize central RenderEngine Namespace
-  window.RenderEngine = {
-    getStageTier() {
-      let st = window.playerStats.stage;
-      if (st <= 100) return 0; // Forest (Stages 1-100)
+      window.RenderEngine = {
+        getStageTier() {
+          if (window.currentGameState === "DUNGEON" && window.player && window.player.depth) {
+            return Math.floor((window.player.depth - 1) / 12);
+          }
+          let st = window.playerStats.stage;
+          if (st <= 100) return 0; // Forest (Stages 1-100)
       if (st <= 200) return 1; // Peaks/Ruins (Stages 101-200)
       if (st <= 300) return 2; // Inferno (Stages 201-300)
       if (st <= 400) return 3; // Swamp (Stages 301-400)
@@ -7348,7 +7392,7 @@
           let baseH = 120;
 
           // Scale proportionally based on a majestic target width of 125px
-          let targetWidth = 125;
+                        let targetWidth = 72;
           let scaleFactor = targetWidth / baseW;
           c.scale(scaleFactor, scaleFactor);
 
