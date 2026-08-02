@@ -2160,6 +2160,17 @@ summary {
   .enchant-right-pane {
     max-height: 250px;
   }
+
+  /* Set bounty layout columns to a single column on tablet/mobile size */
+  .bounty-layout {
+    grid-template-columns: 1fr !important;
+    max-height: calc(84vh - 70px) !important;
+    overflow-y: auto !important;
+  }
+  .bounty-left-pane,
+  .bounty-right-pane {
+    max-height: 280px !important;
+  }
 }
 
 .forge-mode-bar {
@@ -2578,6 +2589,7 @@ summary {
   .forge-layout,
     .enchant-layout,
     .bounty-layout {
+      grid-template-columns: 1fr !important; /* Stack columns on mobile */
       height: auto !important;
       max-height: none !important;
       flex: 1 !important;
@@ -2623,15 +2635,26 @@ summary {
   }
 
   .profile-tab-bar::-webkit-scrollbar-thumb,
-  .satchel-tab-bar::-webkit-scrollbar-thumb,
-  .shop-tab-bar::-webkit-scrollbar-thumb,
-  .gacha-tab-bar::-webkit-scrollbar-thumb,
-  .forge-mode-bar::-webkit-scrollbar-thumb,
-  .ach-filter-bar::-webkit-scrollbar-thumb {
-    background: var(--border-aged-bronze) !important;
-    border-radius: 2px !important;
+    .satchel-tab-bar::-webkit-scrollbar-thumb,
+    .shop-tab-bar::-webkit-scrollbar-thumb,
+    .gacha-tab-bar::-webkit-scrollbar-thumb,
+    .forge-mode-bar::-webkit-scrollbar-thumb,
+    .ach-filter-bar::-webkit-scrollbar-thumb {
+      background: var(--border-aged-bronze) !important;
+      border-radius: 2px !important;
+    }
+
+    /* Prevent text in horizontal tab sliders from getting squeezed */
+    .profile-tab-btn,
+    .satchel-tab-btn,
+    .shop-tab-btn,
+    .gacha-tab-btn,
+    .forge-mode-btn,
+    .ach-filter-btn,
+    .bounty-tab-btn {
+      flex-shrink: 0 !important;
+    }
   }
-}
 
 /* --- ARCADE GACHAPON STYLES --- */
 .gacha-card {
