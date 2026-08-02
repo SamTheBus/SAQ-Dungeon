@@ -317,12 +317,17 @@ window.getBountyRerollCost = function (peakStage, rerollsToday) {
   let soulCost = Math.round(soulBase * Math.pow(2.5, r));
 
   return {
-    gold: goldCost,
-    souls: soulCost
+      gold: goldCost,
+      souls: soulCost
+    };
   };
-};
 
-window.calculateRenownForStageRange = function (fromStage, toStage) {
+  window.isWeeklyQuestUnlocked = function () {
+    if (!window.playerStats) return false;
+    return (window.playerStats.maxFloorCleared || 0) >= 12 || (window.playerStats.prestigeCount || 0) > 0;
+  };
+
+  window.calculateRenownForStageRange = function (fromStage, toStage) {
   if (toStage <= fromStage) return 0;
   let start = Math.max(0, fromStage);
   let end = toStage;
@@ -4142,10 +4147,10 @@ Object.assign(window.QuestSystem, {
     window.playerStats.bountyRerollsToday = r + 1;
 
     // Regenerate active missions
-    this.generateDailyMissions();
-    if (window.playerStats.prestigeCount > 0) {
-      this.generateWeeklyMissions();
-    }
+        this.generateDailyMissions();
+        if (window.isWeeklyQuestUnlocked()) {
+          this.generateWeeklyMissions();
+        }
 
     if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast("Board Re-rolled Successfully!", "#2ecc71");
@@ -4202,27 +4207,27 @@ Object.assign(window.QuestSystem, {
     lastMondayDate.setDate(ptDate.getDate() - daysSinceMonday);
     let lastMondayStr = lastMondayDate.toLocaleDateString("en-US");
 
-    if (window.playerStats.prestigeCount > 0) {
-      if (
-        !window.playerStats.lastWeeklyResetMondayStr ||
-        window.playerStats.lastWeeklyResetMondayStr !== lastMondayStr
-      ) {
-        this.generateWeeklyMissions();
-        window.playerStats.lastWeeklyResetMondayStr = lastMondayStr;
-        window.playerStats.lastWeeklyResetTime = now;
-        window.playerStats.weeklyRewardClaimed = false;
+    if (window.isWeeklyQuestUnlocked()) {
+          if (
+            !window.playerStats.lastWeeklyResetMondayStr ||
+            window.playerStats.lastWeeklyResetMondayStr !== lastMondayStr
+          ) {
+            this.generateWeeklyMissions();
+            window.playerStats.lastWeeklyResetMondayStr = lastMondayStr;
+            window.playerStats.lastWeeklyResetTime = now;
+            window.playerStats.weeklyRewardClaimed = false;
 
-        // Add this line below:
-        window.playerStats.weeklyClanCrateClaimed = false;
+            // Add this line below:
+            window.playerStats.weeklyClanCrateClaimed = false;
 
-        if (typeof window.pushLog === "function")
-          window.pushLog(
-            "<span style='color:#9b59b6; font-weight:bold;'>📅 [SYSTEM] Clan Weekly Board refreshed!</span>",
-          );
-      }
-    } else {
-      window.playerStats.weeklyMissions = [];
-    }
+            if (typeof window.pushLog === "function")
+              window.pushLog(
+                "<span style='color:#9b59b6; font-weight:bold;'>[SYSTEM] Clan Weekly Board refreshed!</span>",
+              );
+          }
+        } else {
+          window.playerStats.weeklyMissions = [];
+        }
   },
 });
 
@@ -4251,10 +4256,10 @@ Object.assign(window.QuestSystem, {
     }
 
     if (
-      window.playerStats.prestigeCount > 0 &&
-      window.playerStats.weeklyMissions
-    ) {
-      window.playerStats.weeklyMissions.forEach((m) => {
+          window.isWeeklyQuestUnlocked() &&
+          window.playerStats.weeklyMissions
+        ) {
+          window.playerStats.weeklyMissions.forEach((m) => {
         if (m.type === type && !m.completed) {
           m.current = Math.min(m.target, m.current + amount);
           if (m.current >= m.target) {
@@ -4645,11 +4650,11 @@ window.loadGame = function () {
                   let hasLegacyWeeklies = window.playerStats.weeklyMissions && window.playerStats.weeklyMissions.some(m => m.type === "tempers" || m.type === "reforges");
 
                   if (hasLegacyDailies || !window.playerStats.dailyMissions || window.playerStats.dailyMissions.length === 0) {
-                    window.QuestSystem.generateDailyMissions();
-                  }
-                  if (hasLegacyWeeklies || (window.playerStats.prestigeCount > 0 && (!window.playerStats.weeklyMissions || window.playerStats.weeklyMissions.length === 0))) {
-                    window.QuestSystem.generateWeeklyMissions();
-                  }
+                          window.QuestSystem.generateDailyMissions();
+                        }
+                        if (hasLegacyWeeklies || (window.isWeeklyQuestUnlocked() && (!window.playerStats.weeklyMissions || window.playerStats.weeklyMissions.length === 0))) {
+                          window.QuestSystem.generateWeeklyMissions();
+                        }
 
                   // Safely hydrate serialized BigNum rewards back into live instances
                   if (window.playerStats.dailyMissions) {

@@ -17950,21 +17950,53 @@
               `;
             }
           } else {
-            // Render Dailies or Weeklies
-            let isWeekly = tab === "weeklies";
-            let list = isWeekly ? window.playerStats.weeklyMissions : window.playerStats.dailyMissions;
+                  // Render Dailies or Weeklies
+                  let isWeekly = tab === "weeklies";
 
-            if (!list || list.length === 0) {
-              leftPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">No active quests rolled. Check back after reset!</div>`;
-              rightPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">Select a quest from the list.</div>`;
-              return;
-            }
+                  // If weekly tab is selected but requirements are not met, display clear locked UX
+                  if (isWeekly && !window.isWeeklyQuestUnlocked()) {
+                    leftPane.innerHTML = `
+                      <div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:10px; font-family:monospace; line-height:1.45;">
+                        [ WEEKLY LOCK ]<br><br>
+                        Clear Floor 12 (Sector 1 Boss) or reach Prestige to unlock Weekly Guild Quests.
+                      </div>
+                    `;
+                    rightPane.innerHTML = `
+                      <div style="display:flex; flex-direction:column; text-align:left; gap:10px; height:100%; font-family:monospace;">
+                        <div style="font-weight:900; font-size:13.5px; color:#e74c3c; border-bottom:1.5px solid rgba(231,76,60,0.3); padding-bottom:6px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.8px;">
+                          Weekly Guild Contracts Locked
+                        </div>
+                        <p style="font-size:11px; color:#cbd5e1; line-height:1.45; margin:0 0 10px 0; white-space:normal;">
+                          The Weekly Guild Board is currently bound by high-tier magical seals. To lift the seals and earn prestigious weekly sacks, you must complete either of the following milestones:
+                        </p>
+                        <div style="background:rgba(231,76,60,0.05); border:1px dashed #e74c3c; border-radius:6px; padding:10px; font-size:10.5px; line-height:1.4; color:#ff7675;">
+                          • Clear Floor 12 (Defeat the Sector 1 Guardian Boss)
+                        </div>
+                        <button class="action-btn" style="width:100%; margin-top:auto; background:#1e293b; border-color:#334155; color:#64748b;" disabled>EXPEDITION UNDERWAY</button>
+                      </div>
+                    `;
+                    return;
+                  }
 
-            if (!window.state.selectedQuestId || !list.some(q => q.id === window.state.selectedQuestId)) {
-              window.state.selectedQuestId = list[0].id;
-            }
+                  let list = isWeekly ? (window.playerStats.weeklyMissions || []) : (window.playerStats.dailyMissions || []);
 
-            let activeQuestId = window.state.selectedQuestId;
+                  // Dynamic On-the-Fly Generator: If unlocked but empty, generate them immediately
+                  if (isWeekly && window.isWeeklyQuestUnlocked() && list.length === 0) {
+                    window.QuestSystem.generateWeeklyMissions();
+                    list = window.playerStats.weeklyMissions || [];
+                  }
+
+                  if (!list || list.length === 0) {
+                    leftPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">No active quests rolled. Check back after reset!</div>`;
+                    rightPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">Select a quest from the list.</div>`;
+                    return;
+                  }
+
+                  if (!window.state.selectedQuestId || !list.some(q => q.id === window.state.selectedQuestId)) {
+                    window.state.selectedQuestId = list[0].id;
+                  }
+
+                  let activeQuestId = window.state.selectedQuestId;
 
             // Render Left Pane (Quests List)
             leftPane.innerHTML = list.map(q => {
