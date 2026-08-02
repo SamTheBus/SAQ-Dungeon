@@ -518,33 +518,45 @@
         let playerQuality = pStats.qly || 1.0;
 
         // Custom Helper to spawn tiered equipment drops
-        let spawnTieredEquipment = (qualityMult, minRarity) => {
-          let effectiveStage = stageScale * 5;
-          let rolledRarity = window.rollItemRarity(
-            effectiveStage,
-            qualityMult,
-            false,
-          );
-          if (rolledRarity < minRarity) {
-            rolledRarity = minRarity;
-          }
-          let types = [
-            "weapon",
-            "subweapon",
-            "helmet",
-            "chest",
-            "boots",
-            "ring",
-          ];
-          let chosenType = types[Math.floor(Math.random() * types.length)];
-          let newItem = window.createItemObject(
-            chosenType,
-            rolledRarity,
-            stageScale,
-            0,
-          );
-          window.spawnGroundLoot(newItem, p.x, p.y - 10);
-        };
+                let spawnTieredEquipment = (qualityMult, minRarity) => {
+                  if (isChallengeActive) {
+                    // Convert to high-value gold and rare crafting material payload
+                    let bonusGold = Math.floor(120 * (1 + stageScale * 0.8));
+                    window.spawnHomingGold(p.x, p.y - 10, bonusGold);
+
+                    let mats = ["Rare Scrap", "Magic Scrap", "Epic Scrap", "Legendary Scrap", "Eridium Shard"];
+                    let idx = Math.min(mats.length - 1, Math.floor((stageScale - 1) / 10) + 1);
+                    let chosenMat = mats[Math.floor(Math.random() * (idx + 1))];
+                    window.addDungeonRunScrap(chosenMat, window.randInt(2, 4), p.x, p.y - 10);
+                    return;
+                  }
+
+                  let effectiveStage = stageScale * 5;
+                  let rolledRarity = window.rollItemRarity(
+                    effectiveStage,
+                    qualityMult,
+                    false,
+                  );
+                  if (rolledRarity < minRarity) {
+                    rolledRarity = minRarity;
+                  }
+                  let types = [
+                    "weapon",
+                    "subweapon",
+                    "helmet",
+                    "chest",
+                    "boots",
+                    "ring",
+                  ];
+                  let chosenType = types[Math.floor(Math.random() * types.length)];
+                  let newItem = window.createItemObject(
+                    chosenType,
+                    rolledRarity,
+                    stageScale,
+                    0,
+                  );
+                  window.spawnGroundLoot(newItem, p.x, p.y - 10);
+                };
 
         if (typeof window.spawnChestEruptionParticles === "function") {
           window.spawnChestEruptionParticles(
@@ -4855,16 +4867,16 @@
     if (overlay) overlay.style.display = "none";
   };
 
-  window.drawPortraitBossHealthBar = function (ctx, m, canvas) {
-    if (!m || !m.hp || !m.maxHp) return;
+  window.drawPortraitBossHealthBar = function (ctx, m, canvas, bossIndex = 0) {
+      if (!m || !m.hp || !m.maxHp) return;
 
-    ctx.save();
+      ctx.save();
 
-    let barW = Math.min(canvas.width - 40, 280);
-    let barH = 10;
-    let barX = (canvas.width - barW) / 2;
-    // Adjusted to 160 to prevent overlap with the stacked top HUD on notched/island devices in portrait mode
-    let barY = 160;
+      let barW = Math.min(canvas.width - 40, 280);
+      let barH = 10;
+      let barX = (canvas.width - barW) / 2;
+      // Adjusted to 160 to prevent overlap, stacked down dynamically
+      let barY = 160 + bossIndex * 42;
 
     let bHp = BigNum.from(m.hp);
     let bMaxHp = BigNum.from(m.maxHp);
@@ -5319,29 +5331,37 @@
     modal.style.display = "flex";
 
     let isCrucible = window.playerStats.isCrucibleMode;
-    let titleEl = document.getElementById("deploy-modal-title");
-    let subtitleEl = document.getElementById("deploy-modal-subtitle");
-    let tabBtnExchange = document.getElementById("deploy-tab-btn-exchange");
-    let tabBtnSetup = document.getElementById("deploy-tab-btn-setup");
-    let tabContainer = document.querySelector(".deploy-tab-bar");
+              let isChallenge = window.playerStats.activeSpecialChallenge !== null;
+              let titleEl = document.getElementById("deploy-modal-title");
+              let subtitleEl = document.getElementById("deploy-modal-subtitle");
+              let tabBtnExchange = document.getElementById("deploy-tab-btn-exchange");
+              let tabBtnSetup = document.getElementById("deploy-tab-btn-setup");
+              let tabContainer = document.querySelector(".deploy-tab-bar");
 
-    if (isCrucible) {
-      if (titleEl) titleEl.innerText = "ONSLAUGHT ALTAR";
-      if (subtitleEl) subtitleEl.innerText = "CHALLENGE THE ONSLAUGHT ARENA";
-      if (tabBtnSetup) tabBtnSetup.innerText = "ARENA SETUP";
-      if (tabBtnExchange) tabBtnExchange.style.display = "inline-block";
-      if (tabContainer) {
-        tabContainer.style.display = ""; // Reset inline override to use stylesheet layout
-      }
-    } else {
-      if (titleEl) titleEl.innerText = "DUNGEON EXPEDITION ALTAR";
-      if (subtitleEl) subtitleEl.innerText = "PREPARE FOR DUNGEON DESCENT";
-      if (tabBtnSetup) tabBtnSetup.innerText = "EXPEDITION SETUP";
-      if (tabBtnExchange) tabBtnExchange.style.display = "none";
-      if (tabContainer) {
-        tabContainer.style.display = "none"; // Hide entire tab bar in standard campaign
-      }
-    }
+              if (isCrucible) {
+                if (titleEl) titleEl.innerText = "ONSLAUGHT ALTAR";
+                if (subtitleEl) subtitleEl.innerText = "CHALLENGE THE ONSLAUGHT ARENA";
+                if (tabBtnSetup) tabBtnSetup.innerText = "ARENA SETUP";
+                if (tabBtnExchange) tabBtnExchange.style.display = "inline-block";
+                if (tabContainer) {
+                  tabContainer.style.display = ""; // Reset inline override to use stylesheet layout
+                }
+              } else if (isChallenge) {
+                if (titleEl) titleEl.innerText = "SPECIAL CHALLENGE ALTAR";
+                if (subtitleEl) subtitleEl.innerText = "PREPARE FOR DANGEROUS DESCENT";
+                if (tabBtnExchange) tabBtnExchange.style.display = "none";
+                if (tabContainer) {
+                  tabContainer.style.display = "none"; // Hide tab bar
+                }
+              } else {
+                if (titleEl) titleEl.innerText = "DUNGEON EXPEDITION ALTAR";
+                if (subtitleEl) subtitleEl.innerText = "PREPARE FOR DUNGEON DESCENT";
+                if (tabBtnSetup) tabBtnSetup.innerText = "EXPEDITION SETUP";
+                if (tabBtnExchange) tabBtnExchange.style.display = "none";
+                if (tabContainer) {
+                  tabContainer.style.display = "none"; // Hide entire tab bar in standard campaign
+                }
+              }
 
     if (typeof window.switchDeployTab === "function") {
       window.switchDeployTab("setup");
@@ -5449,106 +5469,209 @@
   };
 
   window.renderDeploymentModal = function () {
-    let selectorsPanel = document.getElementById("deployment-selectors-panel");
-    if (selectorsPanel) {
-      let checkpoints = window.playerStats.unlockedCheckpoints || [1];
-      let selectedFloor = window.state.deploymentFloor || 1;
-      let rec = window.playerStats && window.playerStats.recoveryLoot;
+      let selectorsPanel = document.getElementById("deployment-selectors-panel");
+      if (selectorsPanel) {
+        let isCrucible = window.playerStats.isCrucibleMode;
+        let isChallenge = window.playerStats.activeSpecialChallenge !== null;
 
-      let floorOptions = checkpoints
-        .map((startFloor) => {
-          let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
-          let isSelected = startFloor === selectedFloor ? "selected" : "";
-          let recBadge =
-            rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
+        if (isCrucible) {
+          let maxPeak = window.playerStats.cruciblePeak || 1;
+          let selectedWave = window.playerStats.crucibleStartWave || 1;
 
-          let tag =
-            startFloor === 1
-              ? "Start"
-              : (startFloor - 1) % 12 === 0
-                ? `Sector ${sectorNum} Start`
-                : `Post Mini-Boss`;
-          return `<option value="${startFloor}" ${isSelected}>Floor ${startFloor} (${tag})${recBadge}</option>`;
-        })
-        .join("");
+          let waveOptions = [];
+          waveOptions.push(1);
+          for (let wave = 5; wave <= maxPeak; wave += 5) {
+            waveOptions.push(wave);
+          }
+          waveOptions = Array.from(new Set(waveOptions)).sort((a, b) => a - b);
 
-      let recBannerHtml = "";
-      if (rec && rec.items && rec.items.length > 0) {
-        recBannerHtml = `
-                      <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
-                        <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
-                        <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
-                      </div>
-                    `;
-      }
+          let optionsMarkup = waveOptions
+            .map((w) => {
+              let isSelected = w === selectedWave ? "selected" : "";
+              let tag = w === 1 ? "Initiation Wave" : `Milestone Wave`;
+              return `<option value="${w}" ${isSelected}>Wave ${w} (${tag})</option>`;
+            })
+            .join("");
 
-      let selectedSigilId = window.state.selectedDeploymentSigilId;
-            let activeSigil = selectedSigilId
-              ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
-              : null;
+          let dividend = window.calculateCumulativeOnslaughtShards(selectedWave);
 
-            let sigilSlotHtml = "";
-            if (activeSigil) {
-              let col = window.getTierColor(activeSigil.statsRolled);
-              let buffPills = (activeSigil.buffs || [])
-                .map(
-                  (b) =>
-                    `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseenter="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseleave="window.hideTooltip()">+ ${b.name}</span>`,
-                )
-                .join(" ");
-              let debuffPills = (activeSigil.debuffs || [])
-                .map(
-                  (d) =>
-                    `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseenter="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseleave="window.hideTooltip()">- ${d.name}</span>`,
-                )
-                .join(" ");
+          selectorsPanel.innerHTML = `
+                <div class="deploy-pane-header">
+                  <span>ONSLAUGHT PARAMETERS</span>
+                  <span class="deploy-risk-tag" style="border-color:#a855f7; color:#a855f7; background:rgba(168,85,247,0.1);">ARENA</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                  <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                    <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. STARTING WAVE MILESTONE</label>
+                    <select id="deploy-wave-select" class="wave-milestone-select" onchange="window.changeOnslaughtStartWave(this.value)">
+                      ${optionsMarkup}
+                    </select>
+                  </div>
 
-        sigilSlotHtml = `
-            <div class="deploy-sigil-card-slot" onclick="window.openSigilPickerModal()" style="border-color:${col}; cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;">
+                  ${
+                    selectedWave > 1
+                      ? `
+                  <div style="background: rgba(168, 85, 247, 0.1); border: 1.5px dashed #a855f7; border-radius: 6px; padding: 10px; text-align: left; font-family: monospace; font-size: 9.5px; line-height: 1.4; color: #e9d5ff;">
+                    <strong style="color: #ffd700; display: block; margin-bottom: 4px;">[70% SKIP DIVIDEND REWARD]</strong>
+                    <span>Bypassing Waves 1 to ${selectedWave - 1} instantly awards:</span>
+                    <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 2px;">
+                      <div style="color: #00ffff;">+ ${dividend.shards.toLocaleString()} Astral Shards</div>
+                      <div style="color: #ffd700;">+ ${window.formatNumber(dividend.gold)} Gold</div>
+                      <div style="color: #c084fc;">+ ${window.formatNumber(dividend.xp)} Experience (XP)</div>
+                    </div>
+                  </div>
+                  `
+                      : ""
+                  }
+                </div>
+              `;
+        } else if (isChallenge) {
+          let challenge = window.playerStats.activeSpecialChallenge;
+          let sigil = window.playerStats.activeDungeonSigil || window.ItemFactory.createCalamitySigil(challenge.id);
+
+          window.state.deploymentFloor = 1;
+
+          let col = window.getTierColor(sigil.statsRolled);
+          let buffPills = (sigil.buffs || []).map(b => {
+            return `<span class="recipe-ingredient-chip" style="border-color:#34d399; background:rgba(52,211,153,0.12); color:#34d399; font-size:8px; font-family:monospace; padding:1px 4px; border-radius:3px; cursor:help;" onpointerdown="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseenter="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseleave="window.hideTooltip()">+ ${b.name}</span>`;
+          }).join(" ");
+          let debuffPills = (sigil.debuffs || []).map(d => {
+            return `<span class="recipe-ingredient-chip" style="border-color:#f87171; background:rgba(239,68,68,0.12); color:#f87171; font-size:8px; font-family:monospace; padding:1px 4px; border-radius:3px; cursor:help;" onpointerdown="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseenter="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseleave="window.hideTooltip()">- ${d.name}</span>`;
+          }).join(" ");
+
+          let sigilSlotHtml = `
+            <div class="deploy-sigil-card-slot" style="border-color:${col}; cursor:default; flex-direction:column; align-items:stretch; gap:6px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-                  ${window.getEquipIconHtml(activeSigil, 24)}
+                  ${window.getEquipIconHtml(sigil, 24)}
                   <div style="display:flex; flex-direction:column; min-width:0;">
-                    <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${activeSigil.name}</span>
-                    <span style="color:#aaa; font-size:8px; font-family:monospace;">${activeSigil.statsRolled}★ ${window.getTierName(activeSigil.statsRolled)}</span>
+                    <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${sigil.name}</span>
+                    <span style="color:#aaa; font-size:8px; font-family:monospace;">${sigil.statsRolled}★ ${window.getTierName(sigil.statsRolled)}</span>
                   </div>
                 </div>
-                <button class="action-btn-sm" style="background:#3b0764; border-color:#a855f7; color:#df9ffb; font-size:8px; padding:3px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">SWAP</button>
               </div>
               <div style="display:flex; flex-wrap:wrap; gap:3px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:4px;">
                 ${buffPills} ${debuffPills}
               </div>
             </div>
           `;
-      } else {
-        sigilSlotHtml = `
-            <div class="deploy-sigil-card-slot empty" onclick="window.openSigilPickerModal()" style="cursor:pointer; padding:12px 10px;">
-              <span style="color:#64748b; font-size:10px; font-weight:bold; font-style:italic;">[ NO SIGIL INFUSED ]</span>
-              <button class="action-btn-sm" style="background:#0284c7; border-color:#38bdf8; color:#fff; font-size:8px; padding:4px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">INFUSE SIGIL</button>
+
+          selectorsPanel.innerHTML = `
+            <div class="deploy-pane-header">
+              <span>CONTRACT PARAMETERS</span>
+              <span class="deploy-risk-tag" style="border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,0.1);">LOCKED</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
+                <div style="background: #0f172a; color: #ffd700; border: 1px solid #1e293b; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%;">Floor 1 (Contract Core Entry)</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">2. CONTRACT SIGIL</label>
+                ${sigilSlotHtml}
+              </div>
             </div>
           `;
-      }
+        } else {
+          let checkpoints = window.playerStats.unlockedCheckpoints || [1];
+          let selectedFloor = window.state.deploymentFloor || 1;
+          let rec = window.playerStats && window.playerStats.recoveryLoot;
 
-      selectorsPanel.innerHTML = `
-                  ${recBannerHtml}
-                  <div class="deploy-pane-header">
-                    <span>EXPEDITION & SIGIL SETUP</span>
-                    <span class="deploy-risk-tag" style="border-color:#f1c40f; color:#f1c40f; background:rgba(241,196,15,0.1);">DESTINATION</span>
-                  </div>
-                  <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                    <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                      <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
-                      <select id="deploy-floor-select" style="background: #1e293b; color: #ffd700; border: 1px solid #334155; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentFloor(this.value)">
-                        ${floorOptions}
-                      </select>
+          let floorOptions = checkpoints
+            .map((startFloor) => {
+              let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
+              let isSelected = startFloor === selectedFloor ? "selected" : "";
+              let recBadge =
+                rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
+
+              let tag =
+                startFloor === 1
+                  ? "Start"
+                  : (startFloor - 1) % 12 === 0
+                    ? `Sector ${sectorNum} Start`
+                    : `Post Mini-Boss`;
+              return `<option value="${startFloor}" ${isSelected}>Floor ${startFloor} (${tag})${recBadge}</option>`;
+            })
+            .join("");
+
+          let recBannerHtml = "";
+          if (rec && rec.items && rec.items.length > 0) {
+            recBannerHtml = `
+                          <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
+                            <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
+                            <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
+                          </div>
+                        `;
+          }
+
+          let selectedSigilId = window.state.selectedDeploymentSigilId;
+          let activeSigil = selectedSigilId
+            ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
+            : null;
+
+          let sigilSlotHtml = "";
+          if (activeSigil) {
+            let col = window.getTierColor(activeSigil.statsRolled);
+            let buffPills = (activeSigil.buffs || [])
+              .map(
+                (b) =>
+                  `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseenter="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseleave="window.hideTooltip()">+ ${b.name}</span>`,
+              )
+              .join(" ");
+            let debuffPills = (activeSigil.debuffs || [])
+              .map(
+                (d) =>
+                  `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseenter="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseleave="window.hideTooltip()">- ${d.name}</span>`,
+              )
+              .join(" ");
+
+            sigilSlotHtml = `
+                <div class="deploy-sigil-card-slot" onclick="window.openSigilPickerModal()" style="border-color:${col}; cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                      ${window.getEquipIconHtml(activeSigil, 24)}
+                      <div style="display:flex; flex-direction:column; min-width:0;">
+                        <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${activeSigil.name}</span>
+                        <span style="color:#aaa; font-size:8px; font-family:monospace;">${activeSigil.statsRolled}★ ${window.getTierName(activeSigil.statsRolled)}</span>
+                      </div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                      <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">2. CAVERN SIGIL ALTAR</label>
-                      ${sigilSlotHtml}
-                    </div>
+                    <button class="action-btn-sm" style="background:#3b0764; border-color:#a855f7; color:#df9ffb; font-size:8px; padding:3px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">SWAP</button>
                   </div>
-                `;
-    }
+                  <div style="display:flex; flex-wrap:wrap; gap:3px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:4px;">
+                    ${buffPills} ${debuffPills}
+                  </div>
+                </div>
+              `;
+          } else {
+            sigilSlotHtml = `
+                <div class="deploy-sigil-card-slot empty" onclick="window.openSigilPickerModal()" style="cursor:pointer; padding:12px 10px;">
+                  <span style="color:#64748b; font-size:10px; font-weight:bold; font-style:italic;">[ NO SIGIL INFUSED ]</span>
+                  <button class="action-btn-sm" style="background:#0284c7; border-color:#38bdf8; color:#fff; font-size:8px; padding:4px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">INFUSE SIGIL</button>
+                </div>
+              `;
+          }
+
+          selectorsPanel.innerHTML = `
+                      ${recBannerHtml}
+                      <div class="deploy-pane-header">
+                        <span>EXPEDITION & SIGIL SETUP</span>
+                        <span class="deploy-risk-tag" style="border-color:#f1c40f; color:#f1c40f; background:rgba(241,196,15,0.1);">DESTINATION</span>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
+                          <select id="deploy-floor-select" style="background: #1e293b; color: #ffd700; border: 1px solid #334155; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentFloor(this.value)">
+                            ${floorOptions}
+                          </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">2. CAVERN SIGIL ALTAR</label>
+                          ${sigilSlotHtml}
+                        </div>
+                      </div>
+                    `;
+        }
+      }
 
     let container = document.getElementById("deployment-gear-list");
     if (!container) return;
@@ -5862,114 +5985,127 @@
   };
 
   window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
-    let map = window.activeDungeonMap;
-    let tileSize = map ? map.tileSize : 32;
+        let map = window.activeDungeonMap;
+        let tileSize = map ? map.tileSize : 32;
 
-    let depth = window.player.depth || 1;
-    let isMini = bossTier === "mini";
+        let depth = window.player.depth || 1;
+        let isMini = bossTier === "mini";
 
-    let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+        let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
-    // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-    let repStage = window.getEffectiveStage(depth * 5);
-    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-    let repScale = Math.pow(repGrowth, repStage * 0.95);
+        // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+        let repStage = window.getEffectiveStage(depth * 5);
+        let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+        let repScale = Math.pow(repGrowth, repStage * 0.95);
 
-    let bossHp = isMini ? 300 * repScale : 500 * repScale;
-    let bossAtk = isMini ? 15 * repScale : 22 * repScale;
+        let bossHp = isMini ? 300 * repScale : 500 * repScale;
+        let bossAtk = isMini ? 15 * repScale : 22 * repScale;
 
-    bossHp = Math.round(bossHp * enemyScale);
-    bossAtk = Math.round(bossAtk * enemyScale);
+        bossHp = Math.round(bossHp * enemyScale);
+        bossAtk = Math.round(bossAtk * enemyScale);
 
-    let tier =
-      typeof window.getStageTier === "function" ? window.getStageTier() : 0;
-    let isDungeon = window.playerStats.isDungeonMode;
-    let dType = window.playerStats.currentDungeon || "gold";
+        let activeChallenge = window.playerStats.activeSpecialChallenge;
+        if (activeChallenge) {
+          let challengeScale = 1.0 + (activeChallenge.riskRating / 30);
+          bossHp = Math.round(bossHp * challengeScale);
+          bossAtk = Math.round(bossAtk * challengeScale);
+        }
 
-    let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
-    let vType = null;
+        let tier =
+          typeof window.getStageTier === "function" ? window.getStageTier() : 0;
+        let isDungeon = window.playerStats.isDungeonMode;
+        let dType = window.playerStats.currentDungeon || "gold";
 
-    if (isDungeon) {
-      if (dType === "gold") {
-        bossName = isMini ? "Treasury Guard" : "Gilded Vault Keeper";
-        vType = "gilded_vault_keeper";
-      } else if (dType === "mat") {
-        bossName = isMini ? "Sludge Sentinel" : "Corrosive Abomination";
-        vType = "corrosive_abomination";
-      } else if (dType === "equip") {
-        bossName = isMini ? "Iron Golem" : "Overlord Iron Vault";
-        vType = "overlord_iron_vault";
-      }
-    } else if (window.playerStats.isUberBoss) {
-      let uType = window.playerStats.currentUberBoss || "guardian";
-      if (uType === "guardian") {
-        bossName = "Aegis Goliath";
-        vType = "aegis_goliath";
-      } else if (uType === "chronos" || uType === "arbitrator") {
-        bossName = "Chronos Arbitrator";
-        vType = "chronos_arbitrator";
-      } else if (uType === "nexus") {
-        bossName = "Nexus Overseer";
-        vType = "nexus_overseer";
-      }
-    } else {
-      const names = [
-        "Arachnid Treant",
-        "Aegis Goliath",
-        "Brimstone Colossus",
-        "Corrosive Abomination",
-        "Void Overseer",
-        "Chronos Arbitrator",
-        "Nexus Overseer",
-      ];
-      const types = [
-        "arachnid_treant",
-        "aegis_goliath",
-        "overlord_iron_vault",
-        "corrosive_abomination",
-        "void_overseer",
-        "chronos_arbitrator",
-        "nexus_overseer",
-      ];
-      bossName = isMini
-        ? "Guard " + (names[tier] || "Warden")
-        : names[tier] || "Dungeon Overlord";
-      vType = types[tier] || "arachnid_treant";
-    }
+        let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
+        let vType = null;
 
-    window.mob = {
-      type: isMini ? "dungeon_miniboss" : "dungeon_boss",
-      name: bossName,
-      visualType: vType,
-      hp: BigNum.from(bossHp),
-      maxHp: BigNum.from(bossHp),
-      atk: bossAtk,
-      x: tileX * tileSize - (isMini ? 4 : 16),
-      y: tileY * tileSize - (isMini ? 4 : 16),
-      w: isMini ? 40 : 64,
-      h: isMini ? 40 : 64,
-      flashTimer: 0,
-      isStopped: true,
-      bossTileX: tileX,
-      bossTileY: tileY,
-      state: "idle",
-      telegraphTimer: 0,
-      maxTelegraphTimer: isMini ? 80 : 65,
-      activeAbility: null,
-      targetX: 0,
-      targetY: 0,
-      attackCooldown: 60,
-      moveset: isMini ? ["slam", "charge"] : ["slam", "nova", "charge"],
-      facing: -1,
-    };
+        // Removed duplicate 'let activeChallenge' declaration to resolve the syntax error
+        if (activeChallenge && activeChallenge.primaryTarget) {
+          let pTar = activeChallenge.primaryTarget;
+          bossName = isMini ? "Guard " + pTar.name : pTar.name;
+          vType = pTar.visualType;
+          tier = pTar.tier;
+        } else if (isDungeon) {
+          if (dType === "gold") {
+            bossName = isMini ? "Treasury Guard" : "Gilded Vault Keeper";
+            vType = "gilded_vault_keeper";
+          } else if (dType === "mat") {
+            bossName = isMini ? "Sludge Sentinel" : "Corrosive Abomination";
+            vType = "corrosive_abomination";
+          } else if (dType === "equip") {
+            bossName = isMini ? "Iron Golem" : "Overlord Iron Vault";
+            vType = "overlord_iron_vault";
+          }
+        } else if (window.playerStats.isUberBoss) {
+          let uType = window.playerStats.currentUberBoss || "guardian";
+          if (uType === "guardian") {
+            bossName = "Aegis Goliath";
+            vType = "aegis_goliath";
+          } else if (uType === "chronos" || uType === "arbitrator") {
+            bossName = "Chronos Arbitrator";
+            vType = "chronos_arbitrator";
+          } else if (uType === "nexus") {
+            bossName = "Nexus Overseer";
+            vType = "nexus_overseer";
+          }
+        } else {
+          const names = [
+            "Arachnid Treant",
+            "Aegis Goliath",
+            "Brimstone Colossus",
+            "Corrosive Abomination",
+            "Void Overseer",
+            "Chronos Arbitrator",
+            "Nexus Overseer",
+          ];
+          const types = [
+            "arachnid_treant",
+            "aegis_goliath",
+            "overlord_iron_vault",
+            "corrosive_abomination",
+            "void_overseer",
+            "chronos_arbitrator",
+            "nexus_overseer",
+          ];
+          bossName = isMini
+            ? "Guard " + (names[tier] || "Warden")
+            : names[tier] || "Dungeon Overlord";
+          vType = types[tier] || "arachnid_treant";
+        }
 
-    window.spawnFloatingText(
-      window.player.x,
-      window.player.y - 25,
-      `${bossName.toUpperCase()} ENGAGED`,
-      isMini ? "#e67e22" : "#e74c3c",
-    );
-  };
+        window.mob = {
+          type: isMini ? "dungeon_miniboss" : "dungeon_boss",
+          name: bossName,
+          visualType: vType,
+          hp: BigNum.from(bossHp),
+          maxHp: BigNum.from(bossHp),
+          atk: bossAtk,
+          x: tileX * tileSize - (isMini ? 4 : 16),
+          y: tileY * tileSize - (isMini ? 4 : 16),
+          w: isMini ? 40 : 64,
+          h: isMini ? 40 : 64,
+          flashTimer: 0,
+          isStopped: true,
+          bossTileX: tileX,
+          bossTileY: tileY,
+          state: "idle",
+          telegraphTimer: 0,
+          maxTelegraphTimer: isMini ? 80 : 65,
+          activeAbility: null,
+          targetX: 0,
+          targetY: 0,
+          attackCooldown: 60,
+          moveset: isMini ? ["slam", "charge"] : ["slam", "nova", "charge"],
+          facing: -1,
+        };
+
+        window.spawnFloatingText(
+          window.player.x,
+          window.player.y - 25,
+          `${bossName.toUpperCase()} ENGAGED`,
+          isMini ? "#e67e22" : "#e74c3c",
+        );
+      };
 
   window.onBossDefeated = function (tileX, tileY) {
       let map = window.activeDungeonMap;
@@ -6090,123 +6226,136 @@
       window.player.targetX = window.player.x;
       window.player.targetY = window.player.y;
 
-      if (isChallenge) {
-        if (depth === 4) {
-          window.ChallengeEngine.spawnTwinBosses(map);
-        } else {
-          // Spawn the floor's Guardian Warden right at the exit portal tile to block descent
-          window.spawnBossEncounter(map.extractionTile.x, map.extractionTile.y, "mini");
-        }
-      } else if (isMajorBoss) {
-        let cx = Math.floor(map.width / 2);
-        let cy = Math.floor(map.height / 2);
-        window.spawnBossEncounter(cx, cy, "major");
-      } else if (isMiniBoss) {
-        let cx = Math.floor(map.width / 2);
-        let cy = Math.floor(map.height / 2);
-        window.spawnBossEncounter(cx, cy, "mini");
-      } else if (map.mobSpawns) {
-      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+      // Spawning Bosses (Warden, Major, or Mini)
+            if (isChallenge) {
+              if (depth === 4) {
+                window.ChallengeEngine.spawnTwinBosses(map);
+              } else {
+                // Spawn the floor's Guardian Warden right at the exit portal tile to block descent
+                window.spawnBossEncounter(map.extractionTile.x, map.extractionTile.y, "mini");
+              }
+            } else if (isMajorBoss) {
+              let cx = Math.floor(map.width / 2);
+              let cy = Math.floor(map.height / 2);
+              window.spawnBossEncounter(cx, cy, "major");
+            } else if (isMiniBoss) {
+              let cx = Math.floor(map.width / 2);
+              let cy = Math.floor(map.height / 2);
+              window.spawnBossEncounter(cx, cy, "mini");
+            }
 
-      // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-      let repStage = window.getEffectiveStage(depth * 5);
-      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-      let repScale = Math.pow(repGrowth, repStage * 0.95);
+            // Spawning Standard Monsters (Enabled on all standard floors + Floors 1-3 of Challenges)
+            let shouldSpawnStandardMobs = (!isMiniBoss && !isMajorBoss && !window.playerStats.isCrucibleMode) && (depth < 4 || !isChallenge);
 
-      let mobHpVal = Math.floor(40 * repScale * enemyScale);
-      let mobAtkVal = Math.floor(8 * repScale * enemyScale);
+            if (shouldSpawnStandardMobs && map.mobSpawns) {
+                    let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
-      let pStats =
-        typeof window.resolvePlayerStats === "function"
-          ? window.resolvePlayerStats()
-          : {};
-      let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
+                    // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+                    let repStage = window.getEffectiveStage(depth * 5);
+                    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+                    let repScale = Math.pow(repGrowth, repStage * 0.95);
 
-      map.mobSpawns.forEach((sp) => {
-        let mobInfo = window.getMobPoolForDepth(depth);
-        let isRare = Math.random() < rareRate;
+                    let mobHpVal = Math.floor(40 * repScale * enemyScale);
+                    let mobAtkVal = Math.floor(8 * repScale * enemyScale);
 
-        // Roll Elite Support Affixes on higher floors
-        let eliteAffix = null;
-        let isEliteInfested =
-          typeof window.isCavernEffectActive === "function" &&
-          window.isCavernEffectActive("elite_infestation");
-        let affixChance = isEliteInfested
-          ? 1.0
-          : depth >= 85
-            ? 0.35
-            : depth >= 49
-              ? 0.15
-              : 0;
-        if (Math.random() < affixChance) {
-          const affixes = [
-            "vitality_weaver",
-            "iron_citadel",
-            "swift_commander",
-            "blood_berserker",
-            "nullifier",
-          ];
-          eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
-        }
+                    let activeChallenge = window.playerStats.activeSpecialChallenge;
+                    if (activeChallenge) {
+                      let challengeScale = 1.0 + (activeChallenge.riskRating / 35);
+                      mobHpVal = Math.floor(mobHpVal * challengeScale);
+                      mobAtkVal = Math.floor(mobAtkVal * challengeScale);
+                    }
 
-        let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
-        let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
+              let pStats =
+                typeof window.resolvePlayerStats === "function"
+                  ? window.resolvePlayerStats()
+                  : {};
+              let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
 
-        let rangedTypes = [
-          "thorn_wyrm",
-          "wyrmling",
-          "magma_elemental",
-          "toxic_fly",
-          "void_orb",
-        ];
-        let isRanged = rangedTypes.includes(mobInfo.type);
-        let projType =
-          mobInfo.type === "thorn_wyrm"
-            ? "thorn"
-            : mobInfo.type === "wyrmling"
-              ? "frost"
-              : mobInfo.type === "magma_elemental"
-                ? "fireball"
-                : mobInfo.type === "toxic_fly"
-                  ? "maelstrom"
-                  : "void";
+              map.mobSpawns.forEach((sp) => {
+                let mobInfo = window.getMobPoolForDepth(depth);
+                let isRare = Math.random() < rareRate;
 
-        let spawnX = sp.x * tileSize;
-        let spawnY = sp.y * tileSize;
+                // Roll Elite Support Affixes on higher floors
+                let eliteAffix = null;
+                let isEliteInfested =
+                  typeof window.isCavernEffectActive === "function" &&
+                  window.isCavernEffectActive("elite_infestation");
+                let affixChance = isEliteInfested
+                  ? 1.0
+                  : depth >= 85
+                    ? 0.35
+                    : depth >= 49
+                      ? 0.15
+                      : 0;
+                if (Math.random() < affixChance) {
+                  const affixes = [
+                    "vitality_weaver",
+                    "iron_citadel",
+                    "swift_commander",
+                    "blood_berserker",
+                    "nullifier",
+                  ];
+                  eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
+                }
 
-        window.activeDungeonMobs.push({
-          id: window.idCounter++,
-          type: "mob",
-          visualTier: mobInfo.tier,
-          visualType: mobInfo.type,
-          x: spawnX,
-          y: spawnY,
-          homeX: spawnX,
-          homeY: spawnY,
-          w: 24,
-          h: 24,
-          hp: BigNum.from(finalHp),
-          maxHp: BigNum.from(finalHp),
-          atk: finalAtk,
-          flashTimer: 0,
-          attackCooldown: 0,
-          rangedCooldown: window.randInt(30, 90),
-          isRanged: isRanged,
-          projectileType: projType,
-          facing: -1,
-          isRare: isRare,
-          eliteAffix: eliteAffix,
-          buffStacks: { haste: 0, def: 0, atk: 0 },
-          buffTimers: { haste: 0, def: 0, atk: 0 },
-          buffDecayTimers: { haste: 0, def: 0, atk: 0 },
-          wanderTimer: window.randInt(40, 120),
-          wanderVx: 0,
-          wanderVy: 0,
-          isWandering: false,
-          hopTimer: window.randInt(0, 29),
-        });
-      });
-    }
+                let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
+                let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
+
+                let rangedTypes = [
+                  "thorn_wyrm",
+                  "wyrmling",
+                  "magma_elemental",
+                  "toxic_fly",
+                  "void_orb",
+                ];
+                let isRanged = rangedTypes.includes(mobInfo.type);
+                let projType =
+                  mobInfo.type === "thorn_wyrm"
+                    ? "thorn"
+                    : mobInfo.type === "wyrmling"
+                      ? "frost"
+                      : mobInfo.type === "magma_elemental"
+                        ? "fireball"
+                        : mobInfo.type === "toxic_fly"
+                          ? "maelstrom"
+                          : "void";
+
+                let spawnX = sp.x * tileSize;
+                let spawnY = sp.y * tileSize;
+
+                window.activeDungeonMobs.push({
+                  id: window.idCounter++,
+                  type: "mob",
+                  visualTier: mobInfo.tier,
+                  visualType: mobInfo.type,
+                  x: spawnX,
+                  y: spawnY,
+                  homeX: spawnX,
+                  homeY: spawnY,
+                  w: 24,
+                  h: 24,
+                  hp: BigNum.from(finalHp),
+                  maxHp: BigNum.from(finalHp),
+                  atk: finalAtk,
+                  flashTimer: 0,
+                  attackCooldown: 0,
+                  rangedCooldown: window.randInt(30, 90),
+                  isRanged: isRanged,
+                  projectileType: projType,
+                  facing: -1,
+                  isRare: isRare,
+                  eliteAffix: eliteAffix,
+                  buffStacks: { haste: 0, def: 0, atk: 0 },
+                  buffTimers: { haste: 0, def: 0, atk: 0 },
+                  buffDecayTimers: { haste: 0, def: 0, atk: 0 },
+                  wanderTimer: window.randInt(40, 120),
+                  wanderVx: 0,
+                  wanderVy: 0,
+                  isWandering: false,
+                  hopTimer: window.randInt(0, 29),
+                });
+              });
+            }
 
     // Wave Clearance Reward Dispatcher
     window.onOnslaughtWaveClear = function () {
@@ -6773,13 +6922,8 @@
 
   window.interactWithStation = function (stationType) {
       if (stationType === window.TILE_TYPES.STATION_PORTAL) {
-        if (window.playerStats.activeSpecialChallenge) {
-          // Direct launch: Bypass deployment setup panel and directly descend into run
-          window.executeDeployment(true);
-        } else {
-          window.playerStats.isCrucibleMode = false;
-          window.openHubPortalModal();
-        }
+              window.playerStats.isCrucibleMode = false;
+              window.openHubPortalModal();
       } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
       if (typeof window.toggleForgeModal === "function") {
         window.toggleForgeModal();
@@ -12545,32 +12689,40 @@
             window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
           }
 
-          // 5% Chance Mob Equipment Drop (Blocked in Crucible/Onslaught Mode)
-          if (!window.playerStats.isCrucibleMode && Math.random() < 0.05) {
-            let stageScale = window.player.depth || 1;
-            let rolledRarity = window.rollItemRarity(
-              window.playerStats.maxFloorCleared || 0,
-              pStats.qly || 1.0,
-              false,
-            );
-            let types = [
-              "weapon",
-              "subweapon",
-              "helmet",
-              "chest",
-              "boots",
-              "ring",
-            ];
-            let chosenType = types[Math.floor(Math.random() * types.length)];
-            let droppedItem = window.createItemObject(
-              chosenType,
-              rolledRarity,
-              stageScale,
-              0,
-            );
+          // 5% Chance Mob Equipment Drop (Blocked in Crucible/Onslaught Mode & Special Challenges)
+                          let isChallengeActive = window.playerStats.activeSpecialChallenge !== null;
+                          if (!window.playerStats.isCrucibleMode && !isChallengeActive && Math.random() < 0.05) {
+                            let stageScale = window.player.depth || 1;
+                            let rolledRarity = window.rollItemRarity(
+                              window.playerStats.maxFloorCleared || 0,
+                              pStats.qly || 1.0,
+                              false,
+                            );
+                            let types = [
+                              "weapon",
+                              "subweapon",
+                              "helmet",
+                              "chest",
+                              "boots",
+                              "ring",
+                            ];
+                            let chosenType = types[Math.floor(Math.random() * types.length)];
+                            let droppedItem = window.createItemObject(
+                              chosenType,
+                              rolledRarity,
+                              stageScale,
+                              0,
+                            );
 
-            window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
-          }
+                            window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
+                          } else if (isChallengeActive && Math.random() < 0.08) {
+                            // In special challenges, convert gear drops into rare crafting scraps / material drops
+                            let mats = ["Monster Soul", "Rare Scrap", "Magic Scrap", "Epic Scrap", "Eridium Shard"];
+                            let depth = window.player.depth || 1;
+                            let idx = Math.min(mats.length - 1, Math.floor((depth - 1) / 10));
+                            let chosenMat = mats[Math.floor(Math.random() * (idx + 1))];
+                            window.addDungeonRunScrap(chosenMat, window.randInt(1, 2), mobCenterX, mobCenterY);
+                          }
 
           window.activeDungeonMobs.splice(i, 1);
           continue;
@@ -14469,54 +14621,54 @@
     }
 
     // C. Active Dungeon Mobs (Fog-of-War Culled)
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      window.activeDungeonMobs.forEach((m) => {
-        let tileC = Math.floor((m.x + (m.w || 24) / 2) / tSize);
-        let tileR = Math.floor((m.y + (m.h || 24) / 2) / tSize);
-        let isExplored =
-          isHub ||
-          (mapInst &&
-            mapInst.exploredGrid &&
-            mapInst.exploredGrid[tileR] &&
-            mapInst.exploredGrid[tileR][tileC]);
-        if (!isExplored) return; // Hide mob if in unexplored Fog of War!
+        if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+          window.activeDungeonMobs.forEach((m) => {
+            let tileC = Math.floor((m.x + (m.w || 24) / 2) / tSize);
+            let tileR = Math.floor((m.y + (m.h || 24) / 2) / tSize);
+            let isExplored =
+              isHub ||
+              (mapInst &&
+                mapInst.exploredGrid &&
+                mapInst.exploredGrid[tileR] &&
+                mapInst.exploredGrid[tileR][tileC]);
+            if (!isExplored) return; // Hide mob if in unexplored Fog of War!
 
-        if (m.perfectStrikeTimer > 0) {
-          m.perfectStrikeTimer--;
-          let progress = m.perfectStrikeTimer / m.perfectStrikeMax;
-          let cx = m.x + m.w / 2;
-          let cy = m.y + m.h / 2;
+            if (m.perfectStrikeTimer > 0) {
+              m.perfectStrikeTimer--;
+              let progress = m.perfectStrikeTimer / m.perfectStrikeMax;
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2;
 
-          depthQueue.push({
-            yBase: m.y + (m.h || 24) + 1,
-            draw: () => {
-              ctx.save();
-              ctx.strokeStyle = "rgba(231, 76, 60, 0.4)";
-              ctx.lineWidth = 1.5;
-              ctx.beginPath();
-              ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-              ctx.stroke();
+              depthQueue.push({
+                yBase: m.y + (m.h || 24) + 1,
+                draw: () => {
+                  ctx.save();
+                  ctx.strokeStyle = "rgba(231, 76, 60, 0.4)";
+                  ctx.lineWidth = 1.5;
+                  ctx.beginPath();
+                  ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+                  ctx.stroke();
 
-              ctx.strokeStyle = "#ffffff";
-              ctx.lineWidth = 2.0;
-              ctx.beginPath();
-              ctx.arc(cx, cy, 6 + progress * 16, 0, Math.PI * 2);
-              ctx.stroke();
-              ctx.restore();
-            },
+                  ctx.strokeStyle = "#ffffff";
+                  ctx.lineWidth = 2.0;
+                  ctx.beginPath();
+                  ctx.arc(cx, cy, 6 + progress * 16, 0, Math.PI * 2);
+                  ctx.stroke();
+                  ctx.restore();
+                },
+              });
+            }
+
+            depthQueue.push({
+              yBase: m.y + (m.h || 24),
+              draw: () => {
+                window.drawSingleMob(ctx, m);
+                if (window.combatVisuals)
+                  window.combatVisuals.drawTargetHealthBar(ctx, m, false);
+              },
+            });
           });
         }
-
-        depthQueue.push({
-          yBase: m.y + (m.h || 24),
-          draw: () => {
-            window.drawSingleMob(ctx, m);
-            if (window.combatVisuals)
-              window.combatVisuals.drawTargetHealthBar(ctx, m);
-          },
-        });
-      });
-    }
 
     // C2. Active Cavern Sigil Interactives (Depth-Sorted)
     if (window.cavernInteractives && window.cavernInteractives.length > 0) {
@@ -15093,16 +15245,30 @@
     }
 
     // Render Boss Health Bar in Screen Space
-    if (window.mob) {
-      if (isPortrait) {
-        window.drawPortraitBossHealthBar(ctx, window.mob, canvas);
-      } else if (
-        window.combatVisuals &&
-        typeof window.combatVisuals.drawTargetHealthBar === "function"
-      ) {
-        window.combatVisuals.drawTargetHealthBar(ctx, window.mob);
-      }
-    }
+        if (window.currentGameState === window.GAME_STATES.DUNGEON) {
+          let activeBosses = [];
+          if (window.activeDungeonMobs) {
+            window.activeDungeonMobs.forEach((m) => {
+              if (m.hp.gt(0) && (m.type === "dungeon_boss" || m.type === "dungeon_miniboss" || m.isBoss)) {
+                activeBosses.push(m);
+              }
+            });
+          }
+          if (window.mob && window.mob.hp.gt(0) && !activeBosses.some(b => b.id === window.mob.id)) {
+            activeBosses.push(window.mob);
+          }
+
+          activeBosses.forEach((bm, index) => {
+            if (isPortrait) {
+              window.drawPortraitBossHealthBar(ctx, bm, canvas, index);
+            } else if (
+              window.combatVisuals &&
+              typeof window.combatVisuals.drawTargetHealthBar === "function"
+            ) {
+              window.combatVisuals.drawTargetHealthBar(ctx, bm, true, index);
+            }
+          });
+        }
 
     // 3. Render Floating Virtual Joystick Overlay (Screen Space)
     let mode = window.playerStats

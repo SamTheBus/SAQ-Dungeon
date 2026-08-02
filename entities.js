@@ -1118,46 +1118,51 @@
       ctx.restore();
     }
 
-    drawTargetHealthBar(ctx, target) {
-      if (!target || !target.hp || target.hp <= 0) return;
+    drawTargetHealthBar(ctx, target, isScreenSpace = false, bossIndex = 0) {
+          if (!target || !target.hp || target.hp <= 0) return;
 
-      let bHp =
-        typeof target.hp === "object"
-          ? target.hp.m * Math.pow(10, target.hp.e)
-          : target.hp;
-      let bMaxHp =
-        typeof target.maxHp === "object"
-          ? target.maxHp.m * Math.pow(10, target.maxHp.e)
-          : target.maxHp;
-      let hpPct = Math.max(0, Math.min(1, bHp / bMaxHp));
+          let bHp =
+            typeof target.hp === "object"
+              ? target.hp.m * Math.pow(10, target.hp.e)
+              : target.hp;
+          let bMaxHp =
+            typeof target.maxHp === "object"
+              ? target.maxHp.m * Math.pow(10, target.maxHp.e)
+              : target.maxHp;
+          let hpPct = Math.max(0, Math.min(1, bHp / bMaxHp));
 
-      target.trailingPct =
-        target.trailingPct !== undefined ? target.trailingPct : hpPct;
-      if (target.trailingPct > hpPct) {
-        target.trailingPct = Math.max(hpPct, target.trailingPct - 0.015);
-      } else {
-        target.trailingPct = hpPct;
-      }
+          target.trailingPct =
+            target.trailingPct !== undefined ? target.trailingPct : hpPct;
+          if (target.trailingPct > hpPct) {
+            target.trailingPct = Math.max(hpPct, target.trailingPct - 0.015);
+          } else {
+            target.trailingPct = hpPct;
+          }
 
-      ctx.save();
+          ctx.save();
 
-      if (
-        target.isBoss ||
-        target.type === "dungeon_boss" ||
-        target.type === "dungeon_miniboss" ||
-        target.type === "boss" ||
-        target.type === "aegis_goliath" ||
-        target.type === "chronos_arbitrator" ||
-        target.type === "nexus_overseer" ||
-        target.type === "gilded_vault_keeper" ||
-        target.type === "corrosive_abomination" ||
-        target.type === "hooktail" ||
-        target.type === "overlord_iron_vault"
-      ) {
-        let barW = Math.min(420, ctx.canvas.width * 0.5);
-        let barH = 12;
-        let barX = (ctx.canvas.width - barW) / 2;
-        let barY = 52;
+          if (
+            target.isBoss ||
+            target.type === "dungeon_boss" ||
+            target.type === "dungeon_miniboss" ||
+            target.type === "boss" ||
+            target.type === "aegis_goliath" ||
+            target.type === "chronos_arbitrator" ||
+            target.type === "nexus_overseer" ||
+            target.type === "gilded_vault_keeper" ||
+            target.type === "corrosive_abomination" ||
+            target.type === "hooktail" ||
+            target.type === "overlord_iron_vault"
+          ) {
+            if (!isScreenSpace) {
+              ctx.restore();
+              return;
+            }
+
+            let barW = Math.min(320, ctx.canvas.width * 0.45); // Slightly smaller footprint
+            let barH = 10;
+            let barX = (ctx.canvas.width - barW) / 2;
+            let barY = 45 + bossIndex * 38; // Stacked with comfortable spacing
 
         // Direct smaller Guard Wardens (minibosses) to the standard boss bar
         // to reserve the highly customized layout exclusively for the final Overlords
@@ -1432,158 +1437,189 @@
     }
 
     drawArachnidTreantBossBar(
-      ctx,
-      target,
-      hpPct,
-      bHp,
-      bMaxHp,
-      barX,
-      barY,
-      barW,
-      barH,
-    ) {
-      let time = Date.now();
-      let isLowHp = hpPct < 0.2;
-      let tremorX = isLowHp
-        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
-        : 0;
-      let tremorY = isLowHp
-        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
-        : 0;
-
-      ctx.save();
-      ctx.translate(tremorX, tremorY);
-
-      let theme = {
-        title: "ARACHNID TREANT",
-        subtitle: "ELDRITCH BARK WARDEN",
-        primaryColor: "#2ecc71",
-        secondaryColor: "#27ae60",
-      };
-
-      let pulse = Math.sin(time / 140) * 0.15 + 0.85;
-      ctx.shadowBlur = 12 * pulse;
-      ctx.shadowColor = theme.primaryColor;
-
-      ctx.fillStyle = "#0c1a10";
-      ctx.strokeStyle = theme.primaryColor;
-      ctx.lineWidth = 2.2;
-      ctx.beginPath();
-      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      [-14, barW + 6].forEach((offsetX) => {
-        let bracketX = barX + offsetX;
-        ctx.fillStyle = "#1e3f20";
-        ctx.strokeStyle = theme.primaryColor;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(bracketX, barY - 1);
-        ctx.lineTo(bracketX + 8, barY + barH / 2);
-        ctx.lineTo(bracketX, barY + barH + 1);
-        ctx.lineTo(bracketX - 4, barY + barH / 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#a3fd83";
-        ctx.beginPath();
-        ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.fillStyle = "#145a32";
-      let fillWidth = Math.max(0, barW * hpPct);
-      let trailingWidth = Math.max(0, barW * target.trailingPct);
-      if (trailingWidth > 0) {
-        ctx.beginPath();
-        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-        ctx.fill();
-      }
-
-      if (fillWidth > 0) {
-        let fillGrad = ctx.createLinearGradient(
+          ctx,
+          target,
+          hpPct,
+          bHp,
+          bMaxHp,
           barX,
           barY,
-          barX + fillWidth,
-          barY,
-        );
-        fillGrad.addColorStop(0, "#a3fd83");
-        fillGrad.addColorStop(0.5, "#2ecc71");
-        fillGrad.addColorStop(1, "#1e824c");
-        ctx.fillStyle = fillGrad;
-        ctx.beginPath();
-        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-        ctx.fill();
+          barW,
+          barH,
+        ) {
+          let time = Date.now();
+          let isLowHp = hpPct < 0.2;
+          let tremorX = isLowHp
+            ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+            : 0;
+          let tremorY = isLowHp
+            ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+            : 0;
 
-        let scanX = barX + ((time / 6) % fillWidth);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-        ctx.fillRect(scanX, barY + 1, 6, barH - 2);
-      }
+          ctx.save();
+          ctx.translate(tremorX, tremorY);
 
-      ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
-      ctx.lineWidth = 2.0;
-      [0.25, 0.5, 0.75].forEach((pct) => {
-        let notchX = barX + barW * pct;
-        ctx.beginPath();
-        ctx.moveTo(notchX, barY + 1);
-        ctx.lineTo(notchX, barY + barH - 1);
-        ctx.stroke();
+          let theme = {
+            title: "ARACHNID TREANT",
+            subtitle: "ELDRITCH BARK WARDEN",
+            primaryColor: "#2ecc71",
+            secondaryColor: "#27ae60",
+          };
 
-        ctx.fillStyle = "#2ecc71";
-        ctx.fillRect(notchX - 1, barY - 1, 2, 2);
-        ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
-      });
+          let pulse = Math.sin(time / 140) * 0.15 + 0.85;
+          ctx.shadowBlur = 12 * pulse;
+          ctx.shadowColor = theme.primaryColor;
 
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.font = "900 12px monospace";
+          // 1. Moss-green & Bark Dark Base Container
+          ctx.fillStyle = "#07120a"; // Dark forest moss
+          ctx.strokeStyle = theme.primaryColor;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+          ctx.fill();
+          ctx.stroke();
+          ctx.shadowBlur = 0;
 
-      let bossTitle = (target.name || theme.title).toUpperCase();
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 3.5;
-      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-      ctx.fillStyle = "#2ecc71";
-      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+          // 2. Draw Eldritch Root/Vine wrapping ornaments on the brackets
+          [-16, barW + 10].forEach((offsetX, idx) => {
+            let rootX = barX + offsetX;
+            let rootY = barY + barH / 2;
+            let isLeft = idx === 0;
 
-      ctx.font = "bold 9px monospace";
-      ctx.textBaseline = "top";
-      let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
-      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-      ctx.fillStyle = "#a3fd83";
-      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+            ctx.save();
+            ctx.translate(rootX, rootY);
+            ctx.rotate(isLeft ? 0 : Math.PI);
 
-      if (target.funnyTextTimer > 0 && target.funnyText) {
-        target.funnyTextTimer--;
-        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 3.5;
-        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-        ctx.fillStyle = "#00ffcc";
-        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-      }
+            // Draw curved root claw wrapping the bar
+            ctx.strokeStyle = "#4d2e1a"; // Wood brown
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.arc(-4, -4, 6, Math.PI * 1.5, Math.PI * 0.5);
+            ctx.stroke();
 
-      this.drawStatusDots(
-        ctx,
-        barX + (barW - 55) / 2,
-        barY + barH + 16,
-        target.bleedStacks || 0,
-        "#e74c3c",
-      );
-      this.drawStatusDots(
-        ctx,
-        barX + (barW - 55) / 2,
-        barY + barH + 24,
-        target.poisonStacks || 0,
-        "#2ecc71",
-      );
+            ctx.strokeStyle = theme.primaryColor; // Glowing eldritch moss
+            ctx.lineWidth = 1.0;
+            ctx.stroke();
 
-      ctx.restore();
-    }
+            // 3. Cluster of 3 pulsing Crimson Spider-Eyes (matching Treant body!)
+            let eyePulse = Math.sin(time / 100 + idx) * 0.2 + 0.8;
+            ctx.fillStyle = "#ff0055"; // Sinister crimson
+            ctx.shadowBlur = 6 * eyePulse;
+            ctx.shadowColor = "#ff0055";
+
+            ctx.beginPath();
+            ctx.arc(-8, -3, 1.8 * eyePulse, 0, Math.PI * 2);
+            ctx.arc(-5, 2, 1.4 * eyePulse, 0, Math.PI * 2);
+            ctx.arc(-10, 4, 1.2 * eyePulse, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.restore();
+          });
+
+          // 4. Draw Wood-Grain Striation lines in the empty background
+          ctx.strokeStyle = "#0d2113";
+          ctx.lineWidth = 1.0;
+          for (let i = 1; i < 4; i++) {
+            let lineY = barY + (barH * i) / 4;
+            ctx.beginPath();
+            ctx.moveTo(barX, lineY);
+            ctx.lineTo(barX + barW, lineY);
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = "#11381a"; // Dark forest underlayer
+          let fillWidth = Math.max(0, barW * hpPct);
+          let trailingWidth = Math.max(0, barW * target.trailingPct);
+          if (trailingWidth > 0) {
+            ctx.beginPath();
+            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+            ctx.fill();
+          }
+
+          if (fillWidth > 0) {
+            let fillGrad = ctx.createLinearGradient(
+              barX,
+              barY,
+              barX + fillWidth,
+              barY,
+            );
+            fillGrad.addColorStop(0, "#a3fd83"); // Bright sap green
+            fillGrad.addColorStop(0.5, "#2ecc71"); // Emerald
+            fillGrad.addColorStop(1, "#145a32"); // Moss green
+            ctx.fillStyle = fillGrad;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+            ctx.fill();
+
+            // Glowing sap flow animation
+            let scanX = barX + ((time / 6) % fillWidth);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.fillRect(scanX, barY + 1, 6, barH - 2);
+          }
+
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+          ctx.lineWidth = 2.0;
+          [0.25, 0.5, 0.75].forEach((pct) => {
+            let notchX = barX + barW * pct;
+            ctx.beginPath();
+            ctx.moveTo(notchX, barY + 1);
+            ctx.lineTo(notchX, barY + barH - 1);
+            ctx.stroke();
+
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(notchX - 1, barY - 1, 2, 2);
+            ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
+          });
+
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.font = "900 12px monospace";
+
+          let bossTitle = (target.name || theme.title).toUpperCase();
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+          ctx.fillStyle = "#2ecc71";
+          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+          ctx.font = "bold 9px monospace";
+          ctx.textBaseline = "top";
+          let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
+          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+          ctx.fillStyle = "#a3fd83";
+          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+          if (target.funnyTextTimer > 0 && target.funnyText) {
+            target.funnyTextTimer--;
+            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 3.5;
+            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+            ctx.fillStyle = "#00ffcc";
+            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+          }
+
+          this.drawStatusDots(
+            ctx,
+            barX + (barW - 55) / 2,
+            barY + barH + 16,
+            target.bleedStacks || 0,
+            "#e74c3c",
+          );
+          this.drawStatusDots(
+            ctx,
+            barX + (barW - 55) / 2,
+            barY + barH + 24,
+            target.poisonStacks || 0,
+            "#2ecc71",
+          );
+
+          ctx.restore();
+        }
 
     drawAegisGoliathBossBar(
       ctx,

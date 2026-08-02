@@ -4144,15 +4144,18 @@ Object.assign(window.QuestSystem, {
     }
 
     // Increment re-roll tracker
-    window.playerStats.bountyRerollsToday = r + 1;
+            window.playerStats.bountyRerollsToday = r + 1;
 
-    // Regenerate active missions
-        this.generateDailyMissions();
-        if (window.isWeeklyQuestUnlocked()) {
-          this.generateWeeklyMissions();
-        }
+            // Regenerate active missions & Special Challenges
+            this.generateDailyMissions();
+            if (window.isWeeklyQuestUnlocked()) {
+              this.generateWeeklyMissions();
+            }
+            if (window.ChallengeEngine && typeof window.ChallengeEngine.generateRandomChallenges === "function") {
+              window.ChallengeEngine.generateRandomChallenges();
+            }
 
-    if (typeof window.pushHeaderToast === "function") {
+            if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast("Board Re-rolled Successfully!", "#2ecc71");
     }
     if (window.SoundManager && typeof window.SoundManager.play === "function") {
@@ -4846,159 +4849,8 @@ window.changeOnslaughtStartWave = function (waveVal) {
 };
 
 window.renderDeploymentModal = function () {
-  let selectorsPanel = document.getElementById("deployment-selectors-panel");
-  if (selectorsPanel) {
-    let isCrucible = window.playerStats.isCrucibleMode;
-
-    if (isCrucible) {
-      let maxPeak = window.playerStats.cruciblePeak || 1;
-      let selectedWave = window.playerStats.crucibleStartWave || 1;
-
-      let waveOptions = [];
-      waveOptions.push(1);
-      for (let wave = 5; wave <= maxPeak; wave += 5) {
-        waveOptions.push(wave);
-      }
-      waveOptions = Array.from(new Set(waveOptions)).sort((a, b) => a - b);
-
-      let optionsMarkup = waveOptions
-        .map((w) => {
-          let isSelected = w === selectedWave ? "selected" : "";
-          let tag = w === 1 ? "Initiation Wave" : `Milestone Wave`;
-          return `<option value="${w}" ${isSelected}>Wave ${w} (${tag})</option>`;
-        })
-        .join("");
-
-      let dividend = window.calculateCumulativeOnslaughtShards(selectedWave);
-
-      selectorsPanel.innerHTML = `
-            <div class="deploy-pane-header">
-              <span>ONSLAUGHT PARAMETERS</span>
-              <span class="deploy-risk-tag" style="border-color:#a855f7; color:#a855f7; background:rgba(168,85,247,0.1);">ARENA</span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-              <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. STARTING WAVE MILESTONE</label>
-                <select id="deploy-wave-select" class="wave-milestone-select" onchange="window.changeOnslaughtStartWave(this.value)">
-                  ${optionsMarkup}
-                </select>
-              </div>
-
-              ${
-                selectedWave > 1
-                  ? `
-              <div style="background: rgba(168, 85, 247, 0.1); border: 1.5px dashed #a855f7; border-radius: 6px; padding: 10px; text-align: left; font-family: monospace; font-size: 9.5px; line-height: 1.4; color: #e9d5ff;">
-                <strong style="color: #ffd700; display: block; margin-bottom: 4px;">[70% SKIP DIVIDEND REWARD]</strong>
-                <span>Bypassing Waves 1 to ${selectedWave - 1} instantly awards:</span>
-                <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 2px;">
-                  <div style="color: #00ffff;">+ ${dividend.shards.toLocaleString()} Astral Shards</div>
-                  <div style="color: #ffd700;">+ ${window.formatNumber(dividend.gold)} Gold</div>
-                  <div style="color: #c084fc;">+ ${window.formatNumber(dividend.xp)} Experience (XP)</div>
-                </div>
-              </div>
-              `
-                  : ""
-              }
-            </div>
-          `;
-    } else {
-      let checkpoints = window.playerStats.unlockedCheckpoints || [1];
-      let selectedFloor = window.state.deploymentFloor || 1;
-      let rec = window.playerStats && window.playerStats.recoveryLoot;
-
-      let floorOptions = checkpoints
-        .map((startFloor) => {
-          let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
-          let isSelected = startFloor === selectedFloor ? "selected" : "";
-          let recBadge =
-            rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
-
-          let tag =
-            startFloor === 1
-              ? "Start"
-              : (startFloor - 1) % 12 === 0
-                ? `Sector ${sectorNum} Start`
-                : `Post Mini-Boss`;
-          return `<option value="${startFloor}" ${isSelected}>Floor ${startFloor} (${tag})${recBadge}</option>`;
-        })
-        .join("");
-
-      let recBannerHtml = "";
-      if (rec && rec.items && rec.items.length > 0) {
-        recBannerHtml = `
-                          <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
-                            <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
-                            <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
-                          </div>
-                        `;
-      }
-
-      let selectedSigilId = window.state.selectedDeploymentSigilId;
-      let activeSigil = selectedSigilId
-        ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
-        : null;
-
-      let sigilSlotHtml = "";
-      if (activeSigil) {
-        let col = window.getTierColor(activeSigil.statsRolled);
-        let buffPills = (activeSigil.buffs || [])
-          .map(
-            (b) =>
-              `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">+ ${b.name}</span>`,
-          )
-          .join(" ");
-        let debuffPills = (activeSigil.debuffs || [])
-          .map(
-            (d) =>
-              `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">- ${d.name}</span>`,
-          )
-          .join(" ");
-
-        sigilSlotHtml = `
-                <div class="deploy-sigil-card-slot" onclick="window.openSigilPickerModal()" style="border-color:${col}; cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-                      ${window.getEquipIconHtml(activeSigil, 24)}
-                      <div style="display:flex; flex-direction:column; min-width:0;">
-                        <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${activeSigil.name}</span>
-                        <span style="color:#aaa; font-size:8px; font-family:monospace;">${activeSigil.statsRolled}★ ${window.getTierName(activeSigil.statsRolled)}</span>
-                      </div>
-                    </div>
-                    <button class="action-btn-sm" style="background:#3b0764; border-color:#a855f7; color:#df9ffb; font-size:8px; padding:3px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">SWAP</button>
-                  </div>
-                  <div style="display:flex; flex-wrap:wrap; gap:3px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:4px;">
-                    ${buffPills} ${debuffPills}
-                  </div>
-                </div>
-              `;
-      } else {
-        sigilSlotHtml = `
-                <div class="deploy-sigil-card-slot empty" onclick="window.openSigilPickerModal()" style="cursor:pointer; padding:12px 10px;">
-                  <span style="color:#64748b; font-size:10px; font-weight:bold; font-style:italic;">[ NO SIGIL INFUSED ]</span>
-                  <button class="action-btn-sm" style="background:#0284c7; border-color:#38bdf8; color:#fff; font-size:8px; padding:4px 8px;" onclick="event.stopPropagation(); window.openSigilPickerModal();">INFUSE SIGIL</button>
-                </div>
-            `;
-      }
-
-      selectorsPanel.innerHTML = `
-                      ${recBannerHtml}
-                      <div class="deploy-pane-header">
-                        <span>EXPEDITION & SIGIL SETUP</span>
-                        <span class="deploy-risk-tag" style="border-color:#f1c40f; color:#f1c40f; background:rgba(241,196,15,0.1);">DESTINATION</span>
-                      </div>
-                      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                        <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
-                          <select id="deploy-floor-select" style="background: #1e293b; color: #ffd700; border: 1px solid #334155; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentFloor(this.value)">
-                            ${floorOptions}
-                          </select>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                                                  <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">2. CAVERN SIGIL ALTAR</label>
-                                                  ${sigilSlotHtml}
-                                                </div>
-                                              </div>
-                                            `;
-    }
+  if (typeof window.renderDeploymentModal === "function") {
+    // Falls back seamlessly to the fully unified version loaded in main.js
+    window.renderDeploymentModal();
   }
 };

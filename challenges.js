@@ -4,95 +4,58 @@
    ========================================================================= */
 
 (function () {
-  // --- SUBPHASE 14: CONTRACT DATABASE (NO EMOJIS) ---
-  window.SPECIAL_CHALLENGES_DATABASE = {
-    "twin_wardens": {
-      id: "twin_wardens",
-      name: "The Twin Wardens",
-      desc: "Descend into the heart of the anomaly. Floor 4 houses both Gilded Vault Keeper and Chronos Arbitrator simultaneously! Slay both to claim victory.",
-      riskRating: 65,
-      rewardMultiplier: 1.8,
-      qualityBoost: 0.35,
-      buffs: ["giant_might", "iron_aegis"],
-      debuffs: ["creeping_miasma", "kinetic_reflectors"],
-      rewards: {
-        gold: { m: 1.0, e: 9 }, // 1 Billion Gold
-        xp: { m: 1.5, e: 6 },   // 150,000 XP
-        shards: 15,
-        cores: 3
-      }
-    },
-    "miasma_famine": {
-      id: "miasma_famine",
-      name: "Miasma Famine",
-      desc: "The safe zone of the room collapses violently. With healing flask charges permanently set to 0, you must rely entirely on siphoning orbs.",
-      riskRating: 80,
-      rewardMultiplier: 2.2,
-      qualityBoost: 0.5,
-      buffs: ["swift_strikes", "unstable_surge"],
-      debuffs: ["creeping_miasma", "spreading_fatigue"],
-      rewards: {
-        gold: { m: 2.5, e: 9 }, // 2.5 Billion Gold
-        xp: { m: 3.0, e: 6 },   // 300,000 XP
-        shards: 25,
-        cores: 5
-      }
-    },
-    "chrono_anomaly": {
-      id: "chrono_anomaly",
-      name: "The Chrono-Glitch Anomaly",
-      desc: "Time behaves erratically. Your primary weapon is locked, slides on slick ice are persistent, and enemies split on death.",
-      riskRating: 95,
-      rewardMultiplier: 3.0,
-      qualityBoost: 0.75,
-      buffs: ["aetheric_surge", "shatter_frenzy"],
-      debuffs: ["weapon_lock", "slick_ice", "spawning_division"],
-      rewards: {
-        gold: { m: 5.0, e: 9 }, // 5 Billion Gold
-        xp: { m: 5.0, e: 6 },   // 500,000 XP
-        shards: 40,
-        cores: 8
-      }
-    }
-  };
-
-  // --- SUBPHASE 12: CALAMITY SIGIL PROJECTION GENERATOR ---
-  window.ItemFactory = window.ItemFactory || {};
-  window.ItemFactory.createCalamitySigil = function (challengeId) {
-    let challenge = window.SPECIAL_CHALLENGES_DATABASE[challengeId];
-    if (!challenge) return null;
-
-    let sigil = {
-      id: window.idCounter++,
-      name: challenge.name + " Sigil",
-      type: "sigil",
-      statsRolled: 5, // Mythic Tier
-      stageLevel: 80,
-      rewardMultiplier: challenge.rewardMultiplier,
-      qualityBoost: challenge.qualityBoost,
-      buffs: (challenge.buffs || []).map(bId => {
-        let b = (window.CAVERN_BUFFS || []).find(x => x.id === bId);
-        return b ? JSON.parse(JSON.stringify(b)) : { id: bId, name: bId, desc: bId, type: "stat" };
-      }),
-      debuffs: (challenge.debuffs || []).map(dId => {
-        let d = (window.CAVERN_DEBUFFS || []).find(x => x.id === dId);
-        return d ? JSON.parse(JSON.stringify(d)) : { id: dId, name: dId, desc: dId, type: "stat" };
-      }),
-      isCalamitySigil: true,
-      locked: true // Protected automatically
+  // --- SUBPHASE 11: LOCAL MUTATOR EXCLUSION MATRIX ---
+    const DEBUFF_EXCLUSIONS = {
+      "slick_ice": ["magnetic_creep"],
+      "magnetic_creep": ["slick_ice"],
+      "creeping_miasma": ["heavy_mist"],
+      "heavy_mist": ["creeping_miasma"],
+      "abyssal_decay": ["frail_vessel"],
+      "frail_vessel": ["abyssal_decay"],
+      "weapon_lock": ["kinetic_reflectors"],
+      "kinetic_reflectors": ["weapon_lock"]
     };
 
-    sigil.buffs.forEach(b => {
-      if (b.type === "stat" && b.value === undefined) b.value = 0.5;
-      if (window.formatSigilStatDesc && b.type === "stat") b.desc = window.formatSigilStatDesc(b.statKey, b.value, true);
-    });
-    sigil.debuffs.forEach(d => {
-      if (d.type === "stat" && d.value === undefined) d.value = -0.5;
-      if (window.formatSigilStatDesc && d.type === "stat") d.desc = window.formatSigilStatDesc(d.statKey, d.value, false);
-    });
+    // --- PROCEDURAL SPECIAL CHALLENGE GENERATOR ---
+    window.SPECIAL_CHALLENGES_DATABASE = {};
 
-    return sigil;
-  };
+    // --- SUBPHASE 12: CALAMITY SIGIL PROJECTION GENERATOR ---
+    window.ItemFactory = window.ItemFactory || {};
+    window.ItemFactory.createCalamitySigil = function (challengeId) {
+      let challenge = window.SPECIAL_CHALLENGES_DATABASE[challengeId];
+      if (!challenge) return null;
+
+      let sigil = {
+        id: window.idCounter++,
+        name: challenge.name + " Sigil",
+        type: "sigil",
+        statsRolled: 5, // Mythic Tier
+        stageLevel: 80,
+        rewardMultiplier: challenge.rewardMultiplier,
+        qualityBoost: challenge.qualityBoost,
+        buffs: (challenge.buffs || []).map(bId => {
+          let b = (window.CAVERN_BUFFS || []).find(x => x.id === bId);
+          return b ? JSON.parse(JSON.stringify(b)) : { id: bId, name: bId, desc: bId, type: "stat" };
+        }),
+        debuffs: (challenge.debuffs || []).map(dId => {
+          let d = (window.CAVERN_DEBUFFS || []).find(x => x.id === dId);
+          return d ? JSON.parse(JSON.stringify(d)) : { id: dId, name: dId, desc: dId, type: "stat" };
+        }),
+        isCalamitySigil: true,
+        locked: true // Protected automatically
+      };
+
+      sigil.buffs.forEach(b => {
+        if (b.type === "stat" && b.value === undefined) b.value = 0.5;
+        if (window.formatSigilStatDesc && b.type === "stat") b.desc = window.formatSigilStatDesc(b.statKey, b.value, true);
+      });
+      sigil.debuffs.forEach(d => {
+        if (d.type === "stat" && d.value === undefined) d.value = -0.5;
+        if (window.formatSigilStatDesc && d.type === "stat") d.desc = window.formatSigilStatDesc(d.statKey, d.value, false);
+      });
+
+      return sigil;
+    };
 
   // --- SUBPHASE 14: CONTRACT SIGNING SYSTEM ---
   window.signSpecialChallengeContract = function (challengeId) {
@@ -151,12 +114,145 @@
       this.fatigueLevel = 0.0;
     }
 
-    init() {
-      this.reset();
-      if (window.playerStats && window.playerStats.activeSpecialChallenge) {
-        this.activeChallenge = window.playerStats.activeSpecialChallenge;
-      }
-    }
+    generateRandomChallenges() {
+          const BOSS_POOL = [
+            { name: "Arachnid Treant", visualType: "arachnid_treant", tier: 0, biome: "Whispering Woods" },
+            { name: "Aegis Goliath", visualType: "aegis_goliath", tier: 1, biome: "Mountain Peaks" },
+            { name: "Brimstone Colossus", visualType: "overlord_iron_vault", tier: 2, biome: "Inferno Depths" },
+            { name: "Corrosive Abomination", visualType: "corrosive_abomination", tier: 3, biome: "Fungal Swamp" },
+            { name: "Void Overseer", visualType: "void_overseer", tier: 4, biome: "Void Singularity" },
+            { name: "Chronos Arbitrator", visualType: "chronos_arbitrator", tier: 5, biome: "Temporal Sanctorum" },
+            { name: "Nexus Overseer", visualType: "nexus_overseer", tier: 6, biome: "Cyberspace Nexus" },
+            { name: "Gilded Vault Keeper", visualType: "gilded_vault_keeper", tier: 2, biome: "Midas Treasury" }
+          ];
+
+          const CONTRACT_TEMPLATES = [
+            {
+              id: "solo_hunt",
+              name: "Warden Execution Contract",
+              isDual: false,
+              descTemplate: "A high-priority target has been spotted. Venture into the [BIOME] and execute [BOSS1] before the anomaly destabilizes.",
+              baseRisk: 25,
+              buffsCount: 1,
+              debuffsCount: 1
+            },
+            {
+              id: "twin_hunt",
+              name: "Dual Overlord Purge",
+              isDual: true,
+              descTemplate: "Slay both [BOSS1] and [BOSS2] who have converged in the [BIOME]. Exercise absolute caution, the risk of total loss is severe.",
+              baseRisk: 50,
+              buffsCount: 2,
+              debuffsCount: 2
+            },
+            {
+              id: "unstable_anomaly",
+              name: "Calamity Rift Containment",
+              isDual: true,
+              descTemplate: "Rifts have torn the [BIOME] apart. You must contain [BOSS1] and [BOSS2] under extreme hazardous conditions.",
+              baseRisk: 70,
+              buffsCount: 2,
+              debuffsCount: 3
+            }
+          ];
+
+          let generated = {};
+
+          CONTRACT_TEMPLATES.forEach((template) => {
+            let primaryBoss = BOSS_POOL[Math.floor(Math.random() * BOSS_POOL.length)];
+            let secondaryBoss = null;
+            if (template.isDual) {
+              let eligibleSecondaries = BOSS_POOL.filter(b => b.name !== primaryBoss.name);
+              secondaryBoss = eligibleSecondaries[Math.floor(Math.random() * eligibleSecondaries.length)];
+            }
+
+            let activeBuffs = [];
+            let activeDebuffs = [];
+
+            let eligibleBuffs = [...(window.CAVERN_BUFFS || [])];
+            let eligibleDebuffs = [...(window.CAVERN_DEBUFFS || [])];
+
+            for (let i = 0; i < template.buffsCount && eligibleBuffs.length > 0; i++) {
+              let randIdx = Math.floor(Math.random() * eligibleBuffs.length);
+              activeBuffs.push(eligibleBuffs.splice(randIdx, 1)[0].id);
+            }
+
+            let excludedDebuffs = [];
+            for (let i = 0; i < template.debuffsCount && eligibleDebuffs.length > 0; i++) {
+              let filteredDebuffs = eligibleDebuffs.filter(d => !excludedDebuffs.includes(d.id));
+              if (filteredDebuffs.length === 0) break;
+
+              let randIdx = Math.floor(Math.random() * filteredDebuffs.length);
+              let chosenDebuff = filteredDebuffs[randIdx];
+              activeDebuffs.push(chosenDebuff.id);
+
+              let exclusions = DEBUFF_EXCLUSIONS[chosenDebuff.id];
+              if (exclusions) {
+                excludedDebuffs.push(...exclusions);
+              }
+              eligibleDebuffs = eligibleDebuffs.filter(d => d.id !== chosenDebuff.id);
+            }
+
+            let dangerSum = activeDebuffs.reduce((sum, dId) => {
+              let d = (window.CAVERN_DEBUFFS || []).find(x => x.id === dId);
+              return sum + (d ? d.dangerRating || 0 : 0);
+            }, 0);
+
+            let riskRating = template.baseRisk + dangerSum;
+            let rewardMult = 1.0 + (riskRating * 0.02);
+            let qualityBoost = parseFloat((riskRating * 0.008).toFixed(2));
+
+            let desc = template.descTemplate
+              .replace("[BIOME]", primaryBoss.biome)
+              .replace("[BOSS1]", primaryBoss.name);
+            if (template.isDual && secondaryBoss) {
+              desc = desc.replace("[BOSS2]", secondaryBoss.name);
+            }
+
+            let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+            let goldBase = BigNum.from(250000).mul(BigNum.from(1.08).pow(peakStage)).mul(riskRating / 30);
+            let xpBase = BigNum.from(2000).mul(BigNum.from(1.05).pow(peakStage)).mul(riskRating / 30);
+
+            let shards = Math.max(5, Math.floor(riskRating / 4));
+            let cores = Math.max(1, Math.floor(riskRating / 15));
+
+            let challengeId = `procedural_${template.id}`;
+
+            generated[challengeId] = {
+              id: challengeId,
+              name: template.name,
+              desc: desc,
+              riskRating: riskRating,
+              rewardMultiplier: parseFloat(rewardMult.toFixed(2)),
+              qualityBoost: qualityBoost,
+              buffs: activeBuffs,
+              debuffs: activeDebuffs,
+              rewards: {
+                gold: { m: goldBase.m, e: goldBase.e },
+                xp: { m: xpBase.m, e: xpBase.e },
+                shards: shards,
+                cores: cores
+              },
+              primaryTarget: { name: primaryBoss.name, visualType: primaryBoss.visualType, tier: primaryBoss.tier },
+              secondaryTarget: secondaryBoss ? { name: secondaryBoss.name, visualType: secondaryBoss.visualType, tier: secondaryBoss.tier } : null
+            };
+          });
+
+          window.playerStats.proceduralChallenges = generated;
+          window.SPECIAL_CHALLENGES_DATABASE = generated;
+        }
+
+        init() {
+          this.reset();
+          if (!window.playerStats.proceduralChallenges || Object.keys(window.playerStats.proceduralChallenges).length === 0) {
+            this.generateRandomChallenges();
+          } else {
+            window.SPECIAL_CHALLENGES_DATABASE = window.playerStats.proceduralChallenges;
+          }
+          if (window.playerStats && window.playerStats.activeSpecialChallenge) {
+            this.activeChallenge = window.playerStats.activeSpecialChallenge;
+          }
+        }
 
     update(map, p) {
       if (window.currentGameState !== window.GAME_STATES.DUNGEON) {
@@ -228,35 +324,47 @@
       }
     }
 
-    // --- SUBPHASE 16 (Part B): TWIN OVERLORD ARENA GENERATION ---
-    spawnTwinBosses(map) {
-      let cx = Math.floor(map.width / 2);
-      let cy = Math.floor(map.height / 2);
+    // --- SUBPHASE 16 (Part B): PROCEDURAL OVERLORD ARENA GENERATION ---
+        spawnTwinBosses(map) {
+          let challenge = window.playerStats.activeSpecialChallenge;
+          if (!challenge || !challenge.primaryTarget) return;
 
-      // Spawn Boss 1 (Gilded Vault Keeper) on Left side
-      window.spawnBossEncounter(cx - 3, cy, "major");
-      let boss1 = window.mob;
-      boss1.id = window.idCounter++;
-      boss1.x = (cx - 3) * map.tileSize - 16;
-      boss1.y = cy * map.tileSize - 16;
-      boss1.visualType = "gilded_vault_keeper";
-      boss1.name = "Gilded Vault Keeper";
+          let cx = Math.floor(map.width / 2);
+          let cy = Math.floor(map.height / 2);
 
-      window.activeDungeonMobs = window.activeDungeonMobs || [];
-      window.activeDungeonMobs.push(boss1);
+          let pTar = challenge.primaryTarget;
+          let sTar = challenge.secondaryTarget;
 
-      // Spawn Boss 2 (Chronos Arbitrator) on Right side
-      window.spawnBossEncounter(cx + 3, cy, "major");
-      let boss2 = window.mob;
-      boss2.id = window.idCounter++;
-      boss2.x = (cx + 3) * map.tileSize - 16;
-      boss2.y = cy * map.tileSize - 16;
-      boss2.visualType = "chronos_arbitrator";
-      boss2.name = "Chronos Arbitrator";
+          // Spawn Boss 1 (Primary Target) on Left side
+          window.spawnBossEncounter(cx - 3, cy, "major");
+          let boss1 = window.mob;
+          boss1.id = window.idCounter++;
+          boss1.x = (cx - 3) * map.tileSize - 16;
+          boss1.y = cy * map.tileSize - 16;
+          boss1.visualType = pTar.visualType;
+          boss1.name = pTar.name;
+          boss1.visualTier = pTar.tier;
 
-      window.activeDungeonMobs.push(boss2);
-      window.mob = boss2; // Primary anchor hook for rendering
-    }
+          window.activeDungeonMobs = window.activeDungeonMobs || [];
+          window.activeDungeonMobs.push(boss1);
+
+          if (sTar) {
+            // Spawn Boss 2 (Secondary Target) on Right side
+            window.spawnBossEncounter(cx + 3, cy, "major");
+            let boss2 = window.mob;
+            boss2.id = window.idCounter++;
+            boss2.x = (cx + 3) * map.tileSize - 16;
+            boss2.y = cy * map.tileSize - 16;
+            boss2.visualType = sTar.visualType;
+            boss2.name = sTar.name;
+            boss2.visualTier = sTar.tier;
+
+            window.activeDungeonMobs.push(boss2);
+            window.mob = boss2; // Primary anchor hook for rendering
+          } else {
+            window.mob = boss1;
+          }
+        }
 
     render(ctx, map) {
       if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
