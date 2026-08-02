@@ -5483,25 +5483,25 @@
       }
 
       let selectedSigilId = window.state.selectedDeploymentSigilId;
-      let activeSigil = selectedSigilId
-        ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
-        : null;
+            let activeSigil = selectedSigilId
+              ? (window.inventory.SIGIL || []).find((s) => s.id === selectedSigilId)
+              : null;
 
-      let sigilSlotHtml = "";
-      if (activeSigil) {
-        let col = window.getTierColor(activeSigil.statsRolled);
-        let buffPills = (activeSigil.buffs || [])
-          .map(
-            (b) =>
-              `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">+ ${b.name}</span>`,
-          )
-          .join(" ");
-        let debuffPills = (activeSigil.debuffs || [])
-          .map(
-            (d) =>
-              `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px;">- ${d.name}</span>`,
-          )
-          .join(" ");
+            let sigilSlotHtml = "";
+            if (activeSigil) {
+              let col = window.getTierColor(activeSigil.statsRolled);
+              let buffPills = (activeSigil.buffs || [])
+                .map(
+                  (b) =>
+                    `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseenter="window.showModifierTooltip(event, '${b.id}', true, '${b.desc}')" onmouseleave="window.hideTooltip()">+ ${b.name}</span>`,
+                )
+                .join(" ");
+              let debuffPills = (activeSigil.debuffs || [])
+                .map(
+                  (d) =>
+                    `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 3px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseenter="window.showModifierTooltip(event, '${d.id}', false, '${d.desc}')" onmouseleave="window.hideTooltip()">- ${d.name}</span>`,
+                )
+                .join(" ");
 
         sigilSlotHtml = `
             <div class="deploy-sigil-card-slot" onclick="window.openSigilPickerModal()" style="border-color:${col}; cursor:pointer; flex-direction:column; align-items:stretch; gap:6px;">
@@ -16118,20 +16118,53 @@
   };
 
   // --- SHOW TOOLTIP HANDLERS ---
-  window.showItemTooltip = function (e, item) {
-    if (!item) return;
-    if (e && e.stopPropagation) e.stopPropagation();
+    window.showItemTooltip = function (e, item) {
+      if (!item) return;
+      if (e && e.stopPropagation) e.stopPropagation();
 
-    let tt = document.getElementById("game-tooltip");
-    if (!tt) return;
+      let tt = document.getElementById("game-tooltip");
+      if (!tt) return;
 
-    tt.innerHTML = window.buildGeneralTooltipHtml(item, true);
-    tt.style.borderColor = window.getTierColor
-      ? window.getTierColor(item.statsRolled)
-      : "#3498db";
-    tt.style.display = "block";
-    window.positionTooltip(e, tt);
-  };
+      tt.innerHTML = window.buildGeneralTooltipHtml(item, true);
+      tt.style.borderColor = window.getTierColor
+        ? window.getTierColor(item.statsRolled)
+        : "#3498db";
+      tt.style.display = "block";
+      window.positionTooltip(e, tt);
+    };
+
+    window.showModifierTooltip = function (e, id, isBuff, customDesc = null) {
+      if (e && e.stopPropagation) e.stopPropagation();
+      let tt = document.getElementById("game-tooltip");
+      if (!tt) return;
+
+      let mod = isBuff
+        ? (window.CAVERN_BUFFS || []).find((x) => x.id === id)
+        : (window.CAVERN_DEBUFFS || []).find((x) => x.id === id);
+
+      if (!mod) return;
+
+      let color = isBuff ? "#10b981" : "#ef4444";
+      let prefix = isBuff ? "MUTATOR BUFF" : "MUTATOR DEBUFF";
+      let desc = customDesc || mod.desc;
+
+      tt.innerHTML = `
+        <div class="tooltip-card" style="border: 2px solid ${color}; border-radius: 6px; background: rgba(10, 2, 2, 0.95); padding: 12px; width: 240px; box-sizing: border-box;">
+          <div style="font-size: 8px; font-weight: bold; color: ${isBuff ? "#34d399" : "#ff7675"}; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
+            [ ${prefix} ]
+          </div>
+          <div class="tt-title" style="color: ${color}; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; font-weight: bold; font-size: 12px; font-family: monospace; text-transform: uppercase;">
+            ${mod.name}
+          </div>
+          <div class="tt-desc" style="color: #cbd5e1; font-size: 10px; line-height: 1.4; font-family: monospace; white-space: normal;">
+            ${desc}
+          </div>
+        </div>
+      `;
+      tt.style.borderColor = color;
+      tt.style.display = "block";
+      window.positionTooltip(e, tt);
+    };
 
   window.showInventoryTooltip = function (e, itemId) {
     if (
@@ -17875,14 +17908,14 @@
               let isAnySigned = window.playerStats.activeSpecialChallenge !== null;
 
               let buffPills = (activeChallenge.buffs || []).map(bId => {
-                let b = (window.CAVERN_BUFFS || []).find(x => x.id === bId);
-                return b ? `<span style="background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 2px 5px; border-radius: 4px;">+ ${b.name}</span>` : "";
-              }).join(" ");
+                              let b = (window.CAVERN_BUFFS || []).find(x => x.id === bId);
+                              return b ? `<span style="background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 2px 5px; border-radius: 4px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${b.id}', true)" onmouseenter="window.showModifierTooltip(event, '${b.id}', true)" onmouseleave="window.hideTooltip()">+ ${b.name}</span>` : "";
+                            }).join(" ");
 
-              let debuffPills = (activeChallenge.debuffs || []).map(dId => {
-                let d = (window.CAVERN_DEBUFFS || []).find(x => x.id === dId);
-                return d ? `<span style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 2px 5px; border-radius: 4px;">- ${d.name}</span>` : "";
-              }).join(" ");
+                            let debuffPills = (activeChallenge.debuffs || []).map(dId => {
+                              let d = (window.CAVERN_DEBUFFS || []).find(x => x.id === dId);
+                              return d ? `<span style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 2px 5px; border-radius: 4px; cursor: help;" onpointerdown="window.showModifierTooltip(event, '${d.id}', false)" onmouseenter="window.showModifierTooltip(event, '${d.id}', false)" onmouseleave="window.hideTooltip()">- ${d.name}</span>` : "";
+                            }).join(" ");
 
               let goldRewardText = window.formatNumber(BigNum.from(activeChallenge.rewards.gold));
               let xpRewardText = window.formatNumber(BigNum.from(activeChallenge.rewards.xp));

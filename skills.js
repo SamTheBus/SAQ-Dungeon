@@ -123,19 +123,19 @@
       color: "#38bdf8",
       nodes: [
         {
-                  id: "shield_starter",
-                  name: "Vanguard Provision",
-                  iconKey: "shield_starter",
-                  x: 50,
-                  y: 88,
-                  tier: 1,
-                  maxRank: 1,
-                  costPerRank: 0,
-                  isStarterToggle: true,
-                  starterType: "shield",
-                  prereqs: [],
-                  desc: "Start dungeon runs with a Common (0★) Starter Shield equipped if offhand is empty.",
-                },
+                          id: "shield_starter",
+                          name: "Vanguard Provision",
+                          iconKey: "shield_starter",
+                          x: 50,
+                          y: 88,
+                          tier: 1,
+                          maxRank: 1,
+                          costPerRank: 0,
+                          isStarterToggle: true,
+                          starterType: "shield",
+                          prereqs: [],
+                          desc: "Start dungeon runs with a Common (0★) Starter Shield equipped if offhand is empty. (Requires Hero Level 2)",
+                        },
         {
           id: "shield_hp",
           name: "Ironclad Resilience",
@@ -376,19 +376,19 @@
       color: "#a855f7",
       nodes: [
         {
-                  id: "dagger_starter",
-                  name: "Shadow Blade Provision",
-                  iconKey: "dagger_starter",
-                  x: 50,
-                  y: 88,
-                  tier: 1,
-                  maxRank: 1,
-                  costPerRank: 0,
-                  isStarterToggle: true,
-                  starterType: "dagger",
-                  prereqs: [],
-                  desc: "Start dungeon runs with a Common (0★) Starter Dagger equipped if offhand is empty.",
-                },
+                          id: "dagger_starter",
+                          name: "Shadow Blade Provision",
+                          iconKey: "dagger_starter",
+                          x: 50,
+                          y: 88,
+                          tier: 1,
+                          maxRank: 1,
+                          costPerRank: 0,
+                          isStarterToggle: true,
+                          starterType: "dagger",
+                          prereqs: [],
+                          desc: "Start dungeon runs with a Common (0★) Starter Dagger equipped if offhand is empty. (Requires Hero Level 2)",
+                        },
         {
           id: "dagger_crit",
           name: "Lethal Precision",
@@ -634,19 +634,19 @@
       color: "#3498db",
       nodes: [
         {
-                  id: "tome_starter",
-                  name: "Codex Apprentice Provision",
-                  iconKey: "tome_starter",
-                  x: 50,
-                  y: 88,
-                  tier: 1,
-                  maxRank: 1,
-                  costPerRank: 0,
-                  isStarterToggle: true,
-                  starterType: "tome",
-                  prereqs: [],
-                  desc: "Start dungeon runs with a Common (0★) Starter Tome equipped if offhand is empty.",
-                },
+                          id: "tome_starter",
+                          name: "Codex Apprentice Provision",
+                          iconKey: "tome_starter",
+                          x: 50,
+                          y: 88,
+                          tier: 1,
+                          maxRank: 1,
+                          costPerRank: 0,
+                          isStarterToggle: true,
+                          starterType: "tome",
+                          prereqs: [],
+                          desc: "Start dungeon runs with a Common (0★) Starter Tome equipped if offhand is empty. (Requires Hero Level 2)",
+                        },
         {
           id: "tome_atk",
           name: "Arcane Focus",
@@ -1196,12 +1196,15 @@
     },
 
     isNodeUnlocked(treeId, node) {
-      if (treeId === "utility") {
-        if (!node.prereqs || node.prereqs.length === 0) return true;
-        return node.prereqs.some((pId) => this.getSkillLevel(pId) > 0);
-      }
+          if (node.isStarterToggle && (window.playerStats.level || 1) < 2) {
+            return false;
+          }
+          if (treeId === "utility") {
+            if (!node.prereqs || node.prereqs.length === 0) return true;
+            return node.prereqs.some((pId) => this.getSkillLevel(pId) > 0);
+          }
 
-      // Mastery SP spend threshold validation
+          // Mastery SP spend threshold validation
       let spent = this.getSpentPointsInTree(treeId);
       let reqSpend = 0;
       if (node.tier === 2) reqSpend = 3;
@@ -1246,22 +1249,32 @@
       if (!targetNode) return false;
 
       let currentRank = this.getSkillLevel(nodeId);
-      if (currentRank >= targetNode.maxRank) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("Node already at max rank!", "#e74c3c");
-        }
-        return false;
-      }
+              if (currentRank >= targetNode.maxRank) {
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("Node already at max rank!", "#e74c3c");
+                }
+                return false;
+              }
 
-      if (!this.isNodeUnlocked(targetTreeId, targetNode)) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast(
-            "Spend requirement or prerequisite node(s) required!",
-            "#e74c3c",
-          );
-        }
-        return false;
-      }
+              if (targetNode.isStarterToggle && (window.playerStats.level || 1) < 2) {
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast(
+                    "Requires Hero Level 2 or higher to unlock!",
+                    "#e74c3c",
+                  );
+                }
+                return false;
+              }
+
+              if (!this.isNodeUnlocked(targetTreeId, targetNode)) {
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast(
+                    "Spend requirement or prerequisite node(s) required!",
+                    "#e74c3c",
+                  );
+                }
+                return false;
+              }
 
       let nextRankCost = this.getNodeCostForRank(targetNode, currentRank + 1);
       let unspent = this.getUnspentPointsForTree(targetTreeId);
@@ -1705,14 +1718,16 @@
       let selCanAfford = unspentPoints >= nextCost;
 
       let actionBtnHtml = "";
-      if (selectedNode.isStarterToggle) {
-        if (selRank === 0) {
-          actionBtnHtml = `
-                      <button class="skill-buy-btn" ${selUnlocked && selCanAfford ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
-                        UNLOCK STARTER (${nextCost} SP)
-                      </button>
-                    `;
-        } else {
+            if (selectedNode.isStarterToggle) {
+              if (selRank === 0) {
+                let isLvlLocked = (window.playerStats.level || 1) < 2;
+                let btnText = isLvlLocked ? "LOCKED (REQUIRES LEVEL 2)" : `UNLOCK STARTER (${nextCost} SP)`;
+                actionBtnHtml = `
+                            <button class="skill-buy-btn" ${selUnlocked && selCanAfford && !isLvlLocked ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
+                              ${btnText}
+                            </button>
+                          `;
+              } else {
           let activeStarter = window.playerStats
             ? window.playerStats.activeStarterSubweapon
             : "none";

@@ -2391,7 +2391,48 @@ window.SoundManager.playCardPackOpen = function () {
 };
 
 // 6. Centralized Non-Blocking DOM Event Delegator with Fallbacks
+window.SoundManager.unlockMobileAudio = function () {
+  if (!this.ctx) {
+    this.init();
+  }
+  if (this.ctx) {
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume().then(() => {
+        // Play a tiny, silent 1-sample buffer to completely unblock Apple's hardware engine
+        try {
+          let buffer = this.ctx.createBuffer(1, 1, 22050);
+          let source = this.ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(this.ctx.destination);
+          source.start(0);
+        } catch (e) {
+          console.warn("Failed to play silent kickstart buffer:", e);
+        }
+        this.updateVolumes();
+        if (window.MusicManager && typeof window.MusicManager.init === "function") {
+          window.MusicManager.init();
+        }
+      }).catch((err) => {
+        console.warn("Failed to resume AudioContext:", err);
+      });
+    } else {
+      if (window.MusicManager && typeof window.MusicManager.init === "function") {
+        window.MusicManager.init();
+      }
+    }
+  }
+};
+
 window.SoundManager.initTactileFeedback = function () {
+  const triggerUnlock = () => {
+    window.SoundManager.unlockMobileAudio();
+  };
+
+  // Non-blocking listeners to reliably unlock and keep the Web Audio context awake on mobile interactions
+  document.addEventListener("pointerdown", triggerUnlock, { passive: true });
+  document.addEventListener("touchstart", triggerUnlock, { passive: true });
+  document.addEventListener("click", triggerUnlock, { passive: true });
+
   document.addEventListener("click", function (e) {
     if (!e.target || typeof e.target.closest !== "function") return;
 
@@ -2487,6 +2528,9 @@ window.MusicManager = {
   isLoading: false,
   isPaused: false,
   currentTrackIndex: 0,
+  proceduralInterval: null,
+  proceduralNodes: [],
+  isProcedural: false,
 
   // Playlist array: easily add more track filenames here in the future!
   tracks: ["music.mp3"],
@@ -2505,31 +2549,36 @@ window.MusicManager = {
   },
 
   async play() {
-    if (!this.ctx || this.tracks.length === 0) return;
+      if (!this.ctx || this.tracks.length === 0) return;
 
-    // Stop any currently playing track first
-    this.stopSource();
-    this.isPaused = false;
-    this.isLoading = true;
+      // Stop any currently playing track first
+      this.stopSource();
+      this.stopProcedural();
+      this.isPaused = false;
+      this.isLoading = true;
 
-    let trackUrl = this.tracks[this.currentTrackIndex];
+      let trackUrl = this.tracks[this.currentTrackIndex];
 
-    try {
-      const response = await fetch(trackUrl);
-      const arrayBuffer = await response.arrayBuffer();
-      this.activeBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-      this.isLoading = false;
+      try {
+        const response = await fetch(trackUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP status ${response.status}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        this.activeBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+        this.isLoading = false;
 
-      // Start playback of the loaded buffer
-      this.startSource();
-    } catch (err) {
-      console.warn(
-        `[MusicManager] Failed to load or decode track: ${trackUrl}`,
-        err,
-      );
-      this.isLoading = false;
-    }
-  },
+        // Start playback of the loaded buffer
+        this.startSource();
+      } catch (err) {
+        console.warn(
+          `[MusicManager] Failed to load or decode track: ${trackUrl}. Falling back to real-time procedural atmospheric BGM synthesis.`,
+          err,
+        );
+        this.isLoading = false;
+        this.startProcedural();
+      }
+    },
 
   startSource() {
     if (!this.ctx || !this.activeBuffer || this.isPaused) return;
@@ -2564,20 +2613,23 @@ window.MusicManager = {
   },
 
   pause() {
-    this.isPaused = true;
-    this.stopSource();
-  },
+      this.isPaused = true;
+      this.stopSource();
+      this.stopProcedural();
+    },
 
-  resume() {
-    if (this.initialized && this.isPaused) {
-      this.isPaused = false;
-      if (this.activeBuffer) {
-        this.startSource();
-      } else {
-        this.play();
+    resume() {
+      if (this.initialized && this.isPaused) {
+        this.isPaused = false;
+        if (this.isProcedural) {
+          this.startProcedural();
+        } else if (this.activeBuffer) {
+          this.startSource();
+        } else {
+          this.play();
+        }
       }
-    }
-  },
+    },
 
   nextTrack() {
     if (this.tracks.length <= 1) return;
@@ -2593,17 +2645,149 @@ window.MusicManager = {
   },
 
   updateVolume() {
-    if (!this.ctx || !this.gainNode) return;
-    let now = this.ctx.currentTime;
-    let masterVol = window.playerStats.mute
-      ? 0
-      : window.playerStats.volumeMaster !== undefined
-        ? window.playerStats.volumeMaster
-        : 0.5;
-    let musicVol =
-      window.playerStats.volumeMusic !== undefined
-        ? window.playerStats.volumeMusic
-        : 0.5;
-    this.gainNode.gain.setTargetAtTime(masterVol * musicVol, now, 0.015);
-  },
-};
+      if (!this.ctx || !this.gainNode) return;
+      let now = this.ctx.currentTime;
+      let masterVol = window.playerStats.mute
+        ? 0
+        : window.playerStats.volumeMaster !== undefined
+          ? window.playerStats.volumeMaster
+          : 0.5;
+      let musicVol =
+        window.playerStats.volumeMusic !== undefined
+          ? window.playerStats.volumeMusic
+          : 0.5;
+      this.gainNode.gain.setTargetAtTime(masterVol * musicVol, now, 0.015);
+    },
+
+    startProcedural() {
+      if (this.isProcedural) return;
+      this.isProcedural = true;
+      this.proceduralNodes = [];
+
+      this.playProceduralStep();
+
+      this.proceduralInterval = setInterval(() => {
+        if (!this.isPaused) {
+          this.playProceduralStep();
+        }
+      }, 8000);
+    },
+
+    stopProcedural() {
+      this.isProcedural = false;
+      if (this.proceduralInterval) {
+        clearInterval(this.proceduralInterval);
+        this.proceduralInterval = null;
+      }
+      if (this.proceduralNodes) {
+        this.proceduralNodes.forEach((node) => {
+          try {
+            node.stop();
+          } catch (e) {}
+          try {
+            node.disconnect();
+          } catch (e) {}
+        });
+        this.proceduralNodes = [];
+      }
+    },
+
+    playProceduralStep() {
+      if (!this.ctx || this.isPaused) return;
+      const now = this.ctx.currentTime;
+      const duration = 10.0;
+
+      // Atmospheric chord progressions in D minor/A minor scales
+      const chords = [
+        { notes: [146.83, 174.61, 220.0], drone: 73.42 }, // Dm (Root, Minor Third, Fifth + Sub Drone)
+        { notes: [116.54, 146.83, 174.61], drone: 58.27 }, // Bb Major
+        { notes: [130.81, 164.81, 196.00], drone: 65.41 }, // C Major
+        { notes: [110.00, 130.81, 164.81], drone: 55.00 }  // Am
+      ];
+
+      const chordIndex = this.currentTrackIndex % chords.length;
+      this.currentTrackIndex = (this.currentTrackIndex + 1) % chords.length;
+      const chord = chords[chordIndex];
+
+      const chordGain = this.ctx.createGain();
+      chordGain.gain.setValueAtTime(0, now);
+      chordGain.gain.linearRampToValueAtTime(0.25, now + 3.0); // Smooth fade-in
+      chordGain.gain.setValueAtTime(0.25, now + 7.0);
+      chordGain.gain.exponentialRampToValueAtTime(0.0001, now + duration); // Smooth fade-out
+      chordGain.connect(this.gainNode);
+
+      // Dynamic low-pass filter to shape a warm, cavernous soundscape
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(450, now);
+      filter.Q.setValueAtTime(1.5, now);
+      filter.connect(chordGain);
+
+      const stepNodes = [];
+
+      // 1. Deep Room Sub Drone
+      const droneOsc = this.ctx.createOscillator();
+      droneOsc.type = "triangle";
+      droneOsc.frequency.setValueAtTime(chord.drone, now);
+      droneOsc.connect(filter);
+      droneOsc.start(now);
+      droneOsc.stop(now + duration);
+      stepNodes.push(droneOsc);
+
+      // 2. Harmonic Pad Layer (Detuned oscillators to create a chorusing effect)
+      chord.notes.forEach((freq) => {
+        const osc = this.ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now);
+        osc.detune.setValueAtTime((Math.random() - 0.5) * 8, now);
+        osc.connect(filter);
+        osc.start(now);
+        osc.stop(now + duration);
+        stepNodes.push(osc);
+      });
+
+      // 3. Occasional Mystical Shimmer Overlay (25% chance of sparkling chimes)
+      if (Math.random() < 0.25) {
+        const crystalNotes = [chord.notes[0] * 4, chord.notes[1] * 4, chord.notes[2] * 4];
+        crystalNotes.forEach((freq, idx) => {
+          const chimeOsc = this.ctx.createOscillator();
+          chimeOsc.type = "sine";
+          chimeOsc.frequency.setValueAtTime(freq, now + 2.0 + idx * 0.15);
+
+          const chimeGain = this.ctx.createGain();
+          chimeGain.gain.setValueAtTime(0, now);
+          chimeGain.gain.setValueAtTime(0, now + 2.0 + idx * 0.15);
+          chimeGain.gain.linearRampToValueAtTime(0.04, now + 2.0 + idx * 0.15 + 0.05);
+          chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.0 + idx * 0.15 + 2.5);
+
+          chimeOsc.connect(chimeGain);
+          chimeGain.connect(this.gainNode);
+
+          chimeOsc.start(now + 2.0 + idx * 0.15);
+          chimeOsc.stop(now + 2.0 + idx * 0.15 + 2.6);
+
+          stepNodes.push(chimeOsc);
+
+          setTimeout(() => {
+            try { chimeGain.disconnect(); } catch (e) {}
+          }, 6000);
+        });
+      }
+
+      this.proceduralNodes.push(...stepNodes);
+
+      // Zero-allocation self-cleaning loop
+      setTimeout(() => {
+        stepNodes.forEach((node) => {
+          try { node.stop(); } catch (e) {}
+          try { node.disconnect(); } catch (e) {}
+          const idx = this.proceduralNodes.indexOf(node);
+          if (idx !== -1) {
+            this.proceduralNodes.splice(idx, 1);
+          }
+        });
+        try { filter.disconnect(); } catch (e) {}
+        try { chordGain.disconnect(); } catch (e) {}
+      }, duration * 1000 + 500);
+    }
+  };
