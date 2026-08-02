@@ -2,7 +2,20 @@
    PRIMARY PURPOSE: Procedural Item Generation, Unique Styling,
    Sack Management, Forge/Crafting, and Shop Transaction Logic.
    ========================================================================= */
-window.getRarityMultiplier = function (stars) {
+(function () {
+  // Subphase 11: Static Mutually Exclusive Debuff Matrix
+  const DEBUFF_EXCLUSIONS = {
+    "slick_ice": ["magnetic_creep"],
+    "magnetic_creep": ["slick_ice"],
+    "creeping_miasma": ["heavy_mist"],
+    "heavy_mist": ["creeping_miasma"],
+    "abyssal_decay": ["frail_vessel"],
+    "frail_vessel": ["abyssal_decay"],
+    "weapon_lock": ["kinetic_reflectors"],
+    "kinetic_reflectors": ["weapon_lock"]
+  };
+
+  window.getRarityMultiplier = function (stars) {
   if (stars === "UNIQUE" || stars === "unique") return 2.25;
   const multipliers = [1.0, 1.15, 1.3, 1.5, 1.75, 2.0];
   return multipliers[stars] || 1.0;
@@ -3158,79 +3171,86 @@ Object.assign(window.ItemFactory, {
     }
 
     if (chosenType === "sigil") {
-      let stars = statLinesCount;
-      let buffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
-      let debuffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
+          let stars = statLinesCount;
+          let buffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
+          let debuffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
 
-      let eligibleBuffs = (window.CAVERN_BUFFS || []).filter(
-        (b) => b.minStars <= stars,
-      );
-      let eligibleDebuffs = (window.CAVERN_DEBUFFS || []).filter(
-        (d) => d.minStars <= stars,
-      );
-
-      let selectedBuffs = [];
-      while (selectedBuffs.length < buffsCount && eligibleBuffs.length > 0) {
-        let randIdx = Math.floor(Math.random() * eligibleBuffs.length);
-        let baseBuff = eligibleBuffs.splice(randIdx, 1)[0];
-        let buffInstance = JSON.parse(JSON.stringify(baseBuff));
-
-        if (buffInstance.type === "stat") {
-          let rolledVal = window.rollSigilStatValue(
-            buffInstance.statKey,
-            stars,
-            true,
+          let eligibleBuffs = (window.CAVERN_BUFFS || []).filter(
+            (b) => b.minStars <= stars,
           );
-          buffInstance.value = rolledVal;
-          buffInstance.desc = window.formatSigilStatDesc(
-            buffInstance.statKey,
-            rolledVal,
-            true,
+          let eligibleDebuffs = (window.CAVERN_DEBUFFS || []).filter(
+            (d) => d.minStars <= stars,
           );
+
+          let selectedBuffs = [];
+          while (selectedBuffs.length < buffsCount && eligibleBuffs.length > 0) {
+            let randIdx = Math.floor(Math.random() * eligibleBuffs.length);
+            let baseBuff = eligibleBuffs.splice(randIdx, 1)[0];
+            let buffInstance = JSON.parse(JSON.stringify(baseBuff));
+
+            if (buffInstance.type === "stat") {
+              let rolledVal = window.rollSigilStatValue(
+                buffInstance.statKey,
+                stars,
+                true,
+              );
+              buffInstance.value = rolledVal;
+              buffInstance.desc = window.formatSigilStatDesc(
+                buffInstance.statKey,
+                rolledVal,
+                true,
+              );
+            }
+            selectedBuffs.push(buffInstance);
+          }
+
+          let selectedDebuffs = [];
+                        let dangerSum = 0;
+
+                        while (
+                  selectedDebuffs.length < debuffsCount &&
+                  eligibleDebuffs.length > 0
+                ) {
+                  let randIdx = Math.floor(Math.random() * eligibleDebuffs.length);
+                  let baseDebuff = eligibleDebuffs.splice(randIdx, 1)[0];
+                  let debuffInstance = JSON.parse(JSON.stringify(baseDebuff));
+
+                  if (debuffInstance.type === "stat") {
+                    let rolledVal = window.rollSigilStatValue(
+                      debuffInstance.statKey,
+                      stars,
+                      false,
+                    );
+                    debuffInstance.value = rolledVal;
+                    debuffInstance.desc = window.formatSigilStatDesc(
+                      debuffInstance.statKey,
+                      rolledVal,
+                      false,
+                    );
+                  }
+                  dangerSum += debuffInstance.dangerRating || 0;
+                  selectedDebuffs.push(debuffInstance);
+
+                  // Filter out excluded mutually exclusive debuffs from remaining options
+                  let excludedList = DEBUFF_EXCLUSIONS[debuffInstance.id];
+                  if (excludedList) {
+                    eligibleDebuffs = eligibleDebuffs.filter(d => !excludedList.includes(d.id));
+                  }
+                }
+
+          let dangerBonus = dangerSum * 0.005; // 1 danger rating point = +0.5% gold/drop rate bonus
+          let rewardMult = 0.15 + stars * 0.2 + dangerBonus;
+          let qlyBoost = stars >= 3 ? (stars - 2) * 0.15 : 0.0;
+
+          item.statsRolled = stars;
+          item.buffs = selectedBuffs;
+          item.debuffs = selectedDebuffs;
+          item.rewardMultiplier = parseFloat(rewardMult.toFixed(4));
+          item.qualityBoost = parseFloat(qlyBoost.toFixed(4));
+          item.name = window.generateCavernSigilName(item);
+
+          return item;
         }
-        selectedBuffs.push(buffInstance);
-      }
-
-      let selectedDebuffs = [];
-      let dangerSum = 0;
-      while (
-        selectedDebuffs.length < debuffsCount &&
-        eligibleDebuffs.length > 0
-      ) {
-        let randIdx = Math.floor(Math.random() * eligibleDebuffs.length);
-        let baseDebuff = eligibleDebuffs.splice(randIdx, 1)[0];
-        let debuffInstance = JSON.parse(JSON.stringify(baseDebuff));
-
-        if (debuffInstance.type === "stat") {
-          let rolledVal = window.rollSigilStatValue(
-            debuffInstance.statKey,
-            stars,
-            false,
-          );
-          debuffInstance.value = rolledVal;
-          debuffInstance.desc = window.formatSigilStatDesc(
-            debuffInstance.statKey,
-            rolledVal,
-            false,
-          );
-        }
-        dangerSum += debuffInstance.dangerRating || 0;
-        selectedDebuffs.push(debuffInstance);
-      }
-
-      let dangerBonus = dangerSum * 0.005; // 1 danger rating point = +0.5% gold/drop rate bonus
-      let rewardMult = 0.15 + stars * 0.2 + dangerBonus;
-      let qlyBoost = stars >= 3 ? (stars - 2) * 0.15 : 0.0;
-
-      item.statsRolled = stars;
-      item.buffs = selectedBuffs;
-      item.debuffs = selectedDebuffs;
-      item.rewardMultiplier = parseFloat(rewardMult.toFixed(4));
-      item.qualityBoost = parseFloat(qlyBoost.toFixed(4));
-      item.name = window.generateCavernSigilName(item);
-
-      return item;
-    }
 
     if (chosenType === "artifact") {
       let filterPool = window.ARTIFACT_POOL;
@@ -7750,6 +7770,7 @@ window.recalculateAllInventoryItems = function () {
 
 // Immediate execution after script load
 window.recalculateAllInventoryItems();
+})();
 
 window.executeParagonUpgrade = function () {
   let p = window.playerStats;

@@ -302,6 +302,26 @@ window.getMilestoneMultiplier = function (level) {
   return 1.0 + Math.sqrt(milestones) * 0.25;
 };
 
+window.getBountyRerollCost = function (peakStage, rerollsToday) {
+  let s = Math.max(1, Math.floor(peakStage || 1));
+  let r = Math.max(0, Math.floor(rerollsToday || 0));
+
+  // Gold Cost: 15000 * (1.09^S) * (3^R)
+  let goldBase = BigNum.from(15000);
+  let stageFactor = BigNum.from(1.09).pow(s);
+  let rerollFactor = BigNum.from(3.0).pow(r);
+  let goldCost = goldBase.mul(stageFactor).mul(rerollFactor);
+
+  // Soul Cost: (25 + Math.floor(10 * (s / 10)^1.2)) * (2.5^r)
+  let soulBase = 25 + Math.floor(10 * Math.pow(s / 10, 1.2));
+  let soulCost = Math.round(soulBase * Math.pow(2.5, r));
+
+  return {
+    gold: goldCost,
+    souls: soulCost
+  };
+};
+
 window.calculateRenownForStageRange = function (fromStage, toStage) {
   if (toStage <= fromStage) return 0;
   let start = Math.max(0, fromStage);
@@ -2533,14 +2553,22 @@ window.resolvePlayerStats = function (useDraft = false) {
     1.0 + (window.playerStats.missionUpgrades?.hp || 0) * 0.03;
 
   p.atk = p.atk
-    .mul(prestigeAtkMult)
-    .mul(missionAtkMult)
-    .mul(1.0 + (p.atkPct || 0));
-  p.maxHp = p.maxHp
-    .mul(prestigeHpMult)
-    .mul(missionHpMult)
-    .mul(1.0 + (p.maxHpPct || 0));
-  p.def = p.def.mul(prestigeDefMult);
+          .mul(prestigeAtkMult)
+          .mul(missionAtkMult)
+          .mul(1.0 + (p.atkPct || 0));
+        p.maxHp = p.maxHp
+          .mul(prestigeHpMult)
+          .mul(missionHpMult)
+          .mul(1.0 + (p.maxHpPct || 0));
+
+        // --- SUBPHASE 6: ABYSSAL DECAY SOUL SIPHON ---
+        if (window.playerStats && window.playerStats.abyssalDecayAccumulated > 0) {
+          p.maxHp = p.maxHp.sub(window.playerStats.abyssalDecayAccumulated);
+          if (p.maxHp.lt(10)) p.maxHp = BigNum.from(10); // Enforce minimum boundary
+        }
+        // ---------------------------------------------
+
+        p.def = p.def.mul(prestigeDefMult);
 
   // Apply Crucible Active Run Modifiers
   if (
@@ -2727,6 +2755,74 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.reflectDamage = 0.4;
   }
 
+// --- SUBPHASE 3: SPECIAL CAVERN SIGIL MUTATORS PIPELINE ---
+    let subItemRef = window.equippedSlots ? window.equippedSlots.subweapon : null;
+    let hasShieldRef = subItemRef && (subItemRef.subType === "shield" || subItemRef.type === "shield");
+    let hasDaggerRef = subItemRef && (subItemRef.subType === "dagger" || subItemRef.type === "dagger");
+    let hasTitanGripRef = window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
+
+    if (window.isCavernEffectActive("aetheric_surge")) {
+      if (p.subType === "tome") {
+        p.spellPower = (p.spellPower || 1.5) * 1.75;
+        p.spellChance = (p.spellChance || 0.33) + 0.20;
+      } else if (p.subType === "shield") {
+        p.reflectDamage = (p.reflectDamage || 1.0) * 2.0;
+        p.bashAtkBonus = (p.bashAtkBonus || 0) * 2.0;
+        p.blockCapBonus = (p.blockCapBonus || 0) + 0.15;
+
+        let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
+        maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
+        p.rawBlock = p.rawBlock !== undefined ? p.rawBlock : p.block;
+        p.block = p.rawBlock > maxBlockCap ? maxBlockCap : p.rawBlock;
+      } else if (p.subType === "dagger") {
+        p.riposteDamage = (p.riposteDamage || 0.8) * 3.0;
+        p.parryCapBonus = (p.parryCapBonus || 0) + 0.15;
+
+        let maxParryCap = 0.15;
+        let noun = subItemRef ? (subItemRef.noun ? subItemRef.noun.toLowerCase() : "") : "";
+        if (noun.includes("main-gauche")) {
+          maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
+        } else {
+          maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
+        }
+        maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
+        p.rawParry = p.rawParry !== undefined ? p.rawParry : p.parry;
+        p.parry = p.rawParry > maxParryCap ? maxParryCap : p.rawParry;
+      }
+    }
+
+    if (window.isCavernEffectActive("weapon_lock")) {
+      p.atk = BigNum.from(1);
+
+      p.spellChance = (p.spellChance || 0) * 2.0;
+      p.offhandChance = (p.offhandChance || 0) * 2.0;
+      p.block = (p.block || 0) * 2.0;
+      p.parry = (p.parry || 0) * 2.0;
+
+      if (hasShieldRef) {
+        let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
+        maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
+        let doubledCap = maxBlockCap * 2.0;
+        if (p.block > doubledCap) p.block = doubledCap;
+      }
+      if (hasDaggerRef) {
+        let maxParryCap = 0.15;
+        let noun = subItemRef ? (subItemRef.noun ? subItemRef.noun.toLowerCase() : "") : "";
+        if (noun.includes("main-gauche")) {
+          maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
+        } else {
+          maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
+        }
+        maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
+        let doubledCap = maxParryCap * 2.0;
+        if (p.parry > doubledCap) p.parry = doubledCap;
+      }
+
+      p.activeAttackSpeed = Math.max(2, Math.round(p.activeAttackSpeed / 2.0));
+      p.idleAttackSpeed = Math.max(5, Math.round(p.idleAttackSpeed / 2.0));
+    }
+    // ----------------------------------------------------------
+
   if (!useDraft) {
     window.cachedPlayerStats = p;
     window.playerStatsDirty = false;
@@ -2847,20 +2943,38 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   let netDmg = Math.max(1, remainingDmg * (1 - defenseDR));
 
   // Step 2: Parry Check (Daggers)
-  if (pStats.parry && Math.random() < pStats.parry) {
-    if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-      window.playerStats.adrenalineTimer = 360;
-    }
+    if (pStats.parry && Math.random() < pStats.parry) {
+      if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
+        window.playerStats.adrenalineTimer = 360;
+      }
 
-    // Gain +10 Dagger Mastery XP on Parry
-    if (window.gainSubweaponXp) window.gainSubweaponXp("dagger", 10);
+      // Gain +10 Dagger Mastery XP on Parry
+      if (window.gainSubweaponXp) window.gainSubweaponXp("dagger", 10);
 
-    let parryMitigation = pStats.hasMasterDuellist
-      ? 1.0
-      : pStats.parryMitigation || 0.6;
-    let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
-    p.hp = Math.max(0, p.hp - parriedDmg);
-    p.lastDamageTimer = 180;
+      if (typeof window.progressMission === "function") {
+        window.progressMission("deflections", 1);
+      }
+
+      let parryMitigation = pStats.hasMasterDuellist
+            ? 1.0
+            : pStats.parryMitigation || 0.6;
+          let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
+          p.hp = Math.max(0, p.hp - parriedDmg);
+
+          if (parriedDmg > 0 && window.isCavernEffectActive && window.isCavernEffectActive("abyssal_decay")) {
+            let decay = Math.round(parriedDmg * 0.15);
+            if (decay > 0) {
+              window.playerStats.abyssalDecayAccumulated = (window.playerStats.abyssalDecayAccumulated || 0) + decay;
+              window.invalidatePlayerStats();
+              let pStatsLocal = window.resolvePlayerStats();
+              p.maxHp = Math.round(pStatsLocal.maxHp.valueOf ? pStatsLocal.maxHp.valueOf() : Number(pStatsLocal.maxHp || 100));
+              p.hp = Math.min(p.hp, p.maxHp);
+              window.playerStats.currentHp = BigNum.from(p.hp);
+              window.spawnFloatingText(p.x, p.y - 28, "MAX HP DECAYED -" + decay, "#8e44ad", true);
+            }
+          }
+
+          p.lastDamageTimer = 180;
     window.playerStats.totalDeflections =
       (window.playerStats.totalDeflections || 0) + 1;
 
@@ -3013,13 +3127,17 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   // Step 3: Block Check (Shields)
-  if (pStats.block && Math.random() < pStats.block) {
-    if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-      window.playerStats.adrenalineTimer = 360;
-    }
+    if (pStats.block && Math.random() < pStats.block) {
+      if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
+        window.playerStats.adrenalineTimer = 360;
+      }
 
-    // Gain +16 Shield Mastery XP on Block
-    if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
+      // Gain +16 Shield Mastery XP on Block
+      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
+
+      if (typeof window.progressMission === "function") {
+        window.progressMission("deflections", 1);
+      }
 
     // Fortitude stack acquisition on block / damage
     if (pStats.fortifiedGuardMultiplier > 0) {
@@ -3049,14 +3167,27 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     if (window.SoundManager) window.SoundManager.play("block");
 
     let baseMitigation = 0.7 + (pStats.blockMitigationBonus || 0); // Applies restored Fortified Stance 10%-30% block mitigation bonus
-    let blockMitigation = pStats.hasColossusKeystone
-      ? 1.0
-      : Math.min(0.95, baseMitigation);
-    let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
-    let savings = netDmg - blockedDmg;
-    p.hp = Math.max(0, p.hp - blockedDmg);
+        let blockMitigation = pStats.hasColossusKeystone
+          ? 1.0
+          : Math.min(0.95, baseMitigation);
+        let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
+        let savings = netDmg - blockedDmg;
+        p.hp = Math.max(0, p.hp - blockedDmg);
 
-    if (pStats.hasColossusKeystone && savings > 0) {
+        if (blockedDmg > 0 && window.isCavernEffectActive && window.isCavernEffectActive("abyssal_decay")) {
+          let decay = Math.round(blockedDmg * 0.15);
+          if (decay > 0) {
+            window.playerStats.abyssalDecayAccumulated = (window.playerStats.abyssalDecayAccumulated || 0) + decay;
+            window.invalidatePlayerStats();
+            let pStatsLocal = window.resolvePlayerStats();
+            p.maxHp = Math.round(pStatsLocal.maxHp.valueOf ? pStatsLocal.maxHp.valueOf() : Number(pStatsLocal.maxHp || 100));
+            p.hp = Math.min(p.hp, p.maxHp);
+            window.playerStats.currentHp = BigNum.from(p.hp);
+            window.spawnFloatingText(p.x, p.y - 28, "MAX HP DECAYED -" + decay, "#8e44ad", true);
+          }
+        }
+
+        if (pStats.hasColossusKeystone && savings > 0) {
       window.playerStats.colossusApBonus =
         (window.playerStats.colossusApBonus || 0) + Math.round(savings * 0.1);
       window.playerStats.colossusApTimer = 600; // 10s at 60 FPS
@@ -3204,10 +3335,24 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   // Step 4: Unmitigated Damage Hit
-  let finalDmg = Math.max(1, Math.round(netDmg));
-  p.hp = Math.max(0, p.hp - finalDmg);
-  p.lastDamageTimer = 180;
-  window.spawnFloatingText(p.x, p.y - 15, `-${finalDmg}`, "#e74c3c");
+    let finalDmg = Math.max(1, Math.round(netDmg));
+    p.hp = Math.max(0, p.hp - finalDmg);
+
+    if (window.isCavernEffectActive && window.isCavernEffectActive("abyssal_decay")) {
+      let decay = Math.round(finalDmg * 0.15);
+      if (decay > 0) {
+        window.playerStats.abyssalDecayAccumulated = (window.playerStats.abyssalDecayAccumulated || 0) + decay;
+        window.invalidatePlayerStats();
+        let pStatsLocal = window.resolvePlayerStats();
+        p.maxHp = Math.round(pStatsLocal.maxHp.valueOf ? pStatsLocal.maxHp.valueOf() : Number(pStatsLocal.maxHp || 100));
+        p.hp = Math.min(p.hp, p.maxHp);
+        window.playerStats.currentHp = BigNum.from(p.hp);
+        window.spawnFloatingText(p.x, p.y - 28, "MAX HP DECAYED -" + decay, "#8e44ad", true);
+      }
+    }
+
+    p.lastDamageTimer = 180;
+    window.spawnFloatingText(p.x, p.y - 15, `-${finalDmg}`, "#e74c3c");
 
   // Crown of Tempests Thunderbolt Counter
   if (
@@ -3690,6 +3835,7 @@ window.playerStats = {
   prestigeApproachTimer: 0,
   highestRiftLevel: 0,
   activeRift: null,
+  abyssalDecayAccumulated: 0,
   activeRiftLevel: 1,
   peakSingleHit: 0,
   maxFairyClicksInWindow: 0,
@@ -3780,9 +3926,11 @@ window.playerStats = {
   claimedMailIds: [],
   unlockedSkins: ["default"],
   equippedCostume: "knight",
-  unlockedCostumes: ["knight"],
-  playerName: "Hero",
-  clanId: null,
+    unlockedCostumes: ["knight"],
+    playerName: "Hero",
+    clanId: null,
+    activeSpecialChallenge: null,
+    bountyRerollsToday: 0,
   audioSessionMode: "ambient",
   clanName: null,
   clanEmblem: null,
@@ -3835,159 +3983,184 @@ window.toggleControlMode = function () {
 
 // Initialize the QuestSystem namespace and define generateDailyMissions
 window.QuestSystem = {
+  getScaledTarget(type, peakStage) {
+    let s = Math.max(1, Math.floor(peakStage || 1));
+    let maxBag = typeof window.getMaxBagSlots === "function" ? window.getMaxBagSlots() : 20;
+    let maxFlask = (window.playerStats && window.playerStats.maxFlaskCharges) || 1;
+
+    switch (type) {
+      // Daily Targets
+      case "kills":
+        return 150 + (s * 5);
+      case "rares":
+        return 3 + Math.floor(s / 30);
+      case "pottery":
+        return 20 + (s * 1);
+      case "salvage":
+        return 10 + Math.floor(s / 20);
+      case "bag":
+        return 8 + Math.floor(maxBag / 4);
+      case "flask":
+        return 2 + Math.floor(maxFlask / 2);
+
+      // Weekly Targets
+      case "rifts":
+        return 5 + Math.floor(s / 40);
+      case "dungeons":
+        return 30 + Math.floor(s / 2);
+      case "deflections":
+        return 100 + (s * 5);
+      case "spells":
+        return 80 + (s * 4);
+      case "luminous":
+        return 8 + Math.floor(s / 25);
+      case "contracts":
+        return 3 + Math.floor(s / 100);
+
+      default:
+        return 10;
+    }
+  },
+
   generateDailyMissions() {
-    let pool = [
-      {
-        type: "kills",
-        label: "Slay monsters",
-        targetBase: 300,
-        unit: "monsters",
-      },
-      {
-        type: "rares",
-        label: "Slay rare spawns",
-        targetBase: 5,
-        unit: "rares",
-      },
-      {
-        type: "gold",
-        label: "Collect Gold",
-        targetBase: 2500,
-        stageScale: true,
-        unit: "Gold",
-      },
-      {
-        type: "fairies",
-        label: "Catch wild fairies",
-        targetBase: 8,
-        unit: "fairies",
-      },
-      {
-        type: "tempers",
-        label: "Attune equipment slots",
-        targetBase: 1,
-        unit: "slots",
-      },
-      {
-        type: "reforges",
-        label: "Reforge gear modifiers",
-        targetBase: 2,
-        unit: "reforges",
-      },
-      {
-        type: "dungeons",
-        label: "Clear Dungeon floors",
-        targetBase: 5,
-        unit: "floors",
-      },
-      {
-        type: "salvage",
-        label: "Salvage gear items",
-        targetBase: 15,
-        unit: "items",
-      },
-      {
-        type: "elixirs",
-        label: "Consume active elixirs",
-        targetBase: 3,
-        unit: "elixirs",
-      },
-      {
-        type: "active_clicks",
-        label: "Manually click canvas",
-        targetBase: 250,
-        unit: "clicks",
-      },
-    ];
+      let pool = [
+        { type: "kills", label: "Purge standard dungeon monsters", unit: "monsters" },
+        { type: "rares", label: "Eradicate wild rare spawns", unit: "rares" },
+        { type: "pottery", label: "Shatter breakable clay pots, urns, or barrels", unit: "props" },
+        { type: "salvage", label: "Salvage unwanted collected gear", unit: "items" },
+        { type: "bag", label: "Extract successfully with a heavily laden satchel", unit: "items" },
+        { type: "flask", label: "Deploy emergency Field Flask restorative charges", unit: "uses" }
+      ];
 
-    pool.sort(() => Math.random() - 0.5);
-    let selected = pool.slice(0, 6);
+      pool.sort(() => Math.random() - 0.5);
+      let selected = pool.slice(0, 6);
 
-    let stage = window.playerStats.stage || 1;
-    window.playerStats.dailyMissions = selected.map((m, idx) => {
-      let target = m.targetBase;
-      if (m.stageScale) {
-        target = Math.ceil(m.targetBase * Math.pow(1.045, stage));
-      }
-      return {
-        id: `daily_${idx + 1}`,
-        type: m.type,
-        desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
-        current: 0,
-        target: target,
-        treat: "Daily Reward Sack",
-        treatQty: 1,
-        completed: false,
-        claimed: false,
-      };
-    });
-  },
-};
+      let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+      window.playerStats.dailyMissions = selected.map((m, idx) => {
+        let target = window.QuestSystem.getScaledTarget(m.type, peakStage);
+        let goldReward = BigNum.from(100).mul(BigNum.from(1.05).pow(peakStage));
+        let xpReward = BigNum.from(20).mul(BigNum.from(1.04).pow(peakStage));
 
-// Legacy Compatibility Aliases to protect cross-file references
+        return {
+          id: `daily_${idx + 1}`,
+          type: m.type,
+          desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
+          current: 0,
+          target: target,
+          goldReward: { m: goldReward.m, e: goldReward.e },
+          xpReward: { m: xpReward.m, e: xpReward.e },
+          treat: "Daily Reward Sack",
+          treatQty: 1,
+          completed: false,
+          claimed: false,
+        };
+      });
+    },
+
+    generateWeeklyMissions() {
+      let pool = [
+        { type: "rifts", label: "Eradicate Altar Rift Guardians", unit: "guardians" },
+        { type: "dungeons", label: "Clear deep Dungeon floors", unit: "floors" },
+        { type: "deflections", label: "Execute tactical Blocks or Parries", unit: "deflections" },
+        { type: "spells", label: "Trigger offhand Tome Spell Procs", unit: "spells" },
+        { type: "luminous", label: "Harvest wild Luminous Souls from rare spawns", unit: "souls" },
+        { type: "contracts", label: "Complete Special Cavern Challenge Contracts", unit: "contracts" }
+      ];
+
+      pool.sort(() => Math.random() - 0.5);
+      let selected = pool.slice(0, 3);
+
+      let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+      window.playerStats.weeklyMissions = selected.map((m, idx) => {
+        let target = window.QuestSystem.getScaledTarget(m.type, peakStage);
+        let goldReward = BigNum.from(800).mul(BigNum.from(1.05).pow(peakStage));
+        let xpReward = BigNum.from(150).mul(BigNum.from(1.04).pow(peakStage));
+
+        return {
+          id: `weekly_${idx + 1}`,
+          type: m.type,
+          desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
+          current: 0,
+          target: target,
+          goldReward: { m: goldReward.m, e: goldReward.e },
+          xpReward: { m: xpReward.m, e: xpReward.e },
+          treat: "Weekly Reward Sack",
+          treatQty: 1,
+          completed: false,
+          claimed: false,
+        };
+      });
+    }
+  };
+
+// Legacy Compatibility Aliases to protect references
 window.generateDailyMissions = () => window.QuestSystem.generateDailyMissions();
+window.generateWeeklyMissions = () => window.QuestSystem.generateWeeklyMissions();
 
-// Append generateWeeklyMissions inside window.QuestSystem
+// Append rerollBountyBoard inside window.QuestSystem
 Object.assign(window.QuestSystem, {
-  generateWeeklyMissions() {
-    let pool = [
-      {
-        type: "rifts",
-        label: "Slay Rift Guardians",
-        targetBase: 10, // Increased from 3
-        unit: "guardians",
-      },
-      {
-        type: "dungeons",
-        label: "Ascend Dungeon floors",
-        targetBase: 50, // Increased from 15
-        unit: "floors",
-      },
-      {
-        type: "gold",
-        label: "Amass extreme wealth",
-        targetBase: 150000, // Increased from 15000
-        stageScale: true,
-        unit: "Gold",
-      },
-      {
-        type: "kills",
-        label: "Execute massive purges",
-        targetBase: 15000, // Increased from 1500
-        unit: "enemies",
-      },
-      {
-        type: "tempers",
-        label: "Master slot attunement",
-        targetBase: 40, // Increased from 15
-        unit: "slots",
-      },
-    ];
-
-    pool.sort(() => Math.random() - 0.5);
-    let selected = pool.slice(0, 3);
-
-    let peakStage =
-      window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-    window.playerStats.weeklyMissions = selected.map((m, idx) => {
-      let target = m.targetBase;
-      if (m.stageScale) {
-        target = Math.ceil(m.targetBase * Math.pow(1.045, peakStage));
+  rerollBountyBoard() {
+    let r = window.playerStats.bountyRerollsToday || 0;
+    if (r >= 3) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast("Maximum of 3 manual board re-rolls per day reached!", "#e74c3c");
       }
-      return {
-        id: `weekly_${idx + 1}`,
-        type: m.type,
-        desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
-        current: 0,
-        target: target,
-        treat: "Weekly Reward Sack",
-        treatQty: 1,
-        completed: false,
-        claimed: false,
-      };
-    });
-  },
+      return;
+    }
+
+    let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+    let cost = window.getBountyRerollCost(peakStage, r);
+
+    let goldOwned = BigNum.from(window.playerStats.coins || 0);
+    let soulsOwned = (window.inventory && window.inventory.ETC && window.inventory.ETC["Monster Soul"]) || 0;
+
+    if (goldOwned.lt(cost.gold)) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast("Not enough Gold for board re-roll!", "#e74c3c");
+      }
+      return;
+    }
+    if (soulsOwned < cost.souls) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast("Not enough Monster Souls for board re-roll!", "#e74c3c");
+      }
+      return;
+    }
+
+    // Deduct resources
+    window.playerStats.coins = goldOwned.sub(cost.gold);
+    if (window.playerStats.coins.eq(0)) {
+      window.playerStats.hasTriggeredExactChange = true;
+    }
+
+    window.inventory.ETC["Monster Soul"] -= cost.souls;
+    if (window.inventory.ETC["Monster Soul"] === 0) {
+      delete window.inventory.ETC["Monster Soul"];
+    }
+
+    // Increment re-roll tracker
+    window.playerStats.bountyRerollsToday = r + 1;
+
+    // Regenerate active missions
+    this.generateDailyMissions();
+    if (window.playerStats.prestigeCount > 0) {
+      this.generateWeeklyMissions();
+    }
+
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast("Board Re-rolled Successfully!", "#2ecc71");
+    }
+    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+      window.SoundManager.play("revive");
+    }
+
+    if (typeof window.updateUI === "function") window.updateUI();
+    if (typeof window.renderBountyBoard === "function") window.renderBountyBoard();
+    if (typeof window.saveGame === "function") window.saveGame();
+  }
 });
+
+window.rerollBountyBoard = () => window.QuestSystem.rerollBountyBoard();
 
 // Legacy Compatibility Aliases to protect references
 window.generateWeeklyMissions = () =>
@@ -4006,20 +4179,21 @@ Object.assign(window.QuestSystem, {
     let currentDayStr = ptDate.toLocaleDateString("en-US"); // e.g. "6/25/2026"
 
     // Check Daily reset against absolute Pacific date string
-    if (
-      !window.playerStats.lastDailyResetDayStr ||
-      window.playerStats.lastDailyResetDayStr !== currentDayStr
-    ) {
-      this.generateDailyMissions();
-      window.playerStats.lastDailyResetDayStr = currentDayStr;
-      window.playerStats.lastDailyResetTime = now;
-      window.playerStats.dailyRewardClaimed = false;
-      window.playerStats.dailyRerollsDone = 0; // Reset active re-roll tracker daily
-      if (typeof window.pushLog === "function")
-        window.pushLog(
-          "<span style='color:#2ecc71; font-weight:bold;'>📅 [SYSTEM] Clan Daily Board refreshed! Reset at 12:00 AM PST/PDT. Complete at least 5 for a grand treat!</span>",
-        );
-    }
+                    if (
+                      !window.playerStats.lastDailyResetDayStr ||
+                      window.playerStats.lastDailyResetDayStr !== currentDayStr
+                    ) {
+                      this.generateDailyMissions();
+                      window.playerStats.lastDailyResetDayStr = currentDayStr;
+                      window.playerStats.lastDailyResetTime = now;
+                      window.playerStats.dailyRewardClaimed = false;
+                      window.playerStats.dailyRerollsDone = 0; // Reset active re-roll tracker daily
+                      window.playerStats.bountyRerollsToday = 0; // Reset active re-roll count daily
+                      if (typeof window.pushLog === "function")
+                        window.pushLog(
+                          "<span style='color:#2ecc71; font-weight:bold;'>[SYSTEM] Clan Daily Board refreshed! Reset at 12:00 AM PST/PDT. Complete at least 5 for a grand treat!</span>",
+                        );
+                    }
 
     // Check Weekly reset (Monday 12:00 AM PST/PDT)
     let dayOfWeek = ptDate.getDay(); // 0 is Sunday, 1 is Monday...
@@ -4249,6 +4423,17 @@ window.saveGame = function () {
       };
     }
 
+    // Subphase 13: Serialize Special Challenge rewards safely without mutating live memory references
+                if (saveData.playerStats.activeSpecialChallenge) {
+                  let challengeCopy = JSON.parse(JSON.stringify(saveData.playerStats.activeSpecialChallenge));
+                  if (challengeCopy.rewards) {
+                    let r = challengeCopy.rewards;
+                    if (r.gold) r.gold = { m: BigNum.from(r.gold).m, e: BigNum.from(r.gold).e };
+                    if (r.xp) r.xp = { m: BigNum.from(r.xp).m, e: BigNum.from(r.xp).e };
+                  }
+                  saveData.playerStats.activeSpecialChallenge = challengeCopy;
+                }
+
     localStorage.setItem("extraction_crawler_save", JSON.stringify(saveData));
   } catch (err) {
     console.warn("Failed to save game to localStorage:", err);
@@ -4260,13 +4445,13 @@ window.hydrateCavernSigils = function () {
   if (!window.inventory.SIGIL) {
     window.inventory.SIGIL = [];
   }
-  window.inventory.SIGIL.forEach((sig) => {
-    if (!sig) return;
 
+  // Subphase 13: Reusable high-quality sigil hydrator
+  window.hydrateSingleSigil = function (sig) {
+    if (!sig) return;
     if (sig.statsRolled === undefined) {
       sig.statsRolled = 1;
     }
-
     if (sig.buffs) {
       sig.buffs = sig.buffs.map((b) => {
         if (typeof b === "string") {
@@ -4301,7 +4486,6 @@ window.hydrateCavernSigils = function () {
     } else {
       sig.buffs = [];
     }
-
     if (sig.debuffs) {
       sig.debuffs = sig.debuffs.map((d) => {
         if (typeof d === "string") {
@@ -4316,15 +4500,12 @@ window.hydrateCavernSigils = function () {
             dangerRating: 5,
           };
         }
-        let match = (window.CAVERN_DEBUFFS || []).find(
-          (ref) => ref.id === d.id,
-        );
+        let match = (window.CAVERN_DEBUFFS || []).find((ref) => ref.id === d.id);
         if (match) {
           d.type = d.type || match.type;
           d.statKey = d.statKey || match.statKey;
           d.minStars = d.minStars !== undefined ? d.minStars : match.minStars;
-          d.dangerRating =
-            d.dangerRating !== undefined ? d.dangerRating : match.dangerRating;
+          d.dangerRating = d.dangerRating !== undefined ? d.dangerRating : match.dangerRating;
           if (d.type === "stat" && d.value === undefined) {
             d.value = window.rollSigilStatValue
               ? window.rollSigilStatValue(d.statKey, sig.statsRolled, false)
@@ -4341,14 +4522,21 @@ window.hydrateCavernSigils = function () {
     } else {
       sig.debuffs = [];
     }
-
     if (sig.rewardMultiplier === undefined) {
       sig.rewardMultiplier = 1.0;
     }
     if (sig.qualityBoost === undefined) {
       sig.qualityBoost = 0.0;
     }
+  };
+
+  window.inventory.SIGIL.forEach((sig) => {
+    window.hydrateSingleSigil(sig);
   });
+
+  if (window.playerStats && window.playerStats.activeDungeonSigil) {
+    window.hydrateSingleSigil(window.playerStats.activeDungeonSigil);
+  }
 };
 
 window.loadGame = function () {
@@ -4365,6 +4553,13 @@ window.loadGame = function () {
         parsed.playerStats.hasTriggeredOnslaughtUnlock || false;
       window.playerStats.isCrucibleMode =
         parsed.playerStats.isCrucibleMode || false;
+
+      // Subphase 13: Safely Hydrate Active Special Challenge BigNum Rewards
+      if (window.playerStats.activeSpecialChallenge && window.playerStats.activeSpecialChallenge.rewards) {
+        let r = window.playerStats.activeSpecialChallenge.rewards;
+        if (r.gold) r.gold = BigNum.from(r.gold);
+        if (r.xp) r.xp = BigNum.from(r.xp);
+      }
       window.playerStats.crucibleWave = parsed.playerStats.crucibleWave || 1;
       window.playerStats.cruciblePeak = parsed.playerStats.cruciblePeak || 0;
       window.playerStats.crucibleDraftDeck =
@@ -4430,11 +4625,47 @@ window.loadGame = function () {
       };
 
       // Fallback initializers for separate Utility SP
-      if (window.playerStats.usp === undefined) {
-        window.playerStats.usp = 0;
-      }
+            if (window.playerStats.usp === undefined) {
+              window.playerStats.usp = 0;
+            }
 
-      // Fallback initializers for Field Flask properties
+            // Fallback initializers for Special Challenges and Bounty Boards
+                  if (window.playerStats.activeSpecialChallenge === undefined) {
+                    window.playerStats.activeSpecialChallenge = null;
+                  }
+                  if (window.playerStats.bountyRerollsToday === undefined) {
+                    window.playerStats.bountyRerollsToday = 0;
+                  }
+                  if (window.playerStats.abyssalDecayAccumulated === undefined) {
+                    window.playerStats.abyssalDecayAccumulated = 0;
+                  }
+
+                  // Backward Compatibility: Migrate legacy slot attunement or reforge quests
+                  let hasLegacyDailies = window.playerStats.dailyMissions && window.playerStats.dailyMissions.some(m => m.type === "tempers" || m.type === "reforges");
+                  let hasLegacyWeeklies = window.playerStats.weeklyMissions && window.playerStats.weeklyMissions.some(m => m.type === "tempers" || m.type === "reforges");
+
+                  if (hasLegacyDailies || !window.playerStats.dailyMissions || window.playerStats.dailyMissions.length === 0) {
+                    window.QuestSystem.generateDailyMissions();
+                  }
+                  if (hasLegacyWeeklies || (window.playerStats.prestigeCount > 0 && (!window.playerStats.weeklyMissions || window.playerStats.weeklyMissions.length === 0))) {
+                    window.QuestSystem.generateWeeklyMissions();
+                  }
+
+                  // Safely hydrate serialized BigNum rewards back into live instances
+                  if (window.playerStats.dailyMissions) {
+                    window.playerStats.dailyMissions.forEach(m => {
+                      if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
+                      if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
+                    });
+                  }
+                  if (window.playerStats.weeklyMissions) {
+                    window.playerStats.weeklyMissions.forEach(m => {
+                      if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
+                      if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
+                    });
+                  }
+
+                  // Fallback initializers for Field Flask properties
       if (window.playerStats.maxFlaskCharges === undefined)
         window.playerStats.maxFlaskCharges = 1;
       if (window.playerStats.flaskCharges === undefined)

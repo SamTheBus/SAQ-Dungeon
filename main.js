@@ -5001,14 +5001,15 @@
 
   // --- ADVENTURER'S HUB & STATE TRANSITIONS ---
   window.loadHub = function () {
-    if (window.nemesisAnimFrameId) {
-      cancelAnimationFrame(window.nemesisAnimFrameId);
-      window.nemesisAnimFrameId = null;
-    }
-    window.currentGameState = window.GAME_STATES.HUB;
-    window.playerStats.isCrucibleMode = false;
-    window.deathAnimationTimer = 0;
-    window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on Hub load
+      if (window.nemesisAnimFrameId) {
+        cancelAnimationFrame(window.nemesisAnimFrameId);
+        window.nemesisAnimFrameId = null;
+      }
+      window.currentGameState = window.GAME_STATES.HUB;
+      window.playerStats.isCrucibleMode = false;
+      window.deathAnimationTimer = 0;
+      window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on Hub load
+      window.playerStats.abyssalDecayAccumulated = 0; // Clear accumulated siphoned HP
 
     // Clear active dungeon combat entities and gold particles
     window.activeDungeonMobs = [];
@@ -5107,11 +5108,12 @@
   };
 
   window.enterDungeonRun = function (startFloor = 1) {
-      window.currentGameState = window.GAME_STATES.DUNGEON;
-      let startFloorNum = Math.max(1, Number(startFloor) || 1);
-      window.player.depth = startFloorNum;
-      window.player.bag = [];
-      window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on descent
+        window.currentGameState = window.GAME_STATES.DUNGEON;
+        let startFloorNum = Math.max(1, Number(startFloor) || 1);
+        window.player.depth = startFloorNum;
+        window.player.bag = [];
+        window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on descent
+        window.playerStats.abyssalDecayAccumulated = 0; // Clear accumulated siphoned HP
 
       if (typeof window.refillFlaskCharges === "function") {
         window.refillFlaskCharges(true);
@@ -5785,26 +5787,30 @@
       }
 
       if (totals.totalSoulsCost > 0) {
-        window.inventory.ETC["Monster Soul"] -= totals.totalSoulsCost;
-        if (window.inventory.ETC["Monster Soul"] === 0) {
-          delete window.inventory.ETC["Monster Soul"];
-        }
-      }
+              window.inventory.ETC["Monster Soul"] -= totals.totalSoulsCost;
+              if (window.inventory.ETC["Monster Soul"] === 0) {
+                delete window.inventory.ETC["Monster Soul"];
+              }
+            }
 
-      // Consume & Slot selected sigil
-      let selectedSigilId = window.state.selectedDeploymentSigilId;
-      let activeSigil = null;
-      if (selectedSigilId && window.inventory.SIGIL) {
-        let idx = window.inventory.SIGIL.findIndex(
-          (s) => s.id === selectedSigilId,
-        );
-        if (idx !== -1) {
-          activeSigil = window.inventory.SIGIL[idx];
-          window.inventory.SIGIL.splice(idx, 1);
-        }
-      }
-      window.playerStats.activeDungeonSigil = activeSigil;
-    }
+            // Consume & Slot selected sigil
+            let selectedSigilId = window.state.selectedDeploymentSigilId;
+            let activeSigil = null;
+            if (selectedSigilId && window.inventory.SIGIL) {
+              let idx = window.inventory.SIGIL.findIndex(
+                (s) => s.id === selectedSigilId,
+              );
+              if (idx !== -1) {
+                activeSigil = window.inventory.SIGIL[idx];
+                window.inventory.SIGIL.splice(idx, 1);
+              }
+            }
+
+            // Subphase 15: Protect Calamity Sigil from being overwritten by null during special challenge launch
+            if (!window.playerStats.activeSpecialChallenge) {
+              window.playerStats.activeDungeonSigil = activeSigil;
+            }
+          }
 
     if (typeof window.saveGame === "function") window.saveGame();
 
@@ -5966,98 +5972,140 @@
   };
 
   window.onBossDefeated = function (tileX, tileY) {
-    let map = window.activeDungeonMap;
-    let depth = window.player.depth || 1;
+      let map = window.activeDungeonMap;
+      let depth = window.player.depth || 1;
 
-    // Refill Field Flask charges upon defeating a boss
-    window.refillFlaskCharges(false);
+      // Refill Field Flask charges upon defeating a boss
+      window.refillFlaskCharges(false);
 
-    let nextCheckpoint = depth + 1;
-    window.playerStats.unlockedCheckpoints = window.playerStats
-      .unlockedCheckpoints || [1];
-    if (!window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)) {
-      window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
-      window.playerStats.unlockedCheckpoints.sort((a, b) => a - b);
-    }
-    window.playerStats.maxFloorCleared = Math.max(
-      window.playerStats.maxFloorCleared || 0,
-      depth,
-    );
-    if (typeof window.saveGame === "function") window.saveGame();
+      let nextCheckpoint = depth + 1;
+      window.playerStats.unlockedCheckpoints = window.playerStats
+        .unlockedCheckpoints || [1];
+      if (!window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)) {
+        window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
+        window.playerStats.unlockedCheckpoints.sort((a, b) => a - b);
+      }
+      window.playerStats.maxFloorCleared = Math.max(
+        window.playerStats.maxFloorCleared || 0,
+        depth,
+      );
+      if (typeof window.saveGame === "function") window.saveGame();
 
-    if (
-      map &&
-      map.grid &&
-      map.grid[tileY] &&
-      map.grid[tileY][tileX] !== undefined
-    ) {
-      map.grid[tileY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
-    }
-    window.spawnFloatingText(
-      window.player.x,
-      window.player.y - 25,
-      "CHECKPOINT UNLOCKED - EXTRACTION OPEN",
-      "#00d2ff",
-    );
-  };
+      if (map && map.grid && map.grid[tileY] && map.grid[tileY][tileX] !== undefined) {
+        if (window.playerStats.activeSpecialChallenge) {
+          if (depth < 4) {
+            // Floors 1-3: Slaying the Warden opens the locked descent portal to the next stage
+            map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
+            window.spawnFloatingText(
+              window.player.x,
+              window.player.y - 25,
+              "WARDEN SLAIN - DESCENT PORTAL ACTIVE",
+              "#ffd700"
+            );
+          } else {
+            // Floor 4: Both Overlords are defeated! Spawn Special Coffer (Astral Vault) & exit portal
+            map.grid[tileY][tileX] = window.TILE_TYPES.CHEST_SPAWN;
+            map.chestTiers[`${tileX},${tileY}`] = "astral";
+
+            // Safe positioning of exit portal 2 tiles away from Special Coffer
+            let exitY = tileY + 2 < map.height - 1 ? tileY + 2 : tileY - 2;
+            map.grid[exitY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
+
+            window.spawnFloatingText(
+              window.player.x,
+              window.player.y - 25,
+              "VICTORY! SPECIAL COFFER DISPENSED",
+              "#ffd700"
+            );
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast("✦ Special Coffer spawned! Claim your loot and extract!", "#ffd700");
+            }
+          }
+        } else {
+          // Standard campaign boss progression
+          map.grid[tileY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
+          window.spawnFloatingText(
+            window.player.x,
+            window.player.y - 25,
+            "CHECKPOINT UNLOCKED - EXTRACTION OPEN",
+            "#00d2ff"
+          );
+        }
+      }
+    };
 
   window.activeDungeonMobs = [];
 
   window.loadDungeonFloor = function (depth) {
-    if (!window.activeDungeonMap) return;
+      if (!window.activeDungeonMap) return;
 
-    // Strict Extraction Rules: Discard and reset uncollected floor state
-    window.groundLoot = [];
-    window.groundMaterials = [];
-    window.goldParticles = [];
-    window.heartOrbs = [];
-    window.xpOrbs = [];
-    window.cavernInteractives = [];
-    window.activeDungeonMobs = [];
-    window.mob = null;
-    window.projectiles = [];
-    window.floorTimeElapsed = 0;
-    window.calamitySpecterActive = false;
-    if (window.activeDungeonMap) {
-      window.activeDungeonMap.openedChests = new Set();
-    }
-
-    let isMiniBoss = false;
-    let isMajorBoss = false;
-    let map;
-
-    if (window.playerStats.isCrucibleMode) {
-      map = window.activeDungeonMap.generateOnslaughtArena();
-      window.state.onslaughterWaveLock = false;
-      setTimeout(() => {
-        window.spawnOnslaughtWave(window.playerStats.crucibleWave || 1);
-      }, 100);
-    } else {
-      isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
-      isMajorBoss = depth % 12 === 0;
-
-      if (isMiniBoss || isMajorBoss) {
-        map = window.activeDungeonMap.generateBossArena();
-      } else {
-        map = window.activeDungeonMap.generate(depth);
+      // Strict Extraction Rules: Discard and reset uncollected floor state
+      window.groundLoot = [];
+      window.groundMaterials = [];
+      window.goldParticles = [];
+      window.heartOrbs = [];
+      window.xpOrbs = [];
+      window.cavernInteractives = [];
+      window.activeDungeonMobs = [];
+      window.mob = null;
+      window.projectiles = [];
+      window.floorTimeElapsed = 0;
+      window.calamitySpecterActive = false;
+      if (window.activeDungeonMap) {
+        window.activeDungeonMap.openedChests = new Set();
       }
-    }
-    let tileSize = map.tileSize;
 
-    window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
-    window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
-    window.player.targetX = window.player.x;
-    window.player.targetY = window.player.y;
+      let isMiniBoss = false;
+      let isMajorBoss = false;
+      let map;
 
-    if (isMajorBoss) {
-      let cx = Math.floor(map.width / 2);
-      let cy = Math.floor(map.height / 2);
-      window.spawnBossEncounter(cx, cy, "major");
-    } else if (isMiniBoss) {
-      let cx = Math.floor(map.width / 2);
-      let cy = Math.floor(map.height / 2);
-      window.spawnBossEncounter(cx, cy, "mini");
-    } else if (map.mobSpawns) {
+      let isChallenge = window.playerStats.activeSpecialChallenge !== null;
+
+      if (isChallenge) {
+        if (depth === 4) {
+          map = window.activeDungeonMap.generateBossArena();
+        } else {
+          map = window.activeDungeonMap.generate(depth);
+        }
+      } else if (window.playerStats.isCrucibleMode) {
+        map = window.activeDungeonMap.generateOnslaughtArena();
+        window.state.onslaughterWaveLock = false;
+        setTimeout(() => {
+          window.spawnOnslaughtWave(window.playerStats.crucibleWave || 1);
+        }, 100);
+      } else {
+        isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
+        isMajorBoss = depth % 12 === 0;
+
+        if (isMiniBoss || isMajorBoss) {
+          map = window.activeDungeonMap.generateBossArena();
+        } else {
+          map = window.activeDungeonMap.generate(depth);
+        }
+      }
+      let tileSize = map.tileSize;
+
+      window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
+      window.player.y = map.spawnTile.y * tileSize + tileSize / 2;
+      window.player.targetX = window.player.x;
+      window.player.targetY = window.player.y;
+
+      if (isChallenge) {
+        if (depth === 4) {
+          window.ChallengeEngine.spawnTwinBosses(map);
+        } else {
+          // Spawn the floor's Guardian Warden right at the exit portal tile to block descent
+          window.spawnBossEncounter(map.extractionTile.x, map.extractionTile.y, "mini");
+        }
+      } else if (isMajorBoss) {
+        let cx = Math.floor(map.width / 2);
+        let cy = Math.floor(map.height / 2);
+        window.spawnBossEncounter(cx, cy, "major");
+      } else if (isMiniBoss) {
+        let cx = Math.floor(map.width / 2);
+        let cy = Math.floor(map.height / 2);
+        window.spawnBossEncounter(cx, cy, "mini");
+      } else if (map.mobSpawns) {
       let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
       // Aligned with exponential item scaling to maintain a tight, balanced progression curve
@@ -6724,10 +6772,15 @@
   };
 
   window.interactWithStation = function (stationType) {
-    if (stationType === window.TILE_TYPES.STATION_PORTAL) {
-      window.playerStats.isCrucibleMode = false;
-      window.openHubPortalModal();
-    } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
+      if (stationType === window.TILE_TYPES.STATION_PORTAL) {
+        if (window.playerStats.activeSpecialChallenge) {
+          // Direct launch: Bypass deployment setup panel and directly descend into run
+          window.executeDeployment(true);
+        } else {
+          window.playerStats.isCrucibleMode = false;
+          window.openHubPortalModal();
+        }
+      } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
       if (typeof window.toggleForgeModal === "function") {
         window.toggleForgeModal();
       }
@@ -6740,10 +6793,14 @@
         window.openGachaModal();
       }
     } else if (stationType === window.TILE_TYPES.STATION_SHOP) {
-      if (typeof window.toggleShopModal === "function") {
-        window.toggleShopModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_INN) {
+          if (typeof window.toggleShopModal === "function") {
+            window.toggleShopModal();
+          }
+        } else if (stationType === window.TILE_TYPES.STATION_BOUNTY) {
+          if (typeof window.toggleBountyModal === "function") {
+            window.toggleBountyModal();
+          }
+        } else if (stationType === window.TILE_TYPES.STATION_INN) {
       let isUnlocked = (window.playerStats.maxFloorCleared || 0) >= 36;
       if (!isUnlocked) {
         if (typeof window.pushHeaderToast === "function") {
@@ -6900,20 +6957,24 @@
       }
 
       let modal = document.getElementById("portal-modal");
-      if (modal) modal.style.display = "none";
+            if (modal) modal.style.display = "none";
 
-      let p = window.player;
-      let map = window.activeDungeonMap;
-      if (map && map.grid && p) {
-        let tx = Math.floor(p.x / map.tileSize);
-        let ty = Math.floor(p.y / map.tileSize);
-        if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
-          map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
-        }
-      }
+            let p = window.player;
+            let map = window.activeDungeonMap;
+            if (map && map.grid && p) {
+              let tx = Math.floor(p.x / map.tileSize);
+              let ty = Math.floor(p.y / map.tileSize);
+              if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
+                map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
+              }
+            }
 
-      window.player.depth++;
-      window.loadDungeonFloor(window.player.depth);
+            if (typeof window.progressMission === "function") {
+              window.progressMission("dungeons", 1);
+            }
+
+            window.player.depth++;
+            window.loadDungeonFloor(window.player.depth);
     };
 
     window.executePortalExtract = function (bypassWarning = false) {
@@ -6941,19 +7002,23 @@
       }
 
       let modal = document.getElementById("portal-modal");
-      if (modal) modal.style.display = "none";
+            if (modal) modal.style.display = "none";
 
-      let p = window.player;
-      let map = window.activeDungeonMap;
-      if (map && map.grid && p) {
-        let tx = Math.floor(p.x / map.tileSize);
-        let ty = Math.floor(p.y / map.tileSize);
-        if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
-          map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
-        }
-      }
+            let p = window.player;
+            let map = window.activeDungeonMap;
+            if (map && map.grid && p) {
+              let tx = Math.floor(p.x / map.tileSize);
+              let ty = Math.floor(p.y / map.tileSize);
+              if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
+                map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
+              }
+            }
 
-      window.triggerExtraction(true);
+            if (typeof window.progressMission === "function") {
+              window.progressMission("dungeons", 1);
+            }
+
+            window.triggerExtraction(true);
     };
 
   window.decrementPotionRunCharges = function () {
@@ -7190,44 +7255,81 @@
     }
 
     if (success) {
-      titleEl.innerText = "EXTRACTION SUCCESSFUL";
-      titleEl.style.color = "#2ecc71";
+              titleEl.innerText = "EXTRACTION SUCCESSFUL";
+              titleEl.style.color = "#2ecc71";
 
-      window.playerStats.successfulExtractions =
-        (window.playerStats.successfulExtractions || 0) + 1;
-      let maxBag =
-        typeof window.getMaxBagSlots === "function"
-          ? window.getMaxBagSlots()
-          : 20;
-      if (extractedLoot.length >= maxBag) {
-        window.playerStats.hasTriggeredFullBag = true;
-      }
+              window.playerStats.successfulExtractions =
+                (window.playerStats.successfulExtractions || 0) + 1;
+              let maxBag =
+                typeof window.getMaxBagSlots === "function"
+                  ? window.getMaxBagSlots()
+                  : 20;
+              if (extractedLoot.length >= maxBag) {
+                window.playerStats.hasTriggeredFullBag = true;
+              }
 
-      // Deposit pending run scraps into permanent inventory
-      pendingScrapsList.forEach((s) => {
-        if (typeof window.addEtcDrop === "function") {
-          window.addEtcDrop(s.name, s.count, true);
-        }
-      });
-      window.player.pendingScraps = {};
+              if (typeof window.progressMission === "function") {
+                if (window.player && window.player.bag) {
+                  window.progressMission("bag", window.player.bag.length);
+                }
+                if (window.playerStats.activeSpecialChallenge) {
+                  window.progressMission("contracts", 1);
+                }
+              }
 
-      // Commit volatile run pocket gold safely into permanent Vault coins!
-      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(
-        activeRunGold,
-      );
-      window.playerStats.runGold = BigNum.from(0);
+              // Subphase 16: Claim Contract rewards and clear active challenge states
+              let challenge = window.playerStats.activeSpecialChallenge;
+          if (challenge) {
+            let goldReward = BigNum.from(challenge.rewards.gold);
+            let xpReward = BigNum.from(challenge.rewards.xp);
 
-      // Award +25% Extraction Bonus XP on total run earnings (base XP already gained in-run)
-      let runXp = window.playerStats.runXp || 0;
-      let bonusXp = Math.floor(runXp * 0.25);
+            window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(goldReward);
+            if (typeof window.gainXp === "function") {
+              window.gainXp(xpReward);
+            }
+            window.playerStats.astralShards = (window.playerStats.astralShards || 0) + challenge.rewards.shards;
+            if (typeof window.addEtcDrop === "function") {
+              window.addEtcDrop("Catalyst Core", challenge.rewards.cores, true);
+            }
 
-      if (bonusXp > 0 && typeof window.gainXp === "function") {
-        window.gainXp(bonusXp);
-      }
-      window.playerStats.runXp = 0;
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(`✦ Contract Completed! Gained +${window.formatNumber(goldReward)} Gold, +${challenge.rewards.shards} Shards!`, "#ffd700");
+            }
 
-      if (subEl)
-        subEl.innerText = `Secured ${extractedLoot.length} items, ${window.formatNumber(activeRunGold)} Gold & ${pendingScrapsList.length} scraps to Vault! (+25% Bonus XP)`;
+            window.playerStats.activeSpecialChallenge = null;
+            window.playerStats.activeDungeonSigil = null;
+          }
+
+          // Deposit pending run scraps into permanent inventory
+          pendingScrapsList.forEach((s) => {
+            if (typeof window.addEtcDrop === "function") {
+              window.addEtcDrop(s.name, s.count, true);
+            }
+          });
+          window.player.pendingScraps = {};
+
+          // Commit volatile run pocket gold safely into permanent Vault coins!
+          window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(
+            activeRunGold,
+          );
+          window.playerStats.runGold = BigNum.from(0);
+
+          // Award +25% Extraction Bonus XP on total run earnings (base XP already gained in-run)
+          let runXp = window.playerStats.runXp || 0;
+          let bonusXp = Math.floor(runXp * 0.25);
+
+          if (bonusXp > 0 && typeof window.gainXp === "function") {
+            window.gainXp(bonusXp);
+          }
+          window.playerStats.runXp = 0;
+
+          if (subEl) {
+            if (challenge) {
+              subEl.innerText = `Contract Complete! Secured ${extractedLoot.length} items, ${window.formatNumber(BigNum.from(challenge.rewards.gold).add(activeRunGold))} Gold & ${pendingScrapsList.length} scraps!`;
+            } else {
+              subEl.innerText = `Secured ${extractedLoot.length} items, ${window.formatNumber(activeRunGold)} Gold & ${pendingScrapsList.length} scraps to Vault! (+25% Bonus XP)`;
+            }
+          }
 
       // Save carried bag items permanently to Stash and sync inventory (Separating Gear from Cavern Sigils)
       extractedLoot.forEach((item) => {
@@ -7661,14 +7763,36 @@
       let dist = Math.hypot(dx, dy);
 
       if (dist > 2) {
-        let moveStep = Math.min(p.speed * speedMult, dist);
-        vx = (dx / dist) * moveStep;
-        vy = (dy / dist) * moveStep;
-      }
-    }
+              let moveStep = Math.min(p.speed * speedMult, dist);
+              vx = (dx / dist) * moveStep;
+              vy = (dy / dist) * moveStep;
+            }
+          }
 
-    if (vx !== 0 || vy !== 0) {
-      if (vx < -0.1) p.facing = -1;
+          // --- SUBPHASE 4: SLICK ICE DECELERATION SLIDING PHYSICS ---
+          p.slideVx = p.slideVx || 0;
+          p.slideVy = p.slideVy || 0;
+
+          if (window.isCavernEffectActive && window.isCavernEffectActive("slick_ice")) {
+            if (vx !== 0 || vy !== 0) {
+              p.slideVx += (vx - p.slideVx) * 0.12; // Smooth acceleration on ice
+              p.slideVy += (vy - p.slideVy) * 0.12;
+            } else {
+              p.slideVx *= 0.95; // Ice sliding friction decay
+              p.slideVy *= 0.95;
+              if (Math.abs(p.slideVx) < 0.05) p.slideVx = 0;
+              if (Math.abs(p.slideVy) < 0.05) p.slideVy = 0;
+            }
+            vx = p.slideVx;
+            vy = p.slideVy;
+          } else {
+            p.slideVx = 0;
+            p.slideVy = 0;
+          }
+          // -----------------------------------------------------------
+
+          if (vx !== 0 || vy !== 0) {
+            if (vx < -0.1) p.facing = -1;
       else if (vx > 0.1) p.facing = 1;
 
       let pRadius = p.radius || 9;
@@ -7795,8 +7919,15 @@
     }
 
     // Execute Top-Down Combat & Gold / XP Magnet Mechanics
-    window.updateCavernEffects();
-    window.updateHeroBuffParticles();
+        window.updateCavernEffects();
+
+        // --- SUBPHASE 5: UPDATE SPECIAL CHALLENGES & CAVERN MUTATORS ENGINE ---
+        if (window.ChallengeEngine && typeof window.ChallengeEngine.update === "function") {
+          window.ChallengeEngine.update(map, p);
+        }
+        // ----------------------------------------------------------------------
+
+        window.updateHeroBuffParticles();
     window.updateDungeonCombat();
     window.updateGoldParticles();
     window.updateHeartOrbs();
@@ -7887,14 +8018,21 @@
         let tile = map.grid[currentTileY][currentTileX];
 
         if (tile === window.TILE_TYPES.DESCENT_PORTAL) {
-          map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
-          window.executePortalDescend();
-        } else if (
-          tile === window.TILE_TYPES.EXTRACTION_ZONE ||
-          tile === window.TILE_TYPES.BOSS_GATE
-        ) {
-          window.openPortalChoiceModal();
-        }
+                  // Subphase 16: Lock descent portals on Floors 1-3 until the active Warden mini-boss is slain
+                  if (window.playerStats.activeSpecialChallenge && window.mob) {
+                    if (window.logicClock % 60 === 0) {
+                      window.spawnFloatingText(p.x, p.y - 25, "PORTAL LOCKED - DEFEAT THE WARDEN!", "#ef4444");
+                    }
+                  } else {
+                    map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
+                    window.executePortalDescend();
+                  }
+                } else if (
+                  tile === window.TILE_TYPES.EXTRACTION_ZONE ||
+                  tile === window.TILE_TYPES.BOSS_GATE
+                ) {
+                  window.openPortalChoiceModal();
+                }
 
         if (tile === window.TILE_TYPES.RECOVERY_CHEST) {
           if (!window.isChestOpened(currentTileX, currentTileY)) {
@@ -8254,17 +8392,22 @@
   };
 
   window.addEtcDrop = function (name, qty, silent = false) {
-    if (!window.inventory)
-      window.inventory = {
-        EQUIP: [],
-        ARTIFACT: [],
-        SIGIL: [],
-        ETC: {},
-        USE: {},
-      };
-    if (!window.inventory.ETC) window.inventory.ETC = {};
-    window.inventory.ETC[name] = (window.inventory.ETC[name] || 0) + qty;
-    if (!silent && typeof window.pushMaterialToast === "function") {
+      if (!window.inventory)
+        window.inventory = {
+          EQUIP: [],
+          ARTIFACT: [],
+          SIGIL: [],
+          ETC: {},
+          USE: {},
+        };
+      if (!window.inventory.ETC) window.inventory.ETC = {};
+      window.inventory.ETC[name] = (window.inventory.ETC[name] || 0) + qty;
+
+      if (name === "Luminous Soul" && typeof window.progressMission === "function") {
+        window.progressMission("luminous", qty);
+      }
+
+      if (!silent && typeof window.pushMaterialToast === "function") {
       window.pushMaterialToast(name, qty);
     }
   };
@@ -9637,12 +9780,16 @@
   };
 
   window.destroyBreakableProp = function (prop, worldX, worldY) {
-    if (!prop) return;
+      if (!prop) return;
 
-    // Reset Spreading Fatigue speed penalty on breakable shatter
-    window.fatiguePenalty = 0;
+      // Reset Spreading Fatigue speed penalty on breakable shatter
+      window.fatiguePenalty = 0;
 
-    let map = window.activeDungeonMap;
+      if (typeof window.progressMission === "function") {
+        window.progressMission("pottery", 1);
+      }
+
+      let map = window.activeDungeonMap;
     if (map) {
       if (
         map.grid &&
@@ -10684,14 +10831,33 @@
       else if (dxToTarget > 0.1) p.facing = 1;
 
       if (closestTarget.type === "mob") {
-        let m = closestTarget.obj;
-        let isCrit = Math.random() < (pStats.critChance || 0.05);
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+            let m = closestTarget.obj;
+            m.lastHitTime = window.logicClock; // Set hit timestamp for regenerative brood tracking
 
-        m.hp = m.hp.sub(pAtk);
-        m.hasTakenDamage = true;
-        m.flashTimer = 6;
+            let isCrit = Math.random() < (pStats.critChance || 0.05);
+            let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+            let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+
+            // --- SUBPHASE 7: KINETIC REFLECTORS CONE CHECK ---
+            if (window.isCavernEffectActive && window.isCavernEffectActive("kinetic_reflectors") && !m.isFriendlyWisp) {
+              let isFrontal = (m.facing === -1 && p.x < m.x + m.w / 2) || (m.facing === 1 && p.x > m.x + m.w / 2);
+              if (isFrontal) {
+                m.flashTimer = 4;
+                let reflectedDmg = Math.round(pAtk.valueOf() * 0.20);
+                window.damagePlayer(reflectedDmg, m);
+                if (window.SoundManager) window.SoundManager.play("block");
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 6, "animated_armor", 2.2);
+                  window.spawnFloatingText(m.x + m.w / 2, m.y - 12, "DEFLECTED!", "#00d2ff");
+                }
+                return; // Skip standard damage resolution
+              }
+            }
+            // -------------------------------------------------
+
+            m.hp = m.hp.sub(pAtk);
+            m.hasTakenDamage = true;
+            m.flashTimer = 6;
 
         // Track Critical Streaks for Wind-Razor Flurry
         let windFlurryLevel = window.SkillTreeManager
@@ -11266,10 +11432,14 @@
         let activeSpellType = pStats.spellType || "tri";
 
         if (isTomeEquipped && Math.random() < activeSpellChance) {
-          // Gain +1 Tome Mastery XP on Spell Proc
-          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
+                  // Gain +1 Tome Mastery XP on Spell Proc
+                  if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
 
-          let spellDmg = BigNum.from(pStats.atk || 15).mul(
+                  if (typeof window.progressMission === "function") {
+                    window.progressMission("spells", 1);
+                  }
+
+                  let spellDmg = BigNum.from(pStats.atk || 15).mul(
             pStats.spellPower || 1.5,
           );
           m.hp = m.hp.sub(spellDmg);
@@ -11677,11 +11847,26 @@
     }
 
     // Process active room mobs (Standard logic loop)
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
-        let m = window.activeDungeonMobs[i];
+        if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+          for (let i = window.activeDungeonMobs.length - 1; i >= 0; i--) {
+            let m = window.activeDungeonMobs[i];
 
-        // Intercept Specter wall-passing physics and instant-death contact checks
+            // --- SUBPHASE 7: REGENERATIVE BROOD HEALTH TICK ---
+            if (window.isCavernEffectActive && window.isCavernEffectActive("regenerative_brood") && m.hp.gt(0) && !m.isFriendlyWisp && !m.isBoss) {
+              let lastHit = m.lastHitTime || 0;
+              if (window.logicClock - lastHit >= 180) { // 3 seconds of peace
+                if (window.logicClock % 120 === 0) { // Every 2 seconds
+                  let healVal = m.maxHp.mul(0.03); // Heal 3% Max HP
+                  m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 3, "default_slime", 1.0);
+                  }
+                }
+              }
+            }
+            // --------------------------------------------------
+
+            // Intercept Specter wall-passing physics and instant-death contact checks
         if (m.isSpecter) {
           let sDx = p.x - (m.x + m.w / 2);
           let sDy = p.y - (m.y + m.h / 2);
@@ -12021,11 +12206,81 @@
         }
 
         // Check death state after any potential hit
-        if (m.hp.lte(0)) {
-          // Reset Spreading Fatigue speed penalty on kill
-          window.fatiguePenalty = 0;
+                if (m.hp.lte(0)) {
+                  // Reset Spreading Fatigue speed penalty on kill
+                  window.fatiguePenalty = 0;
 
-          // Check Magma Vent & Spore harmless pop bypass
+                  // --- SUBPHASE 7: SPAWNING DIVISION SPLIT ---
+                              let canDivide = m.visualType !== "sprout" && m.visualType !== "slime" && m.visualType !== "sprout_cocoon" && m.visualType !== "toxic_spore" && m.visualType !== "magma_vent" && !m.isBossSummon && !m.isFriendlyWisp;
+                              if (canDivide && window.isCavernEffectActive && window.isCavernEffectActive("spawning_division")) {
+                                let stageScale = window.player ? window.player.depth || 1 : 1;
+                                let enemyScale = window.playerStats ? (window.playerStats.currentRunEnemyStrength || 1.0) : 1.0;
+                                let repStage = window.getEffectiveStage(stageScale * 5);
+                                let repScale = Math.pow(1.045 + (repStage * 0.04) / (repStage + 200), repStage * 0.95);
+                                let subMobHp = Math.round(15 * repScale * enemyScale);
+                                let subMobAtk = Math.round(4 * repScale * enemyScale);
+
+                                // Subphase 10: Gaseous Spawning Division Particle Puff
+                                if (window.ParticlePool && window.particles) {
+                                  let mCx = m.x + m.w / 2;
+                                  let mCy = m.y + m.h / 2;
+                                  let pCount = window.randInt(10, 15);
+                                  for (let pIdx = 0; pIdx < pCount; pIdx++) {
+                                    let pAngle = Math.random() * Math.PI * 2;
+                                    let pSpeed = window.randFloat(0.8, 2.5);
+                                    let pLife = window.randInt(15, 28);
+                                    let pt = window.ParticlePool.get(
+                                      mCx,
+                                      mCy,
+                                      Math.cos(pAngle) * pSpeed,
+                                      Math.sin(pAngle) * pSpeed - 1.0, // Mild upward float bias
+                                      window.randFloat(2.0, 3.8),
+                                      Math.random() < 0.5 ? "#2ecc71" : "#a3fd83",
+                                      0.9,
+                                      pLife,
+                                      pLife,
+                                      -0.04, // Upward floating gravity
+                                      true,
+                                      0.95
+                                    );
+                                    pt.style = "glowing_orb";
+                                    pt.scaleDecay = 0.02;
+                                    window.particles.push(pt);
+                                  }
+                                }
+
+                                for (let k = 0; k < 2; k++) {
+                                  let angle = Math.random() * Math.PI * 2;
+                                  let offsetDist = 12;
+                                  let sx = m.x + Math.cos(angle) * offsetDist;
+                                  let sy = m.y + Math.sin(angle) * offsetDist;
+
+                                  window.activeDungeonMobs.push({
+                                    id: window.idCounter++,
+                                    type: "mob",
+                                    visualTier: 0,
+                                    visualType: Math.random() < 0.5 ? "slime" : "sprout",
+                                    x: sx,
+                                    y: sy,
+                                    homeX: sx,
+                                    homeY: sy,
+                                    w: 20, // Slightly smaller sub-unit
+                                    h: 20,
+                                    hp: BigNum.from(subMobHp),
+                                    maxHp: BigNum.from(subMobHp),
+                                    atk: subMobAtk,
+                                    flashTimer: 0,
+                                    attackCooldown: 30, // Brief immunity/recovery before they strike
+                                    facing: -1,
+                                    isBossSummon: true, // Prevent endless splitting loops
+                                    discovered: true,
+                                    hopTimer: window.randInt(0, 29),
+                                  });
+                                }
+                              }
+                              // --------------------------------------------
+
+                  // Check Magma Vent & Spore harmless pop bypass
           if (m.isMagmaVent || m.isSpore) {
             let theme = m.isMagmaVent ? "magma_elemental" : "swamp_basilisk";
             if (window.combatVisuals) {
@@ -12043,13 +12298,23 @@
           }
 
           window.playerStats.totalLifetimeKills =
-            (window.playerStats.totalLifetimeKills || 0) + 1;
-          if (m.isRare) {
-            window.playerStats.rareSpawnsSlain =
-              (window.playerStats.rareSpawnsSlain || 0) + 1;
-          }
+                      (window.playerStats.totalLifetimeKills || 0) + 1;
+                    if (m.isRare) {
+                      window.playerStats.rareSpawnsSlain =
+                        (window.playerStats.rareSpawnsSlain || 0) + 1;
+                    }
 
-          // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
+                    if (typeof window.progressMission === "function") {
+                      window.progressMission("kills", 1);
+                      if (m.isRare) {
+                        window.progressMission("rares", 1);
+                      }
+                      if (m.isRiftGuardian || m.type === "rift_guardian") {
+                        window.progressMission("rifts", 1);
+                      }
+                    }
+
+                    // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
           if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
             m.isDetonating = true;
             m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
@@ -12928,183 +13193,205 @@
         }
 
         if (bm.hp.lte(0)) {
-          window.playerStats.totalLifetimeKills =
-            (window.playerStats.totalLifetimeKills || 0) + 1;
-          window.playerStats.rareSpawnsSlain =
-            (window.playerStats.rareSpawnsSlain || 0) + 1;
+                  window.playerStats.totalLifetimeKills =
+                    (window.playerStats.totalLifetimeKills || 0) + 1;
+                  window.playerStats.rareSpawnsSlain =
+                    (window.playerStats.rareSpawnsSlain || 0) + 1;
 
-          if (window.spawnDeathParticles) {
-            window.spawnDeathParticles(
-              bm.x + bm.w / 2,
-              bm.y + bm.h / 2,
-              "boss",
-            );
-          }
-          let rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
-          let rewardXp = Math.floor(120 + window.player.depth * 25);
-          window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
-          window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
+                  if (window.spawnDeathParticles) {
+                    window.spawnDeathParticles(
+                      bm.x + bm.w / 2,
+                      bm.y + bm.h / 2,
+                      "boss",
+                    );
+                  }
+                  let rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
+                  let rewardXp = Math.floor(120 + window.player.depth * 25);
+                  window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
+                  window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
 
-          let bossCenterX = bm.x + bm.w / 2;
-          let bossCenterY = bm.y + bm.h / 2;
+                  // Subphase 16: Intercept twin boss deaths on Floor 4 to swap active combat camera anchor
+                  let otherLivingBoss = null;
+                  if (window.playerStats.activeSpecialChallenge && window.player.depth === 4 && window.activeDungeonMobs) {
+                    otherLivingBoss = window.activeDungeonMobs.find(other =>
+                      other.id !== bm.id &&
+                      (other.type === "dungeon_boss" || other.type === "dungeon_miniboss") &&
+                      other.hp.gt(0)
+                    );
+                  }
 
-          // Trigger Noxious Bloom on Boss death
-          if (window.checkAndSpawnNoxiousBloom) {
-            window.checkAndSpawnNoxiousBloom(bm, bossCenterX, bossCenterY);
-          }
+                  if (otherLivingBoss) {
+                                      window.mob = otherLivingBoss;
 
-          // Guaranteed 1-3 healing hearts on Boss defeat
-          if (typeof window.spawnHomingHearts === "function") {
-            let heartHeal = Math.round(p.maxHp * 0.15);
-            let numHearts = window.randInt(1, 3);
-            for (let h = 0; h < numHearts; h++) {
-              window.spawnHomingHearts(
-                bm.x + bm.w / 2,
-                bm.y + bm.h / 2,
-                heartHeal,
-              );
-            }
-          }
+                                      // Cleanly remove the defeated twin from the active rendering arrays
+                                      let idx = window.activeDungeonMobs.findIndex(x => x.id === bm.id);
+                                      if (idx !== -1) window.activeDungeonMobs.splice(idx, 1);
 
-          // Boss Material Payload
-          let soulCount = Math.floor(Math.random() * 4) + 3;
-          window.addDungeonRunScrap(
-            "Monster Soul",
-            soulCount,
-            bossCenterX,
-            bossCenterY,
-          );
+                                      if (typeof window.spawnFloatingText === "function") {
+                                        window.spawnFloatingText(bm.x + bm.w / 2, bm.y - 12, "ONE GUARDIAN DOWN!", "#ef4444");
+                                      }
+                                    } else {
+                                      let bossCenterX = bm.x + bm.w / 2;
+                                      let bossCenterY = bm.y + bm.h / 2;
 
-          let depth = window.player.depth || 1;
-          let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
-          let scrapName = window.getScrapYieldName(scrapTier);
-          window.addDungeonRunScrap(
-            scrapName,
-            Math.floor(Math.random() * 3) + 2,
-            bossCenterX,
-            bossCenterY,
-          );
+                                      // Trigger Noxious Bloom on Boss death
+                                      if (window.checkAndSpawnNoxiousBloom) {
+                                        window.checkAndSpawnNoxiousBloom(bm, bossCenterX, bossCenterY);
+                                      }
 
-          if (depth >= 12 && Math.random() < 0.6) {
-            window.addDungeonRunScrap(
-              "Eridium Shard",
-              1,
-              bossCenterX,
-              bossCenterY,
-            );
-          }
+                                      // Guaranteed 1-3 healing hearts on Boss defeat
+                                      if (typeof window.spawnHomingHearts === "function") {
+                                        let heartHeal = Math.round(p.maxHp * 0.15);
+                                        let numHearts = window.randInt(1, 3);
+                                        for (let h = 0; h < numHearts; h++) {
+                                          window.spawnHomingHearts(
+                                            bm.x + bm.w / 2,
+                                            bm.y + bm.h / 2,
+                                            heartHeal,
+                                          );
+                                        }
+                                      }
 
-          // Cavern Sigil Drop Logic for Bosses
-          let isMini = bm.type === "dungeon_miniboss";
-          let sigilBaseRate = isMini ? 0.2 : 0.5;
-          let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
-          if (Math.random() < sigilRollRate) {
-            let maxSigilStars = 0;
-            let cleared = window.playerStats.maxFloorCleared || 0;
-            if (cleared >= 120) maxSigilStars = 5;
-            else if (cleared >= 72) maxSigilStars = 4;
-            else if (cleared >= 48) maxSigilStars = 3;
-            else if (cleared >= 24) maxSigilStars = 2;
-            else if (cleared >= 12) maxSigilStars = 1;
-            maxSigilStars = Math.max(1, maxSigilStars);
+                                      // Boss Material Payload
+                                      let soulCount = Math.floor(Math.random() * 4) + 3;
+                                      window.addDungeonRunScrap(
+                                        "Monster Soul",
+                                        soulCount,
+                                        bossCenterX,
+                                        bossCenterY,
+                                      );
 
-            let rolledSigilRarity = window.rollSigilRarity(
-              maxSigilStars,
-              pStats.qly || 1.0,
-            );
-            let stageScale = window.player.depth || 1;
-            let sigilItem = window.createItemObject(
-              "sigil",
-              rolledSigilRarity,
-              stageScale,
-              0,
-            );
-            window.spawnGroundLoot(sigilItem, bm.x + bm.w / 2, bm.y + bm.h / 2);
-          }
+                                      let depth = window.player.depth || 1;
+                                      let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
+                                      let scrapName = window.getScrapYieldName(scrapTier);
+                                      window.addDungeonRunScrap(
+                                        scrapName,
+                                        Math.floor(Math.random() * 3) + 2,
+                                        bossCenterX,
+                                        bossCenterY,
+                                      );
 
-          // Standard On-Stage Boss Equipment Drop (Blocked in Crucible/Onslaught Mode)
-          if (!window.playerStats.isCrucibleMode) {
-            let stageScale = depth;
-            let rolledRarity = window.rollItemRarity(
-              window.playerStats.maxFloorCleared || 0,
-              pStats.qly || 1.0,
-              false,
-            );
-            let types = [
-              "weapon",
-              "subweapon",
-              "helmet",
-              "chest",
-              "boots",
-              "ring",
-            ];
-            let chosenType = types[Math.floor(Math.random() * types.length)];
-            let bossEquip = window.createItemObject(
-              chosenType,
-              rolledRarity,
-              stageScale,
-              0,
-            );
-            window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
-          }
+                                      if (depth >= 12 && Math.random() < 0.6) {
+                                        window.addDungeonRunScrap(
+                                          "Eridium Shard",
+                                          1,
+                                          bossCenterX,
+                                          bossCenterY,
+                                        );
+                                      }
 
-          // First-Time Boss Clear Key Reward Logic
-          if (!window.playerStats.firstClearBosses)
-            window.playerStats.firstClearBosses = [];
-          if (!window.playerStats.firstClearBosses.includes(depth)) {
-            window.playerStats.firstClearBosses.push(depth);
-            let isMajorBoss = depth % 12 === 0;
+                                      // Cavern Sigil Drop Logic for Bosses
+                                      let isMini = bm.type === "dungeon_miniboss";
+                                      let sigilBaseRate = isMini ? 0.2 : 0.5;
+                                      let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
+                                      if (Math.random() < sigilRollRate) {
+                                        let maxSigilStars = 0;
+                                        let cleared = window.playerStats.maxFloorCleared || 0;
+                                        if (cleared >= 120) maxSigilStars = 5;
+                                        else if (cleared >= 72) maxSigilStars = 4;
+                                        else if (cleared >= 48) maxSigilStars = 3;
+                                        else if (cleared >= 24) maxSigilStars = 2;
+                                        else if (cleared >= 12) maxSigilStars = 1;
+                                        maxSigilStars = Math.max(1, maxSigilStars);
 
-            // Direct to Vault
-            window.addEtcDrop("Gacha Key", 1, false);
-            if (isMajorBoss) {
-              window.addEtcDrop("Glimmering Gachapon Key", 1, false);
-            }
+                                        let rolledSigilRarity = window.rollSigilRarity(
+                                          maxSigilStars,
+                                          pStats.qly || 1.0,
+                                        );
+                                        let stageScale = window.player.depth || 1;
+                                        let sigilItem = window.createItemObject(
+                                          "sigil",
+                                          rolledSigilRarity,
+                                          stageScale,
+                                          0,
+                                        );
+                                        window.spawnGroundLoot(sigilItem, bm.x + bm.w / 2, bm.y + bm.h / 2);
+                                      }
 
-            if (typeof window.pushHeaderToast === "function") {
-              let toastMsg = isMajorBoss
-                ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
-                : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
-              window.pushHeaderToast(toastMsg, "#f1c40f");
-            }
-          }
+                                      // Standard On-Stage Boss Equipment Drop (Blocked in Crucible/Onslaught Mode)
+                                      if (!window.playerStats.isCrucibleMode) {
+                                        let stageScale = depth;
+                                        let rolledRarity = window.rollItemRarity(
+                                          window.playerStats.maxFloorCleared || 0,
+                                          pStats.qly || 1.0,
+                                          false,
+                                        );
+                                        let types = [
+                                          "weapon",
+                                          "subweapon",
+                                          "helmet",
+                                          "chest",
+                                          "boots",
+                                          "ring",
+                                        ];
+                                        let chosenType = types[Math.floor(Math.random() * types.length)];
+                                        let bossEquip = window.createItemObject(
+                                          chosenType,
+                                          rolledRarity,
+                                          stageScale,
+                                          0,
+                                        );
+                                        window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
+                                      }
 
-          if (window.hasUniquePassive("boots_warpcore")) {
-            window.playerStats.warpCoreSprintTimer = 240; // 4 seconds of Maximum Haste
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 25,
-                "WARP-CORE MAX HASTE!",
-                "#1abc9c",
-              );
-            }
+                                      // First-Time Boss Clear Key Reward Logic
+                                      if (!window.playerStats.firstClearBosses)
+                                        window.playerStats.firstClearBosses = [];
+                                      if (!window.playerStats.firstClearBosses.includes(depth)) {
+                                        window.playerStats.firstClearBosses.push(depth);
+                                        let isMajorBoss = depth % 12 === 0;
 
-            // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Boss Defeat)
-            if (Math.random() < 0.2) {
-              let map = window.activeDungeonMap;
-              let tSize = map ? map.tileSize : 32;
-              let tileX = Math.floor(bossCenterX / tSize);
-              let tileY = Math.floor(bossCenterY / tSize);
-              if (
-                map &&
-                map.grid &&
-                map.grid[tileY] &&
-                map.grid[tileY][tileX] !== undefined
-              ) {
-                map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
-                }
-              }
-            }
-          }
+                                        // Direct to Vault
+                                        window.addEtcDrop("Gacha Key", 1, false);
+                                        if (isMajorBoss) {
+                                          window.addEtcDrop("Glimmering Gachapon Key", 1, false);
+                                        }
 
-          let tileX = bm.bossTileX || Math.floor(bm.x / 32);
-          let tileY = bm.bossTileY || Math.floor(bm.y / 32);
-          window.mob = null;
-          window.onBossDefeated(tileX, tileY);
-        }
+                                        if (typeof window.pushHeaderToast === "function") {
+                                          let toastMsg = isMajorBoss
+                                            ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
+                                            : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
+                                          window.pushHeaderToast(toastMsg, "#f1c40f");
+                                        }
+                                      }
+
+                                      if (window.hasUniquePassive("boots_warpcore")) {
+                                        window.playerStats.warpCoreSprintTimer = 240; // 4 seconds of Maximum Haste
+                                        if (typeof window.spawnFloatingText === "function") {
+                                          window.spawnFloatingText(
+                                            p.x,
+                                            p.y - 25,
+                                            "WARP-CORE MAX HASTE!",
+                                            "#1abc9c",
+                                          );
+                                        }
+
+                                        // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Boss Defeat)
+                                        if (Math.random() < 0.2) {
+                                          let map = window.activeDungeonMap;
+                                          let tSize = map ? map.tileSize : 32;
+                                          let tileX = Math.floor(bossCenterX / tSize);
+                                          let tileY = Math.floor(bossCenterY / tSize);
+                                          if (
+                                            map &&
+                                            map.grid &&
+                                            map.grid[tileY] &&
+                                            map.grid[tileY][tileX] !== undefined
+                                          ) {
+                                            map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
+                                            if (typeof window.pushHeaderToast === "function") {
+                                              window.pushHeaderToast("[✦] SPATIAL RIFT OPENED!", "#1abc9c");
+                                            }
+                                          }
+                                        }
+                                      }
+
+                                      let tileX = bm.bossTileX || Math.floor(bm.x / 32);
+                                      let tileY = bm.bossTileY || Math.floor(bm.y / 32);
+                                      window.mob = null;
+                                      window.onBossDefeated(tileX, tileY);
+                                    }
+                                  }
       }
 
       // Telegraphed Boss Ability AI Engine
@@ -13364,14 +13651,20 @@
     window.renderTopDownMap(ctx, canvas);
 
     // Render Active Room Mobs & Boss in Top-Down Space
-    ctx.save();
-    ctx.scale(window.DungeonCamera.zoom, window.DungeonCamera.zoom);
-    ctx.translate(
-      -Math.floor(window.DungeonCamera.x),
-      -Math.floor(window.DungeonCamera.y),
-    );
+        ctx.save();
+        ctx.scale(window.DungeonCamera.zoom, window.DungeonCamera.zoom);
+        ctx.translate(
+          -Math.floor(window.DungeonCamera.x),
+          -Math.floor(window.DungeonCamera.y),
+        );
 
-    // Helper to Render Enemy Overhead Healthbar with White Chasing Fill
+        // --- SUBPHASE 8: RENDER SPECIAL CHALLENGES & CAVERN MUTATORS RENDER PASS ---
+        if (window.ChallengeEngine && typeof window.ChallengeEngine.render === "function") {
+          window.ChallengeEngine.render(ctx, map);
+        }
+        // ---------------------------------------------------------------------------
+
+        // Helper to Render Enemy Overhead Healthbar with White Chasing Fill
     let drawMobOverheadBar = function (cCtx, m) {
       if (!m || !m.hp || !m.maxHp) return;
       let bHp = BigNum.from(m.hp);
@@ -14858,23 +15151,35 @@
         recLoot.items.length > 0;
 
       // Pre-allocate and reuse part configurations on the global window to enforce zero GC allocations in the loop
-      if (!window._proxParts) {
-        window._proxParts = [
-          { text: "[ ", color: "rgba(255, 255, 255, 0.4)" },
-          { text: "TAP TO ENTER: ", color: "#00d2ff" },
-          { text: "", color: "#ffffff" },
-          { text: "", color: "#ff7675", pulse: true },
-          { text: " ]", color: "rgba(255, 255, 255, 0.4)" },
-        ];
-      }
+            if (!window._proxParts) {
+              window._proxParts = [
+                { text: "[ ", color: "rgba(255, 255, 255, 0.4)" },
+                { text: "TAP TO ENTER: ", color: "#00d2ff" },
+                { text: "", color: "#ffffff" },
+                { text: "", color: "#ff7675", pulse: true },
+                { text: " ]", color: "rgba(255, 255, 255, 0.4)" },
+              ];
+            }
 
-      // Update values in-place inside our recycled array
-      window._proxParts[2].text = st.label.toUpperCase();
-      if (hasRecovery) {
-        window._proxParts[3].text = ` (RECOVER FLOOR ${recLoot.floor})`;
-      } else {
-        window._proxParts[3].text = "";
-      }
+            // Subphase 15: Intercept and swap prompt text if an active challenge is signed
+            let hasChallenge = st.type === window.TILE_TYPES.STATION_PORTAL && window.playerStats.activeSpecialChallenge;
+            if (hasChallenge) {
+              window._proxParts[1].text = "CHALLENGE ACTIVE: ";
+              window._proxParts[1].color = "#ef4444"; // High-contrast crimson warning
+              window._proxParts[2].text = window.playerStats.activeSpecialChallenge.name.toUpperCase();
+              window._proxParts[3].text = " (TAP TO RUN)";
+              window._proxParts[3].color = "#ff7675";
+            } else {
+              window._proxParts[1].text = "TAP TO ENTER: ";
+              window._proxParts[1].color = "#00d2ff";
+              window._proxParts[2].text = st.label.toUpperCase();
+              if (hasRecovery) {
+                window._proxParts[3].text = ` (RECOVER FLOOR ${recLoot.floor})`;
+                window._proxParts[3].color = "#ff7675";
+              } else {
+                window._proxParts[3].text = "";
+              }
+            }
 
       ctx.save();
       ctx.font = "bold 10.5px monospace";
@@ -15042,9 +15347,20 @@
         ? window.formatNumber(displayedGold)
         : displayedGold;
     }
-    if (depthLabel) {
+    let activeChallenge = window.playerStats.activeSpecialChallenge;
+
+        // Toggle No-Recovery Warning Badge Visibility
+        let noRecBadge = document.getElementById("hud-no-recovery-badge");
+        if (noRecBadge) {
+          noRecBadge.style.display = (activeChallenge && !isHub) ? "inline-block" : "none";
+        }
+
+        if (depthLabel) {
           if (isHub) {
             depthLabel.innerText = "ADVENTURER'S HUB";
+          } else if (activeChallenge) {
+            // Subphase 19: Display active special challenge name and progress
+            depthLabel.innerText = `${activeChallenge.name.toUpperCase()} [STAGE ${p.depth} OF 4]`;
           } else {
             let text = window.playerStats.isCrucibleMode
               ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}`
@@ -15057,15 +15373,18 @@
             depthLabel.innerText = text;
           }
         }
-    if (objectiveLabel) {
-      if (isHub) {
-        objectiveLabel.innerText = "Select a Station or Portal";
-      } else {
-        objectiveLabel.innerText = window.playerStats.isCrucibleMode
-          ? "Defeat all active wave targets!"
-          : "Find the Extraction Zone";
-      }
-    }
+        if (objectiveLabel) {
+          if (isHub) {
+            objectiveLabel.innerText = "Select a Station or Portal";
+          } else if (activeChallenge) {
+            // Subphase 19: Display active special challenge objective tracker
+            objectiveLabel.innerText = window.getChallengeObjectiveText();
+          } else {
+            objectiveLabel.innerText = window.playerStats.isCrucibleMode
+              ? "Defeat all active wave targets!"
+              : "Find the Extraction Zone";
+          }
+        }
 
     let bagBtn = document.getElementById("btn-bag-toggle");
     if (bagBtn) {
@@ -15099,9 +15418,14 @@
       muteSettingBtn.innerText = stats.mute ? "AUDIO: MUTED" : "AUDIO: ENABLED";
     }
 
-    if (abandonBtn) {
-      abandonBtn.style.display = isHub ? "none" : "inline-block";
-    }
+    let bountyBtn = document.getElementById("btn-bounty-toggle");
+        if (bountyBtn) {
+          bountyBtn.style.display = isHub ? "inline-block" : "none";
+        }
+
+        if (abandonBtn) {
+          abandonBtn.style.display = isHub ? "none" : "inline-block";
+        }
 
     // Update Quick-Slot Field Flask HUD Button
     let flaskBtn = document.getElementById("hud-flask-button");
@@ -15186,8 +15510,44 @@
     }
 
     if (typeof window.updateHudBuffTray === "function") {
-      window.updateHudBuffTray();
-    }
+          window.updateHudBuffTray();
+        }
+      };
+
+      // Subphase 19: Evaluation helper for active Special Challenge objectives
+      window.getChallengeObjectiveText = function () {
+        let challenge = window.playerStats.activeSpecialChallenge;
+        if (!challenge) return "";
+        let depth = window.player.depth || 1;
+
+        if (depth < 4) {
+          let isWardenAlive = window.mob !== null && window.mob.type === "dungeon_miniboss";
+          return isWardenAlive
+            ? "[Clear Portal Guardian: 0/1]"
+            : "[Clear Portal Guardian: 1/1 - Descent Portal Open!]";
+        } else {
+          // Floor 4: Slay twin bosses (which reside in activeDungeonMobs)
+          let bossesCount = window.activeDungeonMobs
+            ? window.activeDungeonMobs.filter(m => m.type === "dungeon_boss" || m.type === "dungeon_miniboss").length
+            : 0;
+          if (window.mob && (window.mob.type === "dungeon_boss" || window.mob.type === "dungeon_miniboss")) {
+            if (!window.activeDungeonMobs.some(m => m.id === window.mob.id)) {
+              bossesCount++;
+            }
+          }
+
+          if (bossesCount > 0) {
+            return `[Slay Twin Overlords: ${2 - bossesCount}/2]`;
+          } else {
+            let isCofferOpened = false;
+            if (window.activeDungeonMap && window.activeDungeonMap.openedChests) {
+              isCofferOpened = window.activeDungeonMap.openedChests.size > 0;
+            }
+            return isCofferOpened
+              ? "[Objective Complete: Enter Extraction Portal!]"
+              : "[Slay Twin Overlords: 2/2 - Claim Special Coffer!]";
+          }
+        }
 
     // Mastery/MP Alert Badge
     let masteryBtn = document.getElementById("btn-skills-toggle");
@@ -15209,24 +15569,48 @@
     }
 
     // Hero Pod/SP Alert Badge
-    let heroPod = document.querySelector(".hud-hero-pod");
-    if (heroPod) {
-      let unspentSP = stats.sp || 0;
-      let existingSpBadge = heroPod.querySelector(".hud-alert-badge");
-      if (unspentSP > 0) {
-        if (!existingSpBadge) {
-          existingSpBadge = document.createElement("span");
-          existingSpBadge.className = "hud-alert-badge";
-          heroPod.appendChild(existingSpBadge);
-        }
-        existingSpBadge.innerText = unspentSP;
-      } else if (existingSpBadge) {
-        existingSpBadge.remove();
-      }
-    }
-  };
+                let heroPod = document.querySelector(".hud-hero-pod");
+                if (heroPod) {
+                  let unspentSP = stats.sp || 0;
+                  let existingSpBadge = heroPod.querySelector(".hud-alert-badge");
+                  if (unspentSP > 0) {
+                    if (!existingSpBadge) {
+                      existingSpBadge = document.createElement("span");
+                      existingSpBadge.className = "hud-alert-badge";
+                      heroPod.appendChild(existingSpBadge);
+                    }
+                    existingSpBadge.innerText = unspentSP;
+                  } else if (existingSpBadge) {
+                    existingSpBadge.remove();
+                  }
+                }
 
-  window.updateHudBuffTray = function () {
+                // Bounty Board/Unclaimed Quests Alert Badge
+                let bountyBtn = document.getElementById("btn-bounty-toggle");
+                if (bountyBtn) {
+                  let unclaimedCount = 0;
+                  if (window.playerStats.dailyMissions) {
+                    unclaimedCount += window.playerStats.dailyMissions.filter(q => q.completed && !q.claimed).length;
+                  }
+                  if (window.playerStats.weeklyMissions) {
+                    unclaimedCount += window.playerStats.weeklyMissions.filter(q => q.completed && !q.claimed).length;
+                  }
+
+                  let existingBountyBadge = bountyBtn.querySelector(".hud-alert-badge");
+                  if (unclaimedCount > 0 && isHub) { // Only display badge alerts while resting in the Hub
+                    if (!existingBountyBadge) {
+                      existingBountyBadge = document.createElement("span");
+                      existingBountyBadge.className = "hud-alert-badge";
+                      bountyBtn.appendChild(existingBountyBadge);
+                    }
+                    existingBountyBadge.innerText = unclaimedCount;
+                  } else if (existingBountyBadge) {
+                    existingBountyBadge.remove();
+                  }
+                }
+              };
+
+              window.updateHudBuffTray = function () {
     let tray = document.getElementById("hud-buff-tray");
     if (!tray) return;
 
@@ -17326,40 +17710,365 @@
   };
 
   window.toggleSettingsModal = function () {
-    let modal = document.getElementById("settings-modal");
-    if (!modal) return;
-    if (modal.style.display === "none" || modal.style.display === "") {
-      modal.style.display = "flex";
-      let stats = window.playerStats || {};
-      let masterSlider = document.getElementById("slider-master-vol");
-      let sfxSlider = document.getElementById("slider-sfx-vol");
-      let bgmSlider = document.getElementById("slider-bgm-vol");
-      if (masterSlider)
-        masterSlider.value =
-          stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5;
-      if (sfxSlider)
-        sfxSlider.value = stats.volumeSFX !== undefined ? stats.volumeSFX : 0.8;
-      if (bgmSlider)
-        bgmSlider.value =
-          stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5;
-      if (typeof window.updateEcoModeStyle === "function")
-        window.updateEcoModeStyle();
-      if (typeof window.updateLightingStyle === "function")
-        window.updateLightingStyle();
-      if (typeof window.updateEditHudModeStyle === "function")
-        window.updateEditHudModeStyle();
-      window.updateHUD();
-    } else {
-      if (window.playerStats && window.playerStats.editHudMode) {
-        window.playerStats.editHudMode = false;
+      let modal = document.getElementById("settings-modal");
+      if (!modal) return;
+      if (modal.style.display === "none" || modal.style.display === "") {
+        modal.style.display = "flex";
+        let stats = window.playerStats || {};
+        let masterSlider = document.getElementById("slider-master-vol");
+        let sfxSlider = document.getElementById("slider-sfx-vol");
+        let bgmSlider = document.getElementById("slider-bgm-vol");
+        if (masterSlider)
+          masterSlider.value =
+            stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5;
+        if (sfxSlider)
+          sfxSlider.value = stats.volumeSFX !== undefined ? stats.volumeSFX : 0.8;
+        if (bgmSlider)
+          bgmSlider.value =
+            stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5;
+        if (typeof window.updateEcoModeStyle === "function")
+          window.updateEcoModeStyle();
+        if (typeof window.updateLightingStyle === "function")
+          window.updateLightingStyle();
         if (typeof window.updateEditHudModeStyle === "function")
           window.updateEditHudModeStyle();
+        window.updateHUD();
+      } else {
+        if (window.playerStats && window.playerStats.editHudMode) {
+          window.playerStats.editHudMode = false;
+          if (typeof window.updateEditHudModeStyle === "function")
+            window.updateEditHudModeStyle();
+        }
+        modal.style.display = "none";
+        window.lastModalCloseTime = Date.now();
+        if (typeof window.saveGame === "function") window.saveGame();
       }
-      modal.style.display = "none";
-      window.lastModalCloseTime = Date.now();
-      if (typeof window.saveGame === "function") window.saveGame();
-    }
-  };
+    };
+
+    // Subphase 14: Bounty Board UI Toggle & Dynamic Ledger Binding
+    window.toggleBountyModal = function () {
+      if (typeof window.hideTooltip === "function") window.hideTooltip();
+      let modal = document.getElementById("bounty-modal");
+      if (!modal) return;
+
+      if (modal.style.display === "none" || modal.style.display === "") {
+        modal.style.display = "flex";
+        window.renderBountyBoard();
+      } else {
+        modal.style.display = "none";
+        window.lastModalCloseTime = Date.now();
+      }
+    };
+
+    window.switchBountyTab = function (tabKey) {
+          window.state.bountyActiveTab = tabKey;
+          ["challenges", "dailies", "weeklies"].forEach((t) => {
+            let btn = document.getElementById("bounty-tab-" + t);
+            if (btn) btn.classList.toggle("active", t === tabKey);
+          });
+          window.renderBountyBoard();
+        };
+
+        window.selectBountyQuest = function (questId) {
+          window.state.selectedQuestId = questId;
+          window.renderBountyBoard();
+        };
+
+        window.claimQuestReward = function (questId, isWeekly) {
+          if (typeof window.hideTooltip === "function") window.hideTooltip();
+          let list = isWeekly ? window.playerStats.weeklyMissions : window.playerStats.dailyMissions;
+          if (!list) return;
+
+          let quest = list.find(q => q.id === questId);
+          if (!quest || !quest.completed || quest.claimed) return;
+
+          quest.claimed = true;
+
+          // Hydrate BigNum rewards
+          let goldReward = BigNum.from(quest.goldReward);
+          let xpReward = BigNum.from(quest.xpReward);
+
+          // Add Gold and XP
+          window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(goldReward);
+          if (window.playerStats.coins.eq(0)) {
+            window.playerStats.hasTriggeredExactChange = true;
+          }
+          if (typeof window.gainXp === "function") {
+            window.gainXp(xpReward);
+          }
+
+          // Add the "Reward Sack" item (Daily or Weekly)
+          window.addUseDrop(quest.treat, quest.treatQty || 1, false);
+
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(`Claimed Reward: ${quest.desc}!`, "#2ecc71");
+          }
+          if (window.SoundManager && typeof window.SoundManager.play === "function") {
+            window.SoundManager.play("revive");
+          }
+
+          if (typeof window.updateUI === "function") window.updateUI();
+          if (typeof window.renderBountyBoard === "function") window.renderBountyBoard();
+          if (typeof window.saveGame === "function") window.saveGame();
+        };
+
+        window.renderBountyBoard = function () {
+          let leftPane = document.getElementById("bounty-list-pane");
+          let rightPane = document.getElementById("bounty-details-pane");
+          if (!leftPane || !rightPane) return;
+
+          let tab = window.state.bountyActiveTab || "challenges";
+
+          if (tab === "challenges") {
+            let database = window.SPECIAL_CHALLENGES_DATABASE || {};
+            let keys = Object.keys(database);
+
+            if (!window.state.selectedBountyId || !database[window.state.selectedBountyId]) {
+              window.state.selectedBountyId = keys[0];
+            }
+
+            let activeBountyId = window.state.selectedBountyId;
+
+            // Render Re-roll button with dynamically scaling progression cost
+            let r = window.playerStats.bountyRerollsToday || 0;
+            let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+            let rerollCost = window.getBountyRerollCost(peakStage, r);
+            let costStr = `${window.formatNumber(rerollCost.gold)} G / ${rerollCost.souls} Souls`;
+
+            let rerollBtnHtml = r >= 3
+              ? `<div style="background:#0e0a14; border:1px solid #334155; border-radius:6px; padding:6px 10px; font-family:monospace; font-size:9px; color:#64748b; text-align:center; margin-bottom:8px; text-transform:uppercase;">MAX DAILY RE-ROLLS REACHED</div>`
+              : `<button class="shop-refresh-btn" style="width:100%; margin-bottom:8px; display:flex; justify-content:center; gap:6px; background:linear-gradient(180deg,#7f1c1d,#450a0a); border-color:#e74c3c; line-height:1.2; padding:6px;" onclick="event.stopPropagation(); window.rerollBountyBoard();">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:translateY(0.5px);"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  <span>RE-ROLL BOARD (${costStr})</span>
+                </button>`;
+
+            // Render Left Pane (Ledger List)
+            let listMarkup = keys.map(key => {
+              let challenge = database[key];
+              let isSelected = key === activeBountyId;
+              let isSigned = window.playerStats.activeSpecialChallenge && window.playerStats.activeSpecialChallenge.id === key;
+
+              let cardStyle = isSelected
+                ? "background: rgba(231, 76, 60, 0.15); border-color: #ffd700;"
+                : "background: rgba(15, 23, 42, 0.65); border-color: #334155;";
+
+              return `
+                <div class="bounty-ledger-row" style="${cardStyle} border-left: 4px solid #e74c3c; padding: 10px; margin-bottom: 6px; border-radius: 6px; cursor: pointer; transition: all 0.15s;" onclick="event.stopPropagation(); window.selectBounty('${key}')">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color: #f1f5f9; font-size: 11.5px;">${challenge.name}</strong>
+                    <span style="font-family: monospace; font-size: 9px; color: #ff7675; font-weight: bold;">RR ${challenge.riskRating}</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
+                    <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">Multi: +${Math.round((challenge.rewardMultiplier - 1) * 100)}%</span>
+                    ${isSigned ? '<span style="color:#2ecc71; font-size:8.5px; font-weight:bold; font-family:monospace;">[ACTIVE]</span>' : ""}
+                  </div>
+                </div>
+              `;
+            }).join("");
+
+            leftPane.innerHTML = rerollBtnHtml + listMarkup;
+
+            // Render Right Pane (Contract Details)
+            let activeChallenge = database[activeBountyId];
+            if (activeChallenge) {
+              let isSignedThis = window.playerStats.activeSpecialChallenge && window.playerStats.activeSpecialChallenge.id === activeBountyId;
+              let isAnySigned = window.playerStats.activeSpecialChallenge !== null;
+
+              let buffPills = (activeChallenge.buffs || []).map(bId => {
+                let b = (window.CAVERN_BUFFS || []).find(x => x.id === bId);
+                return b ? `<span style="background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; color: #34d399; font-size: 8px; font-family: monospace; padding: 2px 5px; border-radius: 4px;">+ ${b.name}</span>` : "";
+              }).join(" ");
+
+              let debuffPills = (activeChallenge.debuffs || []).map(dId => {
+                let d = (window.CAVERN_DEBUFFS || []).find(x => x.id === dId);
+                return d ? `<span style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; color: #f87171; font-size: 8px; font-family: monospace; padding: 2px 5px; border-radius: 4px;">- ${d.name}</span>` : "";
+              }).join(" ");
+
+              let goldRewardText = window.formatNumber(BigNum.from(activeChallenge.rewards.gold));
+              let xpRewardText = window.formatNumber(BigNum.from(activeChallenge.rewards.xp));
+
+              let actionBtnHtml = "";
+              if (isSignedThis) {
+                actionBtnHtml = `
+                  <button class="action-btn" style="width:100%; margin-top:12px; background:linear-gradient(180deg, #dc2626 0%, #991b1b 100%); border-color:#f87171;" onclick="event.stopPropagation(); window.abandonSpecialChallenge(); window.renderBountyBoard();">
+                    ABANDON ACTIVE CONTRACT
+                  </button>
+                `;
+              } else if (isAnySigned) {
+                actionBtnHtml = `
+                  <button class="action-btn" style="width:100%; margin-top:12px; background:#1e293b; border-color:#334155; color:#64748b;" disabled>
+                    ANOTHER CONTRACT IS RUNNING
+                  </button>
+                `;
+              } else {
+                actionBtnHtml = `
+                  <button class="action-btn" style="width:100%; margin-top:12px; background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#34d399;" onclick="event.stopPropagation(); window.signSpecialChallengeContract('${activeBountyId}')">
+                    SIGN SPECIAL CONTRACT
+                  </button>
+                `;
+              }
+
+              rightPane.innerHTML = `
+                <div style="display:flex; flex-direction:column; text-align:left; gap:10px; height:100%;">
+                  <div>
+                    <div style="font-weight:900; font-size:13.5px; color:#ffd700; border-bottom:1.5px solid rgba(212,175,55,0.3); padding-bottom:6px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.8px;">
+                      ${activeChallenge.name}
+                    </div>
+                    <p style="font-size:11px; color:#cbd5e1; line-height:1.45; margin:0 0 10px 0; white-space:normal; font-family:Georgia, serif; font-style:italic;">
+                      "${activeChallenge.desc}"
+                    </p>
+                  </div>
+
+                  <!-- Risk Rating & Focus Modifiers -->
+                  <div style="background:rgba(0,0,0,0.45); border:1px solid #334155; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:4px; font-family:monospace; font-size:9.5px;">
+                    <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Risk Rating:</span> <strong style="color:#ff7675;">${activeChallenge.riskRating} (HIGH DANGER)</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Focus Rewards:</span> <strong style="color:#00ffff;">+${Math.round((activeChallenge.rewardMultiplier - 1) * 100)}% Multiplier</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:#e879f9;">Quality Boost:</span> <strong style="color:#ff007f;">+${Math.round(activeChallenge.qualityBoost * 100)}% Quality</strong></div>
+                  </div>
+
+                  <!-- Mutator Seals -->
+                  <div style="display:flex; flex-direction:column; gap:6px;">
+                    <strong style="color:#38bdf8; font-family:monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.5px;">Active Cavern Mutators:</strong>
+                    <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                      ${buffPills} ${debuffPills}
+                    </div>
+                  </div>
+
+                  <!-- Guaranteed Completion Rewards -->
+                  <div style="background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.1); border-radius:6px; padding:8px 10px; text-align:left; font-family:monospace; font-size:10px; margin-top:auto;">
+                    <strong style="color:#ffd700; display:block; margin-bottom:4px; font-size:9.5px; letter-spacing:0.5px;">[ GUARANTEED CONTRACT REWARDS ]</strong>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                      <div style="color:#f1c40f;">+ ${goldRewardText} Gold Coins</div>
+                      <div style="color:#c084fc;">+ ${xpRewardText} Experience (XP)</div>
+                      <div style="color:#00ffff;">+ ${activeChallenge.rewards.shards} Astral Shards</div>
+                      <div style="color:#2ecc71;">+ ${activeChallenge.rewards.cores} Catalyst Cores</div>
+                    </div>
+                  </div>
+
+                  ${actionBtnHtml}
+                </div>
+              `;
+            }
+          } else {
+            // Render Dailies or Weeklies
+            let isWeekly = tab === "weeklies";
+            let list = isWeekly ? window.playerStats.weeklyMissions : window.playerStats.dailyMissions;
+
+            if (!list || list.length === 0) {
+              leftPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">No active quests rolled. Check back after reset!</div>`;
+              rightPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">Select a quest from the list.</div>`;
+              return;
+            }
+
+            if (!window.state.selectedQuestId || !list.some(q => q.id === window.state.selectedQuestId)) {
+              window.state.selectedQuestId = list[0].id;
+            }
+
+            let activeQuestId = window.state.selectedQuestId;
+
+            // Render Left Pane (Quests List)
+            leftPane.innerHTML = list.map(q => {
+              let isSelected = q.id === activeQuestId;
+              let pct = Math.min(100, (q.current / q.target) * 100);
+
+              let borderCol = isSelected ? "#38bdf8" : "#334155";
+              let bgStyle = isSelected
+                ? "background: rgba(56, 189, 248, 0.12);"
+                : "background: rgba(15, 23, 42, 0.65);";
+
+              let statusText = q.claimed
+                ? `<span style="color:#64748b; font-size:8.5px; font-family:monospace; font-weight:bold;">[CLAIMED]</span>`
+                : q.completed
+                  ? `<span style="color:#2ecc71; font-size:8.5px; font-family:monospace; font-weight:bold;">[COMPLETED]</span>`
+                  : `<span style="color:#94a3b8; font-size:8.5px; font-family:monospace;">${q.current.toLocaleString()} / ${q.target.toLocaleString()}</span>`;
+
+              return `
+                <div class="bounty-ledger-row" style="${bgStyle} border-color:${borderCol}; border-left:4px solid ${q.completed ? "#10b981" : "#475569"}; padding:10px; margin-bottom:6px; border-radius:6px; cursor:pointer; transition:all 0.15s;" onclick="event.stopPropagation(); window.selectBountyQuest('${q.id}')">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:#f1f5f9; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; text-align:left;">${q.desc.split(" (")[0]}</strong>
+                    ${statusText}
+                  </div>
+                  <div class="gacha-pity-bg" style="width:100%; height:4px; margin-top:6px; background:#06040a;">
+                    <div class="gacha-pity-fill" style="width:${pct}%; height:100%; background:${q.completed ? "#10b981" : "#38bdf8"};"></div>
+                  </div>
+                </div>
+              `;
+            }).join("");
+
+            // Render Right Pane (Selected Quest Details)
+            let q = list.find(q => q.id === activeQuestId);
+            if (q) {
+              let pct = Math.min(100, (q.current / q.target) * 100);
+              let goldRewardText = window.formatNumber(BigNum.from(q.goldReward));
+              let xpRewardText = window.formatNumber(BigNum.from(q.xpReward));
+
+              let iconHtml = window.getUseIconHtml ? window.getUseIconHtml(q.treat, 40) : "";
+
+              let claimBtnHtml = "";
+              if (q.claimed) {
+                claimBtnHtml = `<button class="action-btn" style="width:100%; margin-top:12px; background:#0f172a; border-color:#1e293b; color:#64748b;" disabled>REWARD CLAIMED</button>`;
+              } else if (q.completed) {
+                claimBtnHtml = `
+                  <button class="action-btn" style="width:100%; margin-top:12px; background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#34d399;" onclick="event.stopPropagation(); window.claimQuestReward('${q.id}', ${isWeekly})">
+                    CLAIM GUILD REWARD
+                  </button>
+                `;
+              } else {
+                claimBtnHtml = `<button class="action-btn" style="width:100%; margin-top:12px; background:#1e293b; border-color:#334155; color:#64748b;" disabled>QUEST IN PROGRESS</button>`;
+              }
+
+              rightPane.innerHTML = `
+                <div style="display:flex; flex-direction:column; text-align:left; gap:10px; height:100%;">
+                  <div>
+                    <div style="font-weight:900; font-size:13.5px; color:#ffd700; border-bottom:1.5px solid rgba(212,175,55,0.3); padding-bottom:6px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.8px;">
+                      ${isWeekly ? "WEEKLY GUILD QUEST" : "DAILY GUILD QUEST"}
+                    </div>
+                    <p style="font-size:11px; color:#cbd5e1; line-height:1.45; margin:0 0 10px 0; white-space:normal; font-family:monospace;">
+                      ${q.desc}
+                    </p>
+                  </div>
+
+                  <!-- Quest Progress Card -->
+                  <div style="background:rgba(0,0,0,0.45); border:1px solid #334155; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:4px; font-family:monospace; font-size:9.5px;">
+                    <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Current Progress:</span> <strong style="color:#38bdf8;">${q.current.toLocaleString()} / ${q.target.toLocaleString()}</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Completion Ratio:</span> <strong style="color:#2ecc71;">${Math.round(pct)}%</strong></div>
+                    <div class="gacha-pity-bg" style="width:100%; height:6px; margin-top:4px; background:#06040a;">
+                      <div class="gacha-pity-fill" style="width:${pct}%; height:100%; background:${q.completed ? "#10b981" : "#38bdf8"};"></div>
+                    </div>
+                  </div>
+
+                  <!-- Reward Sacks Showcase -->
+                  <div style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.22); border:1.5px dashed rgba(255,255,255,0.06); padding:8px 10px; border-radius:6px; margin-top:4px;">
+                    <div style="border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); padding:4px; border-radius:4px; display:flex; flex-shrink:0;">
+                      ${iconHtml}
+                    </div>
+                    <div style="display:flex; flex-direction:column; text-align:left; min-width:0;">
+                      <strong style="color:#f1c40f; font-size:10px; font-family:monospace; letter-spacing:0.5px;">${q.treat.toUpperCase()}</strong>
+                      <span style="font-size:8.5px; color:#cbd5e1; line-height:1.25; font-family:monospace; white-space:normal;">Unlocks random scaled equipment, keys, or scraps upon consumption.</span>
+                    </div>
+                  </div>
+
+                  <!-- Completion Rewards Card -->
+                  <div style="background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.1); border-radius:6px; padding:8px 10px; text-align:left; font-family:monospace; font-size:10px; margin-top:auto;">
+                    <strong style="color:#ffd700; display:block; margin-bottom:4px; font-size:9.5px; letter-spacing:0.5px;">[ QUEST GUILD REWARDS ]</strong>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                      <div style="color:#f1c40f;">+ ${goldRewardText} Gold Coins</div>
+                      <div style="color:#c084fc;">+ ${xpRewardText} Experience (XP)</div>
+                      <div style="color:#9b59b6;">+ ${q.treatQty || 1}x ${q.treat}</div>
+                    </div>
+                  </div>
+
+                  ${claimBtnHtml}
+                </div>
+              `;
+            }
+          }
+        };
+
+    window.selectBounty = function (id) {
+      window.state.selectedBountyId = id;
+      window.renderBountyBoard();
+    };
 
   window.toggleMute = function () {
     if (!window.playerStats) return;
@@ -18280,11 +18989,15 @@
     }
 
     stats.flaskCharges--;
-    if (stats.flaskCharges > 0) {
-      stats.flaskCooldownTimer = 180; // 3 seconds internal cooldown (60 FPS)
-    } else {
-      stats.flaskCooldownTimer = 0;
-    }
+        if (stats.flaskCharges > 0) {
+          stats.flaskCooldownTimer = 180; // 3 seconds internal cooldown (60 FPS)
+        } else {
+          stats.flaskCooldownTimer = 0;
+        }
+
+        if (typeof window.progressMission === "function") {
+          window.progressMission("flask", 1);
+        }
 
     let flaskBtn = document.getElementById("hud-flask-button");
     if (flaskBtn) {

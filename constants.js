@@ -2093,14 +2093,22 @@ window.CAVERN_BUFFS = [
     dangerRating: 0,
   },
   {
-    id: "astral_conjunction",
-    name: "Astral Conjunction",
-    desc: "Upon room entry, a cosmic laser strikes a random target, spreading fire to adjacent foes.",
-    type: "interactive",
-    minStars: 5,
-    dangerRating: 0,
-  },
-];
+      id: "astral_conjunction",
+      name: "Astral Conjunction",
+      desc: "Upon room entry, a cosmic laser strikes a random target, spreading fire to adjacent foes.",
+      type: "interactive",
+      minStars: 5,
+      dangerRating: 0,
+    },
+    {
+      id: "aetheric_surge",
+      name: "Aetheric Surge",
+      desc: "Catalyzes class offhands. Tomes gain +75% Spell Power and +20% Spell Chance. Shields gain +100% Bash/Reflect Power and +15% Block Cap. Daggers gain 3.0x Riposte Damage and +15% Parry Cap.",
+      type: "interactive",
+      minStars: 4,
+      dangerRating: 0,
+    },
+  ];
 
 window.CAVERN_DEBUFFS = [
   // --- STAT-BASED PENALTIES (Scale with stars) ---
@@ -2216,14 +2224,78 @@ window.CAVERN_DEBUFFS = [
     dangerRating: 40,
   },
   {
-    id: "elite_infestation",
-    name: "Elite Infestation",
-    desc: "Every single spawned monster becomes an Elite with a random support affix.",
-    type: "interactive",
-    minStars: 5,
-    dangerRating: 45,
-  },
-];
+      id: "elite_infestation",
+      name: "Elite Infestation",
+      desc: "Every single spawned monster becomes an Elite with a random support affix.",
+      type: "interactive",
+      minStars: 5,
+      dangerRating: 45,
+    },
+    {
+      id: "slick_ice",
+      name: "Slick Ice",
+      desc: "Ice covers the cavern floor. Deceleration is severely reduced, causing you to slide dynamically.",
+      type: "interactive",
+      minStars: 2,
+      dangerRating: 15,
+    },
+    {
+      id: "magnetic_creep",
+      name: "Magnetic Creep",
+      desc: "Gravitational shift in the cavern pulls you slowly toward the nearest structural wall.",
+      type: "interactive",
+      minStars: 2,
+      dangerRating: 15,
+    },
+    {
+      id: "creeping_miasma",
+      name: "Creeping Miasma",
+      desc: "Poisonous miasma closes in from the room boundaries. Step outside the shrinking safe zone to take 2% Max HP damage per second.",
+      type: "interactive",
+      minStars: 3,
+      dangerRating: 15,
+    },
+    {
+      id: "abyssal_decay",
+      name: "Abyssal Decay",
+      desc: "Corrosive abyss siphons your soul. 15% of all damage taken permanently shrinks your Maximum HP for the remainder of this run.",
+      type: "interactive",
+      minStars: 3,
+      dangerRating: 25,
+    },
+    {
+      id: "weapon_lock",
+      name: "Weapon Lock",
+      desc: "A heavy curse locks your main-hand weapon, limiting its damage to 1. Offhand proc rates are doubled, and offhand cooldowns are halved.",
+      type: "interactive",
+      minStars: 4,
+      dangerRating: 35,
+    },
+    {
+      id: "regenerative_brood",
+      name: "Regenerative Brood",
+      desc: "Dungeon monsters recover 3% of their Maximum HP every 2 seconds if they have not taken damage recently.",
+      type: "interactive",
+      minStars: 2,
+      dangerRating: 15,
+    },
+    {
+      id: "kinetic_reflectors",
+      name: "Kinetic Reflectors",
+      desc: "Monsters construct active kinetic shields in front of them, deflecting all frontal attacks and reflecting 20% of the damage back to you.",
+      type: "interactive",
+      minStars: 3,
+      dangerRating: 20,
+    },
+    {
+      id: "spawning_division",
+      name: "Spawning Division",
+      desc: "Monsters fracture upon death, dividing into two minor, low-HP spores or slimes.",
+      type: "interactive",
+      minStars: 3,
+      dangerRating: 25,
+    },
+  ];
 
 window.ASTRAL_SHOP_STOCK = [
   {
@@ -2602,6 +2674,7 @@ window.TILE_TYPES = {
   STATION_SHOP: 17,
   DUNGEON_MERCHANT: 18,
   DUNGEON_MERCHANT_PEDESTAL: 19,
+  STATION_BOUNTY: 20,
 };
 
 window.DUNGEON_CONFIG = {

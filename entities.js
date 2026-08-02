@@ -8817,22 +8817,53 @@
           }
           c.restore();
           if (m.flashTimer === 0) {
-            let eyePulse = 6 + Math.sin(Date.now() / 150) * 1.5;
-            c.fillStyle = "#00b894";
-            c.beginPath();
-            c.arc(px, py, eyePulse, 0, Math.PI * 2);
-            c.fill();
-            c.strokeStyle = "#000000";
-            c.lineWidth = 1.5;
-            c.stroke();
-            c.fillStyle = "#ff007f";
-            c.fillRect(px - 1.2, -4, 2.4, 8);
-          }
-        }
-      }
-    }
-    c.restore();
-  };
+                      c.fillStyle = "#ff007f";
+                      c.beginPath();
+                      c.arc(px, py, eyePulse, 0, Math.PI * 2);
+                      c.fill();
+                      c.strokeStyle = "#000000";
+                      c.lineWidth = 1.5;
+                      c.stroke();
+                      c.fillStyle = "#ff007f";
+                      c.fillRect(px - 1.2, -4, 2.4, 8);
+                    }
+                  }
+                }
+              }
+
+              // Kinetic Reflectors Energy Shield Arc Rendering
+              if (window.isCavernEffectActive && window.isCavernEffectActive("kinetic_reflectors") && m.type === "mob" && !m.isFriendlyWisp) {
+                c.save();
+                let cx = m.x + m.w / 2;
+                let cy = m.y + m.h / 2;
+                let radius = m.w * 0.8;
+                let time = Date.now();
+                let pulse = Math.sin(time / 100) * 1.5;
+
+                c.strokeStyle = "#00d2ff";
+                c.lineWidth = 2.0;
+                c.shadowBlur = 8;
+                c.shadowColor = "#00d2ff";
+
+                let rot = (time / 800) % (Math.PI * 2);
+                for (let i = 0; i < 3; i++) {
+                  let segmentStart = Math.PI * 0.7 + rot + (i * Math.PI * 2 / 3);
+                  let segmentEnd = segmentStart + 0.35;
+                  c.beginPath();
+                  c.arc(cx, cy, radius + pulse, segmentStart, segmentEnd);
+                  c.stroke();
+                }
+
+                c.strokeStyle = "rgba(0, 210, 255, 0.75)";
+                c.lineWidth = 1.5;
+                c.beginPath();
+                c.arc(cx, cy, radius + 2, Math.PI * 0.75, Math.PI * 1.25);
+                c.stroke();
+                c.restore();
+              }
+
+              c.restore();
+            };
   // --- MISSING DPS CALCULATOR ---
   window.calculateActiveDps = function () {
     const now = window.nowMs || Date.now();
