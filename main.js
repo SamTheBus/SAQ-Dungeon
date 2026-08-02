@@ -6867,40 +6867,94 @@
     modal.style.display = "flex";
   };
 
-  window.executePortalDescend = function () {
-    let modal = document.getElementById("portal-modal");
-    if (modal) modal.style.display = "none";
-
-    let p = window.player;
-    let map = window.activeDungeonMap;
-    if (map && map.grid && p) {
-      let tx = Math.floor(p.x / map.tileSize);
-      let ty = Math.floor(p.y / map.tileSize);
-      if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
-        map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
+  window.checkRecoveryChestUnclaimed = function () {
+      let rec = window.playerStats && window.playerStats.recoveryLoot;
+      if (rec && rec.floor === window.player.depth && rec.items && rec.items.length > 0) {
+        return true;
       }
-    }
+      return false;
+    };
 
-    window.player.depth++;
-    window.loadDungeonFloor(window.player.depth);
-  };
+    window.executePortalDescend = function (bypassWarning = false) {
+      if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
+        let modal = document.getElementById("portal-modal");
+        if (modal) modal.style.display = "none";
 
-  window.executePortalExtract = function () {
-    let modal = document.getElementById("portal-modal");
-    if (modal) modal.style.display = "none";
-
-    let p = window.player;
-    let map = window.activeDungeonMap;
-    if (map && map.grid && p) {
-      let tx = Math.floor(p.x / map.tileSize);
-      let ty = Math.floor(p.y / map.tileSize);
-      if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
-        map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
+        if (typeof window.showCustomConfirm === "function") {
+          window.showCustomConfirm(
+            "Unclaimed Recovery Chest",
+            "WARNING: Your dropped Recovery Chest is still unclaimed on this floor! If you descend without claiming it, your lost items and Gold will be permanently overwritten. Proceed anyway?",
+            "DESCEND WITHOUT LOOT",
+            "RETURN TO FIND IT",
+            "#e74c3c",
+            function () {
+              window.executePortalDescend(true);
+            }
+          );
+        } else {
+          if (confirm("WARNING: Your dropped Recovery Chest is still unclaimed on this floor! Proceed anyway?")) {
+            window.executePortalDescend(true);
+          }
+        }
+        return;
       }
-    }
 
-    window.triggerExtraction(true);
-  };
+      let modal = document.getElementById("portal-modal");
+      if (modal) modal.style.display = "none";
+
+      let p = window.player;
+      let map = window.activeDungeonMap;
+      if (map && map.grid && p) {
+        let tx = Math.floor(p.x / map.tileSize);
+        let ty = Math.floor(p.y / map.tileSize);
+        if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
+          map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
+        }
+      }
+
+      window.player.depth++;
+      window.loadDungeonFloor(window.player.depth);
+    };
+
+    window.executePortalExtract = function (bypassWarning = false) {
+      if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
+        let modal = document.getElementById("portal-modal");
+        if (modal) modal.style.display = "none";
+
+        if (typeof window.showCustomConfirm === "function") {
+          window.showCustomConfirm(
+            "Unclaimed Recovery Chest",
+            "WARNING: Your dropped Recovery Chest is still unclaimed on this floor! If you extract without claiming it, your lost items and Gold will be permanently overwritten. Proceed anyway?",
+            "EXTRACT WITHOUT LOOT",
+            "RETURN TO FIND IT",
+            "#e74c3c",
+            function () {
+              window.executePortalExtract(true);
+            }
+          );
+        } else {
+          if (confirm("WARNING: Your dropped Recovery Chest is still unclaimed on this floor! Proceed anyway?")) {
+            window.executePortalExtract(true);
+          }
+        }
+        return;
+      }
+
+      let modal = document.getElementById("portal-modal");
+      if (modal) modal.style.display = "none";
+
+      let p = window.player;
+      let map = window.activeDungeonMap;
+      if (map && map.grid && p) {
+        let tx = Math.floor(p.x / map.tileSize);
+        let ty = Math.floor(p.y / map.tileSize);
+        if (map.grid[ty] && map.grid[ty][tx] !== undefined) {
+          map.grid[ty][tx] = window.TILE_TYPES.FLOOR;
+        }
+      }
+
+      window.triggerExtraction(true);
+    };
 
   window.decrementPotionRunCharges = function () {
     let p = window.playerStats;
@@ -14989,14 +15043,20 @@
         : displayedGold;
     }
     if (depthLabel) {
-      if (isHub) {
-        depthLabel.innerText = "ADVENTURER'S HUB";
-      } else {
-        depthLabel.innerText = window.playerStats.isCrucibleMode
-          ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}`
-          : `DUNGEON FLOOR ${p.depth}`;
-      }
-    }
+          if (isHub) {
+            depthLabel.innerText = "ADVENTURER'S HUB";
+          } else {
+            let text = window.playerStats.isCrucibleMode
+              ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}`
+              : `DUNGEON FLOOR ${p.depth}`;
+
+            let rec = window.playerStats && window.playerStats.recoveryLoot;
+            if (rec && rec.floor === p.depth && rec.items && rec.items.length > 0) {
+              text += " [RECOVERY ACTIVE]";
+            }
+            depthLabel.innerText = text;
+          }
+        }
     if (objectiveLabel) {
       if (isHub) {
         objectiveLabel.innerText = "Select a Station or Portal";

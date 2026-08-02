@@ -981,31 +981,44 @@
           getStatText: (rank) => `${rank} Active Elixir Effects for Entire Run`,
         },
         {
-          id: "utility_bag",
-          name: "Satchel Expansion",
-          iconKey: "utility_bag",
-          x: 32,
-          y: 28,
-          currency: "global",
-          maxRank: 3,
-          costPerRank: 4,
-          prereqs: ["utility_quality"],
-          desc: "Increases carried satchel equipment capacity by +5 slots per rank.",
-          getStatText: (rank) => `+${rank * 5} Satchel Slots`,
-        },
-        {
-          id: "utility_insurance",
-          name: "Insurance Underwriter",
-          iconKey: "utility_insurance",
-          x: 68,
-          y: 28,
-          currency: "global",
-          maxRank: 3,
-          costPerRank: 4,
-          prereqs: ["utility_vitality", "utility_elixir"],
-          desc: "Reduces Gold insurance premium costs by -10% per rank.",
-          getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
-        },
+                  id: "utility_bag",
+                  name: "Satchel Expansion",
+                  iconKey: "utility_bag",
+                  x: 32,
+                  y: 28,
+                  currency: "global",
+                  maxRank: 3,
+                  costPerRank: 4,
+                  prereqs: ["utility_quality"],
+                  desc: "Increases carried satchel equipment capacity by +5 slots per rank.",
+                  getStatText: (rank) => `+${rank * 5} Satchel Slots`,
+                },
+                {
+                  id: "utility_soul_beacon",
+                  name: "Soul Beacon",
+                  iconKey: "utility_vitality",
+                  x: 50,
+                  y: 28,
+                  currency: "global",
+                  maxRank: 1,
+                  costPerRank: 5,
+                  prereqs: ["utility_quality", "utility_vitality"],
+                  desc: "Guarantees that your dropped Recovery Chest always spawns safely inside the exit Portal Room, farthest from the portal.",
+                  getStatText: () => "Recovery Chest spawns in Portal Room",
+                },
+                {
+                  id: "utility_insurance",
+                  name: "Insurance Underwriter",
+                  iconKey: "utility_insurance",
+                  x: 68,
+                  y: 28,
+                  currency: "global",
+                  maxRank: 3,
+                  costPerRank: 4,
+                  prereqs: ["utility_vitality", "utility_elixir"],
+                  desc: "Reduces Gold insurance premium costs by -10% per rank.",
+                  getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
+                },
         {
           id: "utility_treasure_hunter",
           name: "Relic Hunter",
@@ -1400,97 +1413,105 @@
     },
 
     initViewportPan() {
-      let viewport = document.querySelector(".constellation-viewport");
-      if (!viewport || viewport.dataset.panInitialized) return;
-      viewport.dataset.panInitialized = "true";
+        let viewport = document.querySelector(".constellation-viewport");
+        if (!viewport || viewport.dataset.panInitialized) return;
+        viewport.dataset.panInitialized = "true";
 
-      this.activePointers = [];
-      this.lastPinchDist = null;
+        this.activePointers = [];
+        this.lastPinchDist = null;
 
-      viewport.addEventListener("pointerdown", (e) => {
-        if (
-          e.target.closest(".selected-node-dock") ||
-          e.target.closest("button")
-        )
-          return;
+        viewport.addEventListener("pointerdown", (e) => {
+          if (
+            e.target.closest(".selected-node-dock") ||
+            e.target.closest("button")
+          )
+            return;
 
-        this.activePointers.push(e);
-        this.isPanning = true;
-        this.hasPanned = false;
+          this.activePointers.push(e);
+          this.isPanning = true;
+          this.hasPanned = false;
 
-        if (this.activePointers.length === 1) {
-          this.dragStartX = e.clientX;
-          this.dragStartY = e.clientY;
-        } else if (this.activePointers.length === 2) {
-          let p1 = this.activePointers[0];
-          let p2 = this.activePointers[1];
-          this.lastPinchDist = Math.hypot(
-            p1.clientX - p2.clientX,
-            p1.clientY - p2.clientY,
+          if (this.activePointers.length === 1) {
+            this.touchStartX = e.clientX;
+            this.touchStartY = e.clientY;
+            this.dragStartX = e.clientX;
+            this.dragStartY = e.clientY;
+          } else if (this.activePointers.length === 2) {
+            let p1 = this.activePointers[0];
+            let p2 = this.activePointers[1];
+            this.lastPinchDist = Math.hypot(
+              p1.clientX - p2.clientX,
+              p1.clientY - p2.clientY,
+            );
+          }
+        });
+
+        viewport.addEventListener("pointermove", (e) => {
+          if (!this.isPanning) return;
+
+          let idx = this.activePointers.findIndex(
+            (p) => p.pointerId === e.pointerId,
           );
-        }
+          if (idx !== -1) {
+            this.activePointers[idx] = e;
+          }
 
-        try {
-          viewport.setPointerCapture(e.pointerId);
-        } catch (err) {}
-      });
+          let rect = viewport.getBoundingClientRect();
 
-      viewport.addEventListener("pointermove", (e) => {
-        if (!this.isPanning) return;
-
-        let idx = this.activePointers.findIndex(
-          (p) => p.pointerId === e.pointerId,
-        );
-        if (idx !== -1) {
-          this.activePointers[idx] = e;
-        }
-
-        let rect = viewport.getBoundingClientRect();
-
-        if (this.activePointers.length === 2) {
-          let p1 = this.activePointers[0];
-          let p2 = this.activePointers[1];
-          let dist = Math.hypot(
-            p1.clientX - p2.clientX,
-            p1.clientY - p2.clientY,
-          );
-
-          if (this.lastPinchDist) {
-            let ratio = dist / this.lastPinchDist;
-            let midX = (p1.clientX + p2.clientX) / 2;
-            let midY = (p1.clientY + p2.clientY) / 2;
-
-            let virtualX = (midX - rect.left - this.panX) / this.zoom;
-            let virtualY = (midY - rect.top - this.panY) / this.zoom;
-
-            this.zoom = Math.max(
-              this.minZoom,
-              Math.min(this.maxZoom, this.zoom * ratio),
+          if (this.activePointers.length === 2) {
+            let p1 = this.activePointers[0];
+            let p2 = this.activePointers[1];
+            let dist = Math.hypot(
+              p1.clientX - p2.clientX,
+              p1.clientY - p2.clientY,
             );
 
-            this.panX = midX - rect.left - virtualX * this.zoom;
-            this.panY = midY - rect.top - virtualY * this.zoom;
+            if (this.lastPinchDist) {
+              let ratio = dist / this.lastPinchDist;
+              let midX = (p1.clientX + p2.clientX) / 2;
+              let midY = (p1.clientY + p2.clientY) / 2;
 
-            this.hasPanned = true;
-            this.updatePanTransform();
+              let virtualX = (midX - rect.left - this.panX) / this.zoom;
+              let virtualY = (midY - rect.top - this.panY) / this.zoom;
+
+              this.zoom = Math.max(
+                this.minZoom,
+                Math.min(this.maxZoom, this.zoom * ratio),
+              );
+
+              this.panX = midX - rect.left - virtualX * this.zoom;
+              this.panY = midY - rect.top - virtualY * this.zoom;
+
+              this.hasPanned = true;
+              this.updatePanTransform();
+            }
+            this.lastPinchDist = dist;
+          } else if (this.activePointers.length === 1) {
+            let dx = e.clientX - this.dragStartX;
+            let dy = e.clientY - this.dragStartY;
+
+            let totalDx = e.clientX - this.touchStartX;
+            let totalDy = e.clientY - this.touchStartY;
+
+            if (Math.abs(totalDx) > 5 || Math.abs(totalDy) > 5) {
+              if (!this.hasPanned) {
+                this.hasPanned = true;
+                try {
+                  viewport.setPointerCapture(e.pointerId);
+                } catch (err) {}
+              }
+            }
+
+            if (this.hasPanned) {
+              this.panX += dx;
+              this.panY += dy;
+              this.dragStartX = e.clientX;
+              this.dragStartY = e.clientY;
+
+              this.updatePanTransform();
+            }
           }
-          this.lastPinchDist = dist;
-        } else if (this.activePointers.length === 1) {
-          let dx = e.clientX - this.dragStartX;
-          let dy = e.clientY - this.dragStartY;
-
-          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-            this.hasPanned = true;
-          }
-
-          this.panX += dx;
-          this.panY += dy;
-          this.dragStartX = e.clientX;
-          this.dragStartY = e.clientY;
-
-          this.updatePanTransform();
-        }
-      });
+        });
 
       const stopPan = (e) => {
         this.activePointers = this.activePointers.filter(
@@ -1660,14 +1681,14 @@
           let vy = (node.y / 100) * 1000;
 
           return `
-                        <div class="constellation-node ${isSelected ? "selected" : ""} ${node.isKeystone ? "keystone" : ""}" style="left:${vx}px; top:${vy}px; position: absolute; transform: translate(-50%, -50%); pointer-events: auto;" onclick="window.SkillTreeManager.selectNode('${node.id}')">
-                          <div class="node-icon-socket" style="border-color:${borderCol}; background:${bgCol}; ${isSelected ? `box-shadow: 0 0 16px ${activeTree.color};` : ""}">
-                            ${iconSvg}
-                            <span class="node-rank-tag" style="background:${currentRank > 0 ? activeTree.color : "#1e293b"}; color:#ffffff;">${rankBadge}</span>
-                          </div>
-                          <span class="node-label-title" style="color:${isUnlocked ? (currentRank > 0 ? "#ffffff" : "#94a3b8") : "#475569"};">${node.name}</span>
-                        </div>
-                      `;
+                    <div class="constellation-node ${isSelected ? "selected" : ""} ${node.isKeystone ? "keystone" : ""}" style="left:${vx}px; top:${vy}px; position: absolute; transform: translate(-50%, -50%);" onclick="window.SkillTreeManager.selectNode('${node.id}')">
+                      <div class="node-icon-socket" style="border-color:${borderCol}; background:${bgCol}; ${isSelected ? `box-shadow: 0 0 16px ${activeTree.color};` : ""}">
+                        ${iconSvg}
+                        <span class="node-rank-tag" style="background:${currentRank > 0 ? activeTree.color : "#1e293b"}; color:#ffffff;">${rankBadge}</span>
+                      </div>
+                      <span class="node-label-title" style="color:${isUnlocked ? (currentRank > 0 ? "#ffffff" : "#94a3b8") : "#475569"};">${node.name}</span>
+                    </div>
+                  `;
         })
         .join("");
 
@@ -1744,20 +1765,20 @@
         `;
 
       container.innerHTML = `
-                <div class="skill-tree-wrapper">
-                  ${headerHtml}
-                  <div class="tree-selector-bar">
-                    ${treeTabsHtml}
-                  </div>
-                  <div class="constellation-viewport" style="position: relative; overflow: hidden; width: 100%; height: 100%; touch-action: none;">
-                    <canvas id="skill-constellation-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
-                    <div class="constellation-nodes-layer" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1000px; transform: translate(${this.panX}px, ${this.panY}px) scale(${this.zoom}); transform-origin: 0 0; pointer-events: none;">
-                      ${nodesHtml}
-                    </div>
-                    ${detailDockHtml}
-                  </div>
-                </div>
-              `;
+                      <div class="skill-tree-wrapper">
+                        ${headerHtml}
+                        <div class="tree-selector-bar">
+                          ${treeTabsHtml}
+                        </div>
+                        <div class="constellation-viewport" style="position: relative; overflow: hidden; width: 100%; height: 100%; touch-action: none;">
+                          <canvas id="skill-constellation-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                          <div class="constellation-nodes-layer" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1000px; transform: translate(${this.panX}px, ${this.panY}px) scale(${this.zoom}); transform-origin: 0 0;">
+                            ${nodesHtml}
+                          </div>
+                          ${detailDockHtml}
+                        </div>
+                      </div>
+                    `;
 
       setTimeout(() => {
         this.initViewportPan();

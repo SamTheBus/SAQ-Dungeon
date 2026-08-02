@@ -481,33 +481,42 @@
       this.extractionRoomId = chosen.id;
       this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
 
-      // Spawn Recovery Chest in exit room if lost loot matches current floor depth
-      let rec = window.playerStats && window.playerStats.recoveryLoot;
-      if (
-        rec &&
-        rec.floor === this.depth &&
-        rec.items &&
-        rec.items.length > 0
-      ) {
-        let candidateTiles = [];
-        for (let ry = chosen.y; ry < chosen.y + chosen.h; ry++) {
-          for (let rx = chosen.x; rx < chosen.x + chosen.w; rx++) {
-            let distToPortal = Math.hypot(rx - chosen.cx, ry - chosen.cy);
+      // Spawn Recovery Chest if lost loot matches current floor depth (Portal Room skill vs Random Room)
+            let rec = window.playerStats && window.playerStats.recoveryLoot;
             if (
-              distToPortal >= 2.2 &&
-              this.grid[ry][rx] === window.TILE_TYPES.FLOOR
+              rec &&
+              rec.floor === this.depth &&
+              rec.items &&
+              rec.items.length > 0
             ) {
-              candidateTiles.push({ x: rx, y: ry, dist: distToPortal });
+              let spawnInPortalRoom = window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("utility_soul_beacon") > 0;
+              let targetRoom = chosen;
+
+              if (!spawnInPortalRoom && this.rooms.length > 0) {
+                let eligible = this.rooms.filter(r => r.id !== this.spawnRoomId);
+                if (eligible.length === 0) eligible = this.rooms;
+                targetRoom = eligible[Math.floor(Math.random() * eligible.length)];
+              }
+
+              let candidateTiles = [];
+              for (let ry = targetRoom.y; ry < targetRoom.y + targetRoom.h; ry++) {
+                for (let rx = targetRoom.x; rx < targetRoom.x + targetRoom.w; rx++) {
+                  if (this.grid[ry] && this.grid[ry][rx] === window.TILE_TYPES.FLOOR) {
+                    let distToPortal = Math.hypot(rx - targetRoom.cx, ry - targetRoom.cy);
+                    candidateTiles.push({ x: rx, y: ry, dist: distToPortal });
+                  }
+                }
+              }
+              if (candidateTiles.length > 0) {
+                if (spawnInPortalRoom) {
+                  candidateTiles.sort((a, b) => b.dist - a.dist);
+                } else {
+                  candidateTiles.sort(() => Math.random() - 0.5);
+                }
+                let targetTile = candidateTiles[0];
+                this.grid[targetTile.y][targetTile.x] = window.TILE_TYPES.RECOVERY_CHEST;
+              }
             }
-          }
-        }
-        if (candidateTiles.length > 0) {
-          candidateTiles.sort((a, b) => b.dist - a.dist);
-          let targetTile = candidateTiles[0]; // Tile farthest from portal inside exit room
-          this.grid[targetTile.y][targetTile.x] =
-            window.TILE_TYPES.RECOVERY_CHEST;
-        }
-      }
     }
 
     placeDungeonMerchant() {
