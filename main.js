@@ -8018,21 +8018,23 @@
         let tile = map.grid[currentTileY][currentTileX];
 
         if (tile === window.TILE_TYPES.DESCENT_PORTAL) {
-                  // Subphase 16: Lock descent portals on Floors 1-3 until the active Warden mini-boss is slain
-                  if (window.playerStats.activeSpecialChallenge && window.mob) {
-                    if (window.logicClock % 60 === 0) {
-                      window.spawnFloatingText(p.x, p.y - 25, "PORTAL LOCKED - DEFEAT THE WARDEN!", "#ef4444");
-                    }
-                  } else {
-                    map.grid[currentTileY][currentTileX] = window.TILE_TYPES.FLOOR;
-                    window.executePortalDescend();
-                  }
-                } else if (
-                  tile === window.TILE_TYPES.EXTRACTION_ZONE ||
-                  tile === window.TILE_TYPES.BOSS_GATE
-                ) {
-                  window.openPortalChoiceModal();
+              // Subphase 16: Lock descent portals on Floors 1-3 until the active Warden mini-boss is slain
+              if (window.playerStats.activeSpecialChallenge && window.mob) {
+                if (window.logicClock % 60 === 0) {
+                  window.spawnFloatingText(p.x, p.y - 25, "PORTAL LOCKED - DEFEAT THE WARDEN!", "#ef4444");
                 }
+              } else {
+                if (Date.now() - (window.lastModalCloseTime || 0) > 1000) {
+                  window.executePortalDescend();
+                }
+              }
+            } else if (
+              (tile === window.TILE_TYPES.EXTRACTION_ZONE ||
+               tile === window.TILE_TYPES.BOSS_GATE) &&
+              Date.now() - (window.lastModalCloseTime || 0) > 1000
+            ) {
+              window.openPortalChoiceModal();
+            }
 
         if (tile === window.TILE_TYPES.RECOVERY_CHEST) {
           if (!window.isChestOpened(currentTileX, currentTileY)) {
