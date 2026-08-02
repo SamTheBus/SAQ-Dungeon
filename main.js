@@ -5107,108 +5107,120 @@
   };
 
   window.enterDungeonRun = function (startFloor = 1) {
-    window.currentGameState = window.GAME_STATES.DUNGEON;
-    window.player.depth = Math.max(1, Number(startFloor) || 1);
-    window.player.bag = [];
-    window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on descent
+      window.currentGameState = window.GAME_STATES.DUNGEON;
+      let startFloorNum = Math.max(1, Number(startFloor) || 1);
+      window.player.depth = startFloorNum;
+      window.player.bag = [];
+      window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on descent
 
-    if (typeof window.refillFlaskCharges === "function") {
-      window.refillFlaskCharges(true);
-    }
-
-    let st = window.SkillTreeManager;
-
-    // 1. Offhand Starter Provisioning
-    let activeStarter = window.playerStats
-      ? window.playerStats.activeStarterSubweapon
-      : "none";
-    if (
-      activeStarter &&
-      activeStarter !== "none" &&
-      window.equippedSlots &&
-      !window.equippedSlots.subweapon
-    ) {
-      let starterItem = window.createItemObject(activeStarter, 0, 1, 0);
-      starterItem.name = `Starter ${activeStarter.charAt(0).toUpperCase() + activeStarter.slice(1)}`;
-      starterItem.isStarterItem = true;
-      window.equippedSlots.subweapon = starterItem;
-      starterItem.isEquippedSlot = "subweapon";
-    }
-
-    // 2. Main Hand Weapon Provisioning (utility_start_weapon: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
-    if (st && window.equippedSlots && !window.equippedSlots.weapon) {
-      let weapRank = st.getSkillLevel("utility_start_weapon");
-      if (weapRank > 0) {
-        let stars = Math.min(2, weapRank - 1);
-        let item = window.createItemObject("weapon", stars, 1, 0);
-        item.name = `Provisioned ${window.getTierName(stars)} Blade`;
-        item.isStarterItem = true;
-        window.equippedSlots.weapon = item;
-        item.isEquippedSlot = "weapon";
+      if (typeof window.refillFlaskCharges === "function") {
+        window.refillFlaskCharges(true);
       }
-    }
 
-    // 3. Chest Armor Provisioning (utility_start_armor: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
-    if (
-      st &&
-      window.equippedSlots &&
-      !window.equippedSlots.chest &&
-      !window.equippedSlots.overall
-    ) {
-      let armorRank = st.getSkillLevel("utility_start_armor");
-      if (armorRank > 0) {
-        let stars = Math.min(2, armorRank - 1);
-        let item = window.createItemObject("chest", stars, 1, 0);
-        item.name = `Provisioned ${window.getTierName(stars)} Cuirass`;
-        item.isStarterItem = true;
-        window.equippedSlots.chest = item;
-        item.isEquippedSlot = "chest";
+      let st = window.SkillTreeManager;
+      let starterStageScale = Math.max(1, Math.floor(startFloorNum * 0.70));
+
+      // 1. Offhand Starter Provisioning
+      let activeStarter = window.playerStats
+        ? window.playerStats.activeStarterSubweapon
+        : "none";
+      if (
+        activeStarter &&
+        activeStarter !== "none" &&
+        window.equippedSlots &&
+        !window.equippedSlots.subweapon
+      ) {
+        let starterItem = window.createItemObject(activeStarter, 0, starterStageScale, 0);
+        starterItem.name = `Starter ${activeStarter.charAt(0).toUpperCase() + activeStarter.slice(1)}`;
+        starterItem.isStarterItem = true;
+        window.equippedSlots.subweapon = starterItem;
+        starterItem.isEquippedSlot = "subweapon";
       }
-    }
 
-    // 4. Helmet & Boots Provisioning (utility_start_head_feet)
-    if (st && window.equippedSlots) {
-      let hfRank = st.getSkillLevel("utility_start_head_feet");
-      if (hfRank > 0) {
-        let stars = Math.min(2, hfRank - 1);
-        if (!window.equippedSlots.helmet) {
-          let helm = window.createItemObject("helmet", stars, 1, 0);
-          helm.name = `Provisioned ${window.getTierName(stars)} Helm`;
-          helm.isStarterItem = true;
-          window.equippedSlots.helmet = helm;
-          helm.isEquippedSlot = "helmet";
-        }
-        if (!window.equippedSlots.boots) {
-          let boots = window.createItemObject("boots", stars, 1, 0);
-          boots.name = `Provisioned ${window.getTierName(stars)} Boots`;
-          boots.isStarterItem = true;
-          window.equippedSlots.boots = boots;
-          boots.isEquippedSlot = "boots";
+      // 2. Main Hand Weapon Provisioning (utility_start_weapon: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
+      if (st && window.equippedSlots && !window.equippedSlots.weapon) {
+        let weapRank = st.getSkillLevel("utility_start_weapon");
+        if (weapRank > 0) {
+          let stars = Math.min(2, weapRank - 1);
+          let item = window.createItemObject("weapon", stars, starterStageScale, 0);
+          item.name = `Provisioned ${window.getTierName(stars)} Blade`;
+          item.isStarterItem = true;
+          window.equippedSlots.weapon = item;
+          item.isEquippedSlot = "weapon";
         }
       }
-    }
 
-    // 5. Ring Provisioning (utility_start_ring)
-    if (st && window.equippedSlots) {
-      let ringRank = st.getSkillLevel("utility_start_ring");
-      if (ringRank > 0) {
-        let stars = Math.min(2, ringRank - 1);
-        if (!window.equippedSlots.ring1) {
-          let ring1 = window.createItemObject("ring", stars, 1, 0);
-          ring1.name = `Provisioned ${window.getTierName(stars)} Band`;
-          ring1.isStarterItem = true;
-          window.equippedSlots.ring1 = ring1;
-          ring1.isEquippedSlot = "ring1";
-        }
-        if (!window.equippedSlots.ring2) {
-          let ring2 = window.createItemObject("ring", stars, 1, 0);
-          ring2.name = `Provisioned ${window.getTierName(stars)} Signet`;
-          ring2.isStarterItem = true;
-          window.equippedSlots.ring2 = ring2;
-          ring2.isEquippedSlot = "ring2";
+      // 3. Chest/Overall Armor Provisioning (utility_start_armor: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
+      if (
+        st &&
+        window.equippedSlots &&
+        !window.equippedSlots.chest &&
+        !window.equippedSlots.overall
+      ) {
+        let armorRank = st.getSkillLevel("utility_start_armor");
+        if (armorRank > 0) {
+          let stars = Math.min(2, armorRank - 1);
+          let item = window.createItemObject("overall", stars, starterStageScale, 0);
+          item.name = `Provisioned ${window.getTierName(stars)} Plate Suit`;
+          item.isStarterItem = true;
+
+          // Safe unequip of leggings if equipped to prevent slot overlap
+          if (window.equippedSlots.leggings) {
+            let leggingsItem = window.equippedSlots.leggings;
+            delete leggingsItem.isEquippedSlot;
+            if (!window.player.stash) window.player.stash = [];
+            window.player.stash.push(leggingsItem);
+            window.equippedSlots.leggings = null;
+          }
+
+          window.equippedSlots.overall = item;
+          item.isEquippedSlot = "overall";
         }
       }
-    }
+
+      // 4. Helmet & Boots Provisioning (utility_start_head_feet)
+      if (st && window.equippedSlots) {
+        let hfRank = st.getSkillLevel("utility_start_head_feet");
+        if (hfRank > 0) {
+          let stars = Math.min(2, hfRank - 1);
+          if (!window.equippedSlots.helmet) {
+            let helm = window.createItemObject("helmet", stars, starterStageScale, 0);
+            helm.name = `Provisioned ${window.getTierName(stars)} Helm`;
+            helm.isStarterItem = true;
+            window.equippedSlots.helmet = helm;
+            helm.isEquippedSlot = "helmet";
+          }
+          if (!window.equippedSlots.boots) {
+            let boots = window.createItemObject("boots", stars, starterStageScale, 0);
+            boots.name = `Provisioned ${window.getTierName(stars)} Boots`;
+            boots.isStarterItem = true;
+            window.equippedSlots.boots = boots;
+            boots.isEquippedSlot = "boots";
+          }
+        }
+      }
+
+      // 5. Ring Provisioning (utility_start_ring)
+      if (st && window.equippedSlots) {
+        let ringRank = st.getSkillLevel("utility_start_ring");
+        if (ringRank > 0) {
+          let stars = Math.min(2, ringRank - 1);
+          if (!window.equippedSlots.ring1) {
+            let ring1 = window.createItemObject("ring", stars, starterStageScale, 0);
+            ring1.name = `Provisioned ${window.getTierName(stars)} Band`;
+            ring1.isStarterItem = true;
+            window.equippedSlots.ring1 = ring1;
+            ring1.isEquippedSlot = "ring1";
+          }
+          if (!window.equippedSlots.ring2) {
+            let ring2 = window.createItemObject("ring", stars, starterStageScale, 0);
+            ring2.name = `Provisioned ${window.getTierName(stars)} Signet`;
+            ring2.isStarterItem = true;
+            window.equippedSlots.ring2 = ring2;
+            ring2.isEquippedSlot = "ring2";
+          }
+        }
+      }
 
     // Hook 2: Field Medic Run-Long Basic Elixir Effects
     if (window.SkillTreeManager) {
@@ -15780,11 +15792,26 @@
 
     let tt = document.getElementById("game-tooltip");
     if (tt && tt.style.display === "block" && itemId) {
-      let item =
-        (window.inventory &&
-          window.inventory.EQUIP &&
-          window.inventory.EQUIP.find((i) => i.id === itemId)) ||
-        (window.frozenItemDb && window.frozenItemDb[itemId]);
+      let item = null;
+
+      // Broad search across all potential inventory, equipped, and bag states
+      if (window.inventory && window.inventory.EQUIP) {
+        item = window.inventory.EQUIP.find((i) => i.id === itemId);
+      }
+      if (!item && window.player && window.player.bag) {
+        item = window.player.bag.find((i) => i.id === itemId);
+      }
+      if (!item && window.equippedSlots) {
+        for (let k in window.equippedSlots) {
+          if (window.equippedSlots[k] && window.equippedSlots[k].id === itemId) {
+            item = window.equippedSlots[k];
+            break;
+          }
+        }
+      }
+      if (!item && window.frozenItemDb) {
+        item = window.frozenItemDb[itemId];
+      }
 
       if (item) {
         tt.innerHTML = window.buildGeneralTooltipHtml(item, true);
