@@ -76,6 +76,7 @@ window.SoundManager = {
         for (let i = 0; i < data.length; i++) {
           data[i] = Math.random() * 2 - 1;
         }
+        this.setupVisibilitySentinel();
       } catch (e) {
         console.warn("Failed to initialize Web AudioContext:", e);
         return false;
@@ -126,6 +127,68 @@ window.SoundManager = {
     }
   },
 
+  setupVisibilitySentinel() {
+    if (this.sentinelInitialized) return;
+    this.sentinelInitialized = true;
+
+    const handleVisibilityLoss = () => {
+      if (this.ctx) {
+        if (this.masterGain) {
+          const now = this.ctx.currentTime;
+          this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+          this.masterGain.gain.linearRampToValueAtTime(0, now + 0.05);
+        }
+        setTimeout(() => {
+          if (this.ctx && this.ctx.state !== "suspended") {
+            this.ctx.suspend().catch(() => {});
+          }
+        }, 60);
+      }
+      if (
+        window.MusicManager &&
+        typeof window.MusicManager.pause === "function"
+      ) {
+        window.MusicManager.pause();
+      }
+      if (navigator.audioSession) {
+        try {
+          navigator.audioSession.type = "ambient";
+        } catch (e) {}
+      }
+    };
+
+    const handleVisibilityGain = () => {
+      const pStats = window.playerStats || {};
+      if (pStats.mute) return;
+
+      if (this.ctx) {
+        this.ctx
+          .resume()
+          .then(() => {
+            this.updateVolumes();
+            if (
+              window.MusicManager &&
+              typeof window.MusicManager.resume === "function"
+            ) {
+              window.MusicManager.resume();
+            }
+          })
+          .catch(() => {});
+      }
+    };
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        handleVisibilityLoss();
+      } else if (document.visibilityState === "visible") {
+        handleVisibilityGain();
+      }
+    });
+
+    window.addEventListener("blur", handleVisibilityLoss);
+    window.addEventListener("focus", handleVisibilityGain);
+  },
+
   // Subphase 1.2: Pool Acquisition Helpers
   acquireGainNode(now, duration) {
     const releaseTime = now + duration;
@@ -169,16 +232,28 @@ window.SoundManager = {
   play(type) {
     if (window.playerStats.mute) return;
     if (!this.init()) return;
+
+    // Auto-recovery watchdog to prevent channel lockout from suspended timers or errors
+    const now = this.ctx.currentTime;
+    const lastPlay = this._lastPlayTime || 0;
+    if (now - lastPlay > 2.0) {
+      this.activeChannelCount = 0;
+    }
+    this._lastPlayTime = now;
+
     if (this.activeChannelCount >= this.maxConcurrent) return;
     this.activeChannelCount++;
-    const now = this.ctx.currentTime;
     const dest = this.sfxGain;
     switch (type) {
       case "swing":
         this.playWeaponSwing(now, dest);
         break;
       case "hover":
-        this.synthesizeSwing(now, dest);
+        if (typeof this.playHover === "function") {
+          this.playHover();
+        } else {
+          this.synthesizeSwordSwing(now, dest);
+        }
         break;
       case "hit":
         this.synthesizeHit(now, dest, false);
@@ -456,9 +531,17 @@ window.SoundManager = {
   playChestOpen(tier = "iron_bound") {
     if (window.playerStats && window.playerStats.mute) return;
     if (!this.init()) return;
+
+    // Auto-recovery watchdog to prevent channel lockout from suspended timers or errors
+    const now = this.ctx.currentTime;
+    const lastPlay = this._lastPlayTime || 0;
+    if (now - lastPlay > 2.0) {
+      this.activeChannelCount = 0;
+    }
+    this._lastPlayTime = now;
+
     if (this.activeChannelCount >= this.maxConcurrent) return;
     this.activeChannelCount++;
-    const now = this.ctx.currentTime;
     const dest = this.sfxGain;
 
     if (tier === "iron_bound") {
@@ -1034,9 +1117,17 @@ window.SoundManager = {
   playHitImpact(isCrit = false, targetType = "flesh") {
     if (window.playerStats && window.playerStats.mute) return;
     if (!this.init()) return;
+
+    // Auto-recovery watchdog to prevent channel lockout from suspended timers or errors
+    const now = this.ctx.currentTime;
+    const lastPlay = this._lastPlayTime || 0;
+    if (now - lastPlay > 2.0) {
+      this.activeChannelCount = 0;
+    }
+    this._lastPlayTime = now;
+
     if (this.activeChannelCount >= this.maxConcurrent) return;
     this.activeChannelCount++;
-    const now = this.ctx.currentTime;
     const dest = this.sfxGain;
 
     // Subphase 3.4 Asymptotic Combo Pitch-Compressor Tracking
@@ -2397,26 +2488,35 @@ window.SoundManager.unlockMobileAudio = function () {
   }
   if (this.ctx) {
     if (this.ctx.state === "suspended") {
-      this.ctx.resume().then(() => {
-        // Play a tiny, silent 1-sample buffer to completely unblock Apple's hardware engine
-        try {
-          let buffer = this.ctx.createBuffer(1, 1, 22050);
-          let source = this.ctx.createBufferSource();
-          source.buffer = buffer;
-          source.connect(this.ctx.destination);
-          source.start(0);
-        } catch (e) {
-          console.warn("Failed to play silent kickstart buffer:", e);
-        }
-        this.updateVolumes();
-        if (window.MusicManager && typeof window.MusicManager.init === "function") {
-          window.MusicManager.init();
-        }
-      }).catch((err) => {
-        console.warn("Failed to resume AudioContext:", err);
-      });
+      this.ctx
+        .resume()
+        .then(() => {
+          // Play a tiny, silent 1-sample buffer to completely unblock Apple's hardware engine
+          try {
+            let buffer = this.ctx.createBuffer(1, 1, 22050);
+            let source = this.ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(this.ctx.destination);
+            source.start(0);
+          } catch (e) {
+            console.warn("Failed to play silent kickstart buffer:", e);
+          }
+          this.updateVolumes();
+          if (
+            window.MusicManager &&
+            typeof window.MusicManager.init === "function"
+          ) {
+            window.MusicManager.init();
+          }
+        })
+        .catch((err) => {
+          console.warn("Failed to resume AudioContext:", err);
+        });
     } else {
-      if (window.MusicManager && typeof window.MusicManager.init === "function") {
+      if (
+        window.MusicManager &&
+        typeof window.MusicManager.init === "function"
+      ) {
         window.MusicManager.init();
       }
     }
@@ -2507,8 +2607,14 @@ window.SoundManager.initTactileFeedback = function () {
 window.SoundManager.playCardPickup = function () {
   if (!this.init()) return;
   let audioCtx = this.ctx;
-  let masterVol = window.playerStats.volumeMaster !== undefined ? window.playerStats.volumeMaster : 0.5;
-  let sfxVol = window.playerStats.volumeSFX !== undefined ? window.playerStats.volumeSFX : 0.8;
+  let masterVol =
+    window.playerStats.volumeMaster !== undefined
+      ? window.playerStats.volumeMaster
+      : 0.5;
+  let sfxVol =
+    window.playerStats.volumeSFX !== undefined
+      ? window.playerStats.volumeSFX
+      : 0.8;
   let finalVol = masterVol * sfxVol;
   if (window.playerStats.mute || finalVol <= 0) return;
 
@@ -2545,12 +2651,17 @@ window.SoundManager.playCardPickup = function () {
     oscillators.push(osc);
   });
 
-  setTimeout(() => {
-    oscillators.forEach(osc => {
-      try { osc.disconnect(); } catch (e) {}
-    });
-    masterGain.disconnect();
-  }, (duration + 0.1) * 1000);
+  setTimeout(
+    () => {
+      oscillators.forEach((osc) => {
+        try {
+          osc.disconnect();
+        } catch (e) {}
+      });
+      masterGain.disconnect();
+    },
+    (duration + 0.1) * 1000,
+  );
 };
 
 // Auto-register listener bindings on script load
@@ -2572,14 +2683,26 @@ window.MusicManager = {
   ctx: null,
   source: null,
   gainNode: null,
+  trackGainNode: null,
+  synthFilter: null,
   activeBuffer: null,
   initialized: false,
   isLoading: false,
   isPaused: false,
   currentTrackIndex: 0,
-  proceduralInterval: null,
   proceduralNodes: [],
   isProcedural: false,
+  watcherIntervalId: null,
+
+  // Lookahead Scheduler Clock Registers
+  schedulerActive: false,
+  schedulerTimeoutId: null,
+  tempo: 50,
+  lookahead: 0.1, // schedule 100ms in advance
+  scheduleInterval: 25, // check clock every 25ms
+  nextNoteTime: 0.0,
+  currentStep: 0,
+  currentBGMState: "HUB",
 
   // Playlist array: easily add more track filenames here in the future!
   tracks: ["music.mp3"],
@@ -2590,52 +2713,94 @@ window.MusicManager = {
     this.ctx = window.SoundManager.ctx;
     this.initialized = true;
 
+    // Create the sweepable Lowpass Filter for Music Swells
+    this.synthFilter = this.ctx.createBiquadFilter();
+    this.synthFilter.type = "lowpass";
+    this.synthFilter.frequency.setValueAtTime(450, this.ctx.currentTime);
+    this.synthFilter.Q.setValueAtTime(1.5, this.ctx.currentTime);
+
     this.gainNode = this.ctx.createGain();
     this.updateVolume();
+
+    // Connect Filter to Gain, and Gain to Main Destination
+    this.synthFilter.connect(this.gainNode);
     this.gainNode.connect(this.ctx.destination);
 
-    this.play();
+    // Dedicated track gain node to balance recorded BGM vs procedural BGM
+    this.trackGainNode = this.ctx.createGain();
+    this.trackGainNode.gain.setValueAtTime(0.35, this.ctx.currentTime); // Hard balanced to 35% of peak
+    this.trackGainNode.connect(this.gainNode);
+
+    this.loadTrack();
+    this.startStateWatcher();
   },
 
-  async play() {
-      if (!this.ctx || this.tracks.length === 0) return;
+  async loadTrack() {
+    if (this.isLoading || this.activeBuffer) return;
+    this.isLoading = true;
+    const trackUrl = this.tracks[this.currentTrackIndex];
+    try {
+      const response = await fetch(trackUrl);
+      if (!response.ok) throw new Error(`HTTP status ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+      this.activeBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+    } catch (err) {
+      console.warn(`[MusicManager] Failed to load track: ${trackUrl}`, err);
+    } finally {
+      this.isLoading = false;
+    }
+  },
 
-      // Stop any currently playing track first
-      this.stopSource();
-      this.stopProcedural();
-      this.isPaused = false;
-      this.isLoading = true;
+  startStateWatcher() {
+    if (this.watcherIntervalId) return;
+    this.watcherIntervalId = setInterval(() => {
+      this.tickState();
+    }, 250);
+  },
 
-      let trackUrl = this.tracks[this.currentTrackIndex];
+  tickState() {
+    if (!this.ctx || this.isPaused) return;
 
-      try {
-        const response = await fetch(trackUrl);
-        if (!response.ok) {
-          throw new Error(`HTTP status ${response.status}`);
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        this.activeBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-        this.isLoading = false;
+    const states = window.GAME_STATES || { HUB: 0, DUNGEON: 1 };
+    const isDungeon = window.currentGameState === states.DUNGEON;
 
-        // Start playback of the loaded buffer
-        this.startSource();
-      } catch (err) {
-        console.warn(
-          `[MusicManager] Failed to load or decode track: ${trackUrl}. Falling back to real-time procedural atmospheric BGM synthesis.`,
-          err,
-        );
-        this.isLoading = false;
+    if (isDungeon) {
+      if (this.source) {
+        this.fadeOutAndStopSource();
+      }
+      if (!this.isProcedural) {
         this.startProcedural();
       }
-    },
+      this.updateBGMState();
+    } else {
+      if (this.isProcedural) {
+        this.stopProcedural();
+      }
+      if (this.activeBuffer && !this.source && !this.isLoading) {
+        this.startSource();
+      } else if (!this.activeBuffer && !this.isLoading && !this.isProcedural) {
+        // Fallback to procedural drone if MP3 asset loading fails
+        this.startProcedural();
+        this.updateBGMState();
+      }
+    }
+  },
+
+  play() {
+    if (!this.initialized) {
+      this.init();
+      return;
+    }
+    this.isPaused = false;
+    this.tickState();
+  },
 
   startSource() {
-    if (!this.ctx || !this.activeBuffer || this.isPaused) return;
+    if (!this.ctx || !this.activeBuffer || this.isPaused || this.source) return;
 
     this.source = this.ctx.createBufferSource();
     this.source.buffer = this.activeBuffer;
 
-    // If you only have 1 track, we loop it. If you have multiple, we play the next on end.
     if (this.tracks.length === 1) {
       this.source.loop = true;
     } else {
@@ -2647,8 +2812,44 @@ window.MusicManager = {
       };
     }
 
-    this.source.connect(this.gainNode);
+    // Connect source to our dedicated, volume-balanced track gain node
+    this.source.connect(this.trackGainNode);
+
+    // Fade in the MP3 track cleanly over 1.5s to 0.35 peak level
+    const fadeTime = 1.5;
+    const now = this.ctx.currentTime;
+    this.trackGainNode.gain.cancelScheduledValues(now);
+    this.trackGainNode.gain.setValueAtTime(0.0001, now);
+    this.trackGainNode.gain.exponentialRampToValueAtTime(0.35, now + fadeTime);
+
     this.source.start(0);
+  },
+
+  fadeOutAndStopSource() {
+    if (!this.source) return;
+    const currentSource = this.source;
+    this.source = null; // Detach immediately to prevent cross-ticks
+
+    const fadeTime = 1.0;
+    const now = this.ctx.currentTime;
+    this.trackGainNode.gain.cancelScheduledValues(now);
+    this.trackGainNode.gain.setValueAtTime(this.trackGainNode.gain.value, now);
+    this.trackGainNode.gain.exponentialRampToValueAtTime(
+      0.0001,
+      now + fadeTime,
+    );
+
+    setTimeout(
+      () => {
+        try {
+          currentSource.stop();
+        } catch (e) {}
+        try {
+          currentSource.disconnect();
+        } catch (e) {}
+      },
+      fadeTime * 1000 + 50,
+    );
   },
 
   stopSource() {
@@ -2659,26 +2860,25 @@ window.MusicManager = {
       this.source.disconnect();
       this.source = null;
     }
+    if (this.ctx && this.trackGainNode) {
+      const now = this.ctx.currentTime;
+      this.trackGainNode.gain.cancelScheduledValues(now);
+      this.trackGainNode.gain.setValueAtTime(0, now);
+    }
   },
 
   pause() {
-      this.isPaused = true;
-      this.stopSource();
-      this.stopProcedural();
-    },
+    this.isPaused = true;
+    this.stopSource();
+    this.stopProcedural();
+  },
 
-    resume() {
-      if (this.initialized && this.isPaused) {
-        this.isPaused = false;
-        if (this.isProcedural) {
-          this.startProcedural();
-        } else if (this.activeBuffer) {
-          this.startSource();
-        } else {
-          this.play();
-        }
-      }
-    },
+  resume() {
+    if (this.initialized && this.isPaused) {
+      this.isPaused = false;
+      this.tickState();
+    }
+  },
 
   nextTrack() {
     if (this.tracks.length <= 1) return;
@@ -2694,149 +2894,526 @@ window.MusicManager = {
   },
 
   updateVolume() {
-      if (!this.ctx || !this.gainNode) return;
-      let now = this.ctx.currentTime;
-      let masterVol = window.playerStats.mute
-        ? 0
-        : window.playerStats.volumeMaster !== undefined
-          ? window.playerStats.volumeMaster
-          : 0.5;
-      let musicVol =
-        window.playerStats.volumeMusic !== undefined
-          ? window.playerStats.volumeMusic
-          : 0.5;
-      this.gainNode.gain.setTargetAtTime(masterVol * musicVol, now, 0.015);
-    },
+    if (!this.ctx || !this.gainNode) return;
+    let now = this.ctx.currentTime;
+    let masterVol = window.playerStats.mute
+      ? 0
+      : window.playerStats.volumeMaster !== undefined
+        ? window.playerStats.volumeMaster
+        : 0.5;
+    let musicVol =
+      window.playerStats.volumeMusic !== undefined
+        ? window.playerStats.volumeMusic
+        : 0.5;
+    this.gainNode.gain.setTargetAtTime(masterVol * musicVol, now, 0.015);
+  },
 
-    startProcedural() {
-      if (this.isProcedural) return;
-      this.isProcedural = true;
+  startProcedural() {
+    if (this.isProcedural) return;
+    this.isProcedural = true;
+    this.proceduralNodes = [];
+
+    this.startScheduler();
+  },
+
+  stopProcedural() {
+    this.isProcedural = false;
+    this.stopScheduler();
+    if (this.proceduralNodes) {
+      this.proceduralNodes.forEach((node) => {
+        try {
+          node.stop();
+        } catch (e) {}
+        try {
+          node.disconnect();
+        } catch (e) {}
+      });
       this.proceduralNodes = [];
+    }
+  },
 
-      this.playProceduralStep();
+  startScheduler() {
+    if (this.schedulerActive) return;
+    this.schedulerActive = true;
+    this.nextNoteTime = this.ctx.currentTime;
+    this.currentStep = 0;
 
-      this.proceduralInterval = setInterval(() => {
-        if (!this.isPaused) {
-          this.playProceduralStep();
-        }
-      }, 8000);
-    },
+    const runScheduler = () => {
+      if (!this.schedulerActive || this.isPaused) return;
 
-    stopProcedural() {
-      this.isProcedural = false;
-      if (this.proceduralInterval) {
-        clearInterval(this.proceduralInterval);
-        this.proceduralInterval = null;
+      this.updateBGMState();
+
+      while (this.nextNoteTime < this.ctx.currentTime + this.lookahead) {
+        this.scheduleStep(this.currentStep, this.nextNoteTime);
+        this.advanceStep();
       }
-      if (this.proceduralNodes) {
-        this.proceduralNodes.forEach((node) => {
+
+      this.schedulerTimeoutId = setTimeout(runScheduler, this.scheduleInterval);
+    };
+
+    runScheduler();
+  },
+
+  stopScheduler() {
+    this.schedulerActive = false;
+    if (this.schedulerTimeoutId) {
+      clearTimeout(this.schedulerTimeoutId);
+      this.schedulerTimeoutId = null;
+    }
+  },
+
+  advanceStep() {
+    // 16th note step calculation based on current tempo
+    const stepDuration = 60.0 / this.tempo / 4.0;
+    this.nextNoteTime += stepDuration;
+    this.currentStep = (this.currentStep + 1) % 16;
+  },
+
+  scheduleStep(step, time) {
+    // Chords are scheduled on Step 0 (approx once per bar)
+    if (step === 0) {
+      this.playProceduralPad(time);
+    }
+
+    // Dynamic state-driven sequencer patterns
+    if (this.currentBGMState === "COMBAT" || this.currentBGMState === "BOSS") {
+      // 1. Kick Drum (scheduled on quarter notes: steps 0, 4, 8, 12)
+      if (step % 4 === 0) {
+        this.synthesizeKick(time);
+      }
+      // 2. Off-beat Hi-Hats (scheduled on off-beats: steps 2, 6, 10, 14)
+      if (step % 4 === 2) {
+        this.synthesizeHiHat(time);
+      }
+      // 3. Rolling Bassline (scheduled on 8th notes: even steps)
+      if (step % 2 === 0) {
+        const baseVol = this.currentBGMState === "BOSS" ? 0.16 : 0.11;
+        this.synthesizeBasslineNote(
+          time,
+          this.currentDronePitch || 73.42,
+          step,
+          baseVol,
+        );
+      }
+    } else if (this.currentBGMState === "EXPLORE") {
+      // Minimal tension drone pulses (only steps 0 and 8)
+      if (step === 0 || step === 8) {
+        this.synthesizeBasslineNote(
+          time,
+          this.currentDronePitch || 73.42,
+          step,
+          0.05,
+        );
+      }
+      // Rare environmental water drips (15% chance on off-beat steps 6 and 14)
+      if ((step === 6 || step === 14) && Math.random() < 0.15) {
+        this.synthesizeWaterDrip(time);
+      }
+    } else if (this.currentBGMState === "LOW_HP") {
+      // Muffled, physical heartbeat (lub-dub... lub-dub...)
+      if (step === 0 || step === 4 || step === 8 || step === 12) {
+        this.synthesizeHeartbeat(time, "lub");
+      }
+      if (step === 1 || step === 5 || step === 9 || step === 13) {
+        this.synthesizeHeartbeat(time, "dub");
+      }
+      // High-register tense ringing drone (at the start of every bar)
+      if (step === 0) {
+        this.playLowHPTensionRing(time);
+      }
+    }
+  },
+
+  updateBGMState() {
+    if (!this.ctx) return;
+
+    let targetState = "HUB";
+    const p = window.player;
+    const states = window.GAME_STATES || { HUB: 0, DUNGEON: 1 };
+
+    if (window.currentGameState === states.DUNGEON) {
+      targetState = "EXPLORE";
+
+      const hasBoss = window.mob && window.mob.hp && window.mob.hp.gt(0);
+      const hasCombat =
+        window.activeDungeonMobs &&
+        window.activeDungeonMobs.some((m) => m.isAggroed);
+
+      if (hasBoss) {
+        targetState = "BOSS";
+      } else if (hasCombat) {
+        targetState = "COMBAT";
+      }
+
+      // Safe evaluation of low-HP state (under 30% HP)
+      if (p && p.hp && p.maxHp) {
+        const hpRatio = p.hp / p.maxHp;
+        if (hpRatio <= 0.3) {
+          targetState = "LOW_HP";
+        }
+      }
+    }
+
+    if (this.currentBGMState !== targetState) {
+      this.transitionToState(targetState);
+    }
+  },
+
+  transitionToState(newState) {
+    this.currentBGMState = newState;
+    const now = this.ctx.currentTime;
+
+    // Prevent filter frequency click conflicts
+    this.synthFilter.frequency.cancelScheduledValues(now);
+
+    if (newState === "HUB") {
+      this.tempo = 50; // Melancholic slow tempo
+      this.synthFilter.frequency.setTargetAtTime(450, now, 0.25);
+    } else if (newState === "EXPLORE") {
+      this.tempo = 120; // Driving dungeon crawl tempo
+      this.synthFilter.frequency.setTargetAtTime(400, now, 0.3);
+    } else if (newState === "COMBAT") {
+      this.tempo = 120;
+      // COMBAT SWELL: Sweep the filter open smoothly over 0.6 seconds!
+      this.synthFilter.frequency.exponentialRampToValueAtTime(1400, now + 0.6);
+    } else if (newState === "BOSS") {
+      this.tempo = 135; // Intense boss battle tempo
+      // BOSS SWELL: Sweep the filter wide open over 0.4 seconds!
+      this.synthFilter.frequency.exponentialRampToValueAtTime(1800, now + 0.4);
+    } else if (newState === "LOW_HP") {
+      this.tempo = 130;
+      // LOW-HP MUFFLE: Heavy high-frequency suppression for high tension
+      this.synthFilter.frequency.setTargetAtTime(300, now, 0.15);
+    }
+  },
+
+  playProceduralPad(time) {
+    if (!this.ctx || this.isPaused) return;
+
+    // Chords ring out for 1 bar (16 steps).
+    // Duration = 16 * Step Duration = 4 beats = 4 * (60.0 / tempo)
+    const duration = (60.0 / this.tempo) * 4.0 + 1.0; // Ring out overlap bleed
+
+    // Atmospheric chord progressions in D minor/A minor scales
+    const chords = [
+      { notes: [146.83, 174.61, 220.0], drone: 73.42 }, // Dm (Root, Minor Third, Fifth)
+      { notes: [116.54, 146.83, 174.61], drone: 58.27 }, // Bb Major
+      { notes: [130.81, 164.81, 196.0], drone: 65.41 }, // C Major
+      { notes: [110.0, 130.81, 164.81], drone: 55.0 }, // Am
+    ];
+
+    const chordIndex = this.currentTrackIndex % chords.length;
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % chords.length;
+    const chord = chords[chordIndex];
+    this.currentDronePitch = chord.drone;
+
+    const chordGain = this.ctx.createGain();
+    chordGain.gain.setValueAtTime(0, time);
+    chordGain.gain.linearRampToValueAtTime(0.2, time + 1.5); // Smooth fade-in
+    chordGain.gain.setValueAtTime(0.2, time + (duration - 3.0));
+    chordGain.gain.exponentialRampToValueAtTime(0.0001, time + duration); // Smooth fade-out
+
+    // Connect to the sweepable lowpass filter instead of master music gain!
+    chordGain.connect(this.synthFilter);
+
+    const stepNodes = [];
+
+    // 1. Deep Room Sub Drone
+    const droneOsc = this.ctx.createOscillator();
+    droneOsc.type = "triangle";
+    droneOsc.frequency.setValueAtTime(chord.drone, time);
+    droneOsc.connect(chordGain);
+    droneOsc.start(time);
+    droneOsc.stop(time + duration);
+    stepNodes.push(droneOsc);
+
+    // 2. Harmonic Pad Layer (Detuned oscillators to create a chorusing effect)
+    chord.notes.forEach((freq) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, time);
+      osc.detune.setValueAtTime((Math.random() - 0.5) * 8, time);
+      osc.connect(chordGain);
+      osc.start(time);
+      osc.stop(time + duration);
+      stepNodes.push(osc);
+    });
+
+    // 3. Occasional Mystical Shimmer Overlay (Only in HUB or EXPLORE states)
+    if (
+      Math.random() < 0.25 &&
+      (this.currentBGMState === "HUB" || this.currentBGMState === "EXPLORE")
+    ) {
+      const crystalNotes = [
+        chord.notes[0] * 4,
+        chord.notes[1] * 4,
+        chord.notes[2] * 4,
+      ];
+      crystalNotes.forEach((freq, idx) => {
+        const chimeOsc = this.ctx.createOscillator();
+        chimeOsc.type = "sine";
+        chimeOsc.frequency.setValueAtTime(freq, time + 2.0 + idx * 0.15);
+
+        const chimeGain = this.ctx.createGain();
+        chimeGain.gain.setValueAtTime(0, time);
+        chimeGain.gain.setValueAtTime(0, time + 2.0 + idx * 0.15);
+        chimeGain.gain.linearRampToValueAtTime(
+          0.04,
+          time + 2.0 + idx * 0.15 + 0.05,
+        );
+        chimeGain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          time + 2.0 + idx * 0.15 + 2.5,
+        );
+
+        chimeOsc.connect(chimeGain);
+        chimeGain.connect(this.gainNode);
+
+        chimeOsc.start(time + 2.0 + idx * 0.15);
+        chimeOsc.stop(time + 2.0 + idx * 0.15 + 2.6);
+
+        stepNodes.push(chimeOsc);
+
+        setTimeout(
+          () => {
+            try {
+              chimeGain.disconnect();
+            } catch (e) {}
+          },
+          (2.0 + idx * 0.15 + 3.0) * 1000,
+        );
+      });
+    }
+
+    this.proceduralNodes.push(...stepNodes);
+
+    // Zero-allocation self-cleaning loop
+    setTimeout(
+      () => {
+        stepNodes.forEach((node) => {
           try {
             node.stop();
           } catch (e) {}
           try {
             node.disconnect();
           } catch (e) {}
-        });
-        this.proceduralNodes = [];
-      }
-    },
-
-    playProceduralStep() {
-      if (!this.ctx || this.isPaused) return;
-      const now = this.ctx.currentTime;
-      const duration = 10.0;
-
-      // Atmospheric chord progressions in D minor/A minor scales
-      const chords = [
-        { notes: [146.83, 174.61, 220.0], drone: 73.42 }, // Dm (Root, Minor Third, Fifth + Sub Drone)
-        { notes: [116.54, 146.83, 174.61], drone: 58.27 }, // Bb Major
-        { notes: [130.81, 164.81, 196.00], drone: 65.41 }, // C Major
-        { notes: [110.00, 130.81, 164.81], drone: 55.00 }  // Am
-      ];
-
-      const chordIndex = this.currentTrackIndex % chords.length;
-      this.currentTrackIndex = (this.currentTrackIndex + 1) % chords.length;
-      const chord = chords[chordIndex];
-
-      const chordGain = this.ctx.createGain();
-      chordGain.gain.setValueAtTime(0, now);
-      chordGain.gain.linearRampToValueAtTime(0.25, now + 3.0); // Smooth fade-in
-      chordGain.gain.setValueAtTime(0.25, now + 7.0);
-      chordGain.gain.exponentialRampToValueAtTime(0.0001, now + duration); // Smooth fade-out
-      chordGain.connect(this.gainNode);
-
-      // Dynamic low-pass filter to shape a warm, cavernous soundscape
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(450, now);
-      filter.Q.setValueAtTime(1.5, now);
-      filter.connect(chordGain);
-
-      const stepNodes = [];
-
-      // 1. Deep Room Sub Drone
-      const droneOsc = this.ctx.createOscillator();
-      droneOsc.type = "triangle";
-      droneOsc.frequency.setValueAtTime(chord.drone, now);
-      droneOsc.connect(filter);
-      droneOsc.start(now);
-      droneOsc.stop(now + duration);
-      stepNodes.push(droneOsc);
-
-      // 2. Harmonic Pad Layer (Detuned oscillators to create a chorusing effect)
-      chord.notes.forEach((freq) => {
-        const osc = this.ctx.createOscillator();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, now);
-        osc.detune.setValueAtTime((Math.random() - 0.5) * 8, now);
-        osc.connect(filter);
-        osc.start(now);
-        osc.stop(now + duration);
-        stepNodes.push(osc);
-      });
-
-      // 3. Occasional Mystical Shimmer Overlay (25% chance of sparkling chimes)
-      if (Math.random() < 0.25) {
-        const crystalNotes = [chord.notes[0] * 4, chord.notes[1] * 4, chord.notes[2] * 4];
-        crystalNotes.forEach((freq, idx) => {
-          const chimeOsc = this.ctx.createOscillator();
-          chimeOsc.type = "sine";
-          chimeOsc.frequency.setValueAtTime(freq, now + 2.0 + idx * 0.15);
-
-          const chimeGain = this.ctx.createGain();
-          chimeGain.gain.setValueAtTime(0, now);
-          chimeGain.gain.setValueAtTime(0, now + 2.0 + idx * 0.15);
-          chimeGain.gain.linearRampToValueAtTime(0.04, now + 2.0 + idx * 0.15 + 0.05);
-          chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.0 + idx * 0.15 + 2.5);
-
-          chimeOsc.connect(chimeGain);
-          chimeGain.connect(this.gainNode);
-
-          chimeOsc.start(now + 2.0 + idx * 0.15);
-          chimeOsc.stop(now + 2.0 + idx * 0.15 + 2.6);
-
-          stepNodes.push(chimeOsc);
-
-          setTimeout(() => {
-            try { chimeGain.disconnect(); } catch (e) {}
-          }, 6000);
-        });
-      }
-
-      this.proceduralNodes.push(...stepNodes);
-
-      // Zero-allocation self-cleaning loop
-      setTimeout(() => {
-        stepNodes.forEach((node) => {
-          try { node.stop(); } catch (e) {}
-          try { node.disconnect(); } catch (e) {}
           const idx = this.proceduralNodes.indexOf(node);
           if (idx !== -1) {
             this.proceduralNodes.splice(idx, 1);
           }
         });
-        try { filter.disconnect(); } catch (e) {}
-        try { chordGain.disconnect(); } catch (e) {}
-      }, duration * 1000 + 500);
-    }
-  };
+        try {
+          chordGain.disconnect();
+        } catch (e) {}
+      },
+      duration * 1000 + 500,
+    );
+  },
+
+  synthesizeKick(time) {
+    const osc = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+
+    osc.type = "sine";
+    // Quick downward pitch sweep (150Hz to 42Hz)
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(42, time + 0.08);
+
+    // Fast, punchy decay envelope
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(0.35, time + 0.005);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 0.12);
+
+    osc.connect(gainNode);
+    // Connected straight to master gain to bypass lowpass filter and keep low thuds punchy
+    gainNode.connect(this.gainNode);
+
+    osc.start(time);
+    osc.stop(time + 0.15);
+
+    setTimeout(() => {
+      osc.disconnect();
+      gainNode.disconnect();
+    }, 200);
+  },
+
+  synthesizeHiHat(time) {
+    if (!window.SoundManager || !window.SoundManager.cachedNoiseBuffer) return;
+    const source = this.ctx.createBufferSource();
+    source.buffer = window.SoundManager.cachedNoiseBuffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.setValueAtTime(7500, time);
+
+    const gainNode = this.ctx.createGain();
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(0.06, time + 0.002);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
+
+    source.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(this.synthFilter); // Swell filtered!
+
+    source.start(time);
+    source.stop(time + 0.06);
+
+    setTimeout(() => {
+      source.disconnect();
+      filter.disconnect();
+      gainNode.disconnect();
+    }, 100);
+  },
+
+  synthesizeBasslineNote(time, pitch, step, vol = 0.12) {
+    const osc = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+
+    osc.type = "sawtooth";
+
+    // Bouncy octave-jumping synthwave groove (alternating steps jump an octave up)
+    const actualPitch = step % 4 === 2 ? pitch * 2.0 : pitch;
+    osc.frequency.setValueAtTime(actualPitch, time);
+
+    // Plucky synthesizer envelope
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(vol, time + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 0.16);
+
+    osc.connect(gainNode);
+    gainNode.connect(this.synthFilter); // Swell filtered!
+
+    osc.start(time);
+    osc.stop(time + 0.18);
+
+    setTimeout(() => {
+      osc.disconnect();
+      gainNode.disconnect();
+    }, 250);
+  },
+
+  synthesizeWaterDrip(time) {
+    const osc = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+
+    osc.type = "sine";
+    // Quick upward pitch slide mimicking a clean water drip
+    osc.frequency.setValueAtTime(1200, time);
+    osc.frequency.exponentialRampToValueAtTime(2200, time + 0.04);
+
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(0.02, time + 0.005);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 0.08);
+
+    osc.connect(gainNode);
+    gainNode.connect(this.synthFilter);
+
+    osc.start(time);
+    osc.stop(time + 0.1);
+
+    setTimeout(() => {
+      osc.disconnect();
+      gainNode.disconnect();
+    }, 150);
+  },
+
+  synthesizeHeartbeat(time, type) {
+    const osc = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+
+    osc.type = "triangle";
+    // "lub" is a slightly deeper pitch; "dub" is slightly higher-pitched and punchier
+    const baseFreq = type === "lub" ? 58 : 64;
+    osc.frequency.setValueAtTime(baseFreq, time);
+    osc.frequency.linearRampToValueAtTime(30, time + 0.1);
+
+    // Dynamic physical pulse envelope
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(
+      type === "lub" ? 0.35 : 0.28,
+      time + 0.005,
+    );
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.0001,
+      time + (type === "lub" ? 0.12 : 0.08),
+    );
+
+    // Muffled lowpass filter to emulate internal organic sound
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(80, time);
+
+    osc.connect(filter);
+    filter.connect(gainNode);
+    // Bypasses the general music sweep filter to stay deep and clear
+    gainNode.connect(this.gainNode);
+
+    osc.start(time);
+    osc.stop(time + 0.2);
+
+    setTimeout(() => {
+      osc.disconnect();
+      filter.disconnect();
+      gainNode.disconnect();
+    }, 250);
+  },
+
+  playLowHPTensionRing(time) {
+    if (!this.ctx || this.isPaused) return;
+
+    // Rings for exactly 1 bar
+    const duration = (60.0 / this.tempo) * 4.0;
+
+    const osc = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+
+    osc.type = "sine";
+    // High-pitched, tense ringing note (C7)
+    osc.frequency.setValueAtTime(2093.0, time);
+
+    // Frantic 8Hz distress vibrato
+    const lfo = this.ctx.createOscillator();
+    lfo.frequency.setValueAtTime(8, time);
+    const lfoGain = this.ctx.createGain();
+    lfoGain.gain.setValueAtTime(15, time);
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    gainNode.gain.setValueAtTime(0, time);
+    gainNode.gain.linearRampToValueAtTime(0.025, time + 0.5); // subtle ambient distress ring
+    gainNode.gain.setValueAtTime(0.025, time + (duration - 0.5));
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+    osc.connect(gainNode);
+    gainNode.connect(this.gainNode);
+
+    lfo.start(time);
+    osc.start(time);
+    lfo.stop(time + duration);
+    osc.stop(time + duration);
+
+    this.proceduralNodes.push(osc, lfo);
+
+    setTimeout(
+      () => {
+        try {
+          lfo.disconnect();
+          lfoGain.disconnect();
+        } catch (e) {}
+        try {
+          osc.stop();
+        } catch (e) {}
+        try {
+          osc.disconnect();
+        } catch (e) {}
+        const idx1 = this.proceduralNodes.indexOf(osc);
+        if (idx1 !== -1) this.proceduralNodes.splice(idx1, 1);
+        const idx2 = this.proceduralNodes.indexOf(lfo);
+        if (idx2 !== -1) this.proceduralNodes.splice(idx2, 1);
+        gainNode.disconnect();
+      },
+      duration * 1000 + 500,
+    );
+  },
+};

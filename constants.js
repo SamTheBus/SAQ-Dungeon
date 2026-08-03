@@ -499,6 +499,145 @@ window.ARTIFACT_POOL = [
   },
 ];
 
+// Post-process the existing 21 artifacts to assign their tier properties & inject the 8 new artifacts
+(function() {
+  const tierMapping = {
+    frenzy: 2,
+    vampirism: 2,
+    gold_hoard: 1,
+    magic_find: 2,
+    move_speed: 1,
+    defense: 1,
+    parry_strike: 2,
+    echo_strike: 2,
+    idle_spd: 1,
+    active_spd: 2,
+    dodge_buff: 2,
+    extend_buffs: 2,
+    bag_space: 1,
+    second_wind: 3,
+    golem_stance: 2,
+    fairy_wealth: 2,
+    void_pull: 3,
+    titan_grip: 3,
+    alchemist_alembic: 2,
+    philosopher_catalyst: 2,
+    cauldron_eternity: 2
+  };
+  if (window.ARTIFACT_POOL) {
+    window.ARTIFACT_POOL.forEach(art => {
+      art.tier = tierMapping[art.trait] || 1;
+    });
+
+    const newArtifacts = [
+      {
+        name: "Breacher's Adrenaline Glass",
+        trait: "breach_adrenaline",
+        desc: "Upon entering a new floor, gain +40% Movement Speed and +25% Critical Strike Chance, decaying over 30s. Passive +2% base Crit Chance.",
+        breakdown: "<strong>Vanguard Burst:</strong><br>• Initial Speed: <span style='color:#3498db;'>+40% Move Speed</span><br>• Initial Crit: <span style='color:#f1c40f;'>+25% Crit Chance</span><br>• Decay Limit: <span style='color:#aaa;'>Linearly decays to zero over 30 seconds</span><br>• Passive: <span style='color:#2ecc71;'>+2% Base Crit Chance</span>",
+        tier: 3,
+        critChance: 0.02,
+        dropRate: 0,
+        quality: 0,
+        goldMulti: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      },
+      {
+        name: "Aegis Infiltration Glyph",
+        trait: "breach_barrier",
+        desc: "Upon floor entry, immediately project an overshield equal to 100% of your Maximum HP, decaying by 5% Max HP/sec. Passive +5 flat Defense.",
+        breakdown: "<strong>Breach Barrier:</strong><br>• Initial Shield: <span style='color:#34d399;'>100% Max HP Overshield</span><br>• Decay Limit: <span style='color:#aaa;'>Decays by 5% Max HP per second (depleted in 20s)</span><br>• Passive: <span style='color:#3498db;'>+5 Flat Defense</span>",
+        tier: 3,
+        def: 5,
+        dropRate: 0,
+        quality: 0,
+        goldMulti: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      },
+      {
+        name: "Scout's Cartographic Compass",
+        trait: "breach_scouting",
+        desc: "For the first 15s of a floor, reveal the path to the nearest Chest, Merchant, or Portal and gain +50% Drop Rate. Passive +5% Gold Multiplier.",
+        breakdown: "<strong>Cartography:</strong><br>• Radar Window: <span style='color:#ffd700;'>First 15s of any floor</span><br>• Treasure Find: <span style='color:#2ecc71;'>+50% Drop Rate during window</span><br>• Passive: <span style='color:#ffd700;'>+5% Gold Multiplier</span>",
+        tier: 2,
+        goldMulti: 0.05,
+        dropRate: 0,
+        quality: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      },
+      {
+        name: "Kinetic Friction Turbine",
+        trait: "friction_kinetic",
+        desc: "Generate 1 charge of Kinetic Build per 10 pixels traveled (Max 50). Each charge grants +0.5% Attack Speed and +0.5% Damage. Standing still for 1.5s dissipates charges. Passive +3 DEX.",
+        breakdown: "<strong>Friction Core:</strong><br>• Charge Build: <span style='color:#3498db;'>1 charge per 10 pixels moved (Max 50)</span><br>• Active Output: <span style='color:#2ecc71;'>+0.5% Attack Speed & +0.5% Damage per charge</span><br>• Ground Friction: <span style='color:#aaa;'>Standing still for 1.5s drains 10 charges/sec</span><br>• Passive: <span style='color:#38bdf8;'>+3 DEX</span>",
+        tier: 3,
+        dex: 3,
+        dropRate: 0,
+        quality: 0,
+        goldMulti: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      },
+      {
+        name: "Obsidian Core of Tenacity",
+        trait: "friction_tenacity",
+        desc: "Each second spent in active combat grants 1 stack of Tenacity (Max 15). Each stack grants +2% Defense and +1.5% Block/Parry Mitigation. Stacks decay by 1/sec out of combat. Passive +4 STR.",
+        breakdown: "<strong>Tenacity Core:</strong><br>• Combat Accumulator: <span style='color:#ff7675;'>1 stack per second in active combat (Max 15)</span><br>• Defensive Stack: <span style='color:#3498db;'>+2% Defense & +1.5% Block/Parry Mitigation per stack</span><br>• Out of Combat: <span style='color:#aaa;'>Decays by 1 stack per second</span><br>• Passive: <span style='color:#e74c3c;'>+4 STR</span>",
+        tier: 3,
+        str: 4,
+        dropRate: 0,
+        quality: 0,
+        goldMulti: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      },
+      {
+        name: "Void Accretion Engine",
+        trait: "friction_accretion",
+        desc: "For every 10 seconds spent on a floor, gain +3% damage (Max 30% after 100 seconds). Passive +5% Drop Quality.",
+        breakdown: "<strong>Time Accretion:</strong><br>• Level Scaler: <span style='color:#9b59b6;'>+3% Damage every 10s spent on active floor</span><br>• Stage Limit: <span style='color:#aaa;'>Capped at +30% Damage (100 seconds)</span><br>• Passive: <span style='color:#df9ffb;'>+5% Drop Quality</span>",
+        tier: 2,
+        quality: 0.05,
+        dropRate: 0,
+        goldMulti: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      },
+      {
+        name: "Nexus Harmonizer",
+        trait: "synergy_nexus",
+        desc: "Equipping specific offhands unlocks dual-resonance: Shields have 20% cast-on-block spell chance; Dagger parries reset Field Flask; Tomes boost Block/Parry by 5% for 3s. Passive +4 INT.",
+        breakdown: "<strong>Nexus Resonance:</strong><br>• Shield: <span style='color:#3498db;'>20% chance to cast current Spell on block</span><br>• Dagger: <span style='color:#a855f7;'>Parry immediately resets Field Flask cooldown</span><br>• Tome: <span style='color:#9b59b6;'>Casting spells adds +5% Block & Parry for 3s</span><br>• Passive: <span style='color:#9b59b6;'>+4 INT</span>",
+        tier: 3,
+        int: 4,
+        dropRate: 0,
+        quality: 0,
+        goldMulti: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      },
+      {
+        name: "Sanguine Catalyst",
+        trait: "synergy_sanguine",
+        desc: "Increases all damage dealt to targets by +8% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +3% Crit Chance.",
+        breakdown: "<strong>Sanguine Catalyst:</strong><br>• DoT Scaling: <span style='color:#e74c3c;'>+8% All Damage per unique DoT active on target.</span><br>• Max Potential: <span style='color:#ff7675;'>+24% Damage with Poison, Bleed, and Burn active.</span><br>• Passive: <span style='color:#e74c3c;'>+3% base Critical Strike Chance</span>",
+        tier: 2,
+        critChance: 0.03,
+        dropRate: 0,
+        quality: 0,
+        goldMulti: 0,
+        rareSpawn: 0,
+        fairySpawn: 0
+      }
+    ];
+
+    window.ARTIFACT_POOL.push(...newArtifacts);
+  }
+})();
+
 window.SET_DEFINITIONS = {
   Vanguard: {
     name: "Vanguard",
@@ -2093,22 +2232,22 @@ window.CAVERN_BUFFS = [
     dangerRating: 0,
   },
   {
-      id: "astral_conjunction",
-      name: "Astral Conjunction",
-      desc: "Upon room entry, a cosmic laser strikes a random target, spreading fire to adjacent foes.",
-      type: "interactive",
-      minStars: 5,
-      dangerRating: 0,
-    },
-    {
-      id: "aetheric_surge",
-      name: "Aetheric Surge",
-      desc: "Catalyzes class offhands. Tomes gain +75% Spell Power and +20% Spell Chance. Shields gain +100% Bash/Reflect Power and +15% Block Cap. Daggers gain 3.0x Riposte Damage and +15% Parry Cap.",
-      type: "interactive",
-      minStars: 4,
-      dangerRating: 0,
-    },
-  ];
+    id: "astral_conjunction",
+    name: "Astral Conjunction",
+    desc: "Upon room entry, a cosmic laser strikes a random target, spreading fire to adjacent foes.",
+    type: "interactive",
+    minStars: 5,
+    dangerRating: 0,
+  },
+  {
+    id: "aetheric_surge",
+    name: "Aetheric Surge",
+    desc: "Catalyzes class offhands. Tomes gain +75% Spell Power and +20% Spell Chance. Shields gain +100% Bash/Reflect Power and +15% Block Cap. Daggers gain 3.0x Riposte Damage and +15% Parry Cap.",
+    type: "interactive",
+    minStars: 4,
+    dangerRating: 0,
+  },
+];
 
 window.CAVERN_DEBUFFS = [
   // --- STAT-BASED PENALTIES (Scale with stars) ---
@@ -2224,78 +2363,78 @@ window.CAVERN_DEBUFFS = [
     dangerRating: 40,
   },
   {
-      id: "elite_infestation",
-      name: "Elite Infestation",
-      desc: "Every single spawned monster becomes an Elite with a random support affix.",
-      type: "interactive",
-      minStars: 5,
-      dangerRating: 45,
-    },
-    {
-      id: "slick_ice",
-      name: "Slick Ice",
-      desc: "Ice covers the cavern floor. Deceleration is severely reduced, causing you to slide dynamically.",
-      type: "interactive",
-      minStars: 2,
-      dangerRating: 15,
-    },
-    {
-      id: "magnetic_creep",
-      name: "Magnetic Creep",
-      desc: "Gravitational shift in the cavern pulls you slowly toward the nearest structural wall.",
-      type: "interactive",
-      minStars: 2,
-      dangerRating: 15,
-    },
-    {
-      id: "creeping_miasma",
-      name: "Creeping Miasma",
-      desc: "Poisonous miasma closes in from the room boundaries. Step outside the shrinking safe zone to take 2% Max HP damage per second.",
-      type: "interactive",
-      minStars: 3,
-      dangerRating: 15,
-    },
-    {
-      id: "abyssal_decay",
-      name: "Abyssal Decay",
-      desc: "Corrosive abyss siphons your soul. 15% of all damage taken permanently shrinks your Maximum HP for the remainder of this run.",
-      type: "interactive",
-      minStars: 3,
-      dangerRating: 25,
-    },
-    {
-      id: "weapon_lock",
-      name: "Weapon Lock",
-      desc: "A heavy curse locks your main-hand weapon, limiting its damage to 1. Offhand proc rates are doubled, and offhand cooldowns are halved.",
-      type: "interactive",
-      minStars: 4,
-      dangerRating: 35,
-    },
-    {
-      id: "regenerative_brood",
-      name: "Regenerative Brood",
-      desc: "Dungeon monsters recover 3% of their Maximum HP every 2 seconds if they have not taken damage recently.",
-      type: "interactive",
-      minStars: 2,
-      dangerRating: 15,
-    },
-    {
-      id: "kinetic_reflectors",
-      name: "Kinetic Reflectors",
-      desc: "Monsters construct active kinetic shields in front of them, deflecting all frontal attacks and reflecting 20% of the damage back to you.",
-      type: "interactive",
-      minStars: 3,
-      dangerRating: 20,
-    },
-    {
-      id: "spawning_division",
-      name: "Spawning Division",
-      desc: "Monsters fracture upon death, dividing into two minor, low-HP spores or slimes.",
-      type: "interactive",
-      minStars: 3,
-      dangerRating: 25,
-    },
-  ];
+    id: "elite_infestation",
+    name: "Elite Infestation",
+    desc: "Every single spawned monster becomes an Elite with a random support affix.",
+    type: "interactive",
+    minStars: 5,
+    dangerRating: 45,
+  },
+  {
+    id: "slick_ice",
+    name: "Slick Ice",
+    desc: "Ice covers the cavern floor. Deceleration is severely reduced, causing you to slide dynamically.",
+    type: "interactive",
+    minStars: 2,
+    dangerRating: 15,
+  },
+  {
+    id: "magnetic_creep",
+    name: "Magnetic Creep",
+    desc: "Gravitational shift in the cavern pulls you slowly toward the nearest structural wall.",
+    type: "interactive",
+    minStars: 2,
+    dangerRating: 15,
+  },
+  {
+    id: "creeping_miasma",
+    name: "Creeping Miasma",
+    desc: "Poisonous miasma closes in from the room boundaries. Step outside the shrinking safe zone to take 2% Max HP damage per second.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 15,
+  },
+  {
+    id: "abyssal_decay",
+    name: "Abyssal Decay",
+    desc: "Corrosive abyss siphons your soul. 15% of all damage taken permanently shrinks your Maximum HP for the remainder of this run.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 25,
+  },
+  {
+    id: "weapon_lock",
+    name: "Weapon Lock",
+    desc: "A heavy curse locks your main-hand weapon, limiting its damage to 1. Offhand proc rates are doubled, and offhand cooldowns are halved.",
+    type: "interactive",
+    minStars: 4,
+    dangerRating: 35,
+  },
+  {
+    id: "regenerative_brood",
+    name: "Regenerative Brood",
+    desc: "Dungeon monsters recover 3% of their Maximum HP every 2 seconds if they have not taken damage recently.",
+    type: "interactive",
+    minStars: 2,
+    dangerRating: 15,
+  },
+  {
+    id: "kinetic_reflectors",
+    name: "Kinetic Reflectors",
+    desc: "Monsters construct active kinetic shields in front of them, deflecting all frontal attacks and reflecting 20% of the damage back to you.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 20,
+  },
+  {
+    id: "spawning_division",
+    name: "Spawning Division",
+    desc: "Monsters fracture upon death, dividing into two minor, low-HP spores or slimes.",
+    type: "interactive",
+    minStars: 3,
+    dangerRating: 25,
+  },
+];
 
 window.ASTRAL_SHOP_STOCK = [
   {

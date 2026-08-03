@@ -293,7 +293,8 @@ body {
 }
 
 @keyframes noRecoveryPulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.65;
     transform: scale(1);
     box-shadow: 0 0 4px rgba(231, 76, 60, 0.2);
@@ -2551,25 +2552,25 @@ summary {
   }
 
   /* Expand large panels to fill maximum vertical screen estate cleanly */
-    .profile-card,
-    .mastery-card,
-    .shop-modal-card,
-    .gacha-card,
-    .forge-modal-card,
-    .enchant-card,
-    .deploy-modal-card,
-    #bag-modal .modal-card,
-    .sigil-picker-modal-card,
-    #settings-modal .modal-card,
-    .bounty-modal-card {
-      width: 96% !important;
-      margin: 0 auto !important;
-      height: calc(
-        100dvh - max(8px, env(safe-area-inset-top, 12px)) -
-          max(8px, env(safe-area-inset-bottom, 12px)) - 10px
-      ) !important;
-      max-height: none !important;
-    }
+  .profile-card,
+  .mastery-card,
+  .shop-modal-card,
+  .gacha-card,
+  .forge-modal-card,
+  .enchant-card,
+  .deploy-modal-card,
+  #bag-modal .modal-card,
+  .sigil-picker-modal-card,
+  #settings-modal .modal-card,
+  .bounty-modal-card {
+    width: 96% !important;
+    margin: 0 auto !important;
+    height: calc(
+      100dvh - max(8px, env(safe-area-inset-top, 12px)) -
+        max(8px, env(safe-area-inset-bottom, 12px)) - 10px
+    ) !important;
+    max-height: none !important;
+  }
 
   /* Retain full content scrolling inside full-height panels */
   .shop-content-panel,
@@ -2587,41 +2588,41 @@ summary {
   }
 
   .forge-layout,
-    .enchant-layout,
-    .bounty-layout {
-      grid-template-columns: 1fr !important; /* Stack columns on mobile */
-      height: auto !important;
-      max-height: none !important;
-      flex: 1 !important;
-    }
+  .enchant-layout,
+  .bounty-layout {
+    grid-template-columns: 1fr !important; /* Stack columns on mobile */
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 !important;
+  }
 
-    .forge-left-pane,
-    .forge-right-pane,
-    .enchant-left-pane,
-    .enchant-right-pane,
-    .bounty-left-pane,
-    .bounty-right-pane {
-      max-height: none !important;
-      flex: 1 !important;
-    }
+  .forge-left-pane,
+  .forge-right-pane,
+  .enchant-left-pane,
+  .enchant-right-pane,
+  .bounty-left-pane,
+  .bounty-right-pane {
+    max-height: none !important;
+    flex: 1 !important;
+  }
 
   /* --- LOCK ALL HORIZONTAL BAR FLOWS & ENABLE TOUCH SWIPE FOR TRUNCATED TABS --- */
-    .profile-tab-bar,
-    .satchel-tab-bar,
-    .shop-tab-bar,
-    .gacha-tab-bar,
-    .forge-mode-bar,
-    .ach-filter-bar,
-    .bounty-tab-bar {
-      display: flex !important;
-      overflow-x: auto !important;
-      white-space: nowrap !important;
-      flex-wrap: nowrap !important;
-      flex-shrink: 0 !important;
-      touch-action: pan-x !important;
-      -webkit-overflow-scrolling: touch !important;
-      padding-bottom: 4px !important;
-    }
+  .profile-tab-bar,
+  .satchel-tab-bar,
+  .shop-tab-bar,
+  .gacha-tab-bar,
+  .forge-mode-bar,
+  .ach-filter-bar,
+  .bounty-tab-bar {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
+    touch-action: pan-x !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 4px !important;
+  }
 
   /* Custom subtle indicator line to guide horizontal swipes */
   .profile-tab-bar::-webkit-scrollbar,
@@ -2635,26 +2636,26 @@ summary {
   }
 
   .profile-tab-bar::-webkit-scrollbar-thumb,
-    .satchel-tab-bar::-webkit-scrollbar-thumb,
-    .shop-tab-bar::-webkit-scrollbar-thumb,
-    .gacha-tab-bar::-webkit-scrollbar-thumb,
-    .forge-mode-bar::-webkit-scrollbar-thumb,
-    .ach-filter-bar::-webkit-scrollbar-thumb {
-      background: var(--border-aged-bronze) !important;
-      border-radius: 2px !important;
-    }
-
-    /* Prevent text in horizontal tab sliders from getting squeezed */
-    .profile-tab-btn,
-    .satchel-tab-btn,
-    .shop-tab-btn,
-    .gacha-tab-btn,
-    .forge-mode-btn,
-    .ach-filter-btn,
-    .bounty-tab-btn {
-      flex-shrink: 0 !important;
-    }
+  .satchel-tab-bar::-webkit-scrollbar-thumb,
+  .shop-tab-bar::-webkit-scrollbar-thumb,
+  .gacha-tab-bar::-webkit-scrollbar-thumb,
+  .forge-mode-bar::-webkit-scrollbar-thumb,
+  .ach-filter-bar::-webkit-scrollbar-thumb {
+    background: var(--border-aged-bronze) !important;
+    border-radius: 2px !important;
   }
+
+  /* Prevent text in horizontal tab sliders from getting squeezed */
+  .profile-tab-btn,
+  .satchel-tab-btn,
+  .shop-tab-btn,
+  .gacha-tab-btn,
+  .forge-mode-btn,
+  .ach-filter-btn,
+  .bounty-tab-btn {
+    flex-shrink: 0 !important;
+  }
+}
 
 /* --- ARCADE GACHAPON STYLES --- */
 .gacha-card {
@@ -5707,7 +5708,9 @@ summary {
   min-height: 145px;
   text-align: center;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 .bestiary-card-item:hover {

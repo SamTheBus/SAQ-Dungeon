@@ -123,19 +123,19 @@
       color: "#38bdf8",
       nodes: [
         {
-                          id: "shield_starter",
-                          name: "Vanguard Provision",
-                          iconKey: "shield_starter",
-                          x: 50,
-                          y: 88,
-                          tier: 1,
-                          maxRank: 1,
-                          costPerRank: 0,
-                          isStarterToggle: true,
-                          starterType: "shield",
-                          prereqs: [],
-                          desc: "Start dungeon runs with a Common (0★) Starter Shield equipped if offhand is empty. (Requires Hero Level 2)",
-                        },
+          id: "shield_starter",
+          name: "Vanguard Provision",
+          iconKey: "shield_starter",
+          x: 50,
+          y: 88,
+          tier: 1,
+          maxRank: 1,
+          costPerRank: 0,
+          isStarterToggle: true,
+          starterType: "shield",
+          prereqs: [],
+          desc: "Start dungeon runs with a Common (0★) Starter Shield equipped if offhand is empty. (Requires Hero Level 2)",
+        },
         {
           id: "shield_hp",
           name: "Ironclad Resilience",
@@ -376,19 +376,19 @@
       color: "#a855f7",
       nodes: [
         {
-                          id: "dagger_starter",
-                          name: "Shadow Blade Provision",
-                          iconKey: "dagger_starter",
-                          x: 50,
-                          y: 88,
-                          tier: 1,
-                          maxRank: 1,
-                          costPerRank: 0,
-                          isStarterToggle: true,
-                          starterType: "dagger",
-                          prereqs: [],
-                          desc: "Start dungeon runs with a Common (0★) Starter Dagger equipped if offhand is empty. (Requires Hero Level 2)",
-                        },
+          id: "dagger_starter",
+          name: "Shadow Blade Provision",
+          iconKey: "dagger_starter",
+          x: 50,
+          y: 88,
+          tier: 1,
+          maxRank: 1,
+          costPerRank: 0,
+          isStarterToggle: true,
+          starterType: "dagger",
+          prereqs: [],
+          desc: "Start dungeon runs with a Common (0★) Starter Dagger equipped if offhand is empty. (Requires Hero Level 2)",
+        },
         {
           id: "dagger_crit",
           name: "Lethal Precision",
@@ -634,19 +634,19 @@
       color: "#3498db",
       nodes: [
         {
-                          id: "tome_starter",
-                          name: "Codex Apprentice Provision",
-                          iconKey: "tome_starter",
-                          x: 50,
-                          y: 88,
-                          tier: 1,
-                          maxRank: 1,
-                          costPerRank: 0,
-                          isStarterToggle: true,
-                          starterType: "tome",
-                          prereqs: [],
-                          desc: "Start dungeon runs with a Common (0★) Starter Tome equipped if offhand is empty. (Requires Hero Level 2)",
-                        },
+          id: "tome_starter",
+          name: "Codex Apprentice Provision",
+          iconKey: "tome_starter",
+          x: 50,
+          y: 88,
+          tier: 1,
+          maxRank: 1,
+          costPerRank: 0,
+          isStarterToggle: true,
+          starterType: "tome",
+          prereqs: [],
+          desc: "Start dungeon runs with a Common (0★) Starter Tome equipped if offhand is empty. (Requires Hero Level 2)",
+        },
         {
           id: "tome_atk",
           name: "Arcane Focus",
@@ -981,44 +981,44 @@
           getStatText: (rank) => `${rank} Active Elixir Effects for Entire Run`,
         },
         {
-                  id: "utility_bag",
-                  name: "Satchel Expansion",
-                  iconKey: "utility_bag",
-                  x: 32,
-                  y: 28,
-                  currency: "global",
-                  maxRank: 3,
-                  costPerRank: 4,
-                  prereqs: ["utility_quality"],
-                  desc: "Increases carried satchel equipment capacity by +5 slots per rank.",
-                  getStatText: (rank) => `+${rank * 5} Satchel Slots`,
-                },
-                {
-                  id: "utility_soul_beacon",
-                  name: "Soul Beacon",
-                  iconKey: "utility_vitality",
-                  x: 50,
-                  y: 28,
-                  currency: "global",
-                  maxRank: 1,
-                  costPerRank: 5,
-                  prereqs: ["utility_quality", "utility_vitality"],
-                  desc: "Guarantees that your dropped Recovery Chest always spawns safely inside the exit Portal Room, farthest from the portal.",
-                  getStatText: () => "Recovery Chest spawns in Portal Room",
-                },
-                {
-                  id: "utility_insurance",
-                  name: "Insurance Underwriter",
-                  iconKey: "utility_insurance",
-                  x: 68,
-                  y: 28,
-                  currency: "global",
-                  maxRank: 3,
-                  costPerRank: 4,
-                  prereqs: ["utility_vitality", "utility_elixir"],
-                  desc: "Reduces Gold insurance premium costs by -10% per rank.",
-                  getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
-                },
+          id: "utility_bag",
+          name: "Satchel Expansion",
+          iconKey: "utility_bag",
+          x: 32,
+          y: 28,
+          currency: "global",
+          maxRank: 3,
+          costPerRank: 4,
+          prereqs: ["utility_quality"],
+          desc: "Increases carried satchel equipment capacity by +5 slots per rank.",
+          getStatText: (rank) => `+${rank * 5} Satchel Slots`,
+        },
+        {
+          id: "utility_soul_beacon",
+          name: "Soul Beacon",
+          iconKey: "utility_vitality",
+          x: 50,
+          y: 28,
+          currency: "global",
+          maxRank: 1,
+          costPerRank: 5,
+          prereqs: ["utility_quality", "utility_vitality"],
+          desc: "Guarantees that your dropped Recovery Chest always spawns safely inside the exit Portal Room, farthest from the portal.",
+          getStatText: () => "Recovery Chest spawns in Portal Room",
+        },
+        {
+          id: "utility_insurance",
+          name: "Insurance Underwriter",
+          iconKey: "utility_insurance",
+          x: 68,
+          y: 28,
+          currency: "global",
+          maxRank: 3,
+          costPerRank: 4,
+          prereqs: ["utility_vitality", "utility_elixir"],
+          desc: "Reduces Gold insurance premium costs by -10% per rank.",
+          getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
+        },
         {
           id: "utility_treasure_hunter",
           name: "Relic Hunter",
@@ -1196,15 +1196,15 @@
     },
 
     isNodeUnlocked(treeId, node) {
-          if (node.isStarterToggle && (window.playerStats.level || 1) < 2) {
-            return false;
-          }
-          if (treeId === "utility") {
-            if (!node.prereqs || node.prereqs.length === 0) return true;
-            return node.prereqs.some((pId) => this.getSkillLevel(pId) > 0);
-          }
+      if (node.isStarterToggle && (window.playerStats.level || 1) < 2) {
+        return false;
+      }
+      if (treeId === "utility") {
+        if (!node.prereqs || node.prereqs.length === 0) return true;
+        return node.prereqs.some((pId) => this.getSkillLevel(pId) > 0);
+      }
 
-          // Mastery SP spend threshold validation
+      // Mastery SP spend threshold validation
       let spent = this.getSpentPointsInTree(treeId);
       let reqSpend = 0;
       if (node.tier === 2) reqSpend = 3;
@@ -1249,32 +1249,32 @@
       if (!targetNode) return false;
 
       let currentRank = this.getSkillLevel(nodeId);
-              if (currentRank >= targetNode.maxRank) {
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("Node already at max rank!", "#e74c3c");
-                }
-                return false;
-              }
+      if (currentRank >= targetNode.maxRank) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("Node already at max rank!", "#e74c3c");
+        }
+        return false;
+      }
 
-              if (targetNode.isStarterToggle && (window.playerStats.level || 1) < 2) {
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast(
-                    "Requires Hero Level 2 or higher to unlock!",
-                    "#e74c3c",
-                  );
-                }
-                return false;
-              }
+      if (targetNode.isStarterToggle && (window.playerStats.level || 1) < 2) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            "Requires Hero Level 2 or higher to unlock!",
+            "#e74c3c",
+          );
+        }
+        return false;
+      }
 
-              if (!this.isNodeUnlocked(targetTreeId, targetNode)) {
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast(
-                    "Spend requirement or prerequisite node(s) required!",
-                    "#e74c3c",
-                  );
-                }
-                return false;
-              }
+      if (!this.isNodeUnlocked(targetTreeId, targetNode)) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            "Spend requirement or prerequisite node(s) required!",
+            "#e74c3c",
+          );
+        }
+        return false;
+      }
 
       let nextRankCost = this.getNodeCostForRank(targetNode, currentRank + 1);
       let unspent = this.getUnspentPointsForTree(targetTreeId);
@@ -1426,105 +1426,105 @@
     },
 
     initViewportPan() {
-        let viewport = document.querySelector(".constellation-viewport");
-        if (!viewport || viewport.dataset.panInitialized) return;
-        viewport.dataset.panInitialized = "true";
+      let viewport = document.querySelector(".constellation-viewport");
+      if (!viewport || viewport.dataset.panInitialized) return;
+      viewport.dataset.panInitialized = "true";
 
-        this.activePointers = [];
-        this.lastPinchDist = null;
+      this.activePointers = [];
+      this.lastPinchDist = null;
 
-        viewport.addEventListener("pointerdown", (e) => {
-          if (
-            e.target.closest(".selected-node-dock") ||
-            e.target.closest("button")
-          )
-            return;
+      viewport.addEventListener("pointerdown", (e) => {
+        if (
+          e.target.closest(".selected-node-dock") ||
+          e.target.closest("button")
+        )
+          return;
 
-          this.activePointers.push(e);
-          this.isPanning = true;
-          this.hasPanned = false;
+        this.activePointers.push(e);
+        this.isPanning = true;
+        this.hasPanned = false;
 
-          if (this.activePointers.length === 1) {
-            this.touchStartX = e.clientX;
-            this.touchStartY = e.clientY;
+        if (this.activePointers.length === 1) {
+          this.touchStartX = e.clientX;
+          this.touchStartY = e.clientY;
+          this.dragStartX = e.clientX;
+          this.dragStartY = e.clientY;
+        } else if (this.activePointers.length === 2) {
+          let p1 = this.activePointers[0];
+          let p2 = this.activePointers[1];
+          this.lastPinchDist = Math.hypot(
+            p1.clientX - p2.clientX,
+            p1.clientY - p2.clientY,
+          );
+        }
+      });
+
+      viewport.addEventListener("pointermove", (e) => {
+        if (!this.isPanning) return;
+
+        let idx = this.activePointers.findIndex(
+          (p) => p.pointerId === e.pointerId,
+        );
+        if (idx !== -1) {
+          this.activePointers[idx] = e;
+        }
+
+        let rect = viewport.getBoundingClientRect();
+
+        if (this.activePointers.length === 2) {
+          let p1 = this.activePointers[0];
+          let p2 = this.activePointers[1];
+          let dist = Math.hypot(
+            p1.clientX - p2.clientX,
+            p1.clientY - p2.clientY,
+          );
+
+          if (this.lastPinchDist) {
+            let ratio = dist / this.lastPinchDist;
+            let midX = (p1.clientX + p2.clientX) / 2;
+            let midY = (p1.clientY + p2.clientY) / 2;
+
+            let virtualX = (midX - rect.left - this.panX) / this.zoom;
+            let virtualY = (midY - rect.top - this.panY) / this.zoom;
+
+            this.zoom = Math.max(
+              this.minZoom,
+              Math.min(this.maxZoom, this.zoom * ratio),
+            );
+
+            this.panX = midX - rect.left - virtualX * this.zoom;
+            this.panY = midY - rect.top - virtualY * this.zoom;
+
+            this.hasPanned = true;
+            this.updatePanTransform();
+          }
+          this.lastPinchDist = dist;
+        } else if (this.activePointers.length === 1) {
+          let dx = e.clientX - this.dragStartX;
+          let dy = e.clientY - this.dragStartY;
+
+          let totalDx = e.clientX - this.touchStartX;
+          let totalDy = e.clientY - this.touchStartY;
+
+          if (Math.abs(totalDx) > 5 || Math.abs(totalDy) > 5) {
+            if (!this.hasPanned) {
+              this.hasPanned = true;
+              try {
+                viewport.setPointerCapture(e.pointerId);
+              } catch (err) {}
+            }
+          }
+
+          if (this.hasPanned) {
+            this.panX += dx;
+            this.panY += dy;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
-          } else if (this.activePointers.length === 2) {
-            let p1 = this.activePointers[0];
-            let p2 = this.activePointers[1];
-            this.lastPinchDist = Math.hypot(
-              p1.clientX - p2.clientX,
-              p1.clientY - p2.clientY,
-            );
+
+            this.updatePanTransform();
           }
-        });
-
-        viewport.addEventListener("pointermove", (e) => {
-          if (!this.isPanning) return;
-
-          let idx = this.activePointers.findIndex(
-            (p) => p.pointerId === e.pointerId,
-          );
-          if (idx !== -1) {
-            this.activePointers[idx] = e;
-          }
-
-          let rect = viewport.getBoundingClientRect();
-
-          if (this.activePointers.length === 2) {
-            let p1 = this.activePointers[0];
-            let p2 = this.activePointers[1];
-            let dist = Math.hypot(
-              p1.clientX - p2.clientX,
-              p1.clientY - p2.clientY,
-            );
-
-            if (this.lastPinchDist) {
-              let ratio = dist / this.lastPinchDist;
-              let midX = (p1.clientX + p2.clientX) / 2;
-              let midY = (p1.clientY + p2.clientY) / 2;
-
-              let virtualX = (midX - rect.left - this.panX) / this.zoom;
-              let virtualY = (midY - rect.top - this.panY) / this.zoom;
-
-              this.zoom = Math.max(
-                this.minZoom,
-                Math.min(this.maxZoom, this.zoom * ratio),
-              );
-
-              this.panX = midX - rect.left - virtualX * this.zoom;
-              this.panY = midY - rect.top - virtualY * this.zoom;
-
-              this.hasPanned = true;
-              this.updatePanTransform();
-            }
-            this.lastPinchDist = dist;
-          } else if (this.activePointers.length === 1) {
-            let dx = e.clientX - this.dragStartX;
-            let dy = e.clientY - this.dragStartY;
-
-            let totalDx = e.clientX - this.touchStartX;
-            let totalDy = e.clientY - this.touchStartY;
-
-            if (Math.abs(totalDx) > 5 || Math.abs(totalDy) > 5) {
-              if (!this.hasPanned) {
-                this.hasPanned = true;
-                try {
-                  viewport.setPointerCapture(e.pointerId);
-                } catch (err) {}
-              }
-            }
-
-            if (this.hasPanned) {
-              this.panX += dx;
-              this.panY += dy;
-              this.dragStartX = e.clientX;
-              this.dragStartY = e.clientY;
-
-              this.updatePanTransform();
-            }
-          }
-        });
+        }
+      });
 
       const stopPan = (e) => {
         this.activePointers = this.activePointers.filter(
@@ -1718,16 +1718,18 @@
       let selCanAfford = unspentPoints >= nextCost;
 
       let actionBtnHtml = "";
-            if (selectedNode.isStarterToggle) {
-              if (selRank === 0) {
-                let isLvlLocked = (window.playerStats.level || 1) < 2;
-                let btnText = isLvlLocked ? "LOCKED (REQUIRES LEVEL 2)" : `UNLOCK STARTER (${nextCost} SP)`;
-                actionBtnHtml = `
+      if (selectedNode.isStarterToggle) {
+        if (selRank === 0) {
+          let isLvlLocked = (window.playerStats.level || 1) < 2;
+          let btnText = isLvlLocked
+            ? "LOCKED (REQUIRES LEVEL 2)"
+            : `UNLOCK STARTER (${nextCost} SP)`;
+          actionBtnHtml = `
                             <button class="skill-buy-btn" ${selUnlocked && selCanAfford && !isLvlLocked ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
                               ${btnText}
                             </button>
                           `;
-              } else {
+        } else {
           let activeStarter = window.playerStats
             ? window.playerStats.activeStarterSubweapon
             : "none";

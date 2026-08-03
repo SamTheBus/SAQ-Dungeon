@@ -828,7 +828,7 @@ window.AssetCatalog = {
           `;
     },
     sigil(id, color) {
-          return `
+      return `
                     <defs>
                       <linearGradient id="g_sig_${id}" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#ffffff"/>
@@ -840,9 +840,9 @@ window.AssetCatalog = {
                     <circle cx="16" cy="16" r="6.2" fill="none" stroke="#ffffff" stroke-dasharray="2 2" stroke-width="1" opacity="0.75" />
                     <path d="M16 9 L16 23 M11 16 L21 16" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
                   `;
-        },
-        card(id, color) {
-          return `
+    },
+    card(id, color) {
+      return `
                     <defs>
                       <linearGradient id="g_card_b_${id}" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#ffffff"/>
@@ -855,7 +855,7 @@ window.AssetCatalog = {
                     <circle cx="16" cy="16" r="4.5" fill="none" stroke="#ffffff" stroke-dasharray="2 1.5" stroke-width="1" opacity="0.8" />
                     <polygon points="16,12.5 19,16 16,19.5 13,16" fill="${color}" stroke="#000" stroke-width="0.8" />
                   `;
-        },
+    },
     signet_ring(id, color) {
       return `
             <defs>
@@ -1955,26 +1955,26 @@ window.getIconSvgData = function (itemOrName) {
       }
     }
   } else {
-      let item = itemOrName;
-      uid = item.id || 999;
-      color = window.getTierColor
-        ? window.getTierColor(item.statsRolled)
-        : "#00d2ff";
+    let item = itemOrName;
+    uid = item.id || 999;
+    color = window.getTierColor
+      ? window.getTierColor(item.statsRolled)
+      : "#00d2ff";
 
-      if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
-        let cardData = window.MONSTER_CARDS_DATA[item.cardKey];
-        let setColors = {
-          "Whispering Woods": "#2ecc71",
-          "Mountain Peaks": "#3498db",
-          "Inferno Depths": "#e74c3c",
-          "Fungal Swamp": "#1abc9c",
-          "Void Singularity": "#9b59b6",
-          "Cosmic Wardens": "#f1c40f"
-        };
-        color = setColors[cardData.set] || "#ffd700";
-        innerSvg = window.AssetCatalog.genericEquipment.card(uid, color);
-      } else if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
-        innerSvg = window.AssetCatalog.uniques.staff(uid);
+    if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
+      let cardData = window.MONSTER_CARDS_DATA[item.cardKey];
+      let setColors = {
+        "Whispering Woods": "#2ecc71",
+        "Mountain Peaks": "#3498db",
+        "Inferno Depths": "#e74c3c",
+        "Fungal Swamp": "#1abc9c",
+        "Void Singularity": "#9b59b6",
+        "Cosmic Wardens": "#f1c40f",
+      };
+      color = setColors[cardData.set] || "#ffd700";
+      innerSvg = window.AssetCatalog.genericEquipment.card(uid, color);
+    } else if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
+      innerSvg = window.AssetCatalog.uniques.staff(uid);
     else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
       innerSvg = window.AssetCatalog.uniques.sword(uid);
     else if (
@@ -2319,3 +2319,370 @@ window.getSkillIconSvg = function (iconKey, size = 28) {
     icon.color,
   );
 };
+
+// Initialize the custom modular artifact SVG registry
+window.NEW_ARTIFACT_SVGS = window.NEW_ARTIFACT_SVGS || {};
+
+// Register 1.3: Breacher's Adrenaline Glass SVG
+window.NEW_ARTIFACT_SVGS.breach_adrenaline = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <circle cx="32" cy="32" r="24" fill="url(#adrenaline_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="adrenaline_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ff0055" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="adrenaline_fluid_${size}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ff3366" />
+          <stop offset="50%" stop-color="#ff0055" />
+          <stop offset="100%" stop-color="#990022" />
+        </linearGradient>
+        <linearGradient id="adrenaline_brass_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffd700" />
+          <stop offset="50%" stop-color="#b7950b" />
+          <stop offset="100%" stop-color="#5d4037" />
+        </linearGradient>
+      </defs>
+      <path d="M22 14h20v2H22z" fill="url(#adrenaline_brass_${size})" stroke="#05070a" stroke-width="1.2" />
+      <path d="M22 48h20v2H22z" fill="url(#adrenaline_brass_${size})" stroke="#05070a" stroke-width="1.2" />
+      <path d="M26 16 L26 24 C26 30, 20 34, 20 40 L20 46 L44 46 L44 40 C44 34, 38 30, 38 24 L38 16 Z" fill="rgba(255, 255, 255, 0.08)" stroke="#ffffff" stroke-width="1.5" opacity="0.8" />
+      <path d="M22.5 38 C22.5 35, 26 33, 32 33 C38 33, 41.5 35, 41.5 38 L41.5 45 L22.5 45 Z" fill="url(#adrenaline_fluid_${size})" stroke="#ff0055" stroke-width="0.8" />
+      <circle cx="28" cy="36" r="1.5" fill="#ffffff" opacity="0.9" />
+      <circle cx="36" cy="32" r="1.0" fill="#ffb6c1" opacity="0.8" />
+      <circle cx="32" cy="22" r="1.2" fill="#ffd700" opacity="0.95" />
+      <circle cx="30" cy="28" r="0.8" fill="#ffffff" opacity="0.75" />
+      <path d="M16 20 C12 24, 12 36, 20 42 C18 36, 18 24, 16 20 Z" fill="url(#adrenaline_brass_${size})" stroke="#05070a" stroke-width="1.0" />
+      <path d="M48 20 C52 24, 52 36, 44 42 C46 36, 46 24, 48 20 Z" fill="url(#adrenaline_brass_${size})" stroke="#05070a" stroke-width="1.0" />
+    </svg>
+  `;
+};
+
+// Register 1.4: Aegis Infiltration Glyph SVG
+window.NEW_ARTIFACT_SVGS.breach_barrier = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <circle cx="32" cy="32" r="24" fill="url(#barrier_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="barrier_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#00f0ff" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="barrier_obsidian_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#1e293b" />
+          <stop offset="50%" stop-color="#0f172a" />
+          <stop offset="100%" stop-color="#020617" />
+        </linearGradient>
+        <linearGradient id="barrier_steel_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#38bdf8" />
+          <stop offset="50%" stop-color="#0284c7" />
+          <stop offset="100%" stop-color="#0369a1" />
+        </linearGradient>
+      </defs>
+      <path d="M24 12 L40 12 L52 24 L52 40 L40 52 L24 52 L12 40 L12 24 Z" fill="url(#barrier_obsidian_${size})" stroke="#05070a" stroke-width="1.5" />
+      <path d="M25 14 L39 14 L50 25 L50 39 L39 50 L25 50 L14 39 L14 25 Z" stroke="url(#barrier_steel_${size})" stroke-width="1.5" fill="none" opacity="0.9" />
+      <path d="M32 18 L32 24 M32 40 L32 46 M18 32 L24 32 M40 32 L46 32" stroke="#00f0ff" stroke-width="1.2" opacity="0.85" stroke-linecap="round" />
+      <path d="M28 26 L36 26 L40 32 L36 38 L28 38 L24 32 Z" stroke="rgba(0, 240, 255, 0.4)" stroke-width="1.0" fill="none" />
+      <path d="M29 28 C29 28, 32 29, 32 26 C32 29, 35 28, 35 28 C35 34, 32 37, 32 37 C32 37, 29 34, 29 28 Z" fill="url(#barrier_steel_${size})" stroke="#00f0ff" stroke-width="1.0" />
+      <circle cx="32" cy="26" r="1.5" fill="#ffffff" />
+      <circle cx="28" cy="26" r="1.0" fill="#00f0ff" />
+      <circle cx="36" cy="26" r="1.0" fill="#00f0ff" />
+      <circle cx="24" cy="32" r="1.0" fill="#00f0ff" />
+      <circle cx="40" cy="32" r="1.0" fill="#00f0ff" />
+      <circle cx="28" cy="38" r="1.0" fill="#00f0ff" />
+      <circle cx="36" cy="38" r="1.0" fill="#00f0ff" />
+    </svg>
+  `;
+};
+
+// Register 1.5: Scout's Cartographic Compass SVG
+window.NEW_ARTIFACT_SVGS.breach_scouting = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <circle cx="32" cy="32" r="24" fill="url(#scouting_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="scouting_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffd700" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="scouting_brass_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#fff275" />
+          <stop offset="50%" stop-color="#b7950b" />
+          <stop offset="100%" stop-color="#7d6608" />
+        </linearGradient>
+        <linearGradient id="scouting_glass_${size}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="rgba(255, 255, 255, 0.15)" />
+          <stop offset="100%" stop-color="rgba(255, 255, 255, 0.0)" />
+        </linearGradient>
+      </defs>
+      <circle cx="32" cy="10" r="6" stroke="url(#scouting_brass_${size})" stroke-width="2" fill="none" />
+      <rect x="30" y="14" width="4" height="4" fill="url(#scouting_brass_${size})" stroke="#05070a" stroke-width="1.0" />
+      <circle cx="32" cy="36" r="22" fill="#090514" stroke="url(#scouting_brass_${size})" stroke-width="2.5" />
+      <circle cx="32" cy="36" r="19" stroke="#05070a" stroke-width="1.0" fill="none" />
+      <path d="M32 17 L32 55 M13 36 L51 36" stroke="#b7950b" stroke-width="0.8" opacity="0.4" />
+      <circle cx="32" cy="36" r="14" stroke="#ffd700" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5" />
+      <circle cx="32" cy="36" r="8" stroke="#ffd700" stroke-width="0.8" stroke-dasharray="1,2" opacity="0.3" />
+      <path d="M32 19 L32 21 M32 51 L32 53 M17 36 L19 36 M49 36 L51 36 M22.8 26.8 L24.2 28.2 M41.2 45.2 L42.6 46.6 M22.8 45.2 L24.2 43.8 M41.2 26.8 L42.6 28.2" stroke="url(#scouting_brass_${size})" stroke-width="1.2" stroke-linecap="round" />
+      <path d="M41 27 L42 29 L44.5 29 L42.5 30.5 L43.2 33 L41 31.5 L38.8 33 L39.5 30.5 L37.5 29 L40 29 Z" fill="#2ecc71" stroke="#05070a" stroke-width="0.6" />
+      <circle cx="41" cy="27" r="4" stroke="#2ecc71" stroke-width="0.6" stroke-dasharray="1,1" opacity="0.8" />
+      <circle cx="32" cy="36" r="3" fill="url(#scouting_brass_${size})" stroke="#05070a" stroke-width="0.8" />
+      <path d="M32 36 L34.5 34.5 L38.5 29.5 L34.5 37.5 Z" fill="#ffd700" stroke="#05070a" stroke-width="0.8" />
+      <path d="M32 36 L29.5 37.5 L38.5 29.5 L34.5 37.5 Z" fill="#d4af37" stroke="#05070a" stroke-width="0.8" />
+      <path d="M32 36 L29.5 37.5 L25.5 42.5 L29.5 34.5 Z" fill="#7f8c8d" stroke="#05070a" stroke-width="0.8" />
+      <path d="M32 36 L34.5 34.5 L25.5 42.5 L29.5 34.5 Z" fill="#bdc3c7" stroke="#05070a" stroke-width="0.8" />
+      <path d="M14 26 C17 19, 24 16, 32 16 C39 16, 45 19, 48 24 C40 22, 28 22, 14 26 Z" fill="url(#scouting_glass_${size})" opacity="0.65" />
+    </svg>
+  `;
+};
+
+// Register 1.6: Kinetic Friction Turbine SVG
+window.NEW_ARTIFACT_SVGS.friction_kinetic = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <!-- Ambient back glow -->
+      <circle cx="32" cy="32" r="24" fill="url(#turbine_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="turbine_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#00f3ff" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="turbine_brass_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffe699" />
+          <stop offset="50%" stop-color="#d4af37" />
+          <stop offset="100%" stop-color="#8a6d1c" />
+        </linearGradient>
+        <linearGradient id="turbine_chrome_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff" />
+          <stop offset="50%" stop-color="#b0c4de" />
+          <stop offset="100%" stop-color="#4682b4" />
+        </linearGradient>
+      </defs>
+      <!-- Outer Brass Cog Casing (Teeth) -->
+      <path d="M32 10 L34 14 L30 14 Z M32 54 L34 50 L30 50 Z M10 32 L14 34 L14 30 Z M54 32 L50 34 L50 30 Z M16.5 16.5 L20.5 19.3 L18.5 21.3 Z M47.5 47.5 L43.5 44.7 L45.5 42.7 Z M16.5 47.5 L20.5 44.7 L18.5 42.7 Z M47.5 16.5 L43.5 19.3 L45.5 21.3 Z" fill="url(#turbine_brass_${size})" />
+      <circle cx="32" cy="32" r="18" fill="#090615" stroke="url(#turbine_brass_${size})" stroke-width="2.5" />
+      <circle cx="32" cy="32" r="15" stroke="#05070a" stroke-width="1.0" fill="none" />
+      <!-- Velocity / Wind stream circular arcs -->
+      <circle cx="32" cy="32" r="12" stroke="#00f3ff" stroke-width="0.8" stroke-dasharray="10,6" opacity="0.4" />
+      <circle cx="32" cy="32" r="7" stroke="#00f3ff" stroke-width="0.8" stroke-dasharray="4,8" opacity="0.3" />
+      <!-- Three curved chrome blades radiating from the center -->
+      <path d="M32 32 C34 26, 40 23, 44 20 C40 28, 35 30, 32 32 Z" fill="url(#turbine_chrome_${size})" stroke="#05070a" stroke-width="0.6" />
+      <path d="M32 32 C26 34, 23 40, 20 44 C28 40, 30 35, 32 32 Z" fill="url(#turbine_chrome_${size})" stroke="#05070a" stroke-width="0.6" />
+      <path d="M32 32 C23 28, 20 20, 24 16 C25 24, 29 28, 32 32 Z" fill="url(#turbine_chrome_${size})" stroke="#05070a" stroke-width="0.6" />
+      <!-- Central Axle Core -->
+      <circle cx="32" cy="32" r="3.5" fill="url(#turbine_brass_${size})" stroke="#05070a" stroke-width="1.0" />
+      <circle cx="32" cy="32" r="1.2" fill="#ffffff" />
+      <!-- Crackling lightning/kinetic arcs -->
+      <path d="M19 24 L24 23 L22 27" stroke="#00f3ff" stroke-width="1.0" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" />
+      <path d="M45 40 L40 41 L42 37" stroke="#00f3ff" stroke-width="1.0" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" />
+      <path d="M36 19 L33 24 L37 23" stroke="#00f3ff" stroke-width="1.0" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" />
+      <circle cx="21" cy="25" r="0.8" fill="#ffffff" />
+      <circle cx="43" cy="39" r="0.8" fill="#ffffff" />
+    </svg>
+  `;
+};
+
+// Register 1.7: Obsidian Core of Tenacity SVG
+window.NEW_ARTIFACT_SVGS.friction_tenacity = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <!-- Ambient back glow -->
+      <circle cx="32" cy="32" r="24" fill="url(#tenacity_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="tenacity_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ff4500" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="tenacity_obsidian_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#1b1c24" />
+          <stop offset="50%" stop-color="#0d0d12" />
+          <stop offset="100%" stop-color="#050508" />
+        </linearGradient>
+        <linearGradient id="tenacity_iron_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4a4d5c" />
+          <stop offset="50%" stop-color="#2a2c35" />
+          <stop offset="100%" stop-color="#14151b" />
+        </linearGradient>
+        <linearGradient id="tenacity_magma_${size}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ff7f50" />
+          <stop offset="100%" stop-color="#ff2400" />
+        </linearGradient>
+      </defs>
+      <!-- Base Stone (Faceted Volcanic Prism) -->
+      <path d="M32 12 L46 22 L46 42 L32 52 L18 42 L18 22 Z" fill="url(#tenacity_obsidian_${size})" stroke="#05070a" stroke-width="1.5" />
+      <!-- Facet shading lines to create 3D cuts -->
+      <path d="M32 12 L32 32 L18 22 Z" fill="rgba(255,255,255,0.03)" />
+      <path d="M32 12 L32 32 L46 22 Z" fill="rgba(255,255,255,0.06)" />
+      <path d="M18 42 L32 32 L32 52 Z" fill="rgba(0,0,0,0.4)" />
+      <path d="M46 42 L32 32 L32 52 Z" fill="rgba(0,0,0,0.25)" />
+      <!-- Engraved Magma/Lava pathways pulsing with heat -->
+      <path d="M32 16 L32 26 L24 30 M32 26 L40 30 M32 48 L32 38 L22 34 M32 38 L42 34" stroke="url(#tenacity_magma_${size})" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+      <!-- Heavy Iron Clamps locking on top, bottom, and sides -->
+      <path d="M28 10 L36 10 L38 15 L26 15 Z" fill="url(#tenacity_iron_${size})" stroke="#05070a" stroke-width="1.0" />
+      <path d="M28 54 L36 54 L38 49 L26 49 Z" fill="url(#tenacity_iron_${size})" stroke="#05070a" stroke-width="1.0" />
+      <path d="M14 28 L14 36 L19 34 L19 30 Z" fill="url(#tenacity_iron_${size})" stroke="#05070a" stroke-width="1.0" />
+      <path d="M50 28 L50 36 L45 34 L45 30 Z" fill="url(#tenacity_iron_${size})" stroke="#05070a" stroke-width="1.0" />
+      <!-- Molten rivets/plugs on the iron brackets -->
+      <circle cx="32" cy="12.5" r="1.2" fill="#ff7f50" stroke="#05070a" stroke-width="0.5" />
+      <circle cx="32" cy="51.5" r="1.2" fill="#ff7f50" stroke="#05070a" stroke-width="0.5" />
+      <circle cx="16" cy="32" r="1.0" fill="#ff7f50" stroke="#05070a" stroke-width="0.5" />
+      <circle cx="48" cy="32" r="1.0" fill="#ff7f50" stroke="#05070a" stroke-width="0.5" />
+      <!-- Flaring heat spark nodes -->
+      <circle cx="32" cy="32" r="1.5" fill="#ffaa00" />
+      <circle cx="25" cy="22" r="0.8" fill="#ff3300" opacity="0.75" />
+      <circle cx="39" cy="42" r="1.0" fill="#ff7f50" opacity="0.85" />
+    </svg>
+  `;
+};
+
+// Register 1.8: Void Accretion Engine SVG
+window.NEW_ARTIFACT_SVGS.friction_accretion = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <!-- Ambient back glow -->
+      <circle cx="32" cy="32" r="24" fill="url(#accretion_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="accretion_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#a855f7" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="accretion_metal_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#94a3b8" />
+          <stop offset="50%" stop-color="#475569" />
+          <stop offset="100%" stop-color="#1e293b" />
+        </linearGradient>
+        <linearGradient id="accretion_ring_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#a855f7" />
+          <stop offset="100%" stop-color="#ff007f" />
+        </linearGradient>
+      </defs>
+      <!-- Outer Gyroscope Frame -->
+      <circle cx="32" cy="32" r="22" stroke="url(#accretion_metal_${size})" stroke-width="2.5" />
+      <!-- Inner Clockwork Ticks -->
+      <circle cx="32" cy="32" r="18" stroke="#05070a" stroke-width="1.0" fill="none" />
+      <path d="M32 11 L32 13 M32 51 L32 53 M14 32 L16 32 M50 32 L52 32" stroke="#a855f7" stroke-width="1.2" stroke-linecap="round" />
+      <!-- Swirling cosmic gravitational accretion arms -->
+      <path d="M32 16 C39 16, 44 22, 44 32 C44 42, 38 46, 32 46 C24 46, 21 40, 21 34" stroke="url(#accretion_ring_${size})" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+      <path d="M32 48 C25 48, 20 42, 20 32 C20 22, 26 18, 32 18 C40 18, 43 24, 43 30" stroke="url(#accretion_ring_${size})" stroke-width="1.0" stroke-linecap="round" opacity="0.6" />
+      <!-- Event Horizon Core (Black Hole) -->
+      <circle cx="32" cy="32" r="8" fill="#000000" stroke="#ff007f" stroke-width="1.8" />
+      <circle cx="32" cy="32" r="4" fill="#1e1b4b" opacity="0.8" />
+      <!-- High-energy static sparks and stardust nodes -->
+      <circle cx="28" cy="24" r="1.0" fill="#ffffff" />
+      <circle cx="38" cy="40" r="0.8" fill="#ff007f" opacity="0.85" />
+      <circle cx="21" cy="34" r="1.2" fill="#00ffff" />
+      <circle cx="43" cy="30" r="1.0" fill="#ffffff" />
+    </svg>
+  `;
+};
+
+// Register 1.9: Nexus Harmonizer SVG
+window.NEW_ARTIFACT_SVGS.synergy_nexus = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <!-- Ambient back glow -->
+      <circle cx="32" cy="32" r="24" fill="url(#nexus_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="nexus_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#9b59b6" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="nexus_brass_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffe699" />
+          <stop offset="50%" stop-color="#d4af37" />
+          <stop offset="100%" stop-color="#8a6d1c" />
+        </linearGradient>
+        <linearGradient id="nexus_plasma_${size}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#00f3ff" />
+          <stop offset="100%" stop-color="#a855f7" />
+        </linearGradient>
+      </defs>
+      <!-- Base Trinity Triangle Frame (The Harmonizing Leylines) -->
+      <path d="M32 12 L50 44 L14 44 Z" stroke="url(#nexus_brass_${size})" stroke-width="2.5" stroke-linejoin="round" fill="none" />
+      <path d="M32 15 L48 42 L16 42 Z" stroke="#05070a" stroke-width="1.0" stroke-linejoin="round" fill="none" />
+      <!-- Central Harmonizer Gyro-Sphere (Magical Core) -->
+      <circle cx="32" cy="32" r="10" fill="#090514" stroke="url(#nexus_brass_${size})" stroke-width="1.5" />
+      <circle cx="32" cy="32" r="7.5" stroke="#ff007f" stroke-width="1.0" fill="none" opacity="0.8" />
+      <!-- Swirling Core Energy -->
+      <circle cx="32" cy="32" r="4.5" fill="url(#nexus_plasma_${size})" />
+      <!-- Leyline Channels connecting Core to Triangle Corners -->
+      <path d="M32 32 L32 14 M32 32 L49 43 M32 32 L15 43" stroke="url(#nexus_plasma_${size})" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Corner Nodes (The Trinity Locks) -->
+      <!-- Top Node: Tome -->
+      <circle cx="32" cy="14" r="4" fill="#090514" stroke="url(#nexus_brass_${size})" stroke-width="1.2" />
+      <rect x="30" y="12" width="4" height="4" fill="#9b59b6" stroke="#05070a" stroke-width="0.5" />
+      <!-- Bottom Right Node: Dagger -->
+      <circle cx="49" cy="43" r="4" fill="#090514" stroke="url(#nexus_brass_${size})" stroke-width="1.2" />
+      <path d="M49 40 L51 43 L49 46 L47 43 Z" fill="#3498db" stroke="#05070a" stroke-width="0.5" />
+      <!-- Bottom Left Node: Shield -->
+      <circle cx="15" cy="43" r="4" fill="#090514" stroke="url(#nexus_brass_${size})" stroke-width="1.2" />
+      <path d="M13 41 L17 41 L17 44 L15 46 L13 44 Z" fill="#2ecc71" stroke="#05070a" stroke-width="0.5" />
+      <!-- Tiny orbital alignment nodes -->
+      <circle cx="32" cy="24" r="1.2" fill="#00f3ff" />
+      <circle cx="41" cy="37" r="1.2" fill="#00f3ff" />
+      <circle cx="23" cy="37" r="1.2" fill="#00f3ff" />
+    </svg>
+  `;
+};
+
+// Register 1.10: Sanguine Catalyst SVG
+window.NEW_ARTIFACT_SVGS.synergy_sanguine = function(size) {
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+      <!-- Ambient back glow -->
+      <circle cx="32" cy="32" r="24" fill="url(#sanguine_glow_${size})" opacity="0.15" />
+      <defs>
+        <radialGradient id="sanguine_glow_${size}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ff3300" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="sanguine_fluid_${size}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ff0000" />
+          <stop offset="60%" stop-color="#990000" />
+          <stop offset="100%" stop-color="#4a0000" />
+        </linearGradient>
+        <linearGradient id="sanguine_metal_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffd700" />
+          <stop offset="50%" stop-color="#b7950b" />
+          <stop offset="100%" stop-color="#5d4037" />
+        </linearGradient>
+        <linearGradient id="sanguine_glass_${size}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="rgba(255, 255, 255, 0.2)" />
+          <stop offset="100%" stop-color="rgba(255, 255, 255, 0.0)" />
+        </linearGradient>
+      </defs>
+      <!-- Ornate metal bracket capping the top -->
+      <path d="M28 12 L36 12 L38 18 L26 18 Z" fill="url(#sanguine_metal_${size})" stroke="#05070a" stroke-width="1.0" />
+      <rect x="29" y="10" width="6" height="3" fill="#0d0d12" stroke="url(#sanguine_metal_${size})" stroke-width="0.8" />
+      <!-- Teardrop Glass Vial Body -->
+      <path d="M29 18 C29 18, 24 24, 21 34 C17 44, 23 52, 32 52 C41 52, 47 44, 43 34 C40 24, 35 18, 35 18 Z" fill="rgba(255, 255, 255, 0.06)" stroke="#ffffff" stroke-width="1.5" opacity="0.8" />
+      <!-- Reactant blood-red fluid inside -->
+      <path d="M24.8 33.5 C21.8 42, 26 49.5, 32 49.5 C38 49.5, 42.2 42, 39.2 33.5 C36.5 25.5, 32 23, 32 23 C32 23, 27.5 25.5, 24.8 33.5 Z" fill="url(#sanguine_fluid_${size})" stroke="#ff0000" stroke-width="0.8" />
+      <!-- Multi-element reactive synergy nodes floating inside -->
+      <!-- Venom-Green (Poison) -->
+      <circle cx="28" cy="38" r="1.5" fill="#2ecc71" stroke="#05070a" stroke-width="0.5" />
+      <!-- Molten-Orange (Burn) -->
+      <circle cx="36" cy="35" r="1.5" fill="#e67e22" stroke="#05070a" stroke-width="0.5" />
+      <!-- Deep-Crimson (Bleed) -->
+      <circle cx="31" cy="44" r="1.5" fill="#c0392b" stroke="#05070a" stroke-width="0.5" />
+      <!-- Spark nodes -->
+      <circle cx="27" cy="45" r="0.8" fill="#ffffff" />
+      <circle cx="37" cy="43" r="1.0" fill="#f1c40f" opacity="0.8" />
+      <!-- Side metallic filigree claws securing the flask -->
+      <path d="M19 32 C15 36, 17 48, 25 50 C21 44, 20 36, 19 32 Z" fill="url(#sanguine_metal_${size})" stroke="#05070a" stroke-width="0.8" />
+      <path d="M45 32 C49 36, 47 48, 39 50 C43 44, 44 36, 45 32 Z" fill="url(#sanguine_metal_${size})" stroke="#05070a" stroke-width="0.8" />
+      <!-- Curved glass reflection glare -->
+      <path d="M22.5 32 C25 25, 29 22, 32 22 C35 22, 39 25, 41.5 32 C35.5 30, 28.5 30, 22.5 32 Z" fill="url(#sanguine_glass_${size})" opacity="0.6" />
+    </svg>
+  `;
+};
+
+// Global interceptor hook executing modular dynamic lookups
+(function() {
+  const originalGetArtifactIcon = window.getArtifactIconHtml;
+  window.getArtifactIconHtml = function(trait, size = 56) {
+    if (window.NEW_ARTIFACT_SVGS && window.NEW_ARTIFACT_SVGS[trait]) {
+      return window.NEW_ARTIFACT_SVGS[trait](size);
+    }
+    return originalGetArtifactIcon ? originalGetArtifactIcon(trait, size) : "";
+  };
+})();

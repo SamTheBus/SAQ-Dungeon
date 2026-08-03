@@ -24,6 +24,12 @@ window.escapeHTML = function (str) {
   );
 };
 
+window.triggerCombatState = function () {
+  if (window.playerStats) {
+    window.playerStats.combatTimer = 300; // Flag player as active in combat for 5 seconds (300 frames)
+  }
+};
+
 // Global Custom Confirmation Modal Handler
 window.showCustomConfirm = function (
   title,
@@ -317,17 +323,20 @@ window.getBountyRerollCost = function (peakStage, rerollsToday) {
   let soulCost = Math.round(soulBase * Math.pow(2.5, r));
 
   return {
-      gold: goldCost,
-      souls: soulCost
-    };
+    gold: goldCost,
+    souls: soulCost,
   };
+};
 
-  window.isWeeklyQuestUnlocked = function () {
-    if (!window.playerStats) return false;
-    return (window.playerStats.maxFloorCleared || 0) >= 12 || (window.playerStats.prestigeCount || 0) > 0;
-  };
+window.isWeeklyQuestUnlocked = function () {
+  if (!window.playerStats) return false;
+  return (
+    (window.playerStats.maxFloorCleared || 0) >= 12 ||
+    (window.playerStats.prestigeCount || 0) > 0
+  );
+};
 
-  window.calculateRenownForStageRange = function (fromStage, toStage) {
+window.calculateRenownForStageRange = function (fromStage, toStage) {
   if (toStage <= fromStage) return 0;
   let start = Math.max(0, fromStage);
   let end = toStage;
@@ -1250,12 +1259,41 @@ window.isCavernEffectActive = function (id) {
 };
 
 window.checkArtifactTrait = function (trait) {
+  if (
+    window.playerStats &&
+    window.playerStats.activeRelics &&
+    window.playerStats.activeRelics.includes(trait)
+  ) {
+    return true;
+  }
   if (!window.equippedSlots) return false;
   return (
     (window.equippedSlots.art1 && window.equippedSlots.art1.trait === trait) ||
     (window.equippedSlots.art2 && window.equippedSlots.art2.trait === trait) ||
     (window.equippedSlots.art3 && window.equippedSlots.art3.trait === trait)
   );
+};
+
+window.getArtifactTemperLevel = function (trait) {
+  if (window.playerStats && window.playerStats.activeRelics) {
+    let idx = window.playerStats.activeRelics.indexOf(trait);
+    if (idx !== -1) {
+      let slotKey = ["art1", "art2", "art3"][idx];
+      let slotLvl =
+        (window.playerStats.slotUpgrades &&
+          window.playerStats.slotUpgrades[slotKey]) ||
+        0;
+      return Math.floor(slotLvl / 10); // Converts slot levels 0-100 to temper levels 0-10 dynamically
+    }
+  }
+  if (!window.equippedSlots) return 0;
+  if (window.equippedSlots.art1 && window.equippedSlots.art1.trait === trait)
+    return window.equippedSlots.art1.temperLevel || 0;
+  if (window.equippedSlots.art2 && window.equippedSlots.art2.trait === trait)
+    return window.equippedSlots.art2.temperLevel || 0;
+  if (window.equippedSlots.art3 && window.equippedSlots.art3.trait === trait)
+    return window.equippedSlots.art3.temperLevel || 0;
+  return 0;
 };
 
 window.hasUniquePassive = function (uniqueKey) {
@@ -1323,17 +1361,6 @@ window.hasUniquePassive = function (uniqueKey) {
     default:
       return false;
   }
-};
-
-window.getArtifactTemperLevel = function (trait) {
-  if (!window.equippedSlots) return 0;
-  if (window.equippedSlots.art1 && window.equippedSlots.art1.trait === trait)
-    return window.equippedSlots.art1.temperLevel || 0;
-  if (window.equippedSlots.art2 && window.equippedSlots.art2.trait === trait)
-    return window.equippedSlots.art2.temperLevel || 0;
-  if (window.equippedSlots.art3 && window.equippedSlots.art3.trait === trait)
-    return window.equippedSlots.art3.temperLevel || 0;
-  return 0;
 };
 
 window.getItemSetName = function (item) {
@@ -1442,6 +1469,40 @@ window.updateUI = function () {
   }
 };
 
+window.ARTIFACT_BASE_STATS = {
+  frenzy: { critChance: 0.03 },
+  vampirism: { maxHp: 20 },
+  gold_hoard: { atk: 10, goldMulti: 0.3 },
+  magic_find: { dex: 5, dropRate: 0.25, quality: 0.15 },
+  move_speed: { moveSpeedPct: 0.1, parry: 0.03 },
+  defense: { maxHpPct: 0.06, defPct: 0.08 },
+  parry_strike: { parry: 0.02 },
+  echo_strike: { atk: 3 },
+  idle_spd: { idleAttackSpeed: 0.15, goldMulti: 0.05 },
+  active_spd: { activeAttackSpeed: 0.1, critChance: 0.03 },
+  dodge_buff: { block: 0.02, parry: 0.02 },
+  extend_buffs: { int: 3 },
+  bag_space: { dropRate: 0.1 },
+  second_wind: { str: 5, maxHp: 30 },
+  golem_stance: { str: 5 },
+  fairy_wealth: { goldMulti: 0.06, fairySpawn: 0.15 },
+  void_pull: { dex: 3, rareSpawn: 0.2 },
+  titan_grip: { block: 0.04, parry: 0.04 },
+  alchemist_alembic: { int: 3 },
+  philosopher_catalyst: { int: 4 },
+  cauldron_eternity: { maxHpPct: 0.05 },
+
+  // --- PHASE 3 BASE RELIC MODIFIERS ---
+  breach_adrenaline: { critChance: 0.02 },
+  breach_barrier: { def: 5 },
+  breach_scouting: { goldMulti: 0.05 },
+  friction_kinetic: { dex: 3 },
+  friction_tenacity: { str: 4 },
+  friction_accretion: { quality: 0.05 },
+  synergy_nexus: { int: 4 },
+  synergy_sanguine: { critChance: 0.03 },
+};
+
 window.resolvePlayerStats = function (useDraft = false) {
   if (!useDraft && !window.playerStatsDirty && window.cachedPlayerStats) {
     return window.cachedPlayerStats;
@@ -1510,145 +1571,145 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   if (!window.playerStats.cachedAchievementBonusTotals) {
-      window.recalculateAchievementTotals();
-    }
-    let aT = window.playerStats.cachedAchievementBonusTotals;
+    window.recalculateAchievementTotals();
+  }
+  let aT = window.playerStats.cachedAchievementBonusTotals;
 
-    p.def = BigNum.from(p.def).add(aT.def);
-    let flatSpeedBonus = aT.moveSpeed || 0;
-    p.critChance += aT.critChance;
-    p.critDamage += aT.critDamage;
-    p.block += aT.block;
-    p.parry += aT.parry;
-    p.drop += aT.drop;
-    p.qly += aT.qly;
-    p.gold += aT.gold;
-    p.str += aT.str;
-    p.dex += aT.dex;
-    p.int += aT.int;
-    p.fairySpawn += aT.fairySpawn;
-    p.rareSpawn += aT.rareSpawn;
+  p.def = BigNum.from(p.def).add(aT.def);
+  let flatSpeedBonus = aT.moveSpeed || 0;
+  p.critChance += aT.critChance;
+  p.critDamage += aT.critDamage;
+  p.block += aT.block;
+  p.parry += aT.parry;
+  p.drop += aT.drop;
+  p.qly += aT.qly;
+  p.gold += aT.gold;
+  p.str += aT.str;
+  p.dex += aT.dex;
+  p.int += aT.int;
+  p.fairySpawn += aT.fairySpawn;
+  p.rareSpawn += aT.rareSpawn;
 
-    // Calculate Card Stats
-    let cards = window.playerStats.monsterCards || {};
-    let cardAtkPct = 0;
-    let cardHpPct = 0;
-    let cardDefPct = 0;
-    let cardFlatSpeed = 0;
-    let cardCritChance = 0;
-    let cardCritDamage = 0;
-    let cardParry = 0;
-    let cardXpRate = 0;
-    let cardDrop = 0;
-    let cardGold = 0;
-    let cardRareSpawn = 0;
+  // Calculate Card Stats
+  let cards = window.playerStats.monsterCards || {};
+  let cardAtkPct = 0;
+  let cardHpPct = 0;
+  let cardDefPct = 0;
+  let cardFlatSpeed = 0;
+  let cardCritChance = 0;
+  let cardCritDamage = 0;
+  let cardParry = 0;
+  let cardXpRate = 0;
+  let cardDrop = 0;
+  let cardGold = 0;
+  let cardRareSpawn = 0;
 
-    for (let cardKey in window.MONSTER_CARDS_DATA) {
-      let count = cards[cardKey] || 0;
-      let tier = window.getCardTier(count);
-      if (tier >= 0) {
-        let cardData = window.MONSTER_CARDS_DATA[cardKey];
-        let val = window.getCardValue(cardData.baseVal, tier);
+  for (let cardKey in window.MONSTER_CARDS_DATA) {
+    let count = cards[cardKey] || 0;
+    let tier = window.getCardTier(count);
+    if (tier >= 0) {
+      let cardData = window.MONSTER_CARDS_DATA[cardKey];
+      let val = window.getCardValue(cardData.baseVal, tier);
 
-        switch (cardData.baseStat) {
-          case "atk":
-            cardAtkPct += val;
-            break;
-          case "maxHp":
-            cardHpPct += val;
-            break;
-          case "def":
-            cardDefPct += val;
-            break;
-          case "moveSpeed":
-            cardFlatSpeed += val;
-            break;
-          case "critChance":
-            cardCritChance += val;
-            break;
-          case "critDamage":
-            cardCritDamage += val;
-            break;
-          case "parry":
-            cardParry += val;
-            break;
-          case "xpRate":
-            cardXpRate += val;
-            break;
-          case "dropRate":
-            cardDrop += val;
-            break;
-          case "gold":
-            cardGold += val;
-            break;
-          case "rareSpawn":
-            cardRareSpawn += val;
-            break;
-        }
-      }
-    }
-
-    // Calculate Set Bonuses (The "Weakest Link" Rule)
-    let activeSetBonuses = {};
-    for (let setName in window.CARD_SETS_DATA) {
-      let setData = window.CARD_SETS_DATA[setName];
-      let minTier = Infinity;
-      let allOwned = true;
-
-      for (let cKey of setData.cards) {
-        let count = cards[cKey] || 0;
-        let t = window.getCardTier(count);
-        if (t < 0) {
-          allOwned = false;
+      switch (cardData.baseStat) {
+        case "atk":
+          cardAtkPct += val;
           break;
-        }
-        if (t < minTier) {
-          minTier = t;
-        }
+        case "maxHp":
+          cardHpPct += val;
+          break;
+        case "def":
+          cardDefPct += val;
+          break;
+        case "moveSpeed":
+          cardFlatSpeed += val;
+          break;
+        case "critChance":
+          cardCritChance += val;
+          break;
+        case "critDamage":
+          cardCritDamage += val;
+          break;
+        case "parry":
+          cardParry += val;
+          break;
+        case "xpRate":
+          cardXpRate += val;
+          break;
+        case "dropRate":
+          cardDrop += val;
+          break;
+        case "gold":
+          cardGold += val;
+          break;
+        case "rareSpawn":
+          cardRareSpawn += val;
+          break;
       }
+    }
+  }
 
-      if (allOwned) {
-        let multiplier = 1.0 + 0.5 * minTier;
-        activeSetBonuses[setData.statKey] = multiplier;
+  // Calculate Set Bonuses (The "Weakest Link" Rule)
+  let activeSetBonuses = {};
+  for (let setName in window.CARD_SETS_DATA) {
+    let setData = window.CARD_SETS_DATA[setName];
+    let minTier = Infinity;
+    let allOwned = true;
+
+    for (let cKey of setData.cards) {
+      let count = cards[cKey] || 0;
+      let t = window.getCardTier(count);
+      if (t < 0) {
+        allOwned = false;
+        break;
+      }
+      if (t < minTier) {
+        minTier = t;
       }
     }
 
-    if (activeSetBonuses["xpRate"]) {
-      cardXpRate += 0.05 * activeSetBonuses["xpRate"];
+    if (allOwned) {
+      let multiplier = 1.0 + 0.5 * minTier;
+      activeSetBonuses[setData.statKey] = multiplier;
     }
-    if (activeSetBonuses["defPctBonus"]) {
-      cardDefPct += 0.05 * activeSetBonuses["defPctBonus"];
-    }
-    if (activeSetBonuses["atkPctBonus"]) {
-      cardAtkPct += 0.05 * activeSetBonuses["atkPctBonus"];
-    }
-    if (activeSetBonuses["maxHpPctBonus"]) {
-      cardHpPct += 0.05 * activeSetBonuses["maxHpPctBonus"];
-    }
-    if (activeSetBonuses["qly"]) {
-      p.qly += 0.05 * activeSetBonuses["qly"];
-    }
-    let attributeSetMult = 1.0;
-    if (activeSetBonuses["attributesMult"]) {
-      attributeSetMult += 0.05 * activeSetBonuses["attributesMult"];
-    }
+  }
 
-    // Apply Card Utility and Combat Stats
-    flatSpeedBonus += cardFlatSpeed;
-    p.critChance += cardCritChance;
-    p.critDamage += cardCritDamage;
-    p.parry += cardParry;
-    p.drop += cardDrop;
-    p.gold += cardGold;
-    p.rareSpawn += cardRareSpawn;
+  if (activeSetBonuses["xpRate"]) {
+    cardXpRate += 0.05 * activeSetBonuses["xpRate"];
+  }
+  if (activeSetBonuses["defPctBonus"]) {
+    cardDefPct += 0.05 * activeSetBonuses["defPctBonus"];
+  }
+  if (activeSetBonuses["atkPctBonus"]) {
+    cardAtkPct += 0.05 * activeSetBonuses["atkPctBonus"];
+  }
+  if (activeSetBonuses["maxHpPctBonus"]) {
+    cardHpPct += 0.05 * activeSetBonuses["maxHpPctBonus"];
+  }
+  if (activeSetBonuses["qly"]) {
+    p.qly += 0.05 * activeSetBonuses["qly"];
+  }
+  let attributeSetMult = 1.0;
+  if (activeSetBonuses["attributesMult"]) {
+    attributeSetMult += 0.05 * activeSetBonuses["attributesMult"];
+  }
 
-    let achAtkPct = 1.0 + aT.atkPct + cardAtkPct;
-    let achMaxHpPct = 1.0 + aT.maxHpPct + cardHpPct;
-    let achDefPct = 1.0 + aT.defPct + cardDefPct;
-    let achMoveSpeedPct = 1.0 + aT.moveSpeedPct;
-    let achStrPct = (1.0 + aT.strPct) * attributeSetMult;
-    let achDexPct = (1.0 + aT.dexPct) * attributeSetMult;
-    let achIntPct = (1.0 + aT.intPct) * attributeSetMult;
+  // Apply Card Utility and Combat Stats
+  flatSpeedBonus += cardFlatSpeed;
+  p.critChance += cardCritChance;
+  p.critDamage += cardCritDamage;
+  p.parry += cardParry;
+  p.drop += cardDrop;
+  p.gold += cardGold;
+  p.rareSpawn += cardRareSpawn;
+
+  let achAtkPct = 1.0 + aT.atkPct + cardAtkPct;
+  let achMaxHpPct = 1.0 + aT.maxHpPct + cardHpPct;
+  let achDefPct = 1.0 + aT.defPct + cardDefPct;
+  let achMoveSpeedPct = 1.0 + aT.moveSpeedPct;
+  let achStrPct = (1.0 + aT.strPct) * attributeSetMult;
+  let achDexPct = (1.0 + aT.dexPct) * attributeSetMult;
+  let achIntPct = (1.0 + aT.intPct) * attributeSetMult;
 
   let committed = window.playerStats.spAllocations || {
     spStr: 0,
@@ -1763,6 +1824,69 @@ window.resolvePlayerStats = function (useDraft = false) {
       // itemHpPct += (BigNum.from(item.bonusMaxHp || 0).div(100).mul(slotMult).valueOf());
       // itemDefPct += (BigNum.from(item.bonusDef || 0).div(100).mul(slotMult).valueOf());
     }
+  }
+
+  // Calculate Virtual Codex Relics stats and apply their slot attunements
+  if (
+    window.playerStats &&
+    window.playerStats.activeRelics &&
+    window.ARTIFACT_BASE_STATS
+  ) {
+    const relicSlotsKeys = ["art1", "art2", "art3"];
+    relicSlotsKeys.forEach((slotKey, idx) => {
+      let trait = window.playerStats.activeRelics[idx];
+      if (trait) {
+        let savedPower = window.playerStats.artifactCodex[trait] || 0.0;
+        if (savedPower > 0) {
+          let slotLvl =
+            (window.playerStats.slotUpgrades &&
+              window.playerStats.slotUpgrades[slotKey]) ||
+            0;
+          let runBonus =
+            (window.playerStats.isCrucibleMode &&
+              p.crucibleSlotBonuses &&
+              p.crucibleSlotBonuses[slotKey]) ||
+            0;
+          let slotMult = 1.0 + slotLvl * 0.01 + runBonus;
+
+          let baseStats = window.ARTIFACT_BASE_STATS[trait];
+          if (baseStats) {
+            for (let sKey in baseStats) {
+              let val = baseStats[sKey];
+              let scaledVal = val * savedPower * slotMult;
+
+              if (
+                sKey === "atk" ||
+                sKey === "maxHp" ||
+                sKey === "def" ||
+                sKey === "str" ||
+                sKey === "dex" ||
+                sKey === "int"
+              ) {
+                if (sKey === "atk") flatGearAtk = flatGearAtk.add(scaledVal);
+                else if (sKey === "maxHp")
+                  flatGearHp = flatGearHp.add(scaledVal);
+                else if (sKey === "def")
+                  flatGearDef = flatGearDef.add(scaledVal);
+                else p[sKey] += Math.ceil(scaledVal);
+              } else if (sKey === "moveSpeedPct") {
+                itemSpdPct += scaledVal;
+              } else if (sKey === "idleAttackSpeed") {
+                idleSpeedPct += Math.abs(scaledVal);
+              } else if (sKey === "activeAttackSpeed") {
+                activeSpeedPct += Math.abs(scaledVal);
+              } else if (sKey === "maxHpPct") {
+                itemHpPct += scaledVal;
+              } else if (sKey === "defPct") {
+                itemDefPct += scaledVal;
+              } else if (p[sKey] !== undefined) {
+                p[sKey] += scaledVal;
+              }
+            }
+          }
+        }
+      }
+    });
   }
 
   if (
@@ -2404,9 +2528,19 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   if (window.checkArtifactTrait("move_speed")) flatSpeedBonus += 10;
-  if (window.checkArtifactTrait("gold_hoard")) p.gold += 0.5;
-  if (window.checkArtifactTrait("idle_spd")) idleSpeedPct += 0.35;
-  if (window.checkArtifactTrait("active_spd")) activeSpeedPct += 0.25;
+    if (window.checkArtifactTrait("gold_hoard")) p.gold += 0.5;
+    if (window.checkArtifactTrait("idle_spd")) idleSpeedPct += 0.35;
+    if (window.checkArtifactTrait("active_spd")) activeSpeedPct += 0.25;
+
+    // Kinetic Friction Turbine dynamic attack speed injection
+    if (window.checkArtifactTrait("friction_kinetic")) {
+      let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_kinetic") : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      let charges = window.playerStats.kineticFrictionCharges || 0;
+      let bonusSpeedPct = 0.005 * charges * slotMult;
+      activeSpeedPct += bonusSpeedPct;
+      idleSpeedPct += bonusSpeedPct;
+    }
 
   if (
     window.hasUniquePassive("tome_watch") &&
@@ -2589,13 +2723,13 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   let expBonusMult =
-      1.0 + (window.playerStats.prestigeUpgrades?.exp || 0) * 0.1;
+    1.0 + (window.playerStats.prestigeUpgrades?.exp || 0) * 0.1;
 
-    let wisdom = Math.min(
-      30,
-      window.playerStats.clanSkills?.aetheric_wisdom || 0,
-    );
-    expBonusMult += wisdom * 0.01 + cardXpRate;
+  let wisdom = Math.min(
+    30,
+    window.playerStats.clanSkills?.aetheric_wisdom || 0,
+  );
+  expBonusMult += wisdom * 0.01 + cardXpRate;
 
   if (
     window.hasUniquePassive("tome_chronicle") &&
@@ -2671,22 +2805,22 @@ window.resolvePlayerStats = function (useDraft = false) {
     1.0 + (window.playerStats.missionUpgrades?.hp || 0) * 0.03;
 
   p.atk = p.atk
-          .mul(prestigeAtkMult)
-          .mul(missionAtkMult)
-          .mul(1.0 + (p.atkPct || 0));
-        p.maxHp = p.maxHp
-          .mul(prestigeHpMult)
-          .mul(missionHpMult)
-          .mul(1.0 + (p.maxHpPct || 0));
+    .mul(prestigeAtkMult)
+    .mul(missionAtkMult)
+    .mul(1.0 + (p.atkPct || 0));
+  p.maxHp = p.maxHp
+    .mul(prestigeHpMult)
+    .mul(missionHpMult)
+    .mul(1.0 + (p.maxHpPct || 0));
 
-        // --- SUBPHASE 6: ABYSSAL DECAY SOUL SIPHON ---
-        if (window.playerStats && window.playerStats.abyssalDecayAccumulated > 0) {
-          p.maxHp = p.maxHp.sub(window.playerStats.abyssalDecayAccumulated);
-          if (p.maxHp.lt(10)) p.maxHp = BigNum.from(10); // Enforce minimum boundary
-        }
-        // ---------------------------------------------
+  // --- SUBPHASE 6: ABYSSAL DECAY SOUL SIPHON ---
+  if (window.playerStats && window.playerStats.abyssalDecayAccumulated > 0) {
+    p.maxHp = p.maxHp.sub(window.playerStats.abyssalDecayAccumulated);
+    if (p.maxHp.lt(10)) p.maxHp = BigNum.from(10); // Enforce minimum boundary
+  }
+  // ---------------------------------------------
 
-        p.def = p.def.mul(prestigeDefMult);
+  p.def = p.def.mul(prestigeDefMult);
 
   // Apply Crucible Active Run Modifiers
   if (
@@ -2873,86 +3007,195 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.reflectDamage = 0.4;
   }
 
-// --- SUBPHASE 3: SPECIAL CAVERN SIGIL MUTATORS PIPELINE ---
-    let subItemRef = window.equippedSlots ? window.equippedSlots.subweapon : null;
-    let hasShieldRef = subItemRef && (subItemRef.subType === "shield" || subItemRef.type === "shield");
-    let hasDaggerRef = subItemRef && (subItemRef.subType === "dagger" || subItemRef.type === "dagger");
-    let hasTitanGripRef = window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
+  // --- SUBPHASE 3: SPECIAL CAVERN SIGIL MUTATORS PIPELINE ---
+  let subItemRef = window.equippedSlots ? window.equippedSlots.subweapon : null;
+  let hasShieldRef =
+    subItemRef &&
+    (subItemRef.subType === "shield" || subItemRef.type === "shield");
+  let hasDaggerRef =
+    subItemRef &&
+    (subItemRef.subType === "dagger" || subItemRef.type === "dagger");
+  let hasTitanGripRef =
+    window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
 
-    if (window.isCavernEffectActive("aetheric_surge")) {
-      if (p.subType === "tome") {
-        p.spellPower = (p.spellPower || 1.5) * 1.75;
-        p.spellChance = (p.spellChance || 0.33) + 0.20;
-      } else if (p.subType === "shield") {
-        p.reflectDamage = (p.reflectDamage || 1.0) * 2.0;
-        p.bashAtkBonus = (p.bashAtkBonus || 0) * 2.0;
-        p.blockCapBonus = (p.blockCapBonus || 0) + 0.15;
+  if (window.isCavernEffectActive("aetheric_surge")) {
+    if (p.subType === "tome") {
+      p.spellPower = (p.spellPower || 1.5) * 1.75;
+      p.spellChance = (p.spellChance || 0.33) + 0.2;
+    } else if (p.subType === "shield") {
+      p.reflectDamage = (p.reflectDamage || 1.0) * 2.0;
+      p.bashAtkBonus = (p.bashAtkBonus || 0) * 2.0;
+      p.blockCapBonus = (p.blockCapBonus || 0) + 0.15;
 
-        let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
-        maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
-        p.rawBlock = p.rawBlock !== undefined ? p.rawBlock : p.block;
-        p.block = p.rawBlock > maxBlockCap ? maxBlockCap : p.rawBlock;
-      } else if (p.subType === "dagger") {
-        p.riposteDamage = (p.riposteDamage || 0.8) * 3.0;
-        p.parryCapBonus = (p.parryCapBonus || 0) + 0.15;
+      let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
+      maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
+      p.rawBlock = p.rawBlock !== undefined ? p.rawBlock : p.block;
+      p.block = p.rawBlock > maxBlockCap ? maxBlockCap : p.rawBlock;
+    } else if (p.subType === "dagger") {
+      p.riposteDamage = (p.riposteDamage || 0.8) * 3.0;
+      p.parryCapBonus = (p.parryCapBonus || 0) + 0.15;
 
-        let maxParryCap = 0.15;
-        let noun = subItemRef ? (subItemRef.noun ? subItemRef.noun.toLowerCase() : "") : "";
-        if (noun.includes("main-gauche")) {
-          maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
-        } else {
-          maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
-        }
-        maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
-        p.rawParry = p.rawParry !== undefined ? p.rawParry : p.parry;
-        p.parry = p.rawParry > maxParryCap ? maxParryCap : p.rawParry;
+      let maxParryCap = 0.15;
+      let noun = subItemRef
+        ? subItemRef.noun
+          ? subItemRef.noun.toLowerCase()
+          : ""
+        : "";
+      if (noun.includes("main-gauche")) {
+        maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
+      } else {
+        maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
       }
+      maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
+      p.rawParry = p.rawParry !== undefined ? p.rawParry : p.parry;
+      p.parry = p.rawParry > maxParryCap ? maxParryCap : p.rawParry;
     }
-
-    if (window.isCavernEffectActive("weapon_lock")) {
-      p.atk = BigNum.from(1);
-
-      p.spellChance = (p.spellChance || 0) * 2.0;
-      p.offhandChance = (p.offhandChance || 0) * 2.0;
-      p.block = (p.block || 0) * 2.0;
-      p.parry = (p.parry || 0) * 2.0;
-
-      if (hasShieldRef) {
-        let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
-        maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
-        let doubledCap = maxBlockCap * 2.0;
-        if (p.block > doubledCap) p.block = doubledCap;
-      }
-      if (hasDaggerRef) {
-        let maxParryCap = 0.15;
-        let noun = subItemRef ? (subItemRef.noun ? subItemRef.noun.toLowerCase() : "") : "";
-        if (noun.includes("main-gauche")) {
-          maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
-        } else {
-          maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
-        }
-        maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
-        let doubledCap = maxParryCap * 2.0;
-        if (p.parry > doubledCap) p.parry = doubledCap;
-      }
-
-      p.activeAttackSpeed = Math.max(2, Math.round(p.activeAttackSpeed / 2.0));
-      p.idleAttackSpeed = Math.max(5, Math.round(p.idleAttackSpeed / 2.0));
-    }
-    // ----------------------------------------------------------
-
-  if (!useDraft) {
-    window.cachedPlayerStats = p;
-    window.playerStatsDirty = false;
   }
 
-  return p;
-};
+  if (window.isCavernEffectActive("weapon_lock")) {
+    p.atk = BigNum.from(1);
+
+    p.spellChance = (p.spellChance || 0) * 2.0;
+    p.offhandChance = (p.offhandChance || 0) * 2.0;
+    p.block = (p.block || 0) * 2.0;
+    p.parry = (p.parry || 0) * 2.0;
+
+    if (hasShieldRef) {
+      let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
+      maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
+      let doubledCap = maxBlockCap * 2.0;
+      if (p.block > doubledCap) p.block = doubledCap;
+    }
+    if (hasDaggerRef) {
+      let maxParryCap = 0.15;
+      let noun = subItemRef
+        ? subItemRef.noun
+          ? subItemRef.noun.toLowerCase()
+          : ""
+        : "";
+      if (noun.includes("main-gauche")) {
+        maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
+      } else {
+        maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
+      }
+      maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
+      let doubledCap = maxParryCap * 2.0;
+      if (p.parry > doubledCap) p.parry = doubledCap;
+    }
+
+    p.activeAttackSpeed = Math.max(2, Math.round(p.activeAttackSpeed / 2.0));
+    p.idleAttackSpeed = Math.max(5, Math.round(p.idleAttackSpeed / 2.0));
+  }
+  // ----------------------------------------------------------
+
+  // --- PHASE 3 ACTIVE ARTIFACT MODIFIERS RESOLUTION ---
+    if (window.playerStats) {
+      let floorActiveTicks = window.playerStats.floorActiveTicks || 0;
+
+      // 1. Breacher's Adrenaline Glass
+      if (window.checkArtifactTrait("breach_adrenaline")) {
+        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("breach_adrenaline") : 0;
+        let slotMult = 1.0 + slotLvl * 0.01;
+        let decayRatio = Math.max(0, 1.0 - floorActiveTicks / 1800); // Linear decay over 30s
+        if (decayRatio > 0) {
+          p.moveSpeed *= (1.0 + 0.40 * decayRatio * slotMult);
+          p.critChance += 0.25 * decayRatio * slotMult;
+        }
+      }
+
+      // 2. Scout's Cartographic Compass
+      if (window.checkArtifactTrait("breach_scouting")) {
+        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("breach_scouting") : 0;
+        let slotMult = 1.0 + slotLvl * 0.01;
+        if (floorActiveTicks < 900) { // Active during the first 15s
+          p.drop += 0.50 * slotMult;
+        }
+      }
+
+      // 3. Kinetic Friction Turbine (Attack power scaling)
+      if (window.checkArtifactTrait("friction_kinetic")) {
+        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_kinetic") : 0;
+        let slotMult = 1.0 + slotLvl * 0.01;
+        let charges = window.playerStats.kineticFrictionCharges || 0;
+        if (charges > 0) {
+          p.atk = p.atk.mul(1.0 + 0.005 * charges * slotMult);
+        }
+      }
+
+      // 4. Obsidian Core of Tenacity
+      if (window.checkArtifactTrait("friction_tenacity")) {
+        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_tenacity") : 0;
+        let slotMult = 1.0 + slotLvl * 0.01;
+        let stacks = window.playerStats.tenacityStacks || 0;
+        if (stacks > 0) {
+          p.def = p.def.mul(1.0 + 0.02 * stacks * slotMult);
+          p.blockMitigationBonus = (p.blockMitigationBonus || 0) + (0.015 * stacks * slotMult);
+          p.parryMitigation = (p.parryMitigation || 0.6) + (0.015 * stacks * slotMult);
+        }
+      }
+
+      // 5. Void Accretion Engine (+3% damage every 10s, max 30%)
+      if (window.checkArtifactTrait("friction_accretion")) {
+        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_accretion") : 0;
+        let slotMult = 1.0 + slotLvl * 0.01;
+        let accretionStacks = Math.min(10, Math.floor(floorActiveTicks / 600));
+        if (accretionStacks > 0) {
+          p.atk = p.atk.mul(1.0 + 0.03 * accretionStacks * slotMult);
+        }
+      }
+
+      // 6. Nexus Harmonizer (Temporary block/parry tome buff)
+      if (window.checkArtifactTrait("synergy_nexus")) {
+        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("synergy_nexus") : 0;
+        let slotMult = 1.0 + slotLvl * 0.01;
+        if (window.playerStats.nexusTomeShieldTimer > 0) {
+          p.block += 0.05 * slotMult;
+          p.parry += 0.05 * slotMult;
+        }
+      }
+    }
+
+    if (!useDraft) {
+      window.cachedPlayerStats = p;
+      window.playerStatsDirty = false;
+    }
+
+    return p;
+  };
 
 // --- REAL-TIME COMBAT DAMAGE RESOLUTION PIPELINE ---
 window.damagePlayer = function (rawDmg, sourceMob = null) {
   let p = window.player;
   if (!p || p.hp <= 0) return 0;
+
+  // Transition into active combat state
+  if (typeof window.triggerCombatState === "function") {
+    window.triggerCombatState();
+  }
+
+  // Aegis Infiltration Glyph overshield (Absorbs 100% Max HP, decays 5% Max HP/sec)
+  if (window.checkArtifactTrait("breach_barrier")) {
+    let floorActiveTicks = (window.playerStats && window.playerStats.floorActiveTicks) || 0;
+    let decayRatio = Math.max(0, 1.0 - floorActiveTicks / 1200);
+    if (decayRatio > 0) {
+      let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("breach_barrier") : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      let maxHpVal = p.maxHp && p.maxHp.valueOf ? p.maxHp.valueOf() : Number(p.maxHp || 100);
+      window.playerStats.overshieldConsumed = window.playerStats.overshieldConsumed || 0;
+      let maxOvershield = maxHpVal * slotMult;
+      let currentOvershield = Math.max(0, maxOvershield * decayRatio - window.playerStats.overshieldConsumed);
+      if (currentOvershield > 0) {
+        let absorbedByOvershield = Math.min(rawDmg, currentOvershield);
+        rawDmg -= absorbedByOvershield;
+        window.playerStats.overshieldConsumed += absorbedByOvershield;
+        if (window.spawnFloatingText) {
+          window.spawnFloatingText(p.x, p.y - 20, `[OVERSHIELD] -${Math.round(absorbedByOvershield)}`, "#34d399");
+        }
+        if (rawDmg <= 0) return 0;
+      }
+    }
+  }
+
   let pStats =
     typeof window.resolvePlayerStats === "function"
       ? window.resolvePlayerStats()
@@ -3061,40 +3304,63 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   let netDmg = Math.max(1, remainingDmg * (1 - defenseDR));
 
   // Step 2: Parry Check (Daggers)
-    if (pStats.parry && Math.random() < pStats.parry) {
-      if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-        window.playerStats.adrenalineTimer = 360;
+  if (pStats.parry && Math.random() < pStats.parry) {
+    if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
+      window.playerStats.adrenalineTimer = 360;
+    }
+
+    // Gain +10 Dagger Mastery XP on Parry
+    if (window.gainSubweaponXp) window.gainSubweaponXp("dagger", 10);
+
+    if (typeof window.progressMission === "function") {
+      window.progressMission("deflections", 1);
+    }
+
+    let parryMitigation = pStats.hasMasterDuellist
+      ? 1.0
+      : pStats.parryMitigation || 0.6;
+    let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
+    p.hp = Math.max(0, p.hp - parriedDmg);
+
+    if (
+      parriedDmg > 0 &&
+      window.isCavernEffectActive &&
+      window.isCavernEffectActive("abyssal_decay")
+    ) {
+      let decay = Math.round(parriedDmg * 0.15);
+      if (decay > 0) {
+        window.playerStats.abyssalDecayAccumulated =
+          (window.playerStats.abyssalDecayAccumulated || 0) + decay;
+        window.invalidatePlayerStats();
+        let pStatsLocal = window.resolvePlayerStats();
+        p.maxHp = Math.round(
+          pStatsLocal.maxHp.valueOf
+            ? pStatsLocal.maxHp.valueOf()
+            : Number(pStatsLocal.maxHp || 100),
+        );
+        p.hp = Math.min(p.hp, p.maxHp);
+        window.playerStats.currentHp = BigNum.from(p.hp);
+        window.spawnFloatingText(
+          p.x,
+          p.y - 28,
+          "MAX HP DECAYED -" + decay,
+          "#8e44ad",
+          true,
+        );
       }
+    }
 
-      // Gain +10 Dagger Mastery XP on Parry
-      if (window.gainSubweaponXp) window.gainSubweaponXp("dagger", 10);
+    p.lastDamageTimer = 180;
+        window.playerStats.totalDeflections =
+          (window.playerStats.totalDeflections || 0) + 1;
 
-      if (typeof window.progressMission === "function") {
-        window.progressMission("deflections", 1);
-      }
-
-      let parryMitigation = pStats.hasMasterDuellist
-            ? 1.0
-            : pStats.parryMitigation || 0.6;
-          let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
-          p.hp = Math.max(0, p.hp - parriedDmg);
-
-          if (parriedDmg > 0 && window.isCavernEffectActive && window.isCavernEffectActive("abyssal_decay")) {
-            let decay = Math.round(parriedDmg * 0.15);
-            if (decay > 0) {
-              window.playerStats.abyssalDecayAccumulated = (window.playerStats.abyssalDecayAccumulated || 0) + decay;
-              window.invalidatePlayerStats();
-              let pStatsLocal = window.resolvePlayerStats();
-              p.maxHp = Math.round(pStatsLocal.maxHp.valueOf ? pStatsLocal.maxHp.valueOf() : Number(pStatsLocal.maxHp || 100));
-              p.hp = Math.min(p.hp, p.maxHp);
-              window.playerStats.currentHp = BigNum.from(p.hp);
-              window.spawnFloatingText(p.x, p.y - 28, "MAX HP DECAYED -" + decay, "#8e44ad", true);
-            }
+        // Nexus Harmonizer: Dagger parries reset Field Flask cooldown
+        if (window.checkArtifactTrait("synergy_nexus") && pStats.subType === "dagger" && window.playerStats) {
+          window.playerStats.flaskCooldownTimer = 0;
+          if (window.spawnFloatingText) {
+            window.spawnFloatingText(p.x, p.y - 20, "FLASK COOLDOWN RESET!", "#34d399");
           }
-
-          p.lastDamageTimer = 180;
-    window.playerStats.totalDeflections =
-      (window.playerStats.totalDeflections || 0) + 1;
+        }
 
     if (pStats.hasMasterDuellist) {
       window.playerStats.shadowDecoyTimer = 240; // Spawn Shadow Decoy (4 seconds)
@@ -3245,17 +3511,17 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   // Step 3: Block Check (Shields)
-    if (pStats.block && Math.random() < pStats.block) {
-      if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-        window.playerStats.adrenalineTimer = 360;
-      }
+  if (pStats.block && Math.random() < pStats.block) {
+    if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
+      window.playerStats.adrenalineTimer = 360;
+    }
 
-      // Gain +16 Shield Mastery XP on Block
-      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
+    // Gain +16 Shield Mastery XP on Block
+    if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
 
-      if (typeof window.progressMission === "function") {
-        window.progressMission("deflections", 1);
-      }
+    if (typeof window.progressMission === "function") {
+      window.progressMission("deflections", 1);
+    }
 
     // Fortitude stack acquisition on block / damage
     if (pStats.fortifiedGuardMultiplier > 0) {
@@ -3285,27 +3551,42 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     if (window.SoundManager) window.SoundManager.play("block");
 
     let baseMitigation = 0.7 + (pStats.blockMitigationBonus || 0); // Applies restored Fortified Stance 10%-30% block mitigation bonus
-        let blockMitigation = pStats.hasColossusKeystone
-          ? 1.0
-          : Math.min(0.95, baseMitigation);
-        let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
-        let savings = netDmg - blockedDmg;
-        p.hp = Math.max(0, p.hp - blockedDmg);
+    let blockMitigation = pStats.hasColossusKeystone
+      ? 1.0
+      : Math.min(0.95, baseMitigation);
+    let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
+    let savings = netDmg - blockedDmg;
+    p.hp = Math.max(0, p.hp - blockedDmg);
 
-        if (blockedDmg > 0 && window.isCavernEffectActive && window.isCavernEffectActive("abyssal_decay")) {
-          let decay = Math.round(blockedDmg * 0.15);
-          if (decay > 0) {
-            window.playerStats.abyssalDecayAccumulated = (window.playerStats.abyssalDecayAccumulated || 0) + decay;
-            window.invalidatePlayerStats();
-            let pStatsLocal = window.resolvePlayerStats();
-            p.maxHp = Math.round(pStatsLocal.maxHp.valueOf ? pStatsLocal.maxHp.valueOf() : Number(pStatsLocal.maxHp || 100));
-            p.hp = Math.min(p.hp, p.maxHp);
-            window.playerStats.currentHp = BigNum.from(p.hp);
-            window.spawnFloatingText(p.x, p.y - 28, "MAX HP DECAYED -" + decay, "#8e44ad", true);
-          }
-        }
+    if (
+      blockedDmg > 0 &&
+      window.isCavernEffectActive &&
+      window.isCavernEffectActive("abyssal_decay")
+    ) {
+      let decay = Math.round(blockedDmg * 0.15);
+      if (decay > 0) {
+        window.playerStats.abyssalDecayAccumulated =
+          (window.playerStats.abyssalDecayAccumulated || 0) + decay;
+        window.invalidatePlayerStats();
+        let pStatsLocal = window.resolvePlayerStats();
+        p.maxHp = Math.round(
+          pStatsLocal.maxHp.valueOf
+            ? pStatsLocal.maxHp.valueOf()
+            : Number(pStatsLocal.maxHp || 100),
+        );
+        p.hp = Math.min(p.hp, p.maxHp);
+        window.playerStats.currentHp = BigNum.from(p.hp);
+        window.spawnFloatingText(
+          p.x,
+          p.y - 28,
+          "MAX HP DECAYED -" + decay,
+          "#8e44ad",
+          true,
+        );
+      }
+    }
 
-        if (pStats.hasColossusKeystone && savings > 0) {
+    if (pStats.hasColossusKeystone && savings > 0) {
       window.playerStats.colossusApBonus =
         (window.playerStats.colossusApBonus || 0) + Math.round(savings * 0.1);
       window.playerStats.colossusApTimer = 600; // 10s at 60 FPS
@@ -3381,18 +3662,33 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       );
 
     if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-      // Gain +10 Shield Mastery XP on Shield Bash reflect
-      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
+          // Gain +10 Shield Mastery XP on Shield Bash reflect
+          if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
 
-      let defBash = BigNum.from(pStats.def || 5).mul(
-        pStats.reflectDamage || 1.0,
-      );
-      let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
-      let reflectDmg = defBash.add(atkBash);
+          // Nexus Harmonizer: Shields have 20% cast-on-block spell chance
+          if (window.checkArtifactTrait("synergy_nexus") && pStats.subType === "shield" && Math.random() < 0.20) {
+            let spellDmg = BigNum.from(pStats.atk || 15).mul(pStats.spellPower || 1.5).mul(0.5);
+            sourceMob.hp = sourceMob.hp.sub(spellDmg);
+            sourceMob.flashTimer = 8;
+            let spellType = pStats.spellType || "tri";
+            if (spellType === "tri") spellType = ["fire", "lightning", "frost"][Math.floor(Math.random() * 3)];
+            if (window.castVisualSpell) {
+              window.castVisualSpell(spellType, p, sourceMob, pStats, pStats.hasElementalOverload);
+            }
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnDamageEffect(sourceMob.x + sourceMob.w/2, sourceMob.y + sourceMob.h/2, spellDmg, "spell_" + spellType, false, sourceMob);
+            }
+          }
 
-      if (reflectDmg.gt(0)) {
-        sourceMob.hp = sourceMob.hp.sub(reflectDmg);
-        sourceMob.flashTimer = 6;
+          let defBash = BigNum.from(pStats.def || 5).mul(
+            pStats.reflectDamage || 1.0,
+          );
+          let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
+          let reflectDmg = defBash.add(atkBash);
+
+          if (reflectDmg.gt(0)) {
+            sourceMob.hp = sourceMob.hp.sub(reflectDmg);
+            sourceMob.flashTimer = 6;
 
         // Apply Bulwark Stagger / Knockback impulse to the attacking monster
         let mCx = sourceMob.x + (sourceMob.w || 24) / 2;
@@ -3453,24 +3749,38 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   // Step 4: Unmitigated Damage Hit
-    let finalDmg = Math.max(1, Math.round(netDmg));
-    p.hp = Math.max(0, p.hp - finalDmg);
+  let finalDmg = Math.max(1, Math.round(netDmg));
+  p.hp = Math.max(0, p.hp - finalDmg);
 
-    if (window.isCavernEffectActive && window.isCavernEffectActive("abyssal_decay")) {
-      let decay = Math.round(finalDmg * 0.15);
-      if (decay > 0) {
-        window.playerStats.abyssalDecayAccumulated = (window.playerStats.abyssalDecayAccumulated || 0) + decay;
-        window.invalidatePlayerStats();
-        let pStatsLocal = window.resolvePlayerStats();
-        p.maxHp = Math.round(pStatsLocal.maxHp.valueOf ? pStatsLocal.maxHp.valueOf() : Number(pStatsLocal.maxHp || 100));
-        p.hp = Math.min(p.hp, p.maxHp);
-        window.playerStats.currentHp = BigNum.from(p.hp);
-        window.spawnFloatingText(p.x, p.y - 28, "MAX HP DECAYED -" + decay, "#8e44ad", true);
-      }
+  if (
+    window.isCavernEffectActive &&
+    window.isCavernEffectActive("abyssal_decay")
+  ) {
+    let decay = Math.round(finalDmg * 0.15);
+    if (decay > 0) {
+      window.playerStats.abyssalDecayAccumulated =
+        (window.playerStats.abyssalDecayAccumulated || 0) + decay;
+      window.invalidatePlayerStats();
+      let pStatsLocal = window.resolvePlayerStats();
+      p.maxHp = Math.round(
+        pStatsLocal.maxHp.valueOf
+          ? pStatsLocal.maxHp.valueOf()
+          : Number(pStatsLocal.maxHp || 100),
+      );
+      p.hp = Math.min(p.hp, p.maxHp);
+      window.playerStats.currentHp = BigNum.from(p.hp);
+      window.spawnFloatingText(
+        p.x,
+        p.y - 28,
+        "MAX HP DECAYED -" + decay,
+        "#8e44ad",
+        true,
+      );
     }
+  }
 
-    p.lastDamageTimer = 180;
-    window.spawnFloatingText(p.x, p.y - 15, `-${finalDmg}`, "#e74c3c");
+  p.lastDamageTimer = 180;
+  window.spawnFloatingText(p.x, p.y - 15, `-${finalDmg}`, "#e74c3c");
 
   // Crown of Tempests Thunderbolt Counter
   if (
@@ -3729,6 +4039,16 @@ window.CRUCIBLE_DRAFT_POOL = [
 ];
 
 window.playerStats = {
+  // --- PHASE 2 ACTIVE TRACKERS ---
+  floorActiveTicks: 0,
+  kineticFrictionCharges: 0,
+  kineticDistanceTraveled: 0,
+  kineticStillTimer: 0,
+  combatTimer: 0,
+  tenacityStacks: 0,
+  activeCombatTicks: 0,
+  outOfCombatTicks: 0,
+
   hasTriggeredOnslaughtUnlock: false,
   isCrucibleMode: false,
   crucibleWave: 1,
@@ -4021,6 +4341,8 @@ window.playerStats = {
   weeklyMissions: [],
   monsterCards: {},
   astralDust: 0,
+  activeRelics: [],
+  artifactCodex: {}, // Stores unlocked traits and their highest shattered roll: e.g. { frenzy: 0.85 }
   dailyRerollsDone: 0, // Reset daily at 12:00 AM PST/PDT
   lastDailyResetTime: 0,
   lastWeeklyResetTime: 0,
@@ -4044,11 +4366,11 @@ window.playerStats = {
   claimedMailIds: [],
   unlockedSkins: ["default"],
   equippedCostume: "knight",
-    unlockedCostumes: ["knight"],
-    playerName: "Hero",
-    clanId: null,
-    activeSpecialChallenge: null,
-    bountyRerollsToday: 0,
+  unlockedCostumes: ["knight"],
+  playerName: "Hero",
+  clanId: null,
+  activeSpecialChallenge: null,
+  bountyRerollsToday: 0,
   audioSessionMode: "ambient",
   clanName: null,
   clanEmblem: null,
@@ -4073,7 +4395,7 @@ window.playerStats = {
   chatFloatingMode: false,
   chatX: null,
   chatY: null,
-  controlMode: "joystick",
+  controlMode: "cursor",
   enableLighting: true,
   flaskCharges: 1,
   maxFlaskCharges: 1,
@@ -4103,17 +4425,21 @@ window.toggleControlMode = function () {
 window.QuestSystem = {
   getScaledTarget(type, peakStage) {
     let s = Math.max(1, Math.floor(peakStage || 1));
-    let maxBag = typeof window.getMaxBagSlots === "function" ? window.getMaxBagSlots() : 20;
-    let maxFlask = (window.playerStats && window.playerStats.maxFlaskCharges) || 1;
+    let maxBag =
+      typeof window.getMaxBagSlots === "function"
+        ? window.getMaxBagSlots()
+        : 20;
+    let maxFlask =
+      (window.playerStats && window.playerStats.maxFlaskCharges) || 1;
 
     switch (type) {
       // Daily Targets
       case "kills":
-        return 150 + (s * 5);
+        return 150 + s * 5;
       case "rares":
         return 3 + Math.floor(s / 30);
       case "pottery":
-        return 20 + (s * 1);
+        return 20 + s * 1;
       case "salvage":
         return 10 + Math.floor(s / 20);
       case "bag":
@@ -4127,9 +4453,9 @@ window.QuestSystem = {
       case "dungeons":
         return 30 + Math.floor(s / 2);
       case "deflections":
-        return 100 + (s * 5);
+        return 100 + s * 5;
       case "spells":
-        return 80 + (s * 4);
+        return 80 + s * 4;
       case "luminous":
         return 8 + Math.floor(s / 25);
       case "contracts":
@@ -4141,79 +4467,122 @@ window.QuestSystem = {
   },
 
   generateDailyMissions() {
-      let pool = [
-        { type: "kills", label: "Purge standard dungeon monsters", unit: "monsters" },
-        { type: "rares", label: "Eradicate wild rare spawns", unit: "rares" },
-        { type: "pottery", label: "Shatter breakable clay pots, urns, or barrels", unit: "props" },
-        { type: "salvage", label: "Salvage unwanted collected gear", unit: "items" },
-        { type: "bag", label: "Extract successfully with a heavily laden satchel", unit: "items" },
-        { type: "flask", label: "Deploy emergency Field Flask restorative charges", unit: "uses" }
-      ];
+    let pool = [
+      {
+        type: "kills",
+        label: "Purge standard dungeon monsters",
+        unit: "monsters",
+      },
+      { type: "rares", label: "Eradicate wild rare spawns", unit: "rares" },
+      {
+        type: "pottery",
+        label: "Shatter breakable clay pots, urns, or barrels",
+        unit: "props",
+      },
+      {
+        type: "salvage",
+        label: "Salvage unwanted collected gear",
+        unit: "items",
+      },
+      {
+        type: "bag",
+        label: "Extract successfully with a heavily laden satchel",
+        unit: "items",
+      },
+      {
+        type: "flask",
+        label: "Deploy emergency Field Flask restorative charges",
+        unit: "uses",
+      },
+    ];
 
-      pool.sort(() => Math.random() - 0.5);
-      let selected = pool.slice(0, 6);
+    pool.sort(() => Math.random() - 0.5);
+    let selected = pool.slice(0, 6);
 
-      let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-      window.playerStats.dailyMissions = selected.map((m, idx) => {
-        let target = window.QuestSystem.getScaledTarget(m.type, peakStage);
-        let goldReward = BigNum.from(100).mul(BigNum.from(1.05).pow(peakStage));
-        let xpReward = BigNum.from(20).mul(BigNum.from(1.04).pow(peakStage));
+    let peakStage =
+      window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+    window.playerStats.dailyMissions = selected.map((m, idx) => {
+      let target = window.QuestSystem.getScaledTarget(m.type, peakStage);
+      let goldReward = BigNum.from(100).mul(BigNum.from(1.05).pow(peakStage));
+      let xpReward = BigNum.from(20).mul(BigNum.from(1.04).pow(peakStage));
 
-        return {
-          id: `daily_${idx + 1}`,
-          type: m.type,
-          desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
-          current: 0,
-          target: target,
-          goldReward: { m: goldReward.m, e: goldReward.e },
-          xpReward: { m: xpReward.m, e: xpReward.e },
-          treat: "Daily Reward Sack",
-          treatQty: 1,
-          completed: false,
-          claimed: false,
-        };
-      });
-    },
+      return {
+        id: `daily_${idx + 1}`,
+        type: m.type,
+        desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
+        current: 0,
+        target: target,
+        goldReward: { m: goldReward.m, e: goldReward.e },
+        xpReward: { m: xpReward.m, e: xpReward.e },
+        treat: "Daily Reward Sack",
+        treatQty: 1,
+        completed: false,
+        claimed: false,
+      };
+    });
+  },
 
-    generateWeeklyMissions() {
-      let pool = [
-        { type: "rifts", label: "Eradicate Altar Rift Guardians", unit: "guardians" },
-        { type: "dungeons", label: "Clear deep Dungeon floors", unit: "floors" },
-        { type: "deflections", label: "Execute tactical Blocks or Parries", unit: "deflections" },
-        { type: "spells", label: "Trigger offhand Tome Spell Procs", unit: "spells" },
-        { type: "luminous", label: "Harvest wild Luminous Souls from rare spawns", unit: "souls" },
-        { type: "contracts", label: "Complete Special Cavern Challenge Contracts", unit: "contracts" }
-      ];
+  generateWeeklyMissions() {
+    let pool = [
+      {
+        type: "rifts",
+        label: "Eradicate Altar Rift Guardians",
+        unit: "guardians",
+      },
+      { type: "dungeons", label: "Clear deep Dungeon floors", unit: "floors" },
+      {
+        type: "deflections",
+        label: "Execute tactical Blocks or Parries",
+        unit: "deflections",
+      },
+      {
+        type: "spells",
+        label: "Trigger offhand Tome Spell Procs",
+        unit: "spells",
+      },
+      {
+        type: "luminous",
+        label: "Harvest wild Luminous Souls from rare spawns",
+        unit: "souls",
+      },
+      {
+        type: "contracts",
+        label: "Complete Special Cavern Challenge Contracts",
+        unit: "contracts",
+      },
+    ];
 
-      pool.sort(() => Math.random() - 0.5);
-      let selected = pool.slice(0, 3);
+    pool.sort(() => Math.random() - 0.5);
+    let selected = pool.slice(0, 3);
 
-      let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-      window.playerStats.weeklyMissions = selected.map((m, idx) => {
-        let target = window.QuestSystem.getScaledTarget(m.type, peakStage);
-        let goldReward = BigNum.from(800).mul(BigNum.from(1.05).pow(peakStage));
-        let xpReward = BigNum.from(150).mul(BigNum.from(1.04).pow(peakStage));
+    let peakStage =
+      window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+    window.playerStats.weeklyMissions = selected.map((m, idx) => {
+      let target = window.QuestSystem.getScaledTarget(m.type, peakStage);
+      let goldReward = BigNum.from(800).mul(BigNum.from(1.05).pow(peakStage));
+      let xpReward = BigNum.from(150).mul(BigNum.from(1.04).pow(peakStage));
 
-        return {
-          id: `weekly_${idx + 1}`,
-          type: m.type,
-          desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
-          current: 0,
-          target: target,
-          goldReward: { m: goldReward.m, e: goldReward.e },
-          xpReward: { m: xpReward.m, e: xpReward.e },
-          treat: "Weekly Reward Sack",
-          treatQty: 1,
-          completed: false,
-          claimed: false,
-        };
-      });
-    }
-  };
+      return {
+        id: `weekly_${idx + 1}`,
+        type: m.type,
+        desc: `${m.label} (${target.toLocaleString()} ${m.unit})`,
+        current: 0,
+        target: target,
+        goldReward: { m: goldReward.m, e: goldReward.e },
+        xpReward: { m: xpReward.m, e: xpReward.e },
+        treat: "Weekly Reward Sack",
+        treatQty: 1,
+        completed: false,
+        claimed: false,
+      };
+    });
+  },
+};
 
 // Legacy Compatibility Aliases to protect references
 window.generateDailyMissions = () => window.QuestSystem.generateDailyMissions();
-window.generateWeeklyMissions = () => window.QuestSystem.generateWeeklyMissions();
+window.generateWeeklyMissions = () =>
+  window.QuestSystem.generateWeeklyMissions();
 
 // Append rerollBountyBoard inside window.QuestSystem
 Object.assign(window.QuestSystem, {
@@ -4221,16 +4590,24 @@ Object.assign(window.QuestSystem, {
     let r = window.playerStats.bountyRerollsToday || 0;
     if (r >= 3) {
       if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast("Maximum of 3 manual board re-rolls per day reached!", "#e74c3c");
+        window.pushHeaderToast(
+          "Maximum of 3 manual board re-rolls per day reached!",
+          "#e74c3c",
+        );
       }
       return;
     }
 
-    let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+    let peakStage =
+      window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
     let cost = window.getBountyRerollCost(peakStage, r);
 
     let goldOwned = BigNum.from(window.playerStats.coins || 0);
-    let soulsOwned = (window.inventory && window.inventory.ETC && window.inventory.ETC["Monster Soul"]) || 0;
+    let soulsOwned =
+      (window.inventory &&
+        window.inventory.ETC &&
+        window.inventory.ETC["Monster Soul"]) ||
+      0;
 
     if (goldOwned.lt(cost.gold)) {
       if (typeof window.pushHeaderToast === "function") {
@@ -4240,7 +4617,10 @@ Object.assign(window.QuestSystem, {
     }
     if (soulsOwned < cost.souls) {
       if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast("Not enough Monster Souls for board re-roll!", "#e74c3c");
+        window.pushHeaderToast(
+          "Not enough Monster Souls for board re-roll!",
+          "#e74c3c",
+        );
       }
       return;
     }
@@ -4257,18 +4637,21 @@ Object.assign(window.QuestSystem, {
     }
 
     // Increment re-roll tracker
-            window.playerStats.bountyRerollsToday = r + 1;
+    window.playerStats.bountyRerollsToday = r + 1;
 
-            // Regenerate active missions & Special Challenges
-            this.generateDailyMissions();
-            if (window.isWeeklyQuestUnlocked()) {
-              this.generateWeeklyMissions();
-            }
-            if (window.ChallengeEngine && typeof window.ChallengeEngine.generateRandomChallenges === "function") {
-              window.ChallengeEngine.generateRandomChallenges();
-            }
+    // Regenerate active missions & Special Challenges
+    this.generateDailyMissions();
+    if (window.isWeeklyQuestUnlocked()) {
+      this.generateWeeklyMissions();
+    }
+    if (
+      window.ChallengeEngine &&
+      typeof window.ChallengeEngine.generateRandomChallenges === "function"
+    ) {
+      window.ChallengeEngine.generateRandomChallenges();
+    }
 
-            if (typeof window.pushHeaderToast === "function") {
+    if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast("Board Re-rolled Successfully!", "#2ecc71");
     }
     if (window.SoundManager && typeof window.SoundManager.play === "function") {
@@ -4276,9 +4659,10 @@ Object.assign(window.QuestSystem, {
     }
 
     if (typeof window.updateUI === "function") window.updateUI();
-    if (typeof window.renderBountyBoard === "function") window.renderBountyBoard();
+    if (typeof window.renderBountyBoard === "function")
+      window.renderBountyBoard();
     if (typeof window.saveGame === "function") window.saveGame();
-  }
+  },
 });
 
 window.rerollBountyBoard = () => window.QuestSystem.rerollBountyBoard();
@@ -4300,21 +4684,21 @@ Object.assign(window.QuestSystem, {
     let currentDayStr = ptDate.toLocaleDateString("en-US"); // e.g. "6/25/2026"
 
     // Check Daily reset against absolute Pacific date string
-                    if (
-                      !window.playerStats.lastDailyResetDayStr ||
-                      window.playerStats.lastDailyResetDayStr !== currentDayStr
-                    ) {
-                      this.generateDailyMissions();
-                      window.playerStats.lastDailyResetDayStr = currentDayStr;
-                      window.playerStats.lastDailyResetTime = now;
-                      window.playerStats.dailyRewardClaimed = false;
-                      window.playerStats.dailyRerollsDone = 0; // Reset active re-roll tracker daily
-                      window.playerStats.bountyRerollsToday = 0; // Reset active re-roll count daily
-                      if (typeof window.pushLog === "function")
-                        window.pushLog(
-                          "<span style='color:#2ecc71; font-weight:bold;'>[SYSTEM] Clan Daily Board refreshed! Reset at 12:00 AM PST/PDT. Complete at least 5 for a grand treat!</span>",
-                        );
-                    }
+    if (
+      !window.playerStats.lastDailyResetDayStr ||
+      window.playerStats.lastDailyResetDayStr !== currentDayStr
+    ) {
+      this.generateDailyMissions();
+      window.playerStats.lastDailyResetDayStr = currentDayStr;
+      window.playerStats.lastDailyResetTime = now;
+      window.playerStats.dailyRewardClaimed = false;
+      window.playerStats.dailyRerollsDone = 0; // Reset active re-roll tracker daily
+      window.playerStats.bountyRerollsToday = 0; // Reset active re-roll count daily
+      if (typeof window.pushLog === "function")
+        window.pushLog(
+          "<span style='color:#2ecc71; font-weight:bold;'>[SYSTEM] Clan Daily Board refreshed! Reset at 12:00 AM PST/PDT. Complete at least 5 for a grand treat!</span>",
+        );
+    }
 
     // Check Weekly reset (Monday 12:00 AM PST/PDT)
     let dayOfWeek = ptDate.getDay(); // 0 is Sunday, 1 is Monday...
@@ -4324,26 +4708,26 @@ Object.assign(window.QuestSystem, {
     let lastMondayStr = lastMondayDate.toLocaleDateString("en-US");
 
     if (window.isWeeklyQuestUnlocked()) {
-          if (
-            !window.playerStats.lastWeeklyResetMondayStr ||
-            window.playerStats.lastWeeklyResetMondayStr !== lastMondayStr
-          ) {
-            this.generateWeeklyMissions();
-            window.playerStats.lastWeeklyResetMondayStr = lastMondayStr;
-            window.playerStats.lastWeeklyResetTime = now;
-            window.playerStats.weeklyRewardClaimed = false;
+      if (
+        !window.playerStats.lastWeeklyResetMondayStr ||
+        window.playerStats.lastWeeklyResetMondayStr !== lastMondayStr
+      ) {
+        this.generateWeeklyMissions();
+        window.playerStats.lastWeeklyResetMondayStr = lastMondayStr;
+        window.playerStats.lastWeeklyResetTime = now;
+        window.playerStats.weeklyRewardClaimed = false;
 
-            // Add this line below:
-            window.playerStats.weeklyClanCrateClaimed = false;
+        // Add this line below:
+        window.playerStats.weeklyClanCrateClaimed = false;
 
-            if (typeof window.pushLog === "function")
-              window.pushLog(
-                "<span style='color:#9b59b6; font-weight:bold;'>[SYSTEM] Clan Weekly Board refreshed!</span>",
-              );
-          }
-        } else {
-          window.playerStats.weeklyMissions = [];
-        }
+        if (typeof window.pushLog === "function")
+          window.pushLog(
+            "<span style='color:#9b59b6; font-weight:bold;'>[SYSTEM] Clan Weekly Board refreshed!</span>",
+          );
+      }
+    } else {
+      window.playerStats.weeklyMissions = [];
+    }
   },
 });
 
@@ -4371,11 +4755,8 @@ Object.assign(window.QuestSystem, {
       });
     }
 
-    if (
-          window.isWeeklyQuestUnlocked() &&
-          window.playerStats.weeklyMissions
-        ) {
-          window.playerStats.weeklyMissions.forEach((m) => {
+    if (window.isWeeklyQuestUnlocked() && window.playerStats.weeklyMissions) {
+      window.playerStats.weeklyMissions.forEach((m) => {
         if (m.type === type && !m.completed) {
           m.current = Math.min(m.target, m.current + amount);
           if (m.current >= m.target) {
@@ -4545,15 +4926,18 @@ window.saveGame = function () {
     }
 
     // Subphase 13: Serialize Special Challenge rewards safely without mutating live memory references
-                if (saveData.playerStats.activeSpecialChallenge) {
-                  let challengeCopy = JSON.parse(JSON.stringify(saveData.playerStats.activeSpecialChallenge));
-                  if (challengeCopy.rewards) {
-                    let r = challengeCopy.rewards;
-                    if (r.gold) r.gold = { m: BigNum.from(r.gold).m, e: BigNum.from(r.gold).e };
-                    if (r.xp) r.xp = { m: BigNum.from(r.xp).m, e: BigNum.from(r.xp).e };
-                  }
-                  saveData.playerStats.activeSpecialChallenge = challengeCopy;
-                }
+    if (saveData.playerStats.activeSpecialChallenge) {
+      let challengeCopy = JSON.parse(
+        JSON.stringify(saveData.playerStats.activeSpecialChallenge),
+      );
+      if (challengeCopy.rewards) {
+        let r = challengeCopy.rewards;
+        if (r.gold)
+          r.gold = { m: BigNum.from(r.gold).m, e: BigNum.from(r.gold).e };
+        if (r.xp) r.xp = { m: BigNum.from(r.xp).m, e: BigNum.from(r.xp).e };
+      }
+      saveData.playerStats.activeSpecialChallenge = challengeCopy;
+    }
 
     localStorage.setItem("extraction_crawler_save", JSON.stringify(saveData));
   } catch (err) {
@@ -4621,12 +5005,15 @@ window.hydrateCavernSigils = function () {
             dangerRating: 5,
           };
         }
-        let match = (window.CAVERN_DEBUFFS || []).find((ref) => ref.id === d.id);
+        let match = (window.CAVERN_DEBUFFS || []).find(
+          (ref) => ref.id === d.id,
+        );
         if (match) {
           d.type = d.type || match.type;
           d.statKey = d.statKey || match.statKey;
           d.minStars = d.minStars !== undefined ? d.minStars : match.minStars;
-          d.dangerRating = d.dangerRating !== undefined ? d.dangerRating : match.dangerRating;
+          d.dangerRating =
+            d.dangerRating !== undefined ? d.dangerRating : match.dangerRating;
           if (d.type === "stat" && d.value === undefined) {
             d.value = window.rollSigilStatValue
               ? window.rollSigilStatValue(d.statKey, sig.statsRolled, false)
@@ -4652,162 +5039,194 @@ window.hydrateCavernSigils = function () {
   };
 
   window.inventory.SIGIL.forEach((sig) => {
-      window.hydrateSingleSigil(sig);
-    });
+    window.hydrateSingleSigil(sig);
+  });
 
-    if (window.playerStats && window.playerStats.activeDungeonSigil) {
-        window.hydrateSingleSigil(window.playerStats.activeDungeonSigil);
+  if (window.playerStats && window.playerStats.activeDungeonSigil) {
+    window.hydrateSingleSigil(window.playerStats.activeDungeonSigil);
+  }
+};
+
+window.renderBestiaryAlbum = function () {
+  let container = document.getElementById("album-content-panel");
+  if (!container) return;
+
+  let cards = window.playerStats.monsterCards || {};
+  let totalCards = Object.keys(window.MONSTER_CARDS_DATA).length;
+  let unlockedCount = 0;
+
+  for (let cKey in window.MONSTER_CARDS_DATA) {
+    if ((cards[cKey] || 0) > 0) {
+      unlockedCount++;
+    }
+  }
+
+  let progressPct = Math.round((unlockedCount / totalCards) * 100) || 0;
+
+  // Compile active passive stats from cards
+  let activeBonusTexts = [];
+  let statLabels = {
+    atk: "Attack Power",
+    maxHp: "Maximum HP",
+    def: "Defense Armor",
+    moveSpeed: "Movement Speed",
+    critChance: "Critical Strike Chance",
+    critDamage: "Critical Strike Damage",
+    block: "Block Rate",
+    parry: "Parry Rate",
+    xpRate: "XP Rate Multiplier",
+    dropRate: "Drop Rate Mod",
+    gold: "Gold Multiplier",
+    rareSpawn: "Rare Spawn Rate",
+  };
+
+  // Re-accumulate card stat values
+  let accumulatedStats = {};
+  for (let cKey in window.MONSTER_CARDS_DATA) {
+    let count = cards[cKey] || 0;
+    let tier = window.getCardTier(count);
+    if (tier >= 0) {
+      let cardData = window.MONSTER_CARDS_DATA[cKey];
+      let val = window.getCardValue(cardData.baseVal, tier);
+      accumulatedStats[cardData.baseStat] =
+        (accumulatedStats[cardData.baseStat] || 0) + val;
+    }
+  }
+
+  // Append active Set Resonance bonuses
+  for (let setName in window.CARD_SETS_DATA) {
+    let setData = window.CARD_SETS_DATA[setName];
+    let minTier = Infinity;
+    let allOwned = true;
+    for (let cKey of setData.cards) {
+      let count = cards[cKey] || 0;
+      let t = window.getCardTier(count);
+      if (t < 0) {
+        allOwned = false;
+        break;
       }
-    };
+      if (t < minTier) minTier = t;
+    }
+    if (allOwned) {
+      let multiplier = 1.0 + 0.5 * minTier;
+      let val = 0.05 * multiplier;
+      accumulatedStats[setData.statKey] =
+        (accumulatedStats[setData.statKey] || 0) + val;
+    }
+  }
 
-    window.renderBestiaryAlbum = function () {
-      let container = document.getElementById("album-content-panel");
-      if (!container) return;
+  for (let sKey in accumulatedStats) {
+    let val = accumulatedStats[sKey];
+    if (val > 0) {
+      let isPct = [
+        "dropRate",
+        "qly",
+        "critChance",
+        "critDamage",
+        "block",
+        "parry",
+        "gold",
+        "xpRate",
+        "rareSpawn",
+        "maxHp",
+        "def",
+        "atk",
+        "defPctBonus",
+        "atkPctBonus",
+        "maxHpPctBonus",
+        "attributesMult",
+      ].includes(sKey);
+      let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
+      let label = statLabels[sKey] || sKey.toUpperCase();
+      activeBonusTexts.push(`${label} ${valStr}`);
+    }
+  }
+  let activeBonusStr =
+    activeBonusTexts.length > 0
+      ? activeBonusTexts.join(" • ")
+      : "No active card bonuses yet.";
 
-      let cards = window.playerStats.monsterCards || {};
-      let totalCards = Object.keys(window.MONSTER_CARDS_DATA).length;
-      let unlockedCount = 0;
+  // Build Set Containers
+  let setsHtml = "";
+  let setKeys = [
+    "Whispering Woods",
+    "Mountain Peaks",
+    "Inferno Depths",
+    "Fungal Swamp",
+    "Void Singularity",
+    "Cosmic Wardens",
+  ];
 
-      for (let cKey in window.MONSTER_CARDS_DATA) {
-        if ((cards[cKey] || 0) > 0) {
-          unlockedCount++;
-        }
+  const rankNames = ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond"];
+  const rankColors = [
+    "#b2bec3",
+    "#cd7f32",
+    "#bdc3c7",
+    "#ffd700",
+    "#e5e7eb",
+    "#00ffff",
+  ];
+
+  setKeys.forEach((setName) => {
+    let setData = window.CARD_SETS_DATA[setName];
+    let minTier = Infinity;
+    let ownedSetCount = 0;
+
+    for (let cKey of setData.cards) {
+      let count = cards[cKey] || 0;
+      let t = window.getCardTier(count);
+      if (t >= 0) {
+        ownedSetCount++;
+        if (t < minTier) minTier = t;
+      } else {
+        minTier = -1;
       }
+    }
 
-      let progressPct = Math.round((unlockedCount / totalCards) * 100) || 0;
+    let isSetComplete = ownedSetCount === setData.cards.length;
+    let setResonanceText = "";
+    let setHeaderColor = isSetComplete ? "#ffd700" : "#64748b";
 
-      // Compile active passive stats from cards
-      let activeBonusTexts = [];
-      let statLabels = {
-        atk: "Attack Power",
-        maxHp: "Maximum HP",
-        def: "Defense Armor",
-        moveSpeed: "Movement Speed",
-        critChance: "Critical Strike Chance",
-        critDamage: "Critical Strike Damage",
-        block: "Block Rate",
-        parry: "Parry Rate",
-        xpRate: "XP Rate Multiplier",
-        dropRate: "Drop Rate Mod",
-        gold: "Gold Multiplier",
-        rareSpawn: "Rare Spawn Rate"
-      };
+    if (isSetComplete) {
+      let mult = 1.0 + 0.5 * minTier;
+      setResonanceText = `<span style="color:#2ecc71; font-weight:bold; font-size:9.5px; font-family:monospace;">RESONANCE: ${rankNames[minTier]} (x${mult.toFixed(1)} Bonus)</span>`;
+    } else {
+      setResonanceText = `<span style="color:#64748b; font-size:9.5px; font-family:monospace;">RESONANCE: INACTIVE (${ownedSetCount}/${setData.cards.length})</span>`;
+    }
 
-      // Re-accumulate card stat values
-      let accumulatedStats = {};
-      for (let cKey in window.MONSTER_CARDS_DATA) {
+    let cardsGridHtml = setData.cards
+      .map((cKey) => {
         let count = cards[cKey] || 0;
         let tier = window.getCardTier(count);
+        let cardData = window.MONSTER_CARDS_DATA[cKey];
+        let cost = cardData.set === "Cosmic Wardens" ? 250 : 50;
+        let dustOwned = window.playerStats.astralDust || 0;
+        let canCraft = dustOwned >= cost;
+
         if (tier >= 0) {
-          let cardData = window.MONSTER_CARDS_DATA[cKey];
+          let cardColor = rankColors[tier] || "#ffd700";
           let val = window.getCardValue(cardData.baseVal, tier);
-          accumulatedStats[cardData.baseStat] = (accumulatedStats[cardData.baseStat] || 0) + val;
-        }
-      }
-
-      // Append active Set Resonance bonuses
-      for (let setName in window.CARD_SETS_DATA) {
-        let setData = window.CARD_SETS_DATA[setName];
-        let minTier = Infinity;
-        let allOwned = true;
-        for (let cKey of setData.cards) {
-          let count = cards[cKey] || 0;
-          let t = window.getCardTier(count);
-          if (t < 0) { allOwned = false; break; }
-          if (t < minTier) minTier = t;
-        }
-        if (allOwned) {
-          let multiplier = 1.0 + 0.5 * minTier;
-          let val = 0.05 * multiplier;
-          accumulatedStats[setData.statKey] = (accumulatedStats[setData.statKey] || 0) + val;
-        }
-      }
-
-      for (let sKey in accumulatedStats) {
-        let val = accumulatedStats[sKey];
-        if (val > 0) {
-          let isPct = [
-            "dropRate", "qly", "critChance", "critDamage", "block", "parry",
-            "gold", "xpRate", "rareSpawn", "maxHp", "def", "atk", "defPctBonus",
-            "atkPctBonus", "maxHpPctBonus", "attributesMult"
-          ].includes(sKey);
+          let isPct = cardData.isPct;
           let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
-          let label = statLabels[sKey] || sKey.toUpperCase();
-          activeBonusTexts.push(`${label} ${valStr}`);
-        }
-      }
-      let activeBonusStr = activeBonusTexts.length > 0 ? activeBonusTexts.join(" • ") : "No active card bonuses yet.";
+          let iconHtml = window.getEquipIconHtml(
+            { type: "card", cardKey: cKey },
+            36,
+          );
 
-      // Build Set Containers
-      let setsHtml = "";
-      let setKeys = [
-        "Whispering Woods",
-        "Mountain Peaks",
-        "Inferno Depths",
-        "Fungal Swamp",
-        "Void Singularity",
-        "Cosmic Wardens"
-      ];
+          let thresholds = window.CARD_UPGRADE_THRESHOLDS;
+          let nextThreshold = thresholds[tier + 1];
+          let progressText = "";
+          let progressPct = 0;
 
-      const rankNames = ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond"];
-      const rankColors = ["#b2bec3", "#cd7f32", "#bdc3c7", "#ffd700", "#e5e7eb", "#00ffff"];
-
-      setKeys.forEach(setName => {
-        let setData = window.CARD_SETS_DATA[setName];
-        let minTier = Infinity;
-        let ownedSetCount = 0;
-
-        for (let cKey of setData.cards) {
-          let count = cards[cKey] || 0;
-          let t = window.getCardTier(count);
-          if (t >= 0) {
-            ownedSetCount++;
-            if (t < minTier) minTier = t;
+          if (nextThreshold !== undefined) {
+            progressText = `${count} / ${nextThreshold}`;
+            progressPct = Math.min(100, (count / nextThreshold) * 100);
           } else {
-            minTier = -1;
+            progressText = "MAX RANK";
+            progressPct = 100;
           }
-        }
 
-        let isSetComplete = ownedSetCount === setData.cards.length;
-        let setResonanceText = "";
-        let setHeaderColor = isSetComplete ? "#ffd700" : "#64748b";
-
-        if (isSetComplete) {
-          let mult = 1.0 + 0.5 * minTier;
-          setResonanceText = `<span style="color:#2ecc71; font-weight:bold; font-size:9.5px; font-family:monospace;">RESONANCE: ${rankNames[minTier]} (x${mult.toFixed(1)} Bonus)</span>`;
-        } else {
-          setResonanceText = `<span style="color:#64748b; font-size:9.5px; font-family:monospace;">RESONANCE: INACTIVE (${ownedSetCount}/${setData.cards.length})</span>`;
-        }
-
-        let cardsGridHtml = setData.cards.map(cKey => {
-          let count = cards[cKey] || 0;
-          let tier = window.getCardTier(count);
-          let cardData = window.MONSTER_CARDS_DATA[cKey];
-          let cost = cardData.set === "Cosmic Wardens" ? 250 : 50;
-          let dustOwned = window.playerStats.astralDust || 0;
-          let canCraft = dustOwned >= cost;
-
-          if (tier >= 0) {
-            let cardColor = rankColors[tier] || "#ffd700";
-            let val = window.getCardValue(cardData.baseVal, tier);
-            let isPct = cardData.isPct;
-            let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
-            let iconHtml = window.getEquipIconHtml({ type: "card", cardKey: cKey }, 36);
-
-            let thresholds = window.CARD_UPGRADE_THRESHOLDS;
-            let nextThreshold = thresholds[tier + 1];
-            let progressText = "";
-            let progressPct = 0;
-
-            if (nextThreshold !== undefined) {
-              progressText = `${count} / ${nextThreshold}`;
-              progressPct = Math.min(100, (count / nextThreshold) * 100);
-            } else {
-              progressText = "MAX RANK";
-              progressPct = 100;
-            }
-
-            return `
+          return `
               <div class="bestiary-card-item unlocked-card" style="border-color:${cardColor}; background:rgba(0,0,0,0.5); box-shadow: inset 0 0 10px ${cardColor}15;">
                 <div style="font-size:7px; color:${cardColor}; font-weight:bold; font-family:monospace; text-transform:uppercase;">${rankNames[tier]} RANK</div>
                 <div style="margin:4px 0;">${iconHtml}</div>
@@ -4825,11 +5244,11 @@ window.hydrateCavernSigils = function () {
                 </div>
               </div>
             `;
-          } else {
-            let iconHtml = `<span style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(255,255,255,0.01); border:1px dashed #334155; border-radius:4px; font-weight:bold; font-size:16px; color:#334155; flex-shrink:0;">?</span>`;
-            let craftBtnHtml = `<button class="action-btn-sm" style="font-size:7px; padding:2.5px 6px; margin:0; line-height:1.2; background:${canCraft ? "linear-gradient(180deg, #10b981, #047857)" : "#1e293b"}; border-color:${canCraft ? "#34d399" : "#334155"}; color:${canCraft ? "#ffffff" : "#64748b"}; width:100%; margin-top:4px;" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} Dust)</button>`;
+        } else {
+          let iconHtml = `<span style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(255,255,255,0.01); border:1px dashed #334155; border-radius:4px; font-weight:bold; font-size:16px; color:#334155; flex-shrink:0;">?</span>`;
+          let craftBtnHtml = `<button class="action-btn-sm" style="font-size:7px; padding:2.5px 6px; margin:0; line-height:1.2; background:${canCraft ? "linear-gradient(180deg, #10b981, #047857)" : "#1e293b"}; border-color:${canCraft ? "#34d399" : "#334155"}; color:${canCraft ? "#ffffff" : "#64748b"}; width:100%; margin-top:4px;" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} Dust)</button>`;
 
-            return `
+          return `
               <div class="bestiary-card-item locked-card" style="border-color:#1e293b; background:rgba(10,14,23,0.3); min-height:145px; display:flex; flex-direction:column; justify-content:space-between;">
                 <div style="font-size:7px; color:#475569; font-weight:bold; font-family:monospace;">LOCKED</div>
                 <div style="margin:4px 0; opacity:0.25; filter:grayscale(1);">${iconHtml}</div>
@@ -4843,10 +5262,11 @@ window.hydrateCavernSigils = function () {
                 </div>
               </div>
             `;
-          }
-        }).join("");
+        }
+      })
+      .join("");
 
-        setsHtml += `
+    setsHtml += `
           <div style="margin-bottom:16px;">
             <div class="bestiary-set-header" style="border-bottom: 1.5px solid ${isSetComplete ? "rgba(212,175,55,0.3)" : "rgba(51,65,85,0.3)"}; padding-bottom:4px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
               <strong style="color:${setHeaderColor}; font-size:11.5px; text-transform:uppercase; letter-spacing:0.8px;">${setData.name}</strong>
@@ -4857,9 +5277,9 @@ window.hydrateCavernSigils = function () {
             </div>
           </div>
         `;
-      });
+  });
 
-      container.innerHTML = `
+  container.innerHTML = `
         <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%;">
           <!-- Unlocked Count & Summary Banner -->
           <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #1e172e 0%, #0d0918 100%); border: 1.5px solid #d4af37; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
@@ -4884,132 +5304,152 @@ window.hydrateCavernSigils = function () {
           </div>
         </div>
       `;
-    };
+};
 
-    window.craftCard = function (cKey) {
-      let cardData = window.MONSTER_CARDS_DATA[cKey];
-      if (!cardData) return;
+window.craftCard = function (cKey) {
+  let cardData = window.MONSTER_CARDS_DATA[cKey];
+  if (!cardData) return;
 
-      let cost = cardData.set === "Cosmic Wardens" ? 250 : 50;
-      let dustOwned = window.playerStats.astralDust || 0;
+  let cost = cardData.set === "Cosmic Wardens" ? 250 : 50;
+  let dustOwned = window.playerStats.astralDust || 0;
 
-      if (dustOwned < cost) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast(`❌ Not enough Astral Dust! Requires ${cost} Dust (Owned: ${dustOwned})`, "#e74c3c");
-        }
-        return;
+  if (dustOwned < cost) {
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        `❌ Not enough Astral Dust! Requires ${cost} Dust (Owned: ${dustOwned})`,
+        "#e74c3c",
+      );
+    }
+    return;
+  }
+
+  window.showCustomConfirm(
+    "Craft Monster Card",
+    `Spend <strong style="color:#df9ffb;">${cost} Astral Dust</strong> to forge 1x <strong>${cardData.name}</strong>?`,
+    "Craft Card",
+    "Cancel",
+    "#a855f7",
+    function () {
+      window.playerStats.astralDust = Math.max(
+        0,
+        (window.playerStats.astralDust || 0) - cost,
+      );
+      window.playerStats.monsterCards[cKey] =
+        (window.playerStats.monsterCards[cKey] || 0) + 1;
+
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("revive");
+      }
+      if (typeof window.spawnTemperParticles === "function") {
+        window.spawnTemperParticles(true);
       }
 
-      window.showCustomConfirm(
-        "Craft Monster Card",
-        `Spend <strong style="color:#df9ffb;">${cost} Astral Dust</strong> to forge 1x <strong>${cardData.name}</strong>?`,
-        "Craft Card",
-        "Cancel",
-        "#a855f7",
-        function () {
-          window.playerStats.astralDust = Math.max(0, (window.playerStats.astralDust || 0) - cost);
-          window.playerStats.monsterCards[cKey] = (window.playerStats.monsterCards[cKey] || 0) + 1;
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(`Forged 1x ${cardData.name}!`, "#2ecc71");
+      }
 
-          if (window.SoundManager && typeof window.SoundManager.play === "function") {
-            window.SoundManager.play("revive");
-          }
-          if (typeof window.spawnTemperParticles === "function") {
-            window.spawnTemperParticles(true);
-          }
+      window.updateUI();
+      window.renderBestiaryAlbum();
+      window.saveGame();
+    },
+  );
+};
 
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast(`Forged 1x ${cardData.name}!`, "#2ecc71");
-          }
+window.salvageAllDuplicateCards = function () {
+  let cards = window.playerStats.monsterCards || {};
+  let totalDustYield = 0;
+  let totalCardsSalvaged = 0;
 
-          window.updateUI();
-          window.renderBestiaryAlbum();
-          window.saveGame();
-        }
+  for (let cKey in window.MONSTER_CARDS_DATA) {
+    let count = cards[cKey] || 0;
+    if (count > 1) {
+      let extra = count - 1;
+      let cardData = window.MONSTER_CARDS_DATA[cKey];
+      let isBoss = cardData.set === "Cosmic Wardens";
+      let valuePerCard = isBoss ? 5 : 1;
+
+      totalDustYield += extra * valuePerCard;
+      totalCardsSalvaged += extra;
+    }
+  }
+
+  if (totalCardsSalvaged === 0) {
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        "No duplicate cards available to salvage!",
+        "#e74c3c",
       );
-    };
+    }
+    return;
+  }
 
-    window.salvageAllDuplicateCards = function () {
-      let cards = window.playerStats.monsterCards || {};
-      let totalDustYield = 0;
-      let totalCardsSalvaged = 0;
-
+  window.showCustomConfirm(
+    "Salvage Duplicate Cards",
+    `Are you sure you want to dismantle <strong>${totalCardsSalvaged} spare card(s)</strong>? This will permanently recycle all extra copies (leaving 1 copy of each unlocked card) and yield <strong style="color:#df9ffb;">+${totalDustYield} Astral Dust</strong>.<br><br><span style="color:#e74c3c; font-weight:bold;">Warning: If you had upgraded card ranks, reducing card counts down to 1 will reset those card ranks back to Iron (Tier 0).</span>`,
+    "Salvage Cards",
+    "Cancel",
+    "#e74c3c",
+    function () {
       for (let cKey in window.MONSTER_CARDS_DATA) {
         let count = cards[cKey] || 0;
         if (count > 1) {
-          let extra = count - 1;
-          let cardData = window.MONSTER_CARDS_DATA[cKey];
-          let isBoss = cardData.set === "Cosmic Wardens";
-          let valuePerCard = isBoss ? 5 : 1;
-
-          totalDustYield += extra * valuePerCard;
-          totalCardsSalvaged += extra;
+          cards[cKey] = 1;
         }
       }
+      window.playerStats.astralDust =
+        (window.playerStats.astralDust || 0) + totalDustYield;
 
-      if (totalCardsSalvaged === 0) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("No duplicate cards available to salvage!", "#e74c3c");
-        }
-        return;
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("death");
+      }
+      if (typeof window.spawnTemperParticles === "function") {
+        window.spawnTemperParticles(true);
       }
 
-      window.showCustomConfirm(
-        "Salvage Duplicate Cards",
-        `Are you sure you want to dismantle <strong>${totalCardsSalvaged} spare card(s)</strong>? This will permanently recycle all extra copies (leaving 1 copy of each unlocked card) and yield <strong style="color:#df9ffb;">+${totalDustYield} Astral Dust</strong>.<br><br><span style="color:#e74c3c; font-weight:bold;">Warning: If you had upgraded card ranks, reducing card counts down to 1 will reset those card ranks back to Iron (Tier 0).</span>`,
-        "Salvage Cards",
-        "Cancel",
-        "#e74c3c",
-        function () {
-          for (let cKey in window.MONSTER_CARDS_DATA) {
-            let count = cards[cKey] || 0;
-            if (count > 1) {
-              cards[cKey] = 1;
-            }
-          }
-          window.playerStats.astralDust = (window.playerStats.astralDust || 0) + totalDustYield;
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          `Recycled ${totalCardsSalvaged} duplicate card(s) for +${totalDustYield} Astral Dust!`,
+          "#2ecc71",
+        );
+      }
 
-          if (window.SoundManager && typeof window.SoundManager.play === "function") {
-            window.SoundManager.play("death");
-          }
-          if (typeof window.spawnTemperParticles === "function") {
-            window.spawnTemperParticles(true);
-          }
+      window.updateUI();
+      window.renderBestiaryAlbum();
+      window.saveGame();
+    },
+  );
+};
 
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast(`Recycled ${totalCardsSalvaged} duplicate card(s) for +${totalDustYield} Astral Dust!`, "#2ecc71");
-          }
+window.openMonsterCardSackAnimation = function (rolledCards) {
+  window.isGamePaused = true;
+  let overlay = document.createElement("div");
+  overlay.id = "card-opening-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.backgroundColor = "rgba(4, 3, 9, 0.95)";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
+  overlay.style.zIndex = "45000";
+  overlay.style.backdropFilter = "blur(12px)";
+  overlay.style.fontFamily = "monospace";
+  overlay.style.color = "#f1f5f9";
+  overlay.style.boxSizing = "border-box";
+  overlay.style.padding = "20px";
+  document.body.appendChild(overlay);
 
-          window.updateUI();
-          window.renderBestiaryAlbum();
-          window.saveGame();
-        }
-      );
-    };
-
-  window.openMonsterCardSackAnimation = function (rolledCards) {
-    window.isGamePaused = true;
-    let overlay = document.createElement("div");
-    overlay.id = "card-opening-overlay";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(4, 3, 9, 0.95)";
-    overlay.style.display = "flex";
-    overlay.style.flexDirection = "column";
-    overlay.style.justifyContent = "center";
-    overlay.style.alignItems = "center";
-    overlay.style.zIndex = "45000";
-    overlay.style.backdropFilter = "blur(12px)";
-    overlay.style.fontFamily = "monospace";
-    overlay.style.color = "#f1f5f9";
-    overlay.style.boxSizing = "border-box";
-    overlay.style.padding = "20px";
-    document.body.appendChild(overlay);
-
-    let style = document.createElement("style");
-    style.innerHTML = `
+  let style = document.createElement("style");
+  style.innerHTML = `
       .unboxing-grid {
         display: flex;
         gap: 12px;
@@ -5069,9 +5509,10 @@ window.hydrateCavernSigils = function () {
         pointer-events: auto;
       }
     `;
-    document.head.appendChild(style);
+  document.head.appendChild(style);
 
-    let cardsHtml = rolledCards.map((cKey, idx) => {
+  let cardsHtml = rolledCards
+    .map((cKey, idx) => {
       let cardData = window.MONSTER_CARDS_DATA[cKey];
       let setColors = {
         "Whispering Woods": "#2ecc71",
@@ -5079,10 +5520,13 @@ window.hydrateCavernSigils = function () {
         "Inferno Depths": "#e74c3c",
         "Fungal Swamp": "#1abc9c",
         "Void Singularity": "#9b59b6",
-        "Cosmic Wardens": "#f1c40f"
+        "Cosmic Wardens": "#f1c40f",
       };
       let color = setColors[cardData.set] || "#ffd700";
-      let iconHtml = window.getEquipIconHtml({ type: "card", cardKey: cKey }, 42);
+      let iconHtml = window.getEquipIconHtml(
+        { type: "card", cardKey: cKey },
+        42,
+      );
       let ownedCount = window.playerStats.monsterCards[cKey] || 0;
 
       return `
@@ -5106,9 +5550,10 @@ window.hydrateCavernSigils = function () {
           </div>
         </div>
       `;
-    }).join("");
+    })
+    .join("");
 
-    overlay.innerHTML = `
+  overlay.innerHTML = `
       <div style="text-align:center; max-width:650px; width:95%; animation: toastFadeIn 0.3s ease-out;">
         <h2 style="margin:0 0 4px 0; color:#ffd700; letter-spacing:3px; text-transform:uppercase; font-size:18px; text-shadow:0 0 10px rgba(241,196,15,0.3);">✦ BOOSTER UNBOXED! ✦</h2>
         <div style="font-size:10px; color:#94a3b8; margin-bottom:15px; text-transform:uppercase; letter-spacing:0.8px;">Tap each card to break the runic seal</div>
@@ -5123,24 +5568,27 @@ window.hydrateCavernSigils = function () {
       </div>
     `;
 
-    let flippedCount = 0;
-    window.flipUnboxedCard = function (el, idx) {
-      if (el.classList.contains("flipped")) return;
-      el.classList.add("flipped");
+  let flippedCount = 0;
+  window.flipUnboxedCard = function (el, idx) {
+    if (el.classList.contains("flipped")) return;
+    el.classList.add("flipped");
 
-      if (window.SoundManager && typeof window.SoundManager.playClick === "function") {
-        window.SoundManager.playClick();
-      }
+    if (
+      window.SoundManager &&
+      typeof window.SoundManager.playClick === "function"
+    ) {
+      window.SoundManager.playClick();
+    }
 
-      flippedCount++;
-      if (flippedCount >= 5) {
-        let collectContainer = document.getElementById("collect-btn-container");
-        if (collectContainer) {
-          collectContainer.classList.add("show");
-        }
+    flippedCount++;
+    if (flippedCount >= 5) {
+      let collectContainer = document.getElementById("collect-btn-container");
+      if (collectContainer) {
+        collectContainer.classList.add("show");
       }
-    };
+    }
   };
+};
 
 window.loadGame = function () {
   try {
@@ -5151,16 +5599,32 @@ window.loadGame = function () {
 
     if (parsed.playerStats) {
           Object.assign(window.playerStats, parsed.playerStats);
-          window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
-          window.playerStats.monsterCards = parsed.playerStats.monsterCards || {};
-          window.playerStats.astralDust = parsed.playerStats.astralDust || 0;
-          window.playerStats.hasTriggeredOnslaughtUnlock =
-            parsed.playerStats.hasTriggeredOnslaughtUnlock || false;
+
+          // Safe Migration for Phase 2 Trackers
+                window.playerStats.floorActiveTicks = window.playerStats.floorActiveTicks || 0;
+                window.playerStats.kineticFrictionCharges = window.playerStats.kineticFrictionCharges || 0;
+                window.playerStats.kineticDistanceTraveled = window.playerStats.kineticDistanceTraveled || 0;
+                window.playerStats.kineticStillTimer = window.playerStats.kineticStillTimer || 0;
+                window.playerStats.combatTimer = window.playerStats.combatTimer || 0;
+                window.playerStats.tenacityStacks = window.playerStats.tenacityStacks || 0;
+                window.playerStats.activeCombatTicks = window.playerStats.activeCombatTicks || 0;
+                window.playerStats.outOfCombatTicks = window.playerStats.outOfCombatTicks || 0;
+                window.playerStats.overshieldConsumed = window.playerStats.overshieldConsumed || 0;
+                window.playerStats.nexusTomeShieldTimer = window.playerStats.nexusTomeShieldTimer || 0;
+
+                window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
+      window.playerStats.monsterCards = parsed.playerStats.monsterCards || {};
+      window.playerStats.astralDust = parsed.playerStats.astralDust || 0;
+      window.playerStats.hasTriggeredOnslaughtUnlock =
+        parsed.playerStats.hasTriggeredOnslaughtUnlock || false;
       window.playerStats.isCrucibleMode =
         parsed.playerStats.isCrucibleMode || false;
 
       // Subphase 13: Safely Hydrate Active Special Challenge BigNum Rewards
-      if (window.playerStats.activeSpecialChallenge && window.playerStats.activeSpecialChallenge.rewards) {
+      if (
+        window.playerStats.activeSpecialChallenge &&
+        window.playerStats.activeSpecialChallenge.rewards
+      ) {
         let r = window.playerStats.activeSpecialChallenge.rewards;
         if (r.gold) r.gold = BigNum.from(r.gold);
         if (r.xp) r.xp = BigNum.from(r.xp);
@@ -5230,47 +5694,72 @@ window.loadGame = function () {
       };
 
       // Fallback initializers for separate Utility SP
-            if (window.playerStats.usp === undefined) {
-              window.playerStats.usp = 0;
-            }
+      if (window.playerStats.usp === undefined) {
+        window.playerStats.usp = 0;
+      }
 
-            // Fallback initializers for Special Challenges and Bounty Boards
-                  if (window.playerStats.activeSpecialChallenge === undefined) {
-                    window.playerStats.activeSpecialChallenge = null;
-                  }
-                  if (window.playerStats.bountyRerollsToday === undefined) {
-                    window.playerStats.bountyRerollsToday = 0;
-                  }
-                  if (window.playerStats.abyssalDecayAccumulated === undefined) {
-                    window.playerStats.abyssalDecayAccumulated = 0;
-                  }
+      // Fallback initializers for Artifact Codex properties
+      if (window.playerStats.activeRelics === undefined) {
+        window.playerStats.activeRelics = [];
+      }
+      if (window.playerStats.artifactCodex === undefined) {
+        window.playerStats.artifactCodex = {};
+      }
 
-                  // Backward Compatibility: Migrate legacy slot attunement or reforge quests
-                  let hasLegacyDailies = window.playerStats.dailyMissions && window.playerStats.dailyMissions.some(m => m.type === "tempers" || m.type === "reforges");
-                  let hasLegacyWeeklies = window.playerStats.weeklyMissions && window.playerStats.weeklyMissions.some(m => m.type === "tempers" || m.type === "reforges");
+      // Fallback initializers for Special Challenges and Bounty Boards
+      if (window.playerStats.activeSpecialChallenge === undefined) {
+        window.playerStats.activeSpecialChallenge = null;
+      }
+      if (window.playerStats.bountyRerollsToday === undefined) {
+        window.playerStats.bountyRerollsToday = 0;
+      }
+      if (window.playerStats.abyssalDecayAccumulated === undefined) {
+        window.playerStats.abyssalDecayAccumulated = 0;
+      }
 
-                  if (hasLegacyDailies || !window.playerStats.dailyMissions || window.playerStats.dailyMissions.length === 0) {
-                          window.QuestSystem.generateDailyMissions();
-                        }
-                        if (hasLegacyWeeklies || (window.isWeeklyQuestUnlocked() && (!window.playerStats.weeklyMissions || window.playerStats.weeklyMissions.length === 0))) {
-                          window.QuestSystem.generateWeeklyMissions();
-                        }
+      // Backward Compatibility: Migrate legacy slot attunement or reforge quests
+      let hasLegacyDailies =
+        window.playerStats.dailyMissions &&
+        window.playerStats.dailyMissions.some(
+          (m) => m.type === "tempers" || m.type === "reforges",
+        );
+      let hasLegacyWeeklies =
+        window.playerStats.weeklyMissions &&
+        window.playerStats.weeklyMissions.some(
+          (m) => m.type === "tempers" || m.type === "reforges",
+        );
 
-                  // Safely hydrate serialized BigNum rewards back into live instances
-                  if (window.playerStats.dailyMissions) {
-                    window.playerStats.dailyMissions.forEach(m => {
-                      if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
-                      if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
-                    });
-                  }
-                  if (window.playerStats.weeklyMissions) {
-                    window.playerStats.weeklyMissions.forEach(m => {
-                      if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
-                      if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
-                    });
-                  }
+      if (
+        hasLegacyDailies ||
+        !window.playerStats.dailyMissions ||
+        window.playerStats.dailyMissions.length === 0
+      ) {
+        window.QuestSystem.generateDailyMissions();
+      }
+      if (
+        hasLegacyWeeklies ||
+        (window.isWeeklyQuestUnlocked() &&
+          (!window.playerStats.weeklyMissions ||
+            window.playerStats.weeklyMissions.length === 0))
+      ) {
+        window.QuestSystem.generateWeeklyMissions();
+      }
 
-                  // Fallback initializers for Field Flask properties
+      // Safely hydrate serialized BigNum rewards back into live instances
+      if (window.playerStats.dailyMissions) {
+        window.playerStats.dailyMissions.forEach((m) => {
+          if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
+          if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
+        });
+      }
+      if (window.playerStats.weeklyMissions) {
+        window.playerStats.weeklyMissions.forEach((m) => {
+          if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
+          if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
+        });
+      }
+
+      // Fallback initializers for Field Flask properties
       if (window.playerStats.maxFlaskCharges === undefined)
         window.playerStats.maxFlaskCharges = 1;
       if (window.playerStats.flaskCharges === undefined)
@@ -5345,6 +5834,35 @@ window.loadGame = function () {
 
     if (parsed.equippedSlots) {
       window.equippedSlots = parsed.equippedSlots;
+
+      // Safe Migration: Unequip physical artifacts from art1, art2, art3 slots on load and deposit in bag/stash
+      const relicSlots = ["art1", "art2", "art3"];
+      let migratedAny = false;
+      relicSlots.forEach((slotKey) => {
+        let item = window.equippedSlots[slotKey];
+        if (item) {
+          delete item.isEquippedSlot;
+          if (!window.inventory) {
+            window.inventory = {
+              EQUIP: [],
+              ARTIFACT: [],
+              SIGIL: [],
+              ETC: {},
+              USE: {},
+            };
+          }
+          if (!window.inventory.ARTIFACT) {
+            window.inventory.ARTIFACT = [];
+          }
+          window.inventory.ARTIFACT.push(item);
+          window.equippedSlots[slotKey] = null;
+          migratedAny = true;
+        }
+      });
+
+      if (migratedAny && typeof window.saveGame === "function") {
+        window.saveGame();
+      }
     }
 
     // Safe Skill Tree Migration & Fallback Initialization

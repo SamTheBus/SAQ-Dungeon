@@ -79,49 +79,49 @@
       this.grid[cy][cx] = window.TILE_TYPES.SPAWN_PLAYER;
 
       this.stations = [
-              {
-                type: window.TILE_TYPES.STATION_PORTAL,
-                label: "DUNGEON PORTAL",
-                x: cx,
-                y: 4,
-              },
-              {
-                type: window.TILE_TYPES.STATION_FORGE,
-                label: "BLACKSMITH FORGE",
-                x: 5,
-                y: cy,
-              },
-              {
-                type: window.TILE_TYPES.STATION_SHOP,
-                label: "MERCHANT MARKET",
-                x: 5,
-                y: 12,
-              },
-              {
-                type: window.TILE_TYPES.STATION_ENCHANT,
-                label: "CELESTIAL ALTAR",
-                x: cx,
-                y: 12,
-              },
-              {
-                type: window.TILE_TYPES.STATION_INN,
-                label: "ONSLAUGHT ALTAR",
-                x: 19,
-                y: cy,
-              },
-              {
-                type: window.TILE_TYPES.STATION_GACHAPON,
-                label: "GACHAPON VENDING",
-                x: 19,
-                y: 12,
-              },
-              {
-                type: window.TILE_TYPES.STATION_BOUNTY,
-                label: "BOUNTY BOARD",
-                x: 15,
-                y: 4,
-              },
-            ];
+        {
+          type: window.TILE_TYPES.STATION_PORTAL,
+          label: "DUNGEON PORTAL",
+          x: cx,
+          y: 4,
+        },
+        {
+          type: window.TILE_TYPES.STATION_FORGE,
+          label: "BLACKSMITH FORGE",
+          x: 5,
+          y: cy,
+        },
+        {
+          type: window.TILE_TYPES.STATION_SHOP,
+          label: "MERCHANT MARKET",
+          x: 5,
+          y: 12,
+        },
+        {
+          type: window.TILE_TYPES.STATION_ENCHANT,
+          label: "CELESTIAL ALTAR",
+          x: cx,
+          y: 12,
+        },
+        {
+          type: window.TILE_TYPES.STATION_INN,
+          label: "ONSLAUGHT ALTAR",
+          x: 19,
+          y: cy,
+        },
+        {
+          type: window.TILE_TYPES.STATION_GACHAPON,
+          label: "GACHAPON VENDING",
+          x: 19,
+          y: 12,
+        },
+        {
+          type: window.TILE_TYPES.STATION_BOUNTY,
+          label: "BOUNTY BOARD",
+          x: 15,
+          y: 4,
+        },
+      ];
 
       this.stations.forEach((st) => {
         if (this.grid[st.y] && this.grid[st.y][st.x] !== undefined) {
@@ -488,41 +488,50 @@
       this.grid[chosen.cy][chosen.cx] = window.TILE_TYPES.DESCENT_PORTAL;
 
       // Spawn Recovery Chest if lost loot matches current floor depth (Portal Room skill vs Random Room)
-            let rec = window.playerStats && window.playerStats.recoveryLoot;
+      let rec = window.playerStats && window.playerStats.recoveryLoot;
+      if (
+        rec &&
+        rec.floor === this.depth &&
+        rec.items &&
+        rec.items.length > 0
+      ) {
+        let spawnInPortalRoom =
+          window.SkillTreeManager &&
+          window.SkillTreeManager.getSkillLevel("utility_soul_beacon") > 0;
+        let targetRoom = chosen;
+
+        if (!spawnInPortalRoom && this.rooms.length > 0) {
+          let eligible = this.rooms.filter((r) => r.id !== this.spawnRoomId);
+          if (eligible.length === 0) eligible = this.rooms;
+          targetRoom = eligible[Math.floor(Math.random() * eligible.length)];
+        }
+
+        let candidateTiles = [];
+        for (let ry = targetRoom.y; ry < targetRoom.y + targetRoom.h; ry++) {
+          for (let rx = targetRoom.x; rx < targetRoom.x + targetRoom.w; rx++) {
             if (
-              rec &&
-              rec.floor === this.depth &&
-              rec.items &&
-              rec.items.length > 0
+              this.grid[ry] &&
+              this.grid[ry][rx] === window.TILE_TYPES.FLOOR
             ) {
-              let spawnInPortalRoom = window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("utility_soul_beacon") > 0;
-              let targetRoom = chosen;
-
-              if (!spawnInPortalRoom && this.rooms.length > 0) {
-                let eligible = this.rooms.filter(r => r.id !== this.spawnRoomId);
-                if (eligible.length === 0) eligible = this.rooms;
-                targetRoom = eligible[Math.floor(Math.random() * eligible.length)];
-              }
-
-              let candidateTiles = [];
-              for (let ry = targetRoom.y; ry < targetRoom.y + targetRoom.h; ry++) {
-                for (let rx = targetRoom.x; rx < targetRoom.x + targetRoom.w; rx++) {
-                  if (this.grid[ry] && this.grid[ry][rx] === window.TILE_TYPES.FLOOR) {
-                    let distToPortal = Math.hypot(rx - targetRoom.cx, ry - targetRoom.cy);
-                    candidateTiles.push({ x: rx, y: ry, dist: distToPortal });
-                  }
-                }
-              }
-              if (candidateTiles.length > 0) {
-                if (spawnInPortalRoom) {
-                  candidateTiles.sort((a, b) => b.dist - a.dist);
-                } else {
-                  candidateTiles.sort(() => Math.random() - 0.5);
-                }
-                let targetTile = candidateTiles[0];
-                this.grid[targetTile.y][targetTile.x] = window.TILE_TYPES.RECOVERY_CHEST;
-              }
+              let distToPortal = Math.hypot(
+                rx - targetRoom.cx,
+                ry - targetRoom.cy,
+              );
+              candidateTiles.push({ x: rx, y: ry, dist: distToPortal });
             }
+          }
+        }
+        if (candidateTiles.length > 0) {
+          if (spawnInPortalRoom) {
+            candidateTiles.sort((a, b) => b.dist - a.dist);
+          } else {
+            candidateTiles.sort(() => Math.random() - 0.5);
+          }
+          let targetTile = candidateTiles[0];
+          this.grid[targetTile.y][targetTile.x] =
+            window.TILE_TYPES.RECOVERY_CHEST;
+        }
+      }
     }
 
     placeDungeonMerchant() {
@@ -730,9 +739,14 @@
       let centerC = Math.floor(px / tileSize);
       let centerR = Math.floor(py / tileSize);
 
-      let effectiveInt = Math.max(0, (pInt || 0) - 5);
-      // Enhanced base sight radius from 7 to 12 tiles, and increased max limit to 18 for optimal widescreen coverage
-      let radius = Math.min(18, 12 + Math.floor(effectiveInt / 15));
+      let radius = 12;
+      if (pInt < 0) {
+        // If a negative penalty is passed, allow it to reduce the radius down to a minimum of 3 tiles
+        radius = Math.max(3, 12 + Math.floor(pInt));
+      } else {
+        let effectiveInt = Math.max(0, (pInt || 0) - 5);
+        radius = Math.min(18, 12 + Math.floor(effectiveInt / 15));
+      }
       let radiusSq = radius * radius;
 
       let minR = Math.max(0, centerR - radius);
@@ -1026,6 +1040,9 @@
     let isHub = window.currentGameState === window.GAME_STATES.HUB;
     let depth = window.player ? window.player.depth || 1 : 1;
     let sector = Math.floor((depth - 1) / 12);
+    if (window.playerStats && window.playerStats.activeSpecialChallenge) {
+      sector = window.playerStats.activeSpecialChallenge.primaryTarget.tier;
+    }
 
     const BIOME_PALETTES = [
       {
@@ -1398,42 +1415,43 @@
                   pCtx.stroke();
                 }
               } else if (
-                              stationTile.type === window.TILE_TYPES.STATION_GACHAPON
-                            ) {
-                              pCtx.fillStyle = isAlt ? "#1f1d15" : "#191710";
-                              pCtx.fillRect(px, py, tileSize, tileSize);
+                stationTile.type === window.TILE_TYPES.STATION_GACHAPON
+              ) {
+                pCtx.fillStyle = isAlt ? "#1f1d15" : "#191710";
+                pCtx.fillRect(px, py, tileSize, tileSize);
 
-                              pCtx.strokeStyle = "rgba(241, 196, 15, 0.25)";
-                              pCtx.lineWidth = 1;
-                              pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-                            } else if (
-                              stationTile.type === window.TILE_TYPES.STATION_BOUNTY
-                            ) {
-                              pCtx.fillStyle = isAlt ? "#1a1212" : "#140c0c";
-                              pCtx.fillRect(px, py, tileSize, tileSize);
+                pCtx.strokeStyle = "rgba(241, 196, 15, 0.25)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+              } else if (
+                stationTile.type === window.TILE_TYPES.STATION_BOUNTY
+              ) {
+                pCtx.fillStyle = isAlt ? "#1a1212" : "#140c0c";
+                pCtx.fillRect(px, py, tileSize, tileSize);
 
-                              pCtx.strokeStyle = "rgba(231, 76, 60, 0.25)";
-                              pCtx.lineWidth = 1;
-                              pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-                            }
+                pCtx.strokeStyle = "rgba(231, 76, 60, 0.25)";
+                pCtx.lineWidth = 1;
+                pCtx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
+              }
 
               pCtx.strokeStyle =
-                              stationTile.type === window.TILE_TYPES.STATION_FORGE
-                                ? "#ea580c"
-                                : stationTile.type === window.TILE_TYPES.STATION_PORTAL
-                                  ? "#9333ea"
-                                  : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
-                                    ? "#00d2ff"
-                                    : stationTile.type === window.TILE_TYPES.STATION_STASH
-                                      ? "#0284c7"
-                                      : stationTile.type ===
-                                          window.TILE_TYPES.STATION_GACHAPON
-                                        ? "#f1c40f"
-                                        : stationTile.type === window.TILE_TYPES.STATION_INN
-                                          ? "#a855f7"
-                                          : stationTile.type === window.TILE_TYPES.STATION_BOUNTY
-                                            ? "#e74c3c"
-                                            : "#059669";
+                stationTile.type === window.TILE_TYPES.STATION_FORGE
+                  ? "#ea580c"
+                  : stationTile.type === window.TILE_TYPES.STATION_PORTAL
+                    ? "#9333ea"
+                    : stationTile.type === window.TILE_TYPES.STATION_ENCHANT
+                      ? "#00d2ff"
+                      : stationTile.type === window.TILE_TYPES.STATION_STASH
+                        ? "#0284c7"
+                        : stationTile.type ===
+                            window.TILE_TYPES.STATION_GACHAPON
+                          ? "#f1c40f"
+                          : stationTile.type === window.TILE_TYPES.STATION_INN
+                            ? "#a855f7"
+                            : stationTile.type ===
+                                window.TILE_TYPES.STATION_BOUNTY
+                              ? "#e74c3c"
+                              : "#059669";
               pCtx.lineWidth = 1.5;
 
               if (dx === -1) {
@@ -1685,34 +1703,35 @@
   };
 
   window.drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
-      let time = Date.now();
-      let isChallengeActive = window.playerStats && window.playerStats.activeSpecialChallenge !== null;
+    let time = Date.now();
+    let isChallengeActive =
+      window.playerStats && window.playerStats.activeSpecialChallenge !== null;
 
-      let primaryColor, secondaryColor, coreColor, bgGradColor;
-      if (isChallengeActive) {
-        // Subphase 18: Unstable Crimson & Black Cosmic Vortex
-        primaryColor = "#ef4444";
-        secondaryColor = "#050106";
-        coreColor = "#000000";
-        bgGradColor = "rgba(239, 68, 68, 0.45)";
-      } else if (tileType === window.TILE_TYPES.EXTRACTION_ZONE) {
-        primaryColor = "#00d2ff";
-        secondaryColor = "#38bdf8";
-        coreColor = "#e0f2fe";
-        bgGradColor = "rgba(0, 210, 255, 0.35)";
-      } else if (tileType === window.TILE_TYPES.DESCENT_PORTAL) {
-        primaryColor = "#a855f7";
-        secondaryColor = "#c084fc";
-        coreColor = "#f3e8ff";
-        bgGradColor = "rgba(168, 85, 247, 0.35)";
-      } else if (tileType === window.TILE_TYPES.BOSS_GATE) {
-        primaryColor = "#e74c3c";
-        secondaryColor = "#fb923c";
-        coreColor = "#fef2f2";
-        bgGradColor = "rgba(231, 76, 60, 0.4)";
-      } else {
-        return;
-      }
+    let primaryColor, secondaryColor, coreColor, bgGradColor;
+    if (isChallengeActive) {
+      // Subphase 18: Unstable Crimson & Black Cosmic Vortex
+      primaryColor = "#ef4444";
+      secondaryColor = "#050106";
+      coreColor = "#000000";
+      bgGradColor = "rgba(239, 68, 68, 0.45)";
+    } else if (tileType === window.TILE_TYPES.EXTRACTION_ZONE) {
+      primaryColor = "#00d2ff";
+      secondaryColor = "#38bdf8";
+      coreColor = "#e0f2fe";
+      bgGradColor = "rgba(0, 210, 255, 0.35)";
+    } else if (tileType === window.TILE_TYPES.DESCENT_PORTAL) {
+      primaryColor = "#a855f7";
+      secondaryColor = "#c084fc";
+      coreColor = "#f3e8ff";
+      bgGradColor = "rgba(168, 85, 247, 0.35)";
+    } else if (tileType === window.TILE_TYPES.BOSS_GATE) {
+      primaryColor = "#e74c3c";
+      secondaryColor = "#fb923c";
+      coreColor = "#fef2f2";
+      bgGradColor = "rgba(231, 76, 60, 0.4)";
+    } else {
+      return;
+    }
 
     ctx.save();
 
@@ -1802,22 +1821,18 @@
     ctx.restore();
 
     // 5. White-Hot Central Singularity Core (Flashes on high frequency during active challenges)
-        let oscIntensity = isChallengeActive ? Math.sin(time / 40) * 3.2 : Math.sin(time / 120) * 1.5;
-        ctx.fillStyle = coreColor;
-        ctx.beginPath();
-        ctx.arc(
-          cx,
-          cy,
-          tileSize * 0.12 + oscIntensity,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-        if (isChallengeActive) {
-          ctx.strokeStyle = "#ff003c";
-          ctx.lineWidth = 1.8 + Math.abs(oscIntensity) * 0.3;
-          ctx.stroke();
-        }
+    let oscIntensity = isChallengeActive
+      ? Math.sin(time / 40) * 3.2
+      : Math.sin(time / 120) * 1.5;
+    ctx.fillStyle = coreColor;
+    ctx.beginPath();
+    ctx.arc(cx, cy, tileSize * 0.12 + oscIntensity, 0, Math.PI * 2);
+    ctx.fill();
+    if (isChallengeActive) {
+      ctx.strokeStyle = "#ff003c";
+      ctx.lineWidth = 1.8 + Math.abs(oscIntensity) * 0.3;
+      ctx.stroke();
+    }
 
     // 6. Upward Drifting Deterministic Sparks
     for (let i = 0; i < 4; i++) {
@@ -1831,16 +1846,17 @@
       let sz = 1.5 * (1.0 - progress * 0.4);
 
       let sparkColor;
-            if (isChallengeActive) {
-              sparkColor = i % 2 === 0
-                ? `rgba(255, 255, 255, ${alpha})`
-                : `rgba(239, 68, 68, ${alpha})`;
-            } else {
-              sparkColor =
-                i % 2 === 0
-                  ? `rgba(255, 255, 255, ${alpha})`
-                  : `rgba(${tileType === window.TILE_TYPES.EXTRACTION_ZONE ? "0, 210, 255" : tileType === window.TILE_TYPES.DESCENT_PORTAL ? "168, 85, 247" : "231, 76, 60"}, ${alpha})`;
-            }
+      if (isChallengeActive) {
+        sparkColor =
+          i % 2 === 0
+            ? `rgba(255, 255, 255, ${alpha})`
+            : `rgba(239, 68, 68, ${alpha})`;
+      } else {
+        sparkColor =
+          i % 2 === 0
+            ? `rgba(255, 255, 255, ${alpha})`
+            : `rgba(${tileType === window.TILE_TYPES.EXTRACTION_ZONE ? "0, 210, 255" : tileType === window.TILE_TYPES.DESCENT_PORTAL ? "168, 85, 247" : "231, 76, 60"}, ${alpha})`;
+      }
       ctx.fillStyle = sparkColor;
       ctx.beginPath();
       ctx.arc(sx, sy, sz, 0, Math.PI * 2);
@@ -2897,425 +2913,491 @@
 
         ctx.restore();
 
-        let isChActive = window.playerStats && window.playerStats.activeSpecialChallenge !== null;
-                let baseRad = isChActive ? 21 + Math.sin(time / 40) * 4.5 : 21 + Math.sin(time / 150) * 2.5;
+        let isChActive =
+          window.playerStats &&
+          window.playerStats.activeSpecialChallenge !== null;
+        let baseRad = isChActive
+          ? 21 + Math.sin(time / 40) * 4.5
+          : 21 + Math.sin(time / 150) * 2.5;
 
-                let vortexGrad = ctx.createRadialGradient(
-                  cx,
-                  centerPortalY,
-                  1,
-                  cx,
-                  centerPortalY,
-                  baseRad,
-                );
+        let vortexGrad = ctx.createRadialGradient(
+          cx,
+          centerPortalY,
+          1,
+          cx,
+          centerPortalY,
+          baseRad,
+        );
 
-                if (isChActive) {
-                  vortexGrad.addColorStop(0, "#ffffff");
-                  vortexGrad.addColorStop(0.25, "#ff3300");
-                  vortexGrad.addColorStop(0.65, "#7a0010");
-                  vortexGrad.addColorStop(0.9, "#050106");
-                  vortexGrad.addColorStop(1, "rgba(5, 1, 6, 0)");
-                } else {
-                  vortexGrad.addColorStop(0, "#ffffff");
-                  vortexGrad.addColorStop(0.25, "#e879f9");
-                  vortexGrad.addColorStop(0.65, "#9333ea");
-                  vortexGrad.addColorStop(0.9, "#3b0764");
-                  vortexGrad.addColorStop(1, "rgba(15, 3, 25, 0)");
-                }
+        if (isChActive) {
+          vortexGrad.addColorStop(0, "#ffffff");
+          vortexGrad.addColorStop(0.25, "#ff3300");
+          vortexGrad.addColorStop(0.65, "#7a0010");
+          vortexGrad.addColorStop(0.9, "#050106");
+          vortexGrad.addColorStop(1, "rgba(5, 1, 6, 0)");
+        } else {
+          vortexGrad.addColorStop(0, "#ffffff");
+          vortexGrad.addColorStop(0.25, "#e879f9");
+          vortexGrad.addColorStop(0.65, "#9333ea");
+          vortexGrad.addColorStop(0.9, "#3b0764");
+          vortexGrad.addColorStop(1, "rgba(15, 3, 25, 0)");
+        }
 
-                ctx.fillStyle = vortexGrad;
-                ctx.beginPath();
-                ctx.ellipse(
-                  cx,
-                  centerPortalY,
-                  baseRad * 0.88,
-                  baseRad * 1.18,
-                  0,
-                  0,
-                  Math.PI * 2,
-                );
-                ctx.fill();
+        ctx.fillStyle = vortexGrad;
+        ctx.beginPath();
+        ctx.ellipse(
+          cx,
+          centerPortalY,
+          baseRad * 0.88,
+          baseRad * 1.18,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
 
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-                        ctx.lineWidth = 1.5;
-                        for (let arm = 0; arm < 3; arm++) {
-                          // Accelerated rotation speed when challenge is active to represent unstable state
-                          let startAngle = isChActive
-                            ? time / 110 + (arm * Math.PI * 2) / 3
-                            : time / 250 + (arm * Math.PI * 2) / 3;
-                          ctx.beginPath();
-                          ctx.arc(
-                            cx,
-                            centerPortalY,
-                            baseRad * 0.5,
-                            startAngle,
-                            startAngle + Math.PI * 0.7,
-                          );
-                          ctx.stroke();
-                        }
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.lineWidth = 1.5;
+        for (let arm = 0; arm < 3; arm++) {
+          // Accelerated rotation speed when challenge is active to represent unstable state
+          let startAngle = isChActive
+            ? time / 110 + (arm * Math.PI * 2) / 3
+            : time / 250 + (arm * Math.PI * 2) / 3;
+          ctx.beginPath();
+          ctx.arc(
+            cx,
+            centerPortalY,
+            baseRad * 0.5,
+            startAngle,
+            startAngle + Math.PI * 0.7,
+          );
+          ctx.stroke();
+        }
 
-                        for (let i = 0; i < 6; i++) {
-                  let seed = i * 42.8;
-                  let progress = (time / 700 + seed) % 1.0;
-                  let wAngle = (time / 400 + i * 1.047) % (Math.PI * 2);
-                  let dist = 8 + progress * 22;
-                  let wx = cx + Math.cos(wAngle) * dist;
-                  let wy = centerPortalY + Math.sin(wAngle) * (dist * 1.25);
-                  let wAlpha = (1.0 - progress) * 0.9;
-                  let wSize = 2.0 * (1.0 - progress * 0.4);
+        for (let i = 0; i < 6; i++) {
+          let seed = i * 42.8;
+          let progress = (time / 700 + seed) % 1.0;
+          let wAngle = (time / 400 + i * 1.047) % (Math.PI * 2);
+          let dist = 8 + progress * 22;
+          let wx = cx + Math.cos(wAngle) * dist;
+          let wy = centerPortalY + Math.sin(wAngle) * (dist * 1.25);
+          let wAlpha = (1.0 - progress) * 0.9;
+          let wSize = 2.0 * (1.0 - progress * 0.4);
 
-                  ctx.fillStyle =
-                    i % 2 === 0
-                      ? `rgba(255, 255, 255, ${wAlpha})`
-                      : isChActive
-                        ? `rgba(255, 51, 60, ${wAlpha})`
-                        : `rgba(0, 210, 255, ${wAlpha})`;
-                  ctx.beginPath();
-                  ctx.arc(wx, wy, wSize, 0, Math.PI * 2);
-                  ctx.fill();
-                }
+          ctx.fillStyle =
+            i % 2 === 0
+              ? `rgba(255, 255, 255, ${wAlpha})`
+              : isChActive
+                ? `rgba(255, 51, 60, ${wAlpha})`
+                : `rgba(0, 210, 255, ${wAlpha})`;
+          ctx.beginPath();
+          ctx.arc(wx, wy, wSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         // Recovery Chest Warning Beacon Indicator
-                let rec = window.playerStats && window.playerStats.recoveryLoot;
-                if (rec && rec.items && rec.items.length > 0) {
-                  let warnPulse = Math.sin(time / 140) * 3;
-                  let warnY = centerPortalY - 32 + warnPulse;
+        let rec = window.playerStats && window.playerStats.recoveryLoot;
+        if (rec && rec.items && rec.items.length > 0) {
+          let warnPulse = Math.sin(time / 140) * 3;
+          let warnY = centerPortalY - 32 + warnPulse;
 
-                  ctx.strokeStyle = "#e74c3c";
-                  ctx.lineWidth = 2.0;
-                  ctx.beginPath();
-                  ctx.arc(cx, warnY, 11, 0, Math.PI * 2);
-                  ctx.stroke();
+          ctx.strokeStyle = "#e74c3c";
+          ctx.lineWidth = 2.0;
+          ctx.beginPath();
+          ctx.arc(cx, warnY, 11, 0, Math.PI * 2);
+          ctx.stroke();
 
-                  ctx.fillStyle = "rgba(231, 76, 60, 0.3)";
-                  ctx.beginPath();
-                  ctx.arc(cx, warnY, 11, 0, Math.PI * 2);
-                  ctx.fill();
+          ctx.fillStyle = "rgba(231, 76, 60, 0.3)";
+          ctx.beginPath();
+          ctx.arc(cx, warnY, 11, 0, Math.PI * 2);
+          ctx.fill();
 
-                  ctx.fillStyle = "#f1c40f";
-                  ctx.font = "900 12px monospace";
-                  ctx.textAlign = "center";
-                  ctx.textBaseline = "middle";
-                  ctx.fillText("!", cx, warnY);
+          ctx.fillStyle = "#f1c40f";
+          ctx.font = "900 12px monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("!", cx, warnY);
 
-                  ctx.font = "bold 9px monospace";
-                  ctx.strokeStyle = "#000000";
-                  ctx.lineWidth = 2.5;
-                  let labelText = `[LOOT AT RISK: FL.${rec.floor}]`;
-                  ctx.strokeText(labelText, cx, warnY - 15);
-                  ctx.fillStyle = "#ff7675";
-                  ctx.fillText(labelText, cx, warnY - 15);
-                }
+          ctx.font = "bold 9px monospace";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2.5;
+          let labelText = `[LOOT AT RISK: FL.${rec.floor}]`;
+          ctx.strokeText(labelText, cx, warnY - 15);
+          ctx.fillStyle = "#ff7675";
+          ctx.fillText(labelText, cx, warnY - 15);
+        }
 
-                ctx.restore();
-              } else if (tileType === window.TILE_TYPES.STATION_BOUNTY) {
-                      let cx = px + tileSize / 2;
-                      let cy = py + tileSize / 2;
-                      let time = Date.now();
+        ctx.restore();
+      } else if (tileType === window.TILE_TYPES.STATION_BOUNTY) {
+        let cx = px + tileSize / 2;
+        let cy = py + tileSize / 2;
+        let time = Date.now();
 
-                      ctx.save();
+        ctx.save();
 
-                      // 1. Cobblestone Foundation Platform
-                      let baseW = 64;
-                      let baseH = 12;
-                      let baseX = cx - baseW / 2;
-                      let baseY = cy + 6;
+        // 1. Cobblestone Foundation Platform
+        let baseW = 64;
+        let baseH = 12;
+        let baseX = cx - baseW / 2;
+        let baseY = cy + 6;
 
-                      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-                      ctx.beginPath();
-                      ctx.ellipse(cx, cy + 12, 30, 5, 0, 0, Math.PI * 2);
-                      ctx.fill();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 12, 30, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-                      ctx.fillStyle = "#1e293b";
-                      ctx.strokeStyle = "#080b11";
-                      ctx.lineWidth = 1.8;
-                      ctx.beginPath();
-                      ctx.roundRect(baseX, baseY, baseW, baseH, [2]);
-                      ctx.fill();
-                      ctx.stroke();
+        ctx.fillStyle = "#1e293b";
+        ctx.strokeStyle = "#080b11";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.roundRect(baseX, baseY, baseW, baseH, [2]);
+        ctx.fill();
+        ctx.stroke();
 
-                      ctx.strokeStyle = "#334155";
-                      ctx.lineWidth = 0.8;
-                      ctx.beginPath();
-                      ctx.moveTo(baseX + 16, baseY); ctx.lineTo(baseX + 16, baseY + baseH);
-                      ctx.moveTo(baseX + 32, baseY); ctx.lineTo(baseX + 32, baseY + baseH);
-                      ctx.moveTo(baseX + 48, baseY); ctx.lineTo(baseX + 48, baseY + baseH);
-                      ctx.stroke();
+        ctx.strokeStyle = "#334155";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(baseX + 16, baseY);
+        ctx.lineTo(baseX + 16, baseY + baseH);
+        ctx.moveTo(baseX + 32, baseY);
+        ctx.lineTo(baseX + 32, baseY + baseH);
+        ctx.moveTo(baseX + 48, baseY);
+        ctx.lineTo(baseX + 48, baseY + baseH);
+        ctx.stroke();
 
-                      // Dimensions of the main board structure
-                      let boardW = 48;
-                      let boardH = 34;
-                      let boardX = cx - boardW / 2;
-                      let boardY = cy - 16;
+        // Dimensions of the main board structure
+        let boardW = 48;
+        let boardH = 34;
+        let boardX = cx - boardW / 2;
+        let boardY = cy - 16;
 
-                      // 2. Timbers Support Posts (Left & Right)
-                      ctx.fillStyle = "#271205";
-                      ctx.strokeStyle = "#000000";
-                      ctx.lineWidth = 2.0;
-                      // Left post
-                      ctx.fillRect(boardX - 4, boardY - 6, 4.5, boardH + 14);
-                      ctx.strokeRect(boardX - 4, boardY - 6, 4.5, boardH + 14);
-                      // Right post
-                      ctx.fillRect(boardX + boardW - 0.5, boardY - 6, 4.5, boardH + 14);
-                      ctx.strokeRect(boardX + boardW - 0.5, boardY - 6, 4.5, boardH + 14);
+        // 2. Timbers Support Posts (Left & Right)
+        ctx.fillStyle = "#271205";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2.0;
+        // Left post
+        ctx.fillRect(boardX - 4, boardY - 6, 4.5, boardH + 14);
+        ctx.strokeRect(boardX - 4, boardY - 6, 4.5, boardH + 14);
+        // Right post
+        ctx.fillRect(boardX + boardW - 0.5, boardY - 6, 4.5, boardH + 14);
+        ctx.strokeRect(boardX + boardW - 0.5, boardY - 6, 4.5, boardH + 14);
 
-                      // Iron structural brackets holding the frame
-                      ctx.fillStyle = "#334155";
-                      ctx.fillRect(boardX - 5, boardY + 4, 6, 3);
-                      ctx.fillRect(boardX - 5, boardY + boardH - 8, 6, 3);
-                      ctx.fillRect(boardX + boardW - 1, boardY + 4, 6, 3);
-                      ctx.fillRect(boardX + boardW - 1, boardY + boardH - 8, 6, 3);
+        // Iron structural brackets holding the frame
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(boardX - 5, boardY + 4, 6, 3);
+        ctx.fillRect(boardX - 5, boardY + boardH - 8, 6, 3);
+        ctx.fillRect(boardX + boardW - 1, boardY + 4, 6, 3);
+        ctx.fillRect(boardX + boardW - 1, boardY + boardH - 8, 6, 3);
 
-                      // 3. Aged Board Backing (High Quality Wood Texture)
-                      let boardGrad = ctx.createLinearGradient(boardX, boardY, boardX, boardY + boardH);
-                      boardGrad.addColorStop(0, "#4a2d18");
-                      boardGrad.addColorStop(1, "#271205");
-                      ctx.fillStyle = boardGrad;
-                      ctx.strokeStyle = "#000000";
-                      ctx.lineWidth = 2.2;
-                      ctx.beginPath();
-                      ctx.roundRect(boardX, boardY, boardW, boardH, [1]);
-                      ctx.fill();
-                      ctx.stroke();
+        // 3. Aged Board Backing (High Quality Wood Texture)
+        let boardGrad = ctx.createLinearGradient(
+          boardX,
+          boardY,
+          boardX,
+          boardY + boardH,
+        );
+        boardGrad.addColorStop(0, "#4a2d18");
+        boardGrad.addColorStop(1, "#271205");
+        ctx.fillStyle = boardGrad;
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.roundRect(boardX, boardY, boardW, boardH, [1]);
+        ctx.fill();
+        ctx.stroke();
 
-                      // Inner cork texture lining
-                      ctx.fillStyle = "#5c3a21";
-                      ctx.fillRect(boardX + 3, boardY + 3, boardW - 6, boardH - 6);
+        // Inner cork texture lining
+        ctx.fillStyle = "#5c3a21";
+        ctx.fillRect(boardX + 3, boardY + 3, boardW - 6, boardH - 6);
 
-                      // Fine structural vertical lines inside cork backing (stable texture)
-                      ctx.strokeStyle = "rgba(40, 20, 5, 0.4)";
-                      ctx.lineWidth = 0.8;
-                      ctx.beginPath();
-                      for (let xOff = boardX + 6; xOff < boardX + boardW - 4; xOff += 6) {
-                        ctx.moveTo(xOff, boardY + 3);
-                        ctx.lineTo(xOff, boardY + boardH - 3);
-                      }
-                      ctx.stroke();
+        // Fine structural vertical lines inside cork backing (stable texture)
+        ctx.strokeStyle = "rgba(40, 20, 5, 0.4)";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        for (let xOff = boardX + 6; xOff < boardX + boardW - 4; xOff += 6) {
+          ctx.moveTo(xOff, boardY + 3);
+          ctx.lineTo(xOff, boardY + boardH - 3);
+        }
+        ctx.stroke();
 
-                      // 4. Swinging Oil Lantern (Interactive Lighting)
-                      let swingAngle = Math.sin(time / 380) * 0.12;
-                      let sconceX = boardX - 2;
-                      let sconceY = boardY - 1;
+        // 4. Swinging Oil Lantern (Interactive Lighting)
+        let swingAngle = Math.sin(time / 380) * 0.12;
+        let sconceX = boardX - 2;
+        let sconceY = boardY - 1;
 
-                      // Brass support rod from the timber post
-                      ctx.strokeStyle = "#d4af37";
-                      ctx.lineWidth = 1.8;
-                      ctx.beginPath();
-                      ctx.moveTo(sconceX, sconceY);
-                      ctx.lineTo(sconceX - 6, sconceY - 3);
-                      ctx.lineTo(sconceX - 6, sconceY + 2);
-                      ctx.stroke();
+        // Brass support rod from the timber post
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(sconceX, sconceY);
+        ctx.lineTo(sconceX - 6, sconceY - 3);
+        ctx.lineTo(sconceX - 6, sconceY + 2);
+        ctx.stroke();
 
-                      ctx.save();
-                      ctx.translate(sconceX - 6, sconceY + 2);
-                      ctx.rotate(swingAngle);
+        ctx.save();
+        ctx.translate(sconceX - 6, sconceY + 2);
+        ctx.rotate(swingAngle);
 
-                      // Hanging link chain
-                      ctx.strokeStyle = "#475569";
-                      ctx.lineWidth = 1.0;
-                      ctx.beginPath();
-                      ctx.moveTo(0, 0);
-                      ctx.lineTo(0, 5);
-                      ctx.stroke();
+        // Hanging link chain
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, 5);
+        ctx.stroke();
 
-                      // Lantern cap
-                      ctx.fillStyle = "#1e1b29";
-                      ctx.strokeStyle = "#d4af37";
-                      ctx.lineWidth = 1.0;
-                      ctx.beginPath();
-                      ctx.moveTo(-3, 5);
-                      ctx.lineTo(3, 5);
-                      ctx.lineTo(2, 8);
-                      ctx.lineTo(-2, 8);
-                      ctx.closePath();
-                      ctx.fill();
-                      ctx.stroke();
+        // Lantern cap
+        ctx.fillStyle = "#1e1b29";
+        ctx.strokeStyle = "#d4af37";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(-3, 5);
+        ctx.lineTo(3, 5);
+        ctx.lineTo(2, 8);
+        ctx.lineTo(-2, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-                      // Flashing flame glow
-                      let flickerVal = 0.6 + Math.sin(time / 70) * 0.3;
-                      ctx.fillStyle = `rgba(241, 196, 15, ${0.45 + flickerVal * 0.35})`;
-                      ctx.fillRect(-2.5, 8, 5, 6);
-                      ctx.strokeStyle = "#000000";
-                      ctx.strokeRect(-2.5, 8, 5, 6);
+        // Flashing flame glow
+        let flickerVal = 0.6 + Math.sin(time / 70) * 0.3;
+        ctx.fillStyle = `rgba(241, 196, 15, ${0.45 + flickerVal * 0.35})`;
+        ctx.fillRect(-2.5, 8, 5, 6);
+        ctx.strokeStyle = "#000000";
+        ctx.strokeRect(-2.5, 8, 5, 6);
 
-                      // Light core
-                      ctx.fillStyle = "#ffffff";
-                      ctx.beginPath();
-                      ctx.arc(0, 11, 1.2, 0, Math.PI * 2);
-                      ctx.fill();
+        // Light core
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(0, 11, 1.2, 0, Math.PI * 2);
+        ctx.fill();
 
-                      // Bottom heavy ring
-                      ctx.fillStyle = "#d4af37";
-                      ctx.fillRect(-3, 14, 6, 2);
-                      ctx.strokeRect(-3, 14, 6, 2);
+        // Bottom heavy ring
+        ctx.fillStyle = "#d4af37";
+        ctx.fillRect(-3, 14, 6, 2);
+        ctx.strokeRect(-3, 14, 6, 2);
 
-                      ctx.restore();
+        ctx.restore();
 
-                      // Dynamic light cast overlay onto the corkboard surface
-                      let lOffset = sconceX - 6 + Math.sin(swingAngle) * 11;
-                      let lHeight = sconceY + 13;
-                      let boardGlow = ctx.createRadialGradient(lOffset, lHeight, 1, lOffset, lHeight, 38);
-                      boardGlow.addColorStop(0, "rgba(255, 215, 0, 0.22)");
-                      boardGlow.addColorStop(0.5, "rgba(255, 140, 0, 0.08)");
-                      boardGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-                      ctx.fillStyle = boardGlow;
-                      ctx.fillRect(boardX + 3, boardY + 3, boardW - 6, boardH - 6);
+        // Dynamic light cast overlay onto the corkboard surface
+        let lOffset = sconceX - 6 + Math.sin(swingAngle) * 11;
+        let lHeight = sconceY + 13;
+        let boardGlow = ctx.createRadialGradient(
+          lOffset,
+          lHeight,
+          1,
+          lOffset,
+          lHeight,
+          38,
+        );
+        boardGlow.addColorStop(0, "rgba(255, 215, 0, 0.22)");
+        boardGlow.addColorStop(0.5, "rgba(255, 140, 0, 0.08)");
+        boardGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = boardGlow;
+        ctx.fillRect(boardX + 3, boardY + 3, boardW - 6, boardH - 6);
 
-                      // 5. Arched Header / Gilded Signboard
-                      let signW = boardW + 4;
-                      let signX = cx - signW / 2;
-                      let signY = boardY - 11;
-                      let signH = 10;
+        // 5. Arched Header / Gilded Signboard
+        let signW = boardW + 4;
+        let signX = cx - signW / 2;
+        let signY = boardY - 11;
+        let signH = 10;
 
-                      ctx.fillStyle = "#3d1d0b";
-                      ctx.strokeStyle = "#000000";
-                      ctx.lineWidth = 1.8;
-                      ctx.beginPath();
-                      ctx.roundRect(signX, signY, signW, signH, [3, 3, 0, 0]);
-                      ctx.fill();
-                      ctx.stroke();
+        ctx.fillStyle = "#3d1d0b";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.roundRect(signX, signY, signW, signH, [3, 3, 0, 0]);
+        ctx.fill();
+        ctx.stroke();
 
-                      ctx.strokeStyle = "#ffd700";
-                      ctx.lineWidth = 0.8;
-                      ctx.strokeRect(signX + 2, signY + 2, signW - 4, signH - 4);
+        ctx.strokeStyle = "#ffd700";
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(signX + 2, signY + 2, signW - 4, signH - 4);
 
-                      // Mini crest emblem inside header
-                      ctx.fillStyle = "#e74c3c";
-                      ctx.strokeStyle = "#ffd700";
-                      ctx.lineWidth = 0.8;
-                      ctx.beginPath();
-                      ctx.moveTo(cx, signY + 2);
-                      ctx.lineTo(cx + 3, signY + 4);
-                      ctx.lineTo(cx + 2, signY + 7);
-                      ctx.lineTo(cx, signY + 9);
-                      ctx.lineTo(cx - 2, signY + 7);
-                      ctx.lineTo(cx - 3, signY + 4);
-                      ctx.closePath();
-                      ctx.fill();
-                      ctx.stroke();
+        // Mini crest emblem inside header
+        ctx.fillStyle = "#e74c3c";
+        ctx.strokeStyle = "#ffd700";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(cx, signY + 2);
+        ctx.lineTo(cx + 3, signY + 4);
+        ctx.lineTo(cx + 2, signY + 7);
+        ctx.lineTo(cx, signY + 9);
+        ctx.lineTo(cx - 2, signY + 7);
+        ctx.lineTo(cx - 3, signY + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
-                      // 6. Highly Polished Wanted Contracts (Overlapped and Stable)
-                      let drawPoster = (pIdx, px, py, pw, ph, skew, titleCol, textLineCount) => {
-                        ctx.save();
-                        ctx.translate(px, py);
-                        ctx.rotate(skew);
+        // 6. Highly Polished Wanted Contracts (Overlapped and Stable)
+        let drawPoster = (
+          pIdx,
+          px,
+          py,
+          pw,
+          ph,
+          skew,
+          titleCol,
+          textLineCount,
+        ) => {
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(skew);
 
-                        // Paper subtle drop shadow
-                        ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-                        ctx.fillRect(-pw / 2 + 0.8, -ph / 2 + 1.2, pw, ph);
+          // Paper subtle drop shadow
+          ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+          ctx.fillRect(-pw / 2 + 0.8, -ph / 2 + 1.2, pw, ph);
 
-                        // Aged parchment body
-                        let paperGrad = ctx.createLinearGradient(-pw / 2, -ph / 2, pw / 2, ph / 2);
-                        paperGrad.addColorStop(0, "#fdf6e2");
-                        paperGrad.addColorStop(1, "#eae0c5");
-                        ctx.fillStyle = paperGrad;
-                        ctx.strokeStyle = "#3e2411";
-                        ctx.lineWidth = 0.9;
-                        ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
-                        ctx.strokeRect(-pw / 2, -ph / 2, pw, ph);
+          // Aged parchment body
+          let paperGrad = ctx.createLinearGradient(
+            -pw / 2,
+            -ph / 2,
+            pw / 2,
+            ph / 2,
+          );
+          paperGrad.addColorStop(0, "#fdf6e2");
+          paperGrad.addColorStop(1, "#eae0c5");
+          ctx.fillStyle = paperGrad;
+          ctx.strokeStyle = "#3e2411";
+          ctx.lineWidth = 0.9;
+          ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+          ctx.strokeRect(-pw / 2, -ph / 2, pw, ph);
 
-                        // Push Pin (Tiny metal button with shadow)
-                        let pinY = -ph / 2 + 1.8;
-                        ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-                        ctx.beginPath();
-                        ctx.arc(0.6, pinY + 0.8, 1.0, 0, Math.PI * 2);
-                        ctx.fill();
+          // Push Pin (Tiny metal button with shadow)
+          let pinY = -ph / 2 + 1.8;
+          ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+          ctx.beginPath();
+          ctx.arc(0.6, pinY + 0.8, 1.0, 0, Math.PI * 2);
+          ctx.fill();
 
-                        ctx.fillStyle = pIdx % 2 === 0 ? "#cbd5e1" : "#d4af37";
-                        ctx.strokeStyle = "#000000";
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        ctx.arc(0, pinY, 1.2, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.stroke();
+          ctx.fillStyle = pIdx % 2 === 0 ? "#cbd5e1" : "#d4af37";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.arc(0, pinY, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-                        // Banner wanted label
-                        ctx.fillStyle = titleCol;
-                        ctx.fillRect(-pw / 2 + 1.8, -ph / 2 + 3.5, pw - 3.6, 2.2);
+          // Banner wanted label
+          ctx.fillStyle = titleCol;
+          ctx.fillRect(-pw / 2 + 1.8, -ph / 2 + 3.5, pw - 3.6, 2.2);
 
-                        // Picture Frame / Silhouette mugshot (stable)
-                        let picW = pw - 4.5;
-                        let picH = Math.floor(ph * 0.35);
-                        let picX = -picW / 2;
-                        let picY = -ph / 2 + 7.5;
+          // Picture Frame / Silhouette mugshot (stable)
+          let picW = pw - 4.5;
+          let picH = Math.floor(ph * 0.35);
+          let picX = -picW / 2;
+          let picY = -ph / 2 + 7.5;
 
-                        ctx.fillStyle = "#e5dcb7";
-                        ctx.strokeStyle = "rgba(0,0,0,0.12)";
-                        ctx.lineWidth = 0.8;
-                        ctx.fillRect(picX, picY, picW, picH);
-                        ctx.strokeRect(picX, picY, picW, picH);
+          ctx.fillStyle = "#e5dcb7";
+          ctx.strokeStyle = "rgba(0,0,0,0.12)";
+          ctx.lineWidth = 0.8;
+          ctx.fillRect(picX, picY, picW, picH);
+          ctx.strokeRect(picX, picY, picW, picH);
 
-                        // Ink sketch head & torso (100% stable layout)
-                        ctx.fillStyle = "rgba(50, 30, 15, 0.72)";
-                        ctx.beginPath();
-                        ctx.arc(0, picY + picH / 2 - 1.0, 1.6, 0, Math.PI * 2);
-                        ctx.fill();
+          // Ink sketch head & torso (100% stable layout)
+          ctx.fillStyle = "rgba(50, 30, 15, 0.72)";
+          ctx.beginPath();
+          ctx.arc(0, picY + picH / 2 - 1.0, 1.6, 0, Math.PI * 2);
+          ctx.fill();
 
-                        ctx.beginPath();
-                        ctx.moveTo(-2.5, picY + picH - 1.0);
-                        ctx.lineTo(2.5, picY + picH - 1.0);
-                        ctx.lineTo(1.8, picY + picH / 2 + 0.8);
-                        ctx.lineTo(-1.8, picY + picH / 2 + 0.8);
-                        ctx.closePath();
-                        ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(-2.5, picY + picH - 1.0);
+          ctx.lineTo(2.5, picY + picH - 1.0);
+          ctx.lineTo(1.8, picY + picH / 2 + 0.8);
+          ctx.lineTo(-1.8, picY + picH / 2 + 0.8);
+          ctx.closePath();
+          ctx.fill();
 
-                        // Red glowing eyes on the legendary/crimson bounty target
-                        if (pIdx === 1) {
-                          ctx.fillStyle = "#ef4444";
-                          ctx.fillRect(-0.7, picY + picH / 2 - 1.3, 0.5, 0.5);
-                          ctx.fillRect(0.3, picY + picH / 2 - 1.3, 0.5, 0.5);
-                        }
+          // Red glowing eyes on the legendary/crimson bounty target
+          if (pIdx === 1) {
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(-0.7, picY + picH / 2 - 1.3, 0.5, 0.5);
+            ctx.fillRect(0.3, picY + picH / 2 - 1.3, 0.5, 0.5);
+          }
 
-                        // Scribbled text line details (100% Deterministic)
-                        ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-                        for (let i = 0; i < textLineCount; i++) {
-                          // Stable pseudorandom sequence using trigonometry to resolve real-time frame flickering
-                          let seed = pIdx * 9.7 + i * 14.3;
-                          let stableWidthFactor = 0.4 + Math.abs(Math.sin(seed)) * 0.55;
-                          let lineW = (pw - 4) * stableWidthFactor;
-                          let lineY = picY + picH + 2.2 + i * 2.5;
+          // Scribbled text line details (100% Deterministic)
+          ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+          for (let i = 0; i < textLineCount; i++) {
+            // Stable pseudorandom sequence using trigonometry to resolve real-time frame flickering
+            let seed = pIdx * 9.7 + i * 14.3;
+            let stableWidthFactor = 0.4 + Math.abs(Math.sin(seed)) * 0.55;
+            let lineW = (pw - 4) * stableWidthFactor;
+            let lineY = picY + picH + 2.2 + i * 2.5;
 
-                          if (lineY < ph / 2 - 1.2) {
-                            ctx.fillRect(-pw / 2 + 2, lineY, lineW, 0.75);
-                          }
-                        }
+            if (lineY < ph / 2 - 1.2) {
+              ctx.fillRect(-pw / 2 + 2, lineY, lineW, 0.75);
+            }
+          }
 
-                        ctx.restore();
-                      };
+          ctx.restore();
+        };
 
-                      // Left poster: Small & skewed left
-                      drawPoster(0, boardX + 12, boardY + 16, 13, 20, -Math.PI / 15, "#7f1d1d", 3);
+        // Left poster: Small & skewed left
+        drawPoster(
+          0,
+          boardX + 12,
+          boardY + 16,
+          13,
+          20,
+          -Math.PI / 15,
+          "#7f1d1d",
+          3,
+        );
 
-                      // Center primary target poster: Larger, slightly overlapping, skewed right
-                      drawPoster(1, boardX + 27, boardY + 18, 15, 24, Math.PI / 22, "#111827", 4);
+        // Center primary target poster: Larger, slightly overlapping, skewed right
+        drawPoster(
+          1,
+          boardX + 27,
+          boardY + 18,
+          15,
+          24,
+          Math.PI / 22,
+          "#111827",
+          4,
+        );
 
-                      // Top-right tiny note poster
-                      drawPoster(2, boardX + 41, boardY + 11, 10, 13, -Math.PI / 18, "#064e3b", 1);
+        // Top-right tiny note poster
+        drawPoster(
+          2,
+          boardX + 41,
+          boardY + 11,
+          10,
+          13,
+          -Math.PI / 18,
+          "#064e3b",
+          1,
+        );
 
-                      // 7. Ambient Glowing Reward Particles (Embers)
-                      let hasChallenge = window.playerStats && window.playerStats.activeSpecialChallenge !== null;
-                      let particleColor = hasChallenge ? "#ef4444" : "#f1c40f";
-                      let sparkCount = hasChallenge ? 5 : 3;
+        // 7. Ambient Glowing Reward Particles (Embers)
+        let hasChallenge =
+          window.playerStats &&
+          window.playerStats.activeSpecialChallenge !== null;
+        let particleColor = hasChallenge ? "#ef4444" : "#f1c40f";
+        let sparkCount = hasChallenge ? 5 : 3;
 
-                      for (let i = 0; i < sparkCount; i++) {
-                        let seed = i * 45.3;
-                        let progress = (time / 800 + seed) % 1.0;
-                        let spX = boardX + 4 + ((seed * 79.3) % (boardW - 8)) + Math.sin(time / 200 + seed) * 4;
-                        let spY = boardY + boardH - progress * 26;
-                        let alpha = Math.sin(progress * Math.PI) * 0.85;
+        for (let i = 0; i < sparkCount; i++) {
+          let seed = i * 45.3;
+          let progress = (time / 800 + seed) % 1.0;
+          let spX =
+            boardX +
+            4 +
+            ((seed * 79.3) % (boardW - 8)) +
+            Math.sin(time / 200 + seed) * 4;
+          let spY = boardY + boardH - progress * 26;
+          let alpha = Math.sin(progress * Math.PI) * 0.85;
 
-                        ctx.fillStyle = particleColor;
-                        ctx.save();
-                        ctx.globalAlpha = alpha;
-                        ctx.beginPath();
-                        let r = 1.1 * (1.0 - progress * 0.3);
-                        ctx.arc(spX, spY, r, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.restore();
-                      }
+          ctx.fillStyle = particleColor;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          let r = 1.1 * (1.0 - progress * 0.3);
+          ctx.arc(spX, spY, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
 
-                      ctx.restore();
-                    } else if (tileType === window.TILE_TYPES.STATION_FORGE) {
+        ctx.restore();
+      } else if (tileType === window.TILE_TYPES.STATION_FORGE) {
         let cx = px + tileSize / 2;
         let cy = py + tileSize / 2;
         let time = Date.now();
