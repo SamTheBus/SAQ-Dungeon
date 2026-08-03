@@ -2552,35 +2552,50 @@ summary {
   }
 
   /* Expand large panels to fill maximum vertical screen estate cleanly */
-  .profile-card,
-  .mastery-card,
-  .shop-modal-card,
-  .gacha-card,
-  .forge-modal-card,
-  .enchant-card,
-  .deploy-modal-card,
-  #bag-modal .modal-card,
-  .sigil-picker-modal-card,
-  #settings-modal .modal-card,
-  .bounty-modal-card {
-    width: 96% !important;
-    margin: 0 auto !important;
-    height: calc(
-      100dvh - max(8px, env(safe-area-inset-top, 12px)) -
-        max(8px, env(safe-area-inset-bottom, 12px)) - 10px
-    ) !important;
-    max-height: none !important;
-  }
+    .profile-card,
+    .mastery-card,
+    .shop-modal-card,
+    .gacha-card,
+    .forge-modal-card,
+    .enchant-card,
+    .deploy-modal-card,
+    #bag-modal .modal-card,
+    .sigil-picker-modal-card,
+    #settings-modal .modal-card,
+    .bounty-modal-card,
+    .reliquary-modal-card,
+    .reliquary-card,
+    .codex-modal-card,
+    .codex-card,
+    .artifact-codex-modal-card,
+    .artifact-codex-card {
+      width: 96% !important;
+      margin: 0 auto !important;
+      height: calc(
+        100dvh - max(8px, env(safe-area-inset-top, 12px)) -
+          max(8px, env(safe-area-inset-bottom, 12px)) - 10px
+      ) !important;
+      max-height: none !important;
+    }
 
   /* Retain full content scrolling inside full-height panels */
-  .shop-content-panel,
-  #bag-modal .modal-body,
-  .settings-body,
-  .deploy-gear-list {
-    max-height: none !important;
-    flex: 1 !important;
-    overflow-y: auto !important;
-  }
+    .shop-content-panel,
+    #bag-modal .modal-body,
+    .settings-body,
+    .deploy-gear-list,
+    .reliquary-pane,
+    .codex-pane,
+    .artifact-codex-pane,
+    .reliquary-body,
+    .codex-body,
+    .artifact-codex-body,
+    .reliquary-grid,
+    .codex-grid,
+    .artifact-codex-grid {
+      max-height: none !important;
+      flex: 1 !important;
+      overflow-y: auto !important;
+    }
 
   .deploy-terminal-layout {
     flex: 1 !important;
@@ -2588,73 +2603,94 @@ summary {
   }
 
   .forge-layout,
-  .enchant-layout,
-  .bounty-layout {
-    grid-template-columns: 1fr !important; /* Stack columns on mobile */
-    height: auto !important;
-    max-height: none !important;
-    flex: 1 !important;
-  }
+    .enchant-layout,
+    .bounty-layout,
+    .reliquary-layout,
+    .codex-layout,
+    .artifact-codex-layout {
+      grid-template-columns: 1fr !important; /* Stack columns on mobile */
+      height: auto !important;
+      max-height: none !important;
+      flex: 1 !important;
+    }
 
-  .forge-left-pane,
-  .forge-right-pane,
-  .enchant-left-pane,
-  .enchant-right-pane,
-  .bounty-left-pane,
-  .bounty-right-pane {
-    max-height: none !important;
-    flex: 1 !important;
-  }
+    .forge-left-pane,
+    .forge-right-pane,
+    .enchant-left-pane,
+    .enchant-right-pane,
+    .bounty-left-pane,
+    .bounty-right-pane,
+    .reliquary-left-pane,
+    .reliquary-right-pane,
+    .codex-left-pane,
+    .codex-right-pane,
+    .artifact-codex-left-pane,
+    .artifact-codex-right-pane {
+      max-height: none !important;
+      flex: 1 !important;
+    }
 
   /* --- LOCK ALL HORIZONTAL BAR FLOWS & ENABLE TOUCH SWIPE FOR TRUNCATED TABS --- */
-  .profile-tab-bar,
-  .satchel-tab-bar,
-  .shop-tab-bar,
-  .gacha-tab-bar,
-  .forge-mode-bar,
-  .ach-filter-bar,
-  .bounty-tab-bar {
-    display: flex !important;
-    overflow-x: auto !important;
-    white-space: nowrap !important;
-    flex-wrap: nowrap !important;
-    flex-shrink: 0 !important;
-    touch-action: pan-x !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding-bottom: 4px !important;
-  }
+    .profile-tab-bar,
+    .satchel-tab-bar,
+    .shop-tab-bar,
+    .gacha-tab-bar,
+    .forge-mode-bar,
+    .ach-filter-bar,
+    .bounty-tab-bar,
+    .reliquary-tab-bar,
+    .codex-tab-bar,
+    .artifact-codex-tab-bar {
+      display: flex !important;
+      overflow-x: auto !important;
+      white-space: nowrap !important;
+      flex-wrap: nowrap !important;
+      flex-shrink: 0 !important;
+      touch-action: pan-x !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding-bottom: 4px !important;
+    }
 
-  /* Custom subtle indicator line to guide horizontal swipes */
-  .profile-tab-bar::-webkit-scrollbar,
-  .satchel-tab-bar::-webkit-scrollbar,
-  .shop-tab-bar::-webkit-scrollbar,
-  .gacha-tab-bar::-webkit-scrollbar,
-  .forge-mode-bar::-webkit-scrollbar,
-  .ach-filter-bar::-webkit-scrollbar {
-    height: 3px !important;
-    display: block !important;
-  }
+    /* Custom subtle indicator line to guide horizontal swipes */
+    .profile-tab-bar::-webkit-scrollbar,
+    .satchel-tab-bar::-webkit-scrollbar,
+    .shop-tab-bar::-webkit-scrollbar,
+    .gacha-tab-bar::-webkit-scrollbar,
+    .forge-mode-bar::-webkit-scrollbar,
+    .ach-filter-bar::-webkit-scrollbar,
+    .reliquary-tab-bar::-webkit-scrollbar,
+    .codex-tab-bar::-webkit-scrollbar,
+    .artifact-codex-tab-bar::-webkit-scrollbar {
+      height: 3px !important;
+      display: block !important;
+    }
 
-  .profile-tab-bar::-webkit-scrollbar-thumb,
-  .satchel-tab-bar::-webkit-scrollbar-thumb,
-  .shop-tab-bar::-webkit-scrollbar-thumb,
-  .gacha-tab-bar::-webkit-scrollbar-thumb,
-  .forge-mode-bar::-webkit-scrollbar-thumb,
-  .ach-filter-bar::-webkit-scrollbar-thumb {
-    background: var(--border-aged-bronze) !important;
-    border-radius: 2px !important;
-  }
+    .profile-tab-bar::-webkit-scrollbar-thumb,
+    .satchel-tab-bar::-webkit-scrollbar-thumb,
+    .shop-tab-bar::-webkit-scrollbar-thumb,
+    .gacha-tab-bar::-webkit-scrollbar-thumb,
+    .forge-mode-bar::-webkit-scrollbar-thumb,
+    .ach-filter-bar::-webkit-scrollbar-thumb,
+    .reliquary-tab-bar::-webkit-scrollbar-thumb,
+    .codex-tab-bar::-webkit-scrollbar-thumb,
+    .artifact-codex-tab-bar::-webkit-scrollbar-thumb {
+      background: var(--border-aged-bronze) !important;
+      border-radius: 2px !important;
+    }
 
-  /* Prevent text in horizontal tab sliders from getting squeezed */
-  .profile-tab-btn,
-  .satchel-tab-btn,
-  .shop-tab-btn,
-  .gacha-tab-btn,
-  .forge-mode-btn,
-  .ach-filter-btn,
-  .bounty-tab-btn {
-    flex-shrink: 0 !important;
-  }
+    /* Prevent text in horizontal tab sliders from getting squeezed */
+    .profile-tab-btn,
+    .satchel-tab-btn,
+    .shop-tab-btn,
+    .gacha-tab-btn,
+    .forge-mode-btn,
+    .ach-filter-btn,
+    .bounty-tab-btn,
+    .reliquary-tab-btn,
+    .codex-tab-btn,
+    .artifact-codex-tab-btn {
+      flex-shrink: 0 !important;
+    }
 }
 
 /* --- ARCADE GACHAPON STYLES --- */
@@ -5730,4 +5766,167 @@ summary {
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+}
+
+/* ==========================================================================
+   ARTIFACT CODEX & RELIQUARY COMPACT SCALING LAYOUT
+   ========================================================================= */
+
+.reliquary-wrapper,
+.codex-wrapper,
+.artifact-codex-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.reliquary-layout,
+.codex-layout,
+.artifact-codex-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.reliquary-pane,
+.codex-pane,
+.artifact-codex-pane {
+  background: linear-gradient(180deg, #110d1c 0%, #080510 100%);
+  border: 1.5px solid #5a4325;
+  border-radius: 6px;
+  padding: 10px;
+  overflow-y: auto;
+  min-height: 0;
+  touch-action: pan-y;
+  box-shadow:
+    inset 0 4px 18px rgba(0, 0, 0, 0.95),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.reliquary-grid,
+.codex-grid,
+.artifact-codex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.reliquary-card,
+.codex-card,
+.artifact-card,
+.artifact-codex-card {
+  background: linear-gradient(180deg, #1c142b 0%, #0d0918 100%);
+  border: 1.5px solid var(--border-cold-iron);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  box-sizing: border-box;
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.8),
+    inset 0 1px 3px rgba(255, 255, 255, 0.08);
+  transition: all 0.15s ease;
+}
+
+.reliquary-card:hover,
+.codex-card:hover,
+.artifact-card:hover,
+.artifact-codex-card:hover {
+  background: linear-gradient(180deg, #28193d 0%, #120c22 100%);
+  border-color: var(--border-gold-filigree);
+  transform: translateY(-1px);
+}
+
+.artifact-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1.2px solid var(--border-aged-bronze);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 4px auto;
+}
+
+.artifact-card-title {
+  font-size: 10px;
+  font-weight: 900;
+  color: #ffd700;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artifact-card-sub {
+  font-size: 8px;
+  color: #94a3b8;
+  font-family: monospace;
+  text-align: center;
+}
+
+.reliquary-row,
+.codex-row,
+.artifact-codex-row {
+  background: linear-gradient(180deg, #1c142b 0%, #0d0918 100%);
+  border: 1.5px solid #3a304a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  transition: all 0.15s ease;
+}
+
+.reliquary-row:hover,
+.codex-row:hover,
+.artifact-codex-row:hover {
+  background: linear-gradient(180deg, #28193d 0%, #120c22 100%);
+  border-color: #8c6d3b;
+}
+
+/* Custom layout queries on extremely cramped portrait frames */
+@media (max-width: 580px) {
+  .reliquary-grid,
+  .codex-grid,
+  .artifact-codex-grid {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  .reliquary-card,
+  .codex-card,
+  .artifact-card,
+  .artifact-codex-card {
+    padding: 6px !important;
+    gap: 4px !important;
+    border-radius: 4px !important;
+  }
+
+  .artifact-card-icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .artifact-card-title {
+    font-size: 8.5px !important;
+  }
+
+  .artifact-card-sub {
+    font-size: 7.5px !important;
+  }
 }
