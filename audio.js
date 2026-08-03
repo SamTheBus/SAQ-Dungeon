@@ -2504,6 +2504,55 @@ window.SoundManager.initTactileFeedback = function () {
   );
 };
 
+window.SoundManager.playCardPickup = function () {
+  if (!this.init()) return;
+  let audioCtx = this.ctx;
+  let masterVol = window.playerStats.volumeMaster !== undefined ? window.playerStats.volumeMaster : 0.5;
+  let sfxVol = window.playerStats.volumeSFX !== undefined ? window.playerStats.volumeSFX : 0.8;
+  let finalVol = masterVol * sfxVol;
+  if (window.playerStats.mute || finalVol <= 0) return;
+
+  let now = audioCtx.currentTime;
+
+  // Snappy, shimmering pentatonic chime sequence (C5, G5, C6, G6, C7)
+  const scale = [523.25, 783.99, 1046.5, 1567.98, 2093.0];
+  const duration = 0.6;
+
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0, now);
+  masterGain.gain.linearRampToValueAtTime(finalVol * 0.15, now + 0.01);
+  masterGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  masterGain.connect(this.sfxGain);
+
+  const oscillators = [];
+  scale.forEach((freq, idx) => {
+    let delay = idx * 0.04;
+    let osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, now + delay);
+
+    let gNode = audioCtx.createGain();
+    gNode.gain.setValueAtTime(0, now);
+    gNode.gain.setValueAtTime(0, now + delay);
+    gNode.gain.linearRampToValueAtTime(0.12, now + delay + 0.005);
+    gNode.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.18);
+
+    osc.connect(gNode);
+    gNode.connect(masterGain);
+
+    osc.start(now + delay);
+    osc.stop(now + delay + 0.25);
+    oscillators.push(osc);
+  });
+
+  setTimeout(() => {
+    oscillators.forEach(osc => {
+      try { osc.disconnect(); } catch (e) {}
+    });
+    masterGain.disconnect();
+  }, (duration + 0.1) * 1000);
+};
+
 // Auto-register listener bindings on script load
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", function () {

@@ -243,16 +243,19 @@
         }
 
         init() {
-          this.reset();
-          if (!window.playerStats.proceduralChallenges || Object.keys(window.playerStats.proceduralChallenges).length === 0) {
-            this.generateRandomChallenges();
-          } else {
-            window.SPECIAL_CHALLENGES_DATABASE = window.playerStats.proceduralChallenges;
-          }
-          if (window.playerStats && window.playerStats.activeSpecialChallenge) {
-            this.activeChallenge = window.playerStats.activeSpecialChallenge;
-          }
-        }
+              this.reset();
+              if (!window.playerStats) {
+                window.playerStats = window.playerStats || {};
+              }
+              if (!window.playerStats.proceduralChallenges || Object.keys(window.playerStats.proceduralChallenges).length === 0) {
+                this.generateRandomChallenges();
+              } else {
+                window.SPECIAL_CHALLENGES_DATABASE = window.playerStats.proceduralChallenges;
+              }
+              if (window.playerStats && window.playerStats.activeSpecialChallenge) {
+                this.activeChallenge = window.playerStats.activeSpecialChallenge;
+              }
+            }
 
     update(map, p) {
       if (window.currentGameState !== window.GAME_STATES.DUNGEON) {

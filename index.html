@@ -454,13 +454,20 @@
             >
               VAULT SATCHEL
             </button>
-            <button
-              id="profile-tab-achievements"
-              class="profile-tab-btn"
-              onclick="window.switchProfileTab('achievements')"
-            >
-              ACHIEVEMENTS
-            </button>
+              <button
+                      id="profile-tab-achievements"
+                      class="profile-tab-btn"
+                      onclick="window.switchProfileTab('achievements')"
+              >
+                  ACHIEVEMENTS
+              </button>
+              <button
+                      id="profile-tab-album"
+                      class="profile-tab-btn"
+                      onclick="window.switchProfileTab('album')"
+              >
+                  BESTIARY
+              </button>
           </div>
 
           <div class="profile-layout">
@@ -548,12 +555,19 @@
               </div>
             </div>
 
-            <!-- Achievements Panel -->
-            <div id="profile-sec-achievements" class="profile-section">
-              <div id="achievements-content-panel" class="profile-section-body">
-                <!-- Achievements UI rendered dynamically -->
+              <!-- Achievements Panel -->
+              <div id="profile-sec-achievements" class="profile-section">
+                  <div id="achievements-content-panel" class="profile-section-body">
+                      <!-- Achievements UI rendered dynamically -->
+                  </div>
               </div>
-            </div>
+
+              <!-- Bestiary Album Panel -->
+              <div id="profile-sec-album" class="profile-section">
+                  <div id="album-content-panel" class="profile-section-body">
+                      <!-- Bestiary Album UI rendered dynamically -->
+                  </div>
+              </div>
           </div>
         </div>
       </div>

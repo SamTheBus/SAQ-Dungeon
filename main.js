@@ -416,6 +416,8 @@
     let tileSize = map.tileSize;
     if (!p) return;
 
+    let isChallengeActive = window.playerStats && window.playerStats.activeSpecialChallenge !== null;
+
     let hasBloodToll =
       typeof window.isCavernEffectActive === "function" &&
       window.isCavernEffectActive("blood_toll");
@@ -8708,25 +8710,43 @@
       if (typeof window.resetDraftSP === "function") window.resetDraftSP();
       window.pushHeaderToast("SP Allocations Reset & Refunded!", "#9b59b6");
     } else if (name.includes("Cavern Sigil Sack")) {
-      if (typeof window.openCavernSigilSackAnimation === "function") {
-        let stageScale =
-          Math.floor(((p.lifetimePeakStage || p.stage || 1) - 1) / 5) + 1;
-        let rolledRarity = window.rollItemRarity(
-          stageScale * 5,
-          p.baseQuality || 1.0,
-          false,
-        );
-        let sigilItem = window.createItemObject(
-          "sigil",
-          rolledRarity,
-          stageScale,
-          0,
-        );
-        if (!window.inventory.SIGIL) window.inventory.SIGIL = [];
-        window.inventory.SIGIL.push(sigilItem);
-        window.openCavernSigilSackAnimation(sigilItem);
-      }
-    } else if (name === "Astral Singularity Cache") {
+          if (typeof window.openCavernSigilSackAnimation === "function") {
+            let stageScale =
+              Math.floor(((p.lifetimePeakStage || p.stage || 1) - 1) / 5) + 1;
+            let rolledRarity = window.rollItemRarity(
+              stageScale * 5,
+              p.baseQuality || 1.0,
+              false,
+            );
+            let sigilItem = window.createItemObject(
+              "sigil",
+              rolledRarity,
+              stageScale,
+              0,
+            );
+            if (!window.inventory.SIGIL) window.inventory.SIGIL = [];
+            window.inventory.SIGIL.push(sigilItem);
+            window.openCavernSigilSackAnimation(sigilItem);
+          }
+        } else if (name === "Monster Card Sack") {
+          let keys = Object.keys(window.MONSTER_CARDS_DATA);
+          let rolledCards = [];
+          for (let i = 0; i < 5; i++) {
+            let rolledKey = keys[Math.floor(Math.random() * keys.length)];
+            rolledCards.push(rolledKey);
+
+            // Add directly to persistent Bestiary collection
+            window.playerStats.monsterCards[rolledKey] = (window.playerStats.monsterCards[rolledKey] || 0) + 1;
+          }
+
+          if (window.SoundManager && typeof window.SoundManager.playCardPackOpen === "function") {
+            window.SoundManager.playCardPackOpen();
+          }
+
+          if (typeof window.openMonsterCardSackAnimation === "function") {
+            window.openMonsterCardSackAnimation(rolledCards);
+          }
+        } else if (name === "Astral Singularity Cache") {
       let peakRunStage = p.lifetimePeakStage || p.stage || 1;
       let stageScale = Math.floor((peakRunStage - 1) / 5) + 1;
       let newItem = null;
@@ -8890,29 +8910,55 @@
           gl.y += (dy / dist) * gl.magnetSpeed;
 
           if (dist <= 12) {
-            let isEquipped = window.tryAutoEquip
-              ? window.tryAutoEquip(gl.item)
-              : false;
-            if (!isEquipped) {
-              if (!p.bag) p.bag = [];
-              p.bag.push(gl.item);
-            }
+                      if (gl.item.type === "card") {
+                        let cKey = gl.item.cardKey;
+                        window.playerStats.monsterCards[cKey] = (window.playerStats.monsterCards[cKey] || 0) + 1;
 
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.playLootDrop === "function"
-            ) {
-              window.SoundManager.playLootDrop(gl.item.statsRolled);
-            }
-            if (typeof window.pushToast === "function") {
-              window.pushToast(gl.item);
-            }
-            if (typeof window.updateHUD === "function") {
-              window.updateHUD();
-            }
+                        if (window.SoundManager && typeof window.SoundManager.playCardPickup === "function") {
+                          window.SoundManager.playCardPickup();
+                        }
 
-            window.groundLoot.splice(i, 1);
-          }
+                        let cardData = window.MONSTER_CARDS_DATA[cKey];
+                        let setColors = {
+                          "Whispering Woods": "#2ecc71",
+                          "Mountain Peaks": "#3498db",
+                          "Inferno Depths": "#e74c3c",
+                          "Fungal Swamp": "#1abc9c",
+                          "Void Singularity": "#9b59b6",
+                          "Cosmic Wardens": "#f1c40f"
+                        };
+                        let setCol = setColors[cardData.set] || "#ffd700";
+                        if (typeof window.pushHeaderToast === "function") {
+                          window.pushHeaderToast(`✦ CARD FOUND: ${gl.item.name} [${cardData.set}]`, setCol);
+                        }
+                        if (typeof window.pushLog === "function") {
+                          window.pushLog(`<span style="color:${setCol}; font-weight:bold;">[BESTIARY]</span> Collected <span style="color:#ffffff;">${gl.item.name}</span>! Added to [${cardData.set} Set] album.`);
+                        }
+                      } else {
+                        let isEquipped = window.tryAutoEquip
+                          ? window.tryAutoEquip(gl.item)
+                          : false;
+                        if (!isEquipped) {
+                          if (!p.bag) p.bag = [];
+                          p.bag.push(gl.item);
+                        }
+
+                        if (
+                          window.SoundManager &&
+                          typeof window.SoundManager.playLootDrop === "function"
+                        ) {
+                          window.SoundManager.playLootDrop(gl.item.statsRolled);
+                        }
+                        if (typeof window.pushToast === "function") {
+                          window.pushToast(gl.item);
+                        }
+                      }
+                      if (typeof window.updateHUD === "function") {
+                        window.updateHUD();
+                      }
+
+                      window.groundLoot.splice(i, 1);
+                    }
         }
       }
     }
@@ -12689,9 +12735,27 @@
             window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
           }
 
-          // 5% Chance Mob Equipment Drop (Blocked in Crucible/Onslaught Mode & Special Challenges)
-                          let isChallengeActive = window.playerStats.activeSpecialChallenge !== null;
-                          if (!window.playerStats.isCrucibleMode && !isChallengeActive && Math.random() < 0.05) {
+          // Procedural Card Drop Roll (Regular: 0.15% base, Rare: 1% base, multiplied by Drop Rate)
+                              dropMult = pStats.drop || 1.0;
+                              let cardBaseChance = m.isRare ? 0.010 : 0.0015;
+                              if (Math.random() < cardBaseChance * dropMult) {
+                      let cardKey = m.visualType || m.type;
+                      if (window.MONSTER_CARDS_DATA[cardKey]) {
+                        let cardItem = {
+                          id: window.idCounter++,
+                          type: "card",
+                          cardKey: cardKey,
+                          name: window.MONSTER_CARDS_DATA[cardKey].name,
+                          statsRolled: 5,
+                          stageLevel: m.stageLevel || window.player.depth || 1,
+                        };
+                        window.spawnGroundLoot(cardItem, mobCenterX, mobCenterY);
+                      }
+                    }
+
+                    // 5% Chance Mob Equipment Drop (Blocked in Crucible/Onslaught Mode & Special Challenges)
+                                    let isChallengeActive = window.playerStats.activeSpecialChallenge !== null;
+                                    if (!window.playerStats.isCrucibleMode && !isChallengeActive && Math.random() < 0.05) {
                             let stageScale = window.player.depth || 1;
                             let rolledRarity = window.rollItemRarity(
                               window.playerStats.maxFloorCleared || 0,
@@ -13462,8 +13526,25 @@
                                         window.spawnGroundLoot(sigilItem, bm.x + bm.w / 2, bm.y + bm.h / 2);
                                       }
 
-                                      // Standard On-Stage Boss Equipment Drop (Blocked in Crucible/Onslaught Mode)
-                                      if (!window.playerStats.isCrucibleMode) {
+                                      // Boss Card Drop Roll (5% base chance, multiplied by Drop Rate)
+                                                                            let dropMult = pStats.drop || 1.0;
+                                                                            if (Math.random() < 0.05 * dropMult) {
+                                                                              let cardKey = bm.visualType || bm.type;
+                                                                              if (window.MONSTER_CARDS_DATA[cardKey]) {
+                                                                                let cardItem = {
+                                                                                  id: window.idCounter++,
+                                                                                  type: "card",
+                                                                                  cardKey: cardKey,
+                                                                                  name: window.MONSTER_CARDS_DATA[cardKey].name,
+                                                                                  statsRolled: 5,
+                                                                                  stageLevel: depth || 1,
+                                                                                };
+                                                                                window.spawnGroundLoot(cardItem, bossCenterX, bossCenterY);
+                                                                              }
+                                                                            }
+
+                                                                            // Standard On-Stage Boss Equipment Drop (Blocked in Crucible/Onslaught Mode)
+                                                                            if (!window.playerStats.isCrucibleMode) {
                                         let stageScale = depth;
                                         let rolledRarity = window.rollItemRarity(
                                           window.playerStats.maxFloorCleared || 0,
@@ -14081,15 +14162,17 @@
             ctx.fill();
 
             // Rarity Parsing Setup
-            let isUnique =
-              gl.item &&
-              ((window.isItemUnique && window.isItemUnique(gl.item)) ||
-                gl.item.statsRolled === "UNIQUE");
-            let stars = gl.item
-              ? gl.item.statsRolled === "UNIQUE"
-                ? 5
-                : (gl.item.statsRolled ?? 0)
-              : 0;
+                        let isUnique =
+                          gl.item &&
+                          ((window.isItemUnique && window.isItemUnique(gl.item)) ||
+                            gl.item.statsRolled === "UNIQUE" ||
+                            gl.item.type === "card");
+                        let isCard = gl.item && gl.item.type === "card";
+                        let stars = gl.item
+                          ? gl.item.statsRolled === "UNIQUE" || gl.item.type === "card"
+                            ? 5
+                            : (gl.item.statsRolled ?? 0)
+                          : 0;
             let dRgb = window.hexToRgbValues
               ? window.hexToRgbValues(color)
               : "255, 255, 255";
@@ -16543,26 +16626,30 @@
   };
 
   window.switchProfileTab = function (tabKey) {
-    window.activeProfileMobileTab = tabKey;
-    const tabs = ["stats", "gear", "satchel", "achievements"];
-    tabs.forEach((t) => {
-      let btn = document.getElementById(`profile-tab-${t}`);
-      let sec = document.getElementById(`profile-sec-${t}`);
-      if (btn) btn.classList.toggle("active", t === tabKey);
-      if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
-    });
-    let profileCard = document.querySelector(".profile-card");
-    if (profileCard) {
-      profileCard.classList.toggle(
-        "skills-fullscreen-mode",
-        tabKey === "achievements",
-      );
-    }
-    if (tabKey === "achievements") {
-      window.renderAchievementsTab();
-    }
-    window.renderProfileModal();
-  };
+      window.activeProfileMobileTab = tabKey;
+      const tabs = ["stats", "gear", "satchel", "achievements", "album"];
+      tabs.forEach((t) => {
+        let btn = document.getElementById(`profile-tab-${t}`);
+        let sec = document.getElementById(`profile-sec-${t}`);
+        if (btn) btn.classList.toggle("active", t === tabKey);
+        if (sec) sec.classList.toggle("active-mobile-section", t === tabKey);
+      });
+      let profileCard = document.querySelector(".profile-card");
+      if (profileCard) {
+        profileCard.classList.toggle(
+          "skills-fullscreen-mode",
+          tabKey === "achievements" || tabKey === "album",
+        );
+      }
+      if (tabKey === "achievements") {
+        window.renderAchievementsTab();
+      } else if (tabKey === "album") {
+        if (typeof window.renderBestiaryAlbum === "function") {
+          window.renderBestiaryAlbum();
+        }
+      }
+      window.renderProfileModal();
+    };
 
   window.state.achievementFilter = "all";
 

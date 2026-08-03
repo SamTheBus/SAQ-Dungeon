@@ -5681,3 +5681,50 @@ summary {
   color: #701a75;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   BESTIARY SYSTEM STYLES
+   ========================================================================= */
+.bestiary-wrapper {
+  box-sizing: border-box;
+}
+.bestiary-set-header {
+  font-family: monospace;
+}
+.bestiary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.bestiary-card-item {
+  border: 1.5px solid;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 145px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+.bestiary-card-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.85);
+}
+.unlocked-card {
+  cursor: help;
+}
+.locked-card {
+  cursor: default;
+}
+.bestiary-card-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}

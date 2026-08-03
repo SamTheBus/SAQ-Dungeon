@@ -828,19 +828,34 @@ window.AssetCatalog = {
           `;
     },
     sigil(id, color) {
-      return `
-                <defs>
-                  <linearGradient id="g_sig_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#ffffff"/>
-                    <stop offset="45%" stop-color="${color}"/>
-                    <stop offset="100%" stop-color="#110d1a"/>
-                  </linearGradient>
-                </defs>
-                <path d="M16 2 L28 10 L28 22 L16 30 L4 22 L4 10 Z" fill="url(#g_sig_${id})" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-                <circle cx="16" cy="16" r="6.2" fill="none" stroke="#ffffff" stroke-dasharray="2 2" stroke-width="1" opacity="0.75" />
-                <path d="M16 9 L16 23 M11 16 L21 16" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
-              `;
-    },
+          return `
+                    <defs>
+                      <linearGradient id="g_sig_${id}" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="45%" stop-color="${color}"/>
+                        <stop offset="100%" stop-color="#110d1a"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M16 2 L28 10 L28 22 L16 30 L4 22 L4 10 Z" fill="url(#g_sig_${id})" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
+                    <circle cx="16" cy="16" r="6.2" fill="none" stroke="#ffffff" stroke-dasharray="2 2" stroke-width="1" opacity="0.75" />
+                    <path d="M16 9 L16 23 M11 16 L21 16" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
+                  `;
+        },
+        card(id, color) {
+          return `
+                    <defs>
+                      <linearGradient id="g_card_b_${id}" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="60%" stop-color="${color}"/>
+                        <stop offset="100%" stop-color="#0c051a"/>
+                      </linearGradient>
+                    </defs>
+                    <rect x="7" y="4" width="18" height="24" rx="2.5" fill="url(#g_card_b_${id})" stroke="#000" stroke-width="1.8" />
+                    <rect x="9.5" y="6.5" width="13" height="19" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.3" />
+                    <circle cx="16" cy="16" r="4.5" fill="none" stroke="#ffffff" stroke-dasharray="2 1.5" stroke-width="1" opacity="0.8" />
+                    <polygon points="16,12.5 19,16 16,19.5 13,16" fill="${color}" stroke="#000" stroke-width="0.8" />
+                  `;
+        },
     signet_ring(id, color) {
       return `
             <defs>
@@ -1940,14 +1955,26 @@ window.getIconSvgData = function (itemOrName) {
       }
     }
   } else {
-    let item = itemOrName;
-    uid = item.id || 999;
-    color = window.getTierColor
-      ? window.getTierColor(item.statsRolled)
-      : "#00d2ff";
+      let item = itemOrName;
+      uid = item.id || 999;
+      color = window.getTierColor
+        ? window.getTierColor(item.statsRolled)
+        : "#00d2ff";
 
-    if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
-      innerSvg = window.AssetCatalog.uniques.staff(uid);
+      if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
+        let cardData = window.MONSTER_CARDS_DATA[item.cardKey];
+        let setColors = {
+          "Whispering Woods": "#2ecc71",
+          "Mountain Peaks": "#3498db",
+          "Inferno Depths": "#e74c3c",
+          "Fungal Swamp": "#1abc9c",
+          "Void Singularity": "#9b59b6",
+          "Cosmic Wardens": "#f1c40f"
+        };
+        color = setColors[cardData.set] || "#ffd700";
+        innerSvg = window.AssetCatalog.genericEquipment.card(uid, color);
+      } else if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
+        innerSvg = window.AssetCatalog.uniques.staff(uid);
     else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
       innerSvg = window.AssetCatalog.uniques.sword(uid);
     else if (
