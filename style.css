@@ -2552,50 +2552,50 @@ summary {
   }
 
   /* Expand large panels to fill maximum vertical screen estate cleanly */
-    .profile-card,
-    .mastery-card,
-    .shop-modal-card,
-    .gacha-card,
-    .forge-modal-card,
-    .enchant-card,
-    .deploy-modal-card,
-    #bag-modal .modal-card,
-    .sigil-picker-modal-card,
-    #settings-modal .modal-card,
-    .bounty-modal-card,
-    .reliquary-modal-card,
-    .reliquary-card,
-    .codex-modal-card,
-    .codex-card,
-    .artifact-codex-modal-card,
-    .artifact-codex-card {
-      width: 96% !important;
-      margin: 0 auto !important;
-      height: calc(
-        100dvh - max(8px, env(safe-area-inset-top, 12px)) -
-          max(8px, env(safe-area-inset-bottom, 12px)) - 10px
-      ) !important;
-      max-height: none !important;
-    }
+  .profile-card,
+  .mastery-card,
+  .shop-modal-card,
+  .gacha-card,
+  .forge-modal-card,
+  .enchant-card,
+  .deploy-modal-card,
+  #bag-modal .modal-card,
+  .sigil-picker-modal-card,
+  #settings-modal .modal-card,
+  .bounty-modal-card,
+  .reliquary-modal-card,
+  .reliquary-card,
+  .codex-modal-card,
+  .codex-card,
+  .artifact-codex-modal-card,
+  .artifact-codex-card {
+    width: 96% !important;
+    margin: 0 auto !important;
+    height: calc(
+      100dvh - max(8px, env(safe-area-inset-top, 12px)) -
+        max(8px, env(safe-area-inset-bottom, 12px)) - 10px
+    ) !important;
+    max-height: none !important;
+  }
 
   /* Retain full content scrolling inside full-height panels */
-    .shop-content-panel,
-    #bag-modal .modal-body,
-    .settings-body,
-    .deploy-gear-list,
-    .reliquary-pane,
-    .codex-pane,
-    .artifact-codex-pane,
-    .reliquary-body,
-    .codex-body,
-    .artifact-codex-body,
-    .reliquary-grid,
-    .codex-grid,
-    .artifact-codex-grid {
-      max-height: none !important;
-      flex: 1 !important;
-      overflow-y: auto !important;
-    }
+  .shop-content-panel,
+  #bag-modal .modal-body,
+  .settings-body,
+  .deploy-gear-list,
+  .reliquary-pane,
+  .codex-pane,
+  .artifact-codex-pane,
+  .reliquary-body,
+  .codex-body,
+  .artifact-codex-body,
+  .reliquary-grid,
+  .codex-grid,
+  .artifact-codex-grid {
+    max-height: none !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+  }
 
   .deploy-terminal-layout {
     flex: 1 !important;
@@ -2603,94 +2603,94 @@ summary {
   }
 
   .forge-layout,
-    .enchant-layout,
-    .bounty-layout,
-    .reliquary-layout,
-    .codex-layout,
-    .artifact-codex-layout {
-      grid-template-columns: 1fr !important; /* Stack columns on mobile */
-      height: auto !important;
-      max-height: none !important;
-      flex: 1 !important;
-    }
+  .enchant-layout,
+  .bounty-layout,
+  .reliquary-layout,
+  .codex-layout,
+  .artifact-codex-layout {
+    grid-template-columns: 1fr !important; /* Stack columns on mobile */
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 !important;
+  }
 
-    .forge-left-pane,
-    .forge-right-pane,
-    .enchant-left-pane,
-    .enchant-right-pane,
-    .bounty-left-pane,
-    .bounty-right-pane,
-    .reliquary-left-pane,
-    .reliquary-right-pane,
-    .codex-left-pane,
-    .codex-right-pane,
-    .artifact-codex-left-pane,
-    .artifact-codex-right-pane {
-      max-height: none !important;
-      flex: 1 !important;
-    }
+  .forge-left-pane,
+  .forge-right-pane,
+  .enchant-left-pane,
+  .enchant-right-pane,
+  .bounty-left-pane,
+  .bounty-right-pane,
+  .reliquary-left-pane,
+  .reliquary-right-pane,
+  .codex-left-pane,
+  .codex-right-pane,
+  .artifact-codex-left-pane,
+  .artifact-codex-right-pane {
+    max-height: none !important;
+    flex: 1 !important;
+  }
 
   /* --- LOCK ALL HORIZONTAL BAR FLOWS & ENABLE TOUCH SWIPE FOR TRUNCATED TABS --- */
-    .profile-tab-bar,
-    .satchel-tab-bar,
-    .shop-tab-bar,
-    .gacha-tab-bar,
-    .forge-mode-bar,
-    .ach-filter-bar,
-    .bounty-tab-bar,
-    .reliquary-tab-bar,
-    .codex-tab-bar,
-    .artifact-codex-tab-bar {
-      display: flex !important;
-      overflow-x: auto !important;
-      white-space: nowrap !important;
-      flex-wrap: nowrap !important;
-      flex-shrink: 0 !important;
-      touch-action: pan-x !important;
-      -webkit-overflow-scrolling: touch !important;
-      padding-bottom: 4px !important;
-    }
+  .profile-tab-bar,
+  .satchel-tab-bar,
+  .shop-tab-bar,
+  .gacha-tab-bar,
+  .forge-mode-bar,
+  .ach-filter-bar,
+  .bounty-tab-bar,
+  .reliquary-tab-bar,
+  .codex-tab-bar,
+  .artifact-codex-tab-bar {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
+    touch-action: pan-x !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 4px !important;
+  }
 
-    /* Custom subtle indicator line to guide horizontal swipes */
-    .profile-tab-bar::-webkit-scrollbar,
-    .satchel-tab-bar::-webkit-scrollbar,
-    .shop-tab-bar::-webkit-scrollbar,
-    .gacha-tab-bar::-webkit-scrollbar,
-    .forge-mode-bar::-webkit-scrollbar,
-    .ach-filter-bar::-webkit-scrollbar,
-    .reliquary-tab-bar::-webkit-scrollbar,
-    .codex-tab-bar::-webkit-scrollbar,
-    .artifact-codex-tab-bar::-webkit-scrollbar {
-      height: 3px !important;
-      display: block !important;
-    }
+  /* Custom subtle indicator line to guide horizontal swipes */
+  .profile-tab-bar::-webkit-scrollbar,
+  .satchel-tab-bar::-webkit-scrollbar,
+  .shop-tab-bar::-webkit-scrollbar,
+  .gacha-tab-bar::-webkit-scrollbar,
+  .forge-mode-bar::-webkit-scrollbar,
+  .ach-filter-bar::-webkit-scrollbar,
+  .reliquary-tab-bar::-webkit-scrollbar,
+  .codex-tab-bar::-webkit-scrollbar,
+  .artifact-codex-tab-bar::-webkit-scrollbar {
+    height: 3px !important;
+    display: block !important;
+  }
 
-    .profile-tab-bar::-webkit-scrollbar-thumb,
-    .satchel-tab-bar::-webkit-scrollbar-thumb,
-    .shop-tab-bar::-webkit-scrollbar-thumb,
-    .gacha-tab-bar::-webkit-scrollbar-thumb,
-    .forge-mode-bar::-webkit-scrollbar-thumb,
-    .ach-filter-bar::-webkit-scrollbar-thumb,
-    .reliquary-tab-bar::-webkit-scrollbar-thumb,
-    .codex-tab-bar::-webkit-scrollbar-thumb,
-    .artifact-codex-tab-bar::-webkit-scrollbar-thumb {
-      background: var(--border-aged-bronze) !important;
-      border-radius: 2px !important;
-    }
+  .profile-tab-bar::-webkit-scrollbar-thumb,
+  .satchel-tab-bar::-webkit-scrollbar-thumb,
+  .shop-tab-bar::-webkit-scrollbar-thumb,
+  .gacha-tab-bar::-webkit-scrollbar-thumb,
+  .forge-mode-bar::-webkit-scrollbar-thumb,
+  .ach-filter-bar::-webkit-scrollbar-thumb,
+  .reliquary-tab-bar::-webkit-scrollbar-thumb,
+  .codex-tab-bar::-webkit-scrollbar-thumb,
+  .artifact-codex-tab-bar::-webkit-scrollbar-thumb {
+    background: var(--border-aged-bronze) !important;
+    border-radius: 2px !important;
+  }
 
-    /* Prevent text in horizontal tab sliders from getting squeezed */
-    .profile-tab-btn,
-    .satchel-tab-btn,
-    .shop-tab-btn,
-    .gacha-tab-btn,
-    .forge-mode-btn,
-    .ach-filter-btn,
-    .bounty-tab-btn,
-    .reliquary-tab-btn,
-    .codex-tab-btn,
-    .artifact-codex-tab-btn {
-      flex-shrink: 0 !important;
-    }
+  /* Prevent text in horizontal tab sliders from getting squeezed */
+  .profile-tab-btn,
+  .satchel-tab-btn,
+  .shop-tab-btn,
+  .gacha-tab-btn,
+  .forge-mode-btn,
+  .ach-filter-btn,
+  .bounty-tab-btn,
+  .reliquary-tab-btn,
+  .codex-tab-btn,
+  .artifact-codex-tab-btn {
+    flex-shrink: 0 !important;
+  }
 }
 
 /* --- ARCADE GACHAPON STYLES --- */
@@ -5927,6 +5927,35 @@ summary {
   }
 
   .artifact-card-sub {
-    font-size: 7.5px !important;
-  }
-}
+              font-size: 7.5px !important;
+            }
+          }
+
+          /* --- SUBPHASE 1.1 OUTLAW ROBBERY ACTIONS --- */
+          .action-btn-rob {
+            background: linear-gradient(180deg, #960018 0%, #5a0a0a 100%) !important;
+            border: 1.5px solid #ef4444 !important;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
+            color: #ffffff !important;
+            font-weight: 900 !important;
+          }
+
+          .action-btn-rob:hover {
+            filter: brightness(1.15);
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.7) !important;
+          }
+
+          .pulse-red-border {
+            animation: pulseRedAlert 1.2s infinite ease-in-out;
+          }
+
+          @keyframes pulseRedAlert {
+            0%, 100% {
+              border-color: #ef4444;
+              box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+            }
+            50% {
+              border-color: #ff7675;
+              box-shadow: 0 0 18px rgba(239, 68, 68, 0.85);
+            }
+          }

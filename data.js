@@ -2534,19 +2534,21 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   if (window.checkArtifactTrait("move_speed")) flatSpeedBonus += 10;
-    if (window.checkArtifactTrait("gold_hoard")) p.gold += 0.5;
-    if (window.checkArtifactTrait("idle_spd")) idleSpeedPct += 0.35;
-    if (window.checkArtifactTrait("active_spd")) activeSpeedPct += 0.25;
+  if (window.checkArtifactTrait("gold_hoard")) p.gold += 0.5;
+  if (window.checkArtifactTrait("idle_spd")) idleSpeedPct += 0.35;
+  if (window.checkArtifactTrait("active_spd")) activeSpeedPct += 0.25;
 
-    // Kinetic Friction Turbine dynamic attack speed injection
-    if (window.checkArtifactTrait("friction_kinetic")) {
-      let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_kinetic") : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
-      let charges = window.playerStats.kineticFrictionCharges || 0;
-      let bonusSpeedPct = 0.005 * charges * slotMult;
-      activeSpeedPct += bonusSpeedPct;
-      idleSpeedPct += bonusSpeedPct;
-    }
+  // Kinetic Friction Turbine dynamic attack speed injection
+  if (window.checkArtifactTrait("friction_kinetic")) {
+    let slotLvl = window.getArtifactTemperLevel
+      ? window.getArtifactTemperLevel("friction_kinetic")
+      : 0;
+    let slotMult = 1.0 + slotLvl * 0.01;
+    let charges = window.playerStats.kineticFrictionCharges || 0;
+    let bonusSpeedPct = 0.005 * charges * slotMult;
+    activeSpeedPct += bonusSpeedPct;
+    idleSpeedPct += bonusSpeedPct;
+  }
 
   if (
     window.hasUniquePassive("tome_watch") &&
@@ -3095,79 +3097,94 @@ window.resolvePlayerStats = function (useDraft = false) {
   // ----------------------------------------------------------
 
   // --- PHASE 3 ACTIVE ARTIFACT MODIFIERS RESOLUTION ---
-    if (window.playerStats) {
-      let floorActiveTicks = window.playerStats.floorActiveTicks || 0;
+  if (window.playerStats) {
+    let floorActiveTicks = window.playerStats.floorActiveTicks || 0;
 
-      // 1. Breacher's Adrenaline Glass
-      if (window.checkArtifactTrait("breach_adrenaline")) {
-        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("breach_adrenaline") : 0;
-        let slotMult = 1.0 + slotLvl * 0.01;
-        let decayRatio = Math.max(0, 1.0 - floorActiveTicks / 1800); // Linear decay over 30s
-        if (decayRatio > 0) {
-          p.moveSpeed *= (1.0 + 0.40 * decayRatio * slotMult);
-          p.critChance += 0.25 * decayRatio * slotMult;
-        }
-      }
-
-      // 2. Scout's Cartographic Compass
-      if (window.checkArtifactTrait("breach_scouting")) {
-        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("breach_scouting") : 0;
-        let slotMult = 1.0 + slotLvl * 0.01;
-        if (floorActiveTicks < 900) { // Active during the first 15s
-          p.drop += 0.50 * slotMult;
-        }
-      }
-
-      // 3. Kinetic Friction Turbine (Attack power scaling)
-      if (window.checkArtifactTrait("friction_kinetic")) {
-        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_kinetic") : 0;
-        let slotMult = 1.0 + slotLvl * 0.01;
-        let charges = window.playerStats.kineticFrictionCharges || 0;
-        if (charges > 0) {
-          p.atk = p.atk.mul(1.0 + 0.005 * charges * slotMult);
-        }
-      }
-
-      // 4. Obsidian Core of Tenacity
-      if (window.checkArtifactTrait("friction_tenacity")) {
-        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_tenacity") : 0;
-        let slotMult = 1.0 + slotLvl * 0.01;
-        let stacks = window.playerStats.tenacityStacks || 0;
-        if (stacks > 0) {
-          p.def = p.def.mul(1.0 + 0.02 * stacks * slotMult);
-          p.blockMitigationBonus = (p.blockMitigationBonus || 0) + (0.015 * stacks * slotMult);
-          p.parryMitigation = (p.parryMitigation || 0.6) + (0.015 * stacks * slotMult);
-        }
-      }
-
-      // 5. Void Accretion Engine (+3% damage every 10s, max 30%)
-      if (window.checkArtifactTrait("friction_accretion")) {
-        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("friction_accretion") : 0;
-        let slotMult = 1.0 + slotLvl * 0.01;
-        let accretionStacks = Math.min(10, Math.floor(floorActiveTicks / 600));
-        if (accretionStacks > 0) {
-          p.atk = p.atk.mul(1.0 + 0.03 * accretionStacks * slotMult);
-        }
-      }
-
-      // 6. Nexus Harmonizer (Temporary block/parry tome buff)
-      if (window.checkArtifactTrait("synergy_nexus")) {
-        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("synergy_nexus") : 0;
-        let slotMult = 1.0 + slotLvl * 0.01;
-        if (window.playerStats.nexusTomeShieldTimer > 0) {
-          p.block += 0.05 * slotMult;
-          p.parry += 0.05 * slotMult;
-        }
+    // 1. Breacher's Adrenaline Glass
+    if (window.checkArtifactTrait("breach_adrenaline")) {
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("breach_adrenaline")
+        : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      let decayRatio = Math.max(0, 1.0 - floorActiveTicks / 1800); // Linear decay over 30s
+      if (decayRatio > 0) {
+        p.moveSpeed *= 1.0 + 0.4 * decayRatio * slotMult;
+        p.critChance += 0.25 * decayRatio * slotMult;
       }
     }
 
-    if (!useDraft) {
-      window.cachedPlayerStats = p;
-      window.playerStatsDirty = false;
+    // 2. Scout's Cartographic Compass
+    if (window.checkArtifactTrait("breach_scouting")) {
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("breach_scouting")
+        : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      if (floorActiveTicks < 900) {
+        // Active during the first 15s
+        p.drop += 0.5 * slotMult;
+      }
     }
 
-    return p;
-  };
+    // 3. Kinetic Friction Turbine (Attack power scaling)
+    if (window.checkArtifactTrait("friction_kinetic")) {
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("friction_kinetic")
+        : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      let charges = window.playerStats.kineticFrictionCharges || 0;
+      if (charges > 0) {
+        p.atk = p.atk.mul(1.0 + 0.005 * charges * slotMult);
+      }
+    }
+
+    // 4. Obsidian Core of Tenacity
+    if (window.checkArtifactTrait("friction_tenacity")) {
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("friction_tenacity")
+        : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      let stacks = window.playerStats.tenacityStacks || 0;
+      if (stacks > 0) {
+        p.def = p.def.mul(1.0 + 0.02 * stacks * slotMult);
+        p.blockMitigationBonus =
+          (p.blockMitigationBonus || 0) + 0.015 * stacks * slotMult;
+        p.parryMitigation =
+          (p.parryMitigation || 0.6) + 0.015 * stacks * slotMult;
+      }
+    }
+
+    // 5. Void Accretion Engine (+3% damage every 10s, max 30%)
+    if (window.checkArtifactTrait("friction_accretion")) {
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("friction_accretion")
+        : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      let accretionStacks = Math.min(10, Math.floor(floorActiveTicks / 600));
+      if (accretionStacks > 0) {
+        p.atk = p.atk.mul(1.0 + 0.03 * accretionStacks * slotMult);
+      }
+    }
+
+    // 6. Nexus Harmonizer (Temporary block/parry tome buff)
+    if (window.checkArtifactTrait("synergy_nexus")) {
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("synergy_nexus")
+        : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      if (window.playerStats.nexusTomeShieldTimer > 0) {
+        p.block += 0.05 * slotMult;
+        p.parry += 0.05 * slotMult;
+      }
+    }
+  }
+
+  if (!useDraft) {
+    window.cachedPlayerStats = p;
+    window.playerStatsDirty = false;
+  }
+
+  return p;
+};
 
 // --- REAL-TIME COMBAT DAMAGE RESOLUTION PIPELINE ---
 window.damagePlayer = function (rawDmg, sourceMob = null) {
@@ -3181,21 +3198,34 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
 
   // Aegis Infiltration Glyph overshield (Absorbs 100% Max HP, decays 5% Max HP/sec)
   if (window.checkArtifactTrait("breach_barrier")) {
-    let floorActiveTicks = (window.playerStats && window.playerStats.floorActiveTicks) || 0;
+    let floorActiveTicks =
+      (window.playerStats && window.playerStats.floorActiveTicks) || 0;
     let decayRatio = Math.max(0, 1.0 - floorActiveTicks / 1200);
     if (decayRatio > 0) {
-      let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("breach_barrier") : 0;
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("breach_barrier")
+        : 0;
       let slotMult = 1.0 + slotLvl * 0.01;
-      let maxHpVal = p.maxHp && p.maxHp.valueOf ? p.maxHp.valueOf() : Number(p.maxHp || 100);
-      window.playerStats.overshieldConsumed = window.playerStats.overshieldConsumed || 0;
+      let maxHpVal =
+        p.maxHp && p.maxHp.valueOf ? p.maxHp.valueOf() : Number(p.maxHp || 100);
+      window.playerStats.overshieldConsumed =
+        window.playerStats.overshieldConsumed || 0;
       let maxOvershield = maxHpVal * slotMult;
-      let currentOvershield = Math.max(0, maxOvershield * decayRatio - window.playerStats.overshieldConsumed);
+      let currentOvershield = Math.max(
+        0,
+        maxOvershield * decayRatio - window.playerStats.overshieldConsumed,
+      );
       if (currentOvershield > 0) {
         let absorbedByOvershield = Math.min(rawDmg, currentOvershield);
         rawDmg -= absorbedByOvershield;
         window.playerStats.overshieldConsumed += absorbedByOvershield;
         if (window.spawnFloatingText) {
-          window.spawnFloatingText(p.x, p.y - 20, `[OVERSHIELD] -${Math.round(absorbedByOvershield)}`, "#34d399");
+          window.spawnFloatingText(
+            p.x,
+            p.y - 20,
+            `[OVERSHIELD] -${Math.round(absorbedByOvershield)}`,
+            "#34d399",
+          );
         }
         if (rawDmg <= 0) return 0;
       }
@@ -3357,16 +3387,25 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     p.lastDamageTimer = 180;
-        window.playerStats.totalDeflections =
-          (window.playerStats.totalDeflections || 0) + 1;
+    window.playerStats.totalDeflections =
+      (window.playerStats.totalDeflections || 0) + 1;
 
-        // Nexus Harmonizer: Dagger parries reset Field Flask cooldown
-        if (window.checkArtifactTrait("synergy_nexus") && pStats.subType === "dagger" && window.playerStats) {
-          window.playerStats.flaskCooldownTimer = 0;
-          if (window.spawnFloatingText) {
-            window.spawnFloatingText(p.x, p.y - 20, "FLASK COOLDOWN RESET!", "#34d399");
-          }
-        }
+    // Nexus Harmonizer: Dagger parries reset Field Flask cooldown
+    if (
+      window.checkArtifactTrait("synergy_nexus") &&
+      pStats.subType === "dagger" &&
+      window.playerStats
+    ) {
+      window.playerStats.flaskCooldownTimer = 0;
+      if (window.spawnFloatingText) {
+        window.spawnFloatingText(
+          p.x,
+          p.y - 20,
+          "FLASK COOLDOWN RESET!",
+          "#34d399",
+        );
+      }
+    }
 
     if (pStats.hasMasterDuellist) {
       window.playerStats.shadowDecoyTimer = 240; // Spawn Shadow Decoy (4 seconds)
@@ -3668,33 +3707,55 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       );
 
     if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-          // Gain +10 Shield Mastery XP on Shield Bash reflect
-          if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
+      // Gain +10 Shield Mastery XP on Shield Bash reflect
+      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
 
-          // Nexus Harmonizer: Shields have 20% cast-on-block spell chance
-          if (window.checkArtifactTrait("synergy_nexus") && pStats.subType === "shield" && Math.random() < 0.20) {
-            let spellDmg = BigNum.from(pStats.atk || 15).mul(pStats.spellPower || 1.5).mul(0.5);
-            sourceMob.hp = sourceMob.hp.sub(spellDmg);
-            sourceMob.flashTimer = 8;
-            let spellType = pStats.spellType || "tri";
-            if (spellType === "tri") spellType = ["fire", "lightning", "frost"][Math.floor(Math.random() * 3)];
-            if (window.castVisualSpell) {
-              window.castVisualSpell(spellType, p, sourceMob, pStats, pStats.hasElementalOverload);
-            }
-            if (window.combatVisuals) {
-              window.combatVisuals.spawnDamageEffect(sourceMob.x + sourceMob.w/2, sourceMob.y + sourceMob.h/2, spellDmg, "spell_" + spellType, false, sourceMob);
-            }
-          }
-
-          let defBash = BigNum.from(pStats.def || 5).mul(
-            pStats.reflectDamage || 1.0,
+      // Nexus Harmonizer: Shields have 20% cast-on-block spell chance
+      if (
+        window.checkArtifactTrait("synergy_nexus") &&
+        pStats.subType === "shield" &&
+        Math.random() < 0.2
+      ) {
+        let spellDmg = BigNum.from(pStats.atk || 15)
+          .mul(pStats.spellPower || 1.5)
+          .mul(0.5);
+        sourceMob.hp = sourceMob.hp.sub(spellDmg);
+        sourceMob.flashTimer = 8;
+        let spellType = pStats.spellType || "tri";
+        if (spellType === "tri")
+          spellType = ["fire", "lightning", "frost"][
+            Math.floor(Math.random() * 3)
+          ];
+        if (window.castVisualSpell) {
+          window.castVisualSpell(
+            spellType,
+            p,
+            sourceMob,
+            pStats,
+            pStats.hasElementalOverload,
           );
-          let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
-          let reflectDmg = defBash.add(atkBash);
+        }
+        if (window.combatVisuals) {
+          window.combatVisuals.spawnDamageEffect(
+            sourceMob.x + sourceMob.w / 2,
+            sourceMob.y + sourceMob.h / 2,
+            spellDmg,
+            "spell_" + spellType,
+            false,
+            sourceMob,
+          );
+        }
+      }
 
-          if (reflectDmg.gt(0)) {
-            sourceMob.hp = sourceMob.hp.sub(reflectDmg);
-            sourceMob.flashTimer = 6;
+      let defBash = BigNum.from(pStats.def || 5).mul(
+        pStats.reflectDamage || 1.0,
+      );
+      let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
+      let reflectDmg = defBash.add(atkBash);
+
+      if (reflectDmg.gt(0)) {
+        sourceMob.hp = sourceMob.hp.sub(reflectDmg);
+        sourceMob.flashTimer = 6;
 
         // Apply Bulwark Stagger / Knockback impulse to the attacking monster
         let mCx = sourceMob.x + (sourceMob.w || 24) / 2;
@@ -5604,26 +5665,41 @@ window.loadGame = function () {
     if (!parsed) return;
 
     if (parsed.playerStats) {
-          Object.assign(window.playerStats, parsed.playerStats);
+      Object.assign(window.playerStats, parsed.playerStats);
 
-          // Ensure stage and lifetimePeakStage are synchronized with maxFloorCleared
-          let maxClearedFloor = window.playerStats.maxFloorCleared || 1;
-          window.playerStats.stage = Math.max(window.playerStats.stage || 1, maxClearedFloor);
-          window.playerStats.lifetimePeakStage = Math.max(window.playerStats.lifetimePeakStage || 1, maxClearedFloor);
+      // Ensure stage and lifetimePeakStage are synchronized with maxFloorCleared
+      let maxClearedFloor = window.playerStats.maxFloorCleared || 1;
+      window.playerStats.stage = Math.max(
+        window.playerStats.stage || 1,
+        maxClearedFloor,
+      );
+      window.playerStats.lifetimePeakStage = Math.max(
+        window.playerStats.lifetimePeakStage || 1,
+        maxClearedFloor,
+      );
 
-          // Safe Migration for Phase 2 Trackers
-                window.playerStats.floorActiveTicks = window.playerStats.floorActiveTicks || 0;
-                window.playerStats.kineticFrictionCharges = window.playerStats.kineticFrictionCharges || 0;
-                window.playerStats.kineticDistanceTraveled = window.playerStats.kineticDistanceTraveled || 0;
-                window.playerStats.kineticStillTimer = window.playerStats.kineticStillTimer || 0;
-                window.playerStats.combatTimer = window.playerStats.combatTimer || 0;
-                window.playerStats.tenacityStacks = window.playerStats.tenacityStacks || 0;
-                window.playerStats.activeCombatTicks = window.playerStats.activeCombatTicks || 0;
-                window.playerStats.outOfCombatTicks = window.playerStats.outOfCombatTicks || 0;
-                window.playerStats.overshieldConsumed = window.playerStats.overshieldConsumed || 0;
-                window.playerStats.nexusTomeShieldTimer = window.playerStats.nexusTomeShieldTimer || 0;
+      // Safe Migration for Phase 2 Trackers
+      window.playerStats.floorActiveTicks =
+        window.playerStats.floorActiveTicks || 0;
+      window.playerStats.kineticFrictionCharges =
+        window.playerStats.kineticFrictionCharges || 0;
+      window.playerStats.kineticDistanceTraveled =
+        window.playerStats.kineticDistanceTraveled || 0;
+      window.playerStats.kineticStillTimer =
+        window.playerStats.kineticStillTimer || 0;
+      window.playerStats.combatTimer = window.playerStats.combatTimer || 0;
+      window.playerStats.tenacityStacks =
+        window.playerStats.tenacityStacks || 0;
+      window.playerStats.activeCombatTicks =
+        window.playerStats.activeCombatTicks || 0;
+      window.playerStats.outOfCombatTicks =
+        window.playerStats.outOfCombatTicks || 0;
+      window.playerStats.overshieldConsumed =
+        window.playerStats.overshieldConsumed || 0;
+      window.playerStats.nexusTomeShieldTimer =
+        window.playerStats.nexusTomeShieldTimer || 0;
 
-                window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
+      window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
       window.playerStats.monsterCards = parsed.playerStats.monsterCards || {};
       window.playerStats.astralDust = parsed.playerStats.astralDust || 0;
       window.playerStats.hasTriggeredOnslaughtUnlock =
@@ -5832,15 +5908,15 @@ window.loadGame = function () {
       });
 
       // Backfill starting stage checkpoints for beaten boss/mini-boss floors
-            let maxCleared = window.playerStats.maxFloorCleared || 0;
-            let checkpoints = new Set(window.playerStats.unlockedCheckpoints || [1]);
-            checkpoints.add(1);
-            for (let f = 4; f <= maxCleared; f += 4) {
-              checkpoints.add(f + 1);
-            }
-            window.playerStats.unlockedCheckpoints = Array.from(checkpoints)
-              .filter(window.isValidCheckpoint)
-              .sort((a, b) => a - b);
+      let maxCleared = window.playerStats.maxFloorCleared || 0;
+      let checkpoints = new Set(window.playerStats.unlockedCheckpoints || [1]);
+      checkpoints.add(1);
+      for (let f = 4; f <= maxCleared; f += 4) {
+        checkpoints.add(f + 1);
+      }
+      window.playerStats.unlockedCheckpoints = Array.from(checkpoints)
+        .filter(window.isValidCheckpoint)
+        .sort((a, b) => a - b);
     }
 
     if (parsed.equippedSlots) {

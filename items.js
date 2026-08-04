@@ -163,20 +163,30 @@
     }
 
     if (item.isDungeonShop && !item.purchased) {
-      let costText = window.formatNumber(item.cost);
-      let playerGold = BigNum.from(window.playerStats.runGold || 0);
-      let canAfford = playerGold.gte(item.cost);
-      let btnClass = canAfford ? "affordable" : "unaffordable";
+          let costText = window.formatNumber(item.cost);
+          let playerGold = BigNum.from(window.playerStats.runGold || 0);
+          let canAfford = playerGold.gte(item.cost);
+          let btnClass = canAfford ? "affordable" : "unaffordable";
 
-      html += `
-        <div style="width: 100%; text-align: center; margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; z-index: 50100; position: relative;">
-          <button class="shop-buy-btn ${btnClass}" style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 6px 12px; font-size: 10.5px; border-radius: 4px;" onpointerdown="event.stopPropagation();" onclick="window.buyDungeonMerchantItem(event, ${item.id})">
-            <svg width="12" height="12" viewBox="0 0 12 12" style="vertical-align:middle; margin-right:4px;"><circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8"/><circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6"/></svg>
-            <span>BUY (${costText} GOLD)</span>
-          </button>
-        </div>
-      `;
-    }
+          let robBtnHtml = "";
+          if (!window.playerStats.robbingMarcusActive) {
+            robBtnHtml = `
+              <button class="action-btn-sm action-btn-rob" style="width: 100%; margin-top: 6px; display: flex; align-items: center; justify-content: center; padding: 6px 12px; font-size: 10.5px; border-radius: 4px;" onpointerdown="event.stopPropagation();" onclick="window.triggerRobberyConfirmation(event)">
+                <span>ROB WARES (FIGHT MARCUS)</span>
+              </button>
+            `;
+          }
+
+          html += `
+            <div style="width: 100%; text-align: center; margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; z-index: 50100; position: relative;">
+              <button class="shop-buy-btn ${btnClass}" style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 6px 12px; font-size: 10.5px; border-radius: 4px;" onpointerdown="event.stopPropagation();" onclick="window.buyDungeonMerchantItem(event, ${item.id})">
+                <svg width="12" height="12" viewBox="0 0 12 12" style="vertical-align:middle; margin-right:4px;"><circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8"/><circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6"/></svg>
+                <span>BUY (${costText} GOLD)</span>
+              </button>
+              ${robBtnHtml}
+            </div>
+          `;
+        }
 
     return `<div class="tooltip-flex-container" style="flex-wrap: wrap;">${html}</div>`;
   };
@@ -313,22 +323,22 @@
     }
 
     let tierStrDisplay =
-          item.statsRolled === "UNIQUE"
-            ? "UNIQUE"
-            : `${item.statsRolled}★ ${window.getTierName(item.statsRolled)}`;
+      item.statsRolled === "UNIQUE"
+        ? "UNIQUE"
+        : `${item.statsRolled}★ ${window.getTierName(item.statsRolled)}`;
 
-        let artTier = 1;
-        if (item.type === "artifact") {
-          let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === item.trait);
-          artTier = poolMatch ? (poolMatch.tier || 1) : 1;
-        }
-        let romanNumerals = ["", "I", "II", "III"];
-        let artTierStr = "TIER " + (romanNumerals[artTier] || artTier);
+    let artTier = 1;
+    if (item.type === "artifact") {
+      let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === item.trait);
+      artTier = poolMatch ? poolMatch.tier || 1 : 1;
+    }
+    let romanNumerals = ["", "I", "II", "III"];
+    let artTierStr = "TIER " + (romanNumerals[artTier] || artTier);
 
-        let subtitle =
-          item.type === "artifact"
-            ? `Unique Artifact | <span style="color:#1abc9c; font-weight:bold;">${artTierStr}</span>`
-            : `${labelDisplay} | <span style="color:${tierColor}; font-weight:bold;">${tierStrDisplay}</span>`;
+    let subtitle =
+      item.type === "artifact"
+        ? `Unique Artifact | <span style="color:#1abc9c; font-weight:bold;">${artTierStr}</span>`
+        : `${labelDisplay} | <span style="color:${tierColor}; font-weight:bold;">${tierStrDisplay}</span>`;
 
     html += `<div class="tt-title" style="color:${isUnique ? "#1abc9c" : titleColor}; white-space:normal;">${item.name}${temperTag}${lockTag}</div>`;
     html += runicBadge;
@@ -692,46 +702,52 @@
     }
 
     if (item.type === "artifact") {
-          let powerPct = Math.round(
-            (item.relicPower !== undefined ? item.relicPower : 1.0) * 100,
+      let powerPct = Math.round(
+        (item.relicPower !== undefined ? item.relicPower : 1.0) * 100,
+      );
+
+      let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === item.trait);
+      let artTier = poolMatch ? poolMatch.tier || 1 : 1;
+      let romanNumerals = ["", "I", "II", "III"];
+      let artTierStr = "TIER " + (romanNumerals[artTier] || artTier);
+
+      // Real-time charging status indicators
+      let liveStatusHtml = "";
+      if (
+        window.currentGameState === window.GAME_STATES.DUNGEON &&
+        window.playerStats
+      ) {
+        let stats = window.playerStats;
+        let floorActiveTicks = stats.floorActiveTicks || 0;
+
+        if (item.trait === "friction_kinetic") {
+          let charges = stats.kineticFrictionCharges || 0;
+          liveStatusHtml = `<div style="color:#2ecc71;">• Kinetic Build: ${charges} / 50 Charges (+${(charges * 0.5).toFixed(1)}% Atk Spd & Dmg)</div>`;
+        } else if (item.trait === "friction_tenacity") {
+          let stacks = stats.tenacityStacks || 0;
+          liveStatusHtml = `<div style="color:#38bdf8;">• Tenacity: ${stacks} / 15 Stacks (+${(stacks * 2.0).toFixed(0)}% Def, +${(stacks * 1.5).toFixed(1)}% Mitigation)</div>`;
+        } else if (item.trait === "friction_accretion") {
+          let accretionStacks = Math.min(
+            10,
+            Math.floor(floorActiveTicks / 600),
           );
+          liveStatusHtml = `<div style="color:#f97316;">• Accretion Window: ${Math.floor(floorActiveTicks / 60)}s elapsed (+${accretionStacks * 3}% Dmg)</div>`;
+        } else if (item.trait === "breach_adrenaline") {
+          let remTicks = Math.max(0, 1800 - floorActiveTicks);
+          let sec = (remTicks / 60).toFixed(1);
+          liveStatusHtml = `<div style="color:#ffaa00;">• Adrenaline Wave: ${sec}s remaining before expiration</div>`;
+        } else if (item.trait === "breach_barrier") {
+          let remTicks = Math.max(0, 1200 - floorActiveTicks);
+          let sec = (remTicks / 60).toFixed(1);
+          liveStatusHtml = `<div style="color:#34d399;">• Overshield Window: ${sec}s remaining before decay</div>`;
+        } else if (item.trait === "breach_scouting") {
+          let remTicks = Math.max(0, 900 - floorActiveTicks);
+          let sec = (remTicks / 60).toFixed(1);
+          liveStatusHtml = `<div style="color:#e879f9;">• Cartographic Guidance: ${sec}s remaining (+50% Drop)</div>`;
+        }
+      }
 
-          let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === item.trait);
-          let artTier = poolMatch ? (poolMatch.tier || 1) : 1;
-          let romanNumerals = ["", "I", "II", "III"];
-          let artTierStr = "TIER " + (romanNumerals[artTier] || artTier);
-
-          // Real-time charging status indicators
-          let liveStatusHtml = "";
-          if (window.currentGameState === window.GAME_STATES.DUNGEON && window.playerStats) {
-            let stats = window.playerStats;
-            let floorActiveTicks = stats.floorActiveTicks || 0;
-
-            if (item.trait === "friction_kinetic") {
-              let charges = stats.kineticFrictionCharges || 0;
-              liveStatusHtml = `<div style="color:#2ecc71;">• Kinetic Build: ${charges} / 50 Charges (+${(charges * 0.5).toFixed(1)}% Atk Spd & Dmg)</div>`;
-            } else if (item.trait === "friction_tenacity") {
-              let stacks = stats.tenacityStacks || 0;
-              liveStatusHtml = `<div style="color:#38bdf8;">• Tenacity: ${stacks} / 15 Stacks (+${(stacks * 2.0).toFixed(0)}% Def, +${(stacks * 1.5).toFixed(1)}% Mitigation)</div>`;
-            } else if (item.trait === "friction_accretion") {
-              let accretionStacks = Math.min(10, Math.floor(floorActiveTicks / 600));
-              liveStatusHtml = `<div style="color:#f97316;">• Accretion Window: ${Math.floor(floorActiveTicks / 60)}s elapsed (+${accretionStacks * 3}% Dmg)</div>`;
-            } else if (item.trait === "breach_adrenaline") {
-              let remTicks = Math.max(0, 1800 - floorActiveTicks);
-              let sec = (remTicks / 60).toFixed(1);
-              liveStatusHtml = `<div style="color:#ffaa00;">• Adrenaline Wave: ${sec}s remaining before expiration</div>`;
-            } else if (item.trait === "breach_barrier") {
-              let remTicks = Math.max(0, 1200 - floorActiveTicks);
-              let sec = (remTicks / 60).toFixed(1);
-              liveStatusHtml = `<div style="color:#34d399;">• Overshield Window: ${sec}s remaining before decay</div>`;
-            } else if (item.trait === "breach_scouting") {
-              let remTicks = Math.max(0, 900 - floorActiveTicks);
-              let sec = (remTicks / 60).toFixed(1);
-              liveStatusHtml = `<div style="color:#e879f9;">• Cartographic Guidance: ${sec}s remaining (+50% Drop)</div>`;
-            }
-          }
-
-          html += `
+      html += `
             <div style="background:rgba(0,0,0,0.35); border:1.5px solid #1abc9c33; border-radius:4px; padding:6px; margin-bottom:8px; font-family:monospace; font-size:10px; text-align:left; display:flex; justify-content:space-between;">
               <span><span style="color:#1abc9c; font-weight:bold;">Aspect Roll Power:</span> <strong style="color:#ffd700;">${powerPct}%</strong></span>
               <span style="color:#a855f7; font-weight:bold;">${artTierStr}</span>
@@ -739,7 +755,7 @@
             ${liveStatusHtml ? `<div style="background:rgba(168,85,247,0.06); border:1px dashed #a855f7; border-radius:4px; padding:6px; margin-bottom:8px; font-family:monospace; font-size:9.5px; text-align:left;">${liveStatusHtml}</div>` : ""}
             <div class="tt-trait">${item.breakdown || item.desc}</div>
           `;
-        } else {
+    } else {
       if (isUnique && item.desc) {
         html += `<div class="tt-stat-line" style="color:#ffeaa7; margin-bottom: 10px; line-height:1.4; padding:6px; border:1px dashed #1abc9c; background:rgba(0,0,0,0.4); border-radius:4px;"><strong>[ Unique Effect ]:</strong> ${item.desc}</div>`;
       }
@@ -995,21 +1011,21 @@
     let isArtifact = item.type === "artifact";
 
     if (isArtifact) {
-            // Artifact Shattering Process (Codex Upgrade)
-            let currentPower = window.playerStats.artifactCodex[item.trait] || 0.0;
-            let itemPower = item.relicPower !== undefined ? item.relicPower : 1.0; // Fallback for legacy items
+      // Artifact Shattering Process (Codex Upgrade)
+      let currentPower = window.playerStats.artifactCodex[item.trait] || 0.0;
+      let itemPower = item.relicPower !== undefined ? item.relicPower : 1.0; // Fallback for legacy items
 
-            // Yield tier-scaled Astral Dust (Tier 1: 5-10, Tier 2: 15-25, Tier 3: 40-60)
-            let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === item.trait);
-            let artTier = poolMatch ? (poolMatch.tier || 1) : 1;
-            let dustYield = 5;
-            if (artTier === 1) {
-              dustYield = window.randInt ? window.randInt(5, 10) : 7;
-            } else if (artTier === 2) {
-              dustYield = window.randInt ? window.randInt(15, 25) : 20;
-            } else {
-              dustYield = window.randInt ? window.randInt(40, 60) : 50;
-            }
+      // Yield tier-scaled Astral Dust (Tier 1: 5-10, Tier 2: 15-25, Tier 3: 40-60)
+      let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === item.trait);
+      let artTier = poolMatch ? poolMatch.tier || 1 : 1;
+      let dustYield = 5;
+      if (artTier === 1) {
+        dustYield = window.randInt ? window.randInt(5, 10) : 7;
+      } else if (artTier === 2) {
+        dustYield = window.randInt ? window.randInt(15, 25) : 20;
+      } else {
+        dustYield = window.randInt ? window.randInt(40, 60) : 50;
+      }
 
       window.showCustomConfirm(
         "Shatter Artifact",
@@ -3409,39 +3425,42 @@
       }
 
       if (chosenType === "artifact") {
-              let filterPool = window.ARTIFACT_POOL;
-              if (allowedTraits && allowedTraits.length > 0) {
-                filterPool = window.ARTIFACT_POOL.filter((a) =>
-                  allowedTraits.includes(a.trait),
-                );
-                if (filterPool.length === 0) filterPool = window.ARTIFACT_POOL;
-              }
+        let filterPool = window.ARTIFACT_POOL;
+        if (allowedTraits && allowedTraits.length > 0) {
+          filterPool = window.ARTIFACT_POOL.filter((a) =>
+            allowedTraits.includes(a.trait),
+          );
+          if (filterPool.length === 0) filterPool = window.ARTIFACT_POOL;
+        }
 
-              // Evaluate floor scale and player Drop Quality to adjust artifact drop tiers dynamically
-              let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
-              let qly = pStats.qly || 1.0;
-              let rolledTier = 1;
-              let tier3Chance = Math.min(0.35, 0.02 * stageScale * qly);
-              let tier2Chance = Math.min(0.60, 0.10 * stageScale * qly);
-              let rand = Math.random();
-              if (rand < tier3Chance) {
-                rolledTier = 3;
-              } else if (rand < tier3Chance + tier2Chance) {
-                rolledTier = 2;
-              } else {
-                rolledTier = 1;
-              }
+        // Evaluate floor scale and player Drop Quality to adjust artifact drop tiers dynamically
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : {};
+        let qly = pStats.qly || 1.0;
+        let rolledTier = 1;
+        let tier3Chance = Math.min(0.35, 0.02 * stageScale * qly);
+        let tier2Chance = Math.min(0.6, 0.1 * stageScale * qly);
+        let rand = Math.random();
+        if (rand < tier3Chance) {
+          rolledTier = 3;
+        } else if (rand < tier3Chance + tier2Chance) {
+          rolledTier = 2;
+        } else {
+          rolledTier = 1;
+        }
 
-              let tieredPool = filterPool.filter(a => (a.tier || 1) === rolledTier);
-              if (tieredPool.length === 0) {
-                tieredPool = filterPool.filter(a => (a.tier || 1) < rolledTier);
-              }
-              if (tieredPool.length === 0) {
-                tieredPool = filterPool;
-              }
+        let tieredPool = filterPool.filter((a) => (a.tier || 1) === rolledTier);
+        if (tieredPool.length === 0) {
+          tieredPool = filterPool.filter((a) => (a.tier || 1) < rolledTier);
+        }
+        if (tieredPool.length === 0) {
+          tieredPool = filterPool;
+        }
 
-              let chosenArt =
-                tieredPool[Math.floor(Math.random() * tieredPool.length)];
+        let chosenArt =
+          tieredPool[Math.floor(Math.random() * tieredPool.length)];
 
         // Calculate variable roll power based on stage level (minimum floor climbs from 50% to 85% at Level 300)
         let minPower = Math.min(0.85, 0.5 + (stageScale / 300) * 0.35);
@@ -7989,80 +8008,180 @@
     }
 
     allItems.forEach((item) => {
-          if (item && typeof item === "object") {
-            window.recalculateItemStats(item);
-          }
-        });
-      };
+      if (item && typeof item === "object") {
+        window.recalculateItemStats(item);
+      }
+    });
+  };
 
-      window.runArtifactTestHarness = function () {
-        console.log("=== STARTING ARTIFACT TEST HARNESS ===");
-        let p = window.player;
-        let stats = window.playerStats;
-        if (!p || !stats) {
-          console.error("Test Harness Error: Player state not initialized.");
-          return;
+  window.runArtifactTestHarness = function () {
+    console.log("=== STARTING ARTIFACT TEST HARNESS ===");
+    let p = window.player;
+    let stats = window.playerStats;
+    if (!p || !stats) {
+      console.error("Test Harness Error: Player state not initialized.");
+      return;
+    }
+
+    // 1. Grant coins and materials for testing
+    stats.coins = BigNum.from(stats.coins || 0).add(100000);
+    window.addEtcDrop("Monster Soul", 150, true);
+    window.addEtcDrop("Luminous Soul", 50, true);
+    window.addEtcDrop("Eridium Shard", 25, true);
+    window.addEtcDrop("Astral Essence", 25, true);
+    window.addEtcDrop("Catalyst Core", 15, true);
+
+    // 2. Generate and stash the 8 new artifacts for immediate inspection
+    const traits = [
+      "breach_adrenaline",
+      "breach_barrier",
+      "breach_scouting",
+      "friction_kinetic",
+      "friction_tenacity",
+      "friction_accretion",
+      "synergy_nexus",
+      "synergy_sanguine",
+    ];
+
+    traits.forEach((t) => {
+      let art = window.createItemObject("artifact", 3, 2, 0, [t]);
+      if (art) {
+        if (!window.inventory.ARTIFACT) window.inventory.ARTIFACT = [];
+        window.inventory.ARTIFACT.push(art);
+        console.log(`Generated and stashed: ${art.name} (Trait: ${t})`);
+      }
+    });
+
+    // 3. Verify real-time stats under simulated states
+    console.log("Simulating 15 seconds of floor active time...");
+    stats.floorActiveTicks = 900; // 15 seconds
+    let resolved = window.resolvePlayerStats();
+    console.log(
+      `Accretion damage stacks at 15s (expected +3%): ${Math.min(10, Math.floor(stats.floorActiveTicks / 600)) * 3}%`,
+    );
+
+    console.log("Simulating 35 Kinetic Friction charges...");
+    stats.kineticFrictionCharges = 35;
+    resolved = window.resolvePlayerStats();
+    console.log(
+      `Kinetic Turbine speed/damage modifier at 35 charges: +${(35 * 0.5).toFixed(1)}%`,
+    );
+
+    console.log("Simulating 10 Tenacity stacks...");
+    stats.tenacityStacks = 10;
+    resolved = window.resolvePlayerStats();
+    console.log(
+      `Tenacity Core defense/mitigation modifiers at 10 stacks: +20% Def, +15% Block/Parry Mitigation`,
+    );
+
+    console.log("Simulating active Sanguine Catalyst DoT layers...");
+    console.log(
+      `Sanguine Catalyst Trait active check: ${window.checkArtifactTrait("synergy_sanguine") ? "YES" : "NO (Equip to activate)"}`,
+    );
+
+    console.log("=== ARTIFACT TEST HARNESS COMPLETED SUCCESSFULLY ===");
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        "✦ Test Harness completed! Open console to view results.",
+        "#1abc9c",
+      );
+    }
+    if (typeof window.updateUI === "function") window.updateUI();
+    if (typeof window.renderInventory === "function") window.renderInventory();
+  };
+
+  window.triggerRobberyConfirmation = function (event) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+      if (typeof window.hideTooltip === "function") window.hideTooltip(true);
+
+      if (typeof window.showCustomConfirm === "function") {
+        window.showCustomConfirm(
+          "ROB THE OUTLAW MERCHANT",
+          `<div style="color: #cbd5e1; font-size: 11px; line-height: 1.45; text-align: left; font-family: monospace; white-space: normal;">
+            <span style="color: #ef4444; font-weight: bold; display: block; margin-bottom: 8px;">[WARNING: HIGH DANGER]</span>
+            You are about to steal Marcus's entire inventory. He will defend his life's work with extreme, calamitous force.<br><br>
+            The escape and descent portals on this floor will be <span style="color: #ef4444; font-weight: bold;">hermetically locked</span> until he is slain. Retreat is impossible. Proceed at your own peril!
+          </div>`,
+          "ROB WARES",
+          "ABORT",
+          "#960018",
+          function () {
+            window.initiateMerchantRobbery();
+          }
+        );
+      } else {
+        if (confirm("Are you sure you want to rob Marcus? Portals will be locked and he will attack!")) {
+          window.initiateMerchantRobbery();
+        }
+      }
+    };
+
+    window.initiateMerchantRobbery = function () {
+        let map = window.activeDungeonMap;
+        if (!map || !map.merchantTile) return;
+
+        let mx = map.merchantTile.x;
+        let my = map.merchantTile.y;
+        let tileSize = map.tileSize || 32;
+
+        // 1. Erupt display wares onto the ground as physical loot
+        if (map.merchantWares && map.merchantStock) {
+          map.merchantWares.forEach((ware) => {
+            let item = map.merchantStock[ware.itemIdx];
+            if (item && !item.purchased) {
+              let itemX = ware.x * tileSize + tileSize / 2;
+              let itemY = ware.y * tileSize + tileSize / 2;
+              // Spawn as physical ground loot
+              window.spawnGroundLoot(item, itemX, itemY);
+            }
+            // Clear pedestal tile
+            map.grid[ware.y][ware.x] = window.TILE_TYPES.FLOOR;
+          });
         }
 
-        // 1. Grant coins and materials for testing
-        stats.coins = BigNum.from(stats.coins || 0).add(100000);
-        window.addEtcDrop("Monster Soul", 150, true);
-        window.addEtcDrop("Luminous Soul", 50, true);
-        window.addEtcDrop("Eridium Shard", 25, true);
-        window.addEtcDrop("Astral Essence", 25, true);
-        window.addEtcDrop("Catalyst Core", 15, true);
+        // Clear merchant tile
+        map.grid[my][mx] = window.TILE_TYPES.FLOOR;
+        map.needsPreRender = true; // Force lightmap/tile redraw
 
-        // 2. Generate and stash the 8 new artifacts for immediate inspection
-        const traits = [
-          "breach_adrenaline",
-          "breach_barrier",
-          "breach_scouting",
-          "friction_kinetic",
-          "friction_tenacity",
-          "friction_accretion",
-          "synergy_nexus",
-          "synergy_sanguine"
-        ];
+        // 2. Spawn hostile Marcus boss (Dynamic anti-farming scales resolved inside)
+        window.spawnBossEncounter(mx, my, "marcus");
 
-        traits.forEach((t) => {
-          let art = window.createItemObject("artifact", 3, 2, 0, [t]);
-          if (art) {
-            if (!window.inventory.ARTIFACT) window.inventory.ARTIFACT = [];
-            window.inventory.ARTIFACT.push(art);
-            console.log(`Generated and stashed: ${art.name} (Trait: ${t})`);
-          }
-        });
+        // 3. Trigger state variables
+        window.playerStats.robbingMarcusActive = true;
+        window.playerStats.combatTimer = 300; // Force combat mode
 
-        // 3. Verify real-time stats under simulated states
-        console.log("Simulating 15 seconds of floor active time...");
-        stats.floorActiveTicks = 900; // 15 seconds
-        let resolved = window.resolvePlayerStats();
-        console.log(`Accretion damage stacks at 15s (expected +3%): ${Math.min(10, Math.floor(stats.floorActiveTicks / 600)) * 3}%`);
+        if (window.SoundManager && typeof window.SoundManager.play === "function") {
+          window.SoundManager.play("death");
+        }
+        if (window.combatVisuals) {
+          window.combatVisuals.triggerScreenShake(12, 24);
+          // Spawn gold dust explosion at Marcus's position
+          window.combatVisuals.spawnParticles(
+            mx * tileSize + tileSize / 2,
+            my * tileSize + tileSize / 2,
+            35,
+            "gold_dungeon",
+            5.5
+          );
+        }
 
-        console.log("Simulating 35 Kinetic Friction charges...");
-        stats.kineticFrictionCharges = 35;
-        resolved = window.resolvePlayerStats();
-        console.log(`Kinetic Turbine speed/damage modifier at 35 charges: +${(35 * 0.5).toFixed(1)}%`);
-
-        console.log("Simulating 10 Tenacity stacks...");
-        stats.tenacityStacks = 10;
-        resolved = window.resolvePlayerStats();
-        console.log(`Tenacity Core defense/mitigation modifiers at 10 stacks: +20% Def, +15% Block/Parry Mitigation`);
-
-        console.log("Simulating active Sanguine Catalyst DoT layers...");
-        console.log(`Sanguine Catalyst Trait active check: ${window.checkArtifactTrait("synergy_sanguine") ? "YES" : "NO (Equip to activate)"}`);
-
-        console.log("=== ARTIFACT TEST HARNESS COMPLETED SUCCESSFULLY ===");
         if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("✦ Test Harness completed! Open console to view results.", "#1abc9c");
+          window.pushHeaderToast("[LOCK] PORTALS LOCKED! DEFEAT MARCUS TO ESCAPE!", "#ef4444");
         }
+        if (typeof window.pushLog === "function") {
+          window.pushLog("<span style='color:#ef4444; font-weight:bold;'>[HEIST]</span> You have initiated a heist on Marcus! Portals are sealed.");
+        }
+
         if (typeof window.updateUI === "function") window.updateUI();
-        if (typeof window.renderInventory === "function") window.renderInventory();
+        if (typeof window.saveGame === "function") window.saveGame();
       };
 
-      // Immediate execution after script load
-      window.recalculateAllInventoryItems();
-    })();
+    // Immediate execution after script load
+    window.recalculateAllInventoryItems();
+  })();
 
 window.executeParagonUpgrade = function () {
   let p = window.playerStats;

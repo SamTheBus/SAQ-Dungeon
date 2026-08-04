@@ -2324,7 +2324,7 @@ window.getSkillIconSvg = function (iconKey, size = 28) {
 window.NEW_ARTIFACT_SVGS = window.NEW_ARTIFACT_SVGS || {};
 
 // Register 1.3: Breacher's Adrenaline Glass SVG
-window.NEW_ARTIFACT_SVGS.breach_adrenaline = function(size) {
+window.NEW_ARTIFACT_SVGS.breach_adrenaline = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <circle cx="32" cy="32" r="24" fill="url(#adrenaline_glow_${size})" opacity="0.15" />
@@ -2359,7 +2359,7 @@ window.NEW_ARTIFACT_SVGS.breach_adrenaline = function(size) {
 };
 
 // Register 1.4: Aegis Infiltration Glyph SVG
-window.NEW_ARTIFACT_SVGS.breach_barrier = function(size) {
+window.NEW_ARTIFACT_SVGS.breach_barrier = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <circle cx="32" cy="32" r="24" fill="url(#barrier_glow_${size})" opacity="0.15" />
@@ -2396,7 +2396,7 @@ window.NEW_ARTIFACT_SVGS.breach_barrier = function(size) {
 };
 
 // Register 1.5: Scout's Cartographic Compass SVG
-window.NEW_ARTIFACT_SVGS.breach_scouting = function(size) {
+window.NEW_ARTIFACT_SVGS.breach_scouting = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <circle cx="32" cy="32" r="24" fill="url(#scouting_glow_${size})" opacity="0.15" />
@@ -2436,7 +2436,7 @@ window.NEW_ARTIFACT_SVGS.breach_scouting = function(size) {
 };
 
 // Register 1.6: Kinetic Friction Turbine SVG
-window.NEW_ARTIFACT_SVGS.friction_kinetic = function(size) {
+window.NEW_ARTIFACT_SVGS.friction_kinetic = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <!-- Ambient back glow -->
@@ -2482,7 +2482,7 @@ window.NEW_ARTIFACT_SVGS.friction_kinetic = function(size) {
 };
 
 // Register 1.7: Obsidian Core of Tenacity SVG
-window.NEW_ARTIFACT_SVGS.friction_tenacity = function(size) {
+window.NEW_ARTIFACT_SVGS.friction_tenacity = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <!-- Ambient back glow -->
@@ -2535,7 +2535,7 @@ window.NEW_ARTIFACT_SVGS.friction_tenacity = function(size) {
 };
 
 // Register 1.8: Void Accretion Engine SVG
-window.NEW_ARTIFACT_SVGS.friction_accretion = function(size) {
+window.NEW_ARTIFACT_SVGS.friction_accretion = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <!-- Ambient back glow -->
@@ -2576,7 +2576,7 @@ window.NEW_ARTIFACT_SVGS.friction_accretion = function(size) {
 };
 
 // Register 1.9: Nexus Harmonizer SVG
-window.NEW_ARTIFACT_SVGS.synergy_nexus = function(size) {
+window.NEW_ARTIFACT_SVGS.synergy_nexus = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <!-- Ambient back glow -->
@@ -2625,7 +2625,7 @@ window.NEW_ARTIFACT_SVGS.synergy_nexus = function(size) {
 };
 
 // Register 1.10: Sanguine Catalyst SVG
-window.NEW_ARTIFACT_SVGS.synergy_sanguine = function(size) {
+window.NEW_ARTIFACT_SVGS.synergy_sanguine = function (size) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
       <!-- Ambient back glow -->
@@ -2677,9 +2677,9 @@ window.NEW_ARTIFACT_SVGS.synergy_sanguine = function(size) {
 };
 
 // Global interceptor hook executing modular dynamic lookups
-(function() {
+(function () {
   const originalGetArtifactIcon = window.getArtifactIconHtml;
-  window.getArtifactIconHtml = function(trait, size = 56) {
+  window.getArtifactIconHtml = function (trait, size = 56) {
     if (window.NEW_ARTIFACT_SVGS && window.NEW_ARTIFACT_SVGS[trait]) {
       return window.NEW_ARTIFACT_SVGS[trait](size);
     }
