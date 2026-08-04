@@ -5927,35 +5927,36 @@ summary {
   }
 
   .artifact-card-sub {
-              font-size: 7.5px !important;
-            }
-          }
+    font-size: 7.5px !important;
+  }
+}
 
-          /* --- SUBPHASE 1.1 OUTLAW ROBBERY ACTIONS --- */
-          .action-btn-rob {
-            background: linear-gradient(180deg, #960018 0%, #5a0a0a 100%) !important;
-            border: 1.5px solid #ef4444 !important;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
-            color: #ffffff !important;
-            font-weight: 900 !important;
-          }
+/* --- SUBPHASE 1.1 OUTLAW ROBBERY ACTIONS --- */
+.action-btn-rob {
+  background: linear-gradient(180deg, #960018 0%, #5a0a0a 100%) !important;
+  border: 1.5px solid #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+}
 
-          .action-btn-rob:hover {
-            filter: brightness(1.15);
-            box-shadow: 0 0 16px rgba(239, 68, 68, 0.7) !important;
-          }
+.action-btn-rob:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.7) !important;
+}
 
-          .pulse-red-border {
-            animation: pulseRedAlert 1.2s infinite ease-in-out;
-          }
+.pulse-red-border {
+  animation: pulseRedAlert 1.2s infinite ease-in-out;
+}
 
-          @keyframes pulseRedAlert {
-            0%, 100% {
-              border-color: #ef4444;
-              box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
-            }
-            50% {
-              border-color: #ff7675;
-              box-shadow: 0 0 18px rgba(239, 68, 68, 0.85);
-            }
-          }
+@keyframes pulseRedAlert {
+  0%,
+  100% {
+    border-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    border-color: #ff7675;
+    box-shadow: 0 0 18px rgba(239, 68, 68, 0.85);
+  }
+}

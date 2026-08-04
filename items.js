@@ -163,21 +163,21 @@
     }
 
     if (item.isDungeonShop && !item.purchased) {
-          let costText = window.formatNumber(item.cost);
-          let playerGold = BigNum.from(window.playerStats.runGold || 0);
-          let canAfford = playerGold.gte(item.cost);
-          let btnClass = canAfford ? "affordable" : "unaffordable";
+      let costText = window.formatNumber(item.cost);
+      let playerGold = BigNum.from(window.playerStats.runGold || 0);
+      let canAfford = playerGold.gte(item.cost);
+      let btnClass = canAfford ? "affordable" : "unaffordable";
 
-          let robBtnHtml = "";
-          if (!window.playerStats.robbingMarcusActive) {
-            robBtnHtml = `
+      let robBtnHtml = "";
+      if (!window.playerStats.robbingMarcusActive) {
+        robBtnHtml = `
               <button class="action-btn-sm action-btn-rob" style="width: 100%; margin-top: 6px; display: flex; align-items: center; justify-content: center; padding: 6px 12px; font-size: 10.5px; border-radius: 4px;" onpointerdown="event.stopPropagation();" onclick="window.triggerRobberyConfirmation(event)">
                 <span>ROB WARES (FIGHT MARCUS)</span>
               </button>
             `;
-          }
+      }
 
-          html += `
+      html += `
             <div style="width: 100%; text-align: center; margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; z-index: 50100; position: relative;">
               <button class="shop-buy-btn ${btnClass}" style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 6px 12px; font-size: 10.5px; border-radius: 4px;" onpointerdown="event.stopPropagation();" onclick="window.buyDungeonMerchantItem(event, ${item.id})">
                 <svg width="12" height="12" viewBox="0 0 12 12" style="vertical-align:middle; margin-right:4px;"><circle cx="6" cy="6" r="5" fill="#f1c40f" stroke="#000" stroke-width="0.8"/><circle cx="6" cy="6" r="2.5" fill="none" stroke="#b7950b" stroke-width="0.6"/></svg>
@@ -186,7 +186,7 @@
               ${robBtnHtml}
             </div>
           `;
-        }
+    }
 
     return `<div class="tooltip-flex-container" style="flex-wrap: wrap;">${html}</div>`;
   };
@@ -8091,97 +8091,106 @@
   };
 
   window.triggerRobberyConfirmation = function (event) {
-      if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-      if (typeof window.hideTooltip === "function") window.hideTooltip(true);
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    if (typeof window.hideTooltip === "function") window.hideTooltip(true);
 
-      if (typeof window.showCustomConfirm === "function") {
-        window.showCustomConfirm(
-          "ROB THE OUTLAW MERCHANT",
-          `<div style="color: #cbd5e1; font-size: 11px; line-height: 1.45; text-align: left; font-family: monospace; white-space: normal;">
+    if (typeof window.showCustomConfirm === "function") {
+      window.showCustomConfirm(
+        "ROB THE OUTLAW MERCHANT",
+        `<div style="color: #cbd5e1; font-size: 11px; line-height: 1.45; text-align: left; font-family: monospace; white-space: normal;">
             <span style="color: #ef4444; font-weight: bold; display: block; margin-bottom: 8px;">[WARNING: HIGH DANGER]</span>
             You are about to steal Marcus's entire inventory. He will defend his life's work with extreme, calamitous force.<br><br>
             The escape and descent portals on this floor will be <span style="color: #ef4444; font-weight: bold;">hermetically locked</span> until he is slain. Retreat is impossible. Proceed at your own peril!
           </div>`,
-          "ROB WARES",
-          "ABORT",
-          "#960018",
-          function () {
-            window.initiateMerchantRobbery();
-          }
-        );
-      } else {
-        if (confirm("Are you sure you want to rob Marcus? Portals will be locked and he will attack!")) {
+        "ROB WARES",
+        "ABORT",
+        "#960018",
+        function () {
           window.initiateMerchantRobbery();
-        }
+        },
+      );
+    } else {
+      if (
+        confirm(
+          "Are you sure you want to rob Marcus? Portals will be locked and he will attack!",
+        )
+      ) {
+        window.initiateMerchantRobbery();
       }
-    };
+    }
+  };
 
-    window.initiateMerchantRobbery = function () {
-        let map = window.activeDungeonMap;
-        if (!map || !map.merchantTile) return;
+  window.initiateMerchantRobbery = function () {
+    let map = window.activeDungeonMap;
+    if (!map || !map.merchantTile) return;
 
-        let mx = map.merchantTile.x;
-        let my = map.merchantTile.y;
-        let tileSize = map.tileSize || 32;
+    let mx = map.merchantTile.x;
+    let my = map.merchantTile.y;
+    let tileSize = map.tileSize || 32;
 
-        // 1. Erupt display wares onto the ground as physical loot
-        if (map.merchantWares && map.merchantStock) {
-          map.merchantWares.forEach((ware) => {
-            let item = map.merchantStock[ware.itemIdx];
-            if (item && !item.purchased) {
-              let itemX = ware.x * tileSize + tileSize / 2;
-              let itemY = ware.y * tileSize + tileSize / 2;
-              // Spawn as physical ground loot
-              window.spawnGroundLoot(item, itemX, itemY);
-            }
-            // Clear pedestal tile
-            map.grid[ware.y][ware.x] = window.TILE_TYPES.FLOOR;
-          });
+    // 1. Erupt display wares onto the ground as physical loot
+    if (map.merchantWares && map.merchantStock) {
+      map.merchantWares.forEach((ware) => {
+        let item = map.merchantStock[ware.itemIdx];
+        if (item && !item.purchased) {
+          let itemX = ware.x * tileSize + tileSize / 2;
+          let itemY = ware.y * tileSize + tileSize / 2;
+          // Spawn as physical ground loot
+          window.spawnGroundLoot(item, itemX, itemY);
         }
+        // Clear pedestal tile
+        map.grid[ware.y][ware.x] = window.TILE_TYPES.FLOOR;
+      });
+    }
 
-        // Clear merchant tile
-        map.grid[my][mx] = window.TILE_TYPES.FLOOR;
-        map.needsPreRender = true; // Force lightmap/tile redraw
+    // Clear merchant tile
+    map.grid[my][mx] = window.TILE_TYPES.FLOOR;
+    map.needsPreRender = true; // Force lightmap/tile redraw
 
-        // 2. Spawn hostile Marcus boss (Dynamic anti-farming scales resolved inside)
-        window.spawnBossEncounter(mx, my, "marcus");
+    // 2. Spawn hostile Marcus boss (Dynamic anti-farming scales resolved inside)
+    window.spawnBossEncounter(mx, my, "marcus");
 
-        // 3. Trigger state variables
-        window.playerStats.robbingMarcusActive = true;
-        window.playerStats.combatTimer = 300; // Force combat mode
+    // 3. Trigger state variables
+    window.playerStats.robbingMarcusActive = true;
+    window.playerStats.combatTimer = 300; // Force combat mode
 
-        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-          window.SoundManager.play("death");
-        }
-        if (window.combatVisuals) {
-          window.combatVisuals.triggerScreenShake(12, 24);
-          // Spawn gold dust explosion at Marcus's position
-          window.combatVisuals.spawnParticles(
-            mx * tileSize + tileSize / 2,
-            my * tileSize + tileSize / 2,
-            35,
-            "gold_dungeon",
-            5.5
-          );
-        }
+    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+      window.SoundManager.play("death");
+    }
+    if (window.combatVisuals) {
+      window.combatVisuals.triggerScreenShake(12, 24);
+      // Spawn gold dust explosion at Marcus's position
+      window.combatVisuals.spawnParticles(
+        mx * tileSize + tileSize / 2,
+        my * tileSize + tileSize / 2,
+        35,
+        "gold_dungeon",
+        5.5,
+      );
+    }
 
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("[LOCK] PORTALS LOCKED! DEFEAT MARCUS TO ESCAPE!", "#ef4444");
-        }
-        if (typeof window.pushLog === "function") {
-          window.pushLog("<span style='color:#ef4444; font-weight:bold;'>[HEIST]</span> You have initiated a heist on Marcus! Portals are sealed.");
-        }
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        "[LOCK] PORTALS LOCKED! DEFEAT MARCUS TO ESCAPE!",
+        "#ef4444",
+      );
+    }
+    if (typeof window.pushLog === "function") {
+      window.pushLog(
+        "<span style='color:#ef4444; font-weight:bold;'>[HEIST]</span> You have initiated a heist on Marcus! Portals are sealed.",
+      );
+    }
 
-        if (typeof window.updateUI === "function") window.updateUI();
-        if (typeof window.saveGame === "function") window.saveGame();
-      };
+    if (typeof window.updateUI === "function") window.updateUI();
+    if (typeof window.saveGame === "function") window.saveGame();
+  };
 
-    // Immediate execution after script load
-    window.recalculateAllInventoryItems();
-  })();
+  // Immediate execution after script load
+  window.recalculateAllInventoryItems();
+})();
 
 window.executeParagonUpgrade = function () {
   let p = window.playerStats;

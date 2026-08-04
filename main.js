@@ -12,7 +12,10 @@
   window.xpOrbs = [];
 
   // Safe global state fallback initializer
-  if (window.playerStats && window.playerStats.robbingMarcusActive === undefined) {
+  if (
+    window.playerStats &&
+    window.playerStats.robbingMarcusActive === undefined
+  ) {
     window.playerStats.robbingMarcusActive = false;
   }
 
@@ -1560,34 +1563,34 @@
     window.recalculateAllInventoryItems();
 
     window.BossAIEngine = {
-        initBoss(m) {
-          if (m.bossInitialized) return;
-          m.bossInitialized = true;
-          m.phase = 1;
-          m.actionState = "idle"; // "idle" | "chase" | "telegraphing" | "channeling" | "dazed"
-          m.staggerShield = BigNum.from(0);
-          m.maxStaggerShield = BigNum.from(0);
-          m.channelTimer = 0;
-          m.maxChannelTimer = 0;
-          m.telegraphTimer = 0;
-          m.maxTelegraphTimer = 65;
-          m.attackCooldown = 60;
-          m.funnyText = "";
-          m.funnyTextTimer = 0;
-          m.activeEffects = [];
-          m.targetX = m.x;
-          m.targetY = m.y;
+      initBoss(m) {
+        if (m.bossInitialized) return;
+        m.bossInitialized = true;
+        m.phase = 1;
+        m.actionState = "idle"; // "idle" | "chase" | "telegraphing" | "channeling" | "dazed"
+        m.staggerShield = BigNum.from(0);
+        m.maxStaggerShield = BigNum.from(0);
+        m.channelTimer = 0;
+        m.maxChannelTimer = 0;
+        m.telegraphTimer = 0;
+        m.maxTelegraphTimer = 65;
+        m.attackCooldown = 60;
+        m.funnyText = "";
+        m.funnyTextTimer = 0;
+        m.activeEffects = [];
+        m.targetX = m.x;
+        m.targetY = m.y;
 
-          // Map boss key name by evaluating visualType, name, or type
-          m.bossKey = this.resolveBossKey(m);
-        },
+        // Map boss key name by evaluating visualType, name, or type
+        m.bossKey = this.resolveBossKey(m);
+      },
 
-        resolveBossKey(m) {
-          let nameLower = (m.name || "").toLowerCase();
-          if (m.visualType === "marcus" || nameLower.includes("marcus"))
-            return "marcus";
-          if (m.visualType === "aegis_goliath" || nameLower.includes("aegis"))
-            return "aegis_goliath";
+      resolveBossKey(m) {
+        let nameLower = (m.name || "").toLowerCase();
+        if (m.visualType === "marcus" || nameLower.includes("marcus"))
+          return "marcus";
+        if (m.visualType === "aegis_goliath" || nameLower.includes("aegis"))
+          return "aegis_goliath";
         if (
           m.visualType === "chronos_arbitrator" ||
           nameLower.includes("chronos")
@@ -1701,12 +1704,12 @@
 
         // Route to specific boss strategy execution based on resolved key
         switch (m.bossKey) {
-                  case "marcus":
-                    this.updateMarcus(m, p, pStats, dist, dx, dy);
-                    break;
-                  case "arachnid_treant":
-                    this.updateArachnidTreant(m, p, pStats, dist, dx, dy);
-                    break;
+          case "marcus":
+            this.updateMarcus(m, p, pStats, dist, dx, dy);
+            break;
+          case "arachnid_treant":
+            this.updateArachnidTreant(m, p, pStats, dist, dx, dy);
+            break;
           case "aegis_goliath":
             this.updateAegisGoliath(m, p, pStats, dist, dx, dy);
             break;
@@ -1786,16 +1789,16 @@
             m.activeAbility = null;
           }
         } else {
-                    // Chase player when within range
-                    if (dist < 220 && dist > 14) {
-                      m.hopTimer = (m.hopTimer || 0) + 1;
-                      if (m.hopTimer % 30 < 15) {
-                        let speed = 1.8 * (m.speedMultiplier || 1.0);
-                        let angle = Math.atan2(dy, dx);
-                        m.x += Math.cos(angle) * speed;
-                        m.y += Math.sin(angle) * speed;
-                      }
-                    }
+          // Chase player when within range
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.8 * (m.speedMultiplier || 1.0);
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
 
           // Trigger basic close-range quick strike first
           if (dist < 32 && m.attackCooldown <= 0) {
@@ -1821,371 +1824,423 @@
 
       // Subphase placeholders (will be fleshed out progressively with stunning visuals)
       updateMarcus(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
 
-              // Manage active visual timer for flying lasso rope
-              if (m.lassoVisualTimer > 0) {
-                m.lassoVisualTimer--;
+        // Manage active visual timer for flying lasso rope
+        if (m.lassoVisualTimer > 0) {
+          m.lassoVisualTimer--;
+        }
+
+        // --- PHASE 2 TRIGGER: MOLTEN SHIELD & SIPHON (UNDER 50% HP) ---
+        let bHp = m.hp.valueOf();
+        let bMaxHp = m.maxHp.valueOf();
+        if (bHp < bMaxHp * 0.5 && m.phase === 1) {
+          m.phase = 2;
+          m.actionState = "molten_shield";
+          m.isStopped = true;
+          m.channelTimer = 240; // 4 seconds (240 frames)
+          m.staggerShield = m.maxHp.mul(0.2); // 20% Max HP stagger barrier
+          m.maxStaggerShield = m.maxHp.mul(0.2);
+
+          // Teleport directly to the center of the arena
+          let map = window.activeDungeonMap;
+          let mapW = map ? map.width : 24;
+          let mapH = map ? map.height : 18;
+          let tSize = map ? map.tileSize : 32;
+          m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
+          m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
+          cx = m.x + m.w / 2;
+          cy = m.y + m.h / 2;
+
+          if (typeof window.spawnFloatingText === "function") {
+            window.spawnFloatingText(
+              cx,
+              m.y - 20,
+              "PHASE 2: MOLTEN SHIELD!",
+              "#ea580c",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              cy,
+              35,
+              "magma_elemental",
+              4.5,
+            );
+            window.combatVisuals.triggerScreenShake(10, 18);
+          }
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("spell");
+          }
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Marcus activated Molten Shield! Shatter his barrier to interrupt the Gold & HP Siphon!",
+              "#ea580c",
+            );
+          }
+        }
+
+        // Processing active Molten Shield & Siphon channel
+        if (m.actionState === "molten_shield") {
+          m.channelTimer--;
+
+          // Balanced siphon interval: Every 15 frames (4 times a second)
+          if (window.logicClock % 15 === 0) {
+            // Siphon Gold from permanent wallet
+            let playerGold = BigNum.from(window.playerStats.coins || 0);
+            let siphonGold = BigNum.from(
+              Math.max(1, Math.floor((window.playerStats.level || 1) * 3.5)),
+            );
+            if (playerGold.gt(0)) {
+              if (playerGold.lt(siphonGold)) {
+                siphonGold = playerGold;
               }
+              window.playerStats.coins = playerGold.sub(siphonGold);
+              let healVal = siphonGold.mul(10);
+              m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
+            }
 
-              // --- PHASE 2 TRIGGER: MOLTEN SHIELD & SIPHON (UNDER 50% HP) ---
-              let bHp = m.hp.valueOf();
-              let bMaxHp = m.maxHp.valueOf();
-              if (bHp < bMaxHp * 0.5 && m.phase === 1) {
-                m.phase = 2;
-                m.actionState = "molten_shield";
-                m.isStopped = true;
-                m.channelTimer = 240; // 4 seconds (240 frames)
-                m.staggerShield = m.maxHp.mul(0.20); // 20% Max HP stagger barrier
-                m.maxStaggerShield = m.maxHp.mul(0.20);
+            // Siphon HP (1.5% Max HP per tick)
+            let hpSiphon = Math.round(p.maxHp * 0.015);
+            p.hp = Math.max(1, p.hp - hpSiphon);
+            m.hp = window.BigNumMin(
+              m.maxHp,
+              m.hp.add(BigNum.from(hpSiphon * 4)),
+            ); // Restores boss health
 
-                // Teleport directly to the center of the arena
-                let map = window.activeDungeonMap;
-                let mapW = map ? map.width : 24;
-                let mapH = map ? map.height : 18;
-                let tSize = map ? map.tileSize : 32;
-                m.x = Math.floor(mapW / 2) * tSize - m.w / 2;
-                m.y = Math.floor(mapH / 2) * tSize - m.h / 2;
-                cx = m.x + m.w / 2;
-                cy = m.y + m.h / 2;
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 12,
+                `-${hpSiphon} HP (SIPHONED)`,
+                "#e74c3c",
+              );
+            }
+
+            // Spark siphon lines travelling from player to Marcus
+            if (window.combatVisuals && window.combatVisuals.particlePool) {
+              let angle = Math.atan2(cy - p.y, cx - p.x);
+              window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-6, 6),
+                p.y - 4 + window.randFloat(-6, 6),
+                Math.cos(angle) * 4.5,
+                Math.sin(angle) * 4.5,
+                window.randFloat(1.5, 3.0),
+                "#ffd700",
+                0.85,
+                15,
+                0,
+                true,
+                0,
+              );
+              window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-6, 6),
+                p.y - 4 + window.randFloat(-6, 6),
+                Math.cos(angle) * 4.5,
+                Math.sin(angle) * 4.5,
+                window.randFloat(1.5, 3.0),
+                "#e74c3c",
+                0.85,
+                15,
+                0,
+                true,
+                0,
+              );
+            }
+
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("hit");
+            }
+          }
+
+          if (m.channelTimer <= 0) {
+            m.actionState = "idle";
+            m.state = "idle";
+            m.isStopped = false;
+            m.attackCooldown = 110;
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[!] Taxation siphon completed. Marcus has recovered massive health!",
+                "#e74c3c",
+              );
+            }
+          }
+          return; // Skip normal combat movement/attack AI while shielded
+        }
+
+        // Handle Dazed stun sequence
+        if (m.dazeTimer > 0) {
+          m.dazeTimer--;
+          m.isStopped = true;
+          if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
+            window.combatVisuals.spawnParticles(
+              cx,
+              m.y - 4,
+              3,
+              "gold_dungeon",
+              1.2,
+            );
+          }
+          return;
+        }
+        m.isStopped = false;
+
+        if (m.actionState === "telegraphing" || m.state === "telegraphing") {
+          m.telegraphTimer--;
+          if (m.telegraphTimer <= 0) {
+            m.state = "idle";
+            m.actionState = "idle";
+            m.attackCooldown = 100; // Recovery time
+
+            let ability = m.activeAbility;
+            if (ability === "lasso") {
+              // Gilded Lasso: Check collision at targeted coordinate
+              let hitDist = Math.hypot(p.x - m.targetX, p.y - m.targetY);
+              if (hitDist <= 48) {
+                let angle = Math.atan2(cy - p.y, cx - p.x);
+                let pullX = cx - Math.cos(angle) * 16;
+                let pullY = cy - Math.sin(angle) * 16;
+
+                // Fire tether visual trace
+                m.lassoVisualTimer = 15;
+                m.lassoVisualX = p.x;
+                m.lassoVisualY = p.y;
+
+                // Pull player coordinate
+                if (
+                  !window.checkCollisionAt(
+                    window.activeDungeonMap,
+                    pullX,
+                    pullY,
+                    p.radius || 9,
+                  )
+                ) {
+                  p.x = pullX;
+                  p.y = pullY;
+                }
+
+                // Inflict heavy damage & snare slow
+                window.damagePlayer(Math.round(m.atk * 1.55), m);
+                p.snareTimer = 180; // 3-second slow
 
                 if (typeof window.spawnFloatingText === "function") {
                   window.spawnFloatingText(
-                    cx,
-                    m.y - 20,
-                    "PHASE 2: MOLTEN SHIELD!",
-                    "#ea580c"
+                    p.x,
+                    p.y - 12,
+                    "LASSOED! -60% Speed",
+                    "#f1c40f",
+                    true,
                   );
                 }
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.triggerScreenShake(6, 10);
+                  window.combatVisuals.spawnParticles(
+                    p.x,
+                    p.y,
+                    15,
+                    "gold_dungeon",
+                    3,
+                  );
+                }
+                if (
+                  window.SoundManager &&
+                  typeof window.SoundManager.play === "function"
+                ) {
+                  window.SoundManager.play("block");
+                }
+              }
+            } else if (ability === "barrage") {
+              // Coin Barrage: Spawns a radial ring of 8 fast-moving gold coins
+              let coinDmg = Math.round(m.atk * 0.42);
+              let speed = 4.2;
+              for (let i = 0; i < 8; i++) {
+                let angle = (i * Math.PI * 2) / 8;
+                window.projectiles.push({
+                  x: cx + Math.cos(angle) * 12,
+                  y: cy + Math.sin(angle) * 12,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  r: 4.5,
+                  type: "coin_barrage",
+                  damage: coinDmg,
+                  life: 240, // 4 seconds max life
+                  bounces: 0,
+                  pulseOffset: Math.random() * 10,
+                });
+              }
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.play === "function"
+              ) {
+                window.SoundManager.play("spell_fire");
+              }
+            } else if (ability === "inversion") {
+              // Inversion Field: Caught player receives a 3.0-second inverted controls debuff
+              let range = 120;
+              if (dist <= range) {
+                p.glitchTimer = 180; // 3.0s at 60 FPS
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    p.x,
+                    p.y - 12,
+                    "[GLITCHED] Inverted Controls!",
+                    "#ff007f",
+                    true,
+                  );
+                }
+              }
+
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(5, 8);
+                window.combatVisuals.spawnParticles(
+                  cx,
+                  cy,
+                  25,
+                  "void_orb", // Deep void-purple particles
+                  3.5,
+                );
+              }
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.play === "function"
+              ) {
+                window.SoundManager.play("spell");
+              }
+            } else if (ability === "gold_rush_dash" && m.dashNodes) {
+              // Gold Rush Dash: Rapid zigzag dash leaving molten slag pools
+              m.dashNodes.forEach((node) => {
+                let targetX = node.x - m.w / 2;
+                let targetY = node.y - m.h / 2;
+
+                // Wall-clamping check
+                if (
+                  !window.checkCollisionAt(
+                    window.activeDungeonMap,
+                    node.x,
+                    node.y,
+                    12,
+                  )
+                ) {
+                  m.x = targetX;
+                  m.y = targetY;
+                }
+
+                // Spawn persistent molten slag pool
+                window.cavernInteractives.push({
+                  id: window.idCounter++,
+                  type: "acid_pool",
+                  isSlag: true,
+                  color: "#f97316",
+                  x: m.x + m.w / 2,
+                  y: m.y + m.h / 2,
+                  w: 24,
+                  h: 12,
+                  life: 300, // 5 seconds
+                  maxLife: 300,
+                });
+
+                // Check contact collision damage
+                if (
+                  Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2)) <= 42
+                ) {
+                  window.damagePlayer(Math.round(m.atk * 1.35), m);
+                }
+
                 if (window.combatVisuals) {
                   window.combatVisuals.spawnParticles(
-                    cx,
-                    cy,
-                    35,
+                    m.x + m.w / 2,
+                    m.y + m.h / 2,
+                    8,
                     "magma_elemental",
-                    4.5
-                  );
-                  window.combatVisuals.triggerScreenShake(10, 18);
-                }
-                if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                  window.SoundManager.play("spell");
-                }
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast(
-                    "[!] Marcus activated Molten Shield! Shatter his barrier to interrupt the Gold & HP Siphon!",
-                    "#ea580c"
+                    2.2,
                   );
                 }
+              });
+
+              m.dashNodes = null;
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(6, 12);
               }
-
-              // Processing active Molten Shield & Siphon channel
-              if (m.actionState === "molten_shield") {
-                m.channelTimer--;
-
-                // Balanced siphon interval: Every 15 frames (4 times a second)
-                if (window.logicClock % 15 === 0) {
-                  // Siphon Gold from permanent wallet
-                  let playerGold = BigNum.from(window.playerStats.coins || 0);
-                  let siphonGold = BigNum.from(Math.max(1, Math.floor((window.playerStats.level || 1) * 3.5)));
-                  if (playerGold.gt(0)) {
-                    if (playerGold.lt(siphonGold)) {
-                      siphonGold = playerGold;
-                    }
-                    window.playerStats.coins = playerGold.sub(siphonGold);
-                    let healVal = siphonGold.mul(10);
-                    m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
-                  }
-
-                  // Siphon HP (1.5% Max HP per tick)
-                  let hpSiphon = Math.round(p.maxHp * 0.015);
-                  p.hp = Math.max(1, p.hp - hpSiphon);
-                  m.hp = window.BigNumMin(m.maxHp, m.hp.add(BigNum.from(hpSiphon * 4))); // Restores boss health
-
-                  if (typeof window.spawnFloatingText === "function") {
-                    window.spawnFloatingText(
-                      p.x,
-                      p.y - 12,
-                      `-${hpSiphon} HP (SIPHONED)`,
-                      "#e74c3c"
-                    );
-                  }
-
-                  // Spark siphon lines travelling from player to Marcus
-                  if (window.combatVisuals && window.combatVisuals.particlePool) {
-                    let angle = Math.atan2(cy - p.y, cx - p.x);
-                    window.combatVisuals.particlePool.get(
-                      p.x + window.randFloat(-6, 6),
-                      p.y - 4 + window.randFloat(-6, 6),
-                      Math.cos(angle) * 4.5,
-                      Math.sin(angle) * 4.5,
-                      window.randFloat(1.5, 3.0),
-                      "#ffd700",
-                      0.85,
-                      15,
-                      0,
-                      true,
-                      0
-                    );
-                    window.combatVisuals.particlePool.get(
-                      p.x + window.randFloat(-6, 6),
-                      p.y - 4 + window.randFloat(-6, 6),
-                      Math.cos(angle) * 4.5,
-                      Math.sin(angle) * 4.5,
-                      window.randFloat(1.5, 3.0),
-                      "#e74c3c",
-                      0.85,
-                      15,
-                      0,
-                      true,
-                      0
-                    );
-                  }
-
-                  if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                    window.SoundManager.play("hit");
-                  }
-                }
-
-                if (m.channelTimer <= 0) {
-                  m.actionState = "idle";
-                  m.state = "idle";
-                  m.isStopped = false;
-                  m.attackCooldown = 110;
-                  if (typeof window.pushHeaderToast === "function") {
-                    window.pushHeaderToast(
-                      "[!] Taxation siphon completed. Marcus has recovered massive health!",
-                      "#e74c3c"
-                    );
-                  }
-                }
-                return; // Skip normal combat movement/attack AI while shielded
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.play === "function"
+              ) {
+                window.SoundManager.play("block");
               }
+            }
+            m.activeAbility = null;
+          }
+        } else {
+          // Normal Chase Logic
+          if (dist < 220 && dist > 14) {
+            m.hopTimer = (m.hopTimer || 0) + 1;
+            if (m.hopTimer % 30 < 15) {
+              let speed = 1.8 * (m.speedMultiplier || 1.0);
+              let angle = Math.atan2(dy, dx);
+              m.x += Math.cos(angle) * speed;
+              m.y += Math.sin(angle) * speed;
+            }
+          }
 
-              // Handle Dazed stun sequence
-              if (m.dazeTimer > 0) {
-                m.dazeTimer--;
-                m.isStopped = true;
-                if (m.dazeTimer % 15 === 0 && window.combatVisuals) {
-                  window.combatVisuals.spawnParticles(
-                    cx,
-                    m.y - 4,
-                    3,
-                    "gold_dungeon",
-                    1.2,
-                  );
-                }
-                return;
-              }
-              m.isStopped = false;
+          // Trigger Attacks
+          if (dist < 32 && m.attackCooldown <= 0) {
+            m.attackCooldown = 50;
+            window.damagePlayer(m.atk, m);
+          } else if (m.attackCooldown <= 0 && dist < 220) {
+            // Randomly select between active phase abilities
+            let choices = ["lasso", "barrage", "inversion"];
+            if (m.phase === 2) {
+              choices.push("gold_rush_dash");
+            }
 
-              if (m.actionState === "telegraphing" || m.state === "telegraphing") {
-                m.telegraphTimer--;
-                if (m.telegraphTimer <= 0) {
-                  m.state = "idle";
-                  m.actionState = "idle";
-                  m.attackCooldown = 100; // Recovery time
+            let chosen = choices[Math.floor(Math.random() * choices.length)];
 
-                  let ability = m.activeAbility;
-                              if (ability === "lasso") {
-                                // Gilded Lasso: Check collision at targeted coordinate
-                                let hitDist = Math.hypot(p.x - m.targetX, p.y - m.targetY);
-                                if (hitDist <= 48) {
-                                  let angle = Math.atan2(cy - p.y, cx - p.x);
-                                  let pullX = cx - Math.cos(angle) * 16;
-                                  let pullY = cy - Math.sin(angle) * 16;
+            m.state = "telegraphing";
+            m.actionState = "telegraphing";
+            m.activeAbility = chosen;
+            m.telegraphTimer =
+              chosen === "barrage" ? 65 : chosen === "inversion" ? 80 : 55;
+            m.maxTelegraphTimer = m.telegraphTimer;
 
-                                  // Fire tether visual trace
-                                  m.lassoVisualTimer = 15;
-                                  m.lassoVisualX = p.x;
-                                  m.lassoVisualY = p.y;
+            if (chosen === "gold_rush_dash") {
+              let angle = Math.atan2(p.y - cy, p.x - cx);
+              let distance = Math.hypot(p.x - cx, p.y - cy);
 
-                                  // Pull player coordinate
-                                  if (!window.checkCollisionAt(window.activeDungeonMap, pullX, pullY, p.radius || 9)) {
-                                    p.x = pullX;
-                                    p.y = pullY;
-                                  }
+              let d1 = Math.min(distance * 0.35, 70);
+              let d2 = Math.min(distance * 0.7, 140);
 
-                                  // Inflict heavy damage & snare slow
-                                  window.damagePlayer(Math.round(m.atk * 1.55), m);
-                                  p.snareTimer = 180; // 3-second slow
+              let n1x = cx + Math.cos(angle - 0.6) * d1;
+              let n1y = cy + Math.sin(angle - 0.6) * d1;
+              let n2x = cx + Math.cos(angle + 0.6) * d2;
+              let n2y = cy + Math.sin(angle + 0.6) * d2;
+              let n3x = p.x;
+              let n3y = p.y;
 
-                                  if (typeof window.spawnFloatingText === "function") {
-                                    window.spawnFloatingText(p.x, p.y - 12, "LASSOED! -60% Speed", "#f1c40f", true);
-                                  }
+              m.dashNodes = [
+                { x: n1x, y: n1y },
+                { x: n2x, y: n2y },
+                { x: n3x, y: n3y },
+              ];
+            }
 
-                                  if (window.combatVisuals) {
-                                    window.combatVisuals.triggerScreenShake(6, 10);
-                                    window.combatVisuals.spawnParticles(p.x, p.y, 15, "gold_dungeon", 3);
-                                  }
-                                  if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                                    window.SoundManager.play("block");
-                                  }
-                                }
-                              } else if (ability === "barrage") {
-                                            // Coin Barrage: Spawns a radial ring of 8 fast-moving gold coins
-                                            let coinDmg = Math.round(m.atk * 0.42);
-                                            let speed = 4.2;
-                                            for (let i = 0; i < 8; i++) {
-                                              let angle = (i * Math.PI * 2) / 8;
-                                              window.projectiles.push({
-                                                x: cx + Math.cos(angle) * 12,
-                                                y: cy + Math.sin(angle) * 12,
-                                                vx: Math.cos(angle) * speed,
-                                                vy: Math.sin(angle) * speed,
-                                                r: 4.5,
-                                                type: "coin_barrage",
-                                                damage: coinDmg,
-                                                life: 240, // 4 seconds max life
-                                                bounces: 0,
-                                                pulseOffset: Math.random() * 10
-                                              });
-                                            }
-                                            if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                                              window.SoundManager.play("spell_fire");
-                                            }
-                                          } else if (ability === "inversion") {
-                                                        // Inversion Field: Caught player receives a 3.0-second inverted controls debuff
-                                                        let range = 120;
-                                                        if (dist <= range) {
-                                                          p.glitchTimer = 180; // 3.0s at 60 FPS
-                                                          if (typeof window.spawnFloatingText === "function") {
-                                                            window.spawnFloatingText(
-                                                              p.x,
-                                                              p.y - 12,
-                                                              "[GLITCHED] Inverted Controls!",
-                                                              "#ff007f",
-                                                              true
-                                                            );
-                                                          }
-                                                        }
+            m.targetX = p.x;
+            m.targetY = p.y;
+          }
+        }
+      },
 
-                                                        if (window.combatVisuals) {
-                                                          window.combatVisuals.triggerScreenShake(5, 8);
-                                                          window.combatVisuals.spawnParticles(
-                                                            cx,
-                                                            cy,
-                                                            25,
-                                                            "void_orb", // Deep void-purple particles
-                                                            3.5
-                                                          );
-                                                        }
-                                                        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                                                          window.SoundManager.play("spell");
-                                                        }
-                                                      } else if (ability === "gold_rush_dash" && m.dashNodes) {
-                                                        // Gold Rush Dash: Rapid zigzag dash leaving molten slag pools
-                                                        m.dashNodes.forEach((node) => {
-                                                          let targetX = node.x - m.w / 2;
-                                                          let targetY = node.y - m.h / 2;
-
-                                                          // Wall-clamping check
-                                                          if (!window.checkCollisionAt(window.activeDungeonMap, node.x, node.y, 12)) {
-                                                            m.x = targetX;
-                                                            m.y = targetY;
-                                                          }
-
-                                                          // Spawn persistent molten slag pool
-                                                          window.cavernInteractives.push({
-                                                            id: window.idCounter++,
-                                                            type: "acid_pool",
-                                                            isSlag: true,
-                                                            color: "#f97316",
-                                                            x: m.x + m.w / 2,
-                                                            y: m.y + m.h / 2,
-                                                            w: 24,
-                                                            h: 12,
-                                                            life: 300, // 5 seconds
-                                                            maxLife: 300
-                                                          });
-
-                                                          // Check contact collision damage
-                                                          if (Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2)) <= 42) {
-                                                            window.damagePlayer(Math.round(m.atk * 1.35), m);
-                                                          }
-
-                                                          if (window.combatVisuals) {
-                                                            window.combatVisuals.spawnParticles(
-                                                              m.x + m.w / 2,
-                                                              m.y + m.h / 2,
-                                                              8,
-                                                              "magma_elemental",
-                                                              2.2
-                                                            );
-                                                          }
-                                                        });
-
-                                                        m.dashNodes = null;
-                                                        if (window.combatVisuals) {
-                                                          window.combatVisuals.triggerScreenShake(6, 12);
-                                                        }
-                                                        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                                                          window.SoundManager.play("block");
-                                                        }
-                                                      }
-                                                      m.activeAbility = null;
-                                                    }
-                                                  } else {
-                // Normal Chase Logic
-                if (dist < 220 && dist > 14) {
-                  m.hopTimer = (m.hopTimer || 0) + 1;
-                  if (m.hopTimer % 30 < 15) {
-                    let speed = 1.8 * (m.speedMultiplier || 1.0);
-                    let angle = Math.atan2(dy, dx);
-                    m.x += Math.cos(angle) * speed;
-                    m.y += Math.sin(angle) * speed;
-                  }
-                }
-
-                // Trigger Attacks
-                          if (dist < 32 && m.attackCooldown <= 0) {
-                            m.attackCooldown = 50;
-                            window.damagePlayer(m.atk, m);
-                          } else if (m.attackCooldown <= 0 && dist < 220) {
-                            // Randomly select between active phase abilities
-                            let choices = ["lasso", "barrage", "inversion"];
-                            if (m.phase === 2) {
-                              choices.push("gold_rush_dash");
-                            }
-
-                            let chosen = choices[Math.floor(Math.random() * choices.length)];
-
-                            m.state = "telegraphing";
-                            m.actionState = "telegraphing";
-                            m.activeAbility = chosen;
-                            m.telegraphTimer = chosen === "barrage" ? 65 : (chosen === "inversion" ? 80 : 55);
-                            m.maxTelegraphTimer = m.telegraphTimer;
-
-                            if (chosen === "gold_rush_dash") {
-                              let angle = Math.atan2(p.y - cy, p.x - cx);
-                              let distance = Math.hypot(p.x - cx, p.y - cy);
-
-                              let d1 = Math.min(distance * 0.35, 70);
-                              let d2 = Math.min(distance * 0.70, 140);
-
-                              let n1x = cx + Math.cos(angle - 0.6) * d1;
-                              let n1y = cy + Math.sin(angle - 0.6) * d1;
-                              let n2x = cx + Math.cos(angle + 0.6) * d2;
-                              let n2y = cy + Math.sin(angle + 0.6) * d2;
-                              let n3x = p.x;
-                              let n3y = p.y;
-
-                              m.dashNodes = [
-                                { x: n1x, y: n1y },
-                                { x: n2x, y: n2y },
-                                { x: n3x, y: n3y }
-                              ];
-                            }
-
-                            m.targetX = p.x;
-                            m.targetY = p.y;
-                          }
-              }
-            },
-
-            updateArachnidTreant(m, p, pStats, dist, dx, dy) {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
+      updateArachnidTreant(m, p, pStats, dist, dx, dy) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
 
         // --- PHASE 2 TRIGGER: ELDRITCH BARK SHIELD & SUMMONS (UNDER 50% HP) ---
         let bHp = m.hp.valueOf();
@@ -3964,44 +4019,46 @@
       },
 
       renderTelegraph(c, m) {
-              if (!m) return;
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2;
+        if (!m) return;
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
 
-              // Draw active flying golden braided lasso rope if currently pulling
-              if (m.lassoVisualTimer > 0 && m.lassoVisualX !== undefined) {
-                c.save();
-                c.strokeStyle = "#ffd700";
-                c.lineWidth = 3.0;
-                c.shadowBlur = 6;
-                c.shadowColor = "#f1c40f";
+        // Draw active flying golden braided lasso rope if currently pulling
+        if (m.lassoVisualTimer > 0 && m.lassoVisualX !== undefined) {
+          c.save();
+          c.strokeStyle = "#ffd700";
+          c.lineWidth = 3.0;
+          c.shadowBlur = 6;
+          c.shadowColor = "#f1c40f";
 
-                // Generate a wave-like braided rope effect
-                c.beginPath();
-                c.moveTo(cx, cy);
-                let ldx = m.lassoVisualX - cx;
-                let ldy = m.lassoVisualY - cy;
-                let segments = 8;
-                for (let s = 1; s <= segments; s++) {
-                  let t = s / segments;
-                  let lx = cx + ldx * t + Math.sin(t * Math.PI + Date.now() / 30) * 4.5;
-                  let ly = cy + ldy * t + Math.cos(t * Math.PI + Date.now() / 30) * 4.5;
-                  c.lineTo(lx, ly);
-                }
-                c.stroke();
-                c.shadowBlur = 0;
-                c.restore();
-              }
+          // Generate a wave-like braided rope effect
+          c.beginPath();
+          c.moveTo(cx, cy);
+          let ldx = m.lassoVisualX - cx;
+          let ldy = m.lassoVisualY - cy;
+          let segments = 8;
+          for (let s = 1; s <= segments; s++) {
+            let t = s / segments;
+            let lx =
+              cx + ldx * t + Math.sin(t * Math.PI + Date.now() / 30) * 4.5;
+            let ly =
+              cy + ldy * t + Math.cos(t * Math.PI + Date.now() / 30) * 4.5;
+            c.lineTo(lx, ly);
+          }
+          c.stroke();
+          c.shadowBlur = 0;
+          c.restore();
+        }
 
-              if (!m.activeAbility) return;
-              c.save();
+        if (!m.activeAbility) return;
+        c.save();
 
-              // Clamp progress to prevent negative values if telegraphTimer is temporarily larger than maxTelegraphTimer
-              let progress = Math.max(
-                0,
-                Math.min(1, 1.0 - m.telegraphTimer / m.maxTelegraphTimer),
-              );
-              let pulseAlpha = 0.25 + Math.sin(Date.now() / 45) * 0.15;
+        // Clamp progress to prevent negative values if telegraphTimer is temporarily larger than maxTelegraphTimer
+        let progress = Math.max(
+          0,
+          Math.min(1, 1.0 - m.telegraphTimer / m.maxTelegraphTimer),
+        );
+        let pulseAlpha = 0.25 + Math.sin(Date.now() / 45) * 0.15;
 
         if (m.activeAbility === "slam") {
           let radius = 64;
@@ -5119,91 +5176,95 @@
           c.arc(cx, cy, coreR, 0, Math.PI * 2);
           c.fill();
         } else if (m.activeAbility === "lasso") {
-                      // Render 3D Gold Lasso Indicator Line (Dashed)
-                      c.strokeStyle = "rgba(241, 196, 15, " + (0.45 + pulseAlpha * 0.45) + ")";
-                      c.lineWidth = 2.5;
-                      c.setLineDash([6, 4]);
-                      c.beginPath();
-                      c.moveTo(cx, cy);
-                      c.lineTo(m.targetX, m.targetY);
-                      c.stroke();
-                      c.setLineDash([]);
+          // Render 3D Gold Lasso Indicator Line (Dashed)
+          c.strokeStyle =
+            "rgba(241, 196, 15, " + (0.45 + pulseAlpha * 0.45) + ")";
+          c.lineWidth = 2.5;
+          c.setLineDash([6, 4]);
+          c.beginPath();
+          c.moveTo(cx, cy);
+          c.lineTo(m.targetX, m.targetY);
+          c.stroke();
+          c.setLineDash([]);
 
-                      // Render contracting golden capture ring at target coordinate
-                      let r = 48 * (1.0 - progress);
-                      c.strokeStyle = "#ffd700";
-                      c.lineWidth = 1.5;
-                      c.beginPath();
-                      c.arc(m.targetX, m.targetY, Math.max(1, r), 0, Math.PI * 2);
-                      c.stroke();
+          // Render contracting golden capture ring at target coordinate
+          let r = 48 * (1.0 - progress);
+          c.strokeStyle = "#ffd700";
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, Math.max(1, r), 0, Math.PI * 2);
+          c.stroke();
 
-                      c.fillStyle = "rgba(241, 196, 15, 0.12)";
-                      c.beginPath();
-                      c.arc(m.targetX, m.targetY, Math.max(1, r), 0, Math.PI * 2);
-                      c.fill();
-                    } else if (m.activeAbility === "barrage") {
-                                  // Radial coin indicator ring
-                                  c.strokeStyle = "rgba(241, 196, 15, " + (0.45 + pulseAlpha * 0.45) + ")";
-                                  c.lineWidth = 1.5;
-                                  c.beginPath();
-                                  c.arc(cx, cy, 55 * progress, 0, Math.PI * 2);
-                                  c.stroke();
+          c.fillStyle = "rgba(241, 196, 15, 0.12)";
+          c.beginPath();
+          c.arc(m.targetX, m.targetY, Math.max(1, r), 0, Math.PI * 2);
+          c.fill();
+        } else if (m.activeAbility === "barrage") {
+          // Radial coin indicator ring
+          c.strokeStyle =
+            "rgba(241, 196, 15, " + (0.45 + pulseAlpha * 0.45) + ")";
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.arc(cx, cy, 55 * progress, 0, Math.PI * 2);
+          c.stroke();
 
-                                  // 8 dotted outward guide rays
-                                  c.lineWidth = 1.0;
-                                  c.setLineDash([4, 4]);
-                                  for (let i = 0; i < 8; i++) {
-                                    let angle = (i * Math.PI * 2) / 8;
-                                    c.beginPath();
-                                    c.moveTo(cx + Math.cos(angle) * 12, cy + Math.sin(angle) * 12);
-                                    c.lineTo(cx + Math.cos(angle) * 120, cy + Math.sin(angle) * 120);
-                                    c.stroke();
-                                  }
-                                  c.setLineDash([]);
-                                } else if (m.activeAbility === "inversion") {
-                                              // Radial Inversion Field
-                                              let radius = 120;
-                                              c.strokeStyle = "rgba(168, 85, 247, " + (0.5 + pulseAlpha * 0.45) + ")";
-                                              c.lineWidth = 2.5;
-                                              c.shadowBlur = 10;
-                                              c.shadowColor = "#a855f7";
-                                              c.beginPath();
-                                              c.arc(cx, cy, radius, 0, Math.PI * 2);
-                                              c.stroke();
-                                              c.shadowBlur = 0;
+          // 8 dotted outward guide rays
+          c.lineWidth = 1.0;
+          c.setLineDash([4, 4]);
+          for (let i = 0; i < 8; i++) {
+            let angle = (i * Math.PI * 2) / 8;
+            c.beginPath();
+            c.moveTo(cx + Math.cos(angle) * 12, cy + Math.sin(angle) * 12);
+            c.lineTo(cx + Math.cos(angle) * 120, cy + Math.sin(angle) * 120);
+            c.stroke();
+          }
+          c.setLineDash([]);
+        } else if (m.activeAbility === "inversion") {
+          // Radial Inversion Field
+          let radius = 120;
+          c.strokeStyle =
+            "rgba(168, 85, 247, " + (0.5 + pulseAlpha * 0.45) + ")";
+          c.lineWidth = 2.5;
+          c.shadowBlur = 10;
+          c.shadowColor = "#a855f7";
+          c.beginPath();
+          c.arc(cx, cy, radius, 0, Math.PI * 2);
+          c.stroke();
+          c.shadowBlur = 0;
 
-                                              c.fillStyle = "rgba(168, 85, 247, " + (pulseAlpha * 0.15) + ")";
-                                              c.beginPath();
-                                              c.arc(cx, cy, radius * progress, 0, Math.PI * 2);
-                                              c.fill();
+          c.fillStyle = "rgba(168, 85, 247, " + pulseAlpha * 0.15 + ")";
+          c.beginPath();
+          c.arc(cx, cy, radius * progress, 0, Math.PI * 2);
+          c.fill();
 
-                                              // Dotted outer boundary line
-                                              c.strokeStyle = "rgba(255, 255, 255, 0.4)";
-                                              c.lineWidth = 1.0;
-                                              c.beginPath();
-                                              c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
-                                              c.stroke();
-                                            } else if (m.activeAbility === "gold_rush_dash" && m.dashNodes) {
-                                              // Zigzag Gold Rush guidelines
-                                              c.strokeStyle = "rgba(249, 115, 22, " + (0.5 + pulseAlpha * 0.45) + ")";
-                                              c.lineWidth = 2.0;
-                                              c.beginPath();
-                                              c.moveTo(cx, cy);
-                                              m.dashNodes.forEach(node => {
-                                                c.lineTo(node.x, node.y);
-                                              });
-                                              c.stroke();
+          // Dotted outer boundary line
+          c.strokeStyle = "rgba(255, 255, 255, 0.4)";
+          c.lineWidth = 1.0;
+          c.beginPath();
+          c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+          c.stroke();
+        } else if (m.activeAbility === "gold_rush_dash" && m.dashNodes) {
+          // Zigzag Gold Rush guidelines
+          c.strokeStyle =
+            "rgba(249, 115, 22, " + (0.5 + pulseAlpha * 0.45) + ")";
+          c.lineWidth = 2.0;
+          c.beginPath();
+          c.moveTo(cx, cy);
+          m.dashNodes.forEach((node) => {
+            c.lineTo(node.x, node.y);
+          });
+          c.stroke();
 
-                                              // Draw target ticks at each nodes
-                                              c.fillStyle = "#f97316";
-                                              m.dashNodes.forEach(node => {
-                                                c.beginPath();
-                                                c.arc(node.x, node.y, 3, 0, Math.PI * 2);
-                                                c.fill();
-                                              });
-                                            }
-                                            c.restore(); // Unified top-level restore
-                                          },
+          // Draw target ticks at each nodes
+          c.fillStyle = "#f97316";
+          m.dashNodes.forEach((node) => {
+            c.beginPath();
+            c.arc(node.x, node.y, 3, 0, Math.PI * 2);
+            c.fill();
+          });
+        }
+        c.restore(); // Unified top-level restore
+      },
     };
 
     // Initialize Draggable Flask Button Engine
@@ -5554,10 +5615,10 @@
     }
     window.currentGameState = window.GAME_STATES.HUB;
     window.playerStats.isCrucibleMode = false;
-        window.playerStats.robbingMarcusActive = false;
-        window.deathAnimationTimer = 0;
-        window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on Hub load
-        window.playerStats.abyssalDecayAccumulated = 0; // Clear accumulated siphoned HP
+    window.playerStats.robbingMarcusActive = false;
+    window.deathAnimationTimer = 0;
+    window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on Hub load
+    window.playerStats.abyssalDecayAccumulated = 0; // Clear accumulated siphoned HP
 
     // Clear active dungeon combat entities and gold particles
     window.activeDungeonMobs = [];
@@ -5657,12 +5718,12 @@
 
   window.enterDungeonRun = function (startFloor = 1) {
     window.currentGameState = window.GAME_STATES.DUNGEON;
-        let startFloorNum = Math.max(1, Number(startFloor) || 1);
-        window.player.depth = startFloorNum;
-        window.player.bag = [];
-        window.playerStats.robbingMarcusActive = false;
-        window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on descent
-        window.playerStats.abyssalDecayAccumulated = 0; // Clear accumulated siphoned HP
+    let startFloorNum = Math.max(1, Number(startFloor) || 1);
+    window.player.depth = startFloorNum;
+    window.player.bag = [];
+    window.playerStats.robbingMarcusActive = false;
+    window.fatiguePenalty = 0; // Reset active Spreading Fatigue slow on descent
+    window.playerStats.abyssalDecayAccumulated = 0; // Clear accumulated siphoned HP
 
     if (typeof window.refillFlaskCharges === "function") {
       window.refillFlaskCharges(true);
@@ -6565,34 +6626,43 @@
   };
 
   window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
-      let map = window.activeDungeonMap;
-      let tileSize = map ? map.tileSize : 32;
+    let map = window.activeDungeonMap;
+    let tileSize = map ? map.tileSize : 32;
 
-      let depth = window.player.depth || 1;
-      let isMini = bossTier === "mini";
-      let isMarcus = bossTier === "marcus";
+    let depth = window.player.depth || 1;
+    let isMini = bossTier === "mini";
+    let isMarcus = bossTier === "marcus";
 
-      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+    let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
-      // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-      // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
-      let repStage;
-      if (isMarcus) {
-        let peak = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-        let effectiveDepth = Math.max(depth, peak) * 1.25;
-        repStage = window.getEffectiveStage(effectiveDepth * 5);
-      } else {
-        repStage = window.getEffectiveStage(depth * 5);
-      }
+    // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+    // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
+    let repStage;
+    if (isMarcus) {
+      let peak =
+        window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+      let effectiveDepth = Math.max(depth, peak) * 1.25;
+      repStage = window.getEffectiveStage(effectiveDepth * 5);
+    } else {
+      repStage = window.getEffectiveStage(depth * 5);
+    }
 
-      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-      let repScale = Math.pow(repGrowth, repStage * 0.95);
+    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+    let repScale = Math.pow(repGrowth, repStage * 0.95);
 
-      let bossHp = isMarcus ? 800 * repScale : (isMini ? 300 * repScale : 500 * repScale);
-      let bossAtk = isMarcus ? 30 * repScale : (isMini ? 15 * repScale : 22 * repScale);
+    let bossHp = isMarcus
+      ? 800 * repScale
+      : isMini
+        ? 300 * repScale
+        : 500 * repScale;
+    let bossAtk = isMarcus
+      ? 30 * repScale
+      : isMini
+        ? 15 * repScale
+        : 22 * repScale;
 
-      bossHp = Math.round(bossHp * enemyScale);
-      bossAtk = Math.round(bossAtk * enemyScale);
+    bossHp = Math.round(bossHp * enemyScale);
+    bossAtk = Math.round(bossAtk * enemyScale);
 
     let activeChallenge = window.playerStats.activeSpecialChallenge;
     if (activeChallenge) {
@@ -6602,17 +6672,17 @@
     }
 
     let tier =
-          typeof window.getStageTier === "function" ? window.getStageTier() : 0;
-        let isDungeon = window.playerStats.isDungeonMode;
-        let dType = window.playerStats.currentDungeon || "gold";
+      typeof window.getStageTier === "function" ? window.getStageTier() : 0;
+    let isDungeon = window.playerStats.isDungeonMode;
+    let dType = window.playerStats.currentDungeon || "gold";
 
-        let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
-        let vType = null;
+    let bossName = isMini ? "Guard Warden" : "Dungeon Overlord";
+    let vType = null;
 
-        if (bossTier === "marcus") {
-          bossName = "Marcus the Outlaw";
-          vType = "marcus";
-        } else if (activeChallenge && activeChallenge.primaryTarget) {
+    if (bossTier === "marcus") {
+      bossName = "Marcus the Outlaw";
+      vType = "marcus";
+    } else if (activeChallenge && activeChallenge.primaryTarget) {
       let pTar = activeChallenge.primaryTarget;
       bossName = isMini ? "Guard " + pTar.name : pTar.name;
       vType = pTar.visualType;
@@ -6666,31 +6736,39 @@
     }
 
     window.mob = {
-          type: isMarcus ? "marcus_boss" : (isMini ? "dungeon_miniboss" : "dungeon_boss"),
-          name: bossName,
-          visualType: vType,
-          hp: BigNum.from(bossHp),
-          maxHp: BigNum.from(bossHp),
-          atk: bossAtk,
-          x: tileX * tileSize - (isMini ? 4 : 16),
-          y: tileY * tileSize - (isMini ? 4 : 16),
-          w: isMini ? 40 : 64,
-          h: isMini ? 40 : 64,
-          flashTimer: 0,
-          isStopped: false, // Engages immediately upon theft trigger
-          bossTileX: tileX,
-          bossTileY: tileY,
-          state: "idle",
-          telegraphTimer: 0,
-          maxTelegraphTimer: isMini ? 80 : 65,
-          activeAbility: null,
-          targetX: 0,
-          targetY: 0,
-          attackCooldown: 60,
-          moveset: isMarcus ? ["lasso", "barrage", "inversion"] : (isMini ? ["slam", "charge"] : ["slam", "nova", "charge"]),
-          facing: -1,
-          speedMultiplier: isMarcus ? 1.25 : 1.0, // Moves 25% faster
-        };
+      type: isMarcus
+        ? "marcus_boss"
+        : isMini
+          ? "dungeon_miniboss"
+          : "dungeon_boss",
+      name: bossName,
+      visualType: vType,
+      hp: BigNum.from(bossHp),
+      maxHp: BigNum.from(bossHp),
+      atk: bossAtk,
+      x: tileX * tileSize - (isMini ? 4 : 16),
+      y: tileY * tileSize - (isMini ? 4 : 16),
+      w: isMini ? 40 : 64,
+      h: isMini ? 40 : 64,
+      flashTimer: 0,
+      isStopped: false, // Engages immediately upon theft trigger
+      bossTileX: tileX,
+      bossTileY: tileY,
+      state: "idle",
+      telegraphTimer: 0,
+      maxTelegraphTimer: isMini ? 80 : 65,
+      activeAbility: null,
+      targetX: 0,
+      targetY: 0,
+      attackCooldown: 60,
+      moveset: isMarcus
+        ? ["lasso", "barrage", "inversion"]
+        : isMini
+          ? ["slam", "charge"]
+          : ["slam", "nova", "charge"],
+      facing: -1,
+      speedMultiplier: isMarcus ? 1.25 : 1.0, // Moves 25% faster
+    };
 
     window.spawnFloatingText(
       window.player.x,
@@ -8920,37 +8998,44 @@
         });
       }
     } else {
-          // Check Dungeon Tile Triggers
-          if (
-            currentTileY >= 0 &&
-            currentTileY < map.height &&
-            currentTileX >= 0 &&
-            currentTileX < map.width
-          ) {
-            let tile = map.grid[currentTileY][currentTileX];
+      // Check Dungeon Tile Triggers
+      if (
+        currentTileY >= 0 &&
+        currentTileY < map.height &&
+        currentTileX >= 0 &&
+        currentTileX < map.width
+      ) {
+        let tile = map.grid[currentTileY][currentTileX];
 
-            // Robbery Portal Lockout Intervention
-            if (tile === window.TILE_TYPES.DESCENT_PORTAL || tile === window.TILE_TYPES.EXTRACTION_ZONE || tile === window.TILE_TYPES.BOSS_GATE) {
-              if (window.playerStats && window.playerStats.robbingMarcusActive) {
-                if (window.logicClock % 60 === 0) {
-                  window.spawnFloatingText(
-                    p.x,
-                    p.y - 25,
-                    "[LOCK] PORTAL LOCKED: DEFEAT MARCUS!",
-                    "#ef4444"
-                  );
-                  if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                    window.SoundManager.play("block");
-                  }
-                  if (window.combatVisuals) {
-                    window.combatVisuals.triggerScreenShake(3, 6);
-                  }
-                }
-                return; // Stop further interaction
+        // Robbery Portal Lockout Intervention
+        if (
+          tile === window.TILE_TYPES.DESCENT_PORTAL ||
+          tile === window.TILE_TYPES.EXTRACTION_ZONE ||
+          tile === window.TILE_TYPES.BOSS_GATE
+        ) {
+          if (window.playerStats && window.playerStats.robbingMarcusActive) {
+            if (window.logicClock % 60 === 0) {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 25,
+                "[LOCK] PORTAL LOCKED: DEFEAT MARCUS!",
+                "#ef4444",
+              );
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.play === "function"
+              ) {
+                window.SoundManager.play("block");
+              }
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(3, 6);
               }
             }
+            return; // Stop further interaction
+          }
+        }
 
-            if (tile === window.TILE_TYPES.DESCENT_PORTAL) {
+        if (tile === window.TILE_TYPES.DESCENT_PORTAL) {
           // Subphase 16: Lock descent portals on Floors 1-3 until the active Warden mini-boss is slain
           if (window.playerStats.activeSpecialChallenge && window.mob) {
             if (window.logicClock % 60 === 0) {
@@ -10522,74 +10607,74 @@
 
   window.drawCavernInteractive = function (ctx, item) {
     if (item.type === "lightning_arc") {
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 2.0;
-          ctx.beginPath();
-          ctx.moveTo(item.x, item.y);
-          let dx = item.x2 - item.x;
-          let dy = item.y2 - item.y;
-          let dist = Math.hypot(dx, dy);
-          let steps = Math.floor(dist / 8);
-          for (let s = 1; s < steps; s++) {
-            let progress = s / steps;
-            let jx = item.x + dx * progress + (Math.random() - 0.5) * 6;
-            let jy = item.y + dy * progress + (Math.random() - 0.5) * 6;
-            ctx.lineTo(jx, jy);
-          }
-          ctx.lineTo(item.x2, item.y2);
-          ctx.stroke();
-          return;
-        }
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(item.x, item.y);
+      let dx = item.x2 - item.x;
+      let dy = item.y2 - item.y;
+      let dist = Math.hypot(dx, dy);
+      let steps = Math.floor(dist / 8);
+      for (let s = 1; s < steps; s++) {
+        let progress = s / steps;
+        let jx = item.x + dx * progress + (Math.random() - 0.5) * 6;
+        let jy = item.y + dy * progress + (Math.random() - 0.5) * 6;
+        ctx.lineTo(jx, jy);
+      }
+      ctx.lineTo(item.x2, item.y2);
+      ctx.stroke();
+      return;
+    }
 
-        if (item.type === "acid_pool") {
-          let time = Date.now();
-          let pulse = Math.sin(time / 140) * 1.5;
-          ctx.save();
+    if (item.type === "acid_pool") {
+      let time = Date.now();
+      let pulse = Math.sin(time / 140) * 1.5;
+      ctx.save();
 
-          let fillStyle = "rgba(22, 160, 133, 0.35)";
-          let strokeStyle = "rgba(46, 204, 113, 0.65)";
-          let bubbleColor = "#a3fd83";
+      let fillStyle = "rgba(22, 160, 133, 0.35)";
+      let strokeStyle = "rgba(46, 204, 113, 0.65)";
+      let bubbleColor = "#a3fd83";
 
-          // Render as orange lava/slag if spawned by Marcus
-          if (item.isSlag || item.color === "#f97316") {
-            fillStyle = "rgba(139, 30, 0, 0.4)";
-            strokeStyle = "rgba(249, 115, 22, 0.85)";
-            bubbleColor = "#fef08a";
-          }
+      // Render as orange lava/slag if spawned by Marcus
+      if (item.isSlag || item.color === "#f97316") {
+        fillStyle = "rgba(139, 30, 0, 0.4)";
+        strokeStyle = "rgba(249, 115, 22, 0.85)";
+        bubbleColor = "#fef08a";
+      }
 
-          ctx.fillStyle = fillStyle;
-          ctx.strokeStyle = strokeStyle;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.ellipse(
-            item.x,
-            item.y,
-            14 + pulse,
-            6 + pulse * 0.5,
-            0,
-            0,
-            Math.PI * 2,
-          );
-          ctx.fill();
-          ctx.stroke();
+      ctx.fillStyle = fillStyle;
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(
+        item.x,
+        item.y,
+        14 + pulse,
+        6 + pulse * 0.5,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+      ctx.stroke();
 
-          // Caustic tiny bubbles popping
-          ctx.fillStyle = bubbleColor;
-          for (let i = 0; i < 3; i++) {
-            let bubbleProgress = (time / (400 + i * 100) + i * 2) % 1.0;
-            let bx =
-              item.x + Math.sin(i * 12 + time / 500) * (10 * (1 - bubbleProgress));
-            let by =
-              item.y + Math.cos(i * 8 + time / 500) * (4 * (1 - bubbleProgress));
-            ctx.beginPath();
-            ctx.arc(bx, by, 1.2 * (1.0 - bubbleProgress), 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.restore();
-          return;
-        }
+      // Caustic tiny bubbles popping
+      ctx.fillStyle = bubbleColor;
+      for (let i = 0; i < 3; i++) {
+        let bubbleProgress = (time / (400 + i * 100) + i * 2) % 1.0;
+        let bx =
+          item.x + Math.sin(i * 12 + time / 500) * (10 * (1 - bubbleProgress));
+        let by =
+          item.y + Math.cos(i * 8 + time / 500) * (4 * (1 - bubbleProgress));
+        ctx.beginPath();
+        ctx.arc(bx, by, 1.2 * (1.0 - bubbleProgress), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      return;
+    }
 
-        if (item.type === "noxious_bloom") {
+    if (item.type === "noxious_bloom") {
       let time = Date.now();
       let pulse = Math.sin(time / 120) * 3;
       let alpha = item.life / item.maxLife;
@@ -13888,13 +13973,13 @@
         }
 
         // STAGGER SHIELD ABSORPTION (CHRONOS & GILDED KEEPER)
-                if (
-                  bm.actionState === "chrono_rewind" ||
-                  bm.actionState === "taxation" ||
-                  bm.actionState === "molten_shield"
-                ) {
-                  let dmgVal = pAtk.valueOf();
-                  bm.staggerShield = bm.staggerShield.sub(dmgVal);
+        if (
+          bm.actionState === "chrono_rewind" ||
+          bm.actionState === "taxation" ||
+          bm.actionState === "molten_shield"
+        ) {
+          let dmgVal = pAtk.valueOf();
+          bm.staggerShield = bm.staggerShield.sub(dmgVal);
 
           if (window.combatVisuals) {
             window.combatVisuals.spawnDamageEffect(
@@ -14431,33 +14516,35 @@
         }
 
         if (bm.hp.lte(0)) {
-                  window.playerStats.totalLifetimeKills =
-                    (window.playerStats.totalLifetimeKills || 0) + 1;
-                  window.playerStats.rareSpawnsSlain =
-                    (window.playerStats.rareSpawnsSlain || 0) + 1;
+          let depth = p ? p.depth || 1 : 1; // Defined depth globally for this block
+          window.playerStats.totalLifetimeKills =
+            (window.playerStats.totalLifetimeKills || 0) + 1;
+          window.playerStats.rareSpawnsSlain =
+            (window.playerStats.rareSpawnsSlain || 0) + 1;
 
-                  if (window.spawnDeathParticles) {
-                    window.spawnDeathParticles(
-                      bm.x + bm.w / 2,
-                      bm.y + bm.h / 2,
-                      "boss",
-                    );
-                  }
+          if (window.spawnDeathParticles) {
+            window.spawnDeathParticles(
+              bm.x + bm.w / 2,
+              bm.y + bm.h / 2,
+              "boss",
+            );
+          }
 
-                  let isMarcus = bm.type === "marcus_boss" || bm.visualType === "marcus";
-                  let rewardGold, rewardXp;
+          let isMarcus =
+            bm.type === "marcus_boss" || bm.visualType === "marcus";
+          let rewardGold, rewardXp;
 
-                  if (isMarcus) {
-                    // Scales strictly to current depth to prevent low-floor farming exploits
-                    rewardGold = Math.floor(80 * (1 + depth * 0.45));
-                    rewardXp = Math.floor(60 + depth * 12);
-                  } else {
-                    rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
-                    rewardXp = Math.floor(120 + window.player.depth * 25);
-                  }
+          if (isMarcus) {
+            // Scales strictly to current depth to prevent low-floor farming exploits
+            rewardGold = Math.floor(80 * (1 + depth * 0.45));
+            rewardXp = Math.floor(60 + depth * 12);
+          } else {
+            rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
+            rewardXp = Math.floor(120 + window.player.depth * 25);
+          }
 
-                  window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
-                  window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
+          window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
+          window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
 
           // Subphase 16: Intercept twin boss deaths on Floor 4 to swap active combat camera anchor
           let otherLivingBoss = null;
@@ -14513,55 +14600,67 @@
             }
 
             // Boss Material Payload
-                        if (isMarcus) {
-                          let peak = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-                          let isFloorHighEnough = depth >= peak * 0.85; // 85% of peak required
+            if (isMarcus) {
+              let peak =
+                window.playerStats.lifetimePeakStage ||
+                window.playerStats.stage ||
+                1;
+              let isFloorHighEnough = depth >= peak * 0.85; // 85% of peak required
 
-                          if (isFloorHighEnough) {
-                            let shardsGained = Math.floor(depth / 12) + 2;
-                            let coresGained = window.randInt(1, 3);
-                            let sigilsGained = window.randInt(1, 2);
+              if (isFloorHighEnough) {
+                let shardsGained = Math.floor(depth / 12) + 2;
+                let coresGained = window.randInt(1, 3);
+                let sigilsGained = window.randInt(1, 2);
 
-                            window.playerStats.astralShards = (window.playerStats.astralShards || 0) + shardsGained;
-                            window.addEtcDrop("Catalyst Core", coresGained, false);
-                            window.addEtcDrop("Overlord's Sigil", sigilsGained, false);
+                window.playerStats.astralShards =
+                  (window.playerStats.astralShards || 0) + shardsGained;
+                window.addEtcDrop("Catalyst Core", coresGained, false);
+                window.addEtcDrop("Overlord's Sigil", sigilsGained, false);
 
-                            if (typeof window.pushHeaderToast === "function") {
-                              window.pushHeaderToast(`✦ SECURED HEIST PAYLOAD: +${shardsGained} Shards, +${coresGained} Cores, +${sigilsGained} Sigils!`, "#ffd700");
-                            }
-                          } else {
-                            if (typeof window.pushHeaderToast === "function") {
-                              window.pushHeaderToast("[NOTICE] LOW LEVEL ENCOUNTER: Marcus dropped tattered trash. Rob him near Floor " + Math.ceil(peak * 0.85) + "+ for full payloads!", "#888888");
-                            }
-                          }
-                        } else {
-                          let soulCount = Math.floor(Math.random() * 4) + 3;
-                          window.addDungeonRunScrap(
-                            "Monster Soul",
-                            soulCount,
-                            bossCenterX,
-                            bossCenterY,
-                          );
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast(
+                    `✦ SECURED HEIST PAYLOAD: +${shardsGained} Shards, +${coresGained} Cores, +${sigilsGained} Sigils!`,
+                    "#ffd700",
+                  );
+                }
+              } else {
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast(
+                    "[NOTICE] LOW LEVEL ENCOUNTER: Marcus dropped tattered trash. Rob him near Floor " +
+                      Math.ceil(peak * 0.85) +
+                      "+ for full payloads!",
+                    "#888888",
+                  );
+                }
+              }
+            } else {
+              let soulCount = Math.floor(Math.random() * 4) + 3;
+              window.addDungeonRunScrap(
+                "Monster Soul",
+                soulCount,
+                bossCenterX,
+                bossCenterY,
+              );
 
-                          let depth = window.player.depth || 1;
-                          let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
-                          let scrapName = window.getScrapYieldName(scrapTier);
-                          window.addDungeonRunScrap(
-                            scrapName,
-                            Math.floor(Math.random() * 3) + 2,
-                            bossCenterX,
-                            bossCenterY,
-                          );
+              depth = window.player.depth || 1; // Reassigned without 'let' to use the outer scope variable
+              let scrapTier = Math.min(5, Math.floor((depth - 1) / 10));
+              let scrapName = window.getScrapYieldName(scrapTier);
+              window.addDungeonRunScrap(
+                scrapName,
+                Math.floor(Math.random() * 3) + 2,
+                bossCenterX,
+                bossCenterY,
+              );
 
-                          if (depth >= 12 && Math.random() < 0.6) {
-                            window.addDungeonRunScrap(
-                              "Eridium Shard",
-                              1,
-                              bossCenterX,
-                              bossCenterY,
-                            );
-                          }
-                        }
+              if (depth >= 12 && Math.random() < 0.6) {
+                window.addDungeonRunScrap(
+                  "Eridium Shard",
+                  1,
+                  bossCenterX,
+                  bossCenterY,
+                );
+              }
+            }
 
             // Cavern Sigil Drop Logic for Bosses
             let isMini = bm.type === "dungeon_miniboss";
@@ -14613,37 +14712,56 @@
             }
 
             // Standard On-Stage Boss Equipment Drop (Blocked in Crucible/Onslaught Mode)
-                        if (!window.playerStats.isCrucibleMode) {
-                          let stageScale = depth;
-                          let types = [
-                            "weapon",
-                            "subweapon",
-                            "helmet",
-                            "chest",
-                            "boots",
-                            "ring",
-                          ];
-                          let chosenType = types[Math.floor(Math.random() * types.length)];
-                          let bossEquip;
+            if (!window.playerStats.isCrucibleMode) {
+              let stageScale = depth;
+              let types = [
+                "weapon",
+                "subweapon",
+                "helmet",
+                "chest",
+                "boots",
+                "ring",
+              ];
+              let chosenType = types[Math.floor(Math.random() * types.length)];
+              let bossEquip;
 
-                          if (isMarcus) {
-                            let peak = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-                            let isFloorHighEnough = depth >= peak * 0.85;
+              if (isMarcus) {
+                let peak =
+                  window.playerStats.lifetimePeakStage ||
+                  window.playerStats.stage ||
+                  1;
+                let isFloorHighEnough = depth >= peak * 0.85;
 
-                            // High floor rewards highly valuable Legendary (4*) or Mythic (5*) drops. Low floor drops tattered Common (0*) or Rare (1*) items.
-                            let rolledRarity = isFloorHighEnough ? (Math.random() < 0.35 ? 5 : 4) : (Math.random() < 0.5 ? 1 : 0);
-                            bossEquip = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
-                          } else {
-                            let rolledRarity = window.rollItemRarity(
-                              window.playerStats.maxFloorCleared || 0,
-                              pStats.qly || 1.0,
-                              false,
-                            );
-                            bossEquip = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
-                          }
+                // High floor rewards highly valuable Legendary (4*) or Mythic (5*) drops. Low floor drops tattered Common (0*) or Rare (1*) items.
+                let rolledRarity = isFloorHighEnough
+                  ? Math.random() < 0.35
+                    ? 5
+                    : 4
+                  : Math.random() < 0.5
+                    ? 1
+                    : 0;
+                bossEquip = window.createItemObject(
+                  chosenType,
+                  rolledRarity,
+                  stageScale,
+                  0,
+                );
+              } else {
+                let rolledRarity = window.rollItemRarity(
+                  window.playerStats.maxFloorCleared || 0,
+                  pStats.qly || 1.0,
+                  false,
+                );
+                bossEquip = window.createItemObject(
+                  chosenType,
+                  rolledRarity,
+                  stageScale,
+                  0,
+                );
+              }
 
-                          window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
-                        }
+              window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
+            }
 
             // First-Time Boss Clear Key Reward Logic
             if (!window.playerStats.firstClearBosses)
@@ -14829,78 +14947,82 @@
     }
 
     // Update Active Projectiles and Test Player & Wall Hitboxes
-                for (let i = window.projectiles.length - 1; i >= 0; i--) {
-                  let proj = window.projectiles[i];
-                  proj.life--;
+    for (let i = window.projectiles.length - 1; i >= 0; i--) {
+      let proj = window.projectiles[i];
+      proj.life--;
 
-                  // Custom Boomerang Shield Kinematics
-                  if (proj.type === "boomerang" && window.mob) {
-                    let bm = window.mob;
-                    let bCx = bm.x + bm.w / 2;
-                    let bCy = bm.y + bm.h / 2;
-                    let bdx = bCx - proj.x;
-                    let bdy = bCy - proj.y;
-                    let bdist = Math.hypot(bdx, bdy);
-                    if (bdist > 0) {
-                      proj.vx += (bdx / bdist) * 0.24;
-                      proj.vy += (bdy / bdist) * 0.24;
-                    }
-                    let speed = Math.hypot(proj.vx, proj.vy);
-                    if (speed > 5.5) {
-                      proj.vx = (proj.vx / speed) * 5.5;
-                      proj.vy = (proj.vy / speed) * 5.5;
-                    }
-                  }
+      // Custom Boomerang Shield Kinematics
+      if (proj.type === "boomerang" && window.mob) {
+        let bm = window.mob;
+        let bCx = bm.x + bm.w / 2;
+        let bCy = bm.y + bm.h / 2;
+        let bdx = bCx - proj.x;
+        let bdy = bCy - proj.y;
+        let bdist = Math.hypot(bdx, bdy);
+        if (bdist > 0) {
+          proj.vx += (bdx / bdist) * 0.24;
+          proj.vy += (bdy / bdist) * 0.24;
+        }
+        let speed = Math.hypot(proj.vx, proj.vy);
+        if (speed > 5.5) {
+          proj.vx = (proj.vx / speed) * 5.5;
+          proj.vy = (proj.vy / speed) * 5.5;
+        }
+      }
 
-                  // Custom Coin Barrage Ricochet Physics: Bounce up to 2 times against wall segments
-                  if (proj.type === "coin_barrage") {
-                    let hitX = checkCollisionAt(map, proj.x + proj.vx, proj.y, proj.r);
-                    let hitY = checkCollisionAt(map, proj.x, proj.y + proj.vy, proj.r);
+      // Custom Coin Barrage Ricochet Physics: Bounce up to 2 times against wall segments
+      if (proj.type === "coin_barrage") {
+        let hitX = checkCollisionAt(map, proj.x + proj.vx, proj.y, proj.r);
+        let hitY = checkCollisionAt(map, proj.x, proj.y + proj.vy, proj.r);
 
-                    if (hitX || hitY) {
-                      proj.bounces = (proj.bounces || 0) + 1;
-                      if (proj.bounces > 2) {
-                        // Destroy on 3rd bounce
-                        window.projectiles.splice(i, 1);
-                        continue;
-                      }
+        if (hitX || hitY) {
+          proj.bounces = (proj.bounces || 0) + 1;
+          if (proj.bounces > 2) {
+            // Destroy on 3rd bounce
+            window.projectiles.splice(i, 1);
+            continue;
+          }
 
-                      if (hitX) {
-                        proj.vx = -proj.vx;
-                      }
-                      if (hitY) {
-                        proj.vy = -proj.vy;
-                      }
+          if (hitX) {
+            proj.vx = -proj.vx;
+          }
+          if (hitY) {
+            proj.vy = -proj.vy;
+          }
 
-                      // Spark clink particles on bounce
-                      if (window.combatVisuals && window.combatVisuals.particlePool) {
-                        for (let s = 0; s < 4; s++) {
-                          let pt = window.combatVisuals.particlePool.get(
-                            proj.x,
-                            proj.y,
-                            (Math.random() - 0.5) * 2.0,
-                            (Math.random() - 0.5) * 2.0,
-                            window.randFloat(1.0, 2.2),
-                            "#ffd700",
-                            0.85,
-                            15,
-                            0.1,
-                            true,
-                            0
-                          );
-                          pt.style = "ellipse";
-                          window.particles.push(pt);
-                        }
-                      }
+          // Spark clink particles on bounce
+          if (window.combatVisuals && window.combatVisuals.particlePool) {
+            for (let s = 0; s < 4; s++) {
+              let pt = window.combatVisuals.particlePool.get(
+                proj.x,
+                proj.y,
+                (Math.random() - 0.5) * 2.0,
+                (Math.random() - 0.5) * 2.0,
+                window.randFloat(1.0, 2.2),
+                "#ffd700",
+                0.85,
+                15,
+                0.1,
+                true,
+                0,
+              );
+              pt.style = "ellipse";
+              window.particles.push(pt);
+            }
+          }
 
-                      if (window.SoundManager && typeof window.SoundManager.play === "function" && Math.random() < 0.3) {
-                        window.SoundManager.play("block");
-                      }
-                    }
-                  }
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function" &&
+            Math.random() < 0.3
+          ) {
+            window.SoundManager.play("block");
+          }
+        }
+      }
 
-                  proj.x += proj.vx;
-                  proj.y += proj.vy;
+      proj.x += proj.vx;
+      proj.y += proj.vy;
 
       // Spawning Style-Mapped Projectile Trails (Subphase C.3)
       if (window.particles && window.ParticlePool && Math.random() < 0.45) {
@@ -14913,15 +15035,15 @@
         let scaleDecay = 0.04;
 
         if (proj.type === "fireball") {
-                  color = Math.random() < 0.5 ? "#f97316" : "#fef08a";
-                  style = "streak";
-                  gravity = -0.04; // drift upward slightly
-                } else if (proj.type === "coin_barrage") {
-                  color = "#ffd700";
-                  style = "elliptical_3d";
-                  scaleDecay = 0.05;
-                  spinSpeed = window.randFloat(0.12, 0.34);
-                } else if (proj.type === "frost") {
+          color = Math.random() < 0.5 ? "#f97316" : "#fef08a";
+          style = "streak";
+          gravity = -0.04; // drift upward slightly
+        } else if (proj.type === "coin_barrage") {
+          color = "#ffd700";
+          style = "elliptical_3d";
+          scaleDecay = 0.05;
+          spinSpeed = window.randFloat(0.12, 0.34);
+        } else if (proj.type === "frost") {
           color = Math.random() < 0.5 ? "#38bdf8" : "#ffffff";
           style = "polygon";
           spinSpeed = window.randFloat(-0.15, 0.15);
@@ -14930,27 +15052,51 @@
           style = "sparkle_star";
           scaleDecay = 0.055;
         } else if (proj.type === "coin_barrage") {
-                          // Beautiful, spinning golden coin projectile
-                          ctx.translate(proj.x, proj.y);
-                          ctx.rotate(time / 100 + (proj.pulseOffset || 0));
+          // Beautiful, spinning golden coin projectile
+          ctx.translate(proj.x, proj.y);
+          ctx.rotate(time / 100 + (proj.pulseOffset || 0));
 
-                          ctx.fillStyle = "#b7950b";
-                          ctx.beginPath();
-                          ctx.ellipse(0, 0, r + 0.5, r * Math.abs(Math.sin(time / 140)) + 0.5, 0, 0, Math.PI * 2);
-                          ctx.fill();
-                          ctx.stroke();
+          ctx.fillStyle = "#b7950b";
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            r + 0.5,
+            r * Math.abs(Math.sin(time / 140)) + 0.5,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+          ctx.stroke();
 
-                          ctx.fillStyle = "#ffd700";
-                          ctx.beginPath();
-                          ctx.ellipse(0, 0, r, r * Math.abs(Math.sin(time / 140)), 0, 0, Math.PI * 2);
-                          ctx.fill();
+          ctx.fillStyle = "#ffd700";
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            r,
+            r * Math.abs(Math.sin(time / 140)),
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
 
-                          // Specular shine
-                          ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-                          ctx.beginPath();
-                          ctx.ellipse(-r * 0.3, -r * 0.3, r * 0.25, r * 0.15, Math.PI / 4, 0, Math.PI * 2);
-                          ctx.fill();
-                        } else if (proj.type === "frost") {
+          // Specular shine
+          ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+          ctx.beginPath();
+          ctx.ellipse(
+            -r * 0.3,
+            -r * 0.3,
+            r * 0.25,
+            r * 0.15,
+            Math.PI / 4,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        } else if (proj.type === "frost") {
           color = Math.random() < 0.5 ? "#22c55e" : "#15803d";
           style = "polygon";
           spinSpeed = window.randFloat(-0.22, 0.22);

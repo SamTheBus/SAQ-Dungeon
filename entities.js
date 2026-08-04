@@ -1142,69 +1142,69 @@
       ctx.save();
 
       if (
-              target.isBoss ||
-              target.type === "dungeon_boss" ||
-              target.type === "dungeon_miniboss" ||
-              target.type === "boss" ||
-              target.type === "aegis_goliath" ||
-              target.type === "chronos_arbitrator" ||
-              target.type === "nexus_overseer" ||
-              target.type === "gilded_vault_keeper" ||
-              target.type === "corrosive_abomination" ||
-              target.type === "hooktail" ||
-              target.type === "overlord_iron_vault" ||
-              target.type === "marcus_boss"
-            ) {
-              if (!isScreenSpace) {
-                ctx.restore();
-                return;
-              }
+        target.isBoss ||
+        target.type === "dungeon_boss" ||
+        target.type === "dungeon_miniboss" ||
+        target.type === "boss" ||
+        target.type === "aegis_goliath" ||
+        target.type === "chronos_arbitrator" ||
+        target.type === "nexus_overseer" ||
+        target.type === "gilded_vault_keeper" ||
+        target.type === "corrosive_abomination" ||
+        target.type === "hooktail" ||
+        target.type === "overlord_iron_vault" ||
+        target.type === "marcus_boss"
+      ) {
+        if (!isScreenSpace) {
+          ctx.restore();
+          return;
+        }
 
-              let barW = Math.min(320, ctx.canvas.width * 0.45); // Slightly smaller footprint
-              let barH = 10;
-              let barX = (ctx.canvas.width - barW) / 2;
-              let barY = 45 + bossIndex * 38; // Stacked with comfortable spacing
+        let barW = Math.min(320, ctx.canvas.width * 0.45); // Slightly smaller footprint
+        let barH = 10;
+        let barX = (ctx.canvas.width - barW) / 2;
+        let barY = 45 + bossIndex * 38; // Stacked with comfortable spacing
 
-              // Direct smaller Guard Wardens (minibosses) to the standard boss bar
-              // to reserve the highly customized layout exclusively for the final Overlords
-              if (target.type === "dungeon_miniboss") {
-                this.drawStandardBossBar(
-                  ctx,
-                  target,
-                  hpPct,
-                  bHp,
-                  bMaxHp,
-                  barX,
-                  barY,
-                  barW,
-                  barH,
-                );
-                ctx.restore();
-                return;
-              }
+        // Direct smaller Guard Wardens (minibosses) to the standard boss bar
+        // to reserve the highly customized layout exclusively for the final Overlords
+        if (target.type === "dungeon_miniboss") {
+          this.drawStandardBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
+          ctx.restore();
+          return;
+        }
 
-              let isMarcus =
-                target.type === "marcus_boss" ||
-                target.visualType === "marcus" ||
-                (target.name && target.name.toLowerCase().includes("marcus"));
+        let isMarcus =
+          target.type === "marcus_boss" ||
+          target.visualType === "marcus" ||
+          (target.name && target.name.toLowerCase().includes("marcus"));
 
-              if (isMarcus) {
-                this.drawMarcusBossBar(
-                  ctx,
-                  target,
-                  hpPct,
-                  bHp,
-                  bMaxHp,
-                  barX,
-                  barY,
-                  barW,
-                  barH,
-                );
-                ctx.restore();
-                return;
-              }
+        if (isMarcus) {
+          this.drawMarcusBossBar(
+            ctx,
+            target,
+            hpPct,
+            bHp,
+            bMaxHp,
+            barX,
+            barY,
+            barW,
+            barH,
+          );
+          ctx.restore();
+          return;
+        }
 
-              let isTreant =
+        let isTreant =
           target.type === "arachnid_treant" ||
           target.visualType === "arachnid_treant" ||
           (target.name && target.name.toLowerCase().includes("treant"));
@@ -2857,192 +2857,189 @@
       ctx.restore();
     }
 
-    drawMarcusBossBar(
-          ctx,
-          target,
-          hpPct,
-          bHp,
-          bMaxHp,
+    drawMarcusBossBar(ctx, target, hpPct, bHp, bMaxHp, barX, barY, barW, barH) {
+      let time = Date.now();
+      let isLowHp = hpPct < 0.2;
+      let tremorX = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+      let tremorY = isLowHp
+        ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
+        : 0;
+
+      ctx.save();
+      ctx.translate(tremorX, tremorY);
+
+      let theme = {
+        title: "MARCUS THE OUTLAW",
+        subtitle: "THE TREASURY HEIST REBEL",
+        primaryColor: "#f1c40f",
+        secondaryColor: "#960018",
+      };
+
+      let pulse = Math.sin(time / 140) * 0.15 + 0.85;
+      ctx.shadowBlur = 12 * pulse;
+      ctx.shadowColor = theme.primaryColor;
+
+      // 1. Tattered Velvet Base Container
+      ctx.fillStyle = "#0c0515"; // Deep void velvet
+      ctx.strokeStyle = theme.primaryColor;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 2. Gold filigree corner bracket clamps
+      [-14, barW + 6].forEach((offsetX) => {
+        let bracketX = barX + offsetX;
+        ctx.fillStyle = "#5c3a21"; // Mahogany wood bases
+        ctx.strokeStyle = theme.primaryColor;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(bracketX, barY - 1);
+        ctx.lineTo(bracketX + 8, barY + barH / 2);
+        ctx.lineTo(bracketX, barY + barH + 1);
+        ctx.lineTo(bracketX - 4, barY + barH / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+      let fillWidth = Math.max(0, barW * hpPct);
+      let trailingWidth = Math.max(0, barW * target.trailingPct);
+      if (trailingWidth > 0) {
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+        ctx.fill();
+      }
+
+      if (fillWidth > 0) {
+        let fillGrad = ctx.createLinearGradient(
           barX,
           barY,
-          barW,
-          barH,
-        ) {
-          let time = Date.now();
-          let isLowHp = hpPct < 0.2;
-          let tremorX = isLowHp
-            ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
-            : 0;
-          let tremorY = isLowHp
-            ? (Math.random() - 0.5) * 2.5 * (1.0 - hpPct / 0.2)
-            : 0;
-
-          ctx.save();
-          ctx.translate(tremorX, tremorY);
-
-          let theme = {
-            title: "MARCUS THE OUTLAW",
-            subtitle: "THE TREASURY HEIST REBEL",
-            primaryColor: "#f1c40f",
-            secondaryColor: "#960018",
-          };
-
-          let pulse = Math.sin(time / 140) * 0.15 + 0.85;
-          ctx.shadowBlur = 12 * pulse;
-          ctx.shadowColor = theme.primaryColor;
-
-          // 1. Tattered Velvet Base Container
-          ctx.fillStyle = "#0c0515"; // Deep void velvet
-          ctx.strokeStyle = theme.primaryColor;
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
-          // 2. Gold filigree corner bracket clamps
-          [-14, barW + 6].forEach((offsetX) => {
-            let bracketX = barX + offsetX;
-            ctx.fillStyle = "#5c3a21"; // Mahogany wood bases
-            ctx.strokeStyle = theme.primaryColor;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(bracketX, barY - 1);
-            ctx.lineTo(bracketX + 8, barY + barH / 2);
-            ctx.lineTo(bracketX, barY + barH + 1);
-            ctx.lineTo(bracketX - 4, barY + barH / 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(bracketX + 2, barY + barH / 2, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
-          let fillWidth = Math.max(0, barW * hpPct);
-          let trailingWidth = Math.max(0, barW * target.trailingPct);
-          if (trailingWidth > 0) {
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
-            ctx.fill();
-          }
-
-          if (fillWidth > 0) {
-            let fillGrad = ctx.createLinearGradient(
-              barX,
-              barY,
-              barX + fillWidth,
-              barY,
-            );
-            fillGrad.addColorStop(0, "#ffd700"); // Rich gold
-            fillGrad.addColorStop(0.5, "#ea580c"); // Amber
-            fillGrad.addColorStop(1, "#960018"); // Blood red
-            ctx.fillStyle = fillGrad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
-            ctx.fill();
-
-            let scanX = barX + ((time / 6) % fillWidth);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-            ctx.fillRect(scanX, barY + 1, 6, barH - 2);
-          }
-
-          // Stagger Shield bar overlay (if active)
-          let sShield = target.staggerShield ? BigNum.from(target.staggerShield) : BigNum.from(0);
-          let sMaxShield = target.maxStaggerShield ? BigNum.from(target.maxStaggerShield) : BigNum.from(0);
-          if (sShield.gt(0) && sMaxShield.gt(0)) {
-            let sDiv = sShield.div(sMaxShield);
-            let sPct = Math.max(0, Math.min(1, sDiv.m * Math.pow(10, Math.min(15, sDiv.e))));
-            ctx.fillStyle = "rgba(234, 88, 12, 0.45)"; // Orange stagger shield overlay
-            ctx.beginPath();
-            ctx.roundRect(barX, barY + 1, barW * sPct, barH - 2, [3]);
-            ctx.fill();
-
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1.0;
-            ctx.strokeRect(barX, barY + 1, barW * sPct, barH - 2);
-          }
-
-          ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
-          ctx.lineWidth = 2.0;
-          [0.25, 0.5, 0.75].forEach((pct) => {
-            let notchX = barX + barW * pct;
-            ctx.beginPath();
-            ctx.moveTo(notchX, barY + 1);
-            ctx.lineTo(notchX, barY + barH - 1);
-            ctx.stroke();
-
-            ctx.fillStyle = "#ffd700";
-            ctx.fillRect(notchX - 1, barY - 1, 2, 2);
-            ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
-          });
-
-          ctx.textAlign = "center";
-          ctx.textBaseline = "bottom";
-          ctx.font = "900 12px monospace";
-
-          let bossTitle = (target.name || theme.title).toUpperCase();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
-          ctx.fillStyle = "#f1c40f";
-          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
-
-          ctx.font = "bold 9px monospace";
-          ctx.textBaseline = "top";
-          let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
-          if (sShield.gt(0)) {
-            hpStr += ` [SHIELD: ${window.formatNumber(sShield)}]`;
-          }
-          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
-          ctx.fillStyle = "#fef08a";
-          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
-
-          if (target.funnyTextTimer > 0 && target.funnyText) {
-            target.funnyTextTimer--;
-            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 3.5;
-            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
-            ctx.fillStyle = "#ffd700";
-            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
-          }
-
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 16,
-            target.bleedStacks || 0,
-            "#e74c3c",
-          );
-          this.drawStatusDots(
-            ctx,
-            barX + (barW - 55) / 2,
-            barY + barH + 24,
-            target.poisonStacks || 0,
-            "#2ecc71",
-          );
-
-          ctx.restore();
-        }
-
-        drawStandardBossBar(
-          ctx,
-          target,
-          hpPct,
-          bHp,
-          bMaxHp,
-          barX,
+          barX + fillWidth,
           barY,
-          barW,
-          barH,
-        ) {
+        );
+        fillGrad.addColorStop(0, "#ffd700"); // Rich gold
+        fillGrad.addColorStop(0.5, "#ea580c"); // Amber
+        fillGrad.addColorStop(1, "#960018"); // Blood red
+        ctx.fillStyle = fillGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+        ctx.fill();
+
+        let scanX = barX + ((time / 6) % fillWidth);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.fillRect(scanX, barY + 1, 6, barH - 2);
+      }
+
+      // Stagger Shield bar overlay (if active)
+      let sShield = target.staggerShield
+        ? BigNum.from(target.staggerShield)
+        : BigNum.from(0);
+      let sMaxShield = target.maxStaggerShield
+        ? BigNum.from(target.maxStaggerShield)
+        : BigNum.from(0);
+      if (sShield.gt(0) && sMaxShield.gt(0)) {
+        let sDiv = sShield.div(sMaxShield);
+        let sPct = Math.max(
+          0,
+          Math.min(1, sDiv.m * Math.pow(10, Math.min(15, sDiv.e))),
+        );
+        ctx.fillStyle = "rgba(234, 88, 12, 0.45)"; // Orange stagger shield overlay
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 1, barW * sPct, barH - 2, [3]);
+        ctx.fill();
+
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.0;
+        ctx.strokeRect(barX, barY + 1, barW * sPct, barH - 2);
+      }
+
+      ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+      ctx.lineWidth = 2.0;
+      [0.25, 0.5, 0.75].forEach((pct) => {
+        let notchX = barX + barW * pct;
+        ctx.beginPath();
+        ctx.moveTo(notchX, barY + 1);
+        ctx.lineTo(notchX, barY + barH - 1);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(notchX - 1, barY - 1, 2, 2);
+        ctx.fillRect(notchX - 1, barY + barH - 1, 2, 2);
+      });
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.font = "900 12px monospace";
+
+      let bossTitle = (target.name || theme.title).toUpperCase();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 3.5;
+      ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+      ctx.fillStyle = "#f1c40f";
+      ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+      ctx.font = "bold 9px monospace";
+      ctx.textBaseline = "top";
+      let hpStr = `${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} HP (${(hpPct * 100).toFixed(1)}%)`;
+      if (sShield.gt(0)) {
+        hpStr += ` [SHIELD: ${window.formatNumber(sShield)}]`;
+      }
+      ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+      ctx.fillStyle = "#fef08a";
+      ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+      if (target.funnyTextTimer > 0 && target.funnyText) {
+        target.funnyTextTimer--;
+        ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+        ctx.fillStyle = "#ffd700";
+        ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+      }
+
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 16,
+        target.bleedStacks || 0,
+        "#e74c3c",
+      );
+      this.drawStatusDots(
+        ctx,
+        barX + (barW - 55) / 2,
+        barY + barH + 24,
+        target.poisonStacks || 0,
+        "#2ecc71",
+      );
+
+      ctx.restore();
+    }
+
+    drawStandardBossBar(
+      ctx,
+      target,
+      hpPct,
+      bHp,
+      bMaxHp,
+      barX,
+      barY,
+      barW,
+      barH,
+    ) {
       let time = Date.now();
       let isLowHp = hpPct < 0.2;
       let tremorX = isLowHp
@@ -6947,16 +6944,16 @@
       }
       c.restore();
     } else if (
-          (m.type === "dungeon_boss" && window.playerStats.isDungeonMode) ||
-          m.type === "gilded_vault_keeper" ||
-          m.type === "corrosive_abomination" ||
-          m.type === "overlord_iron_vault" ||
-          m.type === "marcus_boss" ||
-          m.visualType === "gilded_vault_keeper" ||
-          m.visualType === "corrosive_abomination" ||
-          m.visualType === "overlord_iron_vault" ||
-          m.visualType === "marcus"
-        ) {
+      (m.type === "dungeon_boss" && window.playerStats.isDungeonMode) ||
+      m.type === "gilded_vault_keeper" ||
+      m.type === "corrosive_abomination" ||
+      m.type === "overlord_iron_vault" ||
+      m.type === "marcus_boss" ||
+      m.visualType === "gilded_vault_keeper" ||
+      m.visualType === "corrosive_abomination" ||
+      m.visualType === "overlord_iron_vault" ||
+      m.visualType === "marcus"
+    ) {
       let bounce = 0;
       let coreColor = "#9b59b6";
       let glowColor = "#e84393";
@@ -7697,123 +7694,123 @@
           c.stroke();
 
           if (m.flashTimer === 0) {
-                              let heatGrad = c.createLinearGradient(
-                                ax - 20,
-                                ay - 7,
-                                ax + 15,
-                                ay - 2,
-                              );
-                              heatGrad.addColorStop(0, "#ffeaa7");
-                              heatGrad.addColorStop(0.5, "#d35400");
-                              heatGrad.addColorStop(1, "rgba(27, 29, 34, 0)");
-                              c.fillStyle = heatGrad;
-                              c.beginPath();
-                              c.rect(ax - 15, ay - 7, 28, 4);
-                              c.fill();
-                            }
-                          }
-                        }
-                      } else if (m.visualType === "marcus" || m.type === "marcus_boss") {
-                        let cx = m.x + m.w / 2;
-                        let cy = m.y + m.h / 2;
-                        let time = Date.now();
-                        let hover = Math.sin(time / 150) * 4.5;
-                        let merchantY = cy - 4 + hover;
+            let heatGrad = c.createLinearGradient(
+              ax - 20,
+              ay - 7,
+              ax + 15,
+              ay - 2,
+            );
+            heatGrad.addColorStop(0, "#ffeaa7");
+            heatGrad.addColorStop(0.5, "#d35400");
+            heatGrad.addColorStop(1, "rgba(27, 29, 34, 0)");
+            c.fillStyle = heatGrad;
+            c.beginPath();
+            c.rect(ax - 15, ay - 7, 28, 4);
+            c.fill();
+          }
+        }
+      }
+    } else if (m.visualType === "marcus" || m.type === "marcus_boss") {
+      let cx = m.x + m.w / 2;
+      let cy = m.y + m.h / 2;
+      let time = Date.now();
+      let hover = Math.sin(time / 150) * 4.5;
+      let merchantY = cy - 4 + hover;
 
-                        c.save();
+      c.save();
 
-                        // 1. Double Outer Orbiting Gold Coin Rings
-                        let rotSpeed = time / 600;
-                        c.strokeStyle = "rgba(241, 196, 15, 0.4)";
-                        c.lineWidth = 1.2;
-                        c.save();
-                        c.translate(cx, merchantY + 8);
-                        c.rotate(rotSpeed);
-                        c.beginPath();
-                        c.ellipse(0, 0, m.w * 0.75, m.w * 0.28, 0, 0, Math.PI * 2);
-                        c.stroke();
-                        c.restore();
+      // 1. Double Outer Orbiting Gold Coin Rings
+      let rotSpeed = time / 600;
+      c.strokeStyle = "rgba(241, 196, 15, 0.4)";
+      c.lineWidth = 1.2;
+      c.save();
+      c.translate(cx, merchantY + 8);
+      c.rotate(rotSpeed);
+      c.beginPath();
+      c.ellipse(0, 0, m.w * 0.75, m.w * 0.28, 0, 0, Math.PI * 2);
+      c.stroke();
+      c.restore();
 
-                        // 2. Merchant Silhouette (Sitting cross-legged)
-                        c.fillStyle = "rgba(0, 0, 0, 0.45)";
-                        c.beginPath();
-                        c.ellipse(cx, cy + 8, 14, 4.5, 0, 0, Math.PI * 2);
-                        c.fill();
+      // 2. Merchant Silhouette (Sitting cross-legged)
+      c.fillStyle = "rgba(0, 0, 0, 0.45)";
+      c.beginPath();
+      c.ellipse(cx, cy + 8, 14, 4.5, 0, 0, Math.PI * 2);
+      c.fill();
 
-                        // Draped Cloak Base (Crossed legs)
-                        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#1e152a";
-                        c.strokeStyle = "#000000";
-                        c.lineWidth = 1.8;
-                        c.beginPath();
-                        c.moveTo(cx - 15, merchantY + 8);
-                        c.quadraticCurveTo(cx, merchantY + 11, cx + 15, merchantY + 8);
-                        c.lineTo(cx + 12, merchantY);
-                        c.lineTo(cx - 12, merchantY);
-                        c.closePath();
-                        c.fill();
-                        c.stroke();
+      // Draped Cloak Base (Crossed legs)
+      c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#1e152a";
+      c.strokeStyle = "#000000";
+      c.lineWidth = 1.8;
+      c.beginPath();
+      c.moveTo(cx - 15, merchantY + 8);
+      c.quadraticCurveTo(cx, merchantY + 11, cx + 15, merchantY + 8);
+      c.lineTo(cx + 12, merchantY);
+      c.lineTo(cx - 12, merchantY);
+      c.closePath();
+      c.fill();
+      c.stroke();
 
-                        // Cloak Torso
-                        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#130d22";
-                        c.beginPath();
-                        c.moveTo(cx - 9, merchantY);
-                        c.lineTo(cx + 9, merchantY);
-                        c.lineTo(cx + 6, merchantY - 14);
-                        c.lineTo(cx - 6, merchantY - 14);
-                        c.closePath();
-                        c.fill();
-                        c.stroke();
+      // Cloak Torso
+      c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#130d22";
+      c.beginPath();
+      c.moveTo(cx - 9, merchantY);
+      c.lineTo(cx + 9, merchantY);
+      c.lineTo(cx + 6, merchantY - 14);
+      c.lineTo(cx - 6, merchantY - 14);
+      c.closePath();
+      c.fill();
+      c.stroke();
 
-                        // Gold Clasp
-                        c.fillStyle = "#ffd700";
-                        c.beginPath();
-                        c.arc(cx, merchantY - 11, 2.2, 0, Math.PI * 2);
-                        c.fill();
-                        c.stroke();
+      // Gold Clasp
+      c.fillStyle = "#ffd700";
+      c.beginPath();
+      c.arc(cx, merchantY - 11, 2.2, 0, Math.PI * 2);
+      c.fill();
+      c.stroke();
 
-                        // Hooded Cowl
-                        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#1e152a";
-                        c.beginPath();
-                        c.moveTo(cx - 6, merchantY - 14);
-                        c.quadraticCurveTo(cx - 9, merchantY - 24, cx, merchantY - 26);
-                        c.quadraticCurveTo(cx + 9, merchantY - 24, cx + 6, merchantY - 14);
-                        c.closePath();
-                        c.fill();
-                        c.stroke();
+      // Hooded Cowl
+      c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#1e152a";
+      c.beginPath();
+      c.moveTo(cx - 6, merchantY - 14);
+      c.quadraticCurveTo(cx - 9, merchantY - 24, cx, merchantY - 26);
+      c.quadraticCurveTo(cx + 9, merchantY - 24, cx + 6, merchantY - 14);
+      c.closePath();
+      c.fill();
+      c.stroke();
 
-                        // Deep Hood Void (Face Cavity)
-                        c.fillStyle = "#05040a";
-                        c.beginPath();
-                        c.ellipse(cx, merchantY - 20, 4.0, 5.0, 0, 0, Math.PI * 2);
-                        c.fill();
-                        c.stroke();
+      // Deep Hood Void (Face Cavity)
+      c.fillStyle = "#05040a";
+      c.beginPath();
+      c.ellipse(cx, merchantY - 20, 4.0, 5.0, 0, 0, Math.PI * 2);
+      c.fill();
+      c.stroke();
 
-                        // Pulsing Crimson Wrath Eyes
-                        let eyePulse = 0.75 + Math.sin(time / 100) * 0.25;
-                        c.fillStyle = `rgba(231, 76, 60, ${eyePulse})`;
-                        c.beginPath();
-                        c.arc(cx - 1.8, merchantY - 20, 0.9, 0, Math.PI * 2);
-                        c.arc(cx + 1.8, merchantY - 20, 0.9, 0, Math.PI * 2);
-                        c.fill();
+      // Pulsing Crimson Wrath Eyes
+      let eyePulse = 0.75 + Math.sin(time / 100) * 0.25;
+      c.fillStyle = `rgba(231, 76, 60, ${eyePulse})`;
+      c.beginPath();
+      c.arc(cx - 1.8, merchantY - 20, 0.9, 0, Math.PI * 2);
+      c.arc(cx + 1.8, merchantY - 20, 0.9, 0, Math.PI * 2);
+      c.fill();
 
-                        // Floating Halo Ring
-                        if (m.flashTimer === 0) {
-                          c.strokeStyle = "rgba(241, 196, 15, 0.55)";
-                          c.lineWidth = 1.5;
-                          c.shadowBlur = 8;
-                          c.shadowColor = "#f1c40f";
-                          c.beginPath();
-                          c.ellipse(cx, merchantY - 29, 8, 2.2, 0, 0, Math.PI * 2);
-                          c.stroke();
-                          c.shadowBlur = 0;
-                        }
+      // Floating Halo Ring
+      if (m.flashTimer === 0) {
+        c.strokeStyle = "rgba(241, 196, 15, 0.55)";
+        c.lineWidth = 1.5;
+        c.shadowBlur = 8;
+        c.shadowColor = "#f1c40f";
+        c.beginPath();
+        c.ellipse(cx, merchantY - 29, 8, 2.2, 0, 0, Math.PI * 2);
+        c.stroke();
+        c.shadowBlur = 0;
+      }
 
-                        c.restore();
-                      } else if (
-                        m.type === "prestige_boss" ||
-                        m.type === "hooktail" ||
-                        m.visualType === "hooktail"
-                      ) {
+      c.restore();
+    } else if (
+      m.type === "prestige_boss" ||
+      m.type === "hooktail" ||
+      m.visualType === "hooktail"
+    ) {
       let hoverY = Math.sin(Date.now() / 150) * 6;
       let jawOpen = Math.abs(Math.sin(Date.now() / 400)) * 12;
       c.save();
