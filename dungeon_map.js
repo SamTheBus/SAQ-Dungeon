@@ -546,8 +546,8 @@
         return;
       }
 
-      // Balance: Enforce 20% flat chance per standard floor (rare, lucky encounter)
-      if (Math.random() > 0.2) {
+      // Balance: Enforce 6% flat chance per standard floor (highly rare, coveted encounter)
+      if (Math.random() > 0.06) {
         return;
       }
 
@@ -589,7 +589,8 @@
         typeof window.resolvePlayerStats === "function"
           ? window.resolvePlayerStats()
           : {};
-      let playerQuality = pStats.qly || 1.0;
+      // Substantial quality multiplier boost representing exclusive wanderer wares
+      let playerQuality = (pStats.qly || 1.0) * 2.25;
 
       for (let i = 0; i < 3; i++) {
         let chosenType = types[Math.floor(Math.random() * types.length)];
@@ -598,6 +599,10 @@
           playerQuality,
           false,
         );
+        // Guarantee at least Epic (3*) for the featured first item slot
+        if (i === 0 && rolledRarity < 3) {
+          rolledRarity = 3;
+        }
         let item = window.createItemObject(
           chosenType,
           rolledRarity,

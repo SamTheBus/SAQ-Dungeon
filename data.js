@@ -302,6 +302,12 @@ window.getEffectiveStage = function (stage) {
   return s <= 100 ? s : 100 + Math.pow(s - 100, 0.7) * 1.5;
 };
 
+window.isValidCheckpoint = function (floor) {
+  if (floor === 1) return true;
+  let prev = floor - 1;
+  return prev % 12 === 4 || prev % 12 === 8 || prev % 12 === 0;
+};
+
 window.getMilestoneMultiplier = function (level) {
   let milestones = Math.floor(level / 10);
   // Asymptotic square-root scaling dampens late-game stat inflation while preserving milestone achievements
@@ -5600,6 +5606,11 @@ window.loadGame = function () {
     if (parsed.playerStats) {
           Object.assign(window.playerStats, parsed.playerStats);
 
+          // Ensure stage and lifetimePeakStage are synchronized with maxFloorCleared
+          let maxClearedFloor = window.playerStats.maxFloorCleared || 1;
+          window.playerStats.stage = Math.max(window.playerStats.stage || 1, maxClearedFloor);
+          window.playerStats.lifetimePeakStage = Math.max(window.playerStats.lifetimePeakStage || 1, maxClearedFloor);
+
           // Safe Migration for Phase 2 Trackers
                 window.playerStats.floorActiveTicks = window.playerStats.floorActiveTicks || 0;
                 window.playerStats.kineticFrictionCharges = window.playerStats.kineticFrictionCharges || 0;
@@ -5821,15 +5832,15 @@ window.loadGame = function () {
       });
 
       // Backfill starting stage checkpoints for beaten boss/mini-boss floors
-      let maxCleared = window.playerStats.maxFloorCleared || 0;
-      let checkpoints = new Set(window.playerStats.unlockedCheckpoints || [1]);
-      checkpoints.add(1);
-      for (let f = 4; f <= maxCleared; f += 4) {
-        checkpoints.add(f + 1);
-      }
-      window.playerStats.unlockedCheckpoints = Array.from(checkpoints).sort(
-        (a, b) => a - b,
-      );
+            let maxCleared = window.playerStats.maxFloorCleared || 0;
+            let checkpoints = new Set(window.playerStats.unlockedCheckpoints || [1]);
+            checkpoints.add(1);
+            for (let f = 4; f <= maxCleared; f += 4) {
+              checkpoints.add(f + 1);
+            }
+            window.playerStats.unlockedCheckpoints = Array.from(checkpoints)
+              .filter(window.isValidCheckpoint)
+              .sort((a, b) => a - b);
     }
 
     if (parsed.equippedSlots) {

@@ -5666,11 +5666,11 @@
             </div>
           `;
       } else {
-        let checkpoints = window.playerStats.unlockedCheckpoints || [1];
-        let selectedFloor = window.state.deploymentFloor || 1;
-        let rec = window.playerStats && window.playerStats.recoveryLoot;
+              let checkpoints = (window.playerStats.unlockedCheckpoints || [1]).filter(window.isValidCheckpoint);
+              let selectedFloor = window.state.deploymentFloor || 1;
+              let rec = window.playerStats && window.playerStats.recoveryLoot;
 
-        let floorOptions = checkpoints
+              let floorOptions = checkpoints
           .map((startFloor) => {
             let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
             let isSelected = startFloor === selectedFloor ? "selected" : "";
@@ -6201,24 +6201,28 @@
   };
 
   window.onBossDefeated = function (tileX, tileY) {
-    let map = window.activeDungeonMap;
-    let depth = window.player.depth || 1;
+      let map = window.activeDungeonMap;
+      let depth = window.player.depth || 1;
 
-    // Refill Field Flask charges upon defeating a boss
-    window.refillFlaskCharges(false);
+      // Refill Field Flask charges upon defeating a boss
+      window.refillFlaskCharges(false);
 
-    let nextCheckpoint = depth + 1;
-    window.playerStats.unlockedCheckpoints = window.playerStats
-      .unlockedCheckpoints || [1];
-    if (!window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)) {
-      window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
-      window.playerStats.unlockedCheckpoints.sort((a, b) => a - b);
-    }
+      let nextCheckpoint = depth + 1;
+      window.playerStats.unlockedCheckpoints = window.playerStats
+        .unlockedCheckpoints || [1];
+      if (window.isValidCheckpoint(nextCheckpoint) && !window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)) {
+        window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
+      }
+      window.playerStats.unlockedCheckpoints = window.playerStats.unlockedCheckpoints
+        .filter(window.isValidCheckpoint)
+        .sort((a, b) => a - b);
     window.playerStats.maxFloorCleared = Math.max(
-      window.playerStats.maxFloorCleared || 0,
-      depth,
-    );
-    if (typeof window.saveGame === "function") window.saveGame();
+          window.playerStats.maxFloorCleared || 0,
+          depth,
+        );
+        window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
+        window.playerStats.lifetimePeakStage = Math.max(window.playerStats.lifetimePeakStage || 1, depth);
+        if (typeof window.saveGame === "function") window.saveGame();
 
     if (
       map &&
@@ -6274,11 +6278,17 @@
   window.activeDungeonMobs = [];
 
   window.loadDungeonFloor = function (depth) {
-      if (!window.activeDungeonMap) return;
+        if (!window.activeDungeonMap) return;
 
-      // Reset floor-specific active trackers
-          if (window.playerStats) {
-            window.playerStats.floorActiveTicks = 0;
+        // Synchronize stage progress with current depth
+        if (window.playerStats) {
+          window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
+          window.playerStats.lifetimePeakStage = Math.max(window.playerStats.lifetimePeakStage || 1, depth);
+        }
+
+        // Reset floor-specific active trackers
+            if (window.playerStats) {
+              window.playerStats.floorActiveTicks = 0;
             window.playerStats.kineticFrictionCharges = 0;
             window.playerStats.kineticDistanceTraveled = 0;
             window.playerStats.kineticStillTimer = 0;
@@ -7680,40 +7690,54 @@
       }
 
       // Corpse Recovery: Store lost items and lost gold in Recovery Loot object for next attempt
-      if (!isAbandon && (lostItems.length > 0 || activeRunGold.gt(0))) {
-        let deathFloor = window.player.depth || 1;
-        window.playerStats.recoveryLoot = {
-          floor: deathFloor,
-          items: lostItems,
-          gold: activeRunGold,
-        };
+            let challengeActive = window.playerStats.activeSpecialChallenge !== null;
+            if (!isAbandon && !challengeActive && (lostItems.length > 0 || activeRunGold.gt(0))) {
+              let deathFloor = window.player.depth || 1;
+              window.playerStats.recoveryLoot = {
+                floor: deathFloor,
+                items: lostItems,
+                gold: activeRunGold,
+              };
 
-        let reportParts = [];
-        if (lostItems.length > 0) reportParts.push(`${lostItems.length} items`);
-        if (activeRunGold.gt(0))
-          reportParts.push(`${window.formatNumber(activeRunGold)} Gold`);
+              let reportParts = [];
+              if (lostItems.length > 0) reportParts.push(`${lostItems.length} items`);
+              if (activeRunGold.gt(0))
+                reportParts.push(`${window.formatNumber(activeRunGold)} Gold`);
 
-        if (typeof window.pushLog === "function") {
-          window.pushLog(
-            `<strong style='color:#e74c3c;'>[LOOT RECOVERY]</strong> Left ${reportParts.join(" and ")} in a Recovery Chest on Floor ${deathFloor}. Retrieve it on your next attempt!`,
-          );
-        }
-      } else if (!isAbandon) {
-        window.playerStats.recoveryLoot = null;
-      }
+              if (typeof window.pushLog === "function") {
+                window.pushLog(
+                  `<strong style='color:#e74c3c;'>[LOOT RECOVERY]</strong> Left ${reportParts.join(" and ")} in a Recovery Chest on Floor ${deathFloor}. Retrieve it on your next attempt!`,
+                );
+              }
+            } else if (!isAbandon) {
+              window.playerStats.recoveryLoot = null;
+            }
 
-      if (subEl) {
-        if (!isAbandon && (lostItems.length > 0 || activeRunGold.gt(0))) {
-          let reportParts = [];
-          if (lostItems.length > 0)
-            reportParts.push(`${lostItems.length} items`);
-          if (activeRunGold.gt(0))
-            reportParts.push(`${window.formatNumber(activeRunGold)} Gold`);
-          subEl.innerText = `Unlocked gear & gold lost (${reportParts.join(" & ")}) placed in a Recovery Chest on Floor ${window.player.depth || 1}!`;
-        } else {
-          subEl.innerText = `Unlocked gear & gold lost. Insured items (${savedInsuredItems.length}) & 100% Vault Gold saved!`;
-        }
-      }
+            if (subEl) {
+              if (challengeActive) {
+                subEl.innerText = "Special Contract Failed! Unlocked gear and gold permanently lost (No Recovery allowed on Contracts).";
+              } else if (!isAbandon && (lostItems.length > 0 || activeRunGold.gt(0))) {
+                let reportParts = [];
+                if (lostItems.length > 0)
+                  reportParts.push(`${lostItems.length} items`);
+                if (activeRunGold.gt(0))
+                  reportParts.push(`${window.formatNumber(activeRunGold)} Gold`);
+                subEl.innerText = `Unlocked gear & gold lost (${reportParts.join(" & ")}) placed in a Recovery Chest on Floor ${window.player.depth || 1}!`;
+              } else {
+                subEl.innerText = `Unlocked gear & gold lost. Insured items (${savedInsuredItems.length}) & 100% Vault Gold saved!`;
+              }
+            }
+
+            // Clear special challenge on defeat
+            if (window.playerStats.activeSpecialChallenge) {
+              if (typeof window.pushLog === "function") {
+                window.pushLog(
+                  `<strong style='color:#e74c3c;'>[CONTRACT FAILED]</strong> Failed Special Contract: <span style='color:#ef4444;'>${window.playerStats.activeSpecialChallenge.name}</span>.`,
+                );
+              }
+              window.playerStats.activeSpecialChallenge = null;
+              window.playerStats.activeDungeonSigil = null;
+            }
 
       if (window.inventory) window.inventory.EQUIP = window.player.stash;
       if (typeof window.saveGame === "function") window.saveGame();
@@ -8924,20 +8948,20 @@
       if (typeof window.resetDraftSP === "function") window.resetDraftSP();
       window.pushHeaderToast("SP Allocations Reset & Refunded!", "#9b59b6");
     } else if (name.includes("Cavern Sigil Sack")) {
-      if (typeof window.openCavernSigilSackAnimation === "function") {
-        let stageScale =
-          Math.floor(((p.lifetimePeakStage || p.stage || 1) - 1) / 5) + 1;
-        let rolledRarity = window.rollItemRarity(
-          stageScale * 5,
-          p.baseQuality || 1.0,
-          false,
-        );
-        let sigilItem = window.createItemObject(
-          "sigil",
-          rolledRarity,
-          stageScale,
-          0,
-        );
+          if (typeof window.openCavernSigilSackAnimation === "function") {
+            let peakRunStage = Math.max(p.lifetimePeakStage || 1, p.stage || 1, p.maxFloorCleared || 1);
+            let stageScale = peakRunStage;
+            let rolledRarity = window.rollItemRarity(
+              peakRunStage,
+              p.baseQuality || 1.0,
+              false,
+            );
+            let sigilItem = window.createItemObject(
+              "sigil",
+              rolledRarity,
+              stageScale,
+              0,
+            );
         if (!window.inventory.SIGIL) window.inventory.SIGIL = [];
         window.inventory.SIGIL.push(sigilItem);
         window.openCavernSigilSackAnimation(sigilItem);
@@ -8965,15 +8989,15 @@
         window.openMonsterCardSackAnimation(rolledCards);
       }
     } else if (name === "Astral Singularity Cache") {
-      let peakRunStage = p.lifetimePeakStage || p.stage || 1;
-      let stageScale = Math.floor((peakRunStage - 1) / 5) + 1;
-      let newItem = null;
-      let types = ["weapon", "subweapon", "helmet", "chest", "boots"];
+          let peakRunStage = Math.max(p.lifetimePeakStage || 1, p.stage || 1, p.maxFloorCleared || 1);
+          let stageScale = peakRunStage;
+          let newItem = null;
+          let types = ["weapon", "subweapon", "helmet", "chest", "boots"];
 
-      // Roll until a unique is found
-      for (let attempt = 0; attempt < 2000; attempt++) {
-        let chosenType = types[Math.floor(Math.random() * types.length)];
-        let tempItem = window.createItemObject(chosenType, 5, stageScale, 0);
+          // Roll until a unique is found
+          for (let attempt = 0; attempt < 2000; attempt++) {
+            let chosenType = types[Math.floor(Math.random() * types.length)];
+            let tempItem = window.createItemObject(chosenType, 5, stageScale, 0);
         if (window.isItemUnique(tempItem)) {
           newItem = tempItem;
           break;
@@ -9004,9 +9028,9 @@
       );
       if (typeof window.pushToast === "function") window.pushToast(newItem);
     } else if (name === "Astral Artifact Cache") {
-      let peakRunStage = p.lifetimePeakStage || p.stage || 1;
-      let stageScale = Math.floor((peakRunStage - 1) / 5) + 1;
-      let newItem = window.createItemObject("artifact", 3, stageScale, 0);
+          let peakRunStage = Math.max(p.lifetimePeakStage || 1, p.stage || 1, p.maxFloorCleared || 1);
+          let stageScale = peakRunStage;
+          let newItem = window.createItemObject("artifact", 3, stageScale, 0);
 
       let coresGained = window.randInt(2, 4);
       window.addEtcDrop("Catalyst Core", coresGained, false);
@@ -9024,21 +9048,21 @@
       );
       if (typeof window.pushToast === "function") window.pushToast(newItem);
     } else if (name.includes("Sack") || name.includes("Crate")) {
-      let peakRunStage = p.lifetimePeakStage || p.stage || 1;
-      let stageScale = Math.floor((peakRunStage - 1) / 5) + 1;
-      let rolledRarity = window.rollItemRarity(
-        peakRunStage,
-        p.baseQuality || 1.0,
-        false,
-      );
-      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-      let chosenType = types[Math.floor(Math.random() * types.length)];
-      let newItem = window.createItemObject(
-        chosenType,
-        rolledRarity,
-        stageScale,
-        0,
-      );
+          let peakRunStage = Math.max(p.lifetimePeakStage || 1, p.stage || 1, p.maxFloorCleared || 1);
+          let stageScale = peakRunStage;
+          let rolledRarity = window.rollItemRarity(
+            peakRunStage,
+            p.baseQuality || 1.0,
+            false,
+          );
+          let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+          let chosenType = types[Math.floor(Math.random() * types.length)];
+          let newItem = window.createItemObject(
+            chosenType,
+            rolledRarity,
+            stageScale,
+            0,
+          );
 
       if (window.currentGameState === window.GAME_STATES.HUB) {
         if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
@@ -9531,10 +9555,35 @@
       }
 
       if (item.type === "glimmering_pixie") {
-        item.angleSeed += 0.05;
-        item.x += Math.sin(item.angleSeed) * 1.5;
-        item.y += Math.cos(item.angleSeed * 0.7) * 1.0;
-      }
+              item.angleSeed += 0.05;
+              let dx = Math.sin(item.angleSeed) * 1.5;
+              let dy = Math.cos(item.angleSeed * 0.7) * 1.0;
+              let nextX = item.x + dx;
+              let nextY = item.y + dy;
+              let map = window.activeDungeonMap;
+
+              if (map && map.grid) {
+                // Verify both X and Y movement axes against walls using a safe 8px physical radius
+                let collideX = window.checkCollisionAt(map, nextX, item.y, 8);
+                let collideY = window.checkCollisionAt(map, item.x, nextY, 8);
+
+                if (!collideX) {
+                  item.x = nextX;
+                } else {
+                  // Invert the trajectory seed to bounce away from the obstacle
+                  item.angleSeed += Math.PI;
+                }
+
+                if (!collideY) {
+                  item.y = nextY;
+                } else {
+                  item.angleSeed += Math.PI;
+                }
+              } else {
+                item.x = nextX;
+                item.y = nextY;
+              }
+            }
 
       if (item.isTriggeredByTouch) {
         let dist = Math.hypot(p.x - item.x, p.y - item.y);
@@ -9730,22 +9779,36 @@
     }
 
     if (item.type === "glimmering_pixie") {
-      const options = [
-        "Supernal Attack Elixir",
-        "Supernal Vitality Elixir",
-        "Supernal Armored Elixir",
-        "Supernal Haste Elixir",
-      ];
-      let chosen = options[Math.floor(Math.random() * options.length)];
-      window.addUseDrop(chosen, 1, true);
-      window.useConsumableItem(chosen);
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast(
-          `[✦] Caught the Pixie! Gained and active: ${chosen}!`,
-          "#2ecc71",
-        );
-      }
-    } else if (item.type === "aetheric_spark") {
+              const options = [
+                "Supernal Attack Elixir",
+                "Supernal Vitality Elixir",
+                "Supernal Armored Elixir",
+                "Supernal Haste Elixir",
+              ];
+              let chosen = options[Math.floor(Math.random() * options.length)];
+              let pStats = window.playerStats;
+              if (pStats) {
+                if (chosen.includes("Attack")) {
+                  pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
+                  pStats.atkPotionStrength = 0.35;
+                } else if (chosen.includes("Vitality")) {
+                  pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
+                  pStats.hpPotionStrength = 0.35;
+                } else if (chosen.includes("Armored")) {
+                  pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
+                  pStats.defPotionStrength = 0.35;
+                } else if (chosen.includes("Haste")) {
+                  pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
+                  pStats.hastePotionStrength = 3;
+                }
+              }
+              if (typeof window.pushHeaderToast === "function") {
+                window.pushHeaderToast(
+                  `[✦] Caught the Pixie! Activated: ${chosen} (Current Run Only)!`,
+                  "#2ecc71",
+                );
+              }
+            } else if (item.type === "aetheric_spark") {
       let step = item.step;
       if (step >= 5) {
         window.playerStats.astralAwakeningTimer = 900; // 15s
@@ -14679,28 +14742,28 @@
               ctx.stroke();
               ctx.restore();
             } else if (stars === 1) {
-              // 1-Star: Concentric Frost Ripples
-              let rippleCount = isEco ? 1 : 2;
-              for (let rIdx = 0; rIdx < rippleCount; rIdx++) {
-                let rippleProgress = (time / 1200 + rIdx * 0.5) % 1.0;
-                let maxR = 22;
-                let curR = maxR * rippleProgress;
-                let rAlpha = (1.0 - rippleProgress) * 0.5;
-                ctx.strokeStyle = `rgba(56, 189, 248, ${rAlpha})`;
-                ctx.lineWidth = 1.2;
-                ctx.beginPath();
-                ctx.ellipse(
-                  drawX,
-                  groundY,
-                  curR,
-                  curR * 0.35,
-                  0,
-                  0,
-                  Math.PI * 2,
-                );
-                ctx.stroke();
-              }
-            } else {
+                          // 1-Star: Concentric Frost Ripples
+                          let rippleCount = isEco ? 1 : 2;
+                          for (let rIdx = 0; rIdx < rippleCount; rIdx++) {
+                            let rippleProgress = (time / 1200 + rIdx * 0.5) % 1.0;
+                            let maxR = 22;
+                            let curR = maxR * rippleProgress;
+                            let rAlpha = (1.0 - rippleProgress) * 0.5;
+                            ctx.strokeStyle = `rgba(${dRgb}, ${rAlpha})`;
+                            ctx.lineWidth = 1.2;
+                            ctx.beginPath();
+                            ctx.ellipse(
+                              drawX,
+                              groundY,
+                              curR,
+                              curR * 0.35,
+                              0,
+                              0,
+                              Math.PI * 2,
+                            );
+                            ctx.stroke();
+                          }
+                        } else {
               // 0-Star: Simple Dust Ring
               ctx.strokeStyle = "rgba(120, 120, 120, 0.15)";
               ctx.lineWidth = 1.0;
@@ -14909,58 +14972,58 @@
             }
 
             // 3. Custom Rarity-Themed Core Sparks
-            if (stars === 5) {
-              // Mythic: Lightning arcs
-              ctx.strokeStyle = `rgba(255, 255, 255, ${0.45 + Math.sin(time / 45) * 0.15})`;
-              ctx.lineWidth = 1.5;
-              ctx.beginPath();
-              ctx.moveTo(drawX, groundY);
-              let segments = isEco ? 5 : 10;
-              let segH = beamH / segments;
-              for (let s = 1; s <= segments; s++) {
-                let ly = groundY - s * segH;
-                let lx =
-                  drawX + Math.sin(time / 8 + s) * 3 * (1 - s / segments);
-                ctx.lineTo(lx, ly);
-              }
-              ctx.stroke();
-            } else if (stars === 3) {
-              // Epic: Molten embers rising
-              let emberCount = isEco ? 1 : 3;
-              for (let i = 0; i < emberCount; i++) {
-                let progress = (time / 800 + i / emberCount) % 1.0;
-                let ey = groundY - progress * beamH;
-                let ex = drawX + Math.sin(time / 60 + i) * 3.5;
-                ctx.fillStyle = `rgba(249, 115, 22, ${1.0 - progress})`;
-                ctx.beginPath();
-                ctx.arc(ex, ey, 1.2, 0, Math.PI * 2);
-                ctx.fill();
-              }
-            } else if (stars === 2) {
-              // Magic: Arcane motes drifting
-              let runeCount = isEco ? 1 : 3;
-              for (let i = 0; i < runeCount; i++) {
-                let progress = (time / 900 + i / runeCount) % 1.0;
-                let ry = groundY - progress * beamH;
-                let rx = drawX + Math.cos(time / 80 + i) * 5;
-                ctx.fillStyle = `rgba(168, 85, 247, ${0.85 * (1.0 - progress)})`;
-                ctx.beginPath();
-                ctx.arc(rx, ry, 1.4, 0, Math.PI * 2);
-                ctx.fill();
-              }
-            } else if (stars === 1) {
-              // Rare: Floating ice sparks
-              let iceCount = isEco ? 1 : 2;
-              for (let i = 0; i < iceCount; i++) {
-                let progress = (time / 1000 + i / iceCount) % 1.0;
-                let iy = groundY - progress * beamH;
-                let ix = drawX + Math.sin(time / 100 + i * 5) * 4;
-                ctx.fillStyle = `rgba(56, 189, 248, ${0.75 * (1.0 - progress)})`;
-                ctx.beginPath();
-                ctx.arc(ix, iy, 1.1, 0, Math.PI * 2);
-                ctx.fill();
-              }
-            }
+                        if (stars === 5) {
+                          // Mythic: Lightning arcs
+                          ctx.strokeStyle = `rgba(255, 255, 255, ${0.45 + Math.sin(time / 45) * 0.15})`;
+                          ctx.lineWidth = 1.5;
+                          ctx.beginPath();
+                          ctx.moveTo(drawX, groundY);
+                          let segments = isEco ? 5 : 10;
+                          let segH = beamH / segments;
+                          for (let s = 1; s <= segments; s++) {
+                            let ly = groundY - s * segH;
+                            let lx =
+                              drawX + Math.sin(time / 8 + s) * 3 * (1 - s / segments);
+                            ctx.lineTo(lx, ly);
+                          }
+                          ctx.stroke();
+                        } else if (stars === 3) {
+                          // Epic: Molten embers rising
+                          let emberCount = isEco ? 1 : 3;
+                          for (let i = 0; i < emberCount; i++) {
+                            let progress = (time / 800 + i / emberCount) % 1.0;
+                            let ey = groundY - progress * beamH;
+                            let ex = drawX + Math.sin(time / 60 + i) * 3.5;
+                            ctx.fillStyle = `rgba(${dRgb}, ${1.0 - progress})`;
+                            ctx.beginPath();
+                            ctx.arc(ex, ey, 1.2, 0, Math.PI * 2);
+                            ctx.fill();
+                          }
+                        } else if (stars === 2) {
+                          // Magic: Arcane motes drifting
+                          let runeCount = isEco ? 1 : 3;
+                          for (let i = 0; i < runeCount; i++) {
+                            let progress = (time / 900 + i / runeCount) % 1.0;
+                            let ry = groundY - progress * beamH;
+                            let rx = drawX + Math.cos(time / 80 + i) * 5;
+                            ctx.fillStyle = `rgba(${dRgb}, ${0.85 * (1.0 - progress)})`;
+                            ctx.beginPath();
+                            ctx.arc(rx, ry, 1.4, 0, Math.PI * 2);
+                            ctx.fill();
+                          }
+                        } else if (stars === 1) {
+                          // Rare: Floating ice sparks
+                          let iceCount = isEco ? 1 : 2;
+                          for (let i = 0; i < iceCount; i++) {
+                            let progress = (time / 1000 + i / iceCount) % 1.0;
+                            let iy = groundY - progress * beamH;
+                            let ix = drawX + Math.sin(time / 100 + i * 5) * 4;
+                            ctx.fillStyle = `rgba(${dRgb}, ${0.75 * (1.0 - progress)})`;
+                            ctx.beginPath();
+                            ctx.arc(ix, iy, 1.1, 0, Math.PI * 2);
+                            ctx.fill();
+                          }
+                        }
 
             // ==========================================
             // SUB-PASS E: Top Ray & Lens Flare Burst (3★+)
