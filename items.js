@@ -360,62 +360,74 @@
         ? window.hexToRgbValues(tierColor)
         : "127, 140, 141";
       if (item.subType === "shield") {
-        let reflectDmg = Math.round((item.reflectDamage || 1.0) * 100);
-        let blockCapBonus = Math.round((item.blockCapBonus || 0.02) * 100);
-        let bashFormulaStr = `${reflectDmg}% Defense`;
-        if (item.bashAtkBonus > 0) {
-          bashFormulaStr = `${reflectDmg}% Def + ${Math.round(item.bashAtkBonus * 100)}% Atk`;
-        }
+              let reflectDmg = Math.round((item.reflectDamage || 1.0) * 100);
+              let blockCapBonus = Math.round((item.blockCapBonus || 0.02) * 100);
+              let bashFormulaStr = `${reflectDmg}% Defense`;
+              if (item.bashAtkBonus > 0) {
+                bashFormulaStr = `${reflectDmg}% Def + ${Math.round(item.bashAtkBonus * 100)}% Atk`;
+              }
 
-        specialtyHtml = `
-                    <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
-                      <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
-                        ${window.getUiIconSvg ? window.getUiIconSvg("block", 12) : "✦"} <span>BULWARK & BASH METRICS</span>
-                      </div>
-                      <div style="color: #cbd5e1; margin-bottom: 4px;">
-                        Blocks completely negate damage (Cap: 20%-28%). Every Block triggers a Shield Bash counter.
-                      </div>
-                      <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 9.5px;">
-                        <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Shield Bash Power:</span> <strong style="color:#3498db;">${bashFormulaStr}</strong></div>
-                        <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Block Cap Bonus:</span> <strong style="color:#2ecc71;">+${blockCapBonus}% Cap</strong></div>
-                      </div>
-                    </div>
-                  `;
+              // Automated Balance Parameters
+              let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : { maxBlockCap: 0.40 };
+              let activeCap = Math.round((pStats.maxBlockCap || 0.40) * 100);
+              let bossPen = Math.round((window.BOSS_GUARD_PENETRATION || 0.35) * 100);
+              let fatigueSec = ((window.DEFLECTION_FATIGUE_FRAMES || 30) / 60).toFixed(1);
+
+              specialtyHtml = `
+                          <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
+                            <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                              ${window.getUiIconSvg ? window.getUiIconSvg("block", 12) : "✦"} <span>BULWARK & BASH METRICS</span>
+                            </div>
+                            <div style="color: #cbd5e1; margin-bottom: 4px;">
+                              Blocks completely negate damage (Cap: ${activeCap}%). Base Block scales with STR. Boss attacks possess ${bossPen}% Guard Penetration. Successfully deflecting triggers a ${fatigueSec}s Deflection Fatigue.
+                            </div>
+                            <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 9.5px;">
+                              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Shield Bash Power:</span> <strong style="color:#3498db;">${bashFormulaStr}</strong></div>
+                              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Block Cap Bonus:</span> <strong style="color:#2ecc71;">+${blockCapBonus}% Cap</strong></div>
+                            </div>
+                          </div>
+                        `;
       } else if (item.subType === "dagger") {
-        let riposteDmg = Math.round((item.riposteDamage || 0.8) * 100);
-        let bleedChance = Math.round((item.bleedChance || 0) * 100);
-        let offhandChance = Math.round((item.offhandChance || 0) * 100);
-        let offhandDmg = Math.round((item.offhandDmg || 0.35) * 100);
-        let mitigationPct = Math.round((item.parryMitigation || 0.6) * 100);
+              let riposteDmg = Math.round((item.riposteDamage || 0.8) * 100);
+              let bleedChance = Math.round((item.bleedChance || 0) * 100);
+              let offhandChance = Math.round((item.offhandChance || 0) * 100);
+              let offhandDmg = Math.round((item.offhandDmg || 0.35) * 100);
+              let mitigationPct = Math.round((item.parryMitigation || 0.6) * 100);
 
-        let metricLines = [
-          `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Parry Mitigation:</span> <strong style="color:#3498db;">${mitigationPct}% Damage</strong></div>`,
-          `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Riposte Counter:</span> <strong style="color:#a855f7;">${riposteDmg}% Attack</strong></div>`,
-        ];
-        if (bleedChance > 0) {
-          metricLines.push(
-            `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Bleed Chance:</span> <strong style="color:#e74c3c;">${bleedChance}% per swing</strong></div>`,
-          );
-        }
-        if (offhandChance > 0) {
-          metricLines.push(
-            `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Offhand Double-Strike:</span> <strong style="color:#2ecc71;">${offhandChance}% (${offhandDmg}% Dmg)</strong></div>`,
-          );
-        }
+              let metricLines = [
+                `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Parry Mitigation:</span> <strong style="color:#3498db;">${mitigationPct}% Damage</strong></div>`,
+                `<div style="display:flex; justify-content:space-between;"><span style="color:#a855f7;">Riposte Counter:</span> <strong style="color:#a855f7;">${riposteDmg}% Attack</strong></div>`,
+              ];
+              if (bleedChance > 0) {
+                metricLines.push(
+                  `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Bleed Chance:</span> <strong style="color:#e74c3c;">${bleedChance}% per swing</strong></div>`,
+                );
+              }
+              if (offhandChance > 0) {
+                metricLines.push(
+                  `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Offhand Double-Strike:</span> <strong style="color:#2ecc71;">${offhandChance}% (${offhandDmg}% Dmg)</strong></div>`,
+                );
+              }
 
-        specialtyHtml = `
-                    <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
-                      <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
-                        ${window.getUiIconSvg ? window.getUiIconSvg("parry", 12) : "✦"} <span>RIPOSTE & COMBAT METRICS</span>
-                      </div>
-                      <div style="color: #cbd5e1; margin-bottom: 4px;">
-                        Parries mitigate ${mitigationPct}% of incoming damage (Cap: 15%-35%) and trigger an automatic Riposte counter strike.
-                      </div>
-                      <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 9.5px;">
-                        ${metricLines.join("")}
-                      </div>
-                    </div>
-                  `;
+              // Automated Balance Parameters
+              let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : { maxParryCap: 0.35 };
+              let activeCap = Math.round((pStats.maxParryCap || 0.35) * 100);
+              let bossPen = Math.round((window.BOSS_GUARD_PENETRATION || 0.35) * 100);
+              let fatigueSec = ((window.DEFLECTION_FATIGUE_FRAMES || 30) / 60).toFixed(1);
+
+              specialtyHtml = `
+                          <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
+                            <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                              ${window.getUiIconSvg ? window.getUiIconSvg("parry", 12) : "✦"} <span>RIPOSTE & COMBAT METRICS</span>
+                            </div>
+                            <div style="color: #cbd5e1; margin-bottom: 4px;">
+                              Parries mitigate ${mitigationPct}% of damage (Cap: ${activeCap}%) and trigger an automatic Riposte counter strike. Base Parry scales with DEX. Boss attacks possess ${bossPen}% Guard Penetration. Successfully deflecting triggers a ${fatigueSec}s Deflection Fatigue.
+                            </div>
+                            <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 9.5px;">
+                              ${metricLines.join("")}
+                            </div>
+                          </div>
+                        `;
       } else if (item.subType === "tome") {
         let nameMap = {
           fire: "Fireball",
@@ -457,62 +469,79 @@
 
       if (item.type === "subweapon") {
         if (item.subType === "tome") {
-          let spellChance = Math.round(
-            (item.spellChance !== undefined ? item.spellChance : 0.33) * 100,
-          );
-          let spellPower = Math.round((item.spellPower || 1.5) * 100);
-          gridBadges.push({
-            label: "Damage",
-            raw: window.formatNumber(item.baseAtk),
-            attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)),
-            icon: window.getUiIconSvg("atk", 13),
-          });
-          gridBadges.push({
-            label: "INT",
-            raw: `+${item.baseInt || 0}`,
-            attuned: `+${Math.ceil((item.baseInt || 0) * slotMult)}`,
-            icon: window.getUiIconSvg("int", 13),
-          });
-          gridBadges.push({
-            label: "Spell %",
-            raw: `${spellChance}%`,
-            attuned: `${spellChance}%`,
-            icon: window.getUiIconSvg("activeAttackSpeed", 13),
-          });
-          gridBadges.push({
-            label: "Spell Dmg",
-            raw: `${spellPower}% Atk`,
-            attuned: `${spellPower}% Atk`,
-            icon: window.getUiIconSvg("critDamage", 13),
-          });
+                  let spellChance = Math.round(
+                    (item.spellChance !== undefined ? item.spellChance : 0.33) * 100,
+                  );
+                  let spellPower = Math.round((item.spellPower || 1.5) * 100);
+                  gridBadges.push({
+                    label: "Damage",
+                    raw: window.formatNumber(item.baseAtk),
+                    attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)),
+                    icon: window.getUiIconSvg("atk", 13),
+                  });
+                  gridBadges.push({
+                    label: "INT",
+                    raw: `+${item.baseInt || 0}`,
+                    attuned: `+${Math.ceil((item.baseInt || 0) * slotMult)}`,
+                    icon: window.getUiIconSvg("int", 13),
+                  });
+                  gridBadges.push({
+                    label: "Spell %",
+                    raw: `${spellChance}%`,
+                    attuned: `${spellChance}%`,
+                    icon: window.getUiIconSvg("activeAttackSpeed", 13),
+                  });
+                  gridBadges.push({
+                    label: "Spell Dmg",
+                    raw: `${spellPower}% Atk`,
+                    attuned: `${spellPower}% Atk`,
+                    icon: window.getUiIconSvg("critDamage", 13),
+                  });
 
-          let tomeDesc =
-            "Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Absorbs 20%-35% of incoming damage before Defense.";
-          let tomeTitle = "✦ Arcane Triad Array & Barrier:";
-          let tomeTitleColor = "#9b59b6";
-          if (item.spellType === "fire") {
-            tomeTitle = "✦ Fireball Burst & Barrier:";
-            tomeTitleColor = "#e67e22";
-            tomeDesc =
-              "Launches concentrated Fireball bursts dealing heavy burst damage. Absorbs 20%-35% of incoming damage before Defense.";
-          } else if (item.spellType === "lightning") {
-            tomeTitle = "✦ Chain Zap Arcs & Barrier:";
-            tomeTitleColor = "#f1c40f";
-            tomeDesc =
-              "Triggers rapid Chain Zap electrical arcs with high proc frequency. Absorbs 20%-35% of incoming damage before Defense.";
-          } else if (item.spellType === "frost") {
-            tomeTitle = "✦ Glacial Frost Nova & Barrier:";
-            tomeTitleColor = "#3498db";
-            tomeDesc =
-              "Emits Glacial Frost Novas dealing area frost damage. Absorbs 20%-35% of incoming damage before Defense.";
-          }
+                  // Automated Intel-based Barrier Calculation (Even if unequipped)
+                  let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : { int: 5 };
+                  let effInt = Math.max(0, (pStats.int || 5) - 5);
+                  let intBonus = Math.min(0.15, (effInt * 0.15) / (effInt + 150));
+                  let potentialBarrier = 0.20 + intBonus;
 
-          specialtyHtml = `
-                  <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
-                    <strong style="color: ${tomeTitleColor}; display: block; margin-bottom: 2px;">${tomeTitle}</strong>
-                    ${tomeDesc}
-                  </div>
-                `;
+                  // Arcane Barrier Shatter & Keystone overrides
+                  if (pStats.hasAethericSingularity) {
+                    potentialBarrier = 0.45; // Singularity Keystone sets a flat 45% barrier
+                  } else if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("tome_runic_barrier") > 0) {
+                    let rank = window.SkillTreeManager.getSkillLevel("tome_runic_barrier");
+                    potentialBarrier = 0.20 + rank * 0.04 + intBonus;
+                    if (potentialBarrier > 0.40) potentialBarrier = 0.40; // cap runic shielding at 40%
+                  }
+
+                  let barrierPct = Math.round(potentialBarrier * 100);
+
+                  let tomeDesc =
+                    `Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+                  let tomeTitle = "✦ Arcane Triad Array & Barrier:";
+                  let tomeTitleColor = "#9b59b6";
+                  if (item.spellType === "fire") {
+                    tomeTitle = "✦ Fireball Burst & Barrier:";
+                    tomeTitleColor = "#e67e22";
+                    tomeDesc =
+                      `Launches concentrated Fireball bursts dealing heavy burst damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+                  } else if (item.spellType === "lightning") {
+                    tomeTitle = "✦ Chain Zap Arcs & Barrier:";
+                    tomeTitleColor = "#f1c40f";
+                    tomeDesc =
+                      `Triggers rapid Chain Zap electrical arcs with high proc frequency. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+                  } else if (item.spellType === "frost") {
+                    tomeTitle = "✦ Glacial Frost Nova & Barrier:";
+                    tomeTitleColor = "#3498db";
+                    tomeDesc =
+                      `Emits Glacial Frost Novas dealing area frost damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+                  }
+
+                  specialtyHtml = `
+                          <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
+                            <strong style="color: ${tomeTitleColor}; display: block; margin-bottom: 2px;">${tomeTitle}</strong>
+                            ${tomeDesc}
+                          </div>
+                        `;
         } else if (item.subType === "shield") {
           let reflectDmg = Math.round((item.reflectDamage ?? 1.0) * 100);
           let blockPct = Math.round((item.baseBlock ?? 0.08) * 100);
@@ -748,13 +777,13 @@
       }
 
       html += `
-            <div style="background:rgba(0,0,0,0.35); border:1.5px solid #1abc9c33; border-radius:4px; padding:6px; margin-bottom:8px; font-family:monospace; font-size:10px; text-align:left; display:flex; justify-content:space-between;">
-              <span><span style="color:#1abc9c; font-weight:bold;">Aspect Roll Power:</span> <strong style="color:#ffd700;">${powerPct}%</strong></span>
-              <span style="color:#a855f7; font-weight:bold;">${artTierStr}</span>
-            </div>
-            ${liveStatusHtml ? `<div style="background:rgba(168,85,247,0.06); border:1px dashed #a855f7; border-radius:4px; padding:6px; margin-bottom:8px; font-family:monospace; font-size:9.5px; text-align:left;">${liveStatusHtml}</div>` : ""}
-            <div class="tt-trait">${item.breakdown || item.desc}</div>
-          `;
+                  <div style="background:rgba(0,0,0,0.35); border:1.5px solid #1abc9c33; border-radius:4px; padding:6px; margin-bottom:8px; font-family:monospace; font-size:10px; text-align:left; display:flex; justify-content:space-between;">
+                    <span><span style="color:#1abc9c; font-weight:bold;">Aspect Roll Power:</span> <strong style="color:#ffd700;">${powerPct}%</strong></span>
+                    <span style="color:#a855f7; font-weight:bold;">${artTierStr}</span>
+                  </div>
+                  ${liveStatusHtml ? `<div style="background:rgba(168, 85, 247,0.06); border:1px dashed #a855f7; border-radius:4px; padding:6px; margin-bottom:8px; font-family:monospace; font-size:9.5px; text-align:left;">${liveStatusHtml}</div>` : ""}
+                  <div class="tt-trait">${window.getDynamicArtifactDescription(item)}</div>
+                `;
     } else {
       if (isUnique && item.desc) {
         html += `<div class="tt-stat-line" style="color:#ffeaa7; margin-bottom: 10px; line-height:1.4; padding:6px; border:1px dashed #1abc9c; background:rgba(0,0,0,0.4); border-radius:4px;"><strong>[ Unique Effect ]:</strong> ${item.desc}</div>`;
@@ -4463,24 +4492,24 @@
               typeof item.statsRolled === "number" ? item.statsRolled : 0;
 
             if (noun.includes("tower")) {
-              item.subArchetype = "tower";
-              item.baseBlock = 0.08 + stars * 0.01;
-              item.blockCapBonus = 0.04 + stars * 0.008;
-              item.reflectDamage = 1.2 + stars * 0.16; // 120% - 200% Def
-              item.bashAtkBonus = 0;
-            } else if (noun.includes("buckler")) {
-              item.subArchetype = "buckler";
-              item.baseBlock = 0.12 + stars * 0.015;
-              item.blockCapBonus = 0.02 + stars * 0.005;
-              item.reflectDamage = 0.6 + stars * 0.08; // 60% Def
-              item.bashAtkBonus = 0.5; // +50% Atk
-            } else {
-              item.subArchetype = "vanguard";
-              item.baseBlock = 0.08 + stars * 0.01;
-              item.blockCapBonus = 0.02 + stars * 0.006;
-              item.reflectDamage = 1.0 + stars * 0.12; // 100% Def
-              item.bashAtkBonus = 0;
-            }
+                        item.subArchetype = "tower";
+                        item.baseBlock = 0.15 + stars * 0.02;
+                        item.blockCapBonus = 0.04 + stars * 0.008;
+                        item.reflectDamage = 1.2 + stars * 0.16; // 120% - 200% Def
+                        item.bashAtkBonus = 0;
+                      } else if (noun.includes("buckler")) {
+                        item.subArchetype = "buckler";
+                        item.baseBlock = 0.20 + stars * 0.025;
+                        item.blockCapBonus = 0.02 + stars * 0.005;
+                        item.reflectDamage = 0.6 + stars * 0.08; // 60% Def
+                        item.bashAtkBonus = 0.5; // +50% Atk
+                      } else {
+                        item.subArchetype = "vanguard";
+                        item.baseBlock = 0.15 + stars * 0.02;
+                        item.blockCapBonus = 0.02 + stars * 0.006;
+                        item.reflectDamage = 1.0 + stars * 0.12; // 100% Def
+                        item.bashAtkBonus = 0;
+                      }
           } else if (item.subType === "dagger") {
             item.baseAtk = Math.ceil(0.8 * repScale * baseRarityMult);
             item.baseDex = Math.ceil(1.5 * stageScale * baseRarityMult);
@@ -4489,33 +4518,33 @@
               typeof item.statsRolled === "number" ? item.statsRolled : 0;
 
             if (noun.includes("main")) {
-              item.subArchetype = "main_gauche";
-              item.baseParry = 0.1 + stars * 0.012;
-              item.parryCapBonus = 0.1 + stars * 0.01; // 10% - 15% bonus parry cap
-              item.parryMitigation = 0.75; // 75% damage mitigation on parry
-              item.riposteDamage = 0.8 + stars * 0.08;
-              item.bleedChance = 0;
-              item.offhandChance = 0;
-              item.offhandDmg = 0.35;
-            } else if (noun.includes("stiletto")) {
-              item.subArchetype = "stiletto";
-              item.baseParry = 0.06 + stars * 0.008;
-              item.parryCapBonus = 0.02;
-              item.parryMitigation = 0.6;
-              item.riposteDamage = 1.0 + stars * 0.12; // 100% Atk
-              item.bleedChance = 0.35 + stars * 0.04; // 35% - 55% Bleed
-              item.offhandChance = 0;
-              item.offhandDmg = 0.35;
-            } else {
-              item.subArchetype = "flurry";
-              item.baseParry = 0.06 + stars * 0.008;
-              item.parryCapBonus = 0.02;
-              item.parryMitigation = 0.6;
-              item.riposteDamage = 0.8 + stars * 0.08;
-              item.offhandChance = 0.5 + stars * 0.05; // 50% - 75% Offhand Chance
-              item.offhandDmg = 0.45; // 45% Atk
-              item.bleedChance = 0.15;
-            }
+                        item.subArchetype = "main_gauche";
+                        item.baseParry = 0.18 + stars * 0.02;
+                        item.parryCapBonus = 0.1 + stars * 0.01; // 10% - 15% bonus parry cap
+                        item.parryMitigation = 0.75; // 75% damage mitigation on parry
+                        item.riposteDamage = 0.8 + stars * 0.08;
+                        item.bleedChance = 0;
+                        item.offhandChance = 0;
+                        item.offhandDmg = 0.35;
+                      } else if (noun.includes("stiletto")) {
+                        item.subArchetype = "stiletto";
+                        item.baseParry = 0.12 + stars * 0.016;
+                        item.parryCapBonus = 0.02;
+                        item.parryMitigation = 0.6;
+                        item.riposteDamage = 1.0 + stars * 0.12; // 100% Atk
+                        item.bleedChance = 0.35 + stars * 0.04; // 35% - 55% Bleed
+                        item.offhandChance = 0;
+                        item.offhandDmg = 0.35;
+                      } else {
+                        item.subArchetype = "flurry";
+                        item.baseParry = 0.12 + stars * 0.016;
+                        item.parryCapBonus = 0.02;
+                        item.parryMitigation = 0.6;
+                        item.riposteDamage = 0.8 + stars * 0.08;
+                        item.offhandChance = 0.5 + stars * 0.05; // 50% - 75% Offhand Chance
+                        item.offhandDmg = 0.45; // 45% Atk
+                        item.bleedChance = 0.15;
+                      }
           } else if (item.subType === "tome") {
             item.baseInt = Math.ceil(1.5 * stageScale * baseRarityMult);
             item.baseAtk = Math.ceil(0.4 * repScale * baseRarityMult);
@@ -4851,19 +4880,42 @@
       }
 
       if (item.enchantments) {
-        for (let statKey in item.enchantments) {
-          let count = item.enchantments[statKey];
-          let multiplier = Math.pow(1.25, count);
-          const integerStats = ["atk", "maxHp", "def", "str", "dex", "int"];
-          if (integerStats.includes(statKey)) {
-            item[statKey] = Math.ceil(item[statKey] * multiplier);
-          } else {
-            item[statKey] = parseFloat((item[statKey] * multiplier).toFixed(4));
-          }
-        }
-      }
-    },
-  });
+              for (let statKey in item.enchantments) {
+                let count = item.enchantments[statKey];
+                let multiplier = Math.pow(1.25, count);
+                const integerStats = ["atk", "maxHp", "def", "str", "dex", "int"];
+                if (integerStats.includes(statKey)) {
+                  item[statKey] = Math.ceil(item[statKey] * multiplier);
+                } else {
+                  item[statKey] = parseFloat((item[statKey] * multiplier).toFixed(4));
+                }
+              }
+            }
+
+            // Dynamic Unique Gear Passive Scaling
+            if (window.isItemUnique(item)) {
+              let slotKey = item.isEquippedSlot || (item.type === "subweapon" ? "subweapon" : item.type);
+              let slotLvl = (window.playerStats && window.playerStats.slotUpgrades && window.playerStats.slotUpgrades[slotKey]) || 0;
+              let slotMult = 1.0 + slotLvl * 0.01;
+
+              if (item.isUniqueStaff) {
+                item.desc = `Launches penetrating fireballs that deal ${Math.round(25 * slotMult)}% Attack damage (3s Cooldown).`;
+              } else if (item.isUniqueSword) {
+                item.desc = `Strikes apply stacking Bleed (Max 5). Strikes at max stacks triggers Rupture, dealing ${Math.round(300 * slotMult)}% weapon damage and siphoning 10% Max HP.`;
+              } else if (item.isUniqueMaelstrom) {
+                item.desc = `Critical strikes project piercing wind gales. Casting gales grants +${Math.round(10 * slotMult)}% Active & Idle Attack Speed for 6s (stacks up to 3x).`;
+              } else if (item.isUniqueWatch) {
+                item.desc = `Triggers 4s Temporal Fracture every 20s. Accelerates attack speeds by ${Math.round(15 * slotMult)}% and slows enemies by ${Math.round(25 * slotMult)}%.`;
+              } else if (item.isUniqueTempest) {
+                item.desc = `Taking damage has a ${(15 * slotMult).toFixed(1)}% chance to call a thunderbolt dealing ${Math.round(150 * slotMult)}% Attack power and stunning.`;
+              } else if (item.isUniqueViper) {
+                item.desc = `Critical strikes have a ${(25 * slotMult).toFixed(1)}% chance to trigger a Perfect Strike reticle. Tapping it within 2s deals 5x defense-bypassing damage and inflicts a toxic poison sting.`;
+              } else if (item.isUniqueConduit) {
+                item.desc = `Periodically projects an Aetheric Conduit on the field (15s Cooldown). Discharging it casts triple elemental spells & resets cooldowns.`;
+              }
+            }
+          },
+        });
 
   // Legacy Compatibility Aliases to protect references
   window.recalculateItemStats = function (item) {
@@ -8931,4 +8983,84 @@ window.sellItemToDungeonMerchant = function (itemId) {
   }
   if (typeof window.updateUI === "function") window.updateUI();
   if (typeof window.saveGame === "function") window.saveGame();
+};
+
+// --- DYNAMIC ART_TRAIT BLUEPRINT PARSER ---
+window.getDynamicArtifactDescription = function (item) {
+  if (!item || item.type !== "artifact") return "";
+
+  let power = item.relicPower !== undefined ? item.relicPower : 1.0;
+  let slotKey = item.isEquippedSlot || null;
+  let slotLvl = 0;
+  if (slotKey) {
+    slotLvl = (window.playerStats && window.playerStats.slotUpgrades && window.playerStats.slotUpgrades[slotKey]) || 0;
+  }
+  let slotMult = 1.0 + slotLvl * 0.01;
+
+  const b = (val) => Math.ceil(val * power * slotMult);
+  const p = (val) => (val * power * slotMult * 100).toFixed(1);
+  const u = (val) => (val * slotMult).toFixed(0);
+
+  switch (item.trait) {
+    case "frenzy":
+      return `Grants Frenzy Mode for 5s every 15 kills. Passive +${p(0.03)}% Crit Chance.`;
+    case "vampirism":
+      return `Heals ${(0.5 * slotMult).toFixed(1)}% of damage dealt on hit (Capped at 3% Max HP per second globally). Passive +${b(20)} Max HP.`;
+    case "gold_hoard":
+      return `Permanent x${(1.0 + 0.3 * power * slotMult).toFixed(2)} Gold Multiplier bonus. Passive +${b(10)} Attack.`;
+    case "magic_find":
+      return `Increases Drop Rate by +${p(0.25)}% and Drop Quality by +${p(0.15)}%. Passive +${b(5)} DEX.`;
+    case "move_speed":
+      return `Grants +${p(0.1)}% Movement Speed and +${p(0.03)}% Parry Rate.`;
+    case "defense":
+      return `Grants +${p(0.06)}% Max HP and +${p(0.08)}% Defense.`;
+    case "parry_strike":
+      return `Parrying instantly counters for ${u(50)}% damage. Passive +${p(0.02)}% Parry Rate.`;
+    case "echo_strike":
+      return `Attacks have 30% chance to hit a second time for ${u(25)}% damage. Passive +${b(3)} Attack.`;
+    case "idle_spd":
+      return `Increases Idle Attack Speed by +${p(0.15)}%. Passive +${p(0.05)}% Gold Multiplier.`;
+    case "active_spd":
+      return `Increases Active Attack Speed limit by +${p(0.1)}%. Passive +${p(0.03)}% Crit Chance.`;
+    case "dodge_buff":
+      return `Blocking/Parrying grants +30% Dmg for 6s. Passive +${p(0.02)}% Block & Parry.`;
+    case "extend_buffs":
+      return `Extends all temporary buffs by 3 seconds. Passive +${b(3)} INT.`;
+    case "bag_space":
+      return `Expands equipment sack capacity to 50. Passive +${p(0.1)}% Drop Rate.`;
+    case "second_wind":
+      return `Ignore a fatal blow once per stage attempt (40% Heal). Passive +${b(5)} STR & +${b(30)} Max HP.`;
+    case "golem_stance":
+      return `Increases Attack Power by +20% while healthy (>80% HP). Passive +${b(5)} STR.`;
+    case "fairy_wealth":
+      return `Increases Fairy Spawn Rate by +${p(0.15)}%. Fairies have 8% chance to drop 1 Luminous Soul. Passive +${p(0.06)}% Gold.`;
+    case "void_pull":
+      return `Increases Rare Spawn Rate by +${p(0.2)}%. Defeating Rares heals 15% Max HP. Passive +${b(3)} DEX.`;
+    case "titan_grip":
+      return `Increases Block Cap to ${u(25)}% (with Shield) and Parry Cap to ${u(30)}% (with Dagger). Passive +${p(0.04)}% Block & Parry.`;
+    case "alchemist_alembic":
+      return `All consumed elixirs are ${u(15)}% more potent. Passive +${b(3)} INT.`;
+    case "philosopher_catalyst":
+      return `Consuming an elixir has a ${u(12)}% chance to not consume the item. Passive +${b(4)} INT.`;
+    case "cauldron_eternity":
+      return `While any potion buff is active, reduces Idle Attack delay by 2 frames. Passive +${p(0.05)}% Max HP.`;
+    case "breach_adrenaline":
+      return `Upon entering a new floor, gain +${u(40)}% Movement Speed and +${u(25)}% Critical Strike Chance, decaying over 30s. Passive +${p(0.02)}% base Crit Chance.`;
+    case "breach_barrier":
+      return `Upon floor entry, immediately project an overshield equal to ${u(100)}% of your Maximum HP, decaying by 5% Max HP/sec. Passive +${b(5)} flat Defense.`;
+    case "breach_scouting":
+      return `For the first 15s of a floor, reveal the path to the nearest Chest, Merchant, or Portal and gain +${u(50)}% Drop Rate. Passive +${p(0.05)}% Gold Multiplier.`;
+    case "friction_kinetic":
+      return `Generate 1 charge of Kinetic Build per 10 pixels traveled (Max 50). Each charge grants +${(0.5 * slotMult).toFixed(2)}% Attack Speed and +${(0.5 * slotMult).toFixed(2)}% Damage. Standing still for 1.5s dissipates charges. Passive +${b(3)} DEX.`;
+    case "friction_tenacity":
+      return `Each second spent in active combat grants 1 stack of Tenacity (Max 15). Each stack grants +${(2 * slotMult).toFixed(1)}% Defense and +${(1.5 * slotMult).toFixed(1)}% Block/Parry Mitigation. Stacks decay by 1/sec out of combat. Passive +${b(4)} STR.`;
+    case "friction_accretion":
+      return `For every 10 seconds spent on a floor, gain +${(3 * slotMult).toFixed(1)}% damage (Max ${(30 * slotMult).toFixed(0)}% after 100 seconds). Passive +${p(0.05)}% Drop Quality.`;
+    case "synergy_nexus":
+      return `Equipping specific offhands unlocks dual-resonance: Shields have ${u(20)}% cast-on-block spell chance; Dagger parries reset Field Flask; Tomes boost Block/Parry by ${u(5)}% for 3s. Passive +${b(4)} INT.`;
+    case "synergy_sanguine":
+      return `Increases all damage dealt to targets by +${(8 * slotMult).toFixed(1)}% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +${p(0.03)}% base Crit Chance.`;
+    default:
+      return item.breakdown || item.desc || "";
+  }
 };

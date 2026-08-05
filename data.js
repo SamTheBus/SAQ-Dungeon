@@ -6,8 +6,12 @@
 window.GAME_VERSION = 1.02; // Release Version 1.0.02 (Sigil & Calamity Overhaul)
 window.MIN_COMPATIBLE_VERSION = 1.0; // Hard reset epoch threshold
 
-window.BigNumMin = function (a, b) {
-  let ba = BigNum.from(a);
+// --- GLOBAL COMBAT BALANCE CONSTANTS ---
+window.BOSS_GUARD_PENETRATION = 0.35; // 35% damage seepage / rate reduction
+window.DEFLECTION_FATIGUE_FRAMES = 30; // 0.5s at 60 FPS
+window.COUNTER_COOLDOWN_FRAMES = 60; // 1.0s Internal Cooldown (ICD) against bosses
+
+window.BigNumMin = function (a, b) {  let ba = BigNum.from(a);
   let bb = BigNum.from(b);
   return ba.gt(bb) ? bb : ba;
 };
@@ -2589,46 +2593,70 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.idleAttackSpeed = 15;
   }
 
-  let maxBlockCap = 0.2;
-  let maxParryCap = 0.15;
+  let maxBlockCap = 0.40; // Elevated base block cap
+    let maxParryCap = 0.35; // Elevated base parry cap
 
-  let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
-  let hasShield =
-    subItem && (subItem.subType === "shield" || subItem.type === "shield");
-  let hasDagger =
-    subItem && (subItem.subType === "dagger" || subItem.type === "dagger");
-  let hasTitanGrip =
-    window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
+    let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
+    let hasShield =
+      subItem && (subItem.subType === "shield" || subItem.type === "shield");
+    let hasDagger =
+      subItem && (subItem.subType === "dagger" || subItem.type === "dagger");
+    let hasTitanGrip =
+      window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
 
-  if (hasShield) {
-    maxBlockCap = hasTitanGrip ? 0.25 : 0.2;
-  } else if (hasTitanGrip) {
-    maxBlockCap = 0.1;
-  } else {
-    p.block = 0.0;
-  }
-
-  if (hasDagger) {
-    let noun = subItem.noun ? subItem.noun.toLowerCase() : "";
-    if (noun.includes("main-gauche")) {
-      maxParryCap = hasTitanGrip ? 0.35 : 0.3;
+    if (hasShield) {
+      maxBlockCap = hasTitanGrip ? 0.50 : 0.40;
+    } else if (hasTitanGrip) {
+      maxBlockCap = 0.20;
     } else {
-      maxParryCap = hasTitanGrip ? 0.3 : 0.15;
+      p.block = 0.0;
     }
-  } else if (hasTitanGrip) {
-    maxParryCap = 0.08;
-  } else {
-    p.parry = 0.0;
-  }
 
-  maxBlockCap += p.crucibleCapBonus || 0;
-  maxParryCap += p.crucibleCapBonus || 0;
+    if (hasDagger) {
+      let noun = subItem.noun ? subItem.noun.toLowerCase() : "";
+      if (noun.includes("main-gauche")) {
+        maxParryCap = hasTitanGrip ? 0.55 : 0.45;
+      } else {
+        maxParryCap = hasTitanGrip ? 0.45 : 0.35;
+      }
+    } else if (hasTitanGrip) {
+      maxParryCap = 0.15;
+    } else {
+      p.parry = 0.0;
+    }
 
-  p.rawBlock = p.block;
-  p.rawParry = p.parry;
+    maxBlockCap += p.crucibleCapBonus || 0;
+    maxParryCap += p.crucibleCapBonus || 0;
+    maxBlockCap += p.blockCapBonus || 0;
+    maxParryCap += p.parryCapBonus || 0;
 
-  if (p.block > maxBlockCap) p.block = maxBlockCap;
-  if (p.parry > maxParryCap) p.parry = maxParryCap;
+    // STR and DEX Attribute Scaling
+    if (p.block > 0.0) {
+      p.block += effectiveStr * 0.001; // +0.1% raw block rate per STR point
+    }
+    if (p.parry > 0.0) {
+      p.parry += effectiveDex * 0.001; // +0.1% raw parry rate per DEX point
+    }
+
+    p.rawBlock = p.block;
+    p.rawParry = p.parry;
+    p.maxBlockCap = maxBlockCap;
+    p.maxParryCap = maxParryCap;
+
+    // Asymptotic Soft-Cap Curve Processing (S = 50% of the maximum Cap C)
+    let sBlock = maxBlockCap * 0.5;
+    if (p.block > sBlock) {
+      let excess = p.block - sBlock;
+      let range = maxBlockCap - sBlock;
+      p.block = sBlock + range * (excess / (excess + range));
+    }
+
+    let sParry = maxParryCap * 0.5;
+    if (p.parry > sParry) {
+      let excess = p.parry - sParry;
+      let range = maxParryCap - sParry;
+      p.parry = sParry + range * (excess / (excess + range));
+    }
 
   // Calculate Tome passive Arcane Barrier
   let hasTome =
@@ -3233,11 +3261,34 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   let pStats =
-    typeof window.resolvePlayerStats === "function"
-      ? window.resolvePlayerStats()
-      : {};
+      typeof window.resolvePlayerStats === "function"
+        ? window.resolvePlayerStats()
+        : {};
 
-  // Intercept Specter Doom Instant-Kill Strike
+    let isBoss = sourceMob && (
+      sourceMob.type === "dungeon_boss" ||
+      sourceMob.type === "dungeon_miniboss" ||
+      sourceMob.isBoss ||
+      sourceMob.type === "marcus_boss"
+    );
+
+    let activeParry = pStats.parry || 0;
+    let activeBlock = pStats.block || 0;
+
+    // Safeguard 1: Crushing Blows (Boss Guard Penetration)
+    if (isBoss) {
+      let pen = 1.0 - (window.BOSS_GUARD_PENETRATION || 0.35);
+      activeParry *= pen;
+      activeBlock *= pen;
+    }
+
+    // Safeguard 2: Deflection Fatigue (Halves active rates if active)
+    if (window.playerStats && window.playerStats.deflectionFatigueTimer > 0) {
+      activeParry *= 0.5;
+      activeBlock *= 0.5;
+    }
+
+    // Intercept Specter Doom Instant-Kill Strike
   if (rawDmg instanceof BigNum && rawDmg.e > 100) {
     p.hp = 0;
     window.spawnFloatingText(
@@ -3340,7 +3391,11 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   let netDmg = Math.max(1, remainingDmg * (1 - defenseDR));
 
   // Step 2: Parry Check (Daggers)
-  if (pStats.parry && Math.random() < pStats.parry) {
+    if (activeParry > 0 && Math.random() < activeParry) {
+      // Reset Deflection Fatigue Timer
+      if (window.playerStats) {
+        window.playerStats.deflectionFatigueTimer = window.DEFLECTION_FATIGUE_FRAMES || 30;
+      }
     if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
       window.playerStats.adrenalineTimer = 360;
     }
@@ -3353,9 +3408,15 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     let parryMitigation = pStats.hasMasterDuellist
-      ? 1.0
-      : pStats.parryMitigation || 0.6;
-    let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
+          ? 1.0
+          : pStats.parryMitigation || 0.6;
+
+        // Boss Guard Penetration seeps a fraction of the damage through your mitigation
+        if (isBoss) {
+          parryMitigation *= (1.0 - (window.BOSS_GUARD_PENETRATION || 0.35));
+        }
+
+        let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
     p.hp = Math.max(0, p.hp - parriedDmg);
 
     if (
@@ -3431,10 +3492,16 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       );
 
     if (pStats.hasShadowStep) {
-      window.playerStats.shadowStepTimer = 240; // Shadow Step speed burst active
-    }
+          window.playerStats.shadowStepTimer = 240; // Shadow Step speed burst active
+        }
 
-    if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+        // Safeguard 3: Counter-Attack Internal Cooldown
+            let canCounter = !(isBoss && window.playerStats.counterCooldownTimer > 0);
+
+            if (canCounter && sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+              if (isBoss && window.playerStats) {
+                window.playerStats.counterCooldownTimer = window.COUNTER_COOLDOWN_FRAMES || 60;
+              }
       let mobCx = sourceMob.x + (sourceMob.w || 24) / 2;
       let mobCy = sourceMob.y + (sourceMob.h || 24) / 2;
 
@@ -3556,7 +3623,11 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   // Step 3: Block Check (Shields)
-  if (pStats.block && Math.random() < pStats.block) {
+    if (activeBlock > 0 && Math.random() < activeBlock) {
+      // Reset Deflection Fatigue Timer
+      if (window.playerStats) {
+        window.playerStats.deflectionFatigueTimer = window.DEFLECTION_FATIGUE_FRAMES || 30;
+      }
     if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
       window.playerStats.adrenalineTimer = 360;
     }
@@ -3596,10 +3667,16 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     if (window.SoundManager) window.SoundManager.play("block");
 
     let baseMitigation = 0.7 + (pStats.blockMitigationBonus || 0); // Applies restored Fortified Stance 10%-30% block mitigation bonus
-    let blockMitigation = pStats.hasColossusKeystone
-      ? 1.0
-      : Math.min(0.95, baseMitigation);
-    let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
+        let blockMitigation = pStats.hasColossusKeystone
+          ? 1.0
+          : Math.min(0.95, baseMitigation);
+
+        // Boss Guard Penetration seeps a fraction of the damage through your mitigation
+        if (isBoss) {
+          blockMitigation *= (1.0 - (window.BOSS_GUARD_PENETRATION || 0.35));
+        }
+
+        let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
     let savings = netDmg - blockedDmg;
     p.hp = Math.max(0, p.hp - blockedDmg);
 
@@ -3660,10 +3737,16 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     if (pStats.hasRetaliatoryStrike) {
-      window.playerStats.retaliatoryStrikeActive = true;
-    }
+          window.playerStats.retaliatoryStrikeActive = true;
+        }
 
-    if (pStats.hasImpactTremor && Math.random() < pStats.impactTremorChance) {
+        // Safeguard 3: Counter-Attack Internal Cooldown
+            let canCounter = !(isBoss && window.playerStats.counterCooldownTimer > 0);
+
+            if (canCounter && pStats.hasImpactTremor && Math.random() < pStats.impactTremorChance) {
+              if (isBoss && window.playerStats) {
+                window.playerStats.counterCooldownTimer = window.COUNTER_COOLDOWN_FRAMES || 60;
+              }
       let shockwaveDmg = BigNum.from(pStats.def || 5).mul(1.2);
       if (window.activeDungeonMobs) {
         window.activeDungeonMobs.forEach((m) => {
@@ -3697,16 +3780,22 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     if (window.combatVisuals)
-      window.combatVisuals.spawnDamageEffect(
-        p.x,
-        p.y - 15,
-        blockedDmg,
-        "block",
-        false,
-        p,
-      );
+          window.combatVisuals.spawnDamageEffect(
+            p.x,
+            p.y - 15,
+            blockedDmg,
+            "block",
+            false,
+            p,
+          );
 
-    if (sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+        // Safeguard 3: Counter-Attack Internal Cooldown
+            let canCounterShield = !(isBoss && window.playerStats.counterCooldownTimer > 0);
+
+            if (canCounterShield && sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
+              if (isBoss && window.playerStats) {
+                window.playerStats.counterCooldownTimer = window.COUNTER_COOLDOWN_FRAMES || 60;
+              }
       // Gain +10 Shield Mastery XP on Shield Bash reflect
       if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
 
@@ -3781,11 +3870,12 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       }
     }
 
-    // Shield Keystone: Unbreakable Bulwark AoE Shockwave on Block
-    if (
-      window.SkillTreeManager &&
-      window.SkillTreeManager.getSkillLevel("shield_keystone") > 0
-    ) {
+    // Shield Keystone: Unbreakable Bulwark AoE Shockwave on Block (Respects Safeguard 3 ICD)
+        if (
+          canCounterShield &&
+          window.SkillTreeManager &&
+          window.SkillTreeManager.getSkillLevel("shield_keystone") > 0
+        ) {
       let shockwaveDmg = BigNum.from(pStats.def || 5).mul(1.5);
       if (window.activeDungeonMobs) {
         window.activeDungeonMobs.forEach((m) => {

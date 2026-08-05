@@ -12,12 +12,20 @@
   window.xpOrbs = [];
 
   // Safe global state fallback initializer
-  if (
-    window.playerStats &&
-    window.playerStats.robbingMarcusActive === undefined
-  ) {
-    window.playerStats.robbingMarcusActive = false;
-  }
+    if (
+      window.playerStats &&
+      window.playerStats.robbingMarcusActive === undefined
+    ) {
+      window.playerStats.robbingMarcusActive = false;
+    }
+    if (window.playerStats) {
+      if (window.playerStats.deflectionFatigueTimer === undefined) {
+        window.playerStats.deflectionFatigueTimer = 0;
+      }
+      if (window.playerStats.counterCooldownTimer === undefined) {
+        window.playerStats.counterCooldownTimer = 0;
+      }
+    }
 
   // --- REVAMPED ZERO-ALLOCATION PARTICLE POOL ENGINE (SUBPHASE A.1) ---
   window.particles = window.particles || [];
@@ -8622,11 +8630,19 @@
     let prevY = p ? p.y : 0;
 
     if (p.lastDamageTimer && p.lastDamageTimer > 0) {
-      p.lastDamageTimer--;
-    }
-    if (window.playerStats && window.playerStats.flaskCooldownTimer > 0) {
-      window.playerStats.flaskCooldownTimer--;
-    }
+          p.lastDamageTimer--;
+        }
+        if (window.playerStats) {
+          if (window.playerStats.flaskCooldownTimer > 0) {
+            window.playerStats.flaskCooldownTimer--;
+          }
+          if (window.playerStats.deflectionFatigueTimer > 0) {
+            window.playerStats.deflectionFatigueTimer--;
+          }
+          if (window.playerStats.counterCooldownTimer > 0) {
+            window.playerStats.counterCooldownTimer--;
+          }
+        }
     if (p.snareTimer && p.snareTimer > 0) {
       p.snareTimer--;
       p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4);
@@ -18739,11 +18755,11 @@
         : "";
 
       matrixGridEl.innerHTML = `
-                  ${renderAttrCard("STRENGTH", "+10 Max HP, +2.5 Attack Power", "Str", committedAlloc.spStr || 0, draftAlloc.spStr || 0, "str")}
-                  ${renderAttrCard("DEXTERITY", "+0.1% Crit, +0.5% Crit Multi, +1 Move Speed", "Dex", committedAlloc.spDex || 0, draftAlloc.spDex || 0, "dex")}
-                  ${renderAttrCard("INTELLIGENCE", "+1 Defense, +0.5% Potion Power, Arcane Barrier, & Alchemical Preservation", "Int", committedAlloc.spInt || 0, draftAlloc.spInt || 0, "int")}
-                  ${confirmBarHtml}
-                `;
+                        ${renderAttrCard("STRENGTH", "+10 Max HP, +2.5 Attack Power, & +0.1% Raw Block Rate", "Str", committedAlloc.spStr || 0, draftAlloc.spStr || 0, "str")}
+                        ${renderAttrCard("DEXTERITY", "+0.1% Crit, +0.5% Crit Multi, +1 Move Speed, & +0.1% Raw Parry Rate", "Dex", committedAlloc.spDex || 0, draftAlloc.spDex || 0, "dex")}
+                        ${renderAttrCard("INTELLIGENCE", "+1 Defense, +0.5% Potion Power, Arcane Barrier, & Alchemical Preservation", "Int", committedAlloc.spInt || 0, draftAlloc.spInt || 0, "int")}
+                        ${confirmBarHtml}
+                      `;
     }
 
     // 1. Render Character Stats (With live draft preview diffs)
@@ -18792,8 +18808,8 @@
                                   <div class="stat-line"><span class="stat-label">${iconSvg("moveSpeed")} MOVE SPEED</span><span class="stat-val">${formatStatValWithDiff("moveSpeed", curStats.moveSpeed, draftStats.moveSpeed, false)}</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("critChance")} CRIT CHANCE</span><span class="stat-val">${formatStatValWithDiff("critChance", curStats.critChance, draftStats.critChance, true, 1)}</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("critDamage")} CRIT MULTI</span><span class="stat-val">${formatStatValWithDiff("critDamage", curStats.critDamage, draftStats.critDamage, true, 1)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("block")} BLOCK RATE</span><span class="stat-val">${formatStatValWithDiff("block", curStats.block, draftStats.block, true, 1)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("parry")} PARRY RATE</span><span class="stat-val">${formatStatValWithDiff("parry", curStats.parry, draftStats.parry, true, 1)}</span></div>
+                                  <div class="stat-line"><span class="stat-label">${iconSvg("block")} BLOCK RATE</span><span class="stat-val">${formatStatValWithDiff("block", curStats.block, draftStats.block, true, 1)} (Cap: ${formatStatValWithDiff("maxBlockCap", curStats.maxBlockCap, draftStats.maxBlockCap, true, 1)})</span></div>
+                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("parry")} PARRY RATE</span><span class="stat-val">${formatStatValWithDiff("parry", curStats.parry, draftStats.parry, true, 1)} (Cap: ${formatStatValWithDiff("maxParryCap", curStats.maxParryCap, draftStats.maxParryCap, true, 1)})</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("barrier")} BARRIER</span><span class="stat-val">${formatStatValWithDiff("arcaneBarrier", curStats.arcaneBarrier, draftStats.arcaneBarrier, true, 1)}</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("dropRate")} DROP RATE</span><span class="stat-val">${formatStatValWithDiff("drop", curStats.drop, draftStats.drop, true, 0)}</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("goldMulti")} GOLD MULTI</span><span class="stat-val">${formatStatValWithDiff("gold", curStats.gold, draftStats.gold, true, 0)}</span></div>
