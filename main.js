@@ -869,13 +869,26 @@
               outerColor: "rgba(249, 115, 22, 0.65)",
             });
           } else if (st.type === window.TILE_TYPES.STATION_PORTAL) {
-            lights.push({
-              x: sx,
-              y: sy,
-              r: 150,
-              innerColor: "rgba(230, 190, 255, 1.0)",
-              outerColor: "rgba(168, 85, 247, 0.55)",
-            });
+                      let pEvent = window.playerStats.activePortalEvent || "expedition";
+                      let inner = "rgba(224, 242, 254, 1.0)";
+                      let outer = "rgba(56, 189, 248, 0.55)";
+                      let radius = 150;
+
+                      if (pEvent === "onslaught") {
+                        inner = "rgba(255, 180, 100, 1.0)";
+                        outer = "rgba(249, 115, 22, 0.65)";
+                      } else if (pEvent === "rift") {
+                        inner = "rgba(243, 104, 224, 1.0)";
+                        outer = "rgba(168, 85, 247, 0.65)";
+                      }
+
+                      lights.push({
+                        x: sx,
+                        y: sy,
+                        r: radius,
+                        innerColor: inner,
+                        outerColor: outer,
+                      });
           } else if (st.type === window.TILE_TYPES.STATION_ENCHANT) {
             lights.push({
               x: sx,
@@ -6644,36 +6657,38 @@
     let modal = document.getElementById("deployment-modal");
     if (modal) modal.style.display = "none";
 
-    if (isCrucible) {
-      window.currentGameState = window.GAME_STATES.DUNGEON;
-      window.playerStats.crucibleWave =
-        window.playerStats.crucibleStartWave || 1;
-      window.playerStats.crucibleAccumulatedShards = 0;
-      window.playerStats.crucibleAccumulatedCores = 0;
-      window.playerStats.crucibleAccumulatedLoot = [];
+    window.playerStats.activePortalEvent = "expedition"; // Reset active primed portal events on deployment
 
-      if (window.playerStats.crucibleWave > 1) {
-        let dividend = window.calculateCumulativeOnslaughtShards(
-          window.playerStats.crucibleWave,
-        );
-        window.playerStats.crucibleAccumulatedShards = dividend.shards;
-        window.playerStats.coins = BigNum.from(window.playerStats.coins).add(
-          dividend.gold,
-        );
-        window.playerStats.totalGoldEarned = BigNum.from(
-          window.playerStats.totalGoldEarned || 0,
-        ).add(dividend.gold);
-        if (typeof window.gainXp === "function") {
-          window.gainXp(dividend.xp);
+        if (isCrucible) {
+          window.currentGameState = window.GAME_STATES.DUNGEON;
+          window.playerStats.crucibleWave =
+            window.playerStats.crucibleStartWave || 1;
+          window.playerStats.crucibleAccumulatedShards = 0;
+          window.playerStats.crucibleAccumulatedCores = 0;
+          window.playerStats.crucibleAccumulatedLoot = [];
+
+          if (window.playerStats.crucibleWave > 1) {
+            let dividend = window.calculateCumulativeOnslaughtShards(
+              window.playerStats.crucibleWave,
+            );
+            window.playerStats.crucibleAccumulatedShards = dividend.shards;
+            window.playerStats.coins = BigNum.from(window.playerStats.coins).add(
+              dividend.gold,
+            );
+            window.playerStats.totalGoldEarned = BigNum.from(
+              window.playerStats.totalGoldEarned || 0,
+            ).add(dividend.gold);
+            if (typeof window.gainXp === "function") {
+              window.gainXp(dividend.xp);
+            }
+          }
+
+          window.playerStats.crucibleDraftDeck = [];
+          window.playerStats.pendingCrucibleDrafts = 3;
+          window.loadDungeonFloor(1);
+        } else {
+          window.enterDungeonRun(window.state.deploymentFloor);
         }
-      }
-
-      window.playerStats.crucibleDraftDeck = [];
-      window.playerStats.pendingCrucibleDrafts = 3;
-      window.loadDungeonFloor(1);
-    } else {
-      window.enterDungeonRun(window.state.deploymentFloor);
-    }
   };
 
   window.spawnBossEncounter = function (tileX, tileY, bossTier = "major") {
@@ -6830,91 +6845,99 @@
   };
 
   window.onBossDefeated = function (tileX, tileY) {
-    let map = window.activeDungeonMap;
-    let depth = window.player.depth || 1;
+      let map = window.activeDungeonMap;
+      let depth = window.player.depth || 1;
 
-    // Refill Field Flask charges upon defeating a boss
-    window.refillFlaskCharges(false);
+      // Refill Field Flask charges upon defeating a boss
+      window.refillFlaskCharges(false);
 
-    let isChallenge = window.playerStats.activeSpecialChallenge !== null;
-    let isCrucible = window.playerStats.isCrucibleMode;
+      let isChallenge = window.playerStats.activeSpecialChallenge !== null;
+      let isCrucible = window.playerStats.isCrucibleMode;
 
-    if (!isChallenge && !isCrucible) {
-      let nextCheckpoint = depth + 1;
-      window.playerStats.unlockedCheckpoints = window.playerStats
-        .unlockedCheckpoints || [1];
-      if (
-        window.isValidCheckpoint(nextCheckpoint) &&
-        !window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)
-      ) {
-        window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
-      }
-      window.playerStats.unlockedCheckpoints =
-        window.playerStats.unlockedCheckpoints
-          .filter(window.isValidCheckpoint)
-          .sort((a, b) => a - b);
-      window.playerStats.maxFloorCleared = Math.max(
-        window.playerStats.maxFloorCleared || 0,
-        depth,
-      );
-      window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
-      window.playerStats.lifetimePeakStage = Math.max(
-        window.playerStats.lifetimePeakStage || 1,
-        depth,
-      );
-    }
-    if (typeof window.saveGame === "function") window.saveGame();
-
-    if (
-      map &&
-      map.grid &&
-      map.grid[tileY] &&
-      map.grid[tileY][tileX] !== undefined
-    ) {
-      if (window.playerStats.activeSpecialChallenge) {
-        if (depth < 4) {
-          // Floors 1-3: Slaying the Warden opens the locked descent portal to the next stage
-          map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
-          window.spawnFloatingText(
-            window.player.x,
-            window.player.y - 25,
-            "WARDEN SLAIN - DESCENT PORTAL ACTIVE",
-            "#ffd700",
-          );
-        } else {
-          // Floor 4: Both Overlords are defeated! Spawn Special Coffer (Astral Vault) & exit portal
-          map.grid[tileY][tileX] = window.TILE_TYPES.CHEST_SPAWN;
-          map.chestTiers[`${tileX},${tileY}`] = "astral";
-
-          // Safe positioning of exit portal 2 tiles away from Special Coffer
-          let exitY = tileY + 2 < map.height - 1 ? tileY + 2 : tileY - 2;
-          map.grid[exitY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
-
-          window.spawnFloatingText(
-            window.player.x,
-            window.player.y - 25,
-            "VICTORY! SPECIAL COFFER DISPENSED",
-            "#ffd700",
-          );
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast(
-              "✦ Special Coffer spawned! Claim your loot and extract!",
-              "#ffd700",
-            );
-          }
+      if (!isChallenge && !isCrucible) {
+        let nextCheckpoint = depth + 1;
+        window.playerStats.unlockedCheckpoints =
+          window.playerStats.unlockedCheckpoints || [1];
+        if (
+          window.isValidCheckpoint(nextCheckpoint) &&
+          !window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)
+        ) {
+          window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
         }
-      } else {
-        // Standard campaign boss progression
-        map.grid[tileY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
-        window.spawnFloatingText(
-          window.player.x,
-          window.player.y - 25,
-          "CHECKPOINT UNLOCKED - EXTRACTION OPEN",
-          "#00d2ff",
+        window.playerStats.unlockedCheckpoints =
+          window.playerStats.unlockedCheckpoints
+            .filter(window.isValidCheckpoint)
+            .sort((a, b) => a - b);
+        window.playerStats.maxFloorCleared = Math.max(
+          window.playerStats.maxFloorCleared || 0,
+          depth,
+        );
+        window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
+        window.playerStats.lifetimePeakStage = Math.max(
+          window.playerStats.lifetimePeakStage || 1,
+          depth,
         );
       }
-    }
-  };
+      if (typeof window.saveGame === "function") window.saveGame();
+
+      if (
+        map &&
+        map.grid &&
+        map.grid[tileY] &&
+        map.grid[tileY][tileX] !== undefined
+      ) {
+        if (window.playerStats.isRiftMode) {
+          map.grid[tileY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
+          window.spawnFloatingText(
+            window.player.x,
+            window.player.y - 25,
+            "RIFT GUARDIAN SLAIN - PORTAL EXTRACT ACTIVE",
+            "#00ffff",
+          );
+        } else if (window.playerStats.activeSpecialChallenge) {
+          if (depth < 4) {
+            // Floors 1-3: Slaying the Warden opens the locked descent portal to the next stage
+            map.grid[tileY][tileX] = window.TILE_TYPES.DESCENT_PORTAL;
+            window.spawnFloatingText(
+              window.player.x,
+              window.player.y - 25,
+              "WARDEN SLAIN - DESCENT PORTAL ACTIVE",
+              "#ffd700",
+            );
+          } else {
+            // Floor 4: Both Overlords are defeated! Spawn Special Coffer (Astral Vault) & exit portal
+            map.grid[tileY][tileX] = window.TILE_TYPES.CHEST_SPAWN;
+            map.chestTiers[`${tileX},${tileY}`] = "astral";
+
+            // Safe positioning of exit portal 2 tiles away from Special Coffer
+            let exitY = tileY + 2 < map.height - 1 ? tileY + 2 : tileY - 2;
+            map.grid[exitY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
+
+            window.spawnFloatingText(
+              window.player.x,
+              window.player.y - 25,
+              "VICTORY! SPECIAL COFFER DISPENSED",
+              "#ffd700",
+            );
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "✦ Special Coffer spawned! Claim your loot and extract!",
+                "#ffd700",
+              );
+            }
+          }
+        } else {
+          // Standard campaign boss progression
+          map.grid[tileY][tileX] = window.TILE_TYPES.EXTRACTION_ZONE;
+          window.spawnFloatingText(
+            window.player.x,
+            window.player.y - 25,
+            "CHECKPOINT UNLOCKED - EXTRACTION OPEN",
+            "#00d2ff",
+          );
+        }
+      }
+    };
 
   window.activeDungeonMobs = [];
 
@@ -6961,33 +6984,36 @@
     }
 
     let isMiniBoss = false;
-    let isMajorBoss = false;
-    let map;
+        let isMajorBoss = false;
+        let map;
 
-    let isChallenge = window.playerStats.activeSpecialChallenge !== null;
+        let isChallenge = window.playerStats.activeSpecialChallenge !== null;
+        let isRift = window.playerStats.isRiftMode === true;
 
-    if (isChallenge) {
-      if (depth === 4) {
-        map = window.activeDungeonMap.generateBossArena();
-      } else {
-        map = window.activeDungeonMap.generate(depth);
-      }
-    } else if (window.playerStats.isCrucibleMode) {
-      map = window.activeDungeonMap.generateOnslaughtArena();
-      window.state.onslaughterWaveLock = false;
-      setTimeout(() => {
-        window.spawnOnslaughtWave(window.playerStats.crucibleWave || 1);
-      }, 100);
-    } else {
-      isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
-      isMajorBoss = depth % 12 === 0;
+        if (isChallenge) {
+          if (depth === 4) {
+            map = window.activeDungeonMap.generateBossArena();
+          } else {
+            map = window.activeDungeonMap.generate(depth);
+          }
+        } else if (window.playerStats.isCrucibleMode) {
+          map = window.activeDungeonMap.generateOnslaughtArena();
+          window.state.onslaughterWaveLock = false;
+          setTimeout(() => {
+            window.spawnOnslaughtWave(window.playerStats.crucibleWave || 1);
+          }, 100);
+        } else if (isRift) {
+          map = window.activeDungeonMap.generateBossArena();
+        } else {
+          isMiniBoss = depth % 12 === 4 || depth % 12 === 8;
+          isMajorBoss = depth % 12 === 0;
 
-      if (isMiniBoss || isMajorBoss) {
-        map = window.activeDungeonMap.generateBossArena();
-      } else {
-        map = window.activeDungeonMap.generate(depth);
-      }
-    }
+          if (isMiniBoss || isMajorBoss) {
+            map = window.activeDungeonMap.generateBossArena();
+          } else {
+            map = window.activeDungeonMap.generate(depth);
+          }
+        }
     let tileSize = map.tileSize;
 
     window.player.x = map.spawnTile.x * tileSize + tileSize / 2;
@@ -6995,34 +7021,39 @@
     window.player.targetX = window.player.x;
     window.player.targetY = window.player.y;
 
-    // Spawning Bosses (Warden, Major, or Mini)
-    if (isChallenge) {
-      if (depth === 4) {
-        window.ChallengeEngine.spawnTwinBosses(map);
-      } else {
-        // Spawn the floor's Guardian Warden right at the exit portal tile to block descent
-        window.spawnBossEncounter(
-          map.extractionTile.x,
-          map.extractionTile.y,
-          "mini",
-        );
-      }
-    } else if (isMajorBoss) {
-      let cx = Math.floor(map.width / 2);
-      let cy = Math.floor(map.height / 2);
-      window.spawnBossEncounter(cx, cy, "major");
-    } else if (isMiniBoss) {
-      let cx = Math.floor(map.width / 2);
-      let cy = Math.floor(map.height / 2);
-      window.spawnBossEncounter(cx, cy, "mini");
-    }
+    // Spawning Bosses (Warden, Major, Mini, or Rift Guardian)
+        if (isRift) {
+          let cx = Math.floor(map.width / 2);
+          let cy = Math.floor(map.height / 2);
+          window.spawnRiftGuardianEncounter(cx, cy);
+        } else if (isChallenge) {
+          if (depth === 4) {
+            window.ChallengeEngine.spawnTwinBosses(map);
+          } else {
+            // Spawn the floor's Guardian Warden right at the exit portal tile to block descent
+            window.spawnBossEncounter(
+              map.extractionTile.x,
+              map.extractionTile.y,
+              "mini",
+            );
+          }
+        } else if (isMajorBoss) {
+          let cx = Math.floor(map.width / 2);
+          let cy = Math.floor(map.height / 2);
+          window.spawnBossEncounter(cx, cy, "major");
+        } else if (isMiniBoss) {
+          let cx = Math.floor(map.width / 2);
+          let cy = Math.floor(map.height / 2);
+          window.spawnBossEncounter(cx, cy, "mini");
+        }
 
-    // Spawning Standard Monsters (Enabled on all standard floors + Floors 1-3 of Challenges)
-    let shouldSpawnStandardMobs =
-      !isMiniBoss &&
-      !isMajorBoss &&
-      !window.playerStats.isCrucibleMode &&
-      (depth < 4 || !isChallenge);
+        // Spawning Standard Monsters (Enabled on all standard floors + Floors 1-3 of Challenges)
+        let shouldSpawnStandardMobs =
+          !isMiniBoss &&
+          !isMajorBoss &&
+          !window.playerStats.isCrucibleMode &&
+          !isRift &&
+          (depth < 4 || !isChallenge);
 
     if (shouldSpawnStandardMobs && map.mobSpawns) {
       let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
@@ -7691,59 +7722,54 @@
   };
 
   window.interactWithStation = function (stationType) {
-    if (stationType === window.TILE_TYPES.STATION_PORTAL) {
-      window.playerStats.isCrucibleMode = false;
-      window.openHubPortalModal();
-    } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
-      if (typeof window.toggleForgeModal === "function") {
-        window.toggleForgeModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_ENCHANT) {
-      if (typeof window.toggleEnchantmentModal === "function") {
-        window.toggleEnchantmentModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_GACHAPON) {
-      if (typeof window.openGachaModal === "function") {
-        window.openGachaModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_SHOP) {
-      if (typeof window.toggleShopModal === "function") {
-        window.toggleShopModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_BOUNTY) {
-      if (typeof window.toggleBountyModal === "function") {
-        window.toggleBountyModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_INN) {
-      let isUnlocked = (window.playerStats.maxFloorCleared || 0) >= 36;
-      if (!isUnlocked) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast(
-            "[ALTAR LOCKED] The Onslaught Altar is bound by magical seals! Clear Floor 36 (Sector 3 Overlord) to unlock.",
-            "#a855f7",
-          );
-        }
-        if (typeof window.spawnFloatingText === "function") {
-          window.spawnFloatingText(
-            window.player.x,
-            window.player.y - 15,
-            "LOCKED: CLEAR FLOOR 36",
-            "#a855f7",
-            true,
-          );
-        }
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("block");
-        }
-      } else {
-        // Set Onslaught Mode configuration active
-        window.playerStats.isCrucibleMode = true;
-        window.openHubPortalModal();
-      }
-    }
+      if (stationType === window.TILE_TYPES.STATION_PORTAL) {
+                 let activeEvent = window.playerStats.activePortalEvent || "expedition";
+                 if (activeEvent === "onslaught") {
+                   window.playerStats.isCrucibleMode = true;
+                   window.openHubPortalModal();
+                 } else if (activeEvent === "rift") {
+                   let L = window.playerStats.activeRiftLevel || 1;
+                   let gName = (window.playerStats.selectedRiftGuardian || "aegis_goliath").replace("_", " ").toUpperCase();
+
+                   window.showCustomConfirm(
+                     "ENTER THE RIFT",
+                     `Step through the portal to duel <strong style="color:#00ffff;">${gName}</strong> (Rift Level ${L})?`,
+                     "ENTER DUEL",
+                     "CANCEL",
+                     "#a855f7",
+                     function() {
+                       window.launchRiftDuel();
+                     }
+                   );
+                 } else {
+                   window.playerStats.isCrucibleMode = false;
+                   window.openHubPortalModal();
+                 }
+               } else if (stationType === window.TILE_TYPES.STATION_FORGE) {
+                       if (typeof window.toggleForgeModal === "function") {
+                         window.toggleForgeModal();
+                       }
+                     } else if (stationType === window.TILE_TYPES.STATION_ENCHANT) {
+                       if (typeof window.toggleEnchantmentModal === "function") {
+                         window.toggleEnchantmentModal();
+                       }
+                     } else if (stationType === window.TILE_TYPES.STATION_GACHAPON) {
+               if (typeof window.openGachaModal === "function") {
+                 window.openGachaModal();
+               }
+             } else if (stationType === window.TILE_TYPES.STATION_SHOP) {
+               if (typeof window.toggleShopModal === "function") {
+                 window.toggleShopModal();
+               }
+             } else if (stationType === window.TILE_TYPES.STATION_BOUNTY) {
+               if (typeof window.toggleBountyModal === "function") {
+                 window.toggleBountyModal();
+               }
+             } else if (stationType === window.TILE_TYPES.STATION_INN) {
+               if (typeof window.openTrialsAltarModal === "function") {
+                 window.openTrialsAltarModal();
+               }
+             }
   };
 
   window.requestAbandonRun = function () {
@@ -7789,16 +7815,23 @@
     let isMajorBossCurrent = depth % 12 === 0;
 
     let isChallenge = window.playerStats.activeSpecialChallenge !== null;
+        let isRift = window.playerStats.isRiftMode === true;
 
-    if (isChallenge && depth >= 4) {
-      if (titleEl) titleEl.innerText = "CONTRACT COMPLETED!";
-      if (subEl)
-        subEl.innerText =
-          "You have successfully conquered all 4 floors of the Special Challenge! Tap Extract to secure your legendary rewards!";
-      if (descendBtn) descendBtn.style.display = "none";
-    } else {
-      if (descendBtn) descendBtn.style.display = "inline-block";
-      if (titleEl) {
+        if (isRift) {
+          if (titleEl) titleEl.innerText = "RIFT TRIAL COMPLETED!";
+          if (subEl)
+            subEl.innerText =
+              "You have successfully defeated the Rift Guardian! Tap Extract to secure your legendary mastery rewards!";
+          if (descendBtn) descendBtn.style.display = "none";
+        } else if (isChallenge && depth >= 4) {
+          if (titleEl) titleEl.innerText = "CONTRACT COMPLETED!";
+          if (subEl)
+            subEl.innerText =
+              "You have successfully conquered all 4 floors of the Special Challenge! Tap Extract to secure your legendary rewards!";
+          if (descendBtn) descendBtn.style.display = "none";
+        } else {
+          if (descendBtn) descendBtn.style.display = "inline-block";
+          if (titleEl) {
         if (isMajorBossCurrent) {
           titleEl.innerText = `DUNGEON SECTOR CLEARED (FLOOR ${depth})`;
         } else if (isMiniBossCurrent) {
@@ -8046,14 +8079,127 @@
   };
 
   window.triggerExtraction = function (success = true, isAbandon = false) {
-    window.decrementPotionRunCharges();
-    window.playerStats.activeDungeonSigil = null; // Clear and consume active Sigil on run end
+      window.decrementPotionRunCharges();
+      window.playerStats.activeDungeonSigil = null; // Clear and consume active Sigil on run end
 
-    let activeRunGold = BigNum.from(window.playerStats.runGold || 0);
+      let activeRunGold = BigNum.from(window.playerStats.runGold || 0);
 
-    // --- ONSLAUGHT / CRUCIBLE MODE EXTRACTION INTERCEPT ---
-    if (window.playerStats.isCrucibleMode) {
-      let summaryModal = document.getElementById("summary-modal");
+      // --- RIFT MODE EXTRACTION INTERCEPT ---
+      if (window.playerStats.isRiftMode) {
+              let summaryModal = document.getElementById("summary-modal");
+              let titleEl = document.getElementById("summary-title");
+              let subEl = document.getElementById("summary-subtitle");
+              let listEl = document.getElementById("summary-loot-list");
+              let btnEl = document.getElementById("summary-action-btn");
+              let nemesisCard = document.getElementById("death-nemesis-card");
+
+              if (!summaryModal || !titleEl || !listEl) return;
+
+              if (nemesisCard) nemesisCard.style.display = "none";
+
+              let L = window.playerStats.activeRiftLevel || 1;
+              let gName = (window.playerStats.selectedRiftGuardian || "aegis_goliath").replace("_", " ").toUpperCase();
+
+              if (success) {
+                window.playerStats.highestRiftLevelCleared = Math.max(
+                  window.playerStats.highestRiftLevelCleared || 0,
+                  L
+                );
+
+                titleEl.innerText = "RIFT TRIAL CLEARED";
+                titleEl.style.color = "#2ecc71";
+                if (subEl) subEl.innerText = `${gName} Defeated | Rift Level ${L}`;
+
+          // Compute rewards using balanced power curves
+          let xpGranted = Math.round(250 * Math.pow(L, 0.85));
+          let shardsGranted = Math.floor(15 + 3.0 * L);
+          let dustGranted = Math.floor(30 + 6.0 * L);
+
+          // Catalyst Cores: Math.floor(L/10) + fractional chance of (L % 10) * 10%
+          let coreCount = Math.floor(L / 10);
+          let remainder = L % 10;
+          if (remainder > 0 && Math.random() < (remainder * 0.1)) {
+            coreCount++;
+          }
+
+          // Astral Essence chance: min(100%, 5% + 1.8% * L)
+          let essenceChance = Math.min(1.0, 0.05 + 0.018 * L);
+          let gotEssence = Math.random() < essenceChance;
+
+          // Apply rewards
+          window.playerStats.astralShards = (window.playerStats.astralShards || 0) + shardsGranted;
+          window.playerStats.astralDust = (window.playerStats.astralDust || 0) + dustGranted;
+
+          if (coreCount > 0) {
+            window.addEtcDrop("Catalyst Core", coreCount, true);
+          }
+          if (gotEssence) {
+            window.addEtcDrop("Astral Essence", 1, true);
+          }
+
+          // Gain Subweapon Mastery XP
+          if (window.equippedSlots && window.equippedSlots.subweapon) {
+            let sub = window.equippedSlots.subweapon;
+            let subType = sub.subType || sub.type || "shield";
+            if (["shield", "dagger", "tome"].includes(subType)) {
+              window.gainSubweaponXp(subType, xpGranted);
+            }
+          }
+
+          let rewardListHtml = `
+            <div style="display:flex; flex-direction:column; gap:6px; text-align:left; font-family:monospace; font-size:11px;">
+              <div style="background:#091a10; border:1px solid #10b981; border-left:4px solid #2ecc71; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#a3fd83; font-weight:bold;">[MASTERY XP] Mastery XP Gained:</span>
+                <strong style="color:#ffffff; font-size:12px;">+${xpGranted.toLocaleString()} XP</strong>
+              </div>
+              <div style="background:#0c0d14; border:1px solid #1e293b; border-left:4px solid #00ffff; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#94a3b8; font-weight:bold;">[VAULT] Astral Shards Secured:</span>
+                <strong style="color:#00ffff; font-size:12px;">+${shardsGranted.toLocaleString()} Shards</strong>
+              </div>
+              <div style="background:#0d0615; border:1px solid #4c1d95; border-left:4px solid #a855f7; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#cbd5e1; font-weight:bold;">[VAULT] Astral Dust Secured:</span>
+                <strong style="color:#a855f7; font-size:12px;">+${dustGranted.toLocaleString()} Dust</strong>
+              </div>
+              ${coreCount > 0 ? `
+              <div style="background:#0a100d; border:1px solid #06241a; border-left:4px solid #2ecc71; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#64748b; font-weight:bold;">[MATERIAL] Catalyst Cores:</span>
+                <strong style="color:#2ecc71; font-size:12px;">+${coreCount} Cores</strong>
+              </div>` : ""}
+              ${gotEssence ? `
+              <div style="background:#0a0c1a; border:1px solid #3b0764; border-left:4px solid #df9ffb; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#94a3b8; font-weight:bold;">[MATERIAL] Astral Essence:</span>
+                <strong style="color:#df9ffb; font-size:12px;">+1 Essence</strong>
+              </div>` : ""}
+            </div>
+          `;
+          listEl.innerHTML = rewardListHtml;
+        } else {
+          titleEl.innerText = "RIFT TRIAL FAILED";
+          titleEl.style.color = "#e74c3c";
+          if (subEl) subEl.innerText = `${gName} Defeated You | Rift Level ${L}`;
+
+          listEl.innerHTML = `
+            <div style="background:rgba(231,76,60,0.06); border:1px dashed #ef4444; border-radius:6px; padding:12px; text-align:center; font-family:monospace; font-size:10px; line-height:1.5; color:#f87171;">
+              <strong>[RIFT TRIAL PENALTY EXEMPTION]</strong><br><br>
+              All equipped gear and inventory items are 100% safe and have been preserved intact.<br>
+              Practice your timing, refine your build, and challenge the Rift Altar again!
+            </div>
+          `;
+        }
+
+        if (btnEl) btnEl.innerText = "RETURN TO HUB ALTAR";
+        summaryModal.style.display = "flex";
+
+        // Reset Rift State
+        window.playerStats.isRiftMode = false;
+
+        if (typeof window.saveGame === "function") window.saveGame();
+        return;
+      }
+
+      // --- ONSLAUGHT / CRUCIBLE MODE EXTRACTION INTERCEPT ---
+      if (window.playerStats.isCrucibleMode) {
+        let summaryModal = document.getElementById("summary-modal");
       let titleEl = document.getElementById("summary-title");
       let subEl = document.getElementById("summary-subtitle");
       let listEl = document.getElementById("summary-loot-list");
@@ -8531,12 +8677,50 @@
   };
 
   // --- PHYSICS & LOGIC UPDATE ---
-  function update() {
-    window.logicClock = (window.logicClock || 0) + 1;
-    if (
-      window.logicClock % 60 === 0 &&
-      typeof window.checkAchievements === "function"
-    ) {
+    function update() {
+      window.logicClock = (window.logicClock || 0) + 1;
+
+      // Direct themed particle eruptions near the active Portal
+      if (window.currentGameState === window.GAME_STATES.HUB && window.activeDungeonMap && window.activeDungeonMap.stations && window.logicClock % 6 === 0) {
+        let pEvent = window.playerStats.activePortalEvent || "expedition";
+        if (pEvent !== "expedition") {
+          let map = window.activeDungeonMap;
+          let tSize = map.tileSize || 32;
+          let pStation = map.stations.find(st => st.type === window.TILE_TYPES.STATION_PORTAL);
+          if (pStation && window.ParticlePool && window.particles) {
+            let px = pStation.x * tSize + tSize / 2;
+            let py = pStation.y * tSize + tSize / 2;
+
+            let pColor = pEvent === "onslaught" ? "#f97316" : "#a855f7";
+            let angle = Math.random() * Math.PI * 2;
+            let dist = window.randFloat(4, 16);
+
+            let pt = window.ParticlePool.get(
+              px + Math.cos(angle) * dist,
+              py + Math.sin(angle) * dist,
+              (Math.random() - 0.5) * 0.4,
+              -window.randFloat(0.6, 1.4),
+              window.randFloat(1.2, 2.5),
+              pColor,
+              0.85,
+              window.randInt(20, 35),
+              -0.01,
+              true
+            );
+            if (pEvent === "rift") {
+              pt.style = "glowing_orb";
+            } else {
+              pt.style = "sparkle_star";
+            }
+            window.particles.push(pt);
+          }
+        }
+      }
+
+      if (
+        window.logicClock % 60 === 0 &&
+        typeof window.checkAchievements === "function"
+      ) {
       window.checkAchievements();
     }
 
@@ -9241,45 +9425,45 @@
   }
 
   window.spawnCalamitySpecter = function () {
-    if (window.calamitySpecterActive) return;
-    window.calamitySpecterActive = true;
+      if (window.calamitySpecterActive) return;
+      window.calamitySpecterActive = true;
 
-    let p = window.player;
-    let angle = Math.random() * Math.PI * 2;
-    let spawnDist = 320;
-    let sx = p.x + Math.cos(angle) * spawnDist;
-    let sy = p.y + Math.sin(angle) * spawnDist;
+      let p = window.player;
+      let angle = Math.random() * Math.PI * 2;
+      let spawnDist = 320;
+      let sx = p.x + Math.cos(angle) * spawnDist;
+      let sy = p.y + Math.sin(angle) * spawnDist;
 
-    window.activeDungeonMobs = window.activeDungeonMobs || [];
-    window.activeDungeonMobs.push({
-      id: window.idCounter++,
-      type: "mob",
-      visualTier: 5,
-      visualType: "calamity_specter",
-      x: sx - 16,
-      y: sy - 16,
-      w: 32,
-      h: 32,
-      hp: BigNum.from("9.99e300"), // Absolutely immortal
-      maxHp: BigNum.from("9.99e300"),
-      atk: 999999999,
-      flashTimer: 0,
-      isSpecter: true,
-      discovered: true,
-      hopTimer: 0,
-      speedMultiplier: 1.0,
-    });
+      window.activeDungeonMobs = window.activeDungeonMobs || [];
+      window.activeDungeonMobs.push({
+        id: window.idCounter++,
+        type: "mob",
+        visualTier: 5,
+        visualType: "calamity_specter",
+        x: sx - 16,
+        y: sy - 16,
+        w: 32,
+        h: 32,
+        hp: BigNum.from("9.99e300"), // Absolutely immortal
+        maxHp: BigNum.from("9.99e300"),
+        atk: 999999999,
+        flashTimer: 0,
+        isSpecter: true,
+        discovered: true,
+        hopTimer: 0,
+        speedMultiplier: 1.0,
+      });
 
-    if (typeof window.pushHeaderToast === "function") {
-      window.pushHeaderToast(
-        "☠ THE CALAMITY SPECTER HAS AWAKENED! ESCAPE!",
-        "#ef4444",
-      );
-    }
-    if (window.SoundManager && typeof window.SoundManager.play === "function") {
-      window.SoundManager.play("death");
-    }
-  };
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[!] THE CALAMITY SPECTER HAS AWAKENED! ESCAPE!",
+          "#ef4444",
+        );
+      }
+      if (window.SoundManager && typeof window.SoundManager.play === "function") {
+        window.SoundManager.play("death");
+      }
+    };
 
   window.spawnHomingXp = function (worldX, worldY, amount) {
     let particleCount = window.randInt(3, 6);
@@ -12058,63 +12242,112 @@
             let mapInst = window.activeDungeonMap;
 
             if (mapInst && mapInst.grid) {
-              let probeAngles = [
-                0,
-                Math.PI / 4,
-                -Math.PI / 4,
-                Math.PI / 2,
-                -Math.PI / 2,
-                (Math.PI * 3) / 4,
-                -(Math.PI * 3) / 4,
-              ];
+                            // Intercept and redirect aggro toward friendly decoy wisps if nearby
+                            let targetEntity = p;
+                            let nearbyWisp = window.activeDungeonMobs
+                              ? window.activeDungeonMobs.find(
+                                  (w) =>
+                                    w.isFriendlyWisp &&
+                                    w.hp.gt(0) &&
+                                    Math.hypot(
+                                      mCenterX - (w.x + 12),
+                                      mCenterY - (w.y + 12),
+                                    ) <= 160,
+                                )
+                              : null;
+                            if (nearbyWisp) {
+                              targetEntity = { x: nearbyWisp.x + 12, y: nearbyWisp.y + 12 };
+                            }
 
-              // Intercept and redirect aggro toward friendly decoy wisps if nearby
-              let targetEntity = p;
-              let nearbyWisp = window.activeDungeonMobs
-                ? window.activeDungeonMobs.find(
-                    (w) =>
-                      w.isFriendlyWisp &&
-                      w.hp.gt(0) &&
-                      Math.hypot(
-                        mCenterX - (w.x + 12),
-                        mCenterY - (w.y + 12),
-                      ) <= 160,
-                  )
-                : null;
-              if (nearbyWisp) {
-                targetEntity = { x: nearbyWisp.x + 12, y: nearbyWisp.y + 12 };
-              }
+                            let baseAngle = Math.atan2(
+                              targetEntity.y - mCenterY,
+                              targetEntity.x - mCenterX,
+                            );
+                            // Add a slight dynamic drift based on logic clock and mob ID to break identical conga-lines
+                            let drift =
+                              Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
+                            baseAngle += drift;
 
-              let baseAngle = Math.atan2(
-                targetEntity.y - mCenterY,
-                targetEntity.x - mCenterX,
-              );
-              // Add a slight dynamic drift based on logic clock and mob ID to break identical conga-lines
-              let drift =
-                Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
-              baseAngle += drift;
+                            let vx = Math.cos(baseAngle) * speed;
+                            let vy = Math.sin(baseAngle) * speed;
+                            let moved = false;
 
-              for (let a = 0; a < probeAngles.length; a++) {
-                let testAngle = baseAngle + probeAngles[a];
-                let vx = Math.cos(testAngle) * speed;
-                let vy = Math.sin(testAngle) * speed;
+                            // 1. Check direct movement step first (fast path)
+                            if (!checkCollisionAt(mapInst, mCenterX + vx, mCenterY + vy, mRadius)) {
+                              m.x += vx;
+                              m.y += vy;
+                              moved = true;
+                            } else {
+                              // 2. Axis-aligned sliding fallback (smoothly glide along walls in the direction of the target)
+                              let canSlideX = !checkCollisionAt(mapInst, mCenterX + vx, mCenterY, mRadius);
+                              let canSlideY = !checkCollisionAt(mapInst, mCenterX, mCenterY + vy, mRadius);
 
-                if (
-                  !checkCollisionAt(
-                    mapInst,
-                    mCenterX + vx,
-                    mCenterY + vy,
-                    mRadius,
-                  )
-                ) {
-                  m.x += vx;
-                  m.y += vy;
-                  if (vx < -0.1) m.facing = -1;
-                  else if (vx > 0.1) m.facing = 1;
-                  break;
-                }
-              }
-            }
+                              if (canSlideX && !canSlideY && Math.abs(vx) > 0.1) {
+                                m.x += vx;
+                                vy = 0; // Nullify blocked vertical velocity
+                                moved = true;
+                              } else if (canSlideY && !canSlideX && Math.abs(vy) > 0.1) {
+                                m.y += vy;
+                                vx = 0; // Nullify blocked horizontal velocity
+                                moved = true;
+                              } else if (canSlideX && canSlideY) {
+                                // Both axes are free but the diagonal is blocked (outer corner clip)
+                                if (Math.abs(vx) >= Math.abs(vy)) {
+                                  m.x += vx;
+                                  vy = 0;
+                                } else {
+                                  m.y += vy;
+                                  vx = 0;
+                                }
+                                moved = true;
+                              }
+                            }
+
+                            // 3. Tangential Corner Deflection (If direct path and slide paths are both blocked)
+                            if (!moved) {
+                              let preferCW = (m.id % 2 === 0);
+                              let offset1 = preferCW ? Math.PI / 2 : -Math.PI / 2;
+                              let offset2 = preferCW ? -Math.PI / 2 : Math.PI / 2;
+                              let offset3 = Math.PI;
+
+                              for (let j = 0; j < 3; j++) {
+                                let offset = (j === 0) ? offset1 : (j === 1) ? offset2 : offset3;
+                                let testAng = baseAngle + offset;
+                                let tx = Math.cos(testAng) * speed;
+                                let ty = Math.sin(testAng) * speed;
+
+                                if (!checkCollisionAt(mapInst, mCenterX + tx, mCenterY + ty, mRadius)) {
+                                  m.x += tx;
+                                  m.y += ty;
+                                  vx = tx;
+                                  vy = ty;
+                                  moved = true;
+                                  break;
+                                } else {
+                                  let canSlideX = !checkCollisionAt(mapInst, mCenterX + tx, mCenterY, mRadius);
+                                  let canSlideY = !checkCollisionAt(mapInst, mCenterX, mCenterY + ty, mRadius);
+                                  if (canSlideX && !canSlideY && Math.abs(tx) > 0.1) {
+                                    m.x += tx;
+                                    vx = tx;
+                                    vy = 0;
+                                    moved = true;
+                                    break;
+                                  } else if (canSlideY && !canSlideX && Math.abs(ty) > 0.1) {
+                                    m.y += ty;
+                                    vx = 0;
+                                    vy = ty;
+                                    moved = true;
+                                    break;
+                                  }
+                                }
+                              }
+                            }
+
+                            if (moved) {
+                              if (vx < -0.1) m.facing = -1;
+                              else if (vx > 0.1) m.facing = 1;
+                            }
+                          }
           }
         }
       }
@@ -13143,27 +13376,30 @@
         }
 
         // Trigger high-fidelity polymorphic combat particles (Subphase C.2)
-        if (typeof window.spawnCombatImpactParticles === "function") {
-          window.spawnCombatImpactParticles(
-            m.x + m.w / 2,
-            m.y + m.h / 2,
-            isCrit,
-            -dirX,
-            -dirY,
-          );
-        }
+                if (typeof window.spawnCombatImpactParticles === "function") {
+                  window.spawnCombatImpactParticles(
+                    m.x + m.w / 2,
+                    m.y + m.h / 2,
+                    isCrit,
+                    -dirX,
+                    -dirY,
+                    m.visualType || m.type || "default",
+                  );
+                }
 
         if (
-          window.SoundManager &&
-          typeof window.SoundManager.playHitImpact === "function"
-        ) {
-          let targetType = "flesh";
-          let vType = m.visualType || "";
-          if (vType === "animated_armor" || vType === "corroded_golem") {
-            targetType = "metal";
-          }
-          window.SoundManager.playHitImpact(isCrit, targetType);
-        }
+                  window.SoundManager &&
+                  typeof window.SoundManager.playHitImpact === "function"
+                ) {
+                  let targetType = "flesh";
+                  let vType = m.visualType || m.type || "";
+                  if (vType === "animated_armor" || vType === "corroded_golem" || vType === "overlord_iron_vault") {
+                    targetType = "metal";
+                  } else if (vType === "brimstone_colossus" || vType === "magma_elemental" || vType === "lava_serpent") {
+                    targetType = "magma";
+                  }
+                  window.SoundManager.playHitImpact(isCrit, targetType);
+                }
       } else if (closestTarget.type === "cavern") {
         let item = closestTarget.obj;
         item.hp--;
@@ -14250,15 +14486,16 @@
         }
 
         // Trigger high-fidelity polymorphic combat particles (Subphase C.2)
-        if (typeof window.spawnCombatImpactParticles === "function") {
-          window.spawnCombatImpactParticles(
-            bm.x + bm.w / 2,
-            bm.y + bm.h / 2,
-            isCrit,
-            -dirX,
-            -dirY,
-          );
-        }
+                if (typeof window.spawnCombatImpactParticles === "function") {
+                  window.spawnCombatImpactParticles(
+                    bm.x + bm.w / 2,
+                    bm.y + bm.h / 2,
+                    isCrit,
+                    -dirX,
+                    -dirY,
+                    bm.visualType || bm.type || "default",
+                  );
+                }
 
         if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
           window.RenderEngine.spawnDamageEffect(
@@ -14271,16 +14508,18 @@
         }
 
         if (
-          window.SoundManager &&
-          typeof window.SoundManager.playHitImpact === "function"
-        ) {
-          let targetType = "flesh";
-          let vType = bm.visualType || "";
-          if (vType === "overlord_iron_vault" || vType === "aegis_goliath") {
-            targetType = "metal";
-          }
-          window.SoundManager.playHitImpact(isCrit, targetType);
-        }
+                  window.SoundManager &&
+                  typeof window.SoundManager.playHitImpact === "function"
+                ) {
+                  let targetType = "flesh";
+                  let vType = bm.visualType || bm.type || "";
+                  if (vType === "overlord_iron_vault" || vType === "aegis_goliath") {
+                    targetType = "metal";
+                  } else if (vType === "brimstone_colossus" || vType === "magma_elemental" || vType === "lava_serpent") {
+                    targetType = "magma";
+                  }
+                  window.SoundManager.playHitImpact(isCrit, targetType);
+                }
 
         // Define vertical center for boss offhand procs
         let bossCenterY = bm.y + bm.h / 2;
@@ -17032,35 +17271,40 @@
     }
 
     if (depthLabel) {
-      if (isHub) {
-        depthLabel.innerText = "ADVENTURER'S HUB";
-      } else if (activeChallenge) {
-        // Subphase 19: Display active special challenge name and progress
-        depthLabel.innerText = `${activeChallenge.name.toUpperCase()} [STAGE ${p.depth} OF 4]`;
-      } else {
-        let text = window.playerStats.isCrucibleMode
-          ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}`
-          : `DUNGEON FLOOR ${p.depth}`;
+          if (isHub) {
+            depthLabel.innerText = "ADVENTURER'S HUB";
+          } else if (stats.isRiftMode) {
+            let gName = (stats.selectedRiftGuardian || "aegis_goliath").replace("_", " ").toUpperCase();
+            depthLabel.innerText = `${gName} [RIFT TRIAL LEVEL ${stats.activeRiftLevel || 1}]`;
+          } else if (activeChallenge) {
+            // Subphase 19: Display active special challenge name and progress
+            depthLabel.innerText = `${activeChallenge.name.toUpperCase()} [STAGE ${p.depth} OF 4]`;
+          } else {
+            let text = window.playerStats.isCrucibleMode
+              ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}`
+              : `DUNGEON FLOOR ${p.depth}`;
 
-        let rec = window.playerStats && window.playerStats.recoveryLoot;
-        if (rec && rec.floor === p.depth && rec.items && rec.items.length > 0) {
-          text += " [RECOVERY ACTIVE]";
+            let rec = window.playerStats && window.playerStats.recoveryLoot;
+            if (rec && rec.floor === p.depth && rec.items && rec.items.length > 0) {
+              text += " [RECOVERY ACTIVE]";
+            }
+            depthLabel.innerText = text;
+          }
         }
-        depthLabel.innerText = text;
-      }
-    }
-    if (objectiveLabel) {
-      if (isHub) {
-        objectiveLabel.innerText = "Select a Station or Portal";
-      } else if (activeChallenge) {
-        // Subphase 19: Display active special challenge objective tracker
-        objectiveLabel.innerText = window.getChallengeObjectiveText();
-      } else {
-        objectiveLabel.innerText = window.playerStats.isCrucibleMode
-          ? "Defeat all active wave targets!"
-          : "Find the Extraction Zone";
-      }
-    }
+        if (objectiveLabel) {
+          if (isHub) {
+            objectiveLabel.innerText = "Select a Station or Portal";
+          } else if (stats.isRiftMode) {
+            objectiveLabel.innerText = window.mob ? "Slay the Rift Guardian!" : "Step into the Extraction Portal";
+          } else if (activeChallenge) {
+            // Subphase 19: Display active special challenge objective tracker
+            objectiveLabel.innerText = window.getChallengeObjectiveText();
+          } else {
+            objectiveLabel.innerText = window.playerStats.isCrucibleMode
+              ? "Defeat all active wave targets!"
+              : "Find the Extraction Zone";
+          }
+        }
 
     let bagBtn = document.getElementById("btn-bag-toggle");
     if (bagBtn) {
@@ -21977,16 +22221,451 @@
       ? originalCreateItemObject.call(this, type, rarity, stageScale, ...args)
       : null;
     if (
-      item &&
-      (item.type === "tome" ||
-        item.subType === "tome" ||
-        (item.name && item.name.toLowerCase().includes("lexicon")))
-    ) {
-      window.rollTomeSpells(item, stageScale, rarity);
-    }
-    return item;
-  };
-})();
+          item &&
+          (item.type === "tome" ||
+            item.subType === "tome" ||
+            (item.name && item.name.toLowerCase().includes("lexicon")))
+        ) {
+          window.rollTomeSpells(item, stageScale, rarity);
+        }
+        return item;
+      };
+
+      window.openTrialsAltarModal = function () {
+            let modal = document.getElementById("trials-altar-modal");
+            if (!modal) {
+              modal = document.createElement("div");
+              modal.id = "trials-altar-modal";
+              modal.className = "modal-overlay";
+              modal.style.display = "none";
+              document.getElementById("game-container").appendChild(modal);
+
+              modal.addEventListener("pointerdown", function (e) {
+                if (e.target === modal) {
+                  e.stopPropagation();
+                  modal.style.display = "none";
+                  window.lastModalCloseTime = Date.now();
+                  if (typeof window.hideTooltip === "function") window.hideTooltip();
+                }
+              });
+            }
+
+            modal.style.display = "flex";
+
+            if (window.state.trialsAltarActiveTab === undefined) {
+              window.state.trialsAltarActiveTab = "onslaught";
+            }
+            if (window.playerStats.activeRiftLevel === undefined) {
+              window.playerStats.activeRiftLevel = 1;
+            }
+            if (window.playerStats.selectedRiftGuardian === undefined) {
+                    window.playerStats.selectedRiftGuardian = "aegis_goliath";
+                  }
+
+                  let maxSelectableRift = Math.min(100, (window.playerStats.highestRiftLevelCleared || 0) + 1);
+                  window.playerStats.activeRiftLevel = Math.min(maxSelectableRift, window.playerStats.activeRiftLevel || 1);
+
+                  window.renderTrialsAltarModal();
+          };
+
+          window.switchTrialsAltarTab = function (tabKey) {
+            window.state.trialsAltarActiveTab = tabKey;
+            window.renderTrialsAltarModal();
+          };
+
+          window.changeRiftLevel = function (val) {
+                let maxSelectableRift = Math.min(100, (window.playerStats.highestRiftLevelCleared || 0) + 1);
+                window.playerStats.activeRiftLevel = Math.max(1, Math.min(maxSelectableRift, parseInt(val, 10) || 1));
+                window.renderTrialsAltarModal();
+              };
+
+          window.changeRiftGuardian = function (val) {
+            window.playerStats.selectedRiftGuardian = val;
+            window.renderTrialsAltarModal();
+          };
+
+          window.renderTrialsAltarModal = function () {
+                let modal = document.getElementById("trials-altar-modal");
+                if (!modal) return;
+
+                let activeTab = window.state.trialsAltarActiveTab || "onslaught";
+                let isCrucibleUnlocked = (window.playerStats.maxFloorCleared || 0) >= 36;
+                let isRiftsUnlocked = (window.playerStats.level || 1) >= 25;
+
+                let tabsHtml = `
+                  <div class="forge-mode-bar" style="margin-bottom: 12px; display: flex; gap: 6px;">
+                    <button class="forge-mode-btn ${activeTab === "onslaught" ? "active" : ""}" onclick="window.switchTrialsAltarTab('onslaught')" style="flex: 1;">
+                      ONSLAUGHT ARENA
+                    </button>
+                    <button class="forge-mode-btn ${activeTab === "rifts" ? "active" : ""}" onclick="window.switchTrialsAltarTab('rifts')" style="flex: 1;">
+                      RIFT GUARDIAN TRIALS
+                    </button>
+                  </div>
+                `;
+
+                let contentHtml = "";
+
+                if (activeTab === "onslaught") {
+                  if (!isCrucibleUnlocked) {
+                    contentHtml = `
+                      <div style="padding: 30px; text-align: center; color: #94a3b8; font-family: monospace; font-size: 11px; line-height: 1.5; border: 1.5px dashed #475569; border-radius: 6px; background: rgba(0,0,0,0.22); margin-top: 10px;">
+                        <span style="color: #ef4444; font-weight: bold; display: block; margin-bottom: 6px; font-size: 12px;">[ ONSLAUGHT LOCKED ]</span>
+                        The Arena remains sealed under covenant locks.<br>
+                        Defeat the Sector 3 Overlord (Clear Floor 36) to claim access.
+                      </div>
+                    `;
+                  } else {
+                    let maxPeak = window.playerStats.cruciblePeak || 1;
+                    let selectedWave = window.playerStats.crucibleStartWave || 1;
+
+                    let waveOptions = [1];
+                    for (let wave = 5; wave <= maxPeak; wave += 5) {
+                      waveOptions.push(wave);
+                    }
+                    waveOptions = Array.from(new Set(waveOptions)).sort((a, b) => a - b);
+
+                    let optionsMarkup = waveOptions
+                      .map((w) => {
+                        let isSelected = w === selectedWave ? "selected" : "";
+                        let tag = w === 1 ? "Initiation Wave" : `Wave ${w}`;
+                        return `<option value="${w}" ${isSelected}>Wave ${w} (${tag})</option>`;
+                      })
+                      .join("");
+
+                    let dividend = window.calculateCumulativeOnslaughtShards(selectedWave);
+
+                    contentHtml = `
+                      <div class="trials-altar-layout">
+                        <!-- Left Column: Controls -->
+                        <div class="trials-pane">
+                          <div class="deploy-pane-header">
+                            <span>ARENA CONFIGURATION</span>
+                          </div>
+                          <div style="display: flex; flex-direction: column; gap: 4px; text-align: left; font-family: monospace;">
+                            <label style="font-weight: bold; color: #94a3b8; font-size: 8.5px;">STARTING WAVE MILESTONE</label>
+                            <select id="deploy-wave-select" class="wave-milestone-select" onchange="window.changeOnslaughtStartWave(this.value)" style="background: #1a1523; border: 1.5px solid #581c87; color: #e9d5ff; padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; width: 100%; outline: none; cursor: pointer;">
+                              ${optionsMarkup}
+                            </select>
+                          </div>
+
+                          ${selectedWave > 1 ? `
+                          <div style="background: rgba(168, 85, 247, 0.08); border: 1.5px dashed rgba(168,85,247,0.25); border-radius: 6px; padding: 10px; line-height: 1.4; color: #e9d5ff; font-family: monospace; font-size: 9.5px; text-align: left;">
+                            <strong style="color: #ffd700; display: block; margin-bottom: 4px;">[70% SKIP DIVIDEND]</strong>
+                            <span>Instant starting rewards:</span>
+                            <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 2px;">
+                              <div style="color: #00ffff;">+ ${dividend.shards.toLocaleString()} Shards</div>
+                              <div style="color: #ffd700;">+ ${window.formatNumber(dividend.gold)} Gold</div>
+                              <div style="color: #c084fc;">+ ${window.formatNumber(dividend.xp)} XP</div>
+                            </div>
+                          </div>
+                          ` : ""}
+                        </div>
+
+                        <!-- Right Column: Details & Launch -->
+                        <div class="trials-pane" style="justify-content: space-between;">
+                          <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                            <div class="deploy-pane-header">
+                              <span>TRIAL OVERVIEW</span>
+                            </div>
+                            <p style="font-size: 10.5px; color: #cbd5e1; line-height: 1.5; margin: 0; font-family: monospace;">
+                              Enter the infinite onslaught arena. Test your survival limitations against scaling hordes of localized sector monsters.
+                            </p>
+                            <div style="background: rgba(0, 0, 0, 0.35); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 8px 10px; font-family: monospace; font-size: 9.5px; color: #94a3b8; line-height: 1.45;">
+                              <strong style="color: #a855f7; display: block; margin-bottom: 2px;">[ARENA CONDITIONS]</strong>
+                              • Slay all wave targets to progress.<br>
+                              • Draft upgrades are active every 5 waves.<br>
+                              • No equipment loss on failure.
+                            </div>
+                          </div>
+
+                          <button class="action-btn" style="width: 100%; margin: 0;" onclick="window.launchOnslaughtArena()">
+                            LAUNCH ONSLAUGHT ARENA
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  }
+                } else {
+                  if (!isRiftsUnlocked) {
+                    contentHtml = `
+                      <div style="padding: 30px; text-align: center; color: #94a3b8; font-family: monospace; font-size: 11px; line-height: 1.5; border: 1.5px dashed #475569; border-radius: 6px; background: rgba(0,0,0,0.22); margin-top: 10px;">
+                        <span style="color: #ef4444; font-weight: bold; display: block; margin-bottom: 6px; font-size: 12px;">[ TRIALS LOCKED ]</span>
+                        The Rift Altar remains bound by high-tier magical seals.<br>
+                        Reach Character Level 25 to initiate the trial summons.
+                      </div>
+                    `;
+                  } else {
+                    let L = window.playerStats.activeRiftLevel || 1;
+                    let selectedGuardian = window.playerStats.selectedRiftGuardian || "aegis_goliath";
+                    let coresCount = (window.inventory && window.inventory.ETC && window.inventory.ETC["Ancient Core"]) || 0;
+                    let canAfford = coresCount >= 1;
+
+                    let repScale = Math.pow(1.05, 35);
+                              let baseHp = selectedGuardian === "aegis_goliath" ? 400 : selectedGuardian === "chronos_arbitrator" ? 300 : 350;
+                              let baseAtk = selectedGuardian === "aegis_goliath" ? 18 : selectedGuardian === "chronos_arbitrator" ? 22 : 20;
+
+                              let hpScalar = (1 + 0.15 * L) * Math.pow(1.08, L);
+                              let atkScalar = (1 + 0.08 * L) * Math.pow(1.05, L);
+
+                              let projectedHp = Math.round(baseHp * repScale * hpScalar);
+                              let projectedAtk = Math.round(baseAtk * repScale * atkScalar);
+
+                    let xpReward = Math.round(250 * Math.pow(L, 0.85));
+                    let shardsReward = Math.floor(15 + 3.0 * L);
+                    let dustReward = Math.floor(30 + 6.0 * L);
+                    let coreMin = Math.floor(L / 10);
+                    let coreMaxChance = (L % 10) * 10;
+                    let essenceChance = Math.min(100, Math.round((0.05 + 0.018 * L) * 100));
+
+                    let subweaponType = "none";
+                    if (window.equippedSlots && window.equippedSlots.subweapon) {
+                      let sub = window.equippedSlots.subweapon;
+                      subweaponType = sub.subType || sub.type || "none";
+                    }
+                    let isMasteryActive = ["shield", "dagger", "tome"].includes(subweaponType);
+                    let masteryLabel = isMasteryActive
+                      ? subweaponType.toUpperCase() + " MASTERY"
+                      : "ACTIVE SUBWEAPON";
+
+                    contentHtml = `
+                      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 6px 12px; margin-bottom: 10px; font-family: monospace; font-size: 10.5px;">
+                        <span style="color: #94a3b8; font-weight: bold;">PORTAL BALANCE:</span>
+                        <strong style="color: #ffd700;">${coresCount} Ancient Cores</strong>
+                      </div>
+
+                      <div class="trials-altar-layout">
+                        <!-- Left Column: Selection Panel -->
+                        <div class="trials-pane">
+                          <div class="deploy-pane-header">
+                            <span>GUARDIAN SELECT</span>
+                          </div>
+
+                          <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <button class="trial-selection-btn ${selectedGuardian === "aegis_goliath" ? "active" : ""}" onclick="window.changeRiftGuardian('aegis_goliath')">
+                              AEGIS GOLIATH
+                            </button>
+                            <button class="trial-selection-btn ${selectedGuardian === "chronos_arbitrator" ? "active" : ""}" onclick="window.changeRiftGuardian('chronos_arbitrator')">
+                              CHRONOS ARBITRATOR
+                            </button>
+                            <button class="trial-selection-btn ${selectedGuardian === "nexus_overseer" ? "active" : ""}" onclick="window.changeRiftGuardian('nexus_overseer')">
+                              NEXUS OVERSEER
+                            </button>
+                          </div>
+
+                          <div style="border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 6px; padding-top: 6px;"></div>
+
+                          <div style="display: flex; flex-direction: column; gap: 2px; text-align: left; font-family: monospace;">
+                                            <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #94a3b8; font-weight: bold;">
+                                              <span>RIFT LEVEL:</span>
+                                              <strong style="color: #00ffff;">Level ${L}</strong>
+                                            </div>
+                                            <input type="range" min="1" max="${Math.min(100, (window.playerStats.highestRiftLevelCleared || 0) + 1)}" value="${L}" style="width: 100%; accent-color: #a855f7; margin-top: 2px;" oninput="window.changeRiftLevel(this.value)">
+                                          </div>
+
+                                          ${(function() {
+                                            let maxSelectable = Math.min(100, (window.playerStats.highestRiftLevelCleared || 0) + 1);
+                                            if (L >= maxSelectable && maxSelectable < 100) {
+                                              return `
+                                                <div style="color: #f1c40f; font-size: 8px; font-family: monospace; font-weight: bold; text-align: center; margin-top: 6px; background: rgba(241,196,15,0.06); padding: 4px; border-radius: 4px; border: 1px dashed rgba(241,196,15,0.3); line-height: 1.25;">
+                                                  Clear Level ${maxSelectable} to unlock Level ${maxSelectable + 1}
+                                                </div>
+                                              `;
+                                            } else if (maxSelectable >= 100) {
+                                              return `
+                                                <div style="color: #2ecc71; font-size: 8px; font-family: monospace; font-weight: bold; text-align: center; margin-top: 6px; line-height: 1.25;">
+                                                  Max Difficulty Unlocked!
+                                                </div>
+                                              `;
+                                            }
+                                            return "";
+                                          })()}
+                                        </div>
+
+                        <!-- Right Column: Stats & Projected Rewards -->
+                        <div class="trials-pane" style="justify-content: space-between;">
+                          <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; font-family: monospace; font-size: 9.5px;">
+                            <div class="deploy-pane-header">
+                              <span>TRIAL PROJECTIONS</span>
+                            </div>
+
+                            <div style="background: rgba(0,0,0,0.3); border: 1px solid #1e293b; border-radius: 6px; padding: 6px 8px; display: flex; flex-direction: column; gap: 2.5px;">
+                              <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Health:</span> <strong style="color:#ffffff;">${window.formatNumber(projectedHp)} HP</strong></div>
+                              <div style="display: flex; justify-content: space-between;"><span style="color:#94a3b8;">Attack:</span> <strong style="color:#ef4444;">${window.formatNumber(projectedAtk)} ATK</strong></div>
+                            </div>
+
+                            <div style="background: rgba(16, 12, 28, 0.4); border: 1.5px dashed rgba(168,85,247,0.25); border-radius: 6px; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px;">
+                              <strong style="color: #ffd700; display: block; margin-bottom: 2px; font-size: 8.5px; letter-spacing: 0.5px;">[ EXPECTED PAYLOAD ]</strong>
+                              <div style="display: flex; justify-content: space-between;"><span style="color:#c084fc;">${masteryLabel} XP:</span> <strong style="color:#ffffff;">+${xpReward.toLocaleString()} XP</strong></div>
+                              <div style="display: flex; justify-content: space-between;"><span style="color:#00ffff;">Astral Shards:</span> <strong style="color:#00ffff;">+${shardsReward.toLocaleString()}</strong></div>
+                              <div style="display: flex; justify-content: space-between;"><span style="color:#a855f7;">Astral Dust:</span> <strong style="color:#a855f7;">+${dustReward.toLocaleString()}</strong></div>
+                              <div style="display: flex; justify-content: space-between;">
+                                <span style="color:#2ecc71;">Catalyst Cores:</span>
+                                <strong style="color:#2ecc71;">
+                                  +${coreMin}${coreMaxChance > 0 ? ` (${coreMaxChance}% for +1)` : ""}
+                                </strong>
+                              </div>
+                              <div style="display: flex; justify-content: space-between;"><span style="color:#df9ffb;">Astral Essence:</span> <strong style="color:#df9ffb;">${essenceChance}% Chance</strong></div>
+                            </div>
+
+                            ${!isMasteryActive ? `
+                            <div style="background: rgba(239, 68, 60, 0.08); border: 1px dashed #ef4444; border-radius: 4px; padding: 4px 8px; font-size: 7.5px; color: #f87171; line-height: 1.2; margin-top: 2px;">
+                              [!] No active subweapon equipped. You will not earn Mastery XP!
+                            </div>` : ""}
+                          </div>
+
+                          <button id="btn-rift-summon" class="action-btn" style="width: 100%; margin: 0;" ${canAfford ? "" : "disabled"} onclick="window.executeRiftSummon()">
+                            SUMMON RIFT GUARDIAN
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  }
+                }
+
+                modal.innerHTML = `
+                  <div class="modal-card trials-altar-card" style="box-sizing: border-box;">
+                    <div class="modal-header">
+                      <span>Altar of Trials</span>
+                      <button class="close-btn" onclick="document.getElementById('trials-altar-modal').style.display='none'; window.lastModalCloseTime = Date.now();">CLOSE</button>
+                    </div>
+                    <div class="modal-body" style="overflow-y: auto;">
+                      ${tabsHtml}
+                      ${contentHtml}
+                    </div>
+                  </div>
+                `;
+              };
+
+          window.launchOnslaughtArena = function () {
+                let modal = document.getElementById("trials-altar-modal");
+                if (modal) modal.style.display = "none";
+
+                window.playerStats.activePortalEvent = "onslaught";
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("Portal primed! Step into the Portal to initiate Onslaught.", "#a855f7");
+                }
+              };
+
+          window.executeRiftSummon = function () {
+                let coresCount = (window.inventory && window.inventory.ETC && window.inventory.ETC["Ancient Core"]) || 0;
+                if (coresCount < 1) {
+                  window.pushHeaderToast("[X] You need at least 1x Ancient Core to summon a Rift Guardian!", "#ef4444");
+                  return;
+                }
+
+                // Deduct exactly 1x Ancient Core
+                window.inventory.ETC["Ancient Core"]--;
+                if (window.inventory.ETC["Ancient Core"] <= 0) {
+                  delete window.inventory.ETC["Ancient Core"];
+                }
+
+                let modal = document.getElementById("trials-altar-modal");
+                if (modal) modal.style.display = "none";
+
+                window.playerStats.activePortalEvent = "rift";
+
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("Rift Summon primed! Step into the Portal to begin the duel.", "#00ffff");
+                }
+              };
+
+              window.launchRiftDuel = function () {
+                // Configure Rift State
+                window.playerStats.isRiftMode = true;
+                window.playerStats.isCrucibleMode = false;
+                window.playerStats.activeSpecialChallenge = null;
+                window.playerStats.activeDungeonSigil = null;
+
+                // Clear active primed event
+                window.playerStats.activePortalEvent = "expedition";
+
+                if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                  window.SoundManager.play("revive");
+                }
+                if (window.combatVisuals) {
+                  let p = window.player;
+                  if (p) {
+                    window.combatVisuals.spawnBeam(p.x, "#a855f7", 60, true);
+                    window.combatVisuals.spawnParticles(p.x, p.y, 30, "calamity_specter", 5.0);
+                    window.combatVisuals.triggerScreenShake(8, 14);
+                  }
+                }
+
+                // Start Dungeon Run on Floor 84 Baseline parameters
+                window.currentGameState = window.GAME_STATES.DUNGEON;
+                window.player.depth = 84;
+                window.player.bag = [];
+                window.fatiguePenalty = 0;
+                window.playerStats.abyssalDecayAccumulated = 0;
+
+                if (typeof window.refillFlaskCharges === "function") {
+                  window.refillFlaskCharges(true);
+                }
+
+                if (typeof window.invalidatePlayerStats === "function") {
+                  window.invalidatePlayerStats();
+                }
+
+                window.loadDungeonFloor(window.player.depth);
+              };
+
+          window.spawnRiftGuardianEncounter = function (tileX, tileY) {
+            let map = window.activeDungeonMap;
+            let tileSize = map ? map.tileSize : 32;
+            let L = window.playerStats.activeRiftLevel || 1;
+            let type = window.playerStats.selectedRiftGuardian || "aegis_goliath";
+
+            let baseHp = BigNum.from(type === "aegis_goliath" ? 400 : type === "chronos_arbitrator" ? 300 : 350);
+                    let baseAtk = BigNum.from(type === "aegis_goliath" ? 18 : type === "chronos_arbitrator" ? 22 : 20);
+
+                    let repScale = BigNum.from(1.05).pow(35);
+                    let hpDiffGrowth = BigNum.from(1.08).pow(L);
+                    let hpLinearScale = BigNum.from(1 + 0.15 * L);
+
+                    let atkDiffGrowth = BigNum.from(1.05).pow(L);
+                    let atkLinearScale = BigNum.from(1 + 0.08 * L);
+
+                    let finalHp = baseHp.mul(repScale).mul(hpDiffGrowth).mul(hpLinearScale);
+                    let finalAtk = baseAtk.mul(repScale).mul(atkDiffGrowth).mul(atkLinearScale);
+
+                    let bossName = type === "aegis_goliath" ? "Aegis Goliath" : type === "chronos_arbitrator" ? "Chronos Arbitrator" : "Nexus Overseer";
+
+                    window.mob = {
+                      id: window.idCounter++,
+                      type: "dungeon_boss",
+                      name: bossName + ` (Rift Lvl ${L})`,
+                      visualType: type,
+                      hp: finalHp,
+                      maxHp: finalHp,
+                      atk: finalAtk.valueOf(),
+              x: tileX * tileSize - 16,
+              y: tileY * tileSize - 16,
+              w: 64,
+              h: 64,
+              flashTimer: 0,
+              isStopped: false,
+              bossTileX: tileX,
+              bossTileY: tileY,
+              state: "idle",
+              telegraphTimer: 0,
+              maxTelegraphTimer: 65,
+              activeAbility: null,
+              targetX: 0,
+              targetY: 0,
+              attackCooldown: 60,
+              moveset: type === "aegis_goliath" ? ["magnetic_pull", "boomerang_shield", "shield_bash"] : type === "chronos_arbitrator" ? ["slam", "dilation_field"] : ["slam", "control_glitch"],
+              facing: -1,
+              isRiftGuardian: true,
+            };
+
+            window.spawnFloatingText(
+              window.player.x,
+              window.player.y - 25,
+              `${bossName.toUpperCase()} AWAKENED`,
+              "#ff007f"
+            );
+          };
+    })();
 
 (function () {
   const originalResolve = window.resolvePlayerStats;

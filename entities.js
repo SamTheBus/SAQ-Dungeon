@@ -9,9 +9,10 @@
 
   // Static particle themes to avoid runtime array allocations on entity death
   window.PARTICLE_THEMES = {
-    calamity_specter: ["#7c3aed", "#ff0055", "#0d011a", "#000000"],
-    slag_slime: ["#2ecc71", "#27ae60", "#a3fd83", "#111116"],
-    rust_nibbler: ["#d35400", "#e67e22", "#7f8c8d", "#5c3a21"],
+      calamity_specter: ["#7c3aed", "#ff0055", "#0d011a", "#000000"],
+      slag_slime: ["#2ecc71", "#27ae60", "#a3fd83", "#111116"],
+      rust_nibbler: ["#d35400", "#e67e22", "#7f8c8d", "#5c3a21"],
+      brimstone_colossus: ["#ff5500", "#d35400", "#111115", "#2c0e08"],
     corroded_golem: ["#2ecc71", "#34495e", "#1abc9c", "#111116"],
     animated_armor: ["#34495e", "#5d6d7e", "#00d2ff", "#1a252f"],
     cursed_blade: ["#9b59b6", "#8e44ad", "#e84393", "#111116"],
@@ -1221,265 +1222,366 @@
     }
 
     drawTargetHealthBar(ctx, target, isScreenSpace = false, bossIndex = 0) {
-      if (!target || !target.hp || target.hp <= 0) return;
+          if (!target || !target.hp || target.hp <= 0) return;
 
-      let bHp =
-        typeof target.hp === "object"
-          ? target.hp.m * Math.pow(10, target.hp.e)
-          : target.hp;
-      let bMaxHp =
-        typeof target.maxHp === "object"
-          ? target.maxHp.m * Math.pow(10, target.maxHp.e)
-          : target.maxHp;
-      let hpPct = Math.max(0, Math.min(1, bHp / bMaxHp));
+          let bHp =
+            typeof target.hp === "object"
+              ? target.hp.m * Math.pow(10, target.hp.e)
+              : target.hp;
+          let bMaxHp =
+            typeof target.maxHp === "object"
+              ? target.maxHp.m * Math.pow(10, target.maxHp.e)
+              : target.maxHp;
+          let hpPct = Math.max(0, Math.min(1, bHp / bMaxHp));
 
-      target.trailingPct =
-        target.trailingPct !== undefined ? target.trailingPct : hpPct;
-      if (target.trailingPct > hpPct) {
-        target.trailingPct = Math.max(hpPct, target.trailingPct - 0.015);
-      } else {
-        target.trailingPct = hpPct;
-      }
+          target.trailingPct =
+            target.trailingPct !== undefined ? target.trailingPct : hpPct;
+          if (target.trailingPct > hpPct) {
+            target.trailingPct = Math.max(hpPct, target.trailingPct - 0.015);
+          } else {
+            target.trailingPct = hpPct;
+          }
 
-      ctx.save();
+          ctx.save();
 
-      if (
-        target.isBoss ||
-        target.type === "dungeon_boss" ||
-        target.type === "dungeon_miniboss" ||
-        target.type === "boss" ||
-        target.type === "aegis_goliath" ||
-        target.type === "chronos_arbitrator" ||
-        target.type === "nexus_overseer" ||
-        target.type === "gilded_vault_keeper" ||
-        target.type === "corrosive_abomination" ||
-        target.type === "hooktail" ||
-        target.type === "overlord_iron_vault" ||
-        target.type === "marcus_boss"
-      ) {
-        if (!isScreenSpace) {
+          if (
+            target.isBoss ||
+            target.type === "dungeon_boss" ||
+            target.type === "dungeon_miniboss" ||
+            target.type === "boss" ||
+            target.type === "aegis_goliath" ||
+            target.type === "chronos_arbitrator" ||
+            target.type === "nexus_overseer" ||
+            target.type === "gilded_vault_keeper" ||
+            target.type === "corrosive_abomination" ||
+            target.type === "hooktail" ||
+            target.type === "overlord_iron_vault" ||
+            target.type === "brimstone_colossus" ||
+            target.type === "marcus_boss"
+          ) {
+            if (!isScreenSpace) {
+              ctx.restore();
+              return;
+            }
+
+            let barW = Math.min(320, ctx.canvas.width * 0.45);
+            let barH = 10;
+            let barX = (ctx.canvas.width - barW) / 2;
+            let barY = 45 + bossIndex * 38;
+
+            if (target.type === "dungeon_miniboss") {
+              this.drawStandardBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isMarcus =
+              target.type === "marcus_boss" ||
+              target.visualType === "marcus" ||
+              (target.name && target.name.toLowerCase().includes("marcus"));
+
+            if (isMarcus) {
+              this.drawMarcusBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isBrimstone =
+              target.type === "brimstone_colossus" ||
+              target.visualType === "brimstone_colossus" ||
+              (target.name && target.name.toLowerCase().includes("brimstone")) ||
+              (target.name && target.name.toLowerCase().includes("colossus"));
+
+            if (isBrimstone) {
+              this.drawBrimstoneColossusBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isTreant =
+              target.type === "arachnid_treant" ||
+              target.visualType === "arachnid_treant" ||
+              (target.name && target.name.toLowerCase().includes("treant"));
+
+            if (isTreant) {
+              this.drawArachnidTreantBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isAegis =
+              target.type === "aegis_goliath" ||
+              target.visualType === "aegis_goliath" ||
+              (target.name && target.name.toLowerCase().includes("aegis"));
+
+            if (isAegis) {
+              this.drawAegisGoliathBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isChronos =
+              target.type === "chronos_arbitrator" ||
+              target.visualType === "chronos_arbitrator" ||
+              (target.name && target.name.toLowerCase().includes("chronos"));
+
+            if (isChronos) {
+              this.drawChronosArbitratorBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isNexus =
+              target.type === "nexus_overseer" ||
+              target.visualType === "nexus_overseer" ||
+              (target.name && target.name.toLowerCase().includes("nexus"));
+
+            if (isNexus) {
+              this.drawNexusOverseerBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isGilded =
+              target.type === "gilded_vault_keeper" ||
+              target.visualType === "gilded_vault_keeper" ||
+              (target.name && target.name.toLowerCase().includes("vault keeper")) ||
+              (target.name && target.name.toLowerCase().includes("gilded"));
+
+            if (isGilded) {
+              this.drawGildedVaultKeeperBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isCorrosive =
+              target.type === "corrosive_abomination" ||
+              target.visualType === "corrosive_abomination" ||
+              (target.name && target.name.toLowerCase().includes("corrosive")) ||
+              (target.name && target.name.toLowerCase().includes("abomination"));
+
+            if (isCorrosive) {
+              this.drawCorrosiveAbominationBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isHooktail =
+              target.type === "hooktail" ||
+              target.type === "prestige_boss" ||
+              target.visualType === "hooktail" ||
+              (target.name && target.name.toLowerCase().includes("hooktail")) ||
+              (target.name && target.name.toLowerCase().includes("calamity"));
+
+            if (isHooktail) {
+              this.drawHooktailBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            let isOverlord =
+              target.type === "overlord_iron_vault" ||
+              target.visualType === "overlord_iron_vault" ||
+              (target.name && target.name.toLowerCase().includes("overlord")) ||
+              (target.name && target.name.toLowerCase().includes("iron vault"));
+
+            if (isOverlord) {
+              this.drawOverlordIronVaultBossBar(
+                ctx,
+                target,
+                hpPct,
+                bHp,
+                bMaxHp,
+                barX,
+                barY,
+                barW,
+                barH,
+              );
+              ctx.restore();
+              return;
+            }
+
+            this.drawStandardBossBar(
+              ctx,
+              target,
+              hpPct,
+              bHp,
+              bMaxHp,
+              barX,
+              barY,
+              barW,
+              barH,
+            );
+            ctx.restore();
+            return;
+          } else if (hpPct < 1.0) {
+            let barW = target.w || 30;
+            let barX = target.x;
+            let barY = target.y - 12;
+
+            ctx.fillStyle = "#111111";
+            ctx.fillRect(barX, barY, barW, 6);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(barX, barY, target.trailingPct * barW, 6);
+
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(barX, barY, hpPct * barW, 6);
+
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(barX, barY, barW, 6);
+
+            this.drawStatusDots(
+              ctx,
+              barX,
+              barY - 6,
+              target.bleedStacks || 0,
+              "#e74c3c",
+            );
+            this.drawStatusDots(
+              ctx,
+              barX,
+              barY - 12,
+              target.poisonStacks || 0,
+              "#2ecc71",
+            );
+
+            if (target.buffStacks) {
+              let badgeY = barY - 18;
+              let badgeParts = [];
+              if ((target.buffStacks.haste || 0) > 0)
+                badgeParts.push({
+                  text: `Haste ${target.buffStacks.haste}x`,
+                  col: "#00d2ff",
+                });
+              if ((target.buffStacks.def || 0) > 0)
+                badgeParts.push({
+                  text: `Def ${target.buffStacks.def}x`,
+                  col: "#3498db",
+                });
+              if ((target.buffStacks.atk || 0) > 0)
+                badgeParts.push({
+                  text: `Atk ${target.buffStacks.atk}x`,
+                  col: "#e74c3c",
+                });
+
+              badgeParts.forEach((bp) => {
+                ctx.font = "bold 8px monospace";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2.0;
+                ctx.strokeText(bp.text, barX, badgeY);
+                ctx.fillStyle = bp.col;
+                ctx.fillText(bp.text, barX, badgeY);
+                badgeY -= 9;
+              });
+            }
+          }
+
           ctx.restore();
-          return;
         }
 
-        let barW = Math.min(320, ctx.canvas.width * 0.45); // Slightly smaller footprint
-        let barH = 10;
-        let barX = (ctx.canvas.width - barW) / 2;
-        let barY = 45 + bossIndex * 38; // Stacked with comfortable spacing
-
-        // Direct smaller Guard Wardens (minibosses) to the standard boss bar
-        // to reserve the highly customized layout exclusively for the final Overlords
-        if (target.type === "dungeon_miniboss") {
-          this.drawStandardBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isMarcus =
-          target.type === "marcus_boss" ||
-          target.visualType === "marcus" ||
-          (target.name && target.name.toLowerCase().includes("marcus"));
-
-        if (isMarcus) {
-          this.drawMarcusBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isTreant =
-          target.type === "arachnid_treant" ||
-          target.visualType === "arachnid_treant" ||
-          (target.name && target.name.toLowerCase().includes("treant"));
-
-        if (isTreant) {
-          this.drawArachnidTreantBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isAegis =
-          target.type === "aegis_goliath" ||
-          target.visualType === "aegis_goliath" ||
-          (target.name && target.name.toLowerCase().includes("aegis"));
-
-        if (isAegis) {
-          this.drawAegisGoliathBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isChronos =
-          target.type === "chronos_arbitrator" ||
-          target.visualType === "chronos_arbitrator" ||
-          (target.name && target.name.toLowerCase().includes("chronos"));
-
-        if (isChronos) {
-          this.drawChronosArbitratorBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isNexus =
-          target.type === "nexus_overseer" ||
-          target.visualType === "nexus_overseer" ||
-          (target.name && target.name.toLowerCase().includes("nexus"));
-
-        if (isNexus) {
-          this.drawNexusOverseerBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isGilded =
-          target.type === "gilded_vault_keeper" ||
-          target.visualType === "gilded_vault_keeper" ||
-          (target.name && target.name.toLowerCase().includes("vault keeper")) ||
-          (target.name && target.name.toLowerCase().includes("gilded"));
-
-        if (isGilded) {
-          this.drawGildedVaultKeeperBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isCorrosive =
-          target.type === "corrosive_abomination" ||
-          target.visualType === "corrosive_abomination" ||
-          (target.name && target.name.toLowerCase().includes("corrosive")) ||
-          (target.name && target.name.toLowerCase().includes("abomination"));
-
-        if (isCorrosive) {
-          this.drawCorrosiveAbominationBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isHooktail =
-          target.type === "hooktail" ||
-          target.type === "prestige_boss" ||
-          target.visualType === "hooktail" ||
-          (target.name && target.name.toLowerCase().includes("hooktail")) ||
-          (target.name && target.name.toLowerCase().includes("calamity"));
-
-        if (isHooktail) {
-          this.drawHooktailBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        let isOverlord =
-          target.type === "overlord_iron_vault" ||
-          target.visualType === "overlord_iron_vault" ||
-          (target.name && target.name.toLowerCase().includes("overlord")) ||
-          (target.name && target.name.toLowerCase().includes("iron vault"));
-
-        if (isOverlord) {
-          this.drawOverlordIronVaultBossBar(
-            ctx,
-            target,
-            hpPct,
-            bHp,
-            bMaxHp,
-            barX,
-            barY,
-            barW,
-            barH,
-          );
-          ctx.restore();
-          return;
-        }
-
-        this.drawStandardBossBar(
+        drawBrimstoneColossusBossBar(
           ctx,
           target,
           hpPct,
@@ -1489,88 +1591,187 @@
           barY,
           barW,
           barH,
-        );
-        ctx.restore();
-        return;
-      } else if (hpPct < 1.0) {
-        let barW = target.w || 30;
-        let barX = target.x;
-        let barY = target.y - 12;
+        ) {
+          let time = Date.now();
+          let isLowHp = hpPct < 0.2;
+          let tremorX = isLowHp
+            ? (Math.random() - 0.5) * 3.5 * (1.0 - hpPct / 0.2)
+            : 0;
+          let tremorY = isLowHp
+            ? (Math.random() - 0.5) * 3.5 * (1.0 - hpPct / 0.2)
+            : 0;
 
-        ctx.fillStyle = "#111111";
-        ctx.fillRect(barX, barY, barW, 6);
+          ctx.save();
+          ctx.translate(tremorX, tremorY);
 
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(barX, barY, target.trailingPct * barW, 6);
+          let theme = (window.BOSS_BAR_THEMES &&
+            window.BOSS_BAR_THEMES.brimstone_colossus) || {
+            title: "BRIMSTONE COLOSSUS",
+            subtitle: "THE OBSIDIAN MAGMA CORE",
+            primaryColor: "#ff5500",
+            secondaryColor: "#d35400",
+          };
 
-        ctx.fillStyle = "#e74c3c";
-        ctx.fillRect(barX, barY, hpPct * barW, 6);
+          let pulse = Math.sin(time / 110) * 0.18 + 0.82;
+          ctx.shadowBlur = 14 * pulse;
+          ctx.shadowColor = "#ff5500";
 
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(barX, barY, barW, 6);
+          ctx.fillStyle = "#1c0b05";
+          ctx.strokeStyle = "#ff5500";
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.roundRect(barX - 18, barY - 2, barW + 36, barH + 4, [6]);
+          ctx.fill();
+          ctx.stroke();
+          ctx.shadowBlur = 0;
 
-        this.drawStatusDots(
-          ctx,
-          barX,
-          barY - 6,
-          target.bleedStacks || 0,
-          "#e74c3c",
-        );
-        this.drawStatusDots(
-          ctx,
-          barX,
-          barY - 12,
-          target.poisonStacks || 0,
-          "#2ecc71",
-        );
-
-        // Render 3x Multi-Stack Buff Badges above Mob Healthbar
-        if (target.buffStacks) {
-          let badgeY = barY - 18;
-          let badgeParts = [];
-          if ((target.buffStacks.haste || 0) > 0)
-            badgeParts.push({
-              text: `Haste ${target.buffStacks.haste}x`,
-              col: "#00d2ff",
+          ctx.fillStyle = "#f1c40f";
+          [-14, barW + 10].forEach((rx) => {
+            [barY, barY + barH - 2].forEach((ry) => {
+              ctx.beginPath();
+              ctx.arc(barX + rx, ry, 1.5, 0, Math.PI * 2);
+              ctx.fill();
             });
-          if ((target.buffStacks.def || 0) > 0)
-            badgeParts.push({
-              text: `Def ${target.buffStacks.def}x`,
-              col: "#3498db",
-            });
-          if ((target.buffStacks.atk || 0) > 0)
-            badgeParts.push({
-              text: `Atk ${target.buffStacks.atk}x`,
-              col: "#e74c3c",
-            });
-
-          badgeParts.forEach((bp) => {
-            ctx.font = "bold 8px monospace";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 2.0;
-            ctx.strokeText(bp.text, barX, badgeY);
-            ctx.fillStyle = bp.col;
-            ctx.fillText(bp.text, barX, badgeY);
-            badgeY -= 9;
           });
+
+          [-14, barW + 6].forEach((offsetX, idx) => {
+            let bracketX = barX + offsetX;
+            let isLeft = idx === 0;
+
+            ctx.fillStyle = "#2c0e08";
+            ctx.strokeStyle = "#ff5500";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            if (isLeft) {
+              ctx.moveTo(bracketX + 6, barY - 3);
+              ctx.lineTo(bracketX - 6, barY + barH / 2);
+              ctx.lineTo(bracketX + 6, barY + barH + 3);
+              ctx.lineTo(bracketX + 2, barY + barH / 2);
+            } else {
+              ctx.moveTo(bracketX, barY - 3);
+              ctx.lineTo(bracketX + 12, barY + barH / 2);
+              ctx.lineTo(bracketX, barY + barH + 3);
+              ctx.lineTo(bracketX + 4, barY + barH / 2);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = "#ffaa00";
+            ctx.beginPath();
+            ctx.arc(
+              bracketX + (isLeft ? 0 : 6),
+              barY + barH / 2,
+              1.8,
+              0,
+              Math.PI * 2,
+            );
+            ctx.fill();
+          });
+
+          ctx.fillStyle = "rgba(255, 85, 0, 0.4)";
+          let fillWidth = Math.max(0, barW * hpPct);
+          let trailingWidth = Math.max(0, barW * target.trailingPct);
+          if (trailingWidth > 0) {
+            ctx.beginPath();
+            ctx.roundRect(barX, barY + 1, trailingWidth, barH - 2, [3]);
+            ctx.fill();
+          }
+
+          if (fillWidth > 0) {
+            let fillGrad = ctx.createLinearGradient(
+              barX,
+              barY,
+              barX + fillWidth,
+              barY,
+            );
+            fillGrad.addColorStop(0, "#ffeaa7");
+            fillGrad.addColorStop(0.4, "#ff5500");
+            fillGrad.addColorStop(0.8, "#d35400");
+            fillGrad.addColorStop(1, "#2c0e08");
+            ctx.fillStyle = fillGrad;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY + 1, fillWidth, barH - 2, [3]);
+            ctx.fill();
+
+            let sweepX = barX + ((time / 4) % fillWidth);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.fillRect(sweepX, barY + 1, 5, barH - 2);
+          }
+
+          ctx.strokeStyle = "rgba(28, 11, 5, 0.95)";
+          ctx.lineWidth = 2.0;
+          [0.25, 0.5, 0.75].forEach((pct) => {
+            let notchX = barX + barW * pct;
+            ctx.beginPath();
+            ctx.moveTo(notchX, barY + 1);
+            ctx.lineTo(notchX, barY + barH - 1);
+            ctx.stroke();
+
+            ctx.fillStyle = "#ff5500";
+            ctx.fillRect(notchX - 1.5, barY - 2, 3, 3);
+            ctx.fillRect(notchX - 1.5, barY + barH - 1, 3, 3);
+          });
+
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.font = "900 12px monospace";
+
+          let bossTitle = (target.name || theme.title).toUpperCase();
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3.5;
+          ctx.strokeText(bossTitle, barX + barW / 2, barY - 6);
+          ctx.fillStyle = "#ff5500";
+          ctx.fillText(bossTitle, barX + barW / 2, barY - 6);
+
+          ctx.font = "bold 9px monospace";
+          ctx.textBaseline = "top";
+          let hpStr = `[MAGMA_INTEGRITY: ${window.formatNumber(bHp)} / ${window.formatNumber(bMaxHp)} | ${(hpPct * 100).toFixed(1)}%]`;
+          ctx.strokeText(hpStr, barX + barW / 2, barY + barH + 4);
+          ctx.fillStyle = "#ffeaa7";
+          ctx.fillText(hpStr, barX + barW / 2, barY + barH + 4);
+
+          if (target.funnyTextTimer > 0 && target.funnyText) {
+            target.funnyTextTimer--;
+            ctx.font = "900 12px 'Arial Black', Impact, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 3.5;
+            ctx.strokeText(target.funnyText, barX + barW / 2, barY + barH / 2);
+            ctx.fillStyle = "#ff5500";
+            ctx.fillText(target.funnyText, barX + barW / 2, barY + barH / 2);
+          }
+
+          this.drawStatusDots(
+            ctx,
+            barX + (barW - 55) / 2,
+            barY + barH + 16,
+            target.bleedStacks || 0,
+            "#e74c3c",
+          );
+          this.drawStatusDots(
+            ctx,
+            barX + (barW - 55) / 2,
+            barY + barH + 24,
+            target.poisonStacks || 0,
+            "#2ecc71",
+          );
+
+          ctx.restore();
         }
-      }
 
-      ctx.restore();
-    }
-
-    drawArachnidTreantBossBar(
-      ctx,
-      target,
-      hpPct,
-      bHp,
-      bMaxHp,
-      barX,
-      barY,
-      barW,
-      barH,
-    ) {
+        drawArachnidTreantBossBar(
+          ctx,
+          target,
+          hpPct,
+          bHp,
+          bMaxHp,
+          barX,
+          barY,
+          barW,
+          barH,
+        ) {
       let time = Date.now();
       let isLowHp = hpPct < 0.2;
       let tremorX = isLowHp
@@ -3302,7 +3503,119 @@
 
   window.combatVisuals = new CombatVisualsEngine();
 
-  window.activeSpellAnims = [];
+    window.spawnCombatImpactParticles = function (
+      worldX,
+      worldY,
+      isCrit,
+      dirX,
+      dirY,
+      theme = "default",
+    ) {
+      if (!window.particles || !window.ParticlePool) return;
+
+      let speedMult = isCrit ? 1.4 : 1.0;
+      let streakCount = isCrit ? 8 : 4;
+      let shardCount = isCrit ? 6 : 3;
+
+      let colors;
+      if (theme === "brimstone_colossus" || theme === "magma_elemental" || theme === "lava_serpent" || theme === "hell_bat") {
+        colors = ["#ff5500", "#ff3300", "#111115", "#f1c40f"];
+      } else {
+        colors = isCrit
+          ? ["#ffffff", "#ffd700", "#ff4757"]
+          : ["#ffffff", "#eccc68", "#f1c40f"];
+      }
+
+      // A. Spawn high-speed directional motion streaks
+      for (let i = 0; i < streakCount; i++) {
+        let angleOffset = window.randFloat(-0.5, 0.5);
+        let baseAngle = Math.atan2(dirY, dirX) + angleOffset;
+        let velocity = window.randFloat(4.5, 8.5) * speedMult;
+
+        let vx = Math.cos(baseAngle) * velocity;
+        let vy = Math.sin(baseAngle) * velocity;
+        let life = window.randInt(11, 18);
+
+        let pt = window.ParticlePool.get(
+          worldX,
+          worldY,
+          vx,
+          vy,
+          window.randFloat(1.4, 2.4) * speedMult,
+          colors[Math.floor(Math.random() * colors.length)],
+          0.95,
+          life,
+          life,
+          0,
+          true,
+          0.88,
+        );
+        pt.style = "streak";
+        window.particles.push(pt);
+      }
+
+      // B. Spawn tumbling directional organic/metal shards
+      for (let i = 0; i < shardCount; i++) {
+        let angleOffset = window.randFloat(-0.8, 0.8);
+        let baseAngle = Math.atan2(dirY, dirX) + angleOffset;
+        let velocity = window.randFloat(2.0, 4.8) * speedMult;
+
+        let vx = Math.cos(baseAngle) * velocity;
+        let vy = Math.sin(baseAngle) * velocity;
+        let life = window.randInt(14, 24);
+
+        let pt = window.ParticlePool.get(
+          worldX,
+          worldY,
+          vx,
+          vy,
+          window.randFloat(1.6, 3.2),
+          theme === "brimstone_colossus" ? "#ff3300" : colors[Math.floor(Math.random() * colors.length)],
+          0.9,
+          life,
+          life,
+          0.14,
+          true,
+          0.94,
+        );
+        pt.style = "polygon";
+        pt.angle = Math.random() * Math.PI * 2;
+        pt.spinSpeed = window.randFloat(-0.24, 0.24);
+        pt.scaleDecay = 0.025;
+        window.particles.push(pt);
+      }
+
+      // C. Spawn brilliant critical cross flares (critical strikes only)
+      if (isCrit) {
+        for (let i = 0; i < 3; i++) {
+          let speedX = window.randFloat(-1.8, 1.8);
+          let speedY = window.randFloat(-1.8, 1.8);
+          let life = window.randInt(20, 28);
+
+          let pt = window.ParticlePool.get(
+            worldX,
+            worldY,
+            speedX,
+            speedY,
+            window.randFloat(4.0, 6.5),
+            "#ffffff",
+            1.0,
+            life,
+            life,
+            0,
+            true,
+            0.9,
+          );
+          pt.style = "sparkle_star";
+          pt.angle = Math.random() * Math.PI * 2;
+          pt.spinSpeed = window.randFloat(-0.06, 0.06);
+          pt.scaleDecay = 0.02;
+          window.particles.push(pt);
+        }
+      }
+    };
+
+    window.activeSpellAnims = [];
   window.activeSpellLights = [];
 
   window.spawnVisualSpell = function (type, startX, startY, targets) {
@@ -4299,48 +4612,45 @@
 
     spawnDeathParticles(x, y, mobType) {
       // Award Active Subweapon Mastery XP on Monster Defeat
-      if (
-        window.equippedSlots &&
-        window.equippedSlots.subweapon &&
-        window.gainSubweaponXp
-      ) {
-        let activeSub = window.equippedSlots.subweapon;
-        let subType = activeSub.subType || activeSub.type;
-        if (
-          subType === "shield" ||
-          subType === "dagger" ||
-          subType === "tome"
-        ) {
-          let isDestructibleOrFriendly = [
-            "wooden_barrel",
-            "ancient_urn",
-            "pottery_clay",
-            "wooden_crate",
-            "pottery",
-            "clay_pot",
-            "friendly_wisp",
-            "wisp",
-            "summon_wisp",
-          ].includes(mobType);
+      if (window.equippedSlots && window.equippedSlots.subweapon && window.gainSubweaponXp && window.SkillTreeManager) {
+              let activeSub = window.equippedSlots.subweapon;
+              let subType = activeSub.subType || activeSub.type;
+              if (
+                subType === "shield" ||
+                subType === "dagger" ||
+                subType === "tome"
+              ) {
+                let isDestructibleOrFriendly = [
+                  "wooden_barrel",
+                  "ancient_urn",
+                  "pottery_clay",
+                  "wooden_crate",
+                  "pottery",
+                  "clay_pot",
+                  "friendly_wisp",
+                  "wisp",
+                  "summon_wisp",
+                ].includes(mobType);
 
-          if (!isDestructibleOrFriendly) {
-            let xpAward = 4; // Default standard mob
+                if (!isDestructibleOrFriendly) {
+                  let xpAward = 4; // Default standard mob
 
-            // Determine if boss or miniboss
-            let isBoss = [
-              "boss",
-              "dungeon_boss",
-              "prestige_boss",
-              "rift_guardian",
-              "aegis_goliath",
-              "chronos_arbitrator",
-              "nexus_overseer",
-              "gilded_vault_keeper",
-              "corrosive_abomination",
-              "hooktail",
-              "overlord_iron_vault",
-              "marcus_boss",
-            ].includes(mobType);
+                  // Determine if boss or miniboss
+                  let isBoss = [
+                    "boss",
+                    "dungeon_boss",
+                    "prestige_boss",
+                    "rift_guardian",
+                    "aegis_goliath",
+                    "chronos_arbitrator",
+                    "nexus_overseer",
+                    "gilded_vault_keeper",
+                    "corrosive_abomination",
+                    "hooktail",
+                    "overlord_iron_vault",
+                    "brimstone_colossus",
+                    "marcus_boss",
+                  ].includes(mobType);
 
             let isMiniboss = mobType === "dungeon_miniboss";
 
@@ -4387,14 +4697,14 @@
             }
 
             // Use sub-linear power law growth for depth scaling (depth^0.7) to deeply reward deeper descents
-            let scaleMult = Math.max(1, Math.floor(Math.pow(depth, 0.7)));
+                        let scaleMult = Math.max(1, Math.floor(Math.pow(depth, 0.7)));
 
-            window.gainSubweaponXp(subType, xpAward * scaleMult);
-          }
-        }
-      }
+                        window.gainSubweaponXp(subType, xpAward * scaleMult);
+                      }
+                    }
+                  }
 
-      if (window.playerStats.ecoMode && window.particles.length > 100) return;
+                  if (window.playerStats.ecoMode && window.particles.length > 100) return;
       if (window.particles.length > 200) return;
       let count = 15;
       if (window.playerStats && window.playerStats.ecoMode) {
@@ -7239,14 +7549,16 @@
       }
       c.restore();
     } else if (
-      (m.type === "dungeon_boss" && window.playerStats.isDungeonMode) ||
-      m.type === "gilded_vault_keeper" ||
-      m.type === "corrosive_abomination" ||
-      m.type === "overlord_iron_vault" ||
-      m.visualType === "gilded_vault_keeper" ||
-      m.visualType === "corrosive_abomination" ||
-      m.visualType === "overlord_iron_vault"
-    ) {
+          (m.type === "dungeon_boss" && window.playerStats.isDungeonMode) ||
+          m.type === "gilded_vault_keeper" ||
+          m.type === "corrosive_abomination" ||
+          m.type === "overlord_iron_vault" ||
+          m.type === "brimstone_colossus" ||
+          m.visualType === "gilded_vault_keeper" ||
+          m.visualType === "corrosive_abomination" ||
+          m.visualType === "overlord_iron_vault" ||
+          m.visualType === "brimstone_colossus"
+        ) {
       let bounce = 0;
       let coreColor = "#9b59b6";
       let glowColor = "#e84393";
@@ -7368,9 +7680,148 @@
 
         c.restore();
       } else {
-        let dType = window.playerStats.currentDungeon || "gold";
-        if (dType === "gold") {
-          let bx = m.x;
+            let isBrimstone = m.visualType === "brimstone_colossus" || m.type === "brimstone_colossus";
+            if (isBrimstone) {
+              let bx = m.x;
+              let by = m.y;
+              let bw = m.w;
+              let bh = m.h;
+              let cx = bx + bw / 2;
+              let cy = by + bh / 2;
+              let time = Date.now();
+              let hover = Math.sin(time / 200) * 5;
+
+              c.save();
+              let embersCount = 4;
+              c.translate(cx, cy + hover);
+              for (let i = 0; i < embersCount; i++) {
+                let angle = (time / 400) + (i * Math.PI * 2) / embersCount;
+                let sx = Math.cos(angle) * (bw * 0.75);
+                let sy = Math.sin(angle) * 10;
+                c.save();
+                c.translate(sx, sy);
+                c.rotate(angle * 2);
+                c.strokeStyle = "rgba(255, 85, 0, 0.6)";
+                c.fillStyle = "rgba(241, 196, 15, 0.3)";
+                c.lineWidth = 1.0;
+                c.beginPath();
+                c.moveTo(0, -6);
+                c.lineTo(4, 2);
+                c.lineTo(-4, 2);
+                c.closePath();
+                c.fill();
+                c.stroke();
+                c.restore();
+              }
+              c.restore();
+
+              let suitY = cy - 8 + hover;
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#111115";
+              c.strokeStyle = "#000000";
+              c.lineWidth = 2.4;
+
+              c.beginPath();
+              c.roundRect(cx - 26, suitY - 14, 11, 11, [3]);
+              c.roundRect(cx + 15, suitY - 14, 11, 11, [3]);
+              c.fill();
+              c.stroke();
+
+              c.beginPath();
+              c.moveTo(cx - 15, suitY - 8);
+              c.lineTo(cx + 15, suitY - 8);
+              c.lineTo(cx + 12, suitY + 18);
+              c.lineTo(cx, suitY + 28);
+              c.lineTo(cx - 12, suitY + 18);
+              c.closePath();
+              c.fill();
+              c.stroke();
+
+              if (m.flashTimer === 0) {
+                let magmaPulse = 4 + Math.sin(time / 80) * 1.5;
+                let magmaGrad = c.createRadialGradient(
+                  cx,
+                  suitY + 4,
+                  1,
+                  cx,
+                  suitY + 4,
+                  magmaPulse + 6,
+                );
+                magmaGrad.addColorStop(0, "#ffffff");
+                magmaGrad.addColorStop(0.4, "#ff5500");
+                magmaGrad.addColorStop(1, "rgba(211, 84, 0, 0)");
+                c.fillStyle = magmaGrad;
+                c.beginPath();
+                c.arc(cx, suitY + 4, magmaPulse + 6, 0, Math.PI * 2);
+                c.fill();
+
+                c.strokeStyle = "#ff3300";
+                c.lineWidth = 2.0;
+                c.beginPath();
+                c.moveTo(cx - 6, suitY + 4);
+                c.lineTo(cx + 6, suitY + 4);
+                c.moveTo(cx, suitY - 2);
+                c.lineTo(cx, suitY + 10);
+                c.stroke();
+              }
+
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#1c120c";
+              c.beginPath();
+              c.roundRect(cx - 9, suitY - 32, 18, 16, [4]);
+              c.fill();
+              c.stroke();
+
+              if (m.flashTimer === 0) {
+                c.fillStyle = "#ff0000";
+                c.beginPath();
+                c.rect(cx - 6, suitY - 25, 12, 2.5);
+                c.fill();
+              }
+
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#111115";
+              c.beginPath();
+              c.ellipse(cx - 22, suitY + 12, 4.5, 4.5, 0, 0, Math.PI * 2);
+              c.fill();
+              c.stroke();
+
+              c.strokeStyle = "#5c3a21";
+              c.lineWidth = 3.0;
+              c.beginPath();
+              c.moveTo(cx - 22, suitY + 12);
+              c.lineTo(cx - 18, cy + 32 + hover);
+              c.stroke();
+
+              let ax = cx - 18;
+              let ay = cy + 32 + hover;
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#111115";
+              c.beginPath();
+              c.moveTo(ax - 18, ay - 8);
+              c.lineTo(ax + 18, ay - 8);
+              c.quadraticCurveTo(ax + 10, ay, ax + 14, ay + 14);
+              c.lineTo(ax - 14, ay + 14);
+              c.quadraticCurveTo(ax - 10, ay, ax - 18, ay - 8);
+              c.closePath();
+              c.fill();
+              c.stroke();
+
+              if (m.flashTimer === 0) {
+                let heatGrad = c.createLinearGradient(
+                  ax - 20,
+                  ay - 7,
+                  ax + 15,
+                  ay - 2,
+                );
+                heatGrad.addColorStop(0, "#ffeaa7");
+                heatGrad.addColorStop(0.5, "#ff5500");
+                heatGrad.addColorStop(1, "rgba(27, 29, 34, 0)");
+                c.fillStyle = heatGrad;
+                c.beginPath();
+                c.rect(ax - 15, ay - 7, 28, 4);
+                c.fill();
+              }
+            } else {
+              let dType = window.playerStats.currentDungeon || "gold";
+              if (dType === "gold") {
+                let bx = m.x;
           let by = m.y;
           let bw = m.w;
           let bh = m.h;
@@ -7987,23 +8438,24 @@
           c.stroke();
 
           if (m.flashTimer === 0) {
-            let heatGrad = c.createLinearGradient(
-              ax - 20,
-              ay - 7,
-              ax + 15,
-              ay - 2,
-            );
-            heatGrad.addColorStop(0, "#ffeaa7");
-            heatGrad.addColorStop(0.5, "#d35400");
-            heatGrad.addColorStop(1, "rgba(27, 29, 34, 0)");
-            c.fillStyle = heatGrad;
-            c.beginPath();
-            c.rect(ax - 15, ay - 7, 28, 4);
-            c.fill();
-          }
-        }
-      }
-    } else if (m.visualType === "marcus" || m.type === "marcus_boss") {
+                                  let heatGrad = c.createLinearGradient(
+                                    ax - 20,
+                                    ay - 7,
+                                    ax + 15,
+                                    ay - 2,
+                                  );
+                                  heatGrad.addColorStop(0, "#ffeaa7");
+                                  heatGrad.addColorStop(0.5, "#d35400");
+                                  heatGrad.addColorStop(1, "rgba(27, 29, 34, 0)");
+                                  c.fillStyle = heatGrad;
+                                  c.beginPath();
+                                  c.rect(ax - 15, ay - 7, 28, 4);
+                                  c.fill();
+                              }
+                            }
+                          }
+                        }
+                      } else if (m.visualType === "marcus" || m.type === "marcus_boss") {
       let cx = m.x + m.w / 2;
       let cy = m.y + m.h / 2;
       let time = Date.now();

@@ -4852,15 +4852,17 @@ window.playerStats = {
   hasTriggeredFullBag: false,
   hasTriggeredSoulBound: false,
   bossKillRegistry: {
-    arachnid_treant: 0,
-    aegis_goliath: 0,
-    chronos_arbitrator: 0,
-    nexus_overseer: 0,
-    gilded_vault_keeper: 0,
-    corrosive_abomination: 0,
-    hooktail: 0,
-    overlord_iron_vault: 0,
-  },
+      arachnid_treant: 0,
+      brimstone_colossus: 0,
+      corrosive_abomination: 0,
+      void_overseer: 0,
+      overlord_iron_vault: 0,
+      hooktail: 0,
+      aegis_goliath: 0,
+      chronos_arbitrator: 0,
+      nexus_overseer: 0,
+      gilded_vault_keeper: 0,
+    },
   targetsRequired: 3, // Reduced from 5 to 3 for snappier stage runs
   isBossMode: false,
   isFarmingLoop: false,
@@ -5075,9 +5077,11 @@ window.playerStats = {
   flaskX: null,
   flaskY: null,
   editHudMode: false,
-};
+    activePortalEvent: "expedition",
+    highestRiftLevelCleared: 0,
+  };
 
-window.toggleControlMode = function () {
+  window.toggleControlMode = function () {
   let current = window.playerStats.controlMode || "joystick";
   window.playerStats.controlMode =
     current === "joystick" ? "cursor" : "joystick";
@@ -6433,12 +6437,19 @@ window.loadGame = function () {
       });
 
       window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
-      window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
-      window.playerStats.currentHp = BigNum.from(
-        window.playerStats.currentHp || 100,
-      );
-      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
-      window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
+            window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
+            window.playerStats.currentHp = BigNum.from(
+              window.playerStats.currentHp || 100,
+            );
+            window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
+            window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
+
+            // Convert legacy prestigePoints to Astral Shards if present
+            if (window.playerStats.prestigePoints && window.playerStats.prestigePoints > 0) {
+              let pts = window.playerStats.prestigePoints;
+              window.playerStats.astralShards = (window.playerStats.astralShards || 0) + (pts * 10);
+              window.playerStats.prestigePoints = 0;
+            }
 
       if (
         window.playerStats.recoveryLoot &&
@@ -6450,17 +6461,19 @@ window.loadGame = function () {
       }
 
       // Fallback initializer for Boss Kill progress tracking
-      window.playerStats.bossKillRegistry = window.playerStats
-        .bossKillRegistry || {
-        arachnid_treant: 0,
-        aegis_goliath: 0,
-        chronos_arbitrator: 0,
-        nexus_overseer: 0,
-        gilded_vault_keeper: 0,
-        corrosive_abomination: 0,
-        hooktail: 0,
-        overlord_iron_vault: 0,
-      };
+            window.playerStats.bossKillRegistry = window.playerStats
+              .bossKillRegistry || {
+              arachnid_treant: 0,
+              brimstone_colossus: 0,
+              corrosive_abomination: 0,
+              void_overseer: 0,
+              overlord_iron_vault: 0,
+              hooktail: 0,
+              aegis_goliath: 0,
+              chronos_arbitrator: 0,
+              nexus_overseer: 0,
+              gilded_vault_keeper: 0,
+            };
 
       // Fallback initializers for separate Utility SP
       if (window.playerStats.usp === undefined) {
@@ -6477,8 +6490,11 @@ window.loadGame = function () {
 
       // Fallback initializers for Special Challenges and Bounty Boards
       if (window.playerStats.activeSpecialChallenge === undefined) {
-        window.playerStats.activeSpecialChallenge = null;
-      }
+              window.playerStats.activeSpecialChallenge = null;
+            }
+            if (window.playerStats.highestRiftLevelCleared === undefined) {
+              window.playerStats.highestRiftLevelCleared = 0;
+            }
       if (window.playerStats.bountyRerollsToday === undefined) {
         window.playerStats.bountyRerollsToday = 0;
       }

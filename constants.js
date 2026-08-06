@@ -2735,14 +2735,38 @@ window.MONSTER_CARDS_DATA = {
     set: "Cosmic Wardens",
   },
   hooktail: {
-    name: "Hooktail Card",
-    baseStat: "atk",
-    baseVal: 0.08,
-    isPct: true,
-    desc: "The Scarlet Calamity's blazing presence drastically augments your Attack Power.",
-    set: "Cosmic Wardens",
-  },
-};
+      name: "Hooktail Card",
+      baseStat: "atk",
+      baseVal: 0.08,
+      isPct: true,
+      desc: "The Scarlet Calamity's blazing presence drastically augments your Attack Power.",
+      set: "Cosmic Wardens",
+    },
+    arachnid_treant: {
+      name: "Arachnid Treant Card",
+      baseStat: "atk",
+      baseVal: 0.05,
+      isPct: true,
+      desc: "Eldritch nature's roots increase Attack Power.",
+      set: "Cosmic Wardens",
+    },
+    brimstone_colossus: {
+      name: "Brimstone Colossus Card",
+      baseStat: "def",
+      baseVal: 0.05,
+      isPct: true,
+      desc: "Molten magma armor increases Defense.",
+      set: "Cosmic Wardens",
+    },
+    void_overseer: {
+      name: "Void Overseer Card",
+      baseStat: "maxHp",
+      baseVal: 0.05,
+      isPct: true,
+      desc: "Gravity singularity wells increase Maximum HP.",
+      set: "Cosmic Wardens",
+    },
+  };
 
 window.CARD_SETS_DATA = {
   "Whispering Woods": {
@@ -2776,19 +2800,22 @@ window.CARD_SETS_DATA = {
     cards: ["void_orb", "void_crawler", "void_spectre"],
   },
   "Cosmic Wardens": {
-    name: "Cosmic Wardens Set",
-    theme: "All Core Attributes (STR/DEX/INT)",
-    statKey: "attributesMult", // Special handler in data.js to scale str, dex, int
-    cards: [
-      "aegis_goliath",
-      "chronos_arbitrator",
-      "nexus_overseer",
-      "overlord_iron_vault",
-      "gilded_vault_keeper",
-      "corrosive_abomination",
-      "hooktail",
-    ],
-  },
+      name: "Cosmic Wardens Set",
+      theme: "All Core Attributes (STR/DEX/INT)",
+      statKey: "attributesMult", // Special handler in data.js to scale str, dex, int
+      cards: [
+        "aegis_goliath",
+        "chronos_arbitrator",
+        "nexus_overseer",
+        "overlord_iron_vault",
+        "gilded_vault_keeper",
+        "corrosive_abomination",
+        "hooktail",
+        "arachnid_treant",
+        "brimstone_colossus",
+        "void_overseer",
+      ],
+    },
 };
 
 window.useDex["Monster Card Sack"] = {
@@ -2921,5 +2948,32 @@ window.BOSS_BAR_THEMES = {
     coreColor: "#ffeaa7",
     bgDark: "#151922",
     borderColor: "#bdc3c7",
+  },
+  arachnid_treant: {
+    title: "ARACHNID TREANT",
+    subtitle: "ELDRITCH BARK WARDEN",
+    primaryColor: "#2ecc71",
+    secondaryColor: "#27ae60",
+    coreColor: "#a3fd83",
+    bgDark: "#07120a",
+    borderColor: "#2ecc71",
+  },
+  brimstone_colossus: {
+    title: "BRIMSTONE COLOSSUS",
+    subtitle: "THE OBSIDIAN MAGMA CORE",
+    primaryColor: "#ff5500",
+    secondaryColor: "#d35400",
+    coreColor: "#f1c40f",
+    bgDark: "#1c0b05",
+    borderColor: "#ff5500",
+  },
+  void_overseer: {
+    title: "VOID OVERSEER",
+    subtitle: "THE EYE OF THE VOID",
+    primaryColor: "#9b59b6",
+    secondaryColor: "#8e44ad",
+    coreColor: "#e84393",
+    bgDark: "#0c011a",
+    borderColor: "#ff007f",
   },
 };

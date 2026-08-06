@@ -5960,3 +5960,69 @@ summary {
     box-shadow: 0 0 18px rgba(239, 68, 68, 0.85);
   }
 }
+
+/* --- TRIAL ALTAR UNIFIED GOTHIC OVERHAUL --- */
+.modal-card.trials-altar-card {
+  max-width: 840px !important;
+  width: 94vw !important;
+  max-height: 90vh !important;
+  background: radial-gradient(circle at top, rgba(168, 85, 247, 0.14) 0%, rgba(10, 8, 20, 0.98) 75%), #060410 !important;
+  border: 2.5px solid var(--border-gold-filigree) !important;
+  outline: 1px solid var(--border-aged-bronze) !important;
+  outline-offset: -4px !important;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.98), 0 0 35px rgba(168, 85, 247, 0.22), inset 0 0 25px rgba(212, 175, 55, 0.05) !important;
+  border-radius: 10px !important;
+}
+
+.trials-altar-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 12px;
+  height: auto;
+  max-height: none;
+}
+
+.trials-pane {
+  background: linear-gradient(180deg, #110d1c 0%, #080510 100%);
+  border: 1.5px solid #5a4325;
+  border-radius: 6px;
+  padding: 10px;
+  overflow-y: auto;
+  min-height: 0;
+  touch-action: pan-y;
+  box-shadow: inset 0 4px 18px rgba(0, 0, 0, 0.95), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.trial-selection-btn {
+  width: 100%;
+  background: linear-gradient(180deg, #1c1528 0%, #0f0c18 100%);
+  color: #94a3b8;
+  border: 1.5px solid var(--border-cold-iron);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trial-selection-btn:hover {
+  border-color: var(--border-gold-filigree);
+  color: #f1f5f9;
+}
+
+.trial-selection-btn.active {
+  color: #ffffff !important;
+  border-color: #a855f7 !important;
+  border-top-color: #e879f9 !important;
+  background: linear-gradient(180deg, #6b21a8 0%, #4c1d95 100%) !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.45) !important;
+  text-shadow: 0 1px 2px #000000;
+}
+
+@media (max-width: 768px) {
+  .trials-altar-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
