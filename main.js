@@ -6746,9 +6746,12 @@
     let vType = null;
 
     if (bossTier === "marcus") {
-      bossName = "Marcus the Outlaw";
-      vType = "marcus";
-    } else if (activeChallenge && activeChallenge.primaryTarget) {
+                      bossName = "Marcus the Outlaw";
+                      vType = "marcus";
+                      if (window.playerStats) {
+                        window.playerStats.robbingMarcusActive = true;
+                      }
+                    } else if (activeChallenge && activeChallenge.primaryTarget) {
       let pTar = activeChallenge.primaryTarget;
       bossName = isMini ? "Guard " + pTar.name : pTar.name;
       vType = pTar.visualType;
@@ -8725,29 +8728,30 @@
     }
 
     // --- DUNGEON MERCHANT PROXIMITY CHECK ---
-    let pObj = window.player;
-    let mapInstObj = window.activeDungeonMap;
-    let closestShopItem = null;
-    let closestShopDist = Infinity;
-    let closestItemIdx = -1;
+        let pObj = window.player;
+        let mapInstObj = window.activeDungeonMap;
+        let closestShopItem = null;
+        let closestShopDist = Infinity;
+        let closestItemIdx = -1;
 
-    if (
-      window.currentGameState === window.GAME_STATES.DUNGEON &&
-      mapInstObj &&
-      mapInstObj.merchantTile &&
-      mapInstObj.merchantStock &&
-      mapInstObj.merchantStock.length > 0
-    ) {
-      let mcx =
-        mapInstObj.merchantTile.x * mapInstObj.tileSize +
-        mapInstObj.tileSize / 2;
-      let mcy =
-        mapInstObj.merchantTile.y * mapInstObj.tileSize +
-        mapInstObj.tileSize / 2;
-      let itemXOffsets = [-15, 0, 15];
+        if (
+          window.currentGameState === window.GAME_STATES.DUNGEON &&
+          mapInstObj &&
+          mapInstObj.merchantTile &&
+          mapInstObj.merchantStock &&
+          mapInstObj.merchantStock.length > 0 &&
+          !(window.playerStats && window.playerStats.robbingMarcusActive)
+        ) {
+          let mcx =
+            mapInstObj.merchantTile.x * mapInstObj.tileSize +
+            mapInstObj.tileSize / 2;
+          let mcy =
+            mapInstObj.merchantTile.y * mapInstObj.tileSize +
+            mapInstObj.tileSize / 2;
+          let itemXOffsets = [-15, 0, 15];
 
-      mapInstObj.merchantStock.forEach((item, idx) => {
-        if (item.purchased) return;
+          mapInstObj.merchantStock.forEach((item, idx) => {
+            if (item.purchased) return;
         let itemX = mcx + itemXOffsets[idx];
         let itemY = mcy + 4;
         let ware = mapInstObj.merchantWares && mapInstObj.merchantWares[idx];
@@ -14900,14 +14904,25 @@
           }
 
           let isMarcus =
-            bm.type === "marcus_boss" || bm.visualType === "marcus";
-          let rewardGold, rewardXp;
+                                  bm.type === "marcus_boss" || bm.visualType === "marcus";
+                                let rewardGold, rewardXp;
 
-          if (isMarcus) {
-            // Scales strictly to current depth to prevent low-floor farming exploits
-            rewardGold = Math.floor(80 * (1 + depth * 0.45));
-            rewardXp = Math.floor(60 + depth * 12);
-          } else {
+                                if (isMarcus) {
+                                  // Scales strictly to current depth to prevent low-floor farming exploits
+                                  rewardGold = Math.floor(80 * (1 + depth * 0.45));
+                                  rewardXp = Math.floor(60 + depth * 12);
+
+                                  // Drop any unpurchased/stolen wares as ground loot when Marcus dies!
+                                  let map = window.activeDungeonMap;
+                                  if (map && map.merchantStock) {
+                                    map.merchantStock.forEach((item) => {
+                                      if (!item.purchased) {
+                                        window.spawnGroundLoot(item, bm.x + bm.w / 2, bm.y + bm.h / 2);
+                                        item.purchased = true; // Mark as purchased so they disappear/don't duplicate
+                                      }
+                                    });
+                                  }
+                                } else {
             rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
             rewardXp = Math.floor(120 + window.player.depth * 25);
           }

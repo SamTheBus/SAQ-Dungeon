@@ -583,33 +583,29 @@
     }
 
     generateMerchantStock() {
-      this.merchantStock = [];
-      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-      let stageScale = this.depth;
-      let pStats =
-        typeof window.resolvePlayerStats === "function"
-          ? window.resolvePlayerStats()
-          : {};
-      // Substantial quality multiplier boost representing exclusive wanderer wares
-      let playerQuality = (pStats.qly || 1.0) * 2.25;
+          this.merchantStock = [];
+          let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+          let stageScale = this.depth;
+          let pStats =
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : {};
+          // Substantial quality multiplier boost representing exclusive wanderer wares
+          let playerQuality = (pStats.qly || 1.0) * 2.5;
 
-      for (let i = 0; i < 3; i++) {
-        let chosenType = types[Math.floor(Math.random() * types.length)];
-        let rolledRarity = window.rollItemRarity(
-          window.playerStats.maxFloorCleared || 0,
-          playerQuality,
-          false,
-        );
-        // Guarantee at least Epic (3*) for the featured first item slot
-        if (i === 0 && rolledRarity < 3) {
-          rolledRarity = 3;
-        }
-        let item = window.createItemObject(
-          chosenType,
-          rolledRarity,
-          stageScale,
-          0,
-        );
+          for (let i = 0; i < 3; i++) {
+            let chosenType = types[Math.floor(Math.random() * types.length)];
+            let rolledRarity = window.rollItemRarity(
+              window.playerStats.maxFloorCleared || 0,
+              playerQuality,
+              false,
+            );
+            let item = window.createItemObject(
+              chosenType,
+              rolledRarity,
+              stageScale,
+              0,
+            );
 
         let costMult =
           150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
@@ -5071,16 +5067,16 @@
         ctx.fillRect(cx - 11, cy - 3, 2, 2);
         ctx.fillRect(cx + 9, cy - 3, 2, 2);
 
-        // 5. Draw the specific item floating above this pedestal
-        if (map && map.merchantWares && map.merchantStock) {
-          let tileC = Math.floor(px / tileSize);
-          let tileR = Math.floor(py / tileSize);
-          let ware = map.merchantWares.find(
-            (w) => w.x === tileC && w.y === tileR,
-          );
-          if (ware) {
-            let item = map.merchantStock[ware.itemIdx];
-            if (item && !item.purchased) {
+        // 5. Draw the specific item floating above this pedestal (hidden if Marcus is being robbed)
+                if (map && map.merchantWares && map.merchantStock) {
+                  let tileC = Math.floor(px / tileSize);
+                  let tileR = Math.floor(py / tileSize);
+                  let ware = map.merchantWares.find(
+                    (w) => w.x === tileC && w.y === tileR,
+                  );
+                  if (ware) {
+                    let item = map.merchantStock[ware.itemIdx];
+                    if (item && !item.purchased && !(window.playerStats && window.playerStats.robbingMarcusActive)) {
               let itemBob = Math.sin(time / 200 + ware.itemIdx * 1.5) * 1.8;
               let itemY = cy - 12 + itemBob;
 
