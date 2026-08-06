@@ -537,39 +537,39 @@
         let playerQuality = pStats.qly || 1.0;
 
         // Custom Helper to spawn tiered equipment drops
-        let spawnTieredEquipment = (qualityMult, minRarity) => {
-          if (isChallengeActive) {
-            // Convert to high-value gold and rare crafting material payload
-            let bonusGold = Math.floor(120 * (1 + stageScale * 0.8));
-            window.spawnHomingGold(p.x, p.y - 10, bonusGold);
+                    let spawnTieredEquipment = (qualityMult, minRarity) => {
+                      if (isChallengeActive) {
+                        // Convert to high-value gold and rare crafting material payload
+                        let bonusGold = Math.floor(120 * (1 + stageScale * 0.8));
+                        window.spawnHomingGold(p.x, p.y - 10, bonusGold);
 
-            let mats = [
-              "Rare Scrap",
-              "Magic Scrap",
-              "Epic Scrap",
-              "Legendary Scrap",
-              "Eridium Shard",
-            ];
-            let idx = Math.min(
-              mats.length - 1,
-              Math.floor((stageScale - 1) / 10) + 1,
-            );
-            let chosenMat = mats[Math.floor(Math.random() * (idx + 1))];
-            window.addDungeonRunScrap(
-              chosenMat,
-              window.randInt(2, 4),
-              p.x,
-              p.y - 10,
-            );
-            return;
-          }
+                        let mats = [
+                          "Rare Scrap",
+                          "Magic Scrap",
+                          "Epic Scrap",
+                          "Legendary Scrap",
+                          "Eridium Shard",
+                        ];
+                        let idx = Math.min(
+                          mats.length - 1,
+                          Math.floor((stageScale - 1) / 10) + 1,
+                        );
+                        let chosenMat = mats[Math.floor(Math.random() * (idx + 1))];
+                        window.addDungeonRunScrap(
+                          chosenMat,
+                          window.randInt(2, 4),
+                          p.x,
+                          p.y - 10,
+                        );
+                        return;
+                      }
 
-          let effectiveStage = stageScale * 5;
-          let rolledRarity = window.rollItemRarity(
-            effectiveStage,
-            qualityMult,
-            false,
-          );
+                      let effectiveStage = stageScale * 8;
+                      let rolledRarity = window.rollItemRarity(
+                        effectiveStage,
+                        qualityMult,
+                        false,
+                      );
           if (rolledRarity < minRarity) {
             rolledRarity = minRarity;
           }
@@ -14193,19 +14193,19 @@
           }
 
           // 5% Chance Mob Equipment Drop (Blocked in Crucible/Onslaught Mode & Special Challenges)
-          let isChallengeActive =
-            window.playerStats.activeSpecialChallenge !== null;
-          if (
-            !window.playerStats.isCrucibleMode &&
-            !isChallengeActive &&
-            Math.random() < 0.05
-          ) {
-            let stageScale = window.player.depth || 1;
-            let rolledRarity = window.rollItemRarity(
-              window.playerStats.maxFloorCleared || 0,
-              pStats.qly || 1.0,
-              false,
-            );
+                    let isChallengeActive =
+                      window.playerStats.activeSpecialChallenge !== null;
+                    if (
+                      !window.playerStats.isCrucibleMode &&
+                      !isChallengeActive &&
+                      Math.random() < 0.05
+                    ) {
+                      let stageScale = window.player.depth || 1;
+                      let rolledRarity = window.rollItemRarity(
+                        stageScale * 8,
+                        pStats.qly || 1.0,
+                        false,
+                      );
             let types = [
               "weapon",
               "subweapon",
@@ -15113,39 +15113,39 @@
               let bossEquip;
 
               if (isMarcus) {
-                let peak =
-                  window.playerStats.lifetimePeakStage ||
-                  window.playerStats.stage ||
-                  1;
-                let isFloorHighEnough = depth >= peak * 0.85;
+                              let peak =
+                                window.playerStats.lifetimePeakStage ||
+                                window.playerStats.stage ||
+                                1;
+                              let isFloorHighEnough = depth >= peak * 0.85;
 
-                // High floor rewards highly valuable Legendary (4*) or Mythic (5*) drops. Low floor drops tattered Common (0*) or Rare (1*) items.
-                let rolledRarity = isFloorHighEnough
-                  ? Math.random() < 0.35
-                    ? 5
-                    : 4
-                  : Math.random() < 0.5
-                    ? 1
-                    : 0;
-                bossEquip = window.createItemObject(
-                  chosenType,
-                  rolledRarity,
-                  stageScale,
-                  0,
-                );
-              } else {
-                let rolledRarity = window.rollItemRarity(
-                  window.playerStats.maxFloorCleared || 0,
-                  pStats.qly || 1.0,
-                  false,
-                );
-                bossEquip = window.createItemObject(
-                  chosenType,
-                  rolledRarity,
-                  stageScale,
-                  0,
-                );
-              }
+                              // High floor rewards highly valuable Legendary (4*) or Mythic (5*) drops. Low floor drops tattered Common (0*) or Rare (1*) items.
+                              let rolledRarity = isFloorHighEnough
+                                ? Math.random() < 0.35
+                                  ? 5
+                                  : 4
+                                : Math.random() < 0.5
+                                  ? 1
+                                  : 0;
+                              bossEquip = window.createItemObject(
+                                chosenType,
+                                rolledRarity,
+                                stageScale,
+                                0,
+                              );
+                            } else {
+                              let rolledRarity = window.rollItemRarity(
+                                stageScale * 8,
+                                pStats.qly || 1.0,
+                                false,
+                              );
+                              bossEquip = window.createItemObject(
+                                chosenType,
+                                rolledRarity,
+                                stageScale,
+                                0,
+                              );
+                            }
 
               window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
             }

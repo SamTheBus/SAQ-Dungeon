@@ -594,18 +594,18 @@
           let playerQuality = (pStats.qly || 1.0) * 2.5;
 
           for (let i = 0; i < 3; i++) {
-            let chosenType = types[Math.floor(Math.random() * types.length)];
-            let rolledRarity = window.rollItemRarity(
-              window.playerStats.maxFloorCleared || 0,
-              playerQuality,
-              false,
-            );
-            let item = window.createItemObject(
-              chosenType,
-              rolledRarity,
-              stageScale,
-              0,
-            );
+                  let chosenType = types[Math.floor(Math.random() * types.length)];
+                  let rolledRarity = window.rollItemRarity(
+                    Math.max(this.depth, window.playerStats.maxFloorCleared || 0) * 8,
+                    playerQuality,
+                    false,
+                  );
+                  let item = window.createItemObject(
+                    chosenType,
+                    rolledRarity,
+                    stageScale,
+                    0,
+                  );
 
         let costMult =
           150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
