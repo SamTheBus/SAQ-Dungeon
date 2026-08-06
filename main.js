@@ -742,9 +742,13 @@
   let lightingCtx = null;
 
   window.renderLightingOverlay = function (mainCtx, mainCanvas) {
-    if (!window.playerStats || window.playerStats.enableLighting === false)
-      return;
-    if (window.playerStats.ecoMode) return;
+      if (!window.playerStats) return;
+      let hasShroudedSight =
+        typeof window.isCavernEffectActive === "function" &&
+        window.isCavernEffectActive("shrouded_sight");
+      if (window.playerStats.enableLighting === false && !hasShroudedSight)
+        return;
+      if (window.playerStats.ecoMode && !hasShroudedSight) return;
 
     if (!lightingCanvas) {
       lightingCanvas = document.createElement("canvas");
@@ -770,20 +774,22 @@
     let viewH = mainCanvas.height;
 
     let isHub = window.currentGameState === window.GAME_STATES.HUB;
-    let ambientColor = "#e8e2f4";
+        let ambientColor = "#e8e2f4";
 
-    if (!isHub) {
-      let depth = window.player ? window.player.depth || 1 : 1;
-      let sector = Math.floor((depth - 1) / 12);
-      if (window.playerStats && window.playerStats.activeSpecialChallenge) {
-        sector = window.playerStats.activeSpecialChallenge.primaryTarget.tier;
-      }
-      if (sector === 0) ambientColor = "#a8bca8";
-      else if (sector === 1) ambientColor = "#a0b4cc";
-      else if (sector === 2) ambientColor = "#cc9888";
-      else if (sector === 3) ambientColor = "#a0ccb0";
-      else ambientColor = "#9888cc";
-    }
+        if (hasShroudedSight && !isHub) {
+          ambientColor = "#000000"; // Dynamic pitch-black void coverage
+        } else if (!isHub) {
+          let depth = window.player ? window.player.depth || 1 : 1;
+          let sector = Math.floor((depth - 1) / 12);
+          if (window.playerStats && window.playerStats.activeSpecialChallenge) {
+            sector = window.playerStats.activeSpecialChallenge.primaryTarget.tier;
+          }
+          if (sector === 0) ambientColor = "#a8bca8";
+          else if (sector === 1) ambientColor = "#a0b4cc";
+          else if (sector === 2) ambientColor = "#cc9888";
+          else if (sector === 3) ambientColor = "#a0ccb0";
+          else ambientColor = "#9888cc";
+        }
 
     // 1. Fill entire screen lightmap directly with ambientColor (source-over)
     lightingCtx.globalCompositeOperation = "source-over";
@@ -826,17 +832,19 @@
     }
 
     // Player Hero Light
-    let p = window.player;
-    if (p && p.hp > 0) {
-      let flicker = Math.sin(Date.now() / 90) * 4;
-      lights.push({
-        x: p.x,
-        y: p.y - 8,
-        r: 230 + flicker,
-        innerColor: "rgba(255, 248, 230, 0.98)",
-        outerColor: "rgba(235, 200, 150, 0.45)",
-      });
-    }
+        let p = window.player;
+        if (p && p.hp > 0) {
+          let flicker = Math.sin(Date.now() / 90) * 4;
+          let pRadius = hasShroudedSight ? 200 + flicker : 230 + flicker; // Calibrated to 200px spotlight
+          lights.push({
+            x: p.x,
+            y: p.y - 8,
+            r: pRadius,
+            innerColor: hasShroudedSight ? "rgba(255, 255, 245, 1.0)" : "rgba(255, 248, 230, 0.98)",
+            outerColor: hasShroudedSight ? "rgba(215, 150, 70, 0.6)" : "rgba(235, 200, 150, 0.45)",
+            isPlayerLight: true, // Flagged for custom multi-stop rendering
+          });
+        }
 
     // Hub Stations Light
     if (isHub && map.stations) {
@@ -970,24 +978,24 @@
     }
 
     // Wall Torches Light
-    if (map.torches) {
-      let tileSize = map.tileSize;
-      let time = Date.now();
-      map.torches.forEach((t) => {
-        let sx = t.x * tileSize + tileSize / 2;
-        let sy = t.y * tileSize + tileSize - 8;
-        if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
-          let torchFlicker = Math.sin(time / 70 + t.x * 3) * 10;
-          lights.push({
-            x: sx,
-            y: sy,
-            r: 190 + torchFlicker,
-            innerColor: "rgba(255, 245, 200, 1.0)",
-            outerColor: "rgba(255, 140, 30, 0.65)",
+        if (map.torches && !hasShroudedSight) { // Extinguish torches under Shrouded Sight
+          let tileSize = map.tileSize;
+          let time = Date.now();
+          map.torches.forEach((t) => {
+            let sx = t.x * tileSize + tileSize / 2;
+            let sy = t.y * tileSize + tileSize - 8;
+            if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
+              let torchFlicker = Math.sin(time / 70 + t.x * 3) * 10;
+              lights.push({
+                x: sx,
+                y: sy,
+                r: 190 + torchFlicker,
+                innerColor: "rgba(255, 245, 200, 1.0)",
+                outerColor: "rgba(255, 140, 30, 0.65)",
+              });
+            }
           });
         }
-      });
-    }
 
     // Sector Decorations Light
     if (map.decorations) {
@@ -1076,47 +1084,49 @@
     }
 
     // Active Mobs & Boss Lights
-    if (window.activeDungeonMobs) {
-      window.activeDungeonMobs.forEach((m) => {
-        let sx = m.x + m.w / 2;
-        let sy = m.y + m.h / 2;
-        if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
-          if (m.isRare) {
+        if (window.activeDungeonMobs) {
+          window.activeDungeonMobs.forEach((m) => {
+            let sx = m.x + m.w / 2;
+            let sy = m.y + m.h / 2;
+            if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
+              if (m.isRare) {
+                // Rares emit a dim pulsing alert ring in the dark
+                lights.push({
+                  x: sx,
+                  y: sy,
+                  r: hasShroudedSight ? 40 : 90,
+                  innerColor: "rgba(255, 240, 180, 0.85)",
+                  outerColor: "rgba(241, 196, 15, 0.25)",
+                });
+              } else if (!hasShroudedSight) {
+                lights.push({
+                  x: sx,
+                  y: sy,
+                  r: 50,
+                  innerColor: "rgba(255, 200, 200, 0.70)",
+                  outerColor: "rgba(231, 76, 60, 0.25)",
+                });
+              }
+            }
+          });
+        }
+
+    if (window.mob) {
+          let bm = window.mob;
+          let sx = bm.x + bm.w / 2;
+          let sy = bm.y + bm.h / 2;
+          if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
+            let r = bm.type === "dungeon_boss" ? 200 : 150;
+            let bRadius = hasShroudedSight ? r * 0.55 : r; // Slightly dim boss aura
             lights.push({
               x: sx,
               y: sy,
-              r: 90,
-              innerColor: "rgba(255, 240, 180, 0.95)",
-              outerColor: "rgba(241, 196, 15, 0.50)",
-            });
-          } else {
-            lights.push({
-              x: sx,
-              y: sy,
-              r: 50,
-              innerColor: "rgba(255, 200, 200, 0.70)",
-              outerColor: "rgba(231, 76, 60, 0.25)",
+              r: bRadius,
+              innerColor: "rgba(255, 210, 210, 0.9)",
+              outerColor: "rgba(231, 76, 60, 0.40)",
             });
           }
         }
-      });
-    }
-
-    if (window.mob) {
-      let bm = window.mob;
-      let sx = bm.x + bm.w / 2;
-      let sy = bm.y + bm.h / 2;
-      if (sx >= minCamX && sx <= maxCamX && sy >= minCamY && sy <= maxCamY) {
-        let r = bm.type === "dungeon_boss" ? 200 : 150;
-        lights.push({
-          x: sx,
-          y: sy,
-          r: r,
-          innerColor: "rgba(255, 210, 210, 1.0)",
-          outerColor: "rgba(231, 76, 60, 0.60)",
-        });
-      }
-    }
 
     // Gold Particles Light
     if (window.goldParticles) {
@@ -1161,19 +1171,29 @@
     }
 
     // Additive Light Blend Pass in World Coordinates
-    lightingCtx.globalCompositeOperation = "lighter";
-    lights.forEach((light) => {
-      let { x, y, r, innerColor, outerColor } = light;
-      let grad = lightingCtx.createRadialGradient(x, y, 0, x, y, r);
-      grad.addColorStop(0, innerColor);
-      grad.addColorStop(0.4, outerColor);
-      grad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+        lightingCtx.globalCompositeOperation = "lighter";
+        lights.forEach((light) => {
+          let { x, y, r, innerColor, outerColor, isPlayerLight } = light;
+          let grad = lightingCtx.createRadialGradient(x, y, 0, x, y, r);
 
-      lightingCtx.fillStyle = grad;
-      lightingCtx.beginPath();
-      lightingCtx.arc(x, y, r, 0, Math.PI * 2);
-      lightingCtx.fill();
-    });
+          if (isPlayerLight && hasShroudedSight) {
+            // High-contrast, multi-stop radial gradient for Shrouded Sight: bright center, progressive transition
+            grad.addColorStop(0, "rgba(255, 255, 250, 1.0)");    // White-hot center core
+            grad.addColorStop(0.18, "rgba(255, 240, 195, 0.98)"); // Highly illuminated center ring
+            grad.addColorStop(0.45, "rgba(225, 155, 75, 0.65)");  // Smooth golden mid-glow
+            grad.addColorStop(0.75, "rgba(145, 80, 25, 0.22)");   // Soft twilight buffer
+            grad.addColorStop(1.0, "rgba(0, 0, 0, 0)");           // Falloff edge
+          } else {
+            grad.addColorStop(0, innerColor);
+            grad.addColorStop(0.4, outerColor);
+            grad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+          }
+
+          lightingCtx.fillStyle = grad;
+          lightingCtx.beginPath();
+          lightingCtx.arc(x, y, r, 0, Math.PI * 2);
+          lightingCtx.fill();
+        });
 
     lightingCtx.restore();
 
@@ -1185,16 +1205,21 @@
   };
 
   // --- ENGINE INITIALIZATION ---
-  window.addEventListener("load", function () {
-    canvas = document.getElementById("gameCanvas");
-    if (!canvas) return;
-    ctx = canvas.getContext("2d");
+    window.addEventListener("load", function () {
+      canvas = document.getElementById("gameCanvas");
+      if (!canvas) return;
+      ctx = canvas.getContext("2d");
 
-    window.canvas = canvas;
-    window.ctx = ctx;
+      window.canvas = canvas;
+      window.ctx = ctx;
 
-    window.resizeCanvas();
-    window.addEventListener("resize", window.resizeCanvas);
+      window.resizeCanvas();
+      window.addEventListener("resize", window.resizeCanvas);
+
+      // Check and trigger daily/weekly resets on initial boot
+      if (typeof window.checkAndResetMissions === "function") {
+        window.checkAndResetMissions();
+      }
 
     // Dynamically inject the RELIQUARY tab button if not present in index.html
     let tabBar = document.querySelector(".profile-tab-bar");
@@ -6787,35 +6812,40 @@
   };
 
   window.onBossDefeated = function (tileX, tileY) {
-    let map = window.activeDungeonMap;
-    let depth = window.player.depth || 1;
+      let map = window.activeDungeonMap;
+      let depth = window.player.depth || 1;
 
-    // Refill Field Flask charges upon defeating a boss
-    window.refillFlaskCharges(false);
+      // Refill Field Flask charges upon defeating a boss
+      window.refillFlaskCharges(false);
 
-    let nextCheckpoint = depth + 1;
-    window.playerStats.unlockedCheckpoints = window.playerStats
-      .unlockedCheckpoints || [1];
-    if (
-      window.isValidCheckpoint(nextCheckpoint) &&
-      !window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)
-    ) {
-      window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
-    }
-    window.playerStats.unlockedCheckpoints =
-      window.playerStats.unlockedCheckpoints
-        .filter(window.isValidCheckpoint)
-        .sort((a, b) => a - b);
-    window.playerStats.maxFloorCleared = Math.max(
-      window.playerStats.maxFloorCleared || 0,
-      depth,
-    );
-    window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
-    window.playerStats.lifetimePeakStage = Math.max(
-      window.playerStats.lifetimePeakStage || 1,
-      depth,
-    );
-    if (typeof window.saveGame === "function") window.saveGame();
+      let isChallenge = window.playerStats.activeSpecialChallenge !== null;
+      let isCrucible = window.playerStats.isCrucibleMode;
+
+      if (!isChallenge && !isCrucible) {
+        let nextCheckpoint = depth + 1;
+        window.playerStats.unlockedCheckpoints = window.playerStats
+          .unlockedCheckpoints || [1];
+        if (
+          window.isValidCheckpoint(nextCheckpoint) &&
+          !window.playerStats.unlockedCheckpoints.includes(nextCheckpoint)
+        ) {
+          window.playerStats.unlockedCheckpoints.push(nextCheckpoint);
+        }
+        window.playerStats.unlockedCheckpoints =
+          window.playerStats.unlockedCheckpoints
+            .filter(window.isValidCheckpoint)
+            .sort((a, b) => a - b);
+        window.playerStats.maxFloorCleared = Math.max(
+          window.playerStats.maxFloorCleared || 0,
+          depth,
+        );
+        window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
+        window.playerStats.lifetimePeakStage = Math.max(
+          window.playerStats.lifetimePeakStage || 1,
+          depth,
+        );
+      }
+      if (typeof window.saveGame === "function") window.saveGame();
 
     if (
       map &&
@@ -7621,18 +7651,11 @@
     };
 
     if (map && map.revealSightRadius) {
-      let originalReveal = map.revealSightRadius;
-      map.revealSightRadius = function (px, py, intBonus) {
-        let hasShroudedSight =
-          typeof window.isCavernEffectActive === "function" &&
-          window.isCavernEffectActive("shrouded_sight");
-        if (hasShroudedSight) {
-          originalReveal.call(this, px, py, -9); // Clamps the fog light radius to 3 tiles
-        } else {
-          originalReveal.call(this, px, py, intBonus);
+          let originalReveal = map.revealSightRadius;
+          map.revealSightRadius = function (px, py, intBonus) {
+            originalReveal.call(this, px, py, intBonus);
+          };
         }
-      };
-    }
 
     window.updateHUD();
     let floorTitle = isMajorBoss
@@ -8126,7 +8149,7 @@
       if (nemesisCard) nemesisCard.style.display = "none";
     }
 
-    let extractedLoot = [...(window.player.bag || [])];
+    let extractedLoot = [...(window.player.bag || [])].filter(item => !item.isStarterItem);
     let savedInsuredItems = [];
     let lostItems = [];
 
@@ -8255,24 +8278,20 @@
       window.player.bag = [];
 
       // Process Equipped Gear (Unlocked gear is lost on defeat, untempered starter items vanish silently)
-      for (let slotKey in window.equippedSlots) {
-        let eqItem = window.equippedSlots[slotKey];
-        if (eqItem) {
-          if (eqItem.locked) {
-            savedInsuredItems.push(eqItem);
-          } else if (
-            eqItem.isStarterItem &&
-            (eqItem.temperLevel || 0) === 0 &&
-            !eqItem.reforgedProperty
-          ) {
-            // Untempered starter item vanishes on death without cluttering recovery loot
-            window.equippedSlots[slotKey] = null;
-          } else {
-            lostItems.push(eqItem);
-            window.equippedSlots[slotKey] = null;
-          }
-        }
-      }
+            for (let slotKey in window.equippedSlots) {
+              let eqItem = window.equippedSlots[slotKey];
+              if (eqItem) {
+                if (eqItem.isStarterItem) {
+                  // Starter items are temporary and vanish silently on defeat/abandon
+                  window.equippedSlots[slotKey] = null;
+                } else if (eqItem.locked) {
+                  savedInsuredItems.push(eqItem);
+                } else {
+                  lostItems.push(eqItem);
+                  window.equippedSlots[slotKey] = null;
+                }
+              }
+            }
 
       // Safety Net: Ensure player is never left without a weapon option
       let hasWeapon =
@@ -8593,20 +8612,37 @@
       }
     }
 
-    // Live UI updates for active open shop modal
-    if (Date.now() - (window.lastShopTimerUpdate || 0) >= 1000) {
-      window.lastShopTimerUpdate = Date.now();
-      let shopModal = document.getElementById("shop-modal");
-      if (
-        shopModal &&
-        shopModal.style.display !== "none" &&
-        shopModal.style.display !== ""
-      ) {
-        if (window.activeShopTab === "gear") {
-          window.renderMarketShop();
+    // Live UI updates for active open shop/bounty modals and periodically check daily/weekly resets
+        if (Date.now() - (window.lastShopTimerUpdate || 0) >= 1000) {
+          window.lastShopTimerUpdate = Date.now();
+
+          // Lightweight, real-time timezone-aware reset check
+          if (typeof window.checkAndResetMissions === "function") {
+            window.checkAndResetMissions();
+          }
+
+          let shopModal = document.getElementById("shop-modal");
+          if (
+            shopModal &&
+            shopModal.style.display !== "none" &&
+            shopModal.style.display !== ""
+          ) {
+            if (window.activeShopTab === "gear") {
+              window.renderMarketShop();
+            }
+          }
+
+          let bountyModal = document.getElementById("bounty-modal");
+          if (
+            bountyModal &&
+            bountyModal.style.display !== "none" &&
+            bountyModal.style.display !== ""
+          ) {
+            if (typeof window.renderBountyBoard === "function") {
+              window.renderBountyBoard();
+            }
+          }
         }
-      }
-    }
 
     if (window.isAnyMenuOpen()) return;
 
@@ -8958,23 +8994,21 @@
     let minY = cam ? cam.y : 0;
     let maxY = minY + viewH;
 
-    // Discover portal ONLY when its specific tile has been explored AND enters camera view
-    if (map && map.extractionTile && map.exploredGrid) {
-      let pTileX = map.extractionTile.x;
-      let pTileY = map.extractionTile.y;
-      if (map.exploredGrid[pTileY] && map.exploredGrid[pTileY][pTileX]) {
-        let portalPx = pTileX * tileSize + tileSize / 2;
-        let portalPy = pTileY * tileSize + tileSize / 2;
-        if (
-          portalPx >= minX &&
-          portalPx <= maxX &&
-          portalPy >= minY &&
-          portalPy <= maxY
-        ) {
-          map.portalDiscovered = true;
+    // Discover portal ONLY when its specific tile enters camera view
+        if (map && map.extractionTile) {
+          let pTileX = map.extractionTile.x;
+          let pTileY = map.extractionTile.y;
+          let portalPx = pTileX * tileSize + tileSize / 2;
+          let portalPy = pTileY * tileSize + tileSize / 2;
+          if (
+            portalPx >= minX &&
+            portalPx <= maxX &&
+            portalPy >= minY &&
+            portalPy <= maxY
+          ) {
+            map.portalDiscovered = true;
+          }
         }
-      }
-    }
 
     // Discover mobs instantly when entering camera viewport
     if (window.activeDungeonMobs) {
@@ -10064,77 +10098,116 @@
   };
 
   window.updateCavernEffects = function () {
-    if (window.currentGameState !== window.GAME_STATES.DUNGEON) {
-      window.cavernInteractives = [];
-      return;
-    }
-    // Enable interactive sigils on both standard campaign and daily runs
-    if (!window.playerStats.activeDungeonSigil) {
-      window.cavernInteractives = [];
-      return;
-    }
+      if (window.currentGameState !== window.GAME_STATES.DUNGEON) {
+        window.cavernInteractives = [];
+        return;
+      }
+      // Enable interactive elements if either a Sigil or a Special Challenge (Contract) is active
+      if (!window.playerStats.activeDungeonSigil && !window.playerStats.activeSpecialChallenge) {
+        window.cavernInteractives = [];
+        return;
+      }
 
-    window.cavernInteractives = window.cavernInteractives || [];
-    let p = window.player;
-    let pStats =
-      typeof window.resolvePlayerStats === "function"
-        ? window.resolvePlayerStats()
-        : {};
-    let pRadius = p.radius || 9;
+      window.cavernInteractives = window.cavernInteractives || [];
+      let p = window.player;
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      let pRadius = p.radius || 9;
 
-    // Apply continuous debuff penalties for standard hazardous structures
-    let activeShards = window.cavernInteractives.filter(
-      (item) => item.type === "anomalous_shard",
-    );
-    if (activeShards.length > 0) {
-      // 2 HP/sec drain and mild speed penalty
-      if (window.logicClock % 60 === 0) {
-        let drain = Math.max(
-          1,
-          Math.round(p.maxHp * 0.02 * activeShards.length),
+      // Apply continuous debuff penalties for standard hazardous structures (Zero-allocation loop)
+      let activeShardsCount = 0;
+      for (let sIdx = 0; sIdx < window.cavernInteractives.length; sIdx++) {
+        if (window.cavernInteractives[sIdx].type === "anomalous_shard") {
+          activeShardsCount++;
+        }
+      }
+
+      if (activeShardsCount > 0) {
+        // 2 HP/sec drain and mild speed penalty
+        if (window.logicClock % 60 === 0) {
+          let drain = Math.max(
+            1,
+            Math.round(p.maxHp * 0.02 * activeShardsCount),
+          );
+          p.hp = Math.max(1, p.hp - drain);
+          window.spawnFloatingText(
+            p.x,
+            p.y - 15,
+            `-${drain} SHARD DRAIN`,
+            "#ff007f",
+          );
+          if (window.SoundManager) window.SoundManager.play("hit");
+        }
+        p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.65);
+      }
+
+      window.cavernSpawnTimer = (window.cavernSpawnTimer || 0) - 1;
+      if (window.cavernSpawnTimer <= 0) {
+        window.cavernSpawnTimer = window.randInt(900, 1500); // 15-25s
+
+        let activeIds = [];
+        let sig = window.playerStats.activeDungeonSigil;
+        if (sig) {
+          if (sig.buffs) sig.buffs.forEach((b) => activeIds.push(b.id || b));
+          if (sig.debuffs) sig.debuffs.forEach((d) => activeIds.push(d.id || d));
+        }
+        let challenge = window.playerStats.activeSpecialChallenge;
+        if (challenge) {
+          if (challenge.buffs) challenge.buffs.forEach((b) => activeIds.push(b.id || b));
+          if (challenge.debuffs) challenge.debuffs.forEach((d) => activeIds.push(d.id || d));
+        }
+
+        // De-duplicate active mutator IDs
+        let uniqueActiveIds = [];
+        for (let aIdx = 0; aIdx < activeIds.length; aIdx++) {
+          let idVal = activeIds[aIdx];
+          if (uniqueActiveIds.indexOf(idVal) === -1) {
+            uniqueActiveIds.push(idVal);
+          }
+        }
+
+        let targetEffects = uniqueActiveIds.filter((id) =>
+          [
+            "perfect_strike",
+            "aetheric_conduit",
+            "aetheric_spark",
+            "glimmering_pixie",
+            "anomalous_shards",
+            "void_rupture",
+          ].includes(id),
         );
-        p.hp = Math.max(1, p.hp - drain);
-        window.spawnFloatingText(
-          p.x,
-          p.y - 15,
-          `-${drain} SHARD DRAIN`,
-          "#ff007f",
-        );
-        if (window.SoundManager) window.SoundManager.play("hit");
+
+        // Perform Spawning Limit: Cap active interactive structures on a single floor to a maximum of 3 (Zero-allocation loop)
+        let activeStructuresCount = 0;
+        let structuresList = [];
+        for (let sIdx = 0; sIdx < window.cavernInteractives.length; sIdx++) {
+          let itemType = window.cavernInteractives[sIdx].type;
+          if (itemType === "anomalous_shard" || itemType === "rupture_core" || itemType === "rupture_orb" || itemType === "glimmering_pixie" || itemType === "aetheric_spark" || itemType === "aetheric_conduit") {
+            activeStructuresCount++;
+            structuresList.push(window.cavernInteractives[sIdx]);
+          }
+        }
+
+        // Clean up oldest structures if they exceed safety limits
+        while (structuresList.length > 3) {
+          let oldest = structuresList.shift();
+          let idx = window.cavernInteractives.indexOf(oldest);
+          if (idx !== -1) {
+            window.cavernInteractives.splice(idx, 1);
+          }
+          activeStructuresCount--;
+        }
+
+        if (targetEffects.length > 0 && activeStructuresCount < 3) {
+          let chosenId =
+            targetEffects[Math.floor(Math.random() * targetEffects.length)];
+          window.spawnCavernInteractive(chosenId);
+        }
       }
-      p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.65);
-    }
 
-    window.cavernSpawnTimer = (window.cavernSpawnTimer || 0) - 1;
-    if (window.cavernSpawnTimer <= 0) {
-      window.cavernSpawnTimer = window.randInt(900, 1500); // 15-25s
-
-      let activeIds = [];
-      let sig = window.playerStats.activeDungeonSigil;
-      if (sig) {
-        if (sig.buffs) sig.buffs.forEach((b) => activeIds.push(b.id));
-        if (sig.debuffs) sig.debuffs.forEach((d) => activeIds.push(d.id));
-      }
-
-      let targetEffects = activeIds.filter((id) =>
-        [
-          "perfect_strike",
-          "aetheric_conduit",
-          "aetheric_spark",
-          "glimmering_pixie",
-          "anomalous_shards",
-          "void_rupture",
-        ].includes(id),
-      );
-
-      if (targetEffects.length > 0) {
-        let chosenId =
-          targetEffects[Math.floor(Math.random() * targetEffects.length)];
-        window.spawnCavernInteractive(chosenId);
-      }
-    }
-
-    for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
+      for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
       let item = window.cavernInteractives[i];
       item.life--;
 
@@ -14780,56 +14853,61 @@
             }
 
             // First-Time Boss Clear Key Reward Logic
-            if (!window.playerStats.firstClearBosses)
-              window.playerStats.firstClearBosses = [];
-            if (!window.playerStats.firstClearBosses.includes(depth)) {
-              window.playerStats.firstClearBosses.push(depth);
-              let isMajorBoss = depth % 12 === 0;
+                        let isChallengeActive = window.playerStats.activeSpecialChallenge !== null;
+                        let isCrucible = window.playerStats.isCrucibleMode;
 
-              // Direct to Vault
-              window.addEtcDrop("Gacha Key", 1, false);
-              if (isMajorBoss) {
-                window.addEtcDrop("Glimmering Gachapon Key", 1, false);
-              }
+                        if (!isChallengeActive && !isCrucible) {
+                          if (!window.playerStats.firstClearBosses)
+                            window.playerStats.firstClearBosses = [];
+                          if (!window.playerStats.firstClearBosses.includes(depth)) {
+                            window.playerStats.firstClearBosses.push(depth);
+                            let isMajorBoss = depth % 12 === 0;
 
-              if (typeof window.pushHeaderToast === "function") {
-                let toastMsg = isMajorBoss
-                  ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
-                  : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
-                window.pushHeaderToast(toastMsg, "#f1c40f");
-              }
+                            // Direct to Vault
+                            window.addEtcDrop("Gacha Key", 1, false);
+                            if (isMajorBoss) {
+                              window.addEtcDrop("Glimmering Gachapon Key", 1, false);
+                            }
 
-              // Guaranteed locked-power (50% strength) artifact on Floor 12 (Sector 1 Boss) first clear
-              if (depth === 12) {
-                let guaranteedArtifact = window.createItemObject(
-                  "artifact",
-                  1,
-                  2,
-                  0,
-                );
-                guaranteedArtifact.relicPower = 0.5;
-                guaranteedArtifact.name = `${guaranteedArtifact.name.split(" (")[0]} (Clamped) (Lv. 2)`;
-                if (window.recalculateItemStats) {
-                  window.recalculateItemStats(guaranteedArtifact);
-                }
+                            if (typeof window.pushHeaderToast === "function") {
+                              let toastMsg = isMajorBoss
+                                ? "FIRST CLEAR BONUS: +1 Gacha Key & +1 Glimmering Key (Vaulted)!"
+                                : "FIRST CLEAR BONUS: +1 Gacha Key (Vaulted)!";
+                              window.pushHeaderToast(toastMsg, "#f1c40f");
+                            }
 
-                if (window.currentGameState === window.GAME_STATES.HUB) {
-                  if (!window.inventory.ARTIFACT)
-                    window.inventory.ARTIFACT = [];
-                  window.inventory.ARTIFACT.push(guaranteedArtifact);
-                } else {
-                  if (!window.player.bag) window.player.bag = [];
-                  window.player.bag.push(guaranteedArtifact);
-                }
+                            // Guaranteed locked-power (50% strength) artifact on Floor 12 (Sector 1 Boss) first clear
+                            if (depth === 12) {
+                              let guaranteedArtifact = window.createItemObject(
+                                "artifact",
+                                1,
+                                2,
+                                0,
+                              );
+                              guaranteedArtifact.relicPower = 0.5;
+                              guaranteedArtifact.name = `${guaranteedArtifact.name.split(" (")[0]} (Clamped) (Lv. 2)`;
+                              if (window.recalculateItemStats) {
+                                window.recalculateItemStats(guaranteedArtifact);
+                              }
 
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast(
-                    `✦ FIRST CLEAR BONUS: Gained Clamped ${guaranteedArtifact.name}!`,
-                    "#1abc9c",
-                  );
-                }
-              }
-            }
+                              if (window.currentGameState === window.GAME_STATES.HUB) {
+                                if (!window.inventory.ARTIFACT)
+                                  window.inventory.ARTIFACT = [];
+                                window.inventory.ARTIFACT.push(guaranteedArtifact);
+                              } else {
+                                if (!window.player.bag) window.player.bag = [];
+                                window.player.bag.push(guaranteedArtifact);
+                              }
+
+                              if (typeof window.pushHeaderToast === "function") {
+                                window.pushHeaderToast(
+                                  `✦ FIRST CLEAR BONUS: Gained Clamped ${guaranteedArtifact.name}!`,
+                                  "#1abc9c",
+                                );
+                              }
+                            }
+                          }
+                        }
 
             if (window.hasUniquePassive("boots_warpcore")) {
               window.playerStats.warpCoreSprintTimer = 240; // 4 seconds of Maximum Haste
@@ -15325,98 +15403,75 @@
       });
     }
 
-    // B. Chest Spawns (Dungeon State - Fog-of-War Culled)
-    if (
-      window.currentGameState !== window.GAME_STATES.HUB &&
-      mapInst &&
-      mapInst.grid
-    ) {
-      let camera = window.DungeonCamera;
-      let startCol = Math.max(0, Math.floor(camera.x / tSize));
-      let endCol = Math.min(
-        mapInst.width - 1,
-        Math.ceil((camera.x + camera.viewportW / camera.zoom) / tSize),
-      );
-      let startRow = Math.max(0, Math.floor(camera.y / tSize));
-      let endRow = Math.min(
-        mapInst.height - 1,
-        Math.ceil((camera.y + camera.viewportH / camera.zoom) / tSize),
-      );
-
-      for (let r = startRow; r <= endRow; r++) {
-        for (let c = startCol; c <= endCol; c++) {
-          let tType = mapInst.grid[r][c];
+    // B. Chest Spawns (Dungeon State - Culled by Viewport)
           if (
-            tType === window.TILE_TYPES.CHEST_SPAWN ||
-            tType === window.TILE_TYPES.RECOVERY_CHEST ||
-            tType === window.TILE_TYPES.DUNGEON_MERCHANT ||
-            tType === window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL
+            window.currentGameState !== window.GAME_STATES.HUB &&
+            mapInst &&
+            mapInst.grid
           ) {
-            let isExplored =
-              isHub ||
-              (mapInst.exploredGrid &&
-                mapInst.exploredGrid[r] &&
-                mapInst.exploredGrid[r][c]);
-            if (!isExplored) continue;
+            let camera = window.DungeonCamera;
+            let startCol = Math.max(0, Math.floor(camera.x / tSize));
+            let endCol = Math.min(
+              mapInst.width - 1,
+              Math.ceil((camera.x + camera.viewportW / camera.zoom) / tSize),
+            );
+            let startRow = Math.max(0, Math.floor(camera.y / tSize));
+            let endRow = Math.min(
+              mapInst.height - 1,
+              Math.ceil((camera.y + camera.viewportH / camera.zoom) / tSize),
+            );
 
-            let px = c * tSize;
-            let py = r * tSize;
+            for (let r = startRow; r <= endRow; r++) {
+              for (let c = startCol; c <= endCol; c++) {
+                let tType = mapInst.grid[r][c];
+                if (
+                  tType === window.TILE_TYPES.CHEST_SPAWN ||
+                  tType === window.TILE_TYPES.RECOVERY_CHEST ||
+                  tType === window.TILE_TYPES.DUNGEON_MERCHANT ||
+                  tType === window.TILE_TYPES.DUNGEON_MERCHANT_PEDESTAL
+                ) {
+                  let px = c * tSize;
+                  let py = r * tSize;
+                  depthQueue.push({
+                    yBase: py + 20,
+                    draw: () => {
+                      if (window.drawDungeonStructureTile) {
+                        window.drawDungeonStructureTile(ctx, tType, px, py, tSize);
+                      }
+                    },
+                  });
+                }
+              }
+            }
+          }
+
+    // B2. Breakable Pottery & Props (Culled by Viewport)
+        if (
+          window.currentGameState !== window.GAME_STATES.HUB &&
+          mapInst &&
+          mapInst.breakables
+        ) {
+          mapInst.breakables.forEach((b) => {
+            let px = b.x * tSize;
+            let py = b.y * tSize;
             depthQueue.push({
-              yBase: py + 20,
+              yBase: py + 22,
               draw: () => {
-                if (window.drawDungeonStructureTile) {
-                  window.drawDungeonStructureTile(ctx, tType, px, py, tSize);
+                if (window.drawBreakableProp) {
+                  window.drawBreakableProp(ctx, b, px, py, tSize);
                 }
               },
             });
-          }
+          });
         }
-      }
-    }
 
-    // B2. Breakable Pottery & Props (Fog-of-War Culled)
-    if (
-      window.currentGameState !== window.GAME_STATES.HUB &&
-      mapInst &&
-      mapInst.breakables
-    ) {
-      mapInst.breakables.forEach((b) => {
-        let isExplored =
-          mapInst.exploredGrid &&
-          mapInst.exploredGrid[b.y] &&
-          mapInst.exploredGrid[b.y][b.x];
-        if (!isExplored) return;
-
-        let px = b.x * tSize;
-        let py = b.y * tSize;
-        depthQueue.push({
-          yBase: py + 22,
-          draw: () => {
-            if (window.drawBreakableProp) {
-              window.drawBreakableProp(ctx, b, px, py, tSize);
-            }
-          },
-        });
-      });
-    }
-
-    // B3. Ground Material Pickups (Fog-of-War Culled)
-    if (window.groundMaterials && window.groundMaterials.length > 0) {
-      let time = Date.now();
-      window.groundMaterials.forEach((gm) => {
-        let tileC = Math.floor(gm.x / tSize);
-        let tileR = Math.floor(gm.y / tSize);
-        let isExplored =
-          isHub ||
-          (mapInst &&
-            mapInst.exploredGrid &&
-            mapInst.exploredGrid[tileR] &&
-            mapInst.exploredGrid[tileR][tileC]);
-        if (!isExplored) return; // Hide ground material if in unexplored Fog of War!
-
-        depthQueue.push({
-          yBase: gm.y,
-          draw: () => {
+    // B3. Ground Material Pickups (Culled by Viewport)
+        if (window.groundMaterials && window.groundMaterials.length > 0) {
+          let time = Date.now();
+          window.groundMaterials.forEach((gm) => {
+            depthQueue.push({
+              yBase: gm.y,
+              draw: () => {
             let drawX = gm.x;
             let drawY = gm.y + gm.z;
             let color = gm.color || "#00d2ff";
@@ -15479,23 +15534,13 @@
       });
     }
 
-    // B4. Ground Equipment Loot Pickups (Fog-of-War Culled)
-    if (window.groundLoot && window.groundLoot.length > 0) {
-      let time = Date.now();
-      window.groundLoot.forEach((gl) => {
-        let tileC = Math.floor(gl.x / tSize);
-        let tileR = Math.floor(gl.y / tSize);
-        let isExplored =
-          isHub ||
-          (mapInst &&
-            mapInst.exploredGrid &&
-            mapInst.exploredGrid[tileR] &&
-            mapInst.exploredGrid[tileR][tileC]);
-        if (!isExplored) return; // Hide ground equipment if in unexplored Fog of War!
-
-        depthQueue.push({
-          yBase: gl.y,
-          draw: () => {
+    // B4. Ground Equipment Loot Pickups (Culled by Viewport)
+        if (window.groundLoot && window.groundLoot.length > 0) {
+          let time = Date.now();
+          window.groundLoot.forEach((gl) => {
+            depthQueue.push({
+              yBase: gl.y,
+              draw: () => {
             let drawX = gl.x;
             let drawY = gl.y + gl.z;
             let color = gl.color || "#00d2ff";
@@ -16022,49 +16067,33 @@
       });
     }
 
-    // B5. Sector Environmental Decorations (Fog-of-War Culled)
-    if (
-      !isHub &&
-      mapInst &&
-      mapInst.decorations &&
-      mapInst.decorations.length > 0
-    ) {
-      mapInst.decorations.forEach((dec) => {
-        let isExplored =
-          mapInst.exploredGrid &&
-          mapInst.exploredGrid[dec.y] &&
-          mapInst.exploredGrid[dec.y][dec.x];
-        if (!isExplored) return;
+    // B5. Sector Environmental Decorations (Culled by Viewport)
+        if (
+          !isHub &&
+          mapInst &&
+          mapInst.decorations &&
+          mapInst.decorations.length > 0
+        ) {
+          mapInst.decorations.forEach((dec) => {
+            let isWallProp =
+              mapInst.grid[dec.y] &&
+              mapInst.grid[dec.y][dec.x] === window.TILE_TYPES.WALL;
 
-        let isWallProp =
-          mapInst.grid[dec.y] &&
-          mapInst.grid[dec.y][dec.x] === window.TILE_TYPES.WALL;
+            depthQueue.push({
+              yBase: dec.worldY + (isWallProp ? 0 : 8),
+              draw: () => {
+                if (window.drawSectorDecoration) {
+                  window.drawSectorDecoration(ctx, dec, tSize);
+                }
+              },
+            });
+          });
+        }
 
-        depthQueue.push({
-          yBase: dec.worldY + (isWallProp ? 0 : 8),
-          draw: () => {
-            if (window.drawSectorDecoration) {
-              window.drawSectorDecoration(ctx, dec, tSize);
-            }
-          },
-        });
-      });
-    }
-
-    // C. Active Dungeon Mobs (Fog-of-War Culled)
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      window.activeDungeonMobs.forEach((m) => {
-        let tileC = Math.floor((m.x + (m.w || 24) / 2) / tSize);
-        let tileR = Math.floor((m.y + (m.h || 24) / 2) / tSize);
-        let isExplored =
-          isHub ||
-          (mapInst &&
-            mapInst.exploredGrid &&
-            mapInst.exploredGrid[tileR] &&
-            mapInst.exploredGrid[tileR][tileC]);
-        if (!isExplored) return; // Hide mob if in unexplored Fog of War!
-
-        if (m.perfectStrikeTimer > 0) {
+    // C. Active Dungeon Mobs (Culled by Viewport)
+        if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+          window.activeDungeonMobs.forEach((m) => {
+            if (m.perfectStrikeTimer > 0) {
           m.perfectStrikeTimer--;
           let progress = m.perfectStrikeTimer / m.perfectStrikeMax;
           let cx = m.x + m.w / 2;
@@ -16102,26 +16131,16 @@
     }
 
     // C2. Active Cavern Sigil Interactives (Depth-Sorted)
-    if (window.cavernInteractives && window.cavernInteractives.length > 0) {
-      window.cavernInteractives.forEach((item) => {
-        let tileC = Math.floor(item.x / tSize);
-        let tileR = Math.floor(item.y / tSize);
-        let isExplored =
-          isHub ||
-          (mapInst &&
-            mapInst.exploredGrid &&
-            mapInst.exploredGrid[tileR] &&
-            mapInst.exploredGrid[tileR][tileC]);
-        if (!isExplored) return;
-
-        depthQueue.push({
-          yBase: item.y + (item.h || 24),
-          draw: () => {
-            window.drawCavernInteractive(ctx, item);
-          },
-        });
-      });
-    }
+        if (window.cavernInteractives && window.cavernInteractives.length > 0) {
+          window.cavernInteractives.forEach((item) => {
+            depthQueue.push({
+              yBase: item.y + (item.h || 24),
+              draw: () => {
+                window.drawCavernInteractive(ctx, item);
+              },
+            });
+          });
+        }
 
     // D. Boss Warden
     if (window.mob) {
@@ -19752,42 +19771,49 @@
   };
 
   window.renderBountyBoard = function () {
-    let leftPane = document.getElementById("bounty-list-pane");
-    let rightPane = document.getElementById("bounty-details-pane");
-    if (!leftPane || !rightPane) return;
+      let leftPane = document.getElementById("bounty-list-pane");
+      let rightPane = document.getElementById("bounty-details-pane");
+      if (!leftPane || !rightPane) return;
 
-    let tab = window.state.bountyActiveTab || "challenges";
+      let tab = window.state.bountyActiveTab || "challenges";
 
-    if (tab === "challenges") {
-      let database = window.SPECIAL_CHALLENGES_DATABASE || {};
-      let keys = Object.keys(database);
+      if (tab === "challenges") {
+        let database = window.SPECIAL_CHALLENGES_DATABASE || {};
+        let keys = Object.keys(database);
 
-      if (
-        !window.state.selectedBountyId ||
-        !database[window.state.selectedBountyId]
-      ) {
-        window.state.selectedBountyId = keys[0];
-      }
+        if (
+          !window.state.selectedBountyId ||
+          !database[window.state.selectedBountyId]
+        ) {
+          window.state.selectedBountyId = keys[0];
+        }
 
-      let activeBountyId = window.state.selectedBountyId;
+        let activeBountyId = window.state.selectedBountyId;
 
-      // Render Re-roll button with dynamically scaling progression cost
-      let r = window.playerStats.bountyRerollsToday || 0;
-      let peakStage =
-        window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-      let rerollCost = window.getBountyRerollCost(peakStage, r);
-      let costStr = `${window.formatNumber(rerollCost.gold)} G / ${rerollCost.souls} Souls`;
+        // Render Re-roll button with dynamically scaling progression cost
+        let r = window.playerStats.bountyRerollsToday || 0;
+        let peakStage =
+          window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+        let rerollCost = window.getBountyRerollCost(peakStage, r);
+        let costStr = `${window.formatNumber(rerollCost.gold)} G / ${rerollCost.souls} Souls`;
 
-      let rerollBtnHtml =
-        r >= 3
-          ? `<div style="background:#0e0a14; border:1px solid #334155; border-radius:6px; padding:6px 10px; font-family:monospace; font-size:9px; color:#64748b; text-align:center; margin-bottom:8px; text-transform:uppercase;">MAX DAILY RE-ROLLS REACHED</div>`
-          : `<button class="shop-refresh-btn" style="width:100%; margin-bottom:8px; display:flex; justify-content:center; gap:6px; background:linear-gradient(180deg,#7f1c1d,#450a0a); border-color:#e74c3c; line-height:1.2; padding:6px;" onclick="event.stopPropagation(); window.rerollBountyBoard();">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:translateY(0.5px);"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                  <span>RE-ROLL BOARD (${costStr})</span>
-                </button>`;
+        let rerollBtnHtml =
+          r >= 3
+            ? `<div style="background:#0e0a14; border:1px solid #334155; border-radius:6px; padding:6px 10px; font-family:monospace; font-size:9px; color:#64748b; text-align:center; margin-bottom:8px; text-transform:uppercase;">MAX DAILY RE-ROLLS REACHED</div>`
+            : `<button class="shop-refresh-btn" style="width:100%; margin-bottom:8px; display:flex; justify-content:center; gap:6px; background:linear-gradient(180deg,#7f1c1d,#450a0a); border-color:#e74c3c; line-height:1.2; padding:6px;" onclick="event.stopPropagation(); window.rerollBountyBoard();">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:translateY(0.5px);"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    <span>RE-ROLL BOARD (${costStr})</span>
+                  </button>`;
 
-      // Render Left Pane (Ledger List)
-      let listMarkup = keys
+        let timeDiffs = window.getPacificTimeDiffs ? window.getPacificTimeDiffs() : { dailyMs: 0, weeklyMs: 0 };
+        let dailyTimerStr = window.formatRemainingTime ? window.formatRemainingTime(timeDiffs.dailyMs) : "0s";
+        let timerHtml = `<div style="background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.2); border-radius:6px; padding:6px 10px; font-family:monospace; font-size:9.5px; color:#ffd700; text-align:center; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>BOARD RESET IN:</span>
+          <strong style="color:#ffffff;">${dailyTimerStr}</strong>
+        </div>`;
+
+        // Render Left Pane (Ledger List)
+        let listMarkup = keys
         .map((key) => {
           let challenge = database[key];
           let isSelected = key === activeBountyId;
@@ -19814,7 +19840,7 @@
         })
         .join("");
 
-      leftPane.innerHTML = rerollBtnHtml + listMarkup;
+      leftPane.innerHTML = rerollBtnHtml + timerHtml + listMarkup;
 
       // Render Right Pane (Contract Details)
       let activeChallenge = database[activeBountyId];
@@ -19912,89 +19938,105 @@
               `;
       }
     } else {
-      // Render Dailies or Weeklies
-      let isWeekly = tab === "weeklies";
+          // Render Dailies or Weeklies
+          let isWeekly = tab === "weeklies";
 
-      // If weekly tab is selected but requirements are not met, display clear locked UX
-      if (isWeekly && !window.isWeeklyQuestUnlocked()) {
-        leftPane.innerHTML = `
-                      <div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:10px; font-family:monospace; line-height:1.45;">
-                        [ WEEKLY LOCK ]<br><br>
-                        Clear Floor 12 (Sector 1 Boss) or reach Prestige to unlock Weekly Guild Quests.
+          // If weekly tab is selected but requirements are not met, display clear locked UX
+          if (isWeekly && !window.isWeeklyQuestUnlocked()) {
+            let timeDiffs = window.getPacificTimeDiffs ? window.getPacificTimeDiffs() : { dailyMs: 0, weeklyMs: 0 };
+            let weeklyTimerStr = window.formatRemainingTime ? window.formatRemainingTime(timeDiffs.weeklyMs) : "0s";
+            let timerHtml = `<div style="background:rgba(168,85,247,0.06); border:1px solid rgba(168,85,247,0.2); border-radius:6px; padding:6px 10px; font-family:monospace; font-size:9.5px; color:#a855f7; text-align:center; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+              <span>WEEKLY RESET IN:</span>
+              <strong style="color:#ffffff;">${weeklyTimerStr}</strong>
+            </div>`;
+
+            leftPane.innerHTML = timerHtml + `
+                          <div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:10px; font-family:monospace; line-height:1.45;">
+                            [ WEEKLY LOCK ]<br><br>
+                            Clear Floor 12 (Sector 1 Boss) or reach Prestige to unlock Weekly Guild Quests.
+                          </div>
+                        `;
+            rightPane.innerHTML = `
+                          <div style="display:flex; flex-direction:column; text-align:left; gap:10px; height:100%; font-family:monospace;">
+                            <div style="font-weight:900; font-size:13.5px; color:#e74c3c; border-bottom:1.5px solid rgba(231,76,60,0.3); padding-bottom:6px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.8px;">
+                              Weekly Guild Contracts Locked
+                            </div>
+                            <p style="font-size:11px; color:#cbd5e1; line-height:1.45; margin:0 0 10px 0; white-space:normal;">
+                              The Weekly Guild Board is currently bound by high-tier magical seals. To lift the seals and earn prestigious weekly sacks, you must complete either of the following milestones:
+                            </p>
+                            <div style="background:rgba(231,76,60,0.05); border:1px dashed #e74c3c; border-radius:6px; padding:10px; font-size:10.5px; line-height:1.4; color:#ff7675;">
+                              • Clear Floor 12 (Defeat the Sector 1 Guardian Boss)
+                            </div>
+                            <button class="action-btn" style="width:100%; margin-top:auto; background:#1e293b; border-color:#334155; color:#64748b;" disabled>EXPEDITION UNDERWAY</button>
+                          </div>
+                        `;
+            return;
+          }
+
+          let list = isWeekly
+            ? window.playerStats.weeklyMissions || []
+            : window.playerStats.dailyMissions || [];
+
+          // Dynamic On-the-Fly Generator: If unlocked but empty, generate them immediately
+          if (isWeekly && window.isWeeklyQuestUnlocked() && list.length === 0) {
+            window.QuestSystem.generateWeeklyMissions();
+            list = window.playerStats.weeklyMissions || [];
+          }
+
+          let timeDiffs = window.getPacificTimeDiffs ? window.getPacificTimeDiffs() : { dailyMs: 0, weeklyMs: 0 };
+          let resetTimerStr = window.formatRemainingTime ? window.formatRemainingTime(isWeekly ? timeDiffs.weeklyMs : timeDiffs.dailyMs) : "0s";
+          let timerHtml = `<div style="background:rgba(${isWeekly ? "168,85,247" : "56,189,248"},0.06); border:1px solid rgba(${isWeekly ? "168,85,247" : "56,189,248"},0.2); border-radius:6px; padding:6px 10px; font-family:monospace; font-size:9.5px; color:${isWeekly ? "#a855f7" : "#00d2ff"}; text-align:center; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span>${isWeekly ? "WEEKLY" : "DAILY"} RESET IN:</span>
+            <strong style="color:#ffffff;">${resetTimerStr}</strong>
+          </div>`;
+
+          if (!list || list.length === 0) {
+            leftPane.innerHTML = timerHtml + `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">No active quests rolled. Check back after reset!</div>`;
+            rightPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">Select a quest from the list.</div>`;
+            return;
+          }
+
+          if (
+            !window.state.selectedQuestId ||
+            !list.some((q) => q.id === window.state.selectedQuestId)
+          ) {
+            window.state.selectedQuestId = list[0].id;
+          }
+
+          let activeQuestId = window.state.selectedQuestId;
+
+          // Render Left Pane (Quests List)
+          let listMarkup = list
+            .map((q) => {
+              let isSelected = q.id === activeQuestId;
+              let pct = Math.min(100, (q.current / q.target) * 100);
+
+              let borderCol = isSelected ? "#38bdf8" : "#334155";
+              let bgStyle = isSelected
+                ? "background: rgba(56, 189, 248, 0.12);"
+                : "background: rgba(15, 23, 42, 0.65);";
+
+              let statusText = q.claimed
+                ? `<span style="color:#64748b; font-size:8.5px; font-family:monospace; font-weight:bold;">[CLAIMED]</span>`
+                : q.completed
+                  ? `<span style="color:#2ecc71; font-size:8.5px; font-family:monospace; font-weight:bold;">[COMPLETED]</span>`
+                  : `<span style="color:#94a3b8; font-size:8.5px; font-family:monospace;">${q.current.toLocaleString()} / ${q.target.toLocaleString()}</span>`;
+
+              return `
+                    <div class="bounty-ledger-row" style="${bgStyle} border-color:${borderCol}; border-left:4px solid ${q.completed ? "#10b981" : "#475569"}; padding:10px; margin-bottom:6px; border-radius:6px; cursor:pointer; transition:all 0.15s;" onclick="event.stopPropagation(); window.selectBountyQuest('${q.id}')">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:#f1f5f9; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; text-align:left;">${q.desc.split(" (")[0]}</strong>
+                        ${statusText}
                       </div>
-                    `;
-        rightPane.innerHTML = `
-                      <div style="display:flex; flex-direction:column; text-align:left; gap:10px; height:100%; font-family:monospace;">
-                        <div style="font-weight:900; font-size:13.5px; color:#e74c3c; border-bottom:1.5px solid rgba(231,76,60,0.3); padding-bottom:6px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.8px;">
-                          Weekly Guild Contracts Locked
-                        </div>
-                        <p style="font-size:11px; color:#cbd5e1; line-height:1.45; margin:0 0 10px 0; white-space:normal;">
-                          The Weekly Guild Board is currently bound by high-tier magical seals. To lift the seals and earn prestigious weekly sacks, you must complete either of the following milestones:
-                        </p>
-                        <div style="background:rgba(231,76,60,0.05); border:1px dashed #e74c3c; border-radius:6px; padding:10px; font-size:10.5px; line-height:1.4; color:#ff7675;">
-                          • Clear Floor 12 (Defeat the Sector 1 Guardian Boss)
-                        </div>
-                        <button class="action-btn" style="width:100%; margin-top:auto; background:#1e293b; border-color:#334155; color:#64748b;" disabled>EXPEDITION UNDERWAY</button>
+                      <div class="gacha-pity-bg" style="width:100%; height:4px; margin-top:6px; background:#06040a;">
+                        <div class="gacha-pity-fill" style="width:${pct}%; height:100%; background:${q.completed ? "#10b981" : "#38bdf8"};"></div>
                       </div>
-                    `;
-        return;
-      }
+                    </div>
+                  `;
+            })
+            .join("");
 
-      let list = isWeekly
-        ? window.playerStats.weeklyMissions || []
-        : window.playerStats.dailyMissions || [];
-
-      // Dynamic On-the-Fly Generator: If unlocked but empty, generate them immediately
-      if (isWeekly && window.isWeeklyQuestUnlocked() && list.length === 0) {
-        window.QuestSystem.generateWeeklyMissions();
-        list = window.playerStats.weeklyMissions || [];
-      }
-
-      if (!list || list.length === 0) {
-        leftPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">No active quests rolled. Check back after reset!</div>`;
-        rightPane.innerHTML = `<div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:11px;">Select a quest from the list.</div>`;
-        return;
-      }
-
-      if (
-        !window.state.selectedQuestId ||
-        !list.some((q) => q.id === window.state.selectedQuestId)
-      ) {
-        window.state.selectedQuestId = list[0].id;
-      }
-
-      let activeQuestId = window.state.selectedQuestId;
-
-      // Render Left Pane (Quests List)
-      leftPane.innerHTML = list
-        .map((q) => {
-          let isSelected = q.id === activeQuestId;
-          let pct = Math.min(100, (q.current / q.target) * 100);
-
-          let borderCol = isSelected ? "#38bdf8" : "#334155";
-          let bgStyle = isSelected
-            ? "background: rgba(56, 189, 248, 0.12);"
-            : "background: rgba(15, 23, 42, 0.65);";
-
-          let statusText = q.claimed
-            ? `<span style="color:#64748b; font-size:8.5px; font-family:monospace; font-weight:bold;">[CLAIMED]</span>`
-            : q.completed
-              ? `<span style="color:#2ecc71; font-size:8.5px; font-family:monospace; font-weight:bold;">[COMPLETED]</span>`
-              : `<span style="color:#94a3b8; font-size:8.5px; font-family:monospace;">${q.current.toLocaleString()} / ${q.target.toLocaleString()}</span>`;
-
-          return `
-                <div class="bounty-ledger-row" style="${bgStyle} border-color:${borderCol}; border-left:4px solid ${q.completed ? "#10b981" : "#475569"}; padding:10px; margin-bottom:6px; border-radius:6px; cursor:pointer; transition:all 0.15s;" onclick="event.stopPropagation(); window.selectBountyQuest('${q.id}')">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <strong style="color:#f1f5f9; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; text-align:left;">${q.desc.split(" (")[0]}</strong>
-                    ${statusText}
-                  </div>
-                  <div class="gacha-pity-bg" style="width:100%; height:4px; margin-top:6px; background:#06040a;">
-                    <div class="gacha-pity-fill" style="width:${pct}%; height:100%; background:${q.completed ? "#10b981" : "#38bdf8"};"></div>
-                  </div>
-                </div>
-              `;
-        })
-        .join("");
+          leftPane.innerHTML = timerHtml + listMarkup;
 
       // Render Right Pane (Selected Quest Details)
       let q = list.find((q) => q.id === activeQuestId);
@@ -20480,394 +20522,515 @@
   };
 
   // --- TOUCH / POINTER SWIPE NOTIFICATION DISMISSAL ENGINE ---
-  window.attachToastSwipeHandlers = function (toast, onClickCallback) {
-    let startX = 0,
-      startY = 0;
-    let deltaX = 0,
-      deltaY = 0;
-    let isDragging = false;
-    let startTime = 0;
-    let mode = null;
+    window.attachToastSwipeHandlers = function (toast, onClickCallback) {
+      let startX = 0,
+        startY = 0;
+      let deltaX = 0,
+        deltaY = 0;
+      let isDragging = false;
+      let startTime = 0;
+      let mode = null;
 
-    toast.addEventListener("pointerdown", (e) => {
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      deltaX = 0;
-      deltaY = 0;
-      startTime = Date.now();
-      mode = null;
-      toast.style.transition = "none";
-      try {
-        toast.setPointerCapture(e.pointerId);
-      } catch (err) {}
-    });
+      toast.addEventListener("pointerdown", (e) => {
+        // Guard: Abort swipe/drag capturing if clicking the quick equip button
+        if (e.target.closest("button")) return;
 
-    toast.addEventListener("pointermove", (e) => {
-      if (!isDragging) return;
-      deltaX = e.clientX - startX;
-      deltaY = e.clientY - startY;
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        deltaX = 0;
+        deltaY = 0;
+        startTime = Date.now();
+        mode = null;
+        toast.style.transition = "none";
+        try {
+          toast.setPointerCapture(e.pointerId);
+        } catch (err) {}
+      });
 
-      if (!mode) {
-        if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
-          mode = "up";
-        } else if (
-          Math.abs(deltaX) > 8 &&
-          Math.abs(deltaX) >= Math.abs(deltaY)
-        ) {
-          mode = "side";
+      toast.addEventListener("pointermove", (e) => {
+        if (!isDragging) return;
+        deltaX = e.clientX - startX;
+        deltaY = e.clientY - startY;
+
+        if (!mode) {
+          if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
+            mode = "up";
+          } else if (
+            Math.abs(deltaX) > 8 &&
+            Math.abs(deltaX) >= Math.abs(deltaY)
+          ) {
+            mode = "side";
+          }
         }
-      }
 
-      if (mode === "up") {
-        let moveY = Math.min(0, deltaY);
-        let alpha = Math.max(0, 1 - Math.abs(moveY) / 100);
+        if (mode === "up") {
+          let moveY = Math.min(0, deltaY);
+          let alpha = Math.max(0, 1 - Math.abs(moveY) / 100);
+          let container = document.getElementById("toast-container");
+          if (container) {
+            let allToasts = container.querySelectorAll(
+              ".item-toast, .header-toast",
+            );
+            allToasts.forEach((t) => {
+              t.style.transition = "none";
+              t.style.transform = `translateY(${moveY}px)`;
+              t.style.opacity = alpha;
+            });
+          }
+        } else if (mode === "side") {
+          let alpha = Math.max(0, 1 - Math.abs(deltaX) / 180);
+          toast.style.transform = `translateX(${deltaX}px)`;
+          toast.style.opacity = alpha;
+        }
+      });
+
+      const endDrag = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        try {
+          toast.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+
+        let elapsed = Date.now() - startTime;
+        let distY = deltaY;
+        let distX = deltaX;
+
+        if (Math.abs(distX) < 5 && Math.abs(distY) < 5) {
+          toast.style.transition = "all 0.2s ease";
+          toast.style.transform = "";
+          toast.style.opacity = "1";
+          if (typeof onClickCallback === "function") {
+            onClickCallback(e);
+          }
+          return;
+        }
+
         let container = document.getElementById("toast-container");
-        if (container) {
-          let allToasts = container.querySelectorAll(
-            ".item-toast, .header-toast",
-          );
-          allToasts.forEach((t) => {
-            t.style.transition = "none";
-            t.style.transform = `translateY(${moveY}px)`;
-            t.style.opacity = alpha;
-          });
+
+        if (mode === "up" && (distY < -30 || (elapsed < 250 && distY < -15))) {
+          if (container) {
+            let allToasts = container.querySelectorAll(
+              ".item-toast, .header-toast",
+            );
+            allToasts.forEach((t) => {
+              if (t.dismissTimeout) clearTimeout(t.dismissTimeout);
+              t.style.transition =
+                "transform 0.22s ease-in, opacity 0.22s ease-in";
+              t.style.transform = `translateY(-120px)`;
+              t.style.opacity = "0";
+              setTimeout(() => {
+                if (t.parentNode) t.parentNode.removeChild(t);
+                window.processToastQueue();
+              }, 220);
+            });
+          }
+        } else if (
+          mode === "side" &&
+          (Math.abs(distX) > 40 || (elapsed < 250 && Math.abs(distX) > 20))
+        ) {
+          if (toast.dismissTimeout) clearTimeout(toast.dismissTimeout);
+          let exitX = distX > 0 ? 350 : -350;
+          toast.style.transition =
+            "transform 0.22s ease-in, opacity 0.22s ease-in";
+          toast.style.transform = `translateX(${exitX}px)`;
+          toast.style.opacity = "0";
+          setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+            window.processToastQueue();
+          }, 220);
+        } else {
+          if (container) {
+            let allToasts = container.querySelectorAll(
+              ".item-toast, .header-toast",
+            );
+            allToasts.forEach((t) => {
+              t.style.transition =
+                "transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.2s ease";
+              t.style.transform = "";
+              t.style.opacity = "1";
+            });
+          }
         }
-      } else if (mode === "side") {
-        let alpha = Math.max(0, 1 - Math.abs(deltaX) / 180);
-        toast.style.transform = `translateX(${deltaX}px)`;
-        toast.style.opacity = alpha;
+      };
+
+      toast.addEventListener("pointerup", endDrag);
+      toast.addEventListener("pointercancel", endDrag);
+    };
+
+    window.toastQueue = window.toastQueue || [];
+
+    window.processToastQueue = function() {
+      let container = document.getElementById("toast-container");
+      if (!container) return;
+
+      let activeToasts = container.querySelectorAll(".item-toast, .header-toast");
+      let activeCount = Array.from(activeToasts).filter(t => !t.classList.contains("toast-fade-out")).length;
+
+      if (activeCount >= 3) return; // Cap at 3 concurrent visible notifications
+      if (window.toastQueue.length === 0) return;
+
+      let nextRequest = window.toastQueue.shift();
+      if (nextRequest.type === "item") {
+        window.executePushItemToast(nextRequest.item);
+      } else if (nextRequest.type === "material") {
+        window.executePushMaterialToast(nextRequest.name, nextRequest.qty, nextRequest.color);
+      } else if (nextRequest.type === "header") {
+        window.executePushHeaderToast(nextRequest.msg, nextRequest.color, nextRequest.onClick);
       }
-    });
 
-    const endDrag = (e) => {
-      if (!isDragging) return;
-      isDragging = false;
-      try {
-        toast.releasePointerCapture(e.pointerId);
-      } catch (err) {}
+      setTimeout(window.processToastQueue, 50);
+    };
 
-      let elapsed = Date.now() - startTime;
-      let distY = deltaY;
-      let distX = deltaX;
+    // --- ITEM PICKUP TOAST NOTIFICATION ENGINE ---
+    window.pushToast = function (item) {
+      if (!item) return;
+      let container = document.getElementById("toast-container");
+      if (container) {
+        let existingToast = Array.from(container.querySelectorAll(".item-toast")).find(
+          (t) => t.dataset.itemName === item.name && !t.classList.contains("toast-fade-out")
+        );
 
-      if (Math.abs(distX) < 5 && Math.abs(distY) < 5) {
-        toast.style.transition = "all 0.2s ease";
-        toast.style.transform = "";
-        toast.style.opacity = "1";
-        if (typeof onClickCallback === "function") {
-          onClickCallback(e);
+        if (existingToast) {
+          let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
+          let newQty = currentQty + 1;
+          existingToast.dataset.itemQty = newQty;
+
+          let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
+          let countEl = existingToast.querySelector(".toast-count-val");
+
+          if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
+          if (countEl) countEl.innerText = `x${newQty}`;
+
+          existingToast.classList.remove("toast-pop-bump");
+          void existingToast.offsetWidth;
+          existingToast.classList.add("toast-pop-bump");
+
+          if (existingToast.dismissTimeout) {
+            clearTimeout(existingToast.dismissTimeout);
+          }
+
+          if (window.SoundManager && typeof window.SoundManager.playLootDrop === "function") {
+            window.SoundManager.playLootDrop(item.statsRolled);
+          }
+
+          existingToast.dismissTimeout = setTimeout(() => {
+            existingToast.classList.add("toast-fade-out");
+            setTimeout(() => {
+              if (existingToast.parentNode) {
+                existingToast.parentNode.removeChild(existingToast);
+                window.processToastQueue();
+              }
+            }, 300);
+          }, 2800);
+
+          return;
         }
+      }
+
+      // Merge duplicate drop items waiting in queue
+      let existingInQueue = window.toastQueue.find(q => q.type === "item" && q.item.name === item.name);
+      if (existingInQueue) {
+        existingInQueue.qty = (existingInQueue.qty || 1) + 1;
         return;
       }
 
-      let container = document.getElementById("toast-container");
-
-      if (mode === "up" && (distY < -30 || (elapsed < 250 && distY < -15))) {
-        if (container) {
-          let allToasts = container.querySelectorAll(
-            ".item-toast, .header-toast",
-          );
-          allToasts.forEach((t) => {
-            if (t.dismissTimeout) clearTimeout(t.dismissTimeout);
-            t.style.transition =
-              "transform 0.22s ease-in, opacity 0.22s ease-in";
-            t.style.transform = `translateY(-120px)`;
-            t.style.opacity = "0";
-            setTimeout(() => {
-              if (t.parentNode) t.parentNode.removeChild(t);
-            }, 220);
-          });
-        }
-      } else if (
-        mode === "side" &&
-        (Math.abs(distX) > 40 || (elapsed < 250 && Math.abs(distX) > 20))
-      ) {
-        if (toast.dismissTimeout) clearTimeout(toast.dismissTimeout);
-        let exitX = distX > 0 ? 350 : -350;
-        toast.style.transition =
-          "transform 0.22s ease-in, opacity 0.22s ease-in";
-        toast.style.transform = `translateX(${exitX}px)`;
-        toast.style.opacity = "0";
-        setTimeout(() => {
-          if (toast.parentNode) toast.parentNode.removeChild(toast);
-        }, 220);
-      } else {
-        if (container) {
-          let allToasts = container.querySelectorAll(
-            ".item-toast, .header-toast",
-          );
-          allToasts.forEach((t) => {
-            t.style.transition =
-              "transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.2s ease";
-            t.style.transform = "";
-            t.style.opacity = "1";
-          });
-        }
-      }
+      window.toastQueue.push({ type: "item", item: item, qty: 1 });
+      window.processToastQueue();
     };
 
-    toast.addEventListener("pointerup", endDrag);
-    toast.addEventListener("pointercancel", endDrag);
-  };
+    window.executePushItemToast = function (item) {
+        let container = document.getElementById("toast-container");
+        if (!container) return;
 
-  // --- ITEM PICKUP TOAST NOTIFICATION ENGINE ---
-  window.pushToast = function (item) {
-    if (!item) return;
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "toast-container";
-      document.body.appendChild(container);
-    }
+        let col = window.getTierColor ? window.getTierColor(item.statsRolled) : "#00d2ff";
+        let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 26) : "";
 
-    let existingToast = Array.from(
-      container.querySelectorAll(".item-toast"),
-    ).find(
-      (t) =>
-        t.dataset.itemName === item.name &&
-        !t.classList.contains("toast-fade-out"),
-    );
+        let toast = document.createElement("div");
+        toast.className = "item-toast";
+        toast.style.borderColor = col;
+        toast.dataset.itemName = item.name;
+        toast.dataset.itemQty = 1;
 
-    if (existingToast) {
-      let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
-      let newQty = currentQty + 1;
-      existingToast.dataset.itemQty = newQty;
+        // Allow clicking the main body of the toast to compare/inspect the loot
+        toast.setAttribute("onclick", `window.showItemTooltip(event, window.frozenItemDb[${item.id}])`);
+        toast.style.cursor = "pointer";
 
-      let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
-      let countEl = existingToast.querySelector(".toast-count-val");
+        // Determine if target slots are currently occupied
+                let isSlotOccupied = false;
+                if (window.equippedSlots) {
+                  let t = item.type;
+                  if (t === "weapon" && window.equippedSlots.weapon) isSlotOccupied = true;
+                  else if (t === "helmet" && window.equippedSlots.helmet) isSlotOccupied = true;
+                  else if (t === "boots" && window.equippedSlots.boots) isSlotOccupied = true;
+                  else if (["subweapon", "shield", "dagger", "tome"].includes(t) && window.equippedSlots.subweapon) isSlotOccupied = true;
+                  else if (t === "chest" && (window.equippedSlots.chest || window.equippedSlots.overall)) isSlotOccupied = true;
+                  else if (t === "leggings" && (window.equippedSlots.leggings || window.equippedSlots.overall)) isSlotOccupied = true;
+                  else if (t === "overall" && (window.equippedSlots.overall || window.equippedSlots.chest || window.equippedSlots.leggings)) isSlotOccupied = true;
+                  else if (t === "ring" && window.equippedSlots.ring1 && window.equippedSlots.ring2) isSlotOccupied = true;
+                  else if (t === "artifact" && window.equippedSlots.art1 && window.equippedSlots.art2 && window.equippedSlots.art3) isSlotOccupied = true;
+                }
 
-      if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
-      if (countEl) countEl.innerText = `x${newQty}`;
+                // Robust check for quick-equips: Equipment of Rare (1*) or higher, or Uniques (or any equipment if slot is occupied to allow quick swap)
+                let canQuickEquip = false;
+                let equipTypes = ["weapon", "subweapon", "shield", "dagger", "tome", "helmet", "chest", "leggings", "overall", "boots", "ring", "artifact"];
+                let stars = typeof item.statsRolled === "number" ? item.statsRolled : parseInt(item.statsRolled, 10);
+                if (isNaN(stars)) stars = 0;
 
-      existingToast.classList.remove("toast-pop-bump");
-      void existingToast.offsetWidth;
-      existingToast.classList.add("toast-pop-bump");
+                let isUnique = typeof window.isItemUnique === "function" && window.isItemUnique(item);
 
-      if (existingToast.dismissTimeout) {
-        clearTimeout(existingToast.dismissTimeout);
-      }
+                if (equipTypes.includes(item.type)) {
+                  if (isUnique || stars >= 1 || isSlotOccupied) {
+                    canQuickEquip = true;
+                  }
+                }
 
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.playLootDrop === "function"
-      ) {
+                let quickEquipBtn = "";
+                if (canQuickEquip && !item.wasAutoEquipped) {
+                  let isHub = window.currentGameState === window.GAME_STATES.HUB;
+                  let btnText = isSlotOccupied ? "SWAP" : "EQUIP";
+                  quickEquipBtn = `
+                    <button class="action-btn-sm action-btn-equip" style="margin-left: 8px; flex-shrink: 0; font-size: 8.5px; font-weight: 900; padding: 3px 7px; background: linear-gradient(180deg, #10b981 0%, #047857 100%); border: 1.5px solid #34d399; border-radius: 4px; color: #fff; cursor: pointer; box-shadow: 0 0 8px rgba(52, 211, 153, 0.45);"
+                            onpointerdown="event.stopPropagation();"
+                            onclick="event.stopPropagation(); window.handleQuickEquipToast(this, ${item.id}, ${isHub});">
+                      ${btnText}
+                    </button>
+                  `;
+                }
+
+        toast.innerHTML = `
+                ${iconHtml}
+                <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
+                  <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${col}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
+                    <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
+                      <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
+                      <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
+                    </svg>
+                    <span class="toast-loot-header">+1 LOOT</span>
+                    ${item.wasAutoEquipped ? `<span style="background:#2ecc71; color:#05030a; font-weight:900; font-size:7px; padding:1px 3px; border-radius:2px; font-family:monospace; margin-left:5px; letter-spacing:0.5px; line-height:1;">AUTO-EQUIPPED</span>` : ""}
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
+                    <span style="color:${col}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                    <span class="toast-count-val" style="color:${col}; font-family:monospace; font-weight:800; flex-shrink:0;">x1</span>
+                  </div>
+                </div>
+                ${quickEquipBtn}
+              `;
+
+      container.appendChild(toast);
+      window.attachToastSwipeHandlers(toast);
+
+      if (window.SoundManager && typeof window.SoundManager.playLootDrop === "function") {
         window.SoundManager.playLootDrop(item.statsRolled);
       }
 
-      existingToast.dismissTimeout = setTimeout(() => {
-        existingToast.classList.add("toast-fade-out");
+      toast.dismissTimeout = setTimeout(() => {
+        toast.classList.add("toast-fade-out");
         setTimeout(() => {
-          if (existingToast.parentNode)
-            existingToast.parentNode.removeChild(existingToast);
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+            window.processToastQueue();
+          }
         }, 300);
       }, 2800);
+    };
 
-      return;
-    }
-
-    let col = window.getTierColor
-      ? window.getTierColor(item.statsRolled)
-      : "#00d2ff";
-    let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 26) : "";
-
-    let toast = document.createElement("div");
-    toast.className = "item-toast";
-    toast.style.borderColor = col;
-    toast.dataset.itemName = item.name;
-    toast.dataset.itemQty = 1;
-
-    toast.innerHTML = `
-            ${iconHtml}
-            <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
-              <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${col}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
-                <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
-                  <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
-                  <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
-                </svg>
-                <span class="toast-loot-header">+1 LOOT</span>
-                ${item.wasAutoEquipped ? `<span style="background:#2ecc71; color:#05030a; font-weight:900; font-size:7px; padding:1px 3px; border-radius:2px; font-family:monospace; margin-left:5px; letter-spacing:0.5px; line-height:1;">AUTO-EQUIPPED</span>` : ""}
-              </div>
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
-                <span style="color:${col}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
-                <span class="toast-count-val" style="color:${col}; font-family:monospace; font-weight:800; flex-shrink:0;">x1</span>
-              </div>
-            </div>
-          `;
-
-    container.appendChild(toast);
-    window.attachToastSwipeHandlers(toast);
-
-    if (
-      window.SoundManager &&
-      typeof window.SoundManager.playLootDrop === "function"
-    ) {
-      window.SoundManager.playLootDrop(item.statsRolled);
-    }
-
-    toast.dismissTimeout = setTimeout(() => {
-      toast.classList.add("toast-fade-out");
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 300);
-    }, 2800);
-  };
-
-  window.pushMaterialToast = function (name, qty, customColor = null) {
-    if (!name || qty <= 0) return;
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "toast-container";
-      document.body.appendChild(container);
-    }
-
-    let existingToast = Array.from(
-      container.querySelectorAll(".item-toast"),
-    ).find(
-      (t) =>
-        t.dataset.itemName === name && !t.classList.contains("toast-fade-out"),
-    );
-
-    if (existingToast) {
-      let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
-      let newQty = currentQty + qty;
-      existingToast.dataset.itemQty = newQty;
-
-      let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
-      let countEl = existingToast.querySelector(".toast-count-val");
-
-      if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
-      if (countEl) countEl.innerText = `x${newQty}`;
-
-      existingToast.classList.remove("toast-pop-bump");
-      void existingToast.offsetWidth;
-      existingToast.classList.add("toast-pop-bump");
-
-      if (existingToast.dismissTimeout) {
-        clearTimeout(existingToast.dismissTimeout);
+    window.handleQuickEquipToast = function (btnElement, itemId, isHub) {
+      if (isHub) {
+        window.equipFromStash(itemId);
+      } else {
+        window.equipFromBag(itemId);
       }
 
-      existingToast.dismissTimeout = setTimeout(() => {
-        existingToast.classList.add("toast-fade-out");
+      btnElement.disabled = true;
+            btnElement.style.background = "#10b981";
+            btnElement.style.borderColor = "#34d399";
+            let wasSwap = btnElement.innerText.trim() === "SWAP";
+            btnElement.innerText = wasSwap ? "SWAPPED" : "EQUIPPED";
+
+      let toast = btnElement.closest(".item-toast");
+      if (toast) {
+        if (toast.dismissTimeout) clearTimeout(toast.dismissTimeout);
+        toast.dismissTimeout = setTimeout(() => {
+          toast.classList.add("toast-fade-out");
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+              window.processToastQueue();
+            }
+          }, 300);
+        }, 500); // Trigger fast 500ms exit fade
+      }
+    };
+
+    window.pushMaterialToast = function (name, qty, customColor = null) {
+      if (!name || qty <= 0) return;
+      let container = document.getElementById("toast-container");
+      if (container) {
+        let existingToast = Array.from(container.querySelectorAll(".item-toast")).find(
+          (t) => t.dataset.itemName === name && !t.classList.contains("toast-fade-out")
+        );
+
+        if (existingToast) {
+          let currentQty = parseInt(existingToast.dataset.itemQty, 10) || 0;
+          let newQty = currentQty + qty;
+          existingToast.dataset.itemQty = newQty;
+
+          let lootHeaderEl = existingToast.querySelector(".toast-loot-header");
+          let countEl = existingToast.querySelector(".toast-count-val");
+
+          if (lootHeaderEl) lootHeaderEl.innerText = `+${newQty} LOOT`;
+          if (countEl) countEl.innerText = `x${newQty}`;
+
+          existingToast.classList.remove("toast-pop-bump");
+          void existingToast.offsetWidth;
+          existingToast.classList.add("toast-pop-bump");
+
+          if (existingToast.dismissTimeout) {
+            clearTimeout(existingToast.dismissTimeout);
+          }
+
+          existingToast.dismissTimeout = setTimeout(() => {
+            existingToast.classList.add("toast-fade-out");
+            setTimeout(() => {
+              if (existingToast.parentNode) {
+                existingToast.parentNode.removeChild(existingToast);
+                window.processToastQueue();
+              }
+            }, 300);
+          }, 2500);
+
+          return;
+        }
+      }
+
+      let existingInQueue = window.toastQueue.find(q => q.type === "material" && q.name === name);
+      if (existingInQueue) {
+        existingInQueue.qty += qty;
+        return;
+      }
+
+      window.toastQueue.push({ type: "material", name: name, qty: qty, color: customColor });
+      window.processToastQueue();
+    };
+
+    window.executePushMaterialToast = function (name, qty, customColor) {
+      let container = document.getElementById("toast-container");
+      if (!container) return;
+
+      let color = customColor;
+      if (!color) {
+        if (window.useDex && window.useDex[name] && window.useDex[name].color) {
+          color = window.useDex[name].color;
+        } else {
+          const matColors = {
+            "Monster Soul": "#a0aec0",
+            "Luminous Soul": "#ffb6c1",
+            "Rare Scrap": "#3498db",
+            "Magic Scrap": "#9b59b6",
+            "Epic Scrap": "#e67e22",
+            "Legendary Scrap": "#f1c40f",
+            "Mythic Scrap": "#e74c3c",
+            "Eridium Shard": "#8e44ad",
+            "Gacha Key": "#f1c40f",
+            "Glimmering Gachapon Key": "#00d2ff",
+            "Ancient Core": "#e74c3c",
+            "Overlord's Sigil": "#1abc9c",
+            "Astral Essence": "#9b59b6",
+            "Catalyst Core": "#2ecc71",
+          };
+          color = matColors[name] || "#00d2ff";
+        }
+      }
+
+      let iconHtml = "";
+      if (window.getEtcIconHtml && window.etcDex && window.etcDex[name]) {
+        iconHtml = window.getEtcIconHtml(name, 26);
+      } else if (window.getUseIconHtml && window.useDex && window.useDex[name]) {
+        iconHtml = window.getUseIconHtml(name, 26);
+      }
+
+      let toast = document.createElement("div");
+      toast.className = "item-toast";
+      toast.style.borderColor = color;
+      toast.dataset.itemName = name;
+      toast.dataset.itemQty = qty;
+
+      toast.innerHTML = `
+              ${iconHtml}
+              <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
+                <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${color}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
+                  <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
+                    <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
+                    <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
+                  </svg>
+                  <span class="toast-loot-header">+${qty} LOOT</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
+                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>
+                  <span class="toast-count-val" style="color:${color}; font-family:monospace; font-weight:800; flex-shrink:0;">x${qty}</span>
+                </div>
+              </div>
+            `;
+
+      container.appendChild(toast);
+      window.attachToastSwipeHandlers(toast);
+
+      toast.dismissTimeout = setTimeout(() => {
+        toast.classList.add("toast-fade-out");
         setTimeout(() => {
-          if (existingToast.parentNode)
-            existingToast.parentNode.removeChild(existingToast);
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+            window.processToastQueue();
+          }
         }, 300);
       }, 2500);
+    };
 
-      return;
-    }
+    window.pushHeaderToast = function (msg, color = "#00d2ff", onClick = null) {
+      window.toastQueue.push({ type: "header", msg: msg, color: color, onClick: onClick });
+      window.processToastQueue();
+    };
 
-    let color = customColor;
-    if (!color) {
-      if (window.useDex && window.useDex[name] && window.useDex[name].color) {
-        color = window.useDex[name].color;
-      } else {
-        const matColors = {
-          "Monster Soul": "#a0aec0",
-          "Luminous Soul": "#ffb6c1",
-          "Rare Scrap": "#3498db",
-          "Magic Scrap": "#9b59b6",
-          "Epic Scrap": "#e67e22",
-          "Legendary Scrap": "#f1c40f",
-          "Mythic Scrap": "#e74c3c",
-          "Eridium Shard": "#8e44ad",
-          "Gacha Key": "#f1c40f",
-          "Glimmering Gachapon Key": "#00d2ff",
-          "Ancient Core": "#e74c3c",
-          "Overlord's Sigil": "#1abc9c",
-          "Astral Essence": "#9b59b6",
-          "Catalyst Core": "#2ecc71",
-        };
-        color = matColors[name] || "#00d2ff";
-      }
-    }
+    window.executePushHeaderToast = function (msg, color, onClick) {
+      let container = document.getElementById("toast-container");
+      if (!container) return;
 
-    let iconHtml = "";
-    if (window.getEtcIconHtml && window.etcDex && window.etcDex[name]) {
-      iconHtml = window.getEtcIconHtml(name, 26);
-    } else if (window.getUseIconHtml && window.useDex && window.useDex[name]) {
-      iconHtml = window.getUseIconHtml(name, 26);
-    }
+      let toast = document.createElement("div");
+      toast.className = "header-toast";
+      toast.style.borderColor = color;
+      toast.style.boxShadow = `0 10px 30px rgba(0,0,0,0.9), 0 0 12px ${color}44`;
 
-    let toast = document.createElement("div");
-    toast.className = "item-toast";
-    toast.style.borderColor = color;
-    toast.dataset.itemName = name;
-    toast.dataset.itemQty = qty;
+      let isBound = msg.includes("SOUL BOUND") || msg.includes("Protected");
+      let isUnbound = msg.includes("UNBOUND") || msg.includes("At Risk");
 
-    toast.innerHTML = `
-            ${iconHtml}
-            <div class="toast-info" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
-              <div style="display:flex; align-items:center; font-size:8.5px; font-weight:800; color:${color}; text-transform:uppercase; letter-spacing:0.5px; line-height:1;">
-                <svg width="11" height="11" viewBox="0 0 64 64" style="display:inline-block; vertical-align:middle; margin-right:4px; flex-shrink:0;">
-                  <path d="M32 18 C20 18, 10 22, 10 38 C10 50, 18 56, 32 58 C46 58, 54 50, 54 38 C54 22, 44 18, 32 18 Z" fill="#a05a2c" stroke="#111" stroke-width="4" />
-                  <path d="M22 22 Q32 26, 42 22" fill="none" stroke="#ffd700" stroke-width="5" stroke-linecap="round" />
-                </svg>
-                <span class="toast-loot-header">+${qty} LOOT</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#f1f5f9; line-height:1.2;">
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>
-                <span class="toast-count-val" style="color:${color}; font-family:monospace; font-weight:800; flex-shrink:0;">x${qty}</span>
-              </div>
-            </div>
-          `;
+      let iconSvg = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" fill="${color}22"/>
+            ${isBound ? `<path d="M9 12l2 2 4-4" stroke="${color}" stroke-width="2.5"/>` : isUnbound ? `<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>` : `<circle cx="12" cy="12" r="3" fill="${color}"/>`}
+          </svg>
+        `;
 
-    container.appendChild(toast);
-    window.attachToastSwipeHandlers(toast);
+      toast.innerHTML = `
+          ${iconSvg}
+          <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
+            <span style="color:${color}; font-weight:800; font-size:10.5px; font-family:monospace; line-height:1.2; letter-spacing:0.5px;">${msg}</span>
+          </div>
+        `;
 
-    toast.dismissTimeout = setTimeout(() => {
-      toast.classList.add("toast-fade-out");
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 300);
-    }, 2500);
-  };
+      container.appendChild(toast);
+      window.attachToastSwipeHandlers(toast, onClick);
 
-  window.pushHeaderToast = function (msg, color = "#00d2ff", onClick = null) {
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      container.className = "toast-container";
-      document.body.appendChild(container);
-    }
-
-    let toast = document.createElement("div");
-    toast.className = "header-toast";
-    toast.style.borderColor = color;
-    toast.style.boxShadow = `0 10px 30px rgba(0,0,0,0.9), 0 0 12px ${color}44`;
-
-    let isBound = msg.includes("SOUL BOUND") || msg.includes("Protected");
-    let isUnbound = msg.includes("UNBOUND") || msg.includes("At Risk");
-
-    let iconSvg = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-          <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z" fill="${color}22"/>
-          ${isBound ? `<path d="M9 12l2 2 4-4" stroke="${color}" stroke-width="2.5"/>` : isUnbound ? `<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>` : `<circle cx="12" cy="12" r="3" fill="${color}"/>`}
-        </svg>
-      `;
-
-    toast.innerHTML = `
-        ${iconSvg}
-        <div style="display:flex; flex-direction:column; min-width:0; flex:1; text-align:left;">
-          <span style="color:${color}; font-weight:800; font-size:10.5px; font-family:monospace; line-height:1.2; letter-spacing:0.5px;">${msg}</span>
-        </div>
-      `;
-
-    container.appendChild(toast);
-    window.attachToastSwipeHandlers(toast, onClick);
-
-    toast.dismissTimeout = setTimeout(() => {
-      toast.classList.add("toast-fade-out");
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 300);
-    }, 2800);
-  };
+      toast.dismissTimeout = setTimeout(() => {
+        toast.classList.add("toast-fade-out");
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+            window.processToastQueue();
+          }
+        }, 2800);
+      }, 2800);
+    };
 
   window.getMobPoolForDepth = function (depth) {
     // Sectors advance every 12 floors (after each Major Boss on Floor 12, 24, 36...)

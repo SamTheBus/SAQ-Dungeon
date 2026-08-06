@@ -5,16 +5,7 @@
 
 (function () {
   // --- SUBPHASE 11: LOCAL MUTATOR EXCLUSION MATRIX ---
-  const DEBUFF_EXCLUSIONS = {
-    slick_ice: ["magnetic_creep"],
-    magnetic_creep: ["slick_ice"],
-    creeping_miasma: ["heavy_mist"],
-    heavy_mist: ["creeping_miasma"],
-    abyssal_decay: ["frail_vessel"],
-    frail_vessel: ["abyssal_decay"],
-    weapon_lock: ["kinetic_reflectors"],
-    kinetic_reflectors: ["weapon_lock"],
-  };
+  const DEBUFF_EXCLUSIONS = window.DEBUFF_EXCLUSIONS;
 
   // --- PROCEDURAL SPECIAL CHALLENGE GENERATOR ---
   window.SPECIAL_CHALLENGES_DATABASE = {};

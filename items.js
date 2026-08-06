@@ -4,16 +4,7 @@
    ========================================================================= */
 (function () {
   // Subphase 11: Static Mutually Exclusive Debuff Matrix
-  const DEBUFF_EXCLUSIONS = {
-    slick_ice: ["magnetic_creep"],
-    magnetic_creep: ["slick_ice"],
-    creeping_miasma: ["heavy_mist"],
-    heavy_mist: ["creeping_miasma"],
-    abyssal_decay: ["frail_vessel"],
-    frail_vessel: ["abyssal_decay"],
-    weapon_lock: ["kinetic_reflectors"],
-    kinetic_reflectors: ["weapon_lock"],
-  };
+  const DEBUFF_EXCLUSIONS = window.DEBUFF_EXCLUSIONS;
 
   window.getRarityMultiplier = function (stars) {
     if (stars === "UNIQUE" || stars === "unique") return 2.25;
@@ -5163,34 +5154,44 @@
         oldMaxHp = window.resolvePlayerStats().maxHp;
 
       if (item.type === "overall") {
-        if (window.equippedSlots.chest) {
-          delete window.equippedSlots.chest.isEquippedSlot;
-          window.inventory.EQUIP.push(window.equippedSlots.chest);
-          window.equippedSlots.chest = null;
-        }
-        if (window.equippedSlots.leggings) {
-          delete window.equippedSlots.leggings.isEquippedSlot;
-          window.inventory.EQUIP.push(window.equippedSlots.leggings);
-          window.equippedSlots.leggings = null;
-        }
-        if (window.equippedSlots.overall) {
-          delete window.equippedSlots.overall.isEquippedSlot;
-          window.inventory.EQUIP.push(window.equippedSlots.overall);
-        }
-        window.equippedSlots.overall = item;
-        item.isEquippedSlot = "overall";
-      } else if (item.type === "chest" || item.type === "leggings") {
-        if (window.equippedSlots.overall) {
-          delete window.equippedSlots.overall.isEquippedSlot;
-          window.inventory.EQUIP.push(window.equippedSlots.overall);
-          window.equippedSlots.overall = null;
-        }
-        if (window.equippedSlots[item.type]) {
-          delete window.equippedSlots[item.type].isEquippedSlot;
-          window.inventory.EQUIP.push(window.equippedSlots[item.type]);
-        }
-        window.equippedSlots[item.type] = item;
-        item.isEquippedSlot = item.type;
+              if (window.equippedSlots.chest) {
+                delete window.equippedSlots.chest.isEquippedSlot;
+                if (!window.equippedSlots.chest.isStarterItem) {
+                  window.inventory.EQUIP.push(window.equippedSlots.chest);
+                }
+                window.equippedSlots.chest = null;
+              }
+              if (window.equippedSlots.leggings) {
+                delete window.equippedSlots.leggings.isEquippedSlot;
+                if (!window.equippedSlots.leggings.isStarterItem) {
+                  window.inventory.EQUIP.push(window.equippedSlots.leggings);
+                }
+                window.equippedSlots.leggings = null;
+              }
+              if (window.equippedSlots.overall) {
+                delete window.equippedSlots.overall.isEquippedSlot;
+                if (!window.equippedSlots.overall.isStarterItem) {
+                  window.inventory.EQUIP.push(window.equippedSlots.overall);
+                }
+              }
+              window.equippedSlots.overall = item;
+              item.isEquippedSlot = "overall";
+            } else if (item.type === "chest" || item.type === "leggings") {
+              if (window.equippedSlots.overall) {
+                delete window.equippedSlots.overall.isEquippedSlot;
+                if (!window.equippedSlots.overall.isStarterItem) {
+                  window.inventory.EQUIP.push(window.equippedSlots.overall);
+                }
+                window.equippedSlots.overall = null;
+              }
+              if (window.equippedSlots[item.type]) {
+                delete window.equippedSlots[item.type].isEquippedSlot;
+                if (!window.equippedSlots[item.type].isStarterItem) {
+                  window.inventory.EQUIP.push(window.equippedSlots[item.type]);
+                }
+              }
+              window.equippedSlots[item.type] = item;
+              item.isEquippedSlot = item.type;
       } else if (item.type === "artifact") {
         // Prevent equipping duplicate artifacts in core bag slot clicking
         let isAlreadyEquipped = ["art1", "art2", "art3"].some(
@@ -5223,25 +5224,29 @@
           item.isEquippedSlot = "art3";
         }
       } else if (item.type === "ring") {
-        let slotKey = !window.equippedSlots.ring1
-          ? "ring1"
-          : !window.equippedSlots.ring2
-            ? "ring2"
-            : "ring1";
-        if (window.equippedSlots[slotKey]) {
-          delete window.equippedSlots[slotKey].isEquippedSlot;
-          window.inventory.EQUIP.push(window.equippedSlots[slotKey]);
-        }
-        window.equippedSlots[slotKey] = item;
-        item.isEquippedSlot = slotKey;
-      } else {
-        if (window.equippedSlots[item.type]) {
-          delete window.equippedSlots[item.type].isEquippedSlot;
-          window.inventory.EQUIP.push(window.equippedSlots[item.type]);
-        }
-        window.equippedSlots[item.type] = item;
-        item.isEquippedSlot = item.type;
-      }
+              let slotKey = !window.equippedSlots.ring1
+                ? "ring1"
+                : !window.equippedSlots.ring2
+                  ? "ring2"
+                  : "ring1";
+              if (window.equippedSlots[slotKey]) {
+                delete window.equippedSlots[slotKey].isEquippedSlot;
+                if (!window.equippedSlots[slotKey].isStarterItem) {
+                  window.inventory.EQUIP.push(window.equippedSlots[slotKey]);
+                }
+              }
+              window.equippedSlots[slotKey] = item;
+              item.isEquippedSlot = slotKey;
+            } else {
+              if (window.equippedSlots[item.type]) {
+                delete window.equippedSlots[item.type].isEquippedSlot;
+                if (!window.equippedSlots[item.type].isStarterItem) {
+                  window.inventory.EQUIP.push(window.equippedSlots[item.type]);
+                }
+              }
+              window.equippedSlots[item.type] = item;
+              item.isEquippedSlot = item.type;
+            }
 
       if (isArtifactSack) {
         window.inventory.ARTIFACT.splice(index, 1);
@@ -5284,35 +5289,43 @@
       let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
 
       if (item.type === "artifact") {
-        window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
-        if (window.inventory.ARTIFACT.length >= maxBag) {
-          if (typeof window.pushHeaderToast === "function")
-            window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
-          return;
-        }
-        window.equippedSlots[slotKey] = null;
-        window.inventory.ARTIFACT.push(item);
-      } else {
-        if (inDungeonRun) {
-          window.player.bag = window.player.bag || [];
-          if (window.player.bag.length >= maxBag) {
-            if (typeof window.pushHeaderToast === "function")
-              window.pushHeaderToast(`Satchel Full!`, "#e74c3c");
-            return;
-          }
-          window.equippedSlots[slotKey] = null;
-          window.player.bag.push(item);
-        } else {
-          window.inventory.EQUIP = window.inventory.EQUIP || [];
-          if (window.inventory.EQUIP.length >= maxBag) {
-            if (typeof window.pushHeaderToast === "function")
-              window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
-            return;
-          }
-          window.equippedSlots[slotKey] = null;
-          window.inventory.EQUIP.push(item);
-        }
-      }
+              window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+              if (window.inventory.ARTIFACT.length >= maxBag) {
+                if (typeof window.pushHeaderToast === "function")
+                  window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
+                return;
+              }
+              window.equippedSlots[slotKey] = null;
+              window.inventory.ARTIFACT.push(item);
+            } else {
+              if (item.isStarterItem) {
+                // Cleanly discard temporary starter/provisioned gear instead of letting it clog bag/stash
+                window.equippedSlots[slotKey] = null;
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast(`[DISCARDED] Temporary starter item removed.`, "#7f8c8d");
+                }
+              } else {
+                if (inDungeonRun) {
+                  window.player.bag = window.player.bag || [];
+                  if (window.player.bag.length >= maxBag) {
+                    if (typeof window.pushHeaderToast === "function")
+                      window.pushHeaderToast(`Satchel Full!`, "#e74c3c");
+                    return;
+                  }
+                  window.equippedSlots[slotKey] = null;
+                  window.player.bag.push(item);
+                } else {
+                  window.inventory.EQUIP = window.inventory.EQUIP || [];
+                  if (window.inventory.EQUIP.length >= maxBag) {
+                    if (typeof window.pushHeaderToast === "function")
+                      window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
+                    return;
+                  }
+                  window.equippedSlots[slotKey] = null;
+                  window.inventory.EQUIP.push(item);
+                }
+              }
+            }
 
       if (typeof window.invalidatePlayerStats === "function")
         window.invalidatePlayerStats();

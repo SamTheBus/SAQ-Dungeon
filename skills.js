@@ -23,20 +23,19 @@
   }
 
   window.getSubweaponXpRequired = function (level) {
-    return Math.round(250 * Math.pow(1.5, level - 1));
-  };
+      if (level <= 40) {
+        return Math.round(1000 * Math.pow(1.28, level - 1));
+      } else {
+        return Math.round(1417143 + (level - 40) * 100000);
+      }
+    };
 
   window.gainSubweaponXp = function (subType, amount) {
-    if (!window.playerStats || !window.playerStats.subweaponMastery) return;
-    let mast = window.playerStats.subweaponMastery[subType];
-    if (!mast) return;
+      if (!window.playerStats || !window.playerStats.subweaponMastery) return;
+      let mast = window.playerStats.subweaponMastery[subType];
+      if (!mast) return;
 
-    if (mast.level >= 40) {
-      mast.xp = 0;
-      return;
-    }
-
-    // Determine equivalent current floor played
+      // Determine equivalent current floor played
     let playerLevel = window.playerStats.level || 1;
     let currentFloor = 1;
     if (window.playerStats.isDungeonMode && window.player) {
@@ -69,22 +68,18 @@
     }
 
     let req = window.getSubweaponXpRequired(mast.level);
-    let leveledUp = false;
+        let leveledUp = false;
 
-    while (mast.xp >= req && mast.level < 40) {
-      mast.xp -= req;
-      mast.level++;
-      mast.sp++;
-      leveledUp = true;
-      req = window.getSubweaponXpRequired(mast.level);
-    }
+        while (mast.xp >= req) {
+          mast.xp -= req;
+          mast.level++;
+          mast.sp++;
+          leveledUp = true;
+          req = window.getSubweaponXpRequired(mast.level);
+        }
 
-    if (leveledUp) {
-      if (mast.level >= 40) {
-        mast.xp = 0;
-      }
-
-      let label = subType.charAt(0).toUpperCase() + subType.slice(1);
+        if (leveledUp) {
+          let label = subType.charAt(0).toUpperCase() + subType.slice(1);
       if (typeof window.pushHeaderToast === "function") {
         window.pushHeaderToast(
           `✦ ${label} Mastery Level Up! Reached Level ${mast.level}! (+1 SP)`,

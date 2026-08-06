@@ -1872,11 +1872,12 @@
   };
 
   window.renderTopDownMap = function (ctx, canvas) {
-    let map = window.activeDungeonMap;
-    if (!map || !map.grid || map.grid.length === 0) return;
+      let map = window.activeDungeonMap;
+      if (!map || !map.grid || map.grid.length === 0) return;
 
-    let tileSize = map.tileSize;
-    let camera = window.DungeonCamera;
+      let isHub = window.currentGameState === window.GAME_STATES.HUB;
+      let tileSize = map.tileSize;
+      let camera = window.DungeonCamera;
     camera.viewportW = canvas.width;
     camera.viewportH = canvas.height;
 
@@ -1899,35 +1900,28 @@
     ctx.translate(-Math.floor(camera.x), -Math.floor(camera.y));
 
     // PASS 1: Base Terrain & Floor Grid Rendering
-    if (map.needsPreRender || !map.preRenderCanvas) {
-      window.preRenderStaticMap(map);
-    }
+        if (map.needsPreRender || !map.preRenderCanvas) {
+          window.preRenderStaticMap(map);
+        }
 
-    let isHub = window.currentGameState === window.GAME_STATES.HUB;
+        for (let r = startRow; r <= endRow; r++) {
+          for (let c = startCol; c <= endCol; c++) {
+            let px = c * tileSize;
+            let py = r * tileSize;
 
-    for (let r = startRow; r <= endRow; r++) {
-      for (let c = startCol; c <= endCol; c++) {
-        let isExplored =
-          isHub ||
-          (map.exploredGrid && map.exploredGrid[r] && map.exploredGrid[r][c]);
-        if (!isExplored) continue;
-
-        let px = c * tileSize;
-        let py = r * tileSize;
-
-        ctx.drawImage(
-          map.preRenderCanvas,
-          px,
-          py,
-          tileSize,
-          tileSize,
-          px,
-          py,
-          tileSize,
-          tileSize,
-        );
-      }
-    }
+            ctx.drawImage(
+              map.preRenderCanvas,
+              px,
+              py,
+              tileSize,
+              tileSize,
+              px,
+              py,
+              tileSize,
+              tileSize,
+            );
+          }
+        }
 
     // PASS 2: Object & Station Overlay Pass (Renders cleanly over floor grid without clipping)
     for (let r = startRow; r <= endRow; r++) {
@@ -5201,20 +5195,29 @@
     }
 
     // Render Wall Torches
-    if (map.torches && map.torches.length > 0) {
-      map.torches.forEach((t) => {
-        let tx = t.x * tileSize + tileSize / 2;
-        let ty = t.y * tileSize + tileSize - 8;
+        if (map.torches && map.torches.length > 0) {
+          let hasShroudedSight =
+            typeof window.isCavernEffectActive === "function" &&
+            window.isCavernEffectActive("shrouded_sight");
 
-        ctx.save();
-        // Iron Sconce Bracket
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(tx - 2, ty - 2, 4, 6);
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(tx - 2, ty - 2, 4, 6);
+          map.torches.forEach((t) => {
+            let tx = t.x * tileSize + tileSize / 2;
+            let ty = t.y * tileSize + tileSize - 8;
 
-        // Flickering Dynamics
+            ctx.save();
+            // Iron Sconce Bracket
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(tx - 2, ty - 2, 4, 6);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(tx - 2, ty - 2, 4, 6);
+
+            if (hasShroudedSight) {
+              ctx.restore();
+              return; // Wall torches are unlit/extinguished under Shrouded Sight
+            }
+
+            // Flickering Dynamics
         let flick = Math.sin(time / 70 + t.x * 3) * 2;
         let flick2 = Math.cos(time / 90 + t.y * 5) * 1.5;
 
@@ -5291,39 +5294,45 @@
     }
 
     // Render Bioluminescent Mushroom Clusters
-    if (map.shrooms && map.shrooms.length > 0) {
-      map.shrooms.forEach((s) => {
-        let sx = s.x * tileSize + tileSize / 2;
-        let sy = s.y * tileSize + tileSize / 2;
+        if (map.shrooms && map.shrooms.length > 0) {
+          let hasShroudedSight =
+            typeof window.isCavernEffectActive === "function" &&
+            window.isCavernEffectActive("shrouded_sight");
 
-        ctx.save();
-        let shroomSeeds = [-4, 2, 5];
-        shroomSeeds.forEach((offX, idx) => {
-          let shX = sx + offX;
-          let shY = sy + (idx % 2 === 0 ? -2 : 3);
+          map.shrooms.forEach((s) => {
+            let sx = s.x * tileSize + tileSize / 2;
+            let sy = s.y * tileSize + tileSize / 2;
 
-          // Pale Stem
-          ctx.strokeStyle = "#cbd5e1";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(shX, shY + 3);
-          ctx.lineTo(shX, shY);
-          ctx.stroke();
+            ctx.save();
+            let shroomSeeds = [-4, 2, 5];
+            shroomSeeds.forEach((offX, idx) => {
+              let shX = sx + offX;
+              let shY = sy + (idx % 2 === 0 ? -2 : 3);
 
-          // Glowing Cyan Cap
-          ctx.fillStyle = idx === 1 ? "#2ecc71" : "#00f0ff";
-          ctx.beginPath();
-          ctx.arc(shX, shY - 1, 3 - idx * 0.5, Math.PI, 0);
-          ctx.closePath();
-          ctx.fill();
+              // Pale Stem
+              ctx.strokeStyle = "#cbd5e1";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(shX, shY + 3);
+              ctx.lineTo(shX, shY);
+              ctx.stroke();
 
-          // Glowing Dots
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(shX - 1, shY - 2, 1, 1);
-        });
-        ctx.restore();
-      });
-    }
+              // Glowing Cyan Cap (extinguished dull grey under Shrouded Sight)
+              ctx.fillStyle = hasShroudedSight ? "#475569" : (idx === 1 ? "#2ecc71" : "#00f0ff");
+              ctx.beginPath();
+              ctx.arc(shX, shY - 1, 3 - idx * 0.5, Math.PI, 0);
+              ctx.closePath();
+              ctx.fill();
+
+              // Glowing Dots
+              if (!hasShroudedSight) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(shX - 1, shY - 2, 1, 1);
+              }
+            });
+            ctx.restore();
+          });
+        }
 
     // PASS 2.6: Sector-Specific Biome Hazards, Animated Particle Fog, and Environmental Effects
     if (!isHub) {
@@ -5533,110 +5542,146 @@
   };
 
   window.renderMinimap = function (ctx, canvas) {
-    let map = window.activeDungeonMap;
-    if (!map || !map.grid || map.grid.length === 0) return;
+      let map = window.activeDungeonMap;
+      if (!map || !map.grid || map.grid.length === 0) return;
 
-    let mw = 90;
-    let mh = 50;
-    let mx = canvas.width - mw - 10;
+      let mw = 90;
+      let mh = 50;
+      let mx = canvas.width - mw - 10;
 
-    let isLandscapeMobile =
-      window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
-    let isMobile = window.innerWidth <= 600 || isLandscapeMobile;
-    let my = isMobile ? 120 : 58;
+      let isLandscapeMobile =
+        window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
+      let isMobile = window.innerWidth <= 600 || isLandscapeMobile;
+      let my = isMobile ? 120 : 58;
 
-    ctx.save();
-    ctx.fillStyle = "rgba(5, 3, 10, 0.88)";
-    ctx.strokeStyle = "#334155";
-    ctx.lineWidth = 1.5;
-    ctx.fillRect(mx, my, mw, mh);
-    ctx.strokeRect(mx, my, mw, mh);
+      ctx.save();
+      ctx.fillStyle = "rgba(5, 3, 10, 0.88)";
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(mx, my, mw, mh);
+      ctx.strokeRect(mx, my, mw, mh);
 
-    let scaleX = mw / map.width;
-    let scaleY = mh / map.height;
-    let totalWorldW = map.width * map.tileSize;
-    let totalWorldH = map.height * map.tileSize;
+      let scaleX = mw / map.width;
+      let scaleY = mh / map.height;
+      let totalWorldW = map.width * map.tileSize;
+      let totalWorldH = map.height * map.tileSize;
 
-    // 1. Render Explored Floor Terrain (Filtered by Fog of War)
-    for (let r = 0; r < map.height; r++) {
-      for (let c = 0; c < map.width; c++) {
+      // Detect active Shrouded Sight and calculate localized minimap horizon bounds
+            let hasShroudedSight =
+              typeof window.isCavernEffectActive === "function" &&
+              window.isCavernEffectActive("shrouded_sight");
+
+            let p = window.player;
+                  let pTileC = p ? Math.floor(p.x / map.tileSize) : 0;
+                  let pTileR = p ? Math.floor(p.y / map.tileSize) : 0;
+                  let limitDist = 6.5; // Balanced local radar horizon matching the 200px sight radius
+
+      // 1. Render Explored Floor Terrain (Filtered by Fog of War)
+      for (let r = 0; r < map.height; r++) {
+        for (let c = 0; c < map.width; c++) {
+          let isExplored =
+            map.exploredGrid && map.exploredGrid[r] && map.exploredGrid[r][c];
+          if (!isExplored) continue;
+
+          // Minimap sight horizon clamping
+          if (hasShroudedSight) {
+            let dist = Math.hypot(c - pTileC, r - pTileR);
+            if (dist > limitDist) continue;
+          }
+
+          let tile = map.grid[r][c];
+          if (
+            tile === window.TILE_TYPES.FLOOR ||
+            tile === window.TILE_TYPES.SPAWN_PLAYER ||
+            tile === window.TILE_TYPES.EXTRACTION_ZONE ||
+            tile === window.TILE_TYPES.DESCENT_PORTAL ||
+            tile === window.TILE_TYPES.BOSS_GATE ||
+            tile === window.TILE_TYPES.CHEST_SPAWN
+          ) {
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(
+              mx + c * scaleX,
+              my + r * scaleY,
+              Math.max(1, scaleX),
+              Math.max(1, scaleY),
+            );
+          }
+        }
+      }
+
+      // 2. Render Discovered Portal (Hidden until tile explored and seen on screen)
+      if (map.portalDiscovered && map.extractionTile) {
+        let pTileX = map.extractionTile.x;
+        let pTileY = map.extractionTile.y;
         let isExplored =
-          map.exploredGrid && map.exploredGrid[r] && map.exploredGrid[r][c];
-        if (!isExplored) continue;
+          map.exploredGrid &&
+          map.exploredGrid[pTileY] &&
+          map.exploredGrid[pTileY][pTileX];
+        if (isExplored) {
+          if (hasShroudedSight) {
+            let dist = Math.hypot(pTileX - pTileC, pTileY - pTileR);
+            if (dist > limitDist) isExplored = false;
+          }
+          if (isExplored) {
+            let pPx = mx + (pTileX + 0.5) * scaleX;
+            let pPy = my + (pTileY + 0.5) * scaleY;
+            let pulse = Math.sin(Date.now() / 180) * 1.0;
 
-        let tile = map.grid[r][c];
-        if (
-          tile === window.TILE_TYPES.FLOOR ||
-          tile === window.TILE_TYPES.SPAWN_PLAYER ||
-          tile === window.TILE_TYPES.EXTRACTION_ZONE ||
-          tile === window.TILE_TYPES.DESCENT_PORTAL ||
-          tile === window.TILE_TYPES.BOSS_GATE ||
-          tile === window.TILE_TYPES.CHEST_SPAWN
-        ) {
-          ctx.fillStyle = "#334155";
-          ctx.fillRect(
-            mx + c * scaleX,
-            my + r * scaleY,
-            Math.max(1, scaleX),
-            Math.max(1, scaleY),
-          );
+            ctx.fillStyle = "rgba(0, 210, 255, 0.3)";
+            ctx.beginPath();
+            ctx.arc(pPx, pPy, 4 + pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#00d2ff";
+            ctx.beginPath();
+            ctx.arc(pPx, pPy, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       }
-    }
 
-    // 2. Render Discovered Portal (Hidden until tile explored and seen on screen)
-    if (map.portalDiscovered && map.extractionTile) {
-      let pTileX = map.extractionTile.x;
-      let pTileY = map.extractionTile.y;
-      let isExplored =
-        map.exploredGrid &&
-        map.exploredGrid[pTileY] &&
-        map.exploredGrid[pTileY][pTileX];
-      if (isExplored) {
-        let pPx = mx + (pTileX + 0.5) * scaleX;
-        let pPy = my + (pTileY + 0.5) * scaleY;
-        let pulse = Math.sin(Date.now() / 180) * 1.0;
-
-        ctx.fillStyle = "rgba(0, 210, 255, 0.3)";
-        ctx.beginPath();
-        ctx.arc(pPx, pPy, 4 + pulse, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#00d2ff";
-        ctx.beginPath();
-        ctx.arc(pPx, pPy, 2.5, 0, Math.PI * 2);
-        ctx.fill();
+      // 3. Render Discovered Enemies (Shown on minimap once seen on screen)
+      if (window.activeDungeonMobs) {
+        window.activeDungeonMobs.forEach((m) => {
+          if (m.discovered) {
+            let mTileX = Math.floor((m.x + (m.w || 24) / 2) / map.tileSize);
+            let mTileY = Math.floor((m.y + (m.h || 24) / 2) / map.tileSize);
+            if (hasShroudedSight) {
+              let dist = Math.hypot(mTileX - pTileC, mTileY - pTileR);
+              if (dist > limitDist) return;
+            }
+            let mPx = mx + ((m.x + (m.w || 24) / 2) / totalWorldW) * mw;
+            let mPy = my + ((m.y + (m.h || 24) / 2) / totalWorldH) * mh;
+            ctx.fillStyle = m.isRare ? "#f1c40f" : "#e74c3c";
+            ctx.fillRect(mPx - 1, mPy - 1, 2.5, 2.5);
+          }
+        });
       }
-    }
 
-    // 3. Render Discovered Enemies (Shown on minimap once seen on screen)
-    if (window.activeDungeonMobs) {
-      window.activeDungeonMobs.forEach((m) => {
-        if (m.discovered) {
-          let mPx = mx + ((m.x + (m.w || 24) / 2) / totalWorldW) * mw;
-          let mPy = my + ((m.y + (m.h || 24) / 2) / totalWorldH) * mh;
-          ctx.fillStyle = m.isRare ? "#f1c40f" : "#e74c3c";
-          ctx.fillRect(mPx - 1, mPy - 1, 2.5, 2.5);
+      if (window.mob && window.mob.discovered) {
+        let bm = window.mob;
+        let bmTileX = Math.floor((bm.x + (bm.w || 48) / 2) / map.tileSize);
+        let bmTileY = Math.floor((bm.y + (bm.h || 48) / 2) / map.tileSize);
+        let showBoss = true;
+        if (hasShroudedSight) {
+          let dist = Math.hypot(bmTileX - pTileC, bmTileY - pTileR);
+          if (dist > limitDist) showBoss = false;
         }
-      });
-    }
+        if (showBoss) {
+          let bPx = mx + ((bm.x + (bm.w || 48) / 2) / totalWorldW) * mw;
+          let bPy = my + ((bm.y + (bm.h || 48) / 2) / totalWorldH) * mh;
+          let bPulse = Math.sin(Date.now() / 120) * 1.0;
 
-    if (window.mob && window.mob.discovered) {
-      let bm = window.mob;
-      let bPx = mx + ((bm.x + (bm.w || 48) / 2) / totalWorldW) * mw;
-      let bPy = my + ((bm.y + (bm.h || 48) / 2) / totalWorldH) * mh;
-      let bPulse = Math.sin(Date.now() / 120) * 1.0;
-
-      ctx.fillStyle = "#ff0055";
-      ctx.beginPath();
-      ctx.arc(bPx, bPy, 3 + bPulse, 0, Math.PI * 2);
-      ctx.fill();
-    }
+          ctx.fillStyle = "#ff0055";
+          ctx.beginPath();
+          ctx.arc(bPx, bPy, 3 + bPulse, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
 
     // 4. Render Live Player Marker
-    let p = window.player;
-    if (p) {
-      let pPx = mx + (p.x / totalWorldW) * mw;
+        if (p) {
+          let pPx = mx + (p.x / totalWorldW) * mw;
       let pPy = my + (p.y / totalWorldH) * mh;
       let pPulse = Math.sin(Date.now() / 150) * 1.5;
 

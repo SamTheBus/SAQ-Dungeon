@@ -3,8 +3,77 @@
    initial global state, and system utility functions.
    ========================================================================= */
 
-window.GAME_VERSION = 1.02; // Release Version 1.0.02 (Sigil & Calamity Overhaul)
+window.GAME_VERSION = 1.03; // Release Version 1.0.03 (Unified Cavern Mutator Architecture)
 window.MIN_COMPATIBLE_VERSION = 1.0; // Hard reset epoch threshold
+
+// --- STATIC MUTUALLY EXCLUSIVE DEBUFF MATRIX ---
+window.DEBUFF_EXCLUSIONS = {
+  slick_ice: ["magnetic_creep"],
+  magnetic_creep: ["slick_ice"],
+  creeping_miasma: ["heavy_mist"],
+  heavy_mist: ["creeping_miasma"],
+  abyssal_decay: ["frail_vessel"],
+  frail_vessel: ["abyssal_decay"],
+  weapon_lock: ["kinetic_reflectors"],
+  kinetic_reflectors: ["weapon_lock"],
+  shrouded_sight: ["blind_spot"],
+  blind_spot: ["shrouded_sight"]
+};
+
+// --- CENTRALIZED CAVERN MUTATORS REGISTRY ---
+window.CAVERN_MUTATORS = {
+  // --- BUFFS ---
+  giant_might: { id: "giant_might", name: "Giant Might", desc: "Attack Power increased by +30%.", isBuff: true, type: "stat", statKey: "atk", value: 0.3, minStars: 0 },
+  vital_fountain: { id: "vital_fountain", name: "Vital Fountain", desc: "Maximum Health increased by +40%.", isBuff: true, type: "stat", statKey: "maxHp", value: 0.4, minStars: 0 },
+  iron_aegis: { id: "iron_aegis", name: "Iron Aegis", desc: "Defense Armor increased by +35%.", isBuff: true, type: "stat", statKey: "def", value: 0.35, minStars: 0 },
+  unstable_surge: { id: "unstable_surge", name: "Unstable Surge", desc: "Critical Strike Chance increased by +15%.", isBuff: true, type: "stat", statKey: "critChance", value: 0.15, minStars: 0 },
+  shatter_frenzy: { id: "shatter_frenzy", name: "Shatter Frenzy", desc: "Critical Strike Damage increased by +50%.", isBuff: true, type: "stat", statKey: "critDamage", value: 0.5, minStars: 0 },
+  deflection_vortex: { id: "deflection_vortex", name: "Deflection Vortex", desc: "Block and Parry Rates increased by +10%.", isBuff: true, type: "stat", statKey: "block", value: 0.1, minStars: 0 },
+  swift_strikes: { id: "swift_strikes", name: "Swift Strikes", desc: "Increases Attack Speed by +25%.", isBuff: true, type: "event", minStars: 2 },
+  arcane_infusion: { id: "arcane_infusion", name: "Arcane Infusion", desc: "Arcane Barrier absorption increased by +15%.", isBuff: true, type: "stat", statKey: "block", value: 0.15, minStars: 2 },
+  lucky_winds: { id: "lucky_winds", name: "Lucky Winds", desc: "Fairy Spawn Rate increased by +40%.", isBuff: true, type: "event", minStars: 2 },
+  scavenger_insight: { id: "scavenger_insight", name: "Scavenger's Insight", desc: "Item Drop Rate increased by +50%.", isBuff: true, type: "event", minStars: 2 },
+  perfect_strike: { id: "perfect_strike", name: "Viper's Focus", desc: "Spawns targeting reticles to execute critical strikes.", isBuff: true, type: "interactive", minStars: 4 },
+  aetheric_conduit: { id: "aetheric_conduit", name: "Aetheric Conduit", desc: "Spawns conductive pylons to chain lightning through enemies.", isBuff: true, type: "interactive", minStars: 4 },
+  soul_harvest: { id: "soul_harvest", name: "Soul Harvest", desc: "Defeating enemies has 20% chance to summon friendly Wisp decoys.", isBuff: true, type: "event", minStars: 4 },
+  aetheric_spark: { id: "aetheric_spark", name: "Aetheric Spark", desc: "Spawns chainable sparks that grant temporary damage/speed boosts.", isBuff: true, type: "interactive", minStars: 4 },
+  temporal_echo: { id: "temporal_echo", name: "Temporal Echo", desc: "Strikes spawn delayed echoes dealing 35% damage.", isBuff: true, type: "event", minStars: 4 },
+  astral_conjunction: { id: "astral_conjunction", name: "Astral Conjunction", desc: "Periodic stellar lasers strike random targets for massive damage.", isBuff: true, type: "event", minStars: 4 },
+  void_call: { id: "void_call", name: "Void Call", desc: "Rare Spawn Rate increased by +50%.", isBuff: true, type: "event", minStars: 4 },
+  artisan_luck: { id: "artisan_luck", name: "Artisan's Luck", desc: "Drop Quality increased by +25%.", isBuff: true, type: "event", minStars: 4 },
+  treasure_finder: { id: "treasure_finder", name: "Treasure Finder", desc: "Gold Multiplier increased by +50%.", isBuff: true, type: "event", minStars: 4 },
+  glimmering_pixie: { id: "glimmering_pixie", name: "Glimmering Pixie", desc: "Spawns drifting pixies that grant free elixirs on touch.", isBuff: true, type: "interactive", minStars: 4 },
+
+  // --- DEBUFFS ---
+  dull_blades: { id: "dull_blades", name: "Dull Blades", desc: "Attack Power decreased by -20%.", isBuff: false, type: "stat", statKey: "atk", value: -0.2, minStars: 0, dangerRating: 5 },
+  frail_vessel: { id: "frail_vessel", name: "Frail Vessel", desc: "Maximum Health decreased by -20%.", isBuff: false, type: "stat", statKey: "maxHp", value: -0.2, minStars: 0, dangerRating: 5 },
+  shattered_armour: { id: "shattered_armour", name: "Shattered Armour", desc: "Defense Armor decreased by -25%.", isBuff: false, type: "stat", statKey: "def", value: -0.25, minStars: 0, dangerRating: 5 },
+  heavy_mist: { id: "heavy_mist", name: "Heavy Mist", desc: "Movement Speed decreased by -30%.", isBuff: false, type: "stat", statKey: "moveSpeed", value: -0.3, minStars: 0, dangerRating: 5 },
+  blind_spot: { id: "blind_spot", name: "Blind Spot", desc: "Critical Strike Chance decreased by -10%.", isBuff: false, type: "stat", statKey: "critChance", value: -0.1, minStars: 0, dangerRating: 5 },
+  lead_boots: { id: "lead_boots", name: "Lead Boots", desc: "Block and Parry Rates decreased by -8%.", isBuff: false, type: "stat", statKey: "block", value: -0.08, minStars: 0, dangerRating: 10 },
+  curse_greed: { id: "curse_greed", name: "Curse of Greed", desc: "Gold Multiplier decreased by -40%.", isBuff: false, type: "stat", statKey: "goldMulti", value: -0.4, minStars: 0, dangerRating: 10 },
+  anomalous_shards: { id: "anomalous_shards", name: "Anomalous Shards", desc: "Spawns crystal shards that drain HP and slow you until smashed.", isBuff: false, type: "interactive", minStars: 2, dangerRating: 15 },
+  blood_toll: { id: "blood_toll", name: "Blood Toll", desc: "Opening non-recovery chests consumes 12% current HP.", isBuff: false, type: "event", minStars: 2, dangerRating: 10 },
+  spreading_fatigue: { id: "spreading_fatigue", name: "Spreading Fatigue", desc: "Reduces movement speed progressively unless objects are broken.", isBuff: false, type: "stat", minStars: 2, dangerRating: 10 },
+  iron_gaze: { id: "iron_gaze", name: "Iron Gaze", desc: "Increases Attack Speed delays by +20%.", isBuff: false, type: "event", minStars: 2, dangerRating: 10 },
+  feeble_mind: { id: "feeble_mind", name: "Feeble Mind", desc: "Arcane Barrier fully disabled.", isBuff: false, type: "event", minStars: 2, dangerRating: 10 },
+  void_rupture: { id: "void_rupture", name: "Void Rupture", desc: "Spawns collapsing void rifts that explode if orbs are not cleared.", isBuff: false, type: "interactive", minStars: 4, dangerRating: 15 },
+  unstable_crust: { id: "unstable_crust", name: "Unstable Crust", desc: "Periodic sinkholes collapse part of the floor into the void.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 },
+  molten_slag: { id: "molten_slag", name: "Molten Slag", desc: "Moving builds thermal heat. Overheating triggers lava pools.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 10 },
+  deaths_hour: { id: "deaths_hour", name: "Death's Hour", desc: "Relentless Calamity Specter spawns immediately at floor start.", isBuff: false, type: "event", minStars: 4, dangerRating: 25 },
+  elite_infestation: { id: "elite_infestation", name: "Elite Infestation", desc: "100% Elite support aura mutation spawn rates on all monsters.", isBuff: false, type: "event", minStars: 4, dangerRating: 20 },
+  regenerative_brood: { id: "regenerative_brood", name: "Regenerative Brood", desc: "Monsters regenerate +3% Max HP/sec if out of combat for 3s.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
+  spawning_division: { id: "spawning_division", name: "Spawning Division", desc: "Defeated non-bosses split into two mini sprouts or slimes.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
+  aetheric_surge: { id: "aetheric_surge", name: "Aetheric Surge", desc: "Increases offhand tome/shield/dagger stats, but expands caps.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
+  weapon_lock: { id: "weapon_lock", name: "Weapon Lock", desc: "Melee Attack Power set to 1. Doubles defensive rates/speeds.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
+  kinetic_reflectors: { id: "kinetic_reflectors", name: "Kinetic Reflectors", desc: "Monsters deflect 20% frontal damage back as physical backlash.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
+  magnetic_creep: { id: "magnetic_creep", name: "Magnetic Creep", desc: "Polarized creep pulls the player towards hazards.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 },
+  shrouded_sight: { id: "shrouded_sight", name: "Shrouded Sight", desc: "Reduces dynamic viewport sight to a tight 200px spotlight.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 },
+  creeping_miasma: { id: "creeping_miasma", name: "Creeping Miasma", desc: "The outer floor collapses into toxic miasma over time.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 }
+};
+
+window.CAVERN_BUFFS = Object.values(window.CAVERN_MUTATORS).filter(m => m.isBuff);
+window.CAVERN_DEBUFFS = Object.values(window.CAVERN_MUTATORS).filter(m => !m.isBuff);
 
 // --- GLOBAL COMBAT BALANCE CONSTANTS ---
 window.BOSS_GUARD_PENETRATION = 0.35; // 35% damage seepage / rate reduction
@@ -1245,26 +1314,36 @@ window.checkAchievements = function () {
 };
 
 window.isCavernEffectActive = function (id) {
-  if (
-    window.currentGameState === window.GAME_STATES.DUNGEON &&
-    window.playerStats.activeDungeonSigil
-  ) {
-    let sig = window.playerStats.activeDungeonSigil;
-    if (sig.buffs && sig.buffs.some((b) => b.id === id)) return true;
-    if (sig.debuffs && sig.debuffs.some((d) => d.id === id)) return true;
+  if (window.currentGameState !== window.GAME_STATES.DUNGEON) return false;
+
+  // 1. Check active Dungeon Sigil
+  let sig = window.playerStats.activeDungeonSigil;
+  if (sig) {
+    if (sig.buffs && sig.buffs.some((b) => (b.id || b) === id)) return true;
+    if (sig.debuffs && sig.debuffs.some((d) => (d.id || d) === id)) return true;
   }
+
+  // 2. Check active Special Challenge (Bounty Contract)
+  let challenge = window.playerStats.activeSpecialChallenge;
+  if (challenge) {
+    if (challenge.buffs && challenge.buffs.some((b) => (b.id || b) === id)) return true;
+    if (challenge.debuffs && challenge.debuffs.some((d) => (d.id || d) === id)) return true;
+  }
+
+  // 3. Check Crucible / Onslaught Mode overrides
   if (window.playerStats.isCrucibleMode) {
     if (
       window.playerStats.crucibleActiveBuff &&
-      window.playerStats.crucibleActiveBuff.id === id
+      (window.playerStats.crucibleActiveBuff.id || window.playerStats.crucibleActiveBuff) === id
     )
       return true;
     if (
       window.playerStats.crucibleActiveDebuff &&
-      window.playerStats.crucibleActiveDebuff.id === id
+      (window.playerStats.crucibleActiveDebuff.id || window.playerStats.crucibleActiveDebuff) === id
     )
       return true;
   }
+
   return false;
 };
 
@@ -4828,17 +4907,74 @@ window.rerollBountyBoard = () => window.QuestSystem.rerollBountyBoard();
 window.generateWeeklyMissions = () =>
   window.QuestSystem.generateWeeklyMissions();
 
+window.getPacificDate = function() {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false
+  });
+  const parts = formatter.formatToParts(now);
+  const pt = {};
+  parts.forEach(p => { pt[p.type] = p.value; });
+  let hour = parseInt(pt.hour, 10);
+  if (hour === 24) hour = 0;
+  return new Date(pt.year, pt.month - 1, pt.day, hour, pt.minute, pt.second);
+};
+
+window.getPacificTimeDiffs = function() {
+  const laDate = window.getPacificDate();
+  const laTime = laDate.getTime();
+
+  // Calculate next midnight in LA
+  const nextLaMidnight = new Date(laDate.getFullYear(), laDate.getMonth(), laDate.getDate());
+  nextLaMidnight.setDate(laDate.getDate() + 1);
+  nextLaMidnight.setHours(0, 0, 0, 0);
+  const dailyRemainingMs = nextLaMidnight.getTime() - laTime;
+
+  // Calculate next Monday midnight in LA
+  const nextLaMondayMidnight = new Date(laDate.getFullYear(), laDate.getMonth(), laDate.getDate());
+  const dayOfWeek = laDate.getDay(); // 0 is Sunday, 1 is Monday...
+  const daysToMonday = (8 - dayOfWeek) % 7 || 7;
+  nextLaMondayMidnight.setDate(laDate.getDate() + daysToMonday);
+  nextLaMondayMidnight.setHours(0, 0, 0, 0);
+  const weeklyRemainingMs = nextLaMondayMidnight.getTime() - laTime;
+
+  return {
+    dailyMs: Math.max(0, dailyRemainingMs),
+    weeklyMs: Math.max(0, weeklyRemainingMs)
+  };
+};
+
+window.formatRemainingTime = function(ms) {
+  let seconds = Math.floor(ms / 1000);
+  let days = Math.floor(seconds / 86400);
+  seconds %= 86400;
+  let hours = Math.floor(seconds / 3600);
+  seconds %= 3600;
+  let minutes = Math.floor(seconds / 60);
+  seconds %= 60;
+
+  let parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0 || days > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || hours > 0 || days > 0) parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+
+  return parts.join(" ");
+};
+
 // Append checkAndResetMissions inside window.QuestSystem
 Object.assign(window.QuestSystem, {
   checkAndResetMissions() {
     let now = Date.now();
-
-    // Fully Timezone-Aware PST/PDT Date Resolution
-    let ptString = new Date(now).toLocaleString("en-US", {
-      timeZone: "America/Los_Angeles",
-    });
-    let ptDate = new Date(ptString);
-    let currentDayStr = ptDate.toLocaleDateString("en-US"); // e.g. "6/25/2026"
+    let ptDate = window.getPacificDate();
+    let currentDayStr = `${ptDate.getFullYear()}-${ptDate.getMonth() + 1}-${ptDate.getDate()}`;
 
     // Check Daily reset against absolute Pacific date string
     if (
@@ -4846,6 +4982,15 @@ Object.assign(window.QuestSystem, {
       window.playerStats.lastDailyResetDayStr !== currentDayStr
     ) {
       this.generateDailyMissions();
+
+      // Reset special challenges daily
+      if (
+        window.ChallengeEngine &&
+        typeof window.ChallengeEngine.generateRandomChallenges === "function"
+      ) {
+        window.ChallengeEngine.generateRandomChallenges();
+      }
+
       window.playerStats.lastDailyResetDayStr = currentDayStr;
       window.playerStats.lastDailyResetTime = now;
       window.playerStats.dailyRewardClaimed = false;
@@ -4860,9 +5005,8 @@ Object.assign(window.QuestSystem, {
     // Check Weekly reset (Monday 12:00 AM PST/PDT)
     let dayOfWeek = ptDate.getDay(); // 0 is Sunday, 1 is Monday...
     let daysSinceMonday = (dayOfWeek + 6) % 7; // Days elapsed since last Monday
-    let lastMondayDate = new Date(ptDate);
-    lastMondayDate.setDate(ptDate.getDate() - daysSinceMonday);
-    let lastMondayStr = lastMondayDate.toLocaleDateString("en-US");
+    let lastMondayDate = new Date(ptDate.getFullYear(), ptDate.getMonth(), ptDate.getDate() - daysSinceMonday);
+    let lastMondayStr = `${lastMondayDate.getFullYear()}-${lastMondayDate.getMonth() + 1}-${lastMondayDate.getDate()}`;
 
     if (window.isWeeklyQuestUnlocked()) {
       if (
