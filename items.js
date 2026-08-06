@@ -351,20 +351,25 @@
         ? window.hexToRgbValues(tierColor)
         : "127, 140, 141";
       if (item.subType === "shield") {
-              let reflectDmg = Math.round((item.reflectDamage || 1.0) * 100);
-              let blockCapBonus = Math.round((item.blockCapBonus || 0.02) * 100);
-              let bashFormulaStr = `${reflectDmg}% Defense`;
-              if (item.bashAtkBonus > 0) {
-                bashFormulaStr = `${reflectDmg}% Def + ${Math.round(item.bashAtkBonus * 100)}% Atk`;
-              }
+        let reflectDmg = Math.round((item.reflectDamage || 1.0) * 100);
+        let blockCapBonus = Math.round((item.blockCapBonus || 0.02) * 100);
+        let bashFormulaStr = `${reflectDmg}% Defense`;
+        if (item.bashAtkBonus > 0) {
+          bashFormulaStr = `${reflectDmg}% Def + ${Math.round(item.bashAtkBonus * 100)}% Atk`;
+        }
 
-              // Automated Balance Parameters
-              let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : { maxBlockCap: 0.40 };
-              let activeCap = Math.round((pStats.maxBlockCap || 0.40) * 100);
-              let bossPen = Math.round((window.BOSS_GUARD_PENETRATION || 0.35) * 100);
-              let fatigueSec = ((window.DEFLECTION_FATIGUE_FRAMES || 30) / 60).toFixed(1);
+        // Automated Balance Parameters
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : { maxBlockCap: 0.4 };
+        let activeCap = Math.round((pStats.maxBlockCap || 0.4) * 100);
+        let bossPen = Math.round((window.BOSS_GUARD_PENETRATION || 0.35) * 100);
+        let fatigueSec = (
+          (window.DEFLECTION_FATIGUE_FRAMES || 30) / 60
+        ).toFixed(1);
 
-              specialtyHtml = `
+        specialtyHtml = `
                           <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
                             <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                               ${window.getUiIconSvg ? window.getUiIconSvg("block", 12) : "✦"} <span>BULWARK & BASH METRICS</span>
@@ -379,34 +384,39 @@
                           </div>
                         `;
       } else if (item.subType === "dagger") {
-              let riposteDmg = Math.round((item.riposteDamage || 0.8) * 100);
-              let bleedChance = Math.round((item.bleedChance || 0) * 100);
-              let offhandChance = Math.round((item.offhandChance || 0) * 100);
-              let offhandDmg = Math.round((item.offhandDmg || 0.35) * 100);
-              let mitigationPct = Math.round((item.parryMitigation || 0.6) * 100);
+        let riposteDmg = Math.round((item.riposteDamage || 0.8) * 100);
+        let bleedChance = Math.round((item.bleedChance || 0) * 100);
+        let offhandChance = Math.round((item.offhandChance || 0) * 100);
+        let offhandDmg = Math.round((item.offhandDmg || 0.35) * 100);
+        let mitigationPct = Math.round((item.parryMitigation || 0.6) * 100);
 
-              let metricLines = [
-                `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Parry Mitigation:</span> <strong style="color:#3498db;">${mitigationPct}% Damage</strong></div>`,
-                `<div style="display:flex; justify-content:space-between;"><span style="color:#a855f7;">Riposte Counter:</span> <strong style="color:#a855f7;">${riposteDmg}% Attack</strong></div>`,
-              ];
-              if (bleedChance > 0) {
-                metricLines.push(
-                  `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Bleed Chance:</span> <strong style="color:#e74c3c;">${bleedChance}% per swing</strong></div>`,
-                );
-              }
-              if (offhandChance > 0) {
-                metricLines.push(
-                  `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Offhand Double-Strike:</span> <strong style="color:#2ecc71;">${offhandChance}% (${offhandDmg}% Dmg)</strong></div>`,
-                );
-              }
+        let metricLines = [
+          `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Parry Mitigation:</span> <strong style="color:#3498db;">${mitigationPct}% Damage</strong></div>`,
+          `<div style="display:flex; justify-content:space-between;"><span style="color:#a855f7;">Riposte Counter:</span> <strong style="color:#a855f7;">${riposteDmg}% Attack</strong></div>`,
+        ];
+        if (bleedChance > 0) {
+          metricLines.push(
+            `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Bleed Chance:</span> <strong style="color:#e74c3c;">${bleedChance}% per swing</strong></div>`,
+          );
+        }
+        if (offhandChance > 0) {
+          metricLines.push(
+            `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Offhand Double-Strike:</span> <strong style="color:#2ecc71;">${offhandChance}% (${offhandDmg}% Dmg)</strong></div>`,
+          );
+        }
 
-              // Automated Balance Parameters
-              let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : { maxParryCap: 0.35 };
-              let activeCap = Math.round((pStats.maxParryCap || 0.35) * 100);
-              let bossPen = Math.round((window.BOSS_GUARD_PENETRATION || 0.35) * 100);
-              let fatigueSec = ((window.DEFLECTION_FATIGUE_FRAMES || 30) / 60).toFixed(1);
+        // Automated Balance Parameters
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : { maxParryCap: 0.35 };
+        let activeCap = Math.round((pStats.maxParryCap || 0.35) * 100);
+        let bossPen = Math.round((window.BOSS_GUARD_PENETRATION || 0.35) * 100);
+        let fatigueSec = (
+          (window.DEFLECTION_FATIGUE_FRAMES || 30) / 60
+        ).toFixed(1);
 
-              specialtyHtml = `
+        specialtyHtml = `
                           <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
                             <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                               ${window.getUiIconSvg ? window.getUiIconSvg("parry", 12) : "✦"} <span>RIPOSTE & COMBAT METRICS</span>
@@ -460,74 +470,77 @@
 
       if (item.type === "subweapon") {
         if (item.subType === "tome") {
-                  let spellChance = Math.round(
-                    (item.spellChance !== undefined ? item.spellChance : 0.33) * 100,
-                  );
-                  let spellPower = Math.round((item.spellPower || 1.5) * 100);
-                  gridBadges.push({
-                    label: "Damage",
-                    raw: window.formatNumber(item.baseAtk),
-                    attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)),
-                    icon: window.getUiIconSvg("atk", 13),
-                  });
-                  gridBadges.push({
-                    label: "INT",
-                    raw: `+${item.baseInt || 0}`,
-                    attuned: `+${Math.ceil((item.baseInt || 0) * slotMult)}`,
-                    icon: window.getUiIconSvg("int", 13),
-                  });
-                  gridBadges.push({
-                    label: "Spell %",
-                    raw: `${spellChance}%`,
-                    attuned: `${spellChance}%`,
-                    icon: window.getUiIconSvg("activeAttackSpeed", 13),
-                  });
-                  gridBadges.push({
-                    label: "Spell Dmg",
-                    raw: `${spellPower}% Atk`,
-                    attuned: `${spellPower}% Atk`,
-                    icon: window.getUiIconSvg("critDamage", 13),
-                  });
+          let spellChance = Math.round(
+            (item.spellChance !== undefined ? item.spellChance : 0.33) * 100,
+          );
+          let spellPower = Math.round((item.spellPower || 1.5) * 100);
+          gridBadges.push({
+            label: "Damage",
+            raw: window.formatNumber(item.baseAtk),
+            attuned: window.formatNumber(Math.ceil(item.baseAtk * slotMult)),
+            icon: window.getUiIconSvg("atk", 13),
+          });
+          gridBadges.push({
+            label: "INT",
+            raw: `+${item.baseInt || 0}`,
+            attuned: `+${Math.ceil((item.baseInt || 0) * slotMult)}`,
+            icon: window.getUiIconSvg("int", 13),
+          });
+          gridBadges.push({
+            label: "Spell %",
+            raw: `${spellChance}%`,
+            attuned: `${spellChance}%`,
+            icon: window.getUiIconSvg("activeAttackSpeed", 13),
+          });
+          gridBadges.push({
+            label: "Spell Dmg",
+            raw: `${spellPower}% Atk`,
+            attuned: `${spellPower}% Atk`,
+            icon: window.getUiIconSvg("critDamage", 13),
+          });
 
-                  // Automated Intel-based Barrier Calculation (Even if unequipped)
-                  let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : { int: 5 };
-                  let effInt = Math.max(0, (pStats.int || 5) - 5);
-                  let intBonus = Math.min(0.15, (effInt * 0.15) / (effInt + 150));
-                  let potentialBarrier = 0.20 + intBonus;
+          // Automated Intel-based Barrier Calculation (Even if unequipped)
+          let pStats =
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : { int: 5 };
+          let effInt = Math.max(0, (pStats.int || 5) - 5);
+          let intBonus = Math.min(0.15, (effInt * 0.15) / (effInt + 150));
+          let potentialBarrier = 0.2 + intBonus;
 
-                  // Arcane Barrier Shatter & Keystone overrides
-                  if (pStats.hasAethericSingularity) {
-                    potentialBarrier = 0.45; // Singularity Keystone sets a flat 45% barrier
-                  } else if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("tome_runic_barrier") > 0) {
-                    let rank = window.SkillTreeManager.getSkillLevel("tome_runic_barrier");
-                    potentialBarrier = 0.20 + rank * 0.04 + intBonus;
-                    if (potentialBarrier > 0.40) potentialBarrier = 0.40; // cap runic shielding at 40%
-                  }
+          // Arcane Barrier Shatter & Keystone overrides
+          if (pStats.hasAethericSingularity) {
+            potentialBarrier = 0.45; // Singularity Keystone sets a flat 45% barrier
+          } else if (
+            window.SkillTreeManager &&
+            window.SkillTreeManager.getSkillLevel("tome_runic_barrier") > 0
+          ) {
+            let rank =
+              window.SkillTreeManager.getSkillLevel("tome_runic_barrier");
+            potentialBarrier = 0.2 + rank * 0.04 + intBonus;
+            if (potentialBarrier > 0.4) potentialBarrier = 0.4; // cap runic shielding at 40%
+          }
 
-                  let barrierPct = Math.round(potentialBarrier * 100);
+          let barrierPct = Math.round(potentialBarrier * 100);
 
-                  let tomeDesc =
-                    `Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-                  let tomeTitle = "✦ Arcane Triad Array & Barrier:";
-                  let tomeTitleColor = "#9b59b6";
-                  if (item.spellType === "fire") {
-                    tomeTitle = "✦ Fireball Burst & Barrier:";
-                    tomeTitleColor = "#e67e22";
-                    tomeDesc =
-                      `Launches concentrated Fireball bursts dealing heavy burst damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-                  } else if (item.spellType === "lightning") {
-                    tomeTitle = "✦ Chain Zap Arcs & Barrier:";
-                    tomeTitleColor = "#f1c40f";
-                    tomeDesc =
-                      `Triggers rapid Chain Zap electrical arcs with high proc frequency. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-                  } else if (item.spellType === "frost") {
-                    tomeTitle = "✦ Glacial Frost Nova & Barrier:";
-                    tomeTitleColor = "#3498db";
-                    tomeDesc =
-                      `Emits Glacial Frost Novas dealing area frost damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-                  }
+          let tomeDesc = `Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+          let tomeTitle = "✦ Arcane Triad Array & Barrier:";
+          let tomeTitleColor = "#9b59b6";
+          if (item.spellType === "fire") {
+            tomeTitle = "✦ Fireball Burst & Barrier:";
+            tomeTitleColor = "#e67e22";
+            tomeDesc = `Launches concentrated Fireball bursts dealing heavy burst damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+          } else if (item.spellType === "lightning") {
+            tomeTitle = "✦ Chain Zap Arcs & Barrier:";
+            tomeTitleColor = "#f1c40f";
+            tomeDesc = `Triggers rapid Chain Zap electrical arcs with high proc frequency. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+          } else if (item.spellType === "frost") {
+            tomeTitle = "✦ Glacial Frost Nova & Barrier:";
+            tomeTitleColor = "#3498db";
+            tomeDesc = `Emits Glacial Frost Novas dealing area frost damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
+          }
 
-                  specialtyHtml = `
+          specialtyHtml = `
                           <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
                             <strong style="color: ${tomeTitleColor}; display: block; margin-bottom: 2px;">${tomeTitle}</strong>
                             ${tomeDesc}
@@ -4483,24 +4496,24 @@
               typeof item.statsRolled === "number" ? item.statsRolled : 0;
 
             if (noun.includes("tower")) {
-                        item.subArchetype = "tower";
-                        item.baseBlock = 0.15 + stars * 0.02;
-                        item.blockCapBonus = 0.04 + stars * 0.008;
-                        item.reflectDamage = 1.2 + stars * 0.16; // 120% - 200% Def
-                        item.bashAtkBonus = 0;
-                      } else if (noun.includes("buckler")) {
-                        item.subArchetype = "buckler";
-                        item.baseBlock = 0.20 + stars * 0.025;
-                        item.blockCapBonus = 0.02 + stars * 0.005;
-                        item.reflectDamage = 0.6 + stars * 0.08; // 60% Def
-                        item.bashAtkBonus = 0.5; // +50% Atk
-                      } else {
-                        item.subArchetype = "vanguard";
-                        item.baseBlock = 0.15 + stars * 0.02;
-                        item.blockCapBonus = 0.02 + stars * 0.006;
-                        item.reflectDamage = 1.0 + stars * 0.12; // 100% Def
-                        item.bashAtkBonus = 0;
-                      }
+              item.subArchetype = "tower";
+              item.baseBlock = 0.15 + stars * 0.02;
+              item.blockCapBonus = 0.04 + stars * 0.008;
+              item.reflectDamage = 1.2 + stars * 0.16; // 120% - 200% Def
+              item.bashAtkBonus = 0;
+            } else if (noun.includes("buckler")) {
+              item.subArchetype = "buckler";
+              item.baseBlock = 0.2 + stars * 0.025;
+              item.blockCapBonus = 0.02 + stars * 0.005;
+              item.reflectDamage = 0.6 + stars * 0.08; // 60% Def
+              item.bashAtkBonus = 0.5; // +50% Atk
+            } else {
+              item.subArchetype = "vanguard";
+              item.baseBlock = 0.15 + stars * 0.02;
+              item.blockCapBonus = 0.02 + stars * 0.006;
+              item.reflectDamage = 1.0 + stars * 0.12; // 100% Def
+              item.bashAtkBonus = 0;
+            }
           } else if (item.subType === "dagger") {
             item.baseAtk = Math.ceil(0.8 * repScale * baseRarityMult);
             item.baseDex = Math.ceil(1.5 * stageScale * baseRarityMult);
@@ -4509,33 +4522,33 @@
               typeof item.statsRolled === "number" ? item.statsRolled : 0;
 
             if (noun.includes("main")) {
-                        item.subArchetype = "main_gauche";
-                        item.baseParry = 0.18 + stars * 0.02;
-                        item.parryCapBonus = 0.1 + stars * 0.01; // 10% - 15% bonus parry cap
-                        item.parryMitigation = 0.75; // 75% damage mitigation on parry
-                        item.riposteDamage = 0.8 + stars * 0.08;
-                        item.bleedChance = 0;
-                        item.offhandChance = 0;
-                        item.offhandDmg = 0.35;
-                      } else if (noun.includes("stiletto")) {
-                        item.subArchetype = "stiletto";
-                        item.baseParry = 0.12 + stars * 0.016;
-                        item.parryCapBonus = 0.02;
-                        item.parryMitigation = 0.6;
-                        item.riposteDamage = 1.0 + stars * 0.12; // 100% Atk
-                        item.bleedChance = 0.35 + stars * 0.04; // 35% - 55% Bleed
-                        item.offhandChance = 0;
-                        item.offhandDmg = 0.35;
-                      } else {
-                        item.subArchetype = "flurry";
-                        item.baseParry = 0.12 + stars * 0.016;
-                        item.parryCapBonus = 0.02;
-                        item.parryMitigation = 0.6;
-                        item.riposteDamage = 0.8 + stars * 0.08;
-                        item.offhandChance = 0.5 + stars * 0.05; // 50% - 75% Offhand Chance
-                        item.offhandDmg = 0.45; // 45% Atk
-                        item.bleedChance = 0.15;
-                      }
+              item.subArchetype = "main_gauche";
+              item.baseParry = 0.18 + stars * 0.02;
+              item.parryCapBonus = 0.1 + stars * 0.01; // 10% - 15% bonus parry cap
+              item.parryMitigation = 0.75; // 75% damage mitigation on parry
+              item.riposteDamage = 0.8 + stars * 0.08;
+              item.bleedChance = 0;
+              item.offhandChance = 0;
+              item.offhandDmg = 0.35;
+            } else if (noun.includes("stiletto")) {
+              item.subArchetype = "stiletto";
+              item.baseParry = 0.12 + stars * 0.016;
+              item.parryCapBonus = 0.02;
+              item.parryMitigation = 0.6;
+              item.riposteDamage = 1.0 + stars * 0.12; // 100% Atk
+              item.bleedChance = 0.35 + stars * 0.04; // 35% - 55% Bleed
+              item.offhandChance = 0;
+              item.offhandDmg = 0.35;
+            } else {
+              item.subArchetype = "flurry";
+              item.baseParry = 0.12 + stars * 0.016;
+              item.parryCapBonus = 0.02;
+              item.parryMitigation = 0.6;
+              item.riposteDamage = 0.8 + stars * 0.08;
+              item.offhandChance = 0.5 + stars * 0.05; // 50% - 75% Offhand Chance
+              item.offhandDmg = 0.45; // 45% Atk
+              item.bleedChance = 0.15;
+            }
           } else if (item.subType === "tome") {
             item.baseInt = Math.ceil(1.5 * stageScale * baseRarityMult);
             item.baseAtk = Math.ceil(0.4 * repScale * baseRarityMult);
@@ -4871,42 +4884,48 @@
       }
 
       if (item.enchantments) {
-              for (let statKey in item.enchantments) {
-                let count = item.enchantments[statKey];
-                let multiplier = Math.pow(1.25, count);
-                const integerStats = ["atk", "maxHp", "def", "str", "dex", "int"];
-                if (integerStats.includes(statKey)) {
-                  item[statKey] = Math.ceil(item[statKey] * multiplier);
-                } else {
-                  item[statKey] = parseFloat((item[statKey] * multiplier).toFixed(4));
-                }
-              }
-            }
+        for (let statKey in item.enchantments) {
+          let count = item.enchantments[statKey];
+          let multiplier = Math.pow(1.25, count);
+          const integerStats = ["atk", "maxHp", "def", "str", "dex", "int"];
+          if (integerStats.includes(statKey)) {
+            item[statKey] = Math.ceil(item[statKey] * multiplier);
+          } else {
+            item[statKey] = parseFloat((item[statKey] * multiplier).toFixed(4));
+          }
+        }
+      }
 
-            // Dynamic Unique Gear Passive Scaling
-            if (window.isItemUnique(item)) {
-              let slotKey = item.isEquippedSlot || (item.type === "subweapon" ? "subweapon" : item.type);
-              let slotLvl = (window.playerStats && window.playerStats.slotUpgrades && window.playerStats.slotUpgrades[slotKey]) || 0;
-              let slotMult = 1.0 + slotLvl * 0.01;
+      // Dynamic Unique Gear Passive Scaling
+      if (window.isItemUnique(item)) {
+        let slotKey =
+          item.isEquippedSlot ||
+          (item.type === "subweapon" ? "subweapon" : item.type);
+        let slotLvl =
+          (window.playerStats &&
+            window.playerStats.slotUpgrades &&
+            window.playerStats.slotUpgrades[slotKey]) ||
+          0;
+        let slotMult = 1.0 + slotLvl * 0.01;
 
-              if (item.isUniqueStaff) {
-                item.desc = `Launches penetrating fireballs that deal ${Math.round(25 * slotMult)}% Attack damage (3s Cooldown).`;
-              } else if (item.isUniqueSword) {
-                item.desc = `Strikes apply stacking Bleed (Max 5). Strikes at max stacks triggers Rupture, dealing ${Math.round(300 * slotMult)}% weapon damage and siphoning 10% Max HP.`;
-              } else if (item.isUniqueMaelstrom) {
-                item.desc = `Critical strikes project piercing wind gales. Casting gales grants +${Math.round(10 * slotMult)}% Active & Idle Attack Speed for 6s (stacks up to 3x).`;
-              } else if (item.isUniqueWatch) {
-                item.desc = `Triggers 4s Temporal Fracture every 20s. Accelerates attack speeds by ${Math.round(15 * slotMult)}% and slows enemies by ${Math.round(25 * slotMult)}%.`;
-              } else if (item.isUniqueTempest) {
-                item.desc = `Taking damage has a ${(15 * slotMult).toFixed(1)}% chance to call a thunderbolt dealing ${Math.round(150 * slotMult)}% Attack power and stunning.`;
-              } else if (item.isUniqueViper) {
-                item.desc = `Critical strikes have a ${(25 * slotMult).toFixed(1)}% chance to trigger a Perfect Strike reticle. Tapping it within 2s deals 5x defense-bypassing damage and inflicts a toxic poison sting.`;
-              } else if (item.isUniqueConduit) {
-                item.desc = `Periodically projects an Aetheric Conduit on the field (15s Cooldown). Discharging it casts triple elemental spells & resets cooldowns.`;
-              }
-            }
-          },
-        });
+        if (item.isUniqueStaff) {
+          item.desc = `Launches penetrating fireballs that deal ${Math.round(25 * slotMult)}% Attack damage (3s Cooldown).`;
+        } else if (item.isUniqueSword) {
+          item.desc = `Strikes apply stacking Bleed (Max 5). Strikes at max stacks triggers Rupture, dealing ${Math.round(300 * slotMult)}% weapon damage and siphoning 10% Max HP.`;
+        } else if (item.isUniqueMaelstrom) {
+          item.desc = `Critical strikes project piercing wind gales. Casting gales grants +${Math.round(10 * slotMult)}% Active & Idle Attack Speed for 6s (stacks up to 3x).`;
+        } else if (item.isUniqueWatch) {
+          item.desc = `Triggers 4s Temporal Fracture every 20s. Accelerates attack speeds by ${Math.round(15 * slotMult)}% and slows enemies by ${Math.round(25 * slotMult)}%.`;
+        } else if (item.isUniqueTempest) {
+          item.desc = `Taking damage has a ${(15 * slotMult).toFixed(1)}% chance to call a thunderbolt dealing ${Math.round(150 * slotMult)}% Attack power and stunning.`;
+        } else if (item.isUniqueViper) {
+          item.desc = `Critical strikes have a ${(25 * slotMult).toFixed(1)}% chance to trigger a Perfect Strike reticle. Tapping it within 2s deals 5x defense-bypassing damage and inflicts a toxic poison sting.`;
+        } else if (item.isUniqueConduit) {
+          item.desc = `Periodically projects an Aetheric Conduit on the field (15s Cooldown). Discharging it casts triple elemental spells & resets cooldowns.`;
+        }
+      }
+    },
+  });
 
   // Legacy Compatibility Aliases to protect references
   window.recalculateItemStats = function (item) {
@@ -5154,44 +5173,44 @@
         oldMaxHp = window.resolvePlayerStats().maxHp;
 
       if (item.type === "overall") {
-              if (window.equippedSlots.chest) {
-                delete window.equippedSlots.chest.isEquippedSlot;
-                if (!window.equippedSlots.chest.isStarterItem) {
-                  window.inventory.EQUIP.push(window.equippedSlots.chest);
-                }
-                window.equippedSlots.chest = null;
-              }
-              if (window.equippedSlots.leggings) {
-                delete window.equippedSlots.leggings.isEquippedSlot;
-                if (!window.equippedSlots.leggings.isStarterItem) {
-                  window.inventory.EQUIP.push(window.equippedSlots.leggings);
-                }
-                window.equippedSlots.leggings = null;
-              }
-              if (window.equippedSlots.overall) {
-                delete window.equippedSlots.overall.isEquippedSlot;
-                if (!window.equippedSlots.overall.isStarterItem) {
-                  window.inventory.EQUIP.push(window.equippedSlots.overall);
-                }
-              }
-              window.equippedSlots.overall = item;
-              item.isEquippedSlot = "overall";
-            } else if (item.type === "chest" || item.type === "leggings") {
-              if (window.equippedSlots.overall) {
-                delete window.equippedSlots.overall.isEquippedSlot;
-                if (!window.equippedSlots.overall.isStarterItem) {
-                  window.inventory.EQUIP.push(window.equippedSlots.overall);
-                }
-                window.equippedSlots.overall = null;
-              }
-              if (window.equippedSlots[item.type]) {
-                delete window.equippedSlots[item.type].isEquippedSlot;
-                if (!window.equippedSlots[item.type].isStarterItem) {
-                  window.inventory.EQUIP.push(window.equippedSlots[item.type]);
-                }
-              }
-              window.equippedSlots[item.type] = item;
-              item.isEquippedSlot = item.type;
+        if (window.equippedSlots.chest) {
+          delete window.equippedSlots.chest.isEquippedSlot;
+          if (!window.equippedSlots.chest.isStarterItem) {
+            window.inventory.EQUIP.push(window.equippedSlots.chest);
+          }
+          window.equippedSlots.chest = null;
+        }
+        if (window.equippedSlots.leggings) {
+          delete window.equippedSlots.leggings.isEquippedSlot;
+          if (!window.equippedSlots.leggings.isStarterItem) {
+            window.inventory.EQUIP.push(window.equippedSlots.leggings);
+          }
+          window.equippedSlots.leggings = null;
+        }
+        if (window.equippedSlots.overall) {
+          delete window.equippedSlots.overall.isEquippedSlot;
+          if (!window.equippedSlots.overall.isStarterItem) {
+            window.inventory.EQUIP.push(window.equippedSlots.overall);
+          }
+        }
+        window.equippedSlots.overall = item;
+        item.isEquippedSlot = "overall";
+      } else if (item.type === "chest" || item.type === "leggings") {
+        if (window.equippedSlots.overall) {
+          delete window.equippedSlots.overall.isEquippedSlot;
+          if (!window.equippedSlots.overall.isStarterItem) {
+            window.inventory.EQUIP.push(window.equippedSlots.overall);
+          }
+          window.equippedSlots.overall = null;
+        }
+        if (window.equippedSlots[item.type]) {
+          delete window.equippedSlots[item.type].isEquippedSlot;
+          if (!window.equippedSlots[item.type].isStarterItem) {
+            window.inventory.EQUIP.push(window.equippedSlots[item.type]);
+          }
+        }
+        window.equippedSlots[item.type] = item;
+        item.isEquippedSlot = item.type;
       } else if (item.type === "artifact") {
         // Prevent equipping duplicate artifacts in core bag slot clicking
         let isAlreadyEquipped = ["art1", "art2", "art3"].some(
@@ -5224,29 +5243,29 @@
           item.isEquippedSlot = "art3";
         }
       } else if (item.type === "ring") {
-              let slotKey = !window.equippedSlots.ring1
-                ? "ring1"
-                : !window.equippedSlots.ring2
-                  ? "ring2"
-                  : "ring1";
-              if (window.equippedSlots[slotKey]) {
-                delete window.equippedSlots[slotKey].isEquippedSlot;
-                if (!window.equippedSlots[slotKey].isStarterItem) {
-                  window.inventory.EQUIP.push(window.equippedSlots[slotKey]);
-                }
-              }
-              window.equippedSlots[slotKey] = item;
-              item.isEquippedSlot = slotKey;
-            } else {
-              if (window.equippedSlots[item.type]) {
-                delete window.equippedSlots[item.type].isEquippedSlot;
-                if (!window.equippedSlots[item.type].isStarterItem) {
-                  window.inventory.EQUIP.push(window.equippedSlots[item.type]);
-                }
-              }
-              window.equippedSlots[item.type] = item;
-              item.isEquippedSlot = item.type;
-            }
+        let slotKey = !window.equippedSlots.ring1
+          ? "ring1"
+          : !window.equippedSlots.ring2
+            ? "ring2"
+            : "ring1";
+        if (window.equippedSlots[slotKey]) {
+          delete window.equippedSlots[slotKey].isEquippedSlot;
+          if (!window.equippedSlots[slotKey].isStarterItem) {
+            window.inventory.EQUIP.push(window.equippedSlots[slotKey]);
+          }
+        }
+        window.equippedSlots[slotKey] = item;
+        item.isEquippedSlot = slotKey;
+      } else {
+        if (window.equippedSlots[item.type]) {
+          delete window.equippedSlots[item.type].isEquippedSlot;
+          if (!window.equippedSlots[item.type].isStarterItem) {
+            window.inventory.EQUIP.push(window.equippedSlots[item.type]);
+          }
+        }
+        window.equippedSlots[item.type] = item;
+        item.isEquippedSlot = item.type;
+      }
 
       if (isArtifactSack) {
         window.inventory.ARTIFACT.splice(index, 1);
@@ -5289,43 +5308,46 @@
       let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
 
       if (item.type === "artifact") {
-              window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
-              if (window.inventory.ARTIFACT.length >= maxBag) {
-                if (typeof window.pushHeaderToast === "function")
-                  window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
-                return;
-              }
-              window.equippedSlots[slotKey] = null;
-              window.inventory.ARTIFACT.push(item);
-            } else {
-              if (item.isStarterItem) {
-                // Cleanly discard temporary starter/provisioned gear instead of letting it clog bag/stash
-                window.equippedSlots[slotKey] = null;
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast(`[DISCARDED] Temporary starter item removed.`, "#7f8c8d");
-                }
-              } else {
-                if (inDungeonRun) {
-                  window.player.bag = window.player.bag || [];
-                  if (window.player.bag.length >= maxBag) {
-                    if (typeof window.pushHeaderToast === "function")
-                      window.pushHeaderToast(`Satchel Full!`, "#e74c3c");
-                    return;
-                  }
-                  window.equippedSlots[slotKey] = null;
-                  window.player.bag.push(item);
-                } else {
-                  window.inventory.EQUIP = window.inventory.EQUIP || [];
-                  if (window.inventory.EQUIP.length >= maxBag) {
-                    if (typeof window.pushHeaderToast === "function")
-                      window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
-                    return;
-                  }
-                  window.equippedSlots[slotKey] = null;
-                  window.inventory.EQUIP.push(item);
-                }
-              }
+        window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+        if (window.inventory.ARTIFACT.length >= maxBag) {
+          if (typeof window.pushHeaderToast === "function")
+            window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
+          return;
+        }
+        window.equippedSlots[slotKey] = null;
+        window.inventory.ARTIFACT.push(item);
+      } else {
+        if (item.isStarterItem) {
+          // Cleanly discard temporary starter/provisioned gear instead of letting it clog bag/stash
+          window.equippedSlots[slotKey] = null;
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              `[DISCARDED] Temporary starter item removed.`,
+              "#7f8c8d",
+            );
+          }
+        } else {
+          if (inDungeonRun) {
+            window.player.bag = window.player.bag || [];
+            if (window.player.bag.length >= maxBag) {
+              if (typeof window.pushHeaderToast === "function")
+                window.pushHeaderToast(`Satchel Full!`, "#e74c3c");
+              return;
             }
+            window.equippedSlots[slotKey] = null;
+            window.player.bag.push(item);
+          } else {
+            window.inventory.EQUIP = window.inventory.EQUIP || [];
+            if (window.inventory.EQUIP.length >= maxBag) {
+              if (typeof window.pushHeaderToast === "function")
+                window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
+              return;
+            }
+            window.equippedSlots[slotKey] = null;
+            window.inventory.EQUIP.push(item);
+          }
+        }
+      }
 
       if (typeof window.invalidatePlayerStats === "function")
         window.invalidatePlayerStats();
@@ -9006,7 +9028,11 @@ window.getDynamicArtifactDescription = function (item) {
   let slotKey = item.isEquippedSlot || null;
   let slotLvl = 0;
   if (slotKey) {
-    slotLvl = (window.playerStats && window.playerStats.slotUpgrades && window.playerStats.slotUpgrades[slotKey]) || 0;
+    slotLvl =
+      (window.playerStats &&
+        window.playerStats.slotUpgrades &&
+        window.playerStats.slotUpgrades[slotKey]) ||
+      0;
   }
   let slotMult = 1.0 + slotLvl * 0.01;
 

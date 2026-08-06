@@ -320,62 +320,116 @@
     }
 
     spawnDamageEffect(
-          x,
-          y,
-          amount,
-          type = "slash",
-          isCrit = false,
-          targetObj = null,
+      x,
+      y,
+      amount,
+      type = "slash",
+      isCrit = false,
+      targetObj = null,
+    ) {
+      // Award active combat Mastery XP based on trigger action types
+      if (
+        window.equippedSlots &&
+        window.equippedSlots.subweapon &&
+        window.gainSubweaponXp &&
+        window.SkillTreeManager
+      ) {
+        let activeSub = window.equippedSlots.subweapon;
+        let subType = activeSub.subType || activeSub.type;
+
+        // Resolve equivalent current floor depth for trigger scaling
+        let depth = 1;
+        if (
+          window.playerStats &&
+          window.playerStats.isDungeonMode &&
+          window.player
         ) {
-          // Award active combat Mastery XP based on trigger action types
-                    if (window.equippedSlots && window.equippedSlots.subweapon && window.gainSubweaponXp && window.SkillTreeManager) {
-                      let activeSub = window.equippedSlots.subweapon;
-                      let subType = activeSub.subType || activeSub.type;
+          depth = window.player.depth || 1;
+        } else if (window.playerStats) {
+          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
+        }
+        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
 
-                      // Resolve equivalent current floor depth for trigger scaling
-                      let depth = 1;
-                      if (window.playerStats && window.playerStats.isDungeonMode && window.player) {
-                        depth = window.player.depth || 1;
-                      } else if (window.playerStats) {
-                        depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-                      }
-                      let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+        // On-Hit Passive Progression (+1 XP for any successful strike if a subweapon is equipped)
+        if (type === "slash") {
+          window.gainSubweaponXp(subType, Math.round(1 * triggerMult));
+        }
 
-                      if (subType === "shield" && ["block", "counter", "shield_bash", "aegis_counter"].includes(type)) {
-                        let xp = 0;
-                        if (type === "block") {
-                          let fort = window.SkillTreeManager.getSkillLevel("shield_fortitude") || 0;
-                          let wall = window.SkillTreeManager.getSkillLevel("shield_iron_wall") || 0;
-                          xp = 4 + fort + wall;
-                        } else {
-                          let ret = window.SkillTreeManager.getSkillLevel("shield_retaliation") || 0;
-                          xp = 8 + ret * 2;
-                        }
-                        if (xp > 0) window.gainSubweaponXp("shield", Math.round(xp * triggerMult));
-                      } else if (subType === "dagger" && ["parry", "riposte", "parry_counter", "poison", "bleed"].includes(type)) {
-                        let xp = 0;
-                        if (type === "parry" || type === "parry_counter") {
-                          let pR = window.SkillTreeManager.getSkillLevel("dagger_parry") || 0;
-                          let sS = window.SkillTreeManager.getSkillLevel("dagger_shadow_step") || 0;
-                          xp = 6 + (pR + sS) * 2;
-                        } else if (type === "riposte") {
-                          let lP = window.SkillTreeManager.getSkillLevel("dagger_lethal_precision") || 0;
-                          xp = 8 + lP * 3;
-                        } else if (type === "poison" || type === "bleed") {
-                          // Cap tick frequency to prevent training-dummy or AFK-farming exploits
-                          if (Math.random() < 0.25) {
-                            xp = 1;
-                          }
-                        }
-                        if (xp > 0) window.gainSubweaponXp("dagger", Math.round(xp * triggerMult));
-                      } else if (subType === "tome" && type === "barrier") {
-                        let rS = window.SkillTreeManager.getSkillLevel("tome_runic_barrier") || 0;
-                        let xp = 5 + rS * 2;
-                        window.gainSubweaponXp("tome", Math.round(xp * triggerMult));
-                      }
-                    }
+        if (
+          subType === "shield" &&
+          ["block", "counter", "shield_bash", "aegis_counter"].includes(type)
+        ) {
+          let xp = 0;
+          if (type === "block") {
+            let fort =
+              window.SkillTreeManager.getSkillLevel("shield_fortitude") || 0;
+            let wall =
+              window.SkillTreeManager.getSkillLevel("shield_iron_wall") || 0;
+            xp = 4 + fort + wall;
+          } else {
+            let ret =
+              window.SkillTreeManager.getSkillLevel("shield_retaliation") || 0;
+            xp = 8 + ret * 2;
+          }
+          // Earth-Breaker Bash: +15 Base XP for each enemy successfully stunned
+          if (type === "shield_bash") {
+            let ebRank =
+              window.SkillTreeManager.getSkillLevel(
+                "shield_earth_breaker_bash",
+              ) || 0;
+            if (ebRank > 0 && Math.random() < ebRank * 0.15) {
+              xp += 15;
+            }
+          }
+          if (xp > 0)
+            window.gainSubweaponXp("shield", Math.round(xp * triggerMult));
+        } else if (
+          subType === "dagger" &&
+          [
+            "parry",
+            "riposte",
+            "parry_counter",
+            "poison",
+            "bleed",
+            "dagger",
+          ].includes(type)
+        ) {
+          let xp = 0;
+          if (type === "parry" || type === "parry_counter") {
+            let pR = window.SkillTreeManager.getSkillLevel("dagger_parry") || 0;
+            let sS =
+              window.SkillTreeManager.getSkillLevel("dagger_shadow_step") || 0;
+            xp = 6 + (pR + sS) * 2;
+          } else if (type === "riposte") {
+            let lP =
+              window.SkillTreeManager.getSkillLevel(
+                "dagger_lethal_precision",
+              ) || 0;
+            xp = 8 + lP * 3;
+          } else if (type === "poison" || type === "bleed") {
+            // Cap tick frequency to prevent training-dummy or AFK-farming exploits
+            if (Math.random() < 0.25) {
+              xp = 1;
+            }
+          } else if (type === "dagger") {
+            // Standard offhand strike or flurry strike
+            let hasAssassin =
+              window.SkillTreeManager.getSkillLevel(
+                "dagger_keystone_assassin",
+              ) > 0;
+            xp = hasAssassin ? 10 : 2; // +10 Base XP for Shadow Assassin flurry strikes, 2 for default offhand
+          }
+          if (xp > 0)
+            window.gainSubweaponXp("dagger", Math.round(xp * triggerMult));
+        } else if (subType === "tome" && type === "barrier") {
+          let rS =
+            window.SkillTreeManager.getSkillLevel("tome_runic_barrier") || 0;
+          let xp = 5 + rS * 2;
+          window.gainSubweaponXp("tome", Math.round(xp * triggerMult));
+        }
+      }
 
-                    let hitColor = "#ecf0f1";
+      let hitColor = "#ecf0f1";
       let offsetX = (Math.random() - 0.5) * 30;
       let offsetY = (Math.random() - 0.5) * 20 - 10;
       let targetId = targetObj ? targetObj.id : null;
@@ -3329,24 +3383,34 @@
   };
 
   window.spawnResonantAegisRipple = function (x, y) {
-        if (window.equippedSlots && window.equippedSlots.subweapon && window.gainSubweaponXp && window.SkillTreeManager) {
-          let activeSub = window.equippedSlots.subweapon;
-          let subType = activeSub.subType || activeSub.type;
-          if (subType === "shield") {
-            let rA = window.SkillTreeManager.getSkillLevel("shield_impact_tremor") || 0;
-            let baseXp = 10 + rA * 5;
-            let depth = 1;
-            if (window.playerStats && window.playerStats.isDungeonMode && window.player) {
-              depth = window.player.depth || 1;
-            } else if (window.playerStats) {
-              depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-            }
-            let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
-            window.gainSubweaponXp("shield", Math.round(baseXp * triggerMult));
-          }
+    if (
+      window.equippedSlots &&
+      window.equippedSlots.subweapon &&
+      window.gainSubweaponXp &&
+      window.SkillTreeManager
+    ) {
+      let activeSub = window.equippedSlots.subweapon;
+      let subType = activeSub.subType || activeSub.type;
+      if (subType === "shield") {
+        let rA =
+          window.SkillTreeManager.getSkillLevel("shield_impact_tremor") || 0;
+        let baseXp = 10 + rA * 5;
+        let depth = 1;
+        if (
+          window.playerStats &&
+          window.playerStats.isDungeonMode &&
+          window.player
+        ) {
+          depth = window.player.depth || 1;
+        } else if (window.playerStats) {
+          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
         }
-        if (!window.activeSpellAnims) return;
-      window.activeSpellAnims.push({
+        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+        window.gainSubweaponXp("shield", Math.round(baseXp * triggerMult));
+      }
+    }
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
       type: "resonant_aegis",
       x: x,
       y: y,
@@ -3372,24 +3436,35 @@
   };
 
   window.spawnWindRazor = function (x, y, angle, damage) {
-        if (window.equippedSlots && window.equippedSlots.subweapon && window.gainSubweaponXp && window.SkillTreeManager) {
-          let activeSub = window.equippedSlots.subweapon;
-          let subType = activeSub.subType || activeSub.type;
-          if (subType === "dagger") {
-            let wR = window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry") || 0;
-            let baseXp = 12 + wR * 4;
-            let depth = 1;
-            if (window.playerStats && window.playerStats.isDungeonMode && window.player) {
-              depth = window.player.depth || 1;
-            } else if (window.playerStats) {
-              depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-            }
-            let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
-            window.gainSubweaponXp("dagger", Math.round(baseXp * triggerMult));
-          }
+    if (
+      window.equippedSlots &&
+      window.equippedSlots.subweapon &&
+      window.gainSubweaponXp &&
+      window.SkillTreeManager
+    ) {
+      let activeSub = window.equippedSlots.subweapon;
+      let subType = activeSub.subType || activeSub.type;
+      if (subType === "dagger") {
+        let wR =
+          window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry") ||
+          0;
+        let baseXp = 12 + wR * 4;
+        let depth = 1;
+        if (
+          window.playerStats &&
+          window.playerStats.isDungeonMode &&
+          window.player
+        ) {
+          depth = window.player.depth || 1;
+        } else if (window.playerStats) {
+          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
         }
-        if (!window.activeSpellAnims) return;
-      window.activeSpellAnims.push({
+        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+        window.gainSubweaponXp("dagger", Math.round(baseXp * triggerMult));
+      }
+    }
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
       type: "wind_razor",
       x: x,
       y: y,
@@ -3405,34 +3480,52 @@
   };
 
   window.castVisualSpell = function (spellType, p, m, pStats, isOverload) {
-        // Award active Spell Proc and Triad Convergence multi-cast Mastery XP
-        if (window.equippedSlots && window.equippedSlots.subweapon && window.gainSubweaponXp && window.SkillTreeManager) {
-          let activeSub = window.equippedSlots.subweapon;
-          let subType = activeSub.subType || activeSub.type;
-          if (subType === "tome") {
-            let triad = window.SkillTreeManager.getSkillLevel("tome_keystone_triad") || 0;
-            let depth = 1;
-            if (window.playerStats && window.playerStats.isDungeonMode && window.player) {
-              depth = window.player.depth || 1;
-            } else if (window.playerStats) {
-              depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-            }
-            let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
-
-            if (triad > 0) {
-              // Triad Convergence triggers three visual spells simultaneously; award 5 base XP per spell node cast (+15 XP total)
-              window.gainSubweaponXp("tome", Math.round(5 * triggerMult));
-            } else {
-              // Standard single elemental spell proc cast
-              let cat = window.SkillTreeManager.getSkillLevel("tome_empowered_catalysts") || 0;
-              let baseXp = 2 + cat * 1;
-              window.gainSubweaponXp("tome", Math.round(baseXp * triggerMult));
-            }
-          }
+    // Award active Spell Proc and Triad Convergence multi-cast Mastery XP
+    if (
+      window.equippedSlots &&
+      window.equippedSlots.subweapon &&
+      window.gainSubweaponXp &&
+      window.SkillTreeManager
+    ) {
+      let activeSub = window.equippedSlots.subweapon;
+      let subType = activeSub.subType || activeSub.type;
+      if (subType === "tome") {
+        let triad =
+          window.SkillTreeManager.getSkillLevel("tome_keystone_triad") || 0;
+        let depth = 1;
+        if (
+          window.playerStats &&
+          window.playerStats.isDungeonMode &&
+          window.player
+        ) {
+          depth = window.player.depth || 1;
+        } else if (window.playerStats) {
+          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
         }
+        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
 
-        let mainTargetX = m.x + (m.w || 24) / 2;
-      let mainTargetY = m.y + (m.h || 24) / 2;
+        if (triad > 0) {
+          // Triad Convergence triggers three visual spells simultaneously; award 5 base XP per spell node cast (+15 XP total)
+          window.gainSubweaponXp("tome", Math.round(5 * triggerMult));
+        } else {
+          // Standard single elemental spell proc cast
+          let cat =
+            window.SkillTreeManager.getSkillLevel("tome_empowered_catalysts") ||
+            0;
+          let baseXp = 2 + cat * 1;
+          window.gainSubweaponXp("tome", Math.round(baseXp * triggerMult));
+        }
+        // Arcane Syphon: +15 Base XP when an active Syphon stack is gained on spell proc
+        let syphonLvl =
+          window.SkillTreeManager.getSkillLevel("tome_arcane_syphon") || 0;
+        if (syphonLvl > 0) {
+          window.gainSubweaponXp("tome", Math.round(15 * triggerMult));
+        }
+      }
+    }
+
+    let mainTargetX = m.x + (m.w || 24) / 2;
+    let mainTargetY = m.y + (m.h || 24) / 2;
 
     let targets = [{ x: mainTargetX, y: mainTargetY, obj: m }];
 
@@ -4205,68 +4298,105 @@
     },
 
     spawnDeathParticles(x, y, mobType) {
-          // Award Active Subweapon Mastery XP on Monster Defeat
-                    if (window.equippedSlots && window.equippedSlots.subweapon && window.gainSubweaponXp) {
-                      let activeSub = window.equippedSlots.subweapon;
-                      let subType = activeSub.subType || activeSub.type;
-                      if (subType === "shield" || subType === "dagger" || subType === "tome") {
-                        let isDestructibleOrFriendly = [
-                          "wooden_barrel", "ancient_urn", "pottery_clay", "wooden_crate", "pottery", "clay_pot",
-                          "friendly_wisp", "wisp", "summon_wisp"
-                        ].includes(mobType);
+      // Award Active Subweapon Mastery XP on Monster Defeat
+      if (
+        window.equippedSlots &&
+        window.equippedSlots.subweapon &&
+        window.gainSubweaponXp
+      ) {
+        let activeSub = window.equippedSlots.subweapon;
+        let subType = activeSub.subType || activeSub.type;
+        if (
+          subType === "shield" ||
+          subType === "dagger" ||
+          subType === "tome"
+        ) {
+          let isDestructibleOrFriendly = [
+            "wooden_barrel",
+            "ancient_urn",
+            "pottery_clay",
+            "wooden_crate",
+            "pottery",
+            "clay_pot",
+            "friendly_wisp",
+            "wisp",
+            "summon_wisp",
+          ].includes(mobType);
 
-                        if (!isDestructibleOrFriendly) {
-                          let xpAward = 2; // Default standard mob
+          if (!isDestructibleOrFriendly) {
+            let xpAward = 4; // Default standard mob
 
-                          // Determine if boss or miniboss
-                          let isBoss = [
-                            "boss", "dungeon_boss", "prestige_boss", "rift_guardian",
-                            "aegis_goliath", "chronos_arbitrator", "nexus_overseer",
-                            "gilded_vault_keeper", "corrosive_abomination", "hooktail",
-                            "overlord_iron_vault", "marcus_boss"
-                          ].includes(mobType);
+            // Determine if boss or miniboss
+            let isBoss = [
+              "boss",
+              "dungeon_boss",
+              "prestige_boss",
+              "rift_guardian",
+              "aegis_goliath",
+              "chronos_arbitrator",
+              "nexus_overseer",
+              "gilded_vault_keeper",
+              "corrosive_abomination",
+              "hooktail",
+              "overlord_iron_vault",
+              "marcus_boss",
+            ].includes(mobType);
 
-                          let isMiniboss = mobType === "dungeon_miniboss";
+            let isMiniboss = mobType === "dungeon_miniboss";
 
-                          if (isBoss) {
-                            xpAward = 1000;
-                          } else if (isMiniboss) {
-                            xpAward = 200;
-                          } else {
-                            // Check for Elite or Rare
-                            let isEliteOrRare = false;
-                            if (window.activeDungeonMobs) {
-                              let matchingMob = window.activeDungeonMobs.find(m => Math.hypot(m.x - x, m.y - y) < 20);
-                              if (matchingMob) {
-                                isEliteOrRare = !!matchingMob.isRare || !!matchingMob.eliteAffix;
-                              }
-                            }
-                            if (!isEliteOrRare && window.mob) {
-                              // Fallback to active campaign mob
-                              isEliteOrRare = !!window.mob.isRare || !!window.mob.eliteAffix;
-                            }
-                            if (isEliteOrRare) {
-                              xpAward = 25;
-                            }
-                          }
+            // Resolve equivalent current floor depth first to calculate progressive base rewards
+            let depth = 1;
+            if (
+              window.playerStats &&
+              window.playerStats.isDungeonMode &&
+              window.player
+            ) {
+              depth = window.player.depth || 1;
+            } else if (window.playerStats) {
+              depth = Math.max(
+                1,
+                Math.floor((window.playerStats.stage || 1) / 5),
+              );
+            }
 
-                          // Resolve equivalent current floor depth for Slay XP square root scaling
-                          let depth = 1;
-                          if (window.playerStats && window.playerStats.isDungeonMode && window.player) {
-                            depth = window.player.depth || 1;
-                          } else if (window.playerStats) {
-                            depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-                          }
-                          let scaleMult = Math.max(1, Math.floor(Math.sqrt(depth)));
+            if (isBoss) {
+              // Progressive base scaling: Floor 12 = 110 XP, Floor 120 = 650 XP
+              xpAward = 50 + depth * 5;
+            } else if (isMiniboss) {
+              // Progressive base scaling: Floor 4 = 28 XP, Floor 100 = 220 XP
+              xpAward = 20 + depth * 2;
+            } else {
+              // Check for Elite or Rare
+              let isEliteOrRare = false;
+              if (window.activeDungeonMobs) {
+                let matchingMob = window.activeDungeonMobs.find(
+                  (m) => Math.hypot(m.x - x, m.y - y) < 20,
+                );
+                if (matchingMob) {
+                  isEliteOrRare =
+                    !!matchingMob.isRare || !!matchingMob.eliteAffix;
+                }
+              }
+              if (!isEliteOrRare && window.mob) {
+                // Fallback to active campaign mob
+                isEliteOrRare = !!window.mob.isRare || !!window.mob.eliteAffix;
+              }
+              if (isEliteOrRare) {
+                xpAward = 8 + Math.floor(depth * 0.4);
+              }
+            }
 
-                          window.gainSubweaponXp(subType, xpAward * scaleMult);
-                        }
-                      }
-                    }
+            // Use sub-linear power law growth for depth scaling (depth^0.7) to deeply reward deeper descents
+            let scaleMult = Math.max(1, Math.floor(Math.pow(depth, 0.7)));
 
-          if (window.playerStats.ecoMode && window.particles.length > 100) return;
-          if (window.particles.length > 200) return;
-          let count = 15;
+            window.gainSubweaponXp(subType, xpAward * scaleMult);
+          }
+        }
+      }
+
+      if (window.playerStats.ecoMode && window.particles.length > 100) return;
+      if (window.particles.length > 200) return;
+      let count = 15;
       if (window.playerStats && window.playerStats.ecoMode) {
         count = Math.max(2, Math.floor(count * 0.25)); // 75% fewer death debris elements in Eco Mode
       }
@@ -7113,11 +7243,9 @@
       m.type === "gilded_vault_keeper" ||
       m.type === "corrosive_abomination" ||
       m.type === "overlord_iron_vault" ||
-      m.type === "marcus_boss" ||
       m.visualType === "gilded_vault_keeper" ||
       m.visualType === "corrosive_abomination" ||
-      m.visualType === "overlord_iron_vault" ||
-      m.visualType === "marcus"
+      m.visualType === "overlord_iron_vault"
     ) {
       let bounce = 0;
       let coreColor = "#9b59b6";
@@ -9313,6 +9441,7 @@
           }
           c.restore();
           if (m.flashTimer === 0) {
+            let eyePulse = 6 + Math.sin(Date.now() / 150) * 1.5;
             c.fillStyle = "#ff007f";
             c.beginPath();
             c.arc(px, py, eyePulse, 0, Math.PI * 2);

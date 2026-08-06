@@ -23,19 +23,19 @@
   }
 
   window.getSubweaponXpRequired = function (level) {
-      if (level <= 40) {
-        return Math.round(1000 * Math.pow(1.28, level - 1));
-      } else {
-        return Math.round(1417143 + (level - 40) * 100000);
-      }
-    };
+    if (level <= 40) {
+      return Math.round(250 * Math.pow(1.25, level - 1));
+    } else {
+      return Math.round(1470834 + (level - 40) * 100000);
+    }
+  };
 
   window.gainSubweaponXp = function (subType, amount) {
-      if (!window.playerStats || !window.playerStats.subweaponMastery) return;
-      let mast = window.playerStats.subweaponMastery[subType];
-      if (!mast) return;
+    if (!window.playerStats || !window.playerStats.subweaponMastery) return;
+    let mast = window.playerStats.subweaponMastery[subType];
+    if (!mast) return;
 
-      // Determine equivalent current floor played
+    // Determine equivalent current floor played
     let playerLevel = window.playerStats.level || 1;
     let currentFloor = 1;
     if (window.playerStats.isDungeonMode && window.player) {
@@ -68,18 +68,18 @@
     }
 
     let req = window.getSubweaponXpRequired(mast.level);
-        let leveledUp = false;
+    let leveledUp = false;
 
-        while (mast.xp >= req) {
-          mast.xp -= req;
-          mast.level++;
-          mast.sp++;
-          leveledUp = true;
-          req = window.getSubweaponXpRequired(mast.level);
-        }
+    while (mast.xp >= req) {
+      mast.xp -= req;
+      mast.level++;
+      mast.sp++;
+      leveledUp = true;
+      req = window.getSubweaponXpRequired(mast.level);
+    }
 
-        if (leveledUp) {
-          let label = subType.charAt(0).toUpperCase() + subType.slice(1);
+    if (leveledUp) {
+      let label = subType.charAt(0).toUpperCase() + subType.slice(1);
       if (typeof window.pushHeaderToast === "function") {
         window.pushHeaderToast(
           `✦ ${label} Mastery Level Up! Reached Level ${mast.level}! (+1 SP)`,
@@ -1712,6 +1712,54 @@
       let nextCost = this.getNodeCostForRank(selectedNode, selRank + 1);
       let selCanAfford = unspentPoints >= nextCost;
 
+      let reqText = "LOCKED";
+      let lockHintHtml = "";
+      if (!selUnlocked) {
+        if (activeTreeId === "utility") {
+          let missingPrereqs = (selectedNode.prereqs || []).filter(
+            (pId) => this.getSkillLevel(pId) === 0,
+          );
+          if (missingPrereqs.length > 0) {
+            let pNode = activeTree.nodes.find(
+              (n) => n.id === missingPrereqs[0],
+            );
+            let pName = pNode ? pNode.name.toUpperCase() : "PREREQUISITE";
+            reqText = `REQ: ${pName}`;
+            lockHintHtml = `<div style="color: #ef4444; font-size: 9px; font-family: monospace; font-weight: bold; margin-top: 4px;">REQUIRES SKILL: ${pName}</div>`;
+          } else {
+            reqText = "LOCKED";
+          }
+        } else {
+          let spent = this.getSpentPointsInTree(activeTreeId);
+          let reqSpend = 0;
+          if (selectedNode.tier === 2) reqSpend = 3;
+          else if (selectedNode.tier === 3) reqSpend = 7;
+          else if (selectedNode.tier === 4) reqSpend = 12;
+          else if (selectedNode.tier === 5) reqSpend = 15;
+
+          if (spent < reqSpend) {
+            reqText = `T${selectedNode.tier} REQ`;
+            lockHintHtml = `<div style="color: #ef4444; font-size: 9px; font-family: monospace; font-weight: bold; margin-top: 4px;">REQUIRES ${reqSpend} TOTAL POINTS SPENT IN THIS TREE (CURRENTLY: ${spent})</div>`;
+          } else {
+            let missingPrereqs = (selectedNode.prereqs || []).filter(
+              (pId) => this.getSkillLevel(pId) === 0,
+            );
+            if (missingPrereqs.length > 0) {
+              let pNode = activeTree.nodes.find(
+                (n) => n.id === missingPrereqs[0],
+              );
+              let pName = pNode ? pNode.name.toUpperCase() : "PREREQUISITE";
+              reqText = `REQ: ${pName}`;
+              lockHintHtml = `<div style="color: #ef4444; font-size: 9px; font-family: monospace; font-weight: bold; margin-top: 4px;">REQUIRES SKILL: ${pName}</div>`;
+            } else {
+              reqText = "LOCKED";
+            }
+          }
+        }
+      } else {
+        reqText = `UPGRADE (+1 RANK / ${nextCost} SP)`;
+      }
+
       let actionBtnHtml = "";
       if (selectedNode.isStarterToggle) {
         if (selRank === 0) {
@@ -1720,33 +1768,30 @@
             ? "LOCKED (REQUIRES LEVEL 2)"
             : `UNLOCK STARTER (${nextCost} SP)`;
           actionBtnHtml = `
-                            <button class="skill-buy-btn" ${selUnlocked && selCanAfford && !isLvlLocked ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
-                              ${btnText}
-                            </button>
-                          `;
+                                  <button class="skill-buy-btn" ${selUnlocked && selCanAfford && !isLvlLocked ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
+                                    ${btnText}
+                                  </button>
+                                `;
         } else {
           let activeStarter = window.playerStats
             ? window.playerStats.activeStarterSubweapon
             : "none";
           let isEquippedToggle = activeStarter === selectedNode.starterType;
           actionBtnHtml = `
-                      <button class="skill-toggle-btn ${isEquippedToggle ? "active-toggle" : ""}" onclick="window.SkillTreeManager.toggleStarterSubweapon('${selectedNode.starterType}')">
-                        ${isEquippedToggle ? "STARTER EQUIPPED [ON]" : "ENABLE STARTER [OFF]"}
-                      </button>
-                    `;
+                            <button class="skill-toggle-btn ${isEquippedToggle ? "active-toggle" : ""}" onclick="window.SkillTreeManager.toggleStarterSubweapon('${selectedNode.starterType}')">
+                              ${isEquippedToggle ? "STARTER EQUIPPED [ON]" : "ENABLE STARTER [OFF]"}
+                            </button>
+                          `;
         }
       } else {
         if (selMax) {
           actionBtnHtml = `<button class="skill-buy-btn maxed" disabled>MAX RANK REACHED</button>`;
         } else {
-          let reqText = !selUnlocked
-            ? `LOCKED (T${selectedNode.tier} REQ)`
-            : `UPGRADE (+1 RANK / ${nextCost} SP)`;
           actionBtnHtml = `
-                      <button class="skill-buy-btn" ${selUnlocked && selCanAfford ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
-                        ${reqText}
-                      </button>
-                    `;
+                            <button class="skill-buy-btn" ${selUnlocked && selCanAfford ? "" : "disabled"} onclick="window.SkillTreeManager.upgradeSkill('${selectedNode.id}')">
+                              ${reqText}
+                            </button>
+                          `;
         }
       }
 
@@ -1760,21 +1805,22 @@
           : "";
 
       let detailDockHtml = `
-          <div class="selected-node-dock" style="border-top: 2px solid ${activeTree.color};">
-            <div class="dock-info">
-              <div class="dock-header">
-                <span class="dock-title" style="color:${activeTree.color};">${selectedNode.name}</span>
-                <span class="dock-rank" style="color:#ffffff;">Rank ${selRank} / ${selectedNode.maxRank}</span>
-              </div>
-              <div class="dock-desc">${selectedNode.desc}</div>
-              ${activeStatText ? `<div class="dock-stat-active">Current: ${activeStatText}</div>` : ""}
-              ${nextStatText ? `<div class="dock-stat-next">Next Rank: ${nextStatText}</div>` : ""}
-            </div>
-            <div class="dock-action">
-              ${actionBtnHtml}
-            </div>
-          </div>
-        `;
+                <div class="selected-node-dock" style="border-top: 2px solid ${activeTree.color};">
+                  <div class="dock-info">
+                    <div class="dock-header">
+                      <span class="dock-title" style="color:${activeTree.color};">${selectedNode.name}</span>
+                      <span class="dock-rank" style="color:#ffffff;">Rank ${selRank} / ${selectedNode.maxRank}</span>
+                    </div>
+                    <div class="dock-desc">${selectedNode.desc}</div>
+                    ${lockHintHtml}
+                    ${activeStatText ? `<div class="dock-stat-active">Current: ${activeStatText}</div>` : ""}
+                    ${nextStatText ? `<div class="dock-stat-next">Next Rank: ${nextStatText}</div>` : ""}
+                  </div>
+                  <div class="dock-action">
+                    ${actionBtnHtml}
+                  </div>
+                </div>
+              `;
 
       container.innerHTML = `
                       <div class="skill-tree-wrapper">

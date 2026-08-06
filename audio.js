@@ -93,14 +93,17 @@ window.SoundManager = {
       }
     }
     // Secure AudioContext state transitions for mobile background throttling
-        if (this.ctx && (this.ctx.state === "suspended" || this.ctx.state === "interrupted")) {
-          this.ctx.resume().catch((err) => {
-            console.warn(
-              "AudioContext resume postponed (waiting for user gesture):",
-              err,
-            );
-          });
-        }
+    if (
+      this.ctx &&
+      (this.ctx.state === "suspended" || this.ctx.state === "interrupted")
+    ) {
+      this.ctx.resume().catch((err) => {
+        console.warn(
+          "AudioContext resume postponed (waiting for user gesture):",
+          err,
+        );
+      });
+    }
     return true;
   },
 
@@ -158,27 +161,14 @@ window.SoundManager = {
     };
 
     const handleVisibilityGain = () => {
-          if (this.ctx && this.masterGain) {
-            if (this.ctx.state === "suspended" || this.ctx.state === "interrupted") {
-              this.ctx.resume().then(() => {
-                this.updateVolumes();
-                if (
-                  window.MusicManager &&
-                  typeof window.MusicManager.resume === "function"
-                ) {
-                  window.MusicManager.resume();
-                }
-              }).catch((err) => {
-                console.warn("Failed to resume AudioContext on visibility gain:", err);
-                this.updateVolumes();
-                if (
-                  window.MusicManager &&
-                  typeof window.MusicManager.resume === "function"
-                ) {
-                  window.MusicManager.resume();
-                }
-              });
-            } else {
+      if (this.ctx && this.masterGain) {
+        if (
+          this.ctx.state === "suspended" ||
+          this.ctx.state === "interrupted"
+        ) {
+          this.ctx
+            .resume()
+            .then(() => {
               this.updateVolumes();
               if (
                 window.MusicManager &&
@@ -186,9 +176,31 @@ window.SoundManager = {
               ) {
                 window.MusicManager.resume();
               }
-            }
+            })
+            .catch((err) => {
+              console.warn(
+                "Failed to resume AudioContext on visibility gain:",
+                err,
+              );
+              this.updateVolumes();
+              if (
+                window.MusicManager &&
+                typeof window.MusicManager.resume === "function"
+              ) {
+                window.MusicManager.resume();
+              }
+            });
+        } else {
+          this.updateVolumes();
+          if (
+            window.MusicManager &&
+            typeof window.MusicManager.resume === "function"
+          ) {
+            window.MusicManager.resume();
           }
-        };
+        }
+      }
+    };
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") {
@@ -1480,75 +1492,75 @@ window.SoundManager = {
   },
 
   synthesizeSpellLightning(now, dest) {
-      const duration = 0.22;
-      const gainNode = this.acquireGainNode(now, duration);
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.12, now + 0.005); // Lowered peak gain to prevent ear fatigue
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    const duration = 0.22;
+    const gainNode = this.acquireGainNode(now, duration);
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.12, now + 0.005); // Lowered peak gain to prevent ear fatigue
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-      // 1. Soft Warm Electrical Core (Triangle wave instead of aggressive sawtooth)
-      const zapOsc = this.ctx.createOscillator();
-      zapOsc.type = "triangle";
-      zapOsc.frequency.setValueAtTime(1200, now);
-      zapOsc.frequency.exponentialRampToValueAtTime(300, now + 0.12);
+    // 1. Soft Warm Electrical Core (Triangle wave instead of aggressive sawtooth)
+    const zapOsc = this.ctx.createOscillator();
+    zapOsc.type = "triangle";
+    zapOsc.frequency.setValueAtTime(1200, now);
+    zapOsc.frequency.exponentialRampToValueAtTime(300, now + 0.12);
 
-      const zapGain = this.acquireGainNode(now, duration);
-      zapGain.gain.setValueAtTime(0.06, now); // Significantly softer core layer
-      zapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+    const zapGain = this.acquireGainNode(now, duration);
+    zapGain.gain.setValueAtTime(0.06, now); // Significantly softer core layer
+    zapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
 
-      // Amplitude Modulation (Smooth, warm sine wave instead of harsh square)
-      const AMMod = this.ctx.createOscillator();
-      AMMod.type = "sine";
-      AMMod.frequency.setValueAtTime(45, now); // Higher rate for a silky, liquid-like flutter
-      const AMGain = this.ctx.createGain();
-      AMGain.gain.setValueAtTime(0.3, now); // Muted modulation depth
+    // Amplitude Modulation (Smooth, warm sine wave instead of harsh square)
+    const AMMod = this.ctx.createOscillator();
+    AMMod.type = "sine";
+    AMMod.frequency.setValueAtTime(45, now); // Higher rate for a silky, liquid-like flutter
+    const AMGain = this.ctx.createGain();
+    AMGain.gain.setValueAtTime(0.3, now); // Muted modulation depth
 
-      AMMod.connect(AMGain);
-      AMGain.connect(zapGain.gain);
+    AMMod.connect(AMGain);
+    AMGain.connect(zapGain.gain);
 
-      zapOsc.connect(zapGain);
-      zapGain.connect(gainNode);
+    zapOsc.connect(zapGain);
+    zapGain.connect(gainNode);
 
-      // 2. High-Q Static Shimmer (Narrow resonant bandpass instead of fatiguing raw highpass)
-      const noiseSource = this.ctx.createBufferSource();
-      noiseSource.buffer = this.cachedNoiseBuffer;
+    // 2. High-Q Static Shimmer (Narrow resonant bandpass instead of fatiguing raw highpass)
+    const noiseSource = this.ctx.createBufferSource();
+    noiseSource.buffer = this.cachedNoiseBuffer;
 
-      const noiseFilter = this.acquireFilterNode(now, duration);
-      noiseFilter.type = "bandpass";
-      noiseFilter.Q.setValueAtTime(5.0, now); // Sharp resonance isolates a pleasant sparkle frequency
-      noiseFilter.frequency.setValueAtTime(4000, now);
-      noiseFilter.frequency.exponentialRampToValueAtTime(1500, now + 0.14);
+    const noiseFilter = this.acquireFilterNode(now, duration);
+    noiseFilter.type = "bandpass";
+    noiseFilter.Q.setValueAtTime(5.0, now); // Sharp resonance isolates a pleasant sparkle frequency
+    noiseFilter.frequency.setValueAtTime(4000, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(1500, now + 0.14);
 
-      const noiseGain = this.acquireGainNode(now, duration);
-      noiseGain.gain.setValueAtTime(0, now);
-      noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.005); // Heavily reduced gain to keep static texture in the background
-      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    const noiseGain = this.acquireGainNode(now, duration);
+    noiseGain.gain.setValueAtTime(0, now);
+    noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.005); // Heavily reduced gain to keep static texture in the background
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-      noiseSource.connect(noiseFilter);
-      noiseFilter.connect(noiseGain);
-      noiseGain.connect(gainNode);
+    noiseSource.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(gainNode);
 
-      zapOsc.start(now);
-      AMMod.start(now);
-      noiseSource.start(now);
+    zapOsc.start(now);
+    AMMod.start(now);
+    noiseSource.start(now);
 
-      zapOsc.stop(now + 0.18);
-      AMMod.stop(now + 0.18);
-      noiseSource.stop(now + duration);
+    zapOsc.stop(now + 0.18);
+    AMMod.stop(now + 0.18);
+    noiseSource.stop(now + duration);
 
-      setTimeout(
-        () => {
-          try {
-            zapOsc.disconnect();
-            AMMod.disconnect();
-            AMGain.disconnect();
-            noiseFilter.disconnect();
-          } catch (e) {}
-          this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
-        },
-        duration * 1000 + 40,
-      );
-    },
+    setTimeout(
+      () => {
+        try {
+          zapOsc.disconnect();
+          AMMod.disconnect();
+          AMGain.disconnect();
+          noiseFilter.disconnect();
+        } catch (e) {}
+        this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+      },
+      duration * 1000 + 40,
+    );
+  },
 
   synthesizeSpellFrost(now, dest) {
     const duration = 0.65;

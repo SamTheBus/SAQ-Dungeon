@@ -17,72 +17,446 @@ window.DEBUFF_EXCLUSIONS = {
   weapon_lock: ["kinetic_reflectors"],
   kinetic_reflectors: ["weapon_lock"],
   shrouded_sight: ["blind_spot"],
-  blind_spot: ["shrouded_sight"]
+  blind_spot: ["shrouded_sight"],
 };
 
 // --- CENTRALIZED CAVERN MUTATORS REGISTRY ---
 window.CAVERN_MUTATORS = {
   // --- BUFFS ---
-  giant_might: { id: "giant_might", name: "Giant Might", desc: "Attack Power increased by +30%.", isBuff: true, type: "stat", statKey: "atk", value: 0.3, minStars: 0 },
-  vital_fountain: { id: "vital_fountain", name: "Vital Fountain", desc: "Maximum Health increased by +40%.", isBuff: true, type: "stat", statKey: "maxHp", value: 0.4, minStars: 0 },
-  iron_aegis: { id: "iron_aegis", name: "Iron Aegis", desc: "Defense Armor increased by +35%.", isBuff: true, type: "stat", statKey: "def", value: 0.35, minStars: 0 },
-  unstable_surge: { id: "unstable_surge", name: "Unstable Surge", desc: "Critical Strike Chance increased by +15%.", isBuff: true, type: "stat", statKey: "critChance", value: 0.15, minStars: 0 },
-  shatter_frenzy: { id: "shatter_frenzy", name: "Shatter Frenzy", desc: "Critical Strike Damage increased by +50%.", isBuff: true, type: "stat", statKey: "critDamage", value: 0.5, minStars: 0 },
-  deflection_vortex: { id: "deflection_vortex", name: "Deflection Vortex", desc: "Block and Parry Rates increased by +10%.", isBuff: true, type: "stat", statKey: "block", value: 0.1, minStars: 0 },
-  swift_strikes: { id: "swift_strikes", name: "Swift Strikes", desc: "Increases Attack Speed by +25%.", isBuff: true, type: "event", minStars: 2 },
-  arcane_infusion: { id: "arcane_infusion", name: "Arcane Infusion", desc: "Arcane Barrier absorption increased by +15%.", isBuff: true, type: "stat", statKey: "block", value: 0.15, minStars: 2 },
-  lucky_winds: { id: "lucky_winds", name: "Lucky Winds", desc: "Fairy Spawn Rate increased by +40%.", isBuff: true, type: "event", minStars: 2 },
-  scavenger_insight: { id: "scavenger_insight", name: "Scavenger's Insight", desc: "Item Drop Rate increased by +50%.", isBuff: true, type: "event", minStars: 2 },
-  perfect_strike: { id: "perfect_strike", name: "Viper's Focus", desc: "Spawns targeting reticles to execute critical strikes.", isBuff: true, type: "interactive", minStars: 4 },
-  aetheric_conduit: { id: "aetheric_conduit", name: "Aetheric Conduit", desc: "Spawns conductive pylons to chain lightning through enemies.", isBuff: true, type: "interactive", minStars: 4 },
-  soul_harvest: { id: "soul_harvest", name: "Soul Harvest", desc: "Defeating enemies has 20% chance to summon friendly Wisp decoys.", isBuff: true, type: "event", minStars: 4 },
-  aetheric_spark: { id: "aetheric_spark", name: "Aetheric Spark", desc: "Spawns chainable sparks that grant temporary damage/speed boosts.", isBuff: true, type: "interactive", minStars: 4 },
-  temporal_echo: { id: "temporal_echo", name: "Temporal Echo", desc: "Strikes spawn delayed echoes dealing 35% damage.", isBuff: true, type: "event", minStars: 4 },
-  astral_conjunction: { id: "astral_conjunction", name: "Astral Conjunction", desc: "Periodic stellar lasers strike random targets for massive damage.", isBuff: true, type: "event", minStars: 4 },
-  void_call: { id: "void_call", name: "Void Call", desc: "Rare Spawn Rate increased by +50%.", isBuff: true, type: "event", minStars: 4 },
-  artisan_luck: { id: "artisan_luck", name: "Artisan's Luck", desc: "Drop Quality increased by +25%.", isBuff: true, type: "event", minStars: 4 },
-  treasure_finder: { id: "treasure_finder", name: "Treasure Finder", desc: "Gold Multiplier increased by +50%.", isBuff: true, type: "event", minStars: 4 },
-  glimmering_pixie: { id: "glimmering_pixie", name: "Glimmering Pixie", desc: "Spawns drifting pixies that grant free elixirs on touch.", isBuff: true, type: "interactive", minStars: 4 },
+  giant_might: {
+    id: "giant_might",
+    name: "Giant Might",
+    desc: "Attack Power increased by +30%.",
+    isBuff: true,
+    type: "stat",
+    statKey: "atk",
+    value: 0.3,
+    minStars: 0,
+  },
+  vital_fountain: {
+    id: "vital_fountain",
+    name: "Vital Fountain",
+    desc: "Maximum Health increased by +40%.",
+    isBuff: true,
+    type: "stat",
+    statKey: "maxHp",
+    value: 0.4,
+    minStars: 0,
+  },
+  iron_aegis: {
+    id: "iron_aegis",
+    name: "Iron Aegis",
+    desc: "Defense Armor increased by +35%.",
+    isBuff: true,
+    type: "stat",
+    statKey: "def",
+    value: 0.35,
+    minStars: 0,
+  },
+  unstable_surge: {
+    id: "unstable_surge",
+    name: "Unstable Surge",
+    desc: "Critical Strike Chance increased by +15%.",
+    isBuff: true,
+    type: "stat",
+    statKey: "critChance",
+    value: 0.15,
+    minStars: 0,
+  },
+  shatter_frenzy: {
+    id: "shatter_frenzy",
+    name: "Shatter Frenzy",
+    desc: "Critical Strike Damage increased by +50%.",
+    isBuff: true,
+    type: "stat",
+    statKey: "critDamage",
+    value: 0.5,
+    minStars: 0,
+  },
+  deflection_vortex: {
+    id: "deflection_vortex",
+    name: "Deflection Vortex",
+    desc: "Block and Parry Rates increased by +10%.",
+    isBuff: true,
+    type: "stat",
+    statKey: "block",
+    value: 0.1,
+    minStars: 0,
+  },
+  swift_strikes: {
+    id: "swift_strikes",
+    name: "Swift Strikes",
+    desc: "Increases Attack Speed by +25%.",
+    isBuff: true,
+    type: "event",
+    minStars: 2,
+  },
+  arcane_infusion: {
+    id: "arcane_infusion",
+    name: "Arcane Infusion",
+    desc: "Arcane Barrier absorption increased by +15%.",
+    isBuff: true,
+    type: "stat",
+    statKey: "block",
+    value: 0.15,
+    minStars: 2,
+  },
+  lucky_winds: {
+    id: "lucky_winds",
+    name: "Lucky Winds",
+    desc: "Fairy Spawn Rate increased by +40%.",
+    isBuff: true,
+    type: "event",
+    minStars: 2,
+  },
+  scavenger_insight: {
+    id: "scavenger_insight",
+    name: "Scavenger's Insight",
+    desc: "Item Drop Rate increased by +50%.",
+    isBuff: true,
+    type: "event",
+    minStars: 2,
+  },
+  perfect_strike: {
+    id: "perfect_strike",
+    name: "Viper's Focus",
+    desc: "Spawns targeting reticles to execute critical strikes.",
+    isBuff: true,
+    type: "interactive",
+    minStars: 4,
+  },
+  aetheric_conduit: {
+    id: "aetheric_conduit",
+    name: "Aetheric Conduit",
+    desc: "Spawns conductive pylons to chain lightning through enemies.",
+    isBuff: true,
+    type: "interactive",
+    minStars: 4,
+  },
+  soul_harvest: {
+    id: "soul_harvest",
+    name: "Soul Harvest",
+    desc: "Defeating enemies has 20% chance to summon friendly Wisp decoys.",
+    isBuff: true,
+    type: "event",
+    minStars: 4,
+  },
+  aetheric_spark: {
+    id: "aetheric_spark",
+    name: "Aetheric Spark",
+    desc: "Spawns chainable sparks that grant temporary damage/speed boosts.",
+    isBuff: true,
+    type: "interactive",
+    minStars: 4,
+  },
+  temporal_echo: {
+    id: "temporal_echo",
+    name: "Temporal Echo",
+    desc: "Strikes spawn delayed echoes dealing 35% damage.",
+    isBuff: true,
+    type: "event",
+    minStars: 4,
+  },
+  astral_conjunction: {
+    id: "astral_conjunction",
+    name: "Astral Conjunction",
+    desc: "Periodic stellar lasers strike random targets for massive damage.",
+    isBuff: true,
+    type: "event",
+    minStars: 4,
+  },
+  void_call: {
+    id: "void_call",
+    name: "Void Call",
+    desc: "Rare Spawn Rate increased by +50%.",
+    isBuff: true,
+    type: "event",
+    minStars: 4,
+  },
+  artisan_luck: {
+    id: "artisan_luck",
+    name: "Artisan's Luck",
+    desc: "Drop Quality increased by +25%.",
+    isBuff: true,
+    type: "event",
+    minStars: 4,
+  },
+  treasure_finder: {
+    id: "treasure_finder",
+    name: "Treasure Finder",
+    desc: "Gold Multiplier increased by +50%.",
+    isBuff: true,
+    type: "event",
+    minStars: 4,
+  },
+  glimmering_pixie: {
+    id: "glimmering_pixie",
+    name: "Glimmering Pixie",
+    desc: "Spawns drifting pixies that grant free elixirs on touch.",
+    isBuff: true,
+    type: "interactive",
+    minStars: 4,
+  },
 
   // --- DEBUFFS ---
-  dull_blades: { id: "dull_blades", name: "Dull Blades", desc: "Attack Power decreased by -20%.", isBuff: false, type: "stat", statKey: "atk", value: -0.2, minStars: 0, dangerRating: 5 },
-  frail_vessel: { id: "frail_vessel", name: "Frail Vessel", desc: "Maximum Health decreased by -20%.", isBuff: false, type: "stat", statKey: "maxHp", value: -0.2, minStars: 0, dangerRating: 5 },
-  shattered_armour: { id: "shattered_armour", name: "Shattered Armour", desc: "Defense Armor decreased by -25%.", isBuff: false, type: "stat", statKey: "def", value: -0.25, minStars: 0, dangerRating: 5 },
-  heavy_mist: { id: "heavy_mist", name: "Heavy Mist", desc: "Movement Speed decreased by -30%.", isBuff: false, type: "stat", statKey: "moveSpeed", value: -0.3, minStars: 0, dangerRating: 5 },
-  blind_spot: { id: "blind_spot", name: "Blind Spot", desc: "Critical Strike Chance decreased by -10%.", isBuff: false, type: "stat", statKey: "critChance", value: -0.1, minStars: 0, dangerRating: 5 },
-  lead_boots: { id: "lead_boots", name: "Lead Boots", desc: "Block and Parry Rates decreased by -8%.", isBuff: false, type: "stat", statKey: "block", value: -0.08, minStars: 0, dangerRating: 10 },
-  curse_greed: { id: "curse_greed", name: "Curse of Greed", desc: "Gold Multiplier decreased by -40%.", isBuff: false, type: "stat", statKey: "goldMulti", value: -0.4, minStars: 0, dangerRating: 10 },
-  anomalous_shards: { id: "anomalous_shards", name: "Anomalous Shards", desc: "Spawns crystal shards that drain HP and slow you until smashed.", isBuff: false, type: "interactive", minStars: 2, dangerRating: 15 },
-  blood_toll: { id: "blood_toll", name: "Blood Toll", desc: "Opening non-recovery chests consumes 12% current HP.", isBuff: false, type: "event", minStars: 2, dangerRating: 10 },
-  spreading_fatigue: { id: "spreading_fatigue", name: "Spreading Fatigue", desc: "Reduces movement speed progressively unless objects are broken.", isBuff: false, type: "stat", minStars: 2, dangerRating: 10 },
-  iron_gaze: { id: "iron_gaze", name: "Iron Gaze", desc: "Increases Attack Speed delays by +20%.", isBuff: false, type: "event", minStars: 2, dangerRating: 10 },
-  feeble_mind: { id: "feeble_mind", name: "Feeble Mind", desc: "Arcane Barrier fully disabled.", isBuff: false, type: "event", minStars: 2, dangerRating: 10 },
-  void_rupture: { id: "void_rupture", name: "Void Rupture", desc: "Spawns collapsing void rifts that explode if orbs are not cleared.", isBuff: false, type: "interactive", minStars: 4, dangerRating: 15 },
-  unstable_crust: { id: "unstable_crust", name: "Unstable Crust", desc: "Periodic sinkholes collapse part of the floor into the void.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 },
-  molten_slag: { id: "molten_slag", name: "Molten Slag", desc: "Moving builds thermal heat. Overheating triggers lava pools.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 10 },
-  deaths_hour: { id: "deaths_hour", name: "Death's Hour", desc: "Relentless Calamity Specter spawns immediately at floor start.", isBuff: false, type: "event", minStars: 4, dangerRating: 25 },
-  elite_infestation: { id: "elite_infestation", name: "Elite Infestation", desc: "100% Elite support aura mutation spawn rates on all monsters.", isBuff: false, type: "event", minStars: 4, dangerRating: 20 },
-  regenerative_brood: { id: "regenerative_brood", name: "Regenerative Brood", desc: "Monsters regenerate +3% Max HP/sec if out of combat for 3s.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
-  spawning_division: { id: "spawning_division", name: "Spawning Division", desc: "Defeated non-bosses split into two mini sprouts or slimes.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
-  aetheric_surge: { id: "aetheric_surge", name: "Aetheric Surge", desc: "Increases offhand tome/shield/dagger stats, but expands caps.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
-  weapon_lock: { id: "weapon_lock", name: "Weapon Lock", desc: "Melee Attack Power set to 1. Doubles defensive rates/speeds.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
-  kinetic_reflectors: { id: "kinetic_reflectors", name: "Kinetic Reflectors", desc: "Monsters deflect 20% frontal damage back as physical backlash.", isBuff: false, type: "event", minStars: 4, dangerRating: 15 },
-  magnetic_creep: { id: "magnetic_creep", name: "Magnetic Creep", desc: "Polarized creep pulls the player towards hazards.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 },
-  shrouded_sight: { id: "shrouded_sight", name: "Shrouded Sight", desc: "Reduces dynamic viewport sight to a tight 200px spotlight.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 },
-  creeping_miasma: { id: "creeping_miasma", name: "Creeping Miasma", desc: "The outer floor collapses into toxic miasma over time.", isBuff: false, type: "environmental", minStars: 4, dangerRating: 15 }
+  dull_blades: {
+    id: "dull_blades",
+    name: "Dull Blades",
+    desc: "Attack Power decreased by -20%.",
+    isBuff: false,
+    type: "stat",
+    statKey: "atk",
+    value: -0.2,
+    minStars: 0,
+    dangerRating: 5,
+  },
+  frail_vessel: {
+    id: "frail_vessel",
+    name: "Frail Vessel",
+    desc: "Maximum Health decreased by -20%.",
+    isBuff: false,
+    type: "stat",
+    statKey: "maxHp",
+    value: -0.2,
+    minStars: 0,
+    dangerRating: 5,
+  },
+  shattered_armour: {
+    id: "shattered_armour",
+    name: "Shattered Armour",
+    desc: "Defense Armor decreased by -25%.",
+    isBuff: false,
+    type: "stat",
+    statKey: "def",
+    value: -0.25,
+    minStars: 0,
+    dangerRating: 5,
+  },
+  heavy_mist: {
+    id: "heavy_mist",
+    name: "Heavy Mist",
+    desc: "Movement Speed decreased by -30%.",
+    isBuff: false,
+    type: "stat",
+    statKey: "moveSpeed",
+    value: -0.3,
+    minStars: 0,
+    dangerRating: 5,
+  },
+  blind_spot: {
+    id: "blind_spot",
+    name: "Blind Spot",
+    desc: "Critical Strike Chance decreased by -10%.",
+    isBuff: false,
+    type: "stat",
+    statKey: "critChance",
+    value: -0.1,
+    minStars: 0,
+    dangerRating: 5,
+  },
+  lead_boots: {
+    id: "lead_boots",
+    name: "Lead Boots",
+    desc: "Block and Parry Rates decreased by -8%.",
+    isBuff: false,
+    type: "stat",
+    statKey: "block",
+    value: -0.08,
+    minStars: 0,
+    dangerRating: 10,
+  },
+  curse_greed: {
+    id: "curse_greed",
+    name: "Curse of Greed",
+    desc: "Gold Multiplier decreased by -40%.",
+    isBuff: false,
+    type: "stat",
+    statKey: "goldMulti",
+    value: -0.4,
+    minStars: 0,
+    dangerRating: 10,
+  },
+  anomalous_shards: {
+    id: "anomalous_shards",
+    name: "Anomalous Shards",
+    desc: "Spawns crystal shards that drain HP and slow you until smashed.",
+    isBuff: false,
+    type: "interactive",
+    minStars: 2,
+    dangerRating: 15,
+  },
+  blood_toll: {
+    id: "blood_toll",
+    name: "Blood Toll",
+    desc: "Opening non-recovery chests consumes 12% current HP.",
+    isBuff: false,
+    type: "event",
+    minStars: 2,
+    dangerRating: 10,
+  },
+  spreading_fatigue: {
+    id: "spreading_fatigue",
+    name: "Spreading Fatigue",
+    desc: "Reduces movement speed progressively unless objects are broken.",
+    isBuff: false,
+    type: "stat",
+    minStars: 2,
+    dangerRating: 10,
+  },
+  iron_gaze: {
+    id: "iron_gaze",
+    name: "Iron Gaze",
+    desc: "Increases Attack Speed delays by +20%.",
+    isBuff: false,
+    type: "event",
+    minStars: 2,
+    dangerRating: 10,
+  },
+  feeble_mind: {
+    id: "feeble_mind",
+    name: "Feeble Mind",
+    desc: "Arcane Barrier fully disabled.",
+    isBuff: false,
+    type: "event",
+    minStars: 2,
+    dangerRating: 10,
+  },
+  void_rupture: {
+    id: "void_rupture",
+    name: "Void Rupture",
+    desc: "Spawns collapsing void rifts that explode if orbs are not cleared.",
+    isBuff: false,
+    type: "interactive",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  unstable_crust: {
+    id: "unstable_crust",
+    name: "Unstable Crust",
+    desc: "Periodic sinkholes collapse part of the floor into the void.",
+    isBuff: false,
+    type: "environmental",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  molten_slag: {
+    id: "molten_slag",
+    name: "Molten Slag",
+    desc: "Moving builds thermal heat. Overheating triggers lava pools.",
+    isBuff: false,
+    type: "environmental",
+    minStars: 4,
+    dangerRating: 10,
+  },
+  deaths_hour: {
+    id: "deaths_hour",
+    name: "Death's Hour",
+    desc: "Relentless Calamity Specter spawns immediately at floor start.",
+    isBuff: false,
+    type: "event",
+    minStars: 4,
+    dangerRating: 25,
+  },
+  elite_infestation: {
+    id: "elite_infestation",
+    name: "Elite Infestation",
+    desc: "100% Elite support aura mutation spawn rates on all monsters.",
+    isBuff: false,
+    type: "event",
+    minStars: 4,
+    dangerRating: 20,
+  },
+  regenerative_brood: {
+    id: "regenerative_brood",
+    name: "Regenerative Brood",
+    desc: "Monsters regenerate +3% Max HP/sec if out of combat for 3s.",
+    isBuff: false,
+    type: "event",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  spawning_division: {
+    id: "spawning_division",
+    name: "Spawning Division",
+    desc: "Defeated non-bosses split into two mini sprouts or slimes.",
+    isBuff: false,
+    type: "event",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  aetheric_surge: {
+    id: "aetheric_surge",
+    name: "Aetheric Surge",
+    desc: "Increases offhand tome/shield/dagger stats, but expands caps.",
+    isBuff: false,
+    type: "event",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  weapon_lock: {
+    id: "weapon_lock",
+    name: "Weapon Lock",
+    desc: "Melee Attack Power set to 1. Doubles defensive rates/speeds.",
+    isBuff: false,
+    type: "event",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  kinetic_reflectors: {
+    id: "kinetic_reflectors",
+    name: "Kinetic Reflectors",
+    desc: "Monsters deflect 20% frontal damage back as physical backlash.",
+    isBuff: false,
+    type: "event",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  magnetic_creep: {
+    id: "magnetic_creep",
+    name: "Magnetic Creep",
+    desc: "Polarized creep pulls the player towards hazards.",
+    isBuff: false,
+    type: "environmental",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  shrouded_sight: {
+    id: "shrouded_sight",
+    name: "Shrouded Sight",
+    desc: "Reduces dynamic viewport sight to a tight 200px spotlight.",
+    isBuff: false,
+    type: "environmental",
+    minStars: 4,
+    dangerRating: 15,
+  },
+  creeping_miasma: {
+    id: "creeping_miasma",
+    name: "Creeping Miasma",
+    desc: "The outer floor collapses into toxic miasma over time.",
+    isBuff: false,
+    type: "environmental",
+    minStars: 4,
+    dangerRating: 15,
+  },
 };
 
-window.CAVERN_BUFFS = Object.values(window.CAVERN_MUTATORS).filter(m => m.isBuff);
-window.CAVERN_DEBUFFS = Object.values(window.CAVERN_MUTATORS).filter(m => !m.isBuff);
+window.CAVERN_BUFFS = Object.values(window.CAVERN_MUTATORS).filter(
+  (m) => m.isBuff,
+);
+window.CAVERN_DEBUFFS = Object.values(window.CAVERN_MUTATORS).filter(
+  (m) => !m.isBuff,
+);
 
 // --- GLOBAL COMBAT BALANCE CONSTANTS ---
 window.BOSS_GUARD_PENETRATION = 0.35; // 35% damage seepage / rate reduction
 window.DEFLECTION_FATIGUE_FRAMES = 30; // 0.5s at 60 FPS
 window.COUNTER_COOLDOWN_FRAMES = 60; // 1.0s Internal Cooldown (ICD) against bosses
 
-window.BigNumMin = function (a, b) {  let ba = BigNum.from(a);
+window.BigNumMin = function (a, b) {
+  let ba = BigNum.from(a);
   let bb = BigNum.from(b);
-  return ba.gt(bb) ? bb : ba;
+  let res = ba.gt(bb) ? bb : ba;
+  return new BigNum(res.m, res.e);
 };
 
 // Core Security: HTML Sanitizer to prevent XSS injection in user lists
@@ -1326,20 +1700,24 @@ window.isCavernEffectActive = function (id) {
   // 2. Check active Special Challenge (Bounty Contract)
   let challenge = window.playerStats.activeSpecialChallenge;
   if (challenge) {
-    if (challenge.buffs && challenge.buffs.some((b) => (b.id || b) === id)) return true;
-    if (challenge.debuffs && challenge.debuffs.some((d) => (d.id || d) === id)) return true;
+    if (challenge.buffs && challenge.buffs.some((b) => (b.id || b) === id))
+      return true;
+    if (challenge.debuffs && challenge.debuffs.some((d) => (d.id || d) === id))
+      return true;
   }
 
   // 3. Check Crucible / Onslaught Mode overrides
   if (window.playerStats.isCrucibleMode) {
     if (
       window.playerStats.crucibleActiveBuff &&
-      (window.playerStats.crucibleActiveBuff.id || window.playerStats.crucibleActiveBuff) === id
+      (window.playerStats.crucibleActiveBuff.id ||
+        window.playerStats.crucibleActiveBuff) === id
     )
       return true;
     if (
       window.playerStats.crucibleActiveDebuff &&
-      (window.playerStats.crucibleActiveDebuff.id || window.playerStats.crucibleActiveDebuff) === id
+      (window.playerStats.crucibleActiveDebuff.id ||
+        window.playerStats.crucibleActiveDebuff) === id
     )
       return true;
   }
@@ -2672,70 +3050,70 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.idleAttackSpeed = 15;
   }
 
-  let maxBlockCap = 0.40; // Elevated base block cap
-    let maxParryCap = 0.35; // Elevated base parry cap
+  let maxBlockCap = 0.4; // Elevated base block cap
+  let maxParryCap = 0.35; // Elevated base parry cap
 
-    let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
-    let hasShield =
-      subItem && (subItem.subType === "shield" || subItem.type === "shield");
-    let hasDagger =
-      subItem && (subItem.subType === "dagger" || subItem.type === "dagger");
-    let hasTitanGrip =
-      window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
+  let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
+  let hasShield =
+    subItem && (subItem.subType === "shield" || subItem.type === "shield");
+  let hasDagger =
+    subItem && (subItem.subType === "dagger" || subItem.type === "dagger");
+  let hasTitanGrip =
+    window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
 
-    if (hasShield) {
-      maxBlockCap = hasTitanGrip ? 0.50 : 0.40;
-    } else if (hasTitanGrip) {
-      maxBlockCap = 0.20;
+  if (hasShield) {
+    maxBlockCap = hasTitanGrip ? 0.5 : 0.4;
+  } else if (hasTitanGrip) {
+    maxBlockCap = 0.2;
+  } else {
+    p.block = 0.0;
+  }
+
+  if (hasDagger) {
+    let noun = subItem.noun ? subItem.noun.toLowerCase() : "";
+    if (noun.includes("main-gauche")) {
+      maxParryCap = hasTitanGrip ? 0.55 : 0.45;
     } else {
-      p.block = 0.0;
+      maxParryCap = hasTitanGrip ? 0.45 : 0.35;
     }
+  } else if (hasTitanGrip) {
+    maxParryCap = 0.15;
+  } else {
+    p.parry = 0.0;
+  }
 
-    if (hasDagger) {
-      let noun = subItem.noun ? subItem.noun.toLowerCase() : "";
-      if (noun.includes("main-gauche")) {
-        maxParryCap = hasTitanGrip ? 0.55 : 0.45;
-      } else {
-        maxParryCap = hasTitanGrip ? 0.45 : 0.35;
-      }
-    } else if (hasTitanGrip) {
-      maxParryCap = 0.15;
-    } else {
-      p.parry = 0.0;
-    }
+  maxBlockCap += p.crucibleCapBonus || 0;
+  maxParryCap += p.crucibleCapBonus || 0;
+  maxBlockCap += p.blockCapBonus || 0;
+  maxParryCap += p.parryCapBonus || 0;
 
-    maxBlockCap += p.crucibleCapBonus || 0;
-    maxParryCap += p.crucibleCapBonus || 0;
-    maxBlockCap += p.blockCapBonus || 0;
-    maxParryCap += p.parryCapBonus || 0;
+  // STR and DEX Attribute Scaling
+  if (p.block > 0.0) {
+    p.block += effectiveStr * 0.001; // +0.1% raw block rate per STR point
+  }
+  if (p.parry > 0.0) {
+    p.parry += effectiveDex * 0.001; // +0.1% raw parry rate per DEX point
+  }
 
-    // STR and DEX Attribute Scaling
-    if (p.block > 0.0) {
-      p.block += effectiveStr * 0.001; // +0.1% raw block rate per STR point
-    }
-    if (p.parry > 0.0) {
-      p.parry += effectiveDex * 0.001; // +0.1% raw parry rate per DEX point
-    }
+  p.rawBlock = p.block;
+  p.rawParry = p.parry;
+  p.maxBlockCap = maxBlockCap;
+  p.maxParryCap = maxParryCap;
 
-    p.rawBlock = p.block;
-    p.rawParry = p.parry;
-    p.maxBlockCap = maxBlockCap;
-    p.maxParryCap = maxParryCap;
+  // Asymptotic Soft-Cap Curve Processing (S = 50% of the maximum Cap C)
+  let sBlock = maxBlockCap * 0.5;
+  if (p.block > sBlock) {
+    let excess = p.block - sBlock;
+    let range = maxBlockCap - sBlock;
+    p.block = sBlock + range * (excess / (excess + range));
+  }
 
-    // Asymptotic Soft-Cap Curve Processing (S = 50% of the maximum Cap C)
-    let sBlock = maxBlockCap * 0.5;
-    if (p.block > sBlock) {
-      let excess = p.block - sBlock;
-      let range = maxBlockCap - sBlock;
-      p.block = sBlock + range * (excess / (excess + range));
-    }
-
-    let sParry = maxParryCap * 0.5;
-    if (p.parry > sParry) {
-      let excess = p.parry - sParry;
-      let range = maxParryCap - sParry;
-      p.parry = sParry + range * (excess / (excess + range));
-    }
+  let sParry = maxParryCap * 0.5;
+  if (p.parry > sParry) {
+    let excess = p.parry - sParry;
+    let range = maxParryCap - sParry;
+    p.parry = sParry + range * (excess / (excess + range));
+  }
 
   // Calculate Tome passive Arcane Barrier
   let hasTome =
@@ -3340,34 +3718,34 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   let pStats =
-      typeof window.resolvePlayerStats === "function"
-        ? window.resolvePlayerStats()
-        : {};
+    typeof window.resolvePlayerStats === "function"
+      ? window.resolvePlayerStats()
+      : {};
 
-    let isBoss = sourceMob && (
-      sourceMob.type === "dungeon_boss" ||
+  let isBoss =
+    sourceMob &&
+    (sourceMob.type === "dungeon_boss" ||
       sourceMob.type === "dungeon_miniboss" ||
       sourceMob.isBoss ||
-      sourceMob.type === "marcus_boss"
-    );
+      sourceMob.type === "marcus_boss");
 
-    let activeParry = pStats.parry || 0;
-    let activeBlock = pStats.block || 0;
+  let activeParry = pStats.parry || 0;
+  let activeBlock = pStats.block || 0;
 
-    // Safeguard 1: Crushing Blows (Boss Guard Penetration)
-    if (isBoss) {
-      let pen = 1.0 - (window.BOSS_GUARD_PENETRATION || 0.35);
-      activeParry *= pen;
-      activeBlock *= pen;
-    }
+  // Safeguard 1: Crushing Blows (Boss Guard Penetration)
+  if (isBoss) {
+    let pen = 1.0 - (window.BOSS_GUARD_PENETRATION || 0.35);
+    activeParry *= pen;
+    activeBlock *= pen;
+  }
 
-    // Safeguard 2: Deflection Fatigue (Halves active rates if active)
-    if (window.playerStats && window.playerStats.deflectionFatigueTimer > 0) {
-      activeParry *= 0.5;
-      activeBlock *= 0.5;
-    }
+  // Safeguard 2: Deflection Fatigue (Halves active rates if active)
+  if (window.playerStats && window.playerStats.deflectionFatigueTimer > 0) {
+    activeParry *= 0.5;
+    activeBlock *= 0.5;
+  }
 
-    // Intercept Specter Doom Instant-Kill Strike
+  // Intercept Specter Doom Instant-Kill Strike
   if (rawDmg instanceof BigNum && rawDmg.e > 100) {
     p.hp = 0;
     window.spawnFloatingText(
@@ -3441,6 +3819,12 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
               true,
             );
           }
+          // Barrier Shatter Mastery Hook (+30 Base XP)
+          if (window.gainSubweaponXp) {
+            let depth = window.player ? window.player.depth || 1 : 1;
+            let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+            window.gainSubweaponXp("tome", Math.round(30 * triggerMult));
+          }
         }
       }
 
@@ -3470,11 +3854,12 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   let netDmg = Math.max(1, remainingDmg * (1 - defenseDR));
 
   // Step 2: Parry Check (Daggers)
-    if (activeParry > 0 && Math.random() < activeParry) {
-      // Reset Deflection Fatigue Timer
-      if (window.playerStats) {
-        window.playerStats.deflectionFatigueTimer = window.DEFLECTION_FATIGUE_FRAMES || 30;
-      }
+  if (activeParry > 0 && Math.random() < activeParry) {
+    // Reset Deflection Fatigue Timer
+    if (window.playerStats) {
+      window.playerStats.deflectionFatigueTimer =
+        window.DEFLECTION_FATIGUE_FRAMES || 30;
+    }
     if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
       window.playerStats.adrenalineTimer = 360;
     }
@@ -3487,15 +3872,15 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     let parryMitigation = pStats.hasMasterDuellist
-          ? 1.0
-          : pStats.parryMitigation || 0.6;
+      ? 1.0
+      : pStats.parryMitigation || 0.6;
 
-        // Boss Guard Penetration seeps a fraction of the damage through your mitigation
-        if (isBoss) {
-          parryMitigation *= (1.0 - (window.BOSS_GUARD_PENETRATION || 0.35));
-        }
+    // Boss Guard Penetration seeps a fraction of the damage through your mitigation
+    if (isBoss) {
+      parryMitigation *= 1.0 - (window.BOSS_GUARD_PENETRATION || 0.35);
+    }
 
-        let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
+    let parriedDmg = Math.max(0, Math.round(netDmg * (1.0 - parryMitigation)));
     p.hp = Math.max(0, p.hp - parriedDmg);
 
     if (
@@ -3557,6 +3942,12 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
           "#a855f7",
         );
       }
+      // Master Duellist Mastery Hook (+25 Base XP)
+      if (window.gainSubweaponXp) {
+        let depth = window.player ? window.player.depth || 1 : 1;
+        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+        window.gainSubweaponXp("dagger", Math.round(25 * triggerMult));
+      }
     }
 
     if (window.SoundManager) window.SoundManager.play("parry");
@@ -3571,16 +3962,23 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       );
 
     if (pStats.hasShadowStep) {
-          window.playerStats.shadowStepTimer = 240; // Shadow Step speed burst active
-        }
+      window.playerStats.shadowStepTimer = 240; // Shadow Step speed burst active
+    }
 
-        // Safeguard 3: Counter-Attack Internal Cooldown
-            let canCounter = !(isBoss && window.playerStats.counterCooldownTimer > 0);
+    // Safeguard 3: Counter-Attack Internal Cooldown
+    let canCounter = !(isBoss && window.playerStats.counterCooldownTimer > 0);
 
-            if (canCounter && sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-              if (isBoss && window.playerStats) {
-                window.playerStats.counterCooldownTimer = window.COUNTER_COOLDOWN_FRAMES || 60;
-              }
+    if (
+      canCounter &&
+      sourceMob &&
+      sourceMob.hp &&
+      sourceMob.hp.gt &&
+      sourceMob.hp.gt(0)
+    ) {
+      if (isBoss && window.playerStats) {
+        window.playerStats.counterCooldownTimer =
+          window.COUNTER_COOLDOWN_FRAMES || 60;
+      }
       let mobCx = sourceMob.x + (sourceMob.w || 24) / 2;
       let mobCy = sourceMob.y + (sourceMob.h || 24) / 2;
 
@@ -3639,6 +4037,15 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
           typeof window.SoundManager.play === "function"
         ) {
           window.SoundManager.play("spell_fire");
+        }
+        // Sanguine Rupture Mastery Hook (+8 Base XP per stack consumed)
+        if (window.gainSubweaponXp) {
+          let depth = window.player ? window.player.depth || 1 : 1;
+          let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+          window.gainSubweaponXp(
+            "dagger",
+            Math.round(8 * dotCount * triggerMult),
+          );
         }
       }
 
@@ -3702,11 +4109,12 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
   }
 
   // Step 3: Block Check (Shields)
-    if (activeBlock > 0 && Math.random() < activeBlock) {
-      // Reset Deflection Fatigue Timer
-      if (window.playerStats) {
-        window.playerStats.deflectionFatigueTimer = window.DEFLECTION_FATIGUE_FRAMES || 30;
-      }
+  if (activeBlock > 0 && Math.random() < activeBlock) {
+    // Reset Deflection Fatigue Timer
+    if (window.playerStats) {
+      window.playerStats.deflectionFatigueTimer =
+        window.DEFLECTION_FATIGUE_FRAMES || 30;
+    }
     if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
       window.playerStats.adrenalineTimer = 360;
     }
@@ -3746,16 +4154,16 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     if (window.SoundManager) window.SoundManager.play("block");
 
     let baseMitigation = 0.7 + (pStats.blockMitigationBonus || 0); // Applies restored Fortified Stance 10%-30% block mitigation bonus
-        let blockMitigation = pStats.hasColossusKeystone
-          ? 1.0
-          : Math.min(0.95, baseMitigation);
+    let blockMitigation = pStats.hasColossusKeystone
+      ? 1.0
+      : Math.min(0.95, baseMitigation);
 
-        // Boss Guard Penetration seeps a fraction of the damage through your mitigation
-        if (isBoss) {
-          blockMitigation *= (1.0 - (window.BOSS_GUARD_PENETRATION || 0.35));
-        }
+    // Boss Guard Penetration seeps a fraction of the damage through your mitigation
+    if (isBoss) {
+      blockMitigation *= 1.0 - (window.BOSS_GUARD_PENETRATION || 0.35);
+    }
 
-        let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
+    let blockedDmg = Math.max(0, Math.round(netDmg * (1.0 - blockMitigation)));
     let savings = netDmg - blockedDmg;
     p.hp = Math.max(0, p.hp - blockedDmg);
 
@@ -3812,20 +4220,31 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
         if (window.combatVisuals) {
           window.combatVisuals.spawnParticles(p.x, p.y, 15, "slag_slime", 3);
         }
+        // Aegis Pulse Mastery Hook (+25 Base XP)
+        if (window.gainSubweaponXp) {
+          let depth = window.player ? window.player.depth || 1 : 1;
+          let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+          window.gainSubweaponXp("shield", Math.round(25 * triggerMult));
+        }
       }
     }
 
     if (pStats.hasRetaliatoryStrike) {
-          window.playerStats.retaliatoryStrikeActive = true;
-        }
+      window.playerStats.retaliatoryStrikeActive = true;
+    }
 
-        // Safeguard 3: Counter-Attack Internal Cooldown
-            let canCounter = !(isBoss && window.playerStats.counterCooldownTimer > 0);
+    // Safeguard 3: Counter-Attack Internal Cooldown
+    let canCounter = !(isBoss && window.playerStats.counterCooldownTimer > 0);
 
-            if (canCounter && pStats.hasImpactTremor && Math.random() < pStats.impactTremorChance) {
-              if (isBoss && window.playerStats) {
-                window.playerStats.counterCooldownTimer = window.COUNTER_COOLDOWN_FRAMES || 60;
-              }
+    if (
+      canCounter &&
+      pStats.hasImpactTremor &&
+      Math.random() < pStats.impactTremorChance
+    ) {
+      if (isBoss && window.playerStats) {
+        window.playerStats.counterCooldownTimer =
+          window.COUNTER_COOLDOWN_FRAMES || 60;
+      }
       let shockwaveDmg = BigNum.from(pStats.def || 5).mul(1.2);
       if (window.activeDungeonMobs) {
         window.activeDungeonMobs.forEach((m) => {
@@ -3849,6 +4268,12 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
                 false,
               );
             }
+            // Resonant Aegis / Impact Tremor Mastery Hook (+5 Base XP per enemy hit)
+            if (window.gainSubweaponXp) {
+              let depth = window.player ? window.player.depth || 1 : 1;
+              let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+              window.gainSubweaponXp("shield", Math.round(5 * triggerMult));
+            }
           }
         });
       }
@@ -3859,22 +4284,31 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     if (window.combatVisuals)
-          window.combatVisuals.spawnDamageEffect(
-            p.x,
-            p.y - 15,
-            blockedDmg,
-            "block",
-            false,
-            p,
-          );
+      window.combatVisuals.spawnDamageEffect(
+        p.x,
+        p.y - 15,
+        blockedDmg,
+        "block",
+        false,
+        p,
+      );
 
-        // Safeguard 3: Counter-Attack Internal Cooldown
-            let canCounterShield = !(isBoss && window.playerStats.counterCooldownTimer > 0);
+    // Safeguard 3: Counter-Attack Internal Cooldown
+    let canCounterShield = !(
+      isBoss && window.playerStats.counterCooldownTimer > 0
+    );
 
-            if (canCounterShield && sourceMob && sourceMob.hp && sourceMob.hp.gt && sourceMob.hp.gt(0)) {
-              if (isBoss && window.playerStats) {
-                window.playerStats.counterCooldownTimer = window.COUNTER_COOLDOWN_FRAMES || 60;
-              }
+    if (
+      canCounterShield &&
+      sourceMob &&
+      sourceMob.hp &&
+      sourceMob.hp.gt &&
+      sourceMob.hp.gt(0)
+    ) {
+      if (isBoss && window.playerStats) {
+        window.playerStats.counterCooldownTimer =
+          window.COUNTER_COOLDOWN_FRAMES || 60;
+      }
       // Gain +10 Shield Mastery XP on Shield Bash reflect
       if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
 
@@ -3950,11 +4384,11 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     }
 
     // Shield Keystone: Unbreakable Bulwark AoE Shockwave on Block (Respects Safeguard 3 ICD)
-        if (
-          canCounterShield &&
-          window.SkillTreeManager &&
-          window.SkillTreeManager.getSkillLevel("shield_keystone") > 0
-        ) {
+    if (
+      canCounterShield &&
+      window.SkillTreeManager &&
+      window.SkillTreeManager.getSkillLevel("shield_keystone") > 0
+    ) {
       let shockwaveDmg = BigNum.from(pStats.def || 5).mul(1.5);
       if (window.activeDungeonMobs) {
         window.activeDungeonMobs.forEach((m) => {
@@ -4907,7 +5341,7 @@ window.rerollBountyBoard = () => window.QuestSystem.rerollBountyBoard();
 window.generateWeeklyMissions = () =>
   window.QuestSystem.generateWeeklyMissions();
 
-window.getPacificDate = function() {
+window.getPacificDate = function () {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Los_Angeles",
@@ -4917,28 +5351,38 @@ window.getPacificDate = function() {
     hour: "numeric",
     minute: "numeric",
     second: "numeric",
-    hour12: false
+    hour12: false,
   });
   const parts = formatter.formatToParts(now);
   const pt = {};
-  parts.forEach(p => { pt[p.type] = p.value; });
+  parts.forEach((p) => {
+    pt[p.type] = p.value;
+  });
   let hour = parseInt(pt.hour, 10);
   if (hour === 24) hour = 0;
   return new Date(pt.year, pt.month - 1, pt.day, hour, pt.minute, pt.second);
 };
 
-window.getPacificTimeDiffs = function() {
+window.getPacificTimeDiffs = function () {
   const laDate = window.getPacificDate();
   const laTime = laDate.getTime();
 
   // Calculate next midnight in LA
-  const nextLaMidnight = new Date(laDate.getFullYear(), laDate.getMonth(), laDate.getDate());
+  const nextLaMidnight = new Date(
+    laDate.getFullYear(),
+    laDate.getMonth(),
+    laDate.getDate(),
+  );
   nextLaMidnight.setDate(laDate.getDate() + 1);
   nextLaMidnight.setHours(0, 0, 0, 0);
   const dailyRemainingMs = nextLaMidnight.getTime() - laTime;
 
   // Calculate next Monday midnight in LA
-  const nextLaMondayMidnight = new Date(laDate.getFullYear(), laDate.getMonth(), laDate.getDate());
+  const nextLaMondayMidnight = new Date(
+    laDate.getFullYear(),
+    laDate.getMonth(),
+    laDate.getDate(),
+  );
   const dayOfWeek = laDate.getDay(); // 0 is Sunday, 1 is Monday...
   const daysToMonday = (8 - dayOfWeek) % 7 || 7;
   nextLaMondayMidnight.setDate(laDate.getDate() + daysToMonday);
@@ -4947,11 +5391,11 @@ window.getPacificTimeDiffs = function() {
 
   return {
     dailyMs: Math.max(0, dailyRemainingMs),
-    weeklyMs: Math.max(0, weeklyRemainingMs)
+    weeklyMs: Math.max(0, weeklyRemainingMs),
   };
 };
 
-window.formatRemainingTime = function(ms) {
+window.formatRemainingTime = function (ms) {
   let seconds = Math.floor(ms / 1000);
   let days = Math.floor(seconds / 86400);
   seconds %= 86400;
@@ -5005,7 +5449,11 @@ Object.assign(window.QuestSystem, {
     // Check Weekly reset (Monday 12:00 AM PST/PDT)
     let dayOfWeek = ptDate.getDay(); // 0 is Sunday, 1 is Monday...
     let daysSinceMonday = (dayOfWeek + 6) % 7; // Days elapsed since last Monday
-    let lastMondayDate = new Date(ptDate.getFullYear(), ptDate.getMonth(), ptDate.getDate() - daysSinceMonday);
+    let lastMondayDate = new Date(
+      ptDate.getFullYear(),
+      ptDate.getMonth(),
+      ptDate.getDate() - daysSinceMonday,
+    );
     let lastMondayStr = `${lastMondayDate.getFullYear()}-${lastMondayDate.getMonth() + 1}-${lastMondayDate.getDate()}`;
 
     if (window.isWeeklyQuestUnlocked()) {
