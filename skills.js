@@ -2002,3 +2002,291 @@ if (window.playerStats && window.playerStats.usp === undefined) {
     window.saveGame();
   }
 }
+
+(function () {
+  const originalResolve = window.resolvePlayerStats;
+  window.resolvePlayerStats = function (isDraft = false) {
+    let stats = originalResolve ? originalResolve(isDraft) : {};
+    if (!stats) return stats;
+
+    let getLevel = (id) =>
+      window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel(id) : 0;
+
+    // Apply Tome Spell Scaling & Type mapping
+    if (window.equippedSlots && window.equippedSlots.subweapon) {
+      let sub = window.equippedSlots.subweapon;
+      if (
+        sub.type === "tome" ||
+        sub.subType === "tome" ||
+        (sub.name && sub.name.toLowerCase().includes("lexicon"))
+      ) {
+        stats.spellType = sub.spellType || "fire";
+
+        let basePower = stats.spellPower || 1.5;
+        if (stats.spellType === "tri") {
+          stats.spellPower = basePower * 0.8; // Balanced 1.2x modifier for full triad convergence
+        } else if (stats.spellType.startsWith("dual_")) {
+          stats.spellPower = basePower * 0.9; // 1.35x modifier for dual catalysts
+        } else {
+          stats.spellPower = basePower; // Concentrated 1.5x modifier for single element channels
+        }
+      }
+    }
+
+    // --- SUBWEAPON BRANCHING CONSTELLATION NODES ---
+
+    // 1. Shield Tree Branching Nodes
+    let shieldHpLvl = getLevel("shield_hp");
+    if (shieldHpLvl > 0) {
+      stats.maxHp = (stats.maxHp || 100) * (1 + shieldHpLvl * 0.04);
+    }
+    let shieldDefLvl = getLevel("shield_def");
+    if (shieldDefLvl > 0) {
+      stats.def = (stats.def || 5) * (1 + shieldDefLvl * 0.03);
+    }
+    let shieldIronWallLvl = getLevel("shield_iron_wall");
+    if (shieldIronWallLvl > 0) {
+      stats.block = (stats.block || 0.0) + shieldIronWallLvl * 0.01;
+      stats.maxBlockCap = (stats.maxBlockCap || 0.3) + shieldIronWallLvl * 0.02;
+    }
+    let shieldFortifiedGuardLvl = getLevel("shield_fortified_guard");
+    if (shieldFortifiedGuardLvl > 0 && window.playerStats && window.playerStats.fortitudeTimer > 0 && window.playerStats.fortitudeStacks > 0) {
+      stats.def = (stats.def || 5) * (1 + window.playerStats.fortitudeStacks * shieldFortifiedGuardLvl * 0.04);
+    }
+    let shieldImpactTremorLvl = getLevel("shield_impact_tremor");
+    if (shieldImpactTremorLvl > 0) {
+      stats.resonantAegisChance = shieldImpactTremorLvl * 0.20;
+    }
+    let shieldFortitudeLvl = getLevel("shield_fortitude");
+    if (shieldFortitudeLvl > 0) {
+      stats.blockMitigationBonus = shieldFortitudeLvl * 0.10;
+    }
+    let shieldRetaliationLvl = getLevel("shield_retaliation");
+    if (shieldRetaliationLvl > 0) {
+      stats.shieldBashMultiplier = (stats.shieldBashMultiplier || 1.0) + shieldRetaliationLvl * 0.15;
+      stats.shieldDefScalingCounter = shieldRetaliationLvl * 0.12;
+    }
+    if (getLevel("shield_keystone_colossus") > 0) {
+      stats.colossusBlock = true;
+    }
+    if (getLevel("shield_keystone_reflect") > 0) {
+      stats.atk = (stats.atk || 15) + (stats.def || 5) * 0.40;
+      stats.reflectSingularityActive = true;
+    }
+
+    // 2. Dagger Tree Branching Nodes
+    let daggerCritLvl = getLevel("dagger_crit");
+    if (daggerCritLvl > 0) {
+      stats.critChance = (stats.critChance || 0.05) + daggerCritLvl * 0.015;
+    }
+    let daggerCritDmgLvl = getLevel("dagger_crit_dmg");
+    if (daggerCritDmgLvl > 0) {
+      stats.critDamage = (stats.critDamage || 1.5) + daggerCritDmgLvl * 0.06;
+    }
+    let daggerLethalPrecisionLvl = getLevel("dagger_lethal_precision");
+    if (daggerLethalPrecisionLvl > 0) {
+      stats.offhandDmgMultiplier = (stats.offhandDmgMultiplier || 1.0) + daggerLethalPrecisionLvl * 0.08;
+      stats.offhandFlurryMultiplier = (stats.offhandFlurryMultiplier || 1.0) + daggerLethalPrecisionLvl * 0.10;
+    }
+    let daggerVipersCoatingLvl = getLevel("dagger_vipers_coating");
+    if (daggerVipersCoatingLvl > 0) {
+      stats.vipersCoatingLvl = daggerVipersCoatingLvl;
+    }
+    let daggerParryLvl = getLevel("dagger_parry");
+    if (daggerParryLvl > 0) {
+      stats.parry = (stats.parry || 0.0) + daggerParryLvl * 0.01;
+      stats.maxParryCap = (stats.maxParryCap || 0.3) + daggerParryLvl * 0.02;
+    }
+    let daggerExposeWeaknessLvl = getLevel("dagger_expose_weakness");
+    if (daggerExposeWeaknessLvl > 0) {
+      stats.exposeWeaknessLvl = daggerExposeWeaknessLvl;
+    }
+    if (getLevel("dagger_shadow_flurry") > 0) {
+      stats.hasShadowFlurry = true;
+    }
+    let daggerShadowStepLvl = getLevel("dagger_shadow_step");
+    if (daggerShadowStepLvl > 0) {
+      stats.shadowStepLvl = daggerShadowStepLvl;
+    }
+    let daggerSanguineRuptureLvl = getLevel("dagger_sanguine_rupture");
+    if (daggerSanguineRuptureLvl > 0) {
+      stats.sanguineRuptureLvl = daggerSanguineRuptureLvl;
+    }
+    let daggerWindRazorFlurryLvl = getLevel("dagger_wind_razor_flurry");
+    if (daggerWindRazorFlurryLvl > 0) {
+      stats.windRazorFlurryLvl = daggerWindRazorFlurryLvl;
+    }
+    if (getLevel("dagger_keystone_assassin") > 0) {
+      stats.hasKeystoneAssassin = true;
+    }
+    if (getLevel("dagger_keystone_duellist") > 0) {
+      stats.maxParryCap = 0.40;
+      stats.hasKeystoneDuellist = true;
+    }
+
+    // Auto-initialize base Dagger attributes if equipped
+    if (window.equippedSlots && window.equippedSlots.subweapon && (window.equippedSlots.subweapon.type === "dagger" || window.equippedSlots.subweapon.subType === "dagger")) {
+      stats.subType = "dagger";
+      stats.offhandChance = 0.35;
+      stats.offhandDmg = 0.45;
+    }
+
+    // 3. Tome Tree Branching Nodes
+    let tomeAtkLvl = getLevel("tome_atk");
+    if (tomeAtkLvl > 0) {
+      stats.atk = (stats.atk || 15) * (1 + tomeAtkLvl * 0.035);
+      stats.spellPower = (stats.spellPower || 1.5) * (1 + tomeAtkLvl * 0.035);
+    }
+    let tomeExpLvl = getLevel("tome_exp");
+    if (tomeExpLvl > 0) {
+      stats.expGainMultiplier = (stats.expGainMultiplier || 1.0) + tomeExpLvl * 0.03;
+    }
+    let tomeEmpoweredCatalystsLvl = getLevel("tome_empowered_catalysts");
+    if (tomeEmpoweredCatalystsLvl > 0) {
+      stats.spellChance = 0.35 + tomeEmpoweredCatalystsLvl * 0.05;
+      stats.spellPower = 1.5 + tomeEmpoweredCatalystsLvl * 0.25;
+    }
+    let tomeRunicBarrierLvl = getLevel("tome_runic_barrier");
+    if (tomeRunicBarrierLvl > 0) {
+      stats.arcaneBarrier = 0.20 + tomeRunicBarrierLvl * 0.04;
+    }
+    let tomeElementalOverloadLvl = getLevel("tome_elemental_overload");
+    if (tomeElementalOverloadLvl > 0) {
+      stats.hasElementalOverload = true;
+      stats.overloadLevel = tomeElementalOverloadLvl;
+    }
+    let tomeArcaneSyphonLvl = getLevel("tome_arcane_syphon");
+    if (tomeArcaneSyphonLvl > 0) {
+      stats.hasArcaneSyphon = true;
+      stats.arcaneSyphonLevel = tomeArcaneSyphonLvl;
+    }
+    if (getLevel("tome_barrier_shatter") > 0) {
+      stats.hasBarrierShatter = true;
+    }
+    let tomeSpellWeavingLvl = getLevel("tome_spell_weaving");
+    if (tomeSpellWeavingLvl > 0) {
+      stats.hasSpellWeaving = true;
+      stats.spellWeavingLevel = tomeSpellWeavingLvl;
+    }
+    let tomeResilienceLvl = getLevel("tome_resilience");
+    if (tomeResilienceLvl > 0) {
+      stats.manaShieldingHeal = tomeResilienceLvl * 0.02;
+    }
+    if (getLevel("tome_keystone_triad") > 0) {
+      stats.hasTriadConvergence = true;
+    }
+    if (getLevel("tome_keystone_singularity") > 0) {
+      stats.arcaneBarrier = 0.45;
+      stats.atk = (stats.atk || 15) + (stats.int || 5) * 0.80;
+    }
+
+    // --- STANDARD FILLER SKILLS RESOLUTION ---
+
+    // 1. Shield Tree Fillers
+    let stalwartBastionLvl = getLevel("shield_stalwart_bastion");
+    if (stalwartBastionLvl > 0) {
+      stats.blockMitigation =
+        (stats.blockMitigation || 0.7) + stalwartBastionLvl * 0.05;
+    }
+
+    let shieldFiller1 = getLevel("shield_filler_hp_flat");
+    if (shieldFiller1 > 0) {
+      stats.maxHp = (stats.maxHp || 100) * (1 + shieldFiller1 * 0.04);
+      stats.def = (stats.def || 5) * (1 + shieldFiller1 * 0.03);
+    }
+    let shieldFiller2 = getLevel("shield_filler_flat_def");
+    if (shieldFiller2 > 0) {
+      stats.def = (stats.def || 5) + shieldFiller2 * 5;
+      stats.maxHp = (stats.maxHp || 100) + shieldFiller2 * 25;
+    }
+
+    // 2. Dagger Tree Fillers
+    let daggerFiller1 = getLevel("dagger_filler_haste");
+    if (daggerFiller1 > 0) {
+      stats.moveSpeed =
+        (stats.moveSpeed || window.playerStats.baseMoveSpeed) *
+        (1 + (daggerFiller1 * 4) / 100);
+      stats.parry = (stats.parry || 0.0) + daggerFiller1 * 0.01;
+    }
+    let daggerFiller2 = getLevel("dagger_filler_armor_pen");
+    if (daggerFiller2 > 0) {
+      stats.atk = (stats.atk || 15) * (1 + daggerFiller2 * 0.04);
+      stats.critDamage = (stats.critDamage || 1.5) + daggerFiller2 * 0.03;
+    }
+
+    // 3. Tome Tree Fillers
+    let tomeFiller1 = getLevel("tome_filler_barrier_regen");
+    if (tomeFiller1 > 0) {
+      stats.spellPower = (stats.spellPower || 1.5) + tomeFiller1 * 0.04;
+      stats.arcaneBarrier = (stats.arcaneBarrier || 0.2) + tomeFiller1 * 0.01;
+    }
+    let tomeFiller2 = getLevel("tome_filler_spell_crit");
+    if (tomeFiller2 > 0) {
+      stats.critChance = (stats.critChance || 0.05) + tomeFiller2 * 0.015;
+      stats.atk = (stats.atk || 15) * (1 + tomeFiller2 * 0.02);
+    }
+
+    // --- INFINITE ASCENSION SKILLS RESOLUTION ---
+
+    // 1. Shield Tree Compounding
+    let EndlessBastionLvl = getLevel("shield_inf_defense");
+    if (EndlessBastionLvl > 0) {
+      stats.def = (stats.def || 5) * Math.pow(1.1, EndlessBastionLvl);
+    }
+    let SpikeResonanceLvl = getLevel("shield_inf_bash");
+    if (SpikeResonanceLvl > 0) {
+      stats.shieldBashMultiplier =
+        (stats.shieldBashMultiplier || 1.0) * Math.pow(1.12, SpikeResonanceLvl);
+    }
+
+    // 2. Dagger Tree Compounding
+    let LethalInfinitumLvl = getLevel("dagger_inf_crit");
+    if (LethalInfinitumLvl > 0) {
+      stats.critDamage =
+        (stats.critDamage || 1.5) * Math.pow(1.12, LethalInfinitumLvl);
+    }
+    let ToxicOsmosisLvl = getLevel("dagger_inf_poison");
+    if (ToxicOsmosisLvl > 0) {
+      stats.poisonDamageMultiplier =
+        (stats.poisonDamageMultiplier || 1.0) * Math.pow(1.1, ToxicOsmosisLvl);
+      stats.bleedDamageMultiplier =
+        (stats.bleedDamageMultiplier || 1.0) * Math.pow(1.1, ToxicOsmosisLvl);
+    }
+
+    // 3. Tome Tree Compounding
+    let ArcaneSingularityLvl = getLevel("tome_inf_spell");
+    if (ArcaneSingularityLvl > 0) {
+      stats.spellPower =
+        (stats.spellPower || 1.5) * Math.pow(1.12, ArcaneSingularityLvl);
+    }
+    let AethericInfusionLvl = getLevel("tome_inf_intel");
+    if (AethericInfusionLvl > 0) {
+      stats.atk = (stats.atk || 15) * Math.pow(1.1, AethericInfusionLvl);
+      stats.int = (stats.int || 5) * Math.pow(1.1, AethericInfusionLvl);
+    }
+
+    // 4. Utility Tree Soft-Capped Power-Law Scaling (Protects game economy)
+    let GildedEmperorLvl = getLevel("utility_inf_gold");
+    if (GildedEmperorLvl > 0) {
+      let goldBonus = 0.04 * Math.pow(GildedEmperorLvl, 0.65);
+      stats.gold = (stats.gold || 1.0) + goldBonus;
+    }
+    let AstralProspectorLvl = getLevel("utility_inf_drop");
+    if (AstralProspectorLvl > 0) {
+      let dropBonus = 0.015 * Math.pow(AstralProspectorLvl, 0.65);
+      stats.qly = (stats.qly || 1.0) + dropBonus;
+    }
+
+    // Apply active timers and modifications
+    if (window.playerStats) {
+      if (window.playerStats.colossusAtkBonusTimer > 0 && window.playerStats.colossusAtkBonusVal > 0) {
+        stats.atk = (stats.atk || 15) + window.playerStats.colossusAtkBonusVal;
+      }
+      if (window.playerStats.shadowStepTimer > 0 && window.playerStats.shadowStepLevel > 0) {
+        stats.moveSpeed = (stats.moveSpeed || window.playerStats.baseMoveSpeed) * (1 + window.playerStats.shadowStepLevel * 0.15);
+      }
+    }
+
+    return stats;
+  };
+})();

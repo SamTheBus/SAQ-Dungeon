@@ -525,11 +525,14 @@ window.ARTIFACT_POOL = [
     cauldron_eternity: 2,
   };
   if (window.ARTIFACT_POOL) {
-    window.ARTIFACT_POOL.forEach((art) => {
-      art.tier = tierMapping[art.trait] || 1;
-    });
+      window.ARTIFACT_POOL.forEach((art) => {
+        art.tier = tierMapping[art.trait] || 1;
+      });
 
-    const newArtifacts = [
+      // Add speed_to_momentum to the mapping register
+      tierMapping.speed_to_momentum = 3;
+
+      const newArtifacts = [
       {
         name: "Breacher's Adrenaline Glass",
         trait: "breach_adrenaline",
@@ -627,22 +630,36 @@ window.ARTIFACT_POOL = [
         fairySpawn: 0,
       },
       {
-        name: "Sanguine Catalyst",
-        trait: "synergy_sanguine",
-        desc: "Increases all damage dealt to targets by +8% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +3% Crit Chance.",
-        breakdown:
-          "<strong>Sanguine Catalyst:</strong><br>• DoT Scaling: <span style='color:#e74c3c;'>+8% All Damage per unique DoT active on target.</span><br>• Max Potential: <span style='color:#ff7675;'>+24% Damage with Poison, Bleed, and Burn active.</span><br>• Passive: <span style='color:#e74c3c;'>+3% base Critical Strike Chance</span>",
-        tier: 2,
-        critChance: 0.03,
-        dropRate: 0,
-        quality: 0,
-        goldMulti: 0,
-        rareSpawn: 0,
-        fairySpawn: 0,
-      },
-    ];
+              name: "Sanguine Catalyst",
+              trait: "synergy_sanguine",
+              desc: "Increases all damage dealt to targets by +8% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +3% Crit Chance.",
+              breakdown:
+                "<strong>Sanguine Catalyst:</strong><br>• DoT Scaling: <span style='color:#e74c3c;'>+8% All Damage per unique DoT active on target.</span><br>• Max Potential: <span style='color:#ff7675;'>+24% Damage with Poison, Bleed, and Burn active.</span><br>• Passive: <span style='color:#e74c3c;'>+3% base Critical Strike Chance</span>",
+              tier: 2,
+              critChance: 0.03,
+              dropRate: 0,
+              quality: 0,
+              goldMulti: 0,
+              rareSpawn: 0,
+              fairySpawn: 0,
+            },
+            {
+              name: "Kinetic Momentum Converter",
+              trait: "speed_to_momentum",
+              desc: "Physical movement speed remains hard-capped at +150% (2.5x base). Every 1% of raw movement speed beyond this cap is converted directly into +2.5% Critical Strike Damage.",
+              breakdown:
+                "<strong>Kinetic Momentum Converter:</strong><br>• Physical Limit: <span style='color:#38bdf8;'>Clamps physical movement speed to +150% maximum (2.5x base).</span><br>• Kinetic Conversion: <span style='color:#00d2ff;'>Every 1% of raw speed beyond the cap is converted into +2.5% Critical Damage (multiplied by Altar slot attunement!).</span><br>• Passive: <span style='color:#38bdf8;'>+5 flat DEX</span>",
+              tier: 3,
+              dex: 5,
+              dropRate: 0,
+              quality: 0,
+              goldMulti: 0,
+              rareSpawn: 0,
+              fairySpawn: 0,
+            },
+          ];
 
-    window.ARTIFACT_POOL.push(...newArtifacts);
+          window.ARTIFACT_POOL.push(...newArtifacts);
   }
 })();
 

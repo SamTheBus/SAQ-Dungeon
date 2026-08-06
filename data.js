@@ -1966,9 +1966,10 @@ window.ARTIFACT_BASE_STATS = {
   friction_kinetic: { dex: 3 },
   friction_tenacity: { str: 4 },
   friction_accretion: { quality: 0.05 },
-  synergy_nexus: { int: 4 },
-  synergy_sanguine: { critChance: 0.03 },
-};
+    synergy_nexus: { int: 4 },
+    synergy_sanguine: { critChance: 0.03 },
+    speed_to_momentum: { dex: 5 },
+  };
 
 window.resolvePlayerStats = function (useDraft = false) {
   if (!useDraft && !window.playerStatsDirty && window.cachedPlayerStats) {
@@ -2446,13 +2447,11 @@ window.resolvePlayerStats = function (useDraft = false) {
   p.int = Math.floor(p.int * achIntPct);
 
   let effectiveStr = Math.max(0, p.str - 5);
-  let effectiveDex = Math.max(0, p.dex - 5);
-  let effectiveInt = Math.max(0, p.int - 5);
+    let effectiveDex = Math.max(0, p.dex - 5);
+    let effectiveInt = Math.max(0, p.int - 5);
 
-  // Apply Dexterity Attribute Matrix points to Move Speed, Crit Chance, and Crit Multiplier
-  p.critChance += effectiveDex * 0.001; // +0.1% Crit Chance per point
-  p.critDamage += effectiveDex * 0.005; // +0.5% Crit Multiplier per point
-  flatSpeedBonus += effectiveDex * 1.0; // +1% Speed per point
+    // Realigned DEX: Decoupled from native Crit Chance & Move Speed. Scales Crit Damage infinitely.
+    p.critDamage += effectiveDex * 0.0001; // +0.01% Crit Damage per point of DEX
 
   // Dynamically adjust offensive percentage scaling based on equipped subweapon archetype
   let activeSubForPct = window.equippedSlots
@@ -2515,14 +2514,38 @@ window.resolvePlayerStats = function (useDraft = false) {
     .add(BigNum.from(setCtx.flatDefBonus));
 
   // Suffixes multipliers applied on total flat base
-  p.atk = p.atk.mul(1.0 + itemAtkPct).mul(achAtkPct);
-  p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
-  p.moveSpeed =
-    window.playerStats.baseMoveSpeed *
-    (1 + flatSpeedBonus / 100) *
-    (achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0));
+    p.atk = p.atk.mul(1.0 + itemAtkPct).mul(achAtkPct);
+    p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
 
-  // Calculate Arcane Barrier for Inspected Player holding a Tome
+    // Over-Crit Conversion Pipeline
+      p.rawCritChance = p.critChance;
+      if (p.critChance > 1.0) {
+        let excessCrit = p.critChance - 1.0;
+        p.critChance = 1.0;
+        p.critDamage += excessCrit * 2.0; // 1% Over-Crit = +2% Crit Damage
+      }
+
+    // Compute raw, uncapped speed bonus multiplier
+      let speedFactor = achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0);
+      let totalSpeedMult = (1 + flatSpeedBonus / 100) * speedFactor;
+      let rawSpeedBonus = totalSpeedMult - 1.0;
+      p.rawSpeedBonus = rawSpeedBonus;
+
+      if (rawSpeedBonus > 1.5) {
+      let excessSpeed = rawSpeedBonus - 1.5;
+      totalSpeedMult = 2.5; // Cap physical speed multiplier at 2.5x base (+150% speed increase)
+
+      // Convert excess speed if Kinetic Momentum Converter is active
+      if (window.checkArtifactTrait("speed_to_momentum")) {
+        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("speed_to_momentum") : 0;
+        let slotMult = 1.0 + slotLvl * 0.01;
+        p.critDamage += excessSpeed * 2.5 * slotMult;
+      }
+    }
+
+    p.moveSpeed = window.playerStats.baseMoveSpeed * totalSpeedMult;
+
+    // Calculate Arcane Barrier for Inspected Player holding a Tome
   let insSub = window.equippedSlots.subweapon;
   if (insSub && insSub.subType === "tome") {
     let insEffInt = Math.max(0, p.int - 5);
@@ -2929,8 +2952,9 @@ window.resolvePlayerStats = function (useDraft = false) {
     }
   }
 
-  let potStrengthMultiplier = 1.0 + effectiveInt * 0.005; // +0.5% Potion Potency per INT point
-  if (window.playerStats.unlockedAchievements && window.AchievementsData) {
+  // Asymptotic Soft-Cap Curve on Potion Potency
+    let potStrengthMultiplier = 1.0 + (effectiveInt * 1.0) / (effectiveInt + 1000);
+    if (window.playerStats.unlockedAchievements && window.AchievementsData) {
     window.playerStats.unlockedAchievements.forEach((id) => {
       let ach = window.AchievementsData.find((a) => a.id === id);
       if (ach && ach.stats && ach.stats.potStrengthPct)
@@ -3663,13 +3687,16 @@ window.resolvePlayerStats = function (useDraft = false) {
     }
   }
 
-  if (!useDraft) {
-    window.cachedPlayerStats = p;
-    window.playerStatsDirty = false;
-  }
+  // Hard physical engine limit safeguard: No combination of temporary buffs can exceed 3x base speed
+    p.moveSpeed = Math.min(window.playerStats.baseMoveSpeed * 3.0, p.moveSpeed);
 
-  return p;
-};
+    if (!useDraft) {
+      window.cachedPlayerStats = p;
+      window.playerStatsDirty = false;
+    }
+
+    return p;
+  };
 
 // --- REAL-TIME COMBAT DAMAGE RESOLUTION PIPELINE ---
 window.damagePlayer = function (rawDmg, sourceMob = null) {

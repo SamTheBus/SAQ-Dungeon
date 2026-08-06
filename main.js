@@ -118,12 +118,56 @@
     },
 
     recycle(pt) {
-      pt.active = false;
-    },
-  };
-  window.ParticlePool.init();
+          pt.active = false;
+        },
+      };
+      window.ParticlePool.init();
 
-  // Intercept and bind any local particle pool assignments to unified ParticlePool (Subphase A.1)
+      window.spawnResonantAegisRipple = function (x, y) {
+        if (!window.particles || !window.ParticlePool) return;
+        for (let i = 0; i < 20; i++) {
+          let angle = (i * Math.PI * 2) / 20;
+          let speed = 2.8;
+          let pt = window.ParticlePool.get(
+            x,
+            y,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed,
+            3.0,
+            "#38bdf8",
+            0.8,
+            25,
+            0,
+            true
+          );
+          pt.style = "streak";
+          window.particles.push(pt);
+        }
+      };
+
+      window.spawnEarthBreakerBashVisual = function (x, y, angle) {
+        if (!window.particles || !window.ParticlePool) return;
+        for (let i = 0; i < 15; i++) {
+          let spreadAngle = angle + window.randFloat(-0.45, 0.45);
+          let speed = window.randFloat(3.0, 5.5);
+          let pt = window.ParticlePool.get(
+            x,
+            y,
+            Math.cos(spreadAngle) * speed,
+            Math.sin(spreadAngle) * speed,
+            window.randFloat(2.0, 4.0),
+            "#e67e22",
+            0.9,
+            20,
+            0.1,
+            true
+          );
+          pt.style = "polygon";
+          window.particles.push(pt);
+        }
+      };
+
+      // Intercept and bind any local particle pool assignments to unified ParticlePool (Subphase A.1)
   let existingCombatVisuals = window.combatVisuals;
   Object.defineProperty(window, "combatVisuals", {
     configurable: true,
@@ -5340,31 +5384,154 @@
     window.loadHub();
 
     // Decorate damagePlayer globally to monitor and trigger defensive counters
-    const originalDamagePlayer = window.damagePlayer;
-    window.damagePlayer = function (amount, attacker) {
-      let prevBlockTime =
-        (window.playerStats && window.playerStats.recentBlockTime) || 0;
-      let prevParryTime =
-        (window.playerStats && window.playerStats.recentParryTime) || 0;
+            const originalDamagePlayer = window.damagePlayer;
+            window.damagePlayer = function (amount, attacker) {
+              let p = window.player;
+              let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+              let shieldFortifiedGuardLvl = window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("shield_fortified_guard") : 0;
 
-      let result = originalDamagePlayer
-        ? originalDamagePlayer.call(this, amount, attacker)
-        : null;
+              // Compute block mitigation modifications
+          let blockMit = 0.70;
+          if (pStats.blockMitigation) blockMit = pStats.blockMitigation;
+          if (pStats.blockMitigationBonus) blockMit = Math.min(1.0, blockMit + pStats.blockMitigationBonus);
+          if (pStats.colossusBlock) blockMit = 1.0;
 
-      let postBlockTime =
-        (window.playerStats && window.playerStats.recentBlockTime) || 0;
-      let postParryTime =
-        (window.playerStats && window.playerStats.recentParryTime) || 0;
+          let prevBlockTime = (window.playerStats && window.playerStats.recentBlockTime) || 0;
+          let prevParryTime = (window.playerStats && window.playerStats.recentParryTime) || 0;
 
-      if (postBlockTime > prevBlockTime) {
-        window.handleVanguardBlockTrigger(attacker);
-      }
-      if (postParryTime > prevParryTime) {
-        window.handleVanguardParryTrigger(attacker);
-      }
+          let result = originalDamagePlayer ? originalDamagePlayer.call(this, amount, attacker) : null;
 
-      return result;
-    };
+          let postBlockTime = (window.playerStats && window.playerStats.recentBlockTime) || 0;
+          let postParryTime = (window.playerStats && window.playerStats.recentParryTime) || 0;
+
+          if (postBlockTime > prevBlockTime) {
+            // Successful Block retro-active adjustments
+            if (blockMit >= 1.0 && p.hp > 0) {
+              let baseDamageTaken = Math.round(amount * 0.30);
+              p.hp = Math.min(p.maxHp, p.hp + baseDamageTaken);
+            } else if (pStats.blockMitigationBonus && p.hp > 0) {
+              let extraReduction = Math.round(amount * pStats.blockMitigationBonus);
+              p.hp = Math.min(p.maxHp, p.hp + extraReduction);
+            }
+
+            // Colossus AP Bonus Conversion
+            if (pStats.colossusBlock) {
+              window.playerStats.colossusAtkBonusTimer = 600;
+              window.playerStats.colossusAtkBonusVal = Math.round((pStats.def || 5) * 0.50);
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(p.x, p.y - 25, "COLOSSUS MIGHT!", "#2ecc71", true);
+              }
+            }
+
+            // Aegis Pulse Healing
+            let pulseLvl = window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("shield_aegis_pulse") : 0;
+            if (pulseLvl > 0) {
+              window.playerStats.blockCount = (window.playerStats.blockCount || 0) + 1;
+              if (window.playerStats.blockCount >= 5) {
+                window.playerStats.blockCount = 0;
+                let healVal = Math.round(p.maxHp * (pulseLvl * 0.03));
+                p.hp = Math.min(p.maxHp, p.hp + healVal);
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(p.x, p.y - 12, `+${healVal} HP (AEGIS PULSE)`, "#2ecc71", true);
+                }
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnBeam(p.x, "#2ecc71", 30, true);
+                }
+              }
+            }
+
+            // Retaliatory Strike Guaranteed Crit flag
+            if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("shield_retaliatory_strike") > 0) {
+              window.playerStats.guaranteedCrit = true;
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(p.x, p.y - 20, "CRIT GUARANTEED!", "#ffd700", true);
+              }
+            }
+
+            window.handleVanguardBlockTrigger(attacker);
+          }
+
+          if (postParryTime > prevParryTime) {
+            // Successful Parry retro-active adjustments (Master Duellist 100% negation & Decoy Spawn)
+            if (pStats.hasKeystoneDuellist && p.hp > 0) {
+              let baseDamageTaken = Math.round(amount * 0.50);
+              p.hp = Math.min(p.maxHp, p.hp + baseDamageTaken);
+
+              window.activeDungeonMobs = window.activeDungeonMobs || [];
+              window.activeDungeonMobs.push({
+                id: window.idCounter++,
+                type: "mob",
+                visualTier: 4,
+                visualType: "marsh_ghost",
+                x: p.x + window.randFloat(-15, 15),
+                y: p.y + window.randFloat(-15, 15),
+                w: 24,
+                h: 24,
+                hp: BigNum.from(1),
+                maxHp: BigNum.from(1),
+                atk: Math.round((pStats.atk || 15) * 0.8),
+                flashTimer: 0,
+                isFriendlyWisp: true,
+                wispTimer: 240,
+                discovered: true,
+                hopTimer: 0,
+              });
+
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(p.x, p.y - 25, "SHADOW DECOY!", "#a855f7", true);
+              }
+            }
+
+            // Shadow Step Buff trigger
+            if (pStats.shadowStepLvl && pStats.shadowStepLvl > 0) {
+              window.playerStats.shadowStepTimer = 240;
+              window.playerStats.shadowStepLevel = pStats.shadowStepLvl;
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(p.x, p.y - 25, "SHADOW STEP!", "#a855f7", true);
+              }
+            }
+
+            // Sanguine Rupture dot detonation trigger
+            if (pStats.sanguineRuptureLvl && pStats.sanguineRuptureLvl > 0 && attacker && (attacker.poisonStacks > 0 || attacker.bleedStacks > 0)) {
+              let baseAtk = pStats.atk || p.atk || 15;
+              let remainingPoison = BigNum.from(baseAtk).mul(0.10 * (attacker.poisonLevel || 1)).mul(attacker.poisonStacks).mul(10);
+              let remainingBleed = BigNum.from(baseAtk).mul(0.05).mul(attacker.bleedStacks).mul(10);
+              let totalRemaining = remainingPoison.add(remainingBleed);
+              let detonationDmg = totalRemaining.mul(pStats.sanguineRuptureLvl === 1 ? 1.5 : 3.0);
+
+              attacker.hp = attacker.hp.sub(detonationDmg);
+              attacker.poisonStacks = 0;
+              attacker.bleedStacks = 0;
+
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnDamageEffect(
+                  attacker.x + attacker.w / 2,
+                  attacker.y + attacker.h / 2,
+                  detonationDmg,
+                  "crit",
+                  true,
+                  attacker
+                );
+              }
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(attacker.x + attacker.w / 2, attacker.y - 15, "SANGUINE RUPTURE!", "#e74c3c");
+              }
+            }
+
+            window.handleVanguardParryTrigger(attacker);
+          }
+
+          // 4. Fortified Guard Stack Builder
+          if (pStats.def && shieldFortifiedGuardLvl > 0 && amount > 0) {
+            window.playerStats.fortitudeStacks = Math.min(5, (window.playerStats.fortitudeStacks || 0) + 1);
+            window.playerStats.fortitudeTimer = 360;
+            if (typeof window.spawnFloatingText === "function" && Math.random() < 0.3) {
+              window.spawnFloatingText(p.x, p.y - 15, `FORTITUDE x${window.playerStats.fortitudeStacks}`, "#3498db", true);
+            }
+          }
+
+          return result;
+        };
 
     window.handleVanguardBlockTrigger = function (attacker) {
       let p = window.player;
@@ -8886,19 +9053,39 @@
     let prevY = p ? p.y : 0;
 
     if (p.lastDamageTimer && p.lastDamageTimer > 0) {
-      p.lastDamageTimer--;
-    }
-    if (window.playerStats) {
-      if (window.playerStats.flaskCooldownTimer > 0) {
-        window.playerStats.flaskCooldownTimer--;
-      }
-      if (window.playerStats.deflectionFatigueTimer > 0) {
-        window.playerStats.deflectionFatigueTimer--;
-      }
-      if (window.playerStats.counterCooldownTimer > 0) {
-        window.playerStats.counterCooldownTimer--;
-      }
-    }
+              p.lastDamageTimer--;
+            }
+            if (window.playerStats) {
+              if (window.playerStats.flaskCooldownTimer > 0) {
+                window.playerStats.flaskCooldownTimer--;
+                if (window.logicClock % 3 === 0 || window.playerStats.flaskCooldownTimer === 0) {
+                  if (typeof window.updateFlaskCooldownHUDOnly === "function") {
+                    window.updateFlaskCooldownHUDOnly();
+                  }
+                }
+              }
+              if (window.playerStats.deflectionFatigueTimer > 0) {
+                window.playerStats.deflectionFatigueTimer--;
+              }
+          if (window.playerStats.counterCooldownTimer > 0) {
+            window.playerStats.counterCooldownTimer--;
+          }
+          if (window.playerStats.fortitudeTimer > 0) {
+            window.playerStats.fortitudeTimer--;
+            if (window.playerStats.fortitudeTimer === 0) {
+              window.playerStats.fortitudeStacks = 0;
+            }
+          }
+          if (window.playerStats.colossusAtkBonusTimer > 0) {
+            window.playerStats.colossusAtkBonusTimer--;
+            if (window.playerStats.colossusAtkBonusTimer === 0) {
+              window.playerStats.colossusAtkBonusVal = 0;
+            }
+          }
+          if (window.playerStats.shadowStepTimer > 0) {
+            window.playerStats.shadowStepTimer--;
+          }
+        }
     if (p.snareTimer && p.snareTimer > 0) {
       p.snareTimer--;
       p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4);
@@ -12019,12 +12206,63 @@
     }
 
     // Process targets in view
-    targetables.forEach((t) => {
-      if (t.type === "mob") {
-        let m = t.obj;
-        if (m.flashTimer > 0) m.flashTimer--;
-        if (m.attackCooldown > 0) m.attackCooldown--;
-        if (m.rangedCooldown > 0) m.rangedCooldown--;
+        targetables.forEach((t) => {
+          if (t.type === "mob") {
+            let m = t.obj;
+            if (m.flashTimer > 0) m.flashTimer--;
+            if (m.attackCooldown > 0) m.attackCooldown--;
+            if (m.rangedCooldown > 0) m.rangedCooldown--;
+
+            // --- CELESTIAL STATUS DOT TICK ENGINE ---
+            if (m.hp && m.hp.gt && m.hp.gt(0)) {
+              if ((m.poisonStacks && m.poisonStacks > 0) || (m.bleedStacks && m.bleedStacks > 0)) {
+                m.dotTickTimer = (m.dotTickTimer || 0) + 1;
+                if (m.dotTickTimer >= 60) { // Ticks exactly every 1s
+                  m.dotTickTimer = 0;
+                  let baseAtk = pStats.atk || p.atk || 15;
+
+                  if (m.poisonStacks && m.poisonStacks > 0) {
+                    let poisonPower = 0.10 * (m.poisonLevel || 1);
+                    if (pStats.poisonDamageMultiplier) poisonPower *= pStats.poisonDamageMultiplier;
+                    let pDmg = BigNum.from(baseAtk).mul(poisonPower).mul(m.poisonStacks);
+                    m.hp = m.hp.sub(pDmg);
+                    m.flashTimer = 4;
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        m.x + m.w / 2,
+                        m.y + m.h / 2,
+                        pDmg,
+                        "poison",
+                        false,
+                        m
+                      );
+                    }
+                  }
+
+                  if (m.bleedStacks && m.bleedStacks > 0) {
+                    let bleedPower = 0.05;
+                    if (pStats.bleedDamageMultiplier) bleedPower *= pStats.bleedDamageMultiplier;
+                    let bDmg = BigNum.from(baseAtk).mul(bleedPower).mul(m.bleedStacks);
+                    m.hp = m.hp.sub(bDmg);
+                    m.flashTimer = 4;
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        m.x + m.w / 2,
+                        m.y + m.h / 2,
+                        bDmg,
+                        "bleed",
+                        false,
+                        m
+                      );
+                    }
+                  }
+                }
+              }
+              if (m.shredTimer && m.shredTimer > 0) {
+                m.shredTimer--;
+                if (m.shredTimer === 0) m.shredPercent = 0;
+              }
+            }
 
         if (m.recoilX) {
           m.recoilX *= 0.65;
@@ -12408,8 +12646,12 @@
         }
 
         let isCrit = Math.random() < (pStats.critChance || 0.05);
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+                if (window.playerStats && window.playerStats.guaranteedCrit) {
+                  isCrit = true;
+                  window.playerStats.guaranteedCrit = false;
+                }
+                let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+                let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
         // --- SUBPHASE 7: KINETIC REFLECTORS CONE CHECK ---
         if (
@@ -12973,42 +13215,87 @@
           }
         }
 
-        // Dagger Offhand Multi-Strike & Bleed DoT Triggers
-        if (pStats.subType === "dagger") {
-          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-            let offhandHit = BigNum.from(pStats.atk || 15).mul(
-              pStats.offhandDmg || 0.45,
-            );
-            m.hp = m.hp.sub(offhandHit);
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 6,
-                offhandHit,
-                "dagger",
-                false,
-              );
-            }
-          }
+        // Dagger Offhand Multi-Strike & DoT Application
+                if (pStats.subType === "dagger") {
+                  let finalOffhandChance = pStats.offhandChance || 0.35;
+                  if (Math.random() < finalOffhandChance) {
+                    let offhandDmgMult = pStats.offhandDmgMultiplier || 1.0;
+                    let offhandHit = BigNum.from(pStats.atk || 15).mul((pStats.offhandDmg || 0.45) * offhandDmgMult);
+                    m.hp = m.hp.sub(offhandHit);
 
-          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-            if (pStats.bleedDamageMultiplier) {
-              bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
-            }
-            m.hp = m.hp.sub(bleedTick);
-            m.flashTimer = 6;
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 10,
-                bleedTick,
-                "bleed",
-                false,
-              );
-            }
-          }
-        }
+                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                      window.RenderEngine.spawnDamageEffect(
+                        mobCenterX,
+                        mobCenterY - 6,
+                        offhandHit,
+                        "dagger",
+                        false,
+                        m
+                      );
+                    }
+
+                    // 1. Viper's Coating (Apply Stacking Poison & Bleeding)
+                    let vipersLvl = pStats.vipersCoatingLvl || 0;
+                    if (vipersLvl > 0) {
+                      m.poisonStacks = Math.min(5, (m.poisonStacks || 0) + 1);
+                      m.poisonLevel = vipersLvl;
+                      m.dotTickTimer = m.dotTickTimer || 0;
+
+                      let bleedChance = vipersLvl * 0.05;
+                      if (Math.random() < bleedChance) {
+                        m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
+                      }
+
+                      // Shadow Assassin Keystone check at 5 stacks
+                      if (pStats.hasKeystoneAssassin && m.poisonStacks >= 5) {
+                        m.poisonStacks = 0; // consume
+                        let flurryStrike = BigNum.from(pStats.atk || 15);
+                        for (let s = 0; s < 3; s++) {
+                          m.hp = m.hp.sub(flurryStrike);
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(
+                              mobCenterX + (s - 1) * 8,
+                              mobCenterY,
+                              flurryStrike,
+                              "dagger",
+                              true,
+                              m
+                            );
+                          }
+                        }
+                        if (typeof window.spawnFloatingText === "function") {
+                          window.spawnFloatingText(mobCenterX, mobCenterY - 15, "SHADOW FLURRY!", "#a855f7");
+                        }
+                      }
+                    }
+
+                    // 2. Expose Weakness (Armor/Defense shred)
+                    let exposeLvl = pStats.exposeWeaknessLvl || 0;
+                    if (exposeLvl > 0) {
+                      m.shredTimer = 300;
+                      m.shredPercent = exposeLvl * 0.04;
+                      if (typeof window.spawnFloatingText === "function" && Math.random() < 0.2) {
+                        window.spawnFloatingText(mobCenterX, mobCenterY - 20, "WEAKNESS EXPOSED!", "#df9ffb");
+                      }
+                    }
+                  }
+
+                  // 3. Shadow Flurry (Crit proc Offhand Strike)
+                  if (isCrit && pStats.hasShadowFlurry) {
+                    let flurryDmg = BigNum.from(pStats.atk || 15).mul((pStats.offhandDmg || 0.45) * 1.5);
+                    m.hp = m.hp.sub(flurryDmg);
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        mobCenterX,
+                        mobCenterY - 4,
+                        flurryDmg,
+                        "dagger",
+                        true,
+                        m
+                      );
+                    }
+                  }
+                }
 
         // Tome Spell Cast Trigger
         let isTomeEquipped =
@@ -14289,8 +14576,12 @@
         else if (dxToBoss > 0.1) p.facing = 1;
 
         let isCrit = Math.random() < (pStats.critChance || 0.05);
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+                if (window.playerStats && window.playerStats.guaranteedCrit) {
+                  isCrit = true;
+                  window.playerStats.guaranteedCrit = false;
+                }
+                let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+                let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
         // Synergy Sanguine DoT damage scaling (Boss)
         if (window.checkArtifactTrait("synergy_sanguine")) {
@@ -14528,42 +14819,138 @@
         // Define vertical center for boss offhand procs
         let bossCenterY = bm.y + bm.h / 2;
 
-        // Dagger Offhand Multi-Strike & Bleed DoT Triggers on Boss
-        if (pStats.subType === "dagger") {
-          if (pStats.offhandChance && Math.random() < pStats.offhandChance) {
-            let offhandHit = BigNum.from(pStats.atk || 15).mul(
-              pStats.offhandDmg || 0.45,
-            );
-            bm.hp = bm.hp.sub(offhandHit);
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 6,
-                offhandHit,
-                "dagger",
-                false,
-              );
-            }
-          }
+        // Dagger Offhand Multi-Strike & DoT Application on Boss
+                if (pStats.subType === "dagger") {
+                  let finalOffhandChance = pStats.offhandChance || 0.35;
+                  if (Math.random() < finalOffhandChance) {
+                    let offhandDmgMult = pStats.offhandDmgMultiplier || 1.0;
+                    let offhandHit = BigNum.from(pStats.atk || 15).mul((pStats.offhandDmg || 0.45) * offhandDmgMult);
+                    bm.hp = bm.hp.sub(offhandHit);
 
-          if (pStats.bleedChance && Math.random() < pStats.bleedChance) {
-            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.25);
-            if (pStats.bleedDamageMultiplier) {
-              bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
-            }
-            bm.hp = bm.hp.sub(bleedTick);
-            bm.flashTimer = 6;
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 10,
-                bleedTick,
-                "bleed",
-                false,
-              );
-            }
-          }
-        }
+                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                      window.RenderEngine.spawnDamageEffect(
+                        bossCenterX,
+                        bossCenterY - 6,
+                        offhandHit,
+                        "dagger",
+                        false,
+                        bm
+                      );
+                    }
+
+                    // 1. Viper's Coating
+                    let vipersLvl = pStats.vipersCoatingLvl || 0;
+                    if (vipersLvl > 0) {
+                      bm.poisonStacks = Math.min(5, (bm.poisonStacks || 0) + 1);
+                      bm.poisonLevel = vipersLvl;
+                      bm.dotTickTimer = bm.dotTickTimer || 0;
+
+                      let bleedChance = vipersLvl * 0.05;
+                      if (Math.random() < bleedChance) {
+                        bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
+                      }
+
+                      // Shadow Assassin Keystone check at 5 stacks
+                      if (pStats.hasKeystoneAssassin && bm.poisonStacks >= 5) {
+                        bm.poisonStacks = 0; // consume
+                        let flurryStrike = BigNum.from(pStats.atk || 15);
+                        for (let s = 0; s < 3; s++) {
+                          bm.hp = bm.hp.sub(flurryStrike);
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(
+                              bossCenterX + (s - 1) * 12,
+                              bossCenterY,
+                              flurryStrike,
+                              "dagger",
+                              true,
+                              bm
+                            );
+                          }
+                        }
+                        if (typeof window.spawnFloatingText === "function") {
+                          window.spawnFloatingText(bossCenterX, bossCenterY - 20, "SHADOW FLURRY!", "#a855f7");
+                        }
+                      }
+                    }
+
+                    // 2. Expose Weakness
+                    let exposeLvl = pStats.exposeWeaknessLvl || 0;
+                    if (exposeLvl > 0) {
+                      bm.shredTimer = 300;
+                      bm.shredPercent = exposeLvl * 0.04;
+                      if (typeof window.spawnFloatingText === "function" && Math.random() < 0.2) {
+                        window.spawnFloatingText(bossCenterX, bossCenterY - 20, "WEAKNESS EXPOSED!", "#df9ffb");
+                      }
+                    }
+                  }
+
+                  // 3. Shadow Flurry
+                  if (isCrit && pStats.hasShadowFlurry) {
+                    let flurryDmg = BigNum.from(pStats.atk || 15).mul((pStats.offhandDmg || 0.45) * 1.5);
+                    bm.hp = bm.hp.sub(flurryDmg);
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        bossCenterX,
+                        bossCenterY - 4,
+                        flurryDmg,
+                        "dagger",
+                        true,
+                        bm
+                      );
+                    }
+                  }
+                }
+
+                // --- CELESTIAL STATUS DOT TICK ENGINE ON BOSS ---
+                if (bm.hp && bm.hp.gt && bm.hp.gt(0)) {
+                  if ((bm.poisonStacks && bm.poisonStacks > 0) || (bm.bleedStacks && bm.bleedStacks > 0)) {
+                    bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
+                    if (bm.dotTickTimer >= 60) {
+                      bm.dotTickTimer = 0;
+                      let baseAtk = pStats.atk || p.atk || 15;
+
+                      if (bm.poisonStacks && bm.poisonStacks > 0) {
+                        let poisonPower = 0.10 * (bm.poisonLevel || 1);
+                        if (pStats.poisonDamageMultiplier) poisonPower *= pStats.poisonDamageMultiplier;
+                        let pDmg = BigNum.from(baseAtk).mul(poisonPower).mul(bm.poisonStacks);
+                        bm.hp = bm.hp.sub(pDmg);
+                        bm.flashTimer = 4;
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnDamageEffect(
+                            bm.x + bm.w / 2,
+                            bm.y + bm.h / 2,
+                            pDmg,
+                            "poison",
+                            false,
+                            bm
+                          );
+                        }
+                      }
+
+                      if (bm.bleedStacks && bm.bleedStacks > 0) {
+                        let bleedPower = 0.05;
+                        if (pStats.bleedDamageMultiplier) bleedPower *= pStats.bleedDamageMultiplier;
+                        let bDmg = BigNum.from(baseAtk).mul(bleedPower).mul(bm.bleedStacks);
+                        bm.hp = bm.hp.sub(bDmg);
+                        bm.flashTimer = 4;
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnDamageEffect(
+                            bm.x + bm.w / 2,
+                            bm.y + bm.h / 2,
+                            bDmg,
+                            "bleed",
+                            false,
+                            bm
+                          );
+                        }
+                      }
+                    }
+                  }
+                  if (bm.shredTimer && bm.shredTimer > 0) {
+                    bm.shredTimer--;
+                    if (bm.shredTimer === 0) bm.shredPercent = 0;
+                  }
+                }
 
         // Tome Spell Cast Trigger on Boss
         let isTomeEquipped =
@@ -17195,8 +17582,37 @@
     }
   }
 
-  // --- HUD UPDATER ---
-  window.updateHUD = function () {
+  window.updateFlaskCooldownHUDOnly = function () {
+      let stats = window.playerStats || {};
+      let flaskBtn = document.getElementById("hud-flask-button");
+      let cdRing = document.getElementById("hud-flask-cooldown-ring");
+      let cdText = document.getElementById("hud-flask-cd-text");
+
+      if (flaskBtn && cdRing) {
+        let cdTimer = stats.flaskCooldownTimer || 0;
+        let totalCircumference = 81.68;
+        if (cdTimer > 0) {
+          let cdProgress = cdTimer / 2700; // 2700 frames = 45.0s
+          let offset = totalCircumference * (1 - cdProgress);
+          cdRing.setAttribute("stroke-dashoffset", offset.toFixed(2));
+          cdRing.style.display = "block";
+
+          if (cdText) {
+            let secLeft = (cdTimer / 60).toFixed(1);
+            cdText.innerText = `${secLeft}s`;
+          }
+          flaskBtn.classList.add("flask-on-cooldown");
+        } else {
+          cdRing.setAttribute("stroke-dashoffset", totalCircumference.toFixed(2));
+          cdRing.style.display = "none";
+          if (cdText) cdText.innerText = "";
+          flaskBtn.classList.remove("flask-on-cooldown");
+        }
+      }
+    };
+
+    // --- HUD UPDATER ---
+    window.updateHUD = function () {
     let nameEl = document.getElementById("hud-player-name");
     let lvlEl = document.getElementById("hud-player-level");
     let hpFill = document.getElementById("hp-bar-fill");
@@ -17386,29 +17802,9 @@
       }
 
       // 2. Radial Sweeping 360 Degree Cooldown Ring & Countdown Text
-      if (cdRing) {
-        let totalCircumference = 81.68;
-        if (cdTimer > 0 && charges > 0) {
-          let cdProgress = cdTimer / 180; // 180 frames = 3.0s
-          let offset = totalCircumference * (1 - cdProgress);
-          cdRing.setAttribute("stroke-dashoffset", offset.toFixed(2));
-          cdRing.style.display = "block";
-
-          if (cdText) {
-            let secLeft = (cdTimer / 60).toFixed(1);
-            cdText.innerText = `${secLeft}s`;
-          }
-          flaskBtn.classList.add("flask-on-cooldown");
-        } else {
-          cdRing.setAttribute(
-            "stroke-dashoffset",
-            totalCircumference.toFixed(2),
-          );
-          cdRing.style.display = "none";
-          if (cdText) cdText.innerText = "";
-          flaskBtn.classList.remove("flask-on-cooldown");
-        }
-      }
+            if (typeof window.updateFlaskCooldownHUDOnly === "function") {
+              window.updateFlaskCooldownHUDOnly();
+            }
 
       if (charges <= 0) {
         flaskBtn.classList.add("flask-empty");
@@ -19126,11 +19522,42 @@
 
     statsListEl.innerHTML = `
                                   <div class="stat-line"><span class="stat-label">${iconSvg("atk")} ATTACK</span><span class="stat-val">${formatStatValWithDiff("atk", curStats.atk, draftStats.atk)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("def")} DEFENSE</span><span class="stat-val">${formatStatValWithDiff("def", curStats.def, draftStats.def)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("maxHp")} MAX HP</span><span class="stat-val">${formatStatValWithDiff("maxHp", curStats.maxHp, draftStats.maxHp)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("moveSpeed")} MOVE SPEED</span><span class="stat-val">${formatStatValWithDiff("moveSpeed", curStats.moveSpeed, draftStats.moveSpeed, false)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("critChance")} CRIT CHANCE</span><span class="stat-val">${formatStatValWithDiff("critChance", curStats.critChance, draftStats.critChance, true, 1)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("critDamage")} CRIT MULTI</span><span class="stat-val">${formatStatValWithDiff("critDamage", curStats.critDamage, draftStats.critDamage, true, 1)}</span></div>
+                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("def")} DEFENSE</span><span class="stat-val">${formatStatValWithDiff("def", curStats.def, draftStats.def)}</span></div>
+                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("maxHp")} MAX HP</span><span class="stat-val">${formatStatValWithDiff("maxHp", curStats.maxHp, draftStats.maxHp)}</span></div>
+                                                                    <div class="stat-line">
+                                                                      <span class="stat-label">${iconSvg("moveSpeed")} MOVE SPEED</span>
+                                                                      <span class="stat-val">
+                                                                        ${formatStatValWithDiff("moveSpeed", curStats.moveSpeed, draftStats.moveSpeed, false)}
+                                                                        ${(function() {
+                                                                          let rawSpd = curStats.rawSpeedBonus || 0;
+                                                                          if (rawSpd > 1.5) {
+                                                                            let excessPct = Math.round((rawSpd - 1.5) * 100);
+                                                                            let activeRelicLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("speed_to_momentum") : 0;
+                                                                            let relicMult = 1.0 + activeRelicLvl * 0.01;
+                                                                            let conversionText = window.checkArtifactTrait("speed_to_momentum")
+                                                                              ? `Converts to +${(excessPct * 2.5 * relicMult).toFixed(1)}% Crit Damage via Kinetic Momentum Converter.`
+                                                                              : "Equip and attune the Kinetic Momentum Converter to convert this overflow into damage!";
+                                                                            return ` <span style="color:#ffd700; font-size:8.5px;" title="Physical speed capped at 2.5x base. ${excessPct}% excess speed. ${conversionText}">[Capped +${excessPct}% Overflow]</span>`;
+                                                                          }
+                                                                          return "";
+                                                                        })()}
+                                                                      </span>
+                                                                    </div>
+                                                                    <div class="stat-line">
+                                                                      <span class="stat-label">${iconSvg("critChance")} CRIT CHANCE</span>
+                                                                      <span class="stat-val">
+                                                                        ${formatStatValWithDiff("critChance", curStats.critChance, draftStats.critChance, true, 1)}
+                                                                        ${(function() {
+                                                                          let rawCrit = curStats.rawCritChance || 0;
+                                                                          if (rawCrit > 1.0) {
+                                                                            let excessPct = Math.round((rawCrit - 1.0) * 100);
+                                                                            return ` <span style="color:#ffd700; font-size:8.5px;" title="Crit chance capped at 100%. ${excessPct}% excess converted to +${excessPct * 2}% Crit Damage.">[Capped +${excessPct}% Overflow]</span>`;
+                                                                          }
+                                                                          return "";
+                                                                        })()}
+                                                                      </span>
+                                                                    </div>
+                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("critDamage")} CRIT MULTI</span><span class="stat-val">${formatStatValWithDiff("critDamage", curStats.critDamage, draftStats.critDamage, true, 1)}</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("block")} BLOCK RATE</span><span class="stat-val">${formatStatValWithDiff("block", curStats.block, draftStats.block, true, 1)} (Cap: ${formatStatValWithDiff("maxBlockCap", curStats.maxBlockCap, draftStats.maxBlockCap, true, 1)})</span></div>
                                                                     <div class="stat-line"><span class="stat-label">${iconSvg("parry")} PARRY RATE</span><span class="stat-val">${formatStatValWithDiff("parry", curStats.parry, draftStats.parry, true, 1)} (Cap: ${formatStatValWithDiff("maxParryCap", curStats.maxParryCap, draftStats.maxParryCap, true, 1)})</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("barrier")} BARRIER</span><span class="stat-val">${formatStatValWithDiff("arcaneBarrier", curStats.arcaneBarrier, draftStats.arcaneBarrier, true, 1)}</span></div>
@@ -21502,6 +21929,7 @@
     let p = window.playerStats;
     if (!p) return;
     p.flaskCharges = p.maxFlaskCharges || 1;
+    p.flaskCooldownTimer = 0; // Clear the active cooldown timer on refill
     if (!silent) {
       let flaskBtn = document.getElementById("hud-flask-button");
       if (flaskBtn) {
@@ -21571,11 +21999,7 @@
     }
 
     stats.flaskCharges--;
-    if (stats.flaskCharges > 0) {
-      stats.flaskCooldownTimer = 180; // 3 seconds internal cooldown (60 FPS)
-    } else {
-      stats.flaskCooldownTimer = 0;
-    }
+        stats.flaskCooldownTimer = 2700; // 45 seconds internal cooldown (60 FPS)
 
     if (typeof window.progressMission === "function") {
       window.progressMission("flask", 1);
@@ -22682,133 +23106,4 @@
           };
     })();
 
-(function () {
-  const originalResolve = window.resolvePlayerStats;
-  window.resolvePlayerStats = function (isDraft = false) {
-    let stats = originalResolve ? originalResolve(isDraft) : {};
-    if (!stats) return stats;
 
-    let getLevel = (id) =>
-      window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel(id) : 0;
-
-    // Apply Tome Spell Scaling & Type mapping
-    if (window.equippedSlots && window.equippedSlots.subweapon) {
-      let sub = window.equippedSlots.subweapon;
-      if (
-        sub.type === "tome" ||
-        sub.subType === "tome" ||
-        (sub.name && sub.name.toLowerCase().includes("lexicon"))
-      ) {
-        stats.spellType = sub.spellType || "fire";
-
-        let basePower = stats.spellPower || 1.5;
-        if (stats.spellType === "tri") {
-          stats.spellPower = basePower * 0.8; // Balanced 1.2x modifier for full triad convergence
-        } else if (stats.spellType.startsWith("dual_")) {
-          stats.spellPower = basePower * 0.9; // 1.35x modifier for dual catalysts
-        } else {
-          stats.spellPower = basePower; // Concentrated 1.5x modifier for single element channels
-        }
-      }
-    }
-
-    // --- STANDARD FILLER SKILLS RESOLUTION ---
-
-    // 1. Shield Tree Fillers
-    let stalwartBastionLvl = getLevel("shield_stalwart_bastion");
-    if (stalwartBastionLvl > 0) {
-      stats.blockMitigation =
-        (stats.blockMitigation || 0.7) + stalwartBastionLvl * 0.05;
-    }
-
-    let shieldFiller1 = getLevel("shield_filler_hp_flat");
-    if (shieldFiller1 > 0) {
-      stats.maxHp = (stats.maxHp || 100) * (1 + shieldFiller1 * 0.04);
-      stats.def = (stats.def || 5) * (1 + shieldFiller1 * 0.03);
-    }
-    let shieldFiller2 = getLevel("shield_filler_flat_def");
-    if (shieldFiller2 > 0) {
-      stats.def = (stats.def || 5) + shieldFiller2 * 5;
-      stats.maxHp = (stats.maxHp || 100) + shieldFiller2 * 25;
-    }
-
-    // 2. Dagger Tree Fillers
-    let daggerFiller1 = getLevel("dagger_filler_haste");
-    if (daggerFiller1 > 0) {
-      stats.moveSpeed =
-        (stats.moveSpeed || window.playerStats.baseMoveSpeed) *
-        (1 + (daggerFiller1 * 4) / 100);
-      stats.parry = (stats.parry || 0.0) + daggerFiller1 * 0.01;
-    }
-    let daggerFiller2 = getLevel("dagger_filler_armor_pen");
-    if (daggerFiller2 > 0) {
-      stats.atk = (stats.atk || 15) * (1 + daggerFiller2 * 0.04);
-      stats.critDamage = (stats.critDamage || 1.5) + daggerFiller2 * 0.03;
-    }
-
-    // 3. Tome Tree Fillers
-    let tomeFiller1 = getLevel("tome_filler_barrier_regen");
-    if (tomeFiller1 > 0) {
-      stats.spellPower = (stats.spellPower || 1.5) + tomeFiller1 * 0.04;
-      stats.arcaneBarrier = (stats.arcaneBarrier || 0.2) + tomeFiller1 * 0.01;
-    }
-    let tomeFiller2 = getLevel("tome_filler_spell_crit");
-    if (tomeFiller2 > 0) {
-      stats.critChance = (stats.critChance || 0.05) + tomeFiller2 * 0.015;
-      stats.atk = (stats.atk || 15) * (1 + tomeFiller2 * 0.02);
-    }
-
-    // --- INFINITE ASCENSION SKILLS RESOLUTION ---
-
-    // 1. Shield Tree Compounding
-    let EndlessBastionLvl = getLevel("shield_inf_defense");
-    if (EndlessBastionLvl > 0) {
-      stats.def = (stats.def || 5) * Math.pow(1.1, EndlessBastionLvl);
-    }
-    let SpikeResonanceLvl = getLevel("shield_inf_bash");
-    if (SpikeResonanceLvl > 0) {
-      stats.shieldBashMultiplier =
-        (stats.shieldBashMultiplier || 1.0) * Math.pow(1.12, SpikeResonanceLvl);
-    }
-
-    // 2. Dagger Tree Compounding
-    let LethalInfinitumLvl = getLevel("dagger_inf_crit");
-    if (LethalInfinitumLvl > 0) {
-      stats.critDamage =
-        (stats.critDamage || 1.5) * Math.pow(1.12, LethalInfinitumLvl);
-    }
-    let ToxicOsmosisLvl = getLevel("dagger_inf_poison");
-    if (ToxicOsmosisLvl > 0) {
-      stats.poisonDamageMultiplier =
-        (stats.poisonDamageMultiplier || 1.0) * Math.pow(1.1, ToxicOsmosisLvl);
-      stats.bleedDamageMultiplier =
-        (stats.bleedDamageMultiplier || 1.0) * Math.pow(1.1, ToxicOsmosisLvl);
-    }
-
-    // 3. Tome Tree Compounding
-    let ArcaneSingularityLvl = getLevel("tome_inf_spell");
-    if (ArcaneSingularityLvl > 0) {
-      stats.spellPower =
-        (stats.spellPower || 1.5) * Math.pow(1.12, ArcaneSingularityLvl);
-    }
-    let AethericInfusionLvl = getLevel("tome_inf_intel");
-    if (AethericInfusionLvl > 0) {
-      stats.atk = (stats.atk || 15) * Math.pow(1.1, AethericInfusionLvl);
-      stats.int = (stats.int || 5) * Math.pow(1.1, AethericInfusionLvl);
-    }
-
-    // 4. Utility Tree Soft-Capped Power-Law Scaling (Protects game economy)
-    let GildedEmperorLvl = getLevel("utility_inf_gold");
-    if (GildedEmperorLvl > 0) {
-      let goldBonus = 0.04 * Math.pow(GildedEmperorLvl, 0.65);
-      stats.gold = (stats.gold || 1.0) + goldBonus;
-    }
-    let AstralProspectorLvl = getLevel("utility_inf_drop");
-    if (AstralProspectorLvl > 0) {
-      let dropBonus = 0.015 * Math.pow(AstralProspectorLvl, 0.65);
-      stats.qly = (stats.qly || 1.0) + dropBonus;
-    }
-
-    return stats;
-  };
-})();

@@ -3551,9 +3551,9 @@
       } else if (chosenType === "boots") {
         pool = ["moveSpeed", "idleSpd", "activeSpd"];
       } else if (chosenType === "ring") {
-        // Rings act as the dedicated Flat Base Suffix Engine (restricted strictly to flat rolls)
-        pool = ["atk", "maxHp", "def", "str", "dex", "int"];
-      } else if (chosenType === "subweapon") {
+              // Rings act as the dedicated Flat Base Suffix Engine (restricted strictly to flat rolls)
+              pool = ["atk", "maxHp", "def", "str", "dex", "int", "critChance", "moveSpeed"];
+            } else if (chosenType === "subweapon") {
         if (item.subType === "shield") pool = ["block", "moveSpeed"];
         else if (item.subType === "dagger")
           pool = ["parry", "critChance", "moveSpeed"];
@@ -3597,12 +3597,12 @@
             window.randInt(1, 2) * stageScale * pctRarityMult * prestigeMult,
           );
         } else if (selectedStat === "critChance") {
-          let rolled =
-            window.randFloat(0.01, 0.025) *
-            Math.sqrt(stageScale) *
-            pctRarityMult *
-            prestigeMult;
-          item.bonusCritChance += parseFloat(Math.min(0.2, rolled).toFixed(4));
+                  let rolled =
+                    window.randFloat(0.015, 0.04) * // Progressive baseline 1.5% to 4.0%
+                    Math.sqrt(stageScale) *
+                    pctRarityMult *
+                    prestigeMult;
+                  item.bonusCritChance += parseFloat(Math.min(0.2, rolled).toFixed(4));
         } else if (selectedStat === "critDamage") {
           let rolled =
             window.randFloat(0.03, 0.06) *

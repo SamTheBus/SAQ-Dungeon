@@ -2671,14 +2671,61 @@ window.NEW_ARTIFACT_SVGS.synergy_sanguine = function (size) {
       <path d="M19 32 C15 36, 17 48, 25 50 C21 44, 20 36, 19 32 Z" fill="url(#sanguine_metal_${size})" stroke="#05070a" stroke-width="0.8" />
       <path d="M45 32 C49 36, 47 48, 39 50 C43 44, 44 36, 45 32 Z" fill="url(#sanguine_metal_${size})" stroke="#05070a" stroke-width="0.8" />
       <!-- Curved glass reflection glare -->
-      <path d="M22.5 32 C25 25, 29 22, 32 22 C35 22, 39 25, 41.5 32 C35.5 30, 28.5 30, 22.5 32 Z" fill="url(#sanguine_glass_${size})" opacity="0.6" />
-    </svg>
-  `;
-};
+            <path d="M22.5 32 C25 25, 29 22, 32 22 C35 22, 39 25, 41.5 32 C35.5 30, 28.5 30, 22.5 32 Z" fill="url(#sanguine_glass_${size})" opacity="0.6" />
+          </svg>
+        `;
+      };
 
-// Global interceptor hook executing modular dynamic lookups
-(function () {
-  const originalGetArtifactIcon = window.getArtifactIconHtml;
+      // Register 1.11: Kinetic Momentum Converter SVG
+      window.NEW_ARTIFACT_SVGS.speed_to_momentum = function (size) {
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+            <circle cx="32" cy="32" r="24" fill="url(#momentum_glow_${size})" opacity="0.15" />
+            <defs>
+              <radialGradient id="momentum_glow_${size}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#00ffff" />
+                <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+              </radialGradient>
+              <linearGradient id="momentum_steel_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="50%" stop-color="#0284c7" />
+                <stop offset="100%" stop-color="#0369a1" />
+              </linearGradient>
+              <linearGradient id="momentum_gold_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffd700" />
+                <stop offset="50%" stop-color="#d4af37" />
+                <stop offset="100%" stop-color="#8a6d1c" />
+              </linearGradient>
+              <linearGradient id="momentum_core_${size}" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" />
+                <stop offset="50%" stop-color="#00ffff" />
+                <stop offset="100%" stop-color="#1e1b4b" />
+              </linearGradient>
+            </defs>
+            <!-- Outer Circular Frame -->
+            <circle cx="32" cy="32" r="22" stroke="url(#momentum_steel_${size})" stroke-width="2.2" />
+            <circle cx="32" cy="32" r="19" stroke="#05070a" stroke-width="1.0" fill="none" />
+            <!-- Vector Chevron Arrows around the edge representing speed and forward direction -->
+            <path d="M12 32 L15 30 L15 34 Z M52 32 L49 30 L49 34 Z M32 12 L30 15 L34 15 Z M32 52 L30 49 L34 49 Z" fill="url(#momentum_gold_${size})" />
+            <!-- Inner Gyroscope rings -->
+            <circle cx="32" cy="32" r="14" stroke="#ffd700" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.6" />
+            <!-- Central Converter Axle with vector wings -->
+            <path d="M26 32 L32 20 L38 32 L32 44 Z" fill="rgba(255, 255, 255, 0.08)" stroke="#ffffff" stroke-width="1.2" opacity="0.75" />
+            <!-- Glowing converted core -->
+            <circle cx="32" cy="32" r="6" fill="url(#momentum_core_${size})" stroke="#00ffff" stroke-width="1.0" />
+            <circle cx="32" cy="32" r="2" fill="#ffffff" />
+            <!-- Energy transfer bolts/arcs -->
+            <path d="M21 21 L26 23" stroke="#00ffff" stroke-width="1.0" stroke-linecap="round" />
+            <path d="M43 43 L38 41" stroke="#00ffff" stroke-width="1.0" stroke-linecap="round" />
+            <path d="M21 43 L26 41" stroke="#a855f7" stroke-width="1.0" stroke-linecap="round" />
+            <path d="M43 21 L38 23" stroke="#a855f7" stroke-width="1.0" stroke-linecap="round" />
+          </svg>
+        `;
+      };
+
+      // Global interceptor hook executing modular dynamic lookups
+      (function () {
+        const originalGetArtifactIcon = window.getArtifactIconHtml;
   window.getArtifactIconHtml = function (trait, size = 56) {
     if (window.NEW_ARTIFACT_SVGS && window.NEW_ARTIFACT_SVGS[trait]) {
       return window.NEW_ARTIFACT_SVGS[trait](size);
