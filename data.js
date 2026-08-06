@@ -1195,11 +1195,11 @@ Object.assign(window.GameState, {
         }
       }
 
-      // Calculate next xpReq safely using BigNum exponential power scaling
-      xpReq = BigNum.from(600).mul(
-        BigNum.from(1.55).pow(window.playerStats.level - 1),
-      );
-      leveledUp = true;
+      // Calculate next xpReq safely using polynomial scaling
+            let lvl = window.playerStats.level || 1;
+            let rawXpReq = Math.round(350 * Math.pow(lvl, 1.8));
+            xpReq = BigNum.from(rawXpReq);
+            leveledUp = true;
     }
 
     if (leveledUp) {
@@ -5589,9 +5589,9 @@ window.lastUpdateTime = Date.now();
 window.sessionStartTime = Date.now();
 window.respawnIntervalId = null;
 window.recalculateXpRequirement = function () {
-  window.playerStats.xpReq = BigNum.from(600).mul(
-    BigNum.from(1.55).pow(window.playerStats.level - 1),
-  );
+  let lvl = window.playerStats.level || 1;
+  let rawXpReq = Math.round(350 * Math.pow(lvl, 1.8));
+  window.playerStats.xpReq = BigNum.from(rawXpReq);
 };
 // Expose the manual boss rechallenge actuator to the DOM window
 window.rechallengeBoss = function () {

@@ -1035,13 +1035,17 @@
   window.activeDungeonMap = new DungeonMapGenerator();
 
   window.preRenderStaticMap = function (map) {
-    if (!map || !map.grid || map.grid.length === 0) return;
-    let tileSize = map.tileSize;
+      if (!map || !map.grid || map.grid.length === 0) return;
+      let tileSize = map.tileSize;
 
-    map.preRenderCanvas = document.createElement("canvas");
-    map.preRenderCanvas.width = map.width * tileSize;
-    map.preRenderCanvas.height = map.height * tileSize;
-    let pCtx = map.preRenderCanvas.getContext("2d");
+      if (!window.sharedPreRenderCanvas) {
+        window.sharedPreRenderCanvas = document.createElement("canvas");
+      }
+      let pCanvas = window.sharedPreRenderCanvas;
+      pCanvas.width = map.width * tileSize;
+      pCanvas.height = map.height * tileSize;
+      map.preRenderCanvas = pCanvas;
+      let pCtx = pCanvas.getContext("2d");
 
     let isHub = window.currentGameState === window.GAME_STATES.HUB;
     let depth = window.player ? window.player.depth || 1 : 1;
@@ -1901,28 +1905,15 @@
     ctx.translate(-Math.floor(camera.x), -Math.floor(camera.y));
 
     // PASS 1: Base Terrain & Floor Grid Rendering
-    if (map.needsPreRender || !map.preRenderCanvas) {
-      window.preRenderStaticMap(map);
-    }
+        if (map.needsPreRender || !map.preRenderCanvas) {
+          window.preRenderStaticMap(map);
+        }
 
-    for (let r = startRow; r <= endRow; r++) {
-      for (let c = startCol; c <= endCol; c++) {
-        let px = c * tileSize;
-        let py = r * tileSize;
-
-        ctx.drawImage(
-          map.preRenderCanvas,
-          px,
-          py,
-          tileSize,
-          tileSize,
-          px,
-          py,
-          tileSize,
-          tileSize,
-        );
-      }
-    }
+        let sx = startCol * tileSize;
+        let sy = startRow * tileSize;
+        let sWidth = Math.max(1, (endCol - startCol + 1) * tileSize);
+        let sHeight = Math.max(1, (endRow - startRow + 1) * tileSize);
+        ctx.drawImage(map.preRenderCanvas, sx, sy, sWidth, sHeight, sx, sy, sWidth, sHeight);
 
     // PASS 2: Object & Station Overlay Pass (Renders cleanly over floor grid without clipping)
     for (let r = startRow; r <= endRow; r++) {
