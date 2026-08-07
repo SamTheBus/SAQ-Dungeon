@@ -200,12 +200,62 @@ window.AssetCatalog = {
     // --- SPECIALIZED NOUN Blueprints ---
     greatsword(id, color) {
       return `
-          ${window.AssetCatalog.gradients.weapon(id, color)}
-          <path d="M14 2 L18 2 L18 20 L14 20 Z" fill="url(#grad_weap_${id})" stroke="#000" stroke-width="1.8" />
-          <path d="M9 20 L23 20 L16 23 Z" fill="${color}" stroke="#000" stroke-width="1.5" />
-          <rect x="14.5" y="23" width="3" height="6" fill="#4d2f12" stroke="#000" stroke-width="1" />
-          <circle cx="16" cy="29.5" r="1.5" fill="${color}" stroke="#000" stroke-width="1" />
-        `;
+            <defs>
+              <!-- Massive blade light facet -->
+              <linearGradient id="gs_blade_l_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+              <!-- Massive blade shadow facet -->
+              <linearGradient id="gs_blade_s_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#334155"/>
+              </linearGradient>
+              <!-- Ricasso dark steel leather wrap -->
+              <linearGradient id="gs_ricasso_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#555555"/>
+                <stop offset="100%" stop-color="#2c3e50"/>
+              </linearGradient>
+              <!-- Long grip leather wrap -->
+              <linearGradient id="gs_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Heavy Blade (Shadow + Parierhaken parrying hook) -->
+            <path d="M16 2 L13.5 3.5 L13.5 14 L11.5 14.5 L14 15 L14 19 L16 19 Z" fill="url(#gs_blade_s_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Right Heavy Blade (Light + Parierhaken parrying hook) -->
+            <path d="M16 2 L18.5 3.5 L18.5 14 L20.5 14.5 L18 15 L18 19 L16 19 Z" fill="url(#gs_blade_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Specular Highlight Sheen -->
+            <polygon points="16,2 18.0,3.5 17.5,13.5 16,13.5" fill="rgba(255,255,255,0.45)" />
+
+            <!-- Ricasso (Blunt base wrap) -->
+            <rect x="14" y="15.8" width="4" height="3.2" fill="url(#gs_ricasso_${id})" stroke="#05070a" stroke-width="1.5" />
+
+            <!-- Left Guard Side Ring (Seitenring) -->
+            <circle cx="10" cy="19.5" r="3.2" fill="none" stroke="${color}" stroke-width="1.8" />
+
+            <!-- Right Guard Side Ring (Seitenring) -->
+            <circle cx="22" cy="19.5" r="3.2" fill="none" stroke="${color}" stroke-width="1.8" />
+
+            <!-- Imposing Straight Crossguard -->
+            <path d="M7 19.5 L25 19.5 L23 21.5 L9 21.5 Z" fill="${color}" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Long Two-Handed Grip -->
+            <rect x="14.2" y="21.5" width="3.6" height="7" fill="url(#gs_hilt_${id})" stroke="#05070a" stroke-width="1.5" />
+            <!-- Grip Ribs/Spacers -->
+            <line x1="14.2" y1="23.2" x2="17.8" y2="23.2" stroke="#05070a" stroke-width="1" />
+            <line x1="14.2" y1="25.0" x2="17.8" y2="25.0" stroke="#05070a" stroke-width="1" />
+            <line x1="14.2" y1="26.8" x2="17.8" y2="26.8" stroke="#05070a" stroke-width="1" />
+
+            <!-- Faceted Octagonal Pommel with Inset Gem -->
+            <polygon points="16,28.5 18.8,30 16,31.5 13.2,30" fill="${color}" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+            <circle cx="16" cy="30" r="0.8" fill="#ffffff" />
+          `;
     },
     warhammer(id, color) {
       return `
@@ -228,21 +278,95 @@ window.AssetCatalog = {
     },
     broadsword(id, color) {
       return `
-              ${window.AssetCatalog.gradients.weapon(id, color)}
-              <path d="M13 3 L19 3 L18 20 L14 20 Z" fill="url(#grad_weap_${id})" stroke="#000" stroke-width="1.8" />
-              <rect x="9" y="20" width="14" height="2.5" rx="0.5" fill="${color}" stroke="#000" stroke-width="1.2" />
-              <rect x="14" y="22.5" width="4" height="6" fill="#3b3b3b" stroke="#000" stroke-width="1" />
-              <circle cx="16" cy="29.5" r="1.5" fill="${color}" stroke="#000" stroke-width="1" />
-            `;
+            <defs>
+              <!-- Steel blade light gradient -->
+              <linearGradient id="bs_blade_l_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#bdc3c7"/>
+              </linearGradient>
+              <!-- Steel blade shadow gradient -->
+              <linearGradient id="bs_blade_s_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#95a5a6"/>
+                <stop offset="100%" stop-color="#7f8c8d"/>
+              </linearGradient>
+              <!-- Hilt leather wrap gradient -->
+              <linearGradient id="bs_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#4e3629"/>
+                <stop offset="100%" stop-color="#2b1a11"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Basket crossguard backplate -->
+            <path d="M11 20 L21 20 L19 23 L13 23 Z" fill="${color}" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Left Blade Side (Shadow Side) -->
+            <path d="M16 2 L13 3 L14 20 L16 20 Z" fill="url(#bs_blade_s_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Right Blade Side (Light Side) -->
+            <path d="M16 2 L19 3 L18 20 L16 20 Z" fill="url(#bs_blade_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Specular Highlight Sheen (Gleam) -->
+            <polygon points="16,2 17.5,3.2 16.8,18 16,18" fill="rgba(255,255,255,0.45)" />
+
+            <!-- Heavy crossguard overlay -->
+            <path d="M9 20h14v2.5H9z" fill="${color}" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Wrapped Leather Grip -->
+            <rect x="14" y="22.5" width="4" height="6" fill="url(#bs_hilt_${id})" stroke="#05070a" stroke-width="1.5" />
+            <!-- Grip Ribs -->
+            <line x1="14" y1="24" x2="18" y2="24" stroke="#05070a" stroke-width="1" />
+            <line x1="14" y1="26" x2="18" y2="26" stroke="#05070a" stroke-width="1" />
+            <line x1="14" y1="28" x2="18" y2="28" stroke="#05070a" stroke-width="1" />
+
+            <!-- Weighted Pommel Gem (Scales with rarity color) -->
+            <circle cx="16" cy="29.5" r="2.2" fill="${color}" stroke="#05070a" stroke-width="1.8" />
+            <circle cx="15.2" cy="28.7" r="0.6" fill="#ffffff" />
+          `;
     },
     longsword(id, color) {
       return `
-              ${window.AssetCatalog.gradients.weapon(id, color)}
-              <path d="M15 2 H17 L17.5 21 H14.5 Z" fill="url(#grad_weap_${id})" stroke="#000" stroke-width="1.5" />
-              <rect x="10" y="21" width="12" height="2" rx="0.5" fill="${color}" stroke="#000" stroke-width="1" />
-              <rect x="14.5" y="23" width="3" height="6.5" fill="#333" stroke="#000" stroke-width="1" />
-              <circle cx="16" cy="29.5" r="1.5" fill="${color}" stroke="#000" stroke-width="0.8" />
-            `;
+            <defs>
+              <!-- Steel blade light gradient (slender sheen) -->
+              <linearGradient id="ls_blade_l_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="60%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+              <!-- Steel blade shadow gradient -->
+              <linearGradient id="ls_blade_s_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#64748b"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <!-- Slender handle leather wrap -->
+              <linearGradient id="ls_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#2d3748"/>
+                <stop offset="100%" stop-color="#1a202c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Slender Blade Side (Shadow Side) -->
+            <path d="M16 2 L14.5 4 L14.5 21 L16 21 Z" fill="url(#ls_blade_s_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Right Slender Blade Side (Light Side) -->
+            <path d="M16 2 L17.5 4 L17.5 21 L16 21 Z" fill="url(#ls_blade_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Specular Highlight Sheen -->
+            <polygon points="16,2 17.0,4 16.8,19 16,19" fill="rgba(255,255,255,0.4)" />
+
+            <!-- Slender Curved Crossguard (Gold/Iron accent base) -->
+            <path d="M9.5 20.5 Q16 18.5 22.5 20.5 L21.5 22.5 Q16 21.0 10.5 22.5 Z" fill="${color}" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Hand-and-a-Half Grip -->
+            <rect x="14.5" y="22.5" width="3" height="7.5" fill="url(#ls_hilt_${id})" stroke="#05070a" stroke-width="1.2" />
+            <!-- Grip cord wraps -->
+            <line x1="14.5" y1="24.5" x2="17.5" y2="24.5" stroke="#05070a" stroke-width="0.8" />
+            <line x1="14.5" y1="26.5" x2="17.5" y2="26.5" stroke="#05070a" stroke-width="0.8" />
+            <line x1="14.5" y1="28.5" x2="17.5" y2="28.5" stroke="#05070a" stroke-width="0.8" />
+
+            <!-- Diamond Pommel (Scales with rarity color) -->
+            <polygon points="16,29.5 18.2,31 16,32.5 13.8,31" fill="${color}" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <circle cx="16" cy="31" r="0.8" fill="#ffffff" />
+          `;
     },
     halberd(id, color) {
       return `
@@ -263,45 +387,267 @@ window.AssetCatalog = {
     },
     claymore(id, color) {
       return `
-              ${window.AssetCatalog.gradients.weapon(id, color)}
-              <path d="M14 2 L18 2 L18 19 L14 19 Z" fill="url(#grad_weap_${id})" stroke="#000" stroke-width="1.8" />
-              <path d="M9 19 L16 21 L23 19 L21 23 L16 22 L11 23 Z" fill="${color}" stroke="#000" stroke-width="1.5" />
-              <rect x="14.5" y="23" width="3" height="6.5" fill="#4a2711" stroke="#000" stroke-width="1" />
-              <circle cx="16" cy="29.5" r="1.5" fill="${color}" stroke="#000" stroke-width="1" />
-            `;
+            <defs>
+              <!-- Broad, imposing blade light facet -->
+              <linearGradient id="cm_blade_l_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="40%" stop-color="#e2e8f0"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+              <!-- Broad blade shadow facet -->
+              <linearGradient id="cm_blade_s_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#64748b"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <!-- Heavy leather-wrapped grip -->
+              <linearGradient id="cm_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#3d1d0b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Heavy Blade Side (Shadow Side) -->
+            <path d="M16 2 L13.5 3.5 L14 19 L16 19 Z" fill="url(#cm_blade_s_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Right Heavy Blade Side (Light Side) -->
+            <path d="M16 2 L18.5 3.5 L18 19 L16 19 Z" fill="url(#cm_blade_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Specular Highlight Sheen -->
+            <polygon points="16,2 18.0,3.5 17.2,18 16,18" fill="rgba(255,255,255,0.4)" />
+
+            <!-- Left Forward-Sloping Quillon -->
+            <path d="M16 19 L8.5 22.8 L9.2 24.6 L16 21.2 Z" fill="${color}" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+            <circle cx="7.8" cy="23.4" r="1.8" fill="${color}" stroke="#05070a" stroke-width="1.5" />
+
+            <!-- Right Forward-Sloping Quillon -->
+            <path d="M16 19 L23.5 22.8 L22.8 24.6 L16 21.2 Z" fill="${color}" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+            <circle cx="24.2" cy="23.4" r="1.8" fill="${color}" stroke="#05070a" stroke-width="1.5" />
+
+            <!-- Center Guard Block -->
+            <path d="M11.5 19h9v2.5h-9z" fill="${color}" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Long Two-Handed Grip -->
+            <rect x="14.2" y="21.5" width="3.6" height="6.5" fill="url(#cm_hilt_${id})" stroke="#05070a" stroke-width="1.5" />
+            <line x1="14.2" y1="23.2" x2="17.8" y2="23.2" stroke="#05070a" stroke-width="1" />
+            <line x1="14.2" y1="25.0" x2="17.8" y2="25.0" stroke="#05070a" stroke-width="1" />
+            <line x1="14.2" y1="26.8" x2="17.8" y2="26.8" stroke="#05070a" stroke-width="1" />
+
+            <!-- Weighted Wheel Pommel with Inset Rarity Gem -->
+            <circle cx="16" cy="29.8" r="2.8" fill="#55555d" stroke="#05070a" stroke-width="1.8" />
+            <circle cx="16" cy="29.8" r="1.5" fill="${color}" stroke="#05070a" stroke-width="1.2" />
+            <circle cx="15.4" cy="29.2" r="0.5" fill="#ffffff" />
+          `;
     },
     kite_shield(id, color) {
       return `
-              ${window.AssetCatalog.gradients.shield(id, color)}
-              <path d="M7 5 Q16 3, 25 5 Q23 18, 16 29 Q9 18, 7 5 Z" fill="url(#grad_sh_${id})" stroke="#000" stroke-width="2" />
-              <path d="M12 9 Q16 7, 20 9 L18 18 Q16 23, 16 23 L14 18 Z" fill="none" stroke="#fff" stroke-width="1" opacity="0.6" />
-            `;
+            <defs>
+              <!-- Steel rim gradient -->
+              <linearGradient id="ks_rim_${id}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <!-- Inner plate light gradient -->
+              <linearGradient id="ks_face_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+              <!-- Inner plate shadow gradient -->
+              <linearGradient id="ks_face_s_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#64748b"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Outer Steel Rim -->
+            <path d="M7 5 Q16 3, 25 5 Q23 18, 16 29 Q9 18, 7 5 Z" fill="url(#ks_rim_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Inner Plate (Shadow - Left side) -->
+            <path d="M16 5.5 Q11.5 4.5, 8.5 6 Q10.2 17.5, 16 27 Z" fill="url(#ks_face_s_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Inner Plate (Light - Right side) -->
+            <path d="M16 5.5 Q20.5 4.5, 23.5 6 Q21.8 17.5, 16 27 Z" fill="url(#ks_face_l_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Specular Highlight (Gleam) -->
+            <path d="M16 5.5 Q19.5 4.5, 21.5 6 Q20.2 15, 16 23 Z" fill="rgba(255,255,255,0.22)" />
+
+            <!-- Central Heraldic Cross (Scales with Rarity Color) -->
+            <path d="M15 8 H17 V12 H21 V14 H17 V24 H15 V14 H11 V12 H15 Z" fill="${color}" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round" />
+
+            <!-- Center Core Gem Glistening -->
+            <circle cx="16" cy="13" r="1.5" fill="#ffffff" opacity="0.8" />
+
+            <!-- Steel Rim Rivets (Left side) -->
+            <circle cx="9" cy="7" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="10.5" cy="13" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="12.8" cy="19" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="14.8" cy="24" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+
+            <!-- Steel Rim Rivets (Right side) -->
+            <circle cx="23" cy="7" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="21.5" cy="13" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="19.2" cy="19" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="17.2" cy="24" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+          `;
     },
     tower_shield(id, color) {
       return `
-              ${window.AssetCatalog.gradients.shield(id, color)}
-              <rect x="8" y="4" width="16" height="24" rx="2" fill="url(#grad_sh_${id})" stroke="#000" stroke-width="2" />
-              <line x1="16" y1="4" x2="16" y2="28" stroke="#000" stroke-width="1.5" />
-              <circle cx="11" cy="8" r="1" fill="#fff" /><circle cx="21" cy="8" r="1" fill="#fff" />
-              <circle cx="11" cy="16" r="1" fill="#fff" /><circle cx="21" cy="16" r="1" fill="#fff" />
-              <circle cx="11" cy="24" r="1" fill="#fff" /><circle cx="21" cy="24" r="1" fill="#fff" />
-            `;
+            <defs>
+              <!-- Heavy steel rim gradient -->
+              <linearGradient id="ts_rim_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#cbd5e1"/>
+                <stop offset="50%" stop-color="#64748b"/>
+                <stop offset="100%" stop-color="#334155"/>
+              </linearGradient>
+              <!-- Face light gradient -->
+              <linearGradient id="ts_face_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Face shadow gradient -->
+              <linearGradient id="ts_face_s_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Heavy Rectangular Rim -->
+            <rect x="7" y="4" width="18" height="24" rx="3" fill="url(#ts_rim_${id})" stroke="#05070a" stroke-width="1.8" />
+
+            <!-- Inner Plate (Shadow - Left side) -->
+            <path d="M16 6 V26 H9.5 V6 Z" fill="url(#ts_face_s_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Inner Plate (Light - Right side) -->
+            <path d="M16 6 V26 H22.5 V6 Z" fill="url(#ts_face_l_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Specular Highlight (Gleam) -->
+            <polygon points="16,6.5 21,6.5 21,25.5 16,25.5" fill="rgba(255,255,255,0.15)" />
+
+            <!-- Reinforced Horizontal Plate Band (Rarity Colored) -->
+            <path d="M7 14.5 H25 V17.5 H7 Z" fill="${color}" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Reinforced Vertical Plate Band (Rarity Colored) -->
+            <path d="M14.5 4 H17.5 V28 H14.5 Z" fill="${color}" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Heavy Central Boss Dome -->
+            <circle cx="16" cy="16" r="3.8" fill="url(#ts_rim_${id})" stroke="#05070a" stroke-width="1.5" />
+            <circle cx="16" cy="16" r="1.8" fill="${color}" stroke="#05070a" stroke-width="1.2" />
+            <circle cx="15.2" cy="15.2" r="0.6" fill="#ffffff" />
+
+            <!-- Heavy Corner Rivets (Left) -->
+            <circle cx="9" cy="6" r="1.2" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="9" cy="16" r="1.2" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="9" cy="26" r="1.2" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+
+            <!-- Heavy Corner Rivets (Right) -->
+            <circle cx="23" cy="6" r="1.2" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="23" cy="16" r="1.2" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="23" cy="26" r="1.2" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+          `;
     },
     buckler(id, color) {
       return `
-              <circle cx="16" cy="16" r="11" fill="${color}" stroke="#000" stroke-width="2" />
-              <circle cx="16" cy="16" r="7" fill="#2c3e50" stroke="#000" stroke-width="1.5" />
-              <circle cx="16" cy="16" r="3" fill="#ffffff" stroke="#000" stroke-width="1" />
-              <line x1="16" y1="5" x2="16" y2="27" stroke="#111" stroke-dasharray="2 2" stroke-width="1" />
-              <line x1="5" y1="16" x2="27" y2="16" stroke="#111" stroke-dasharray="2 2" stroke-width="1" />
-            `;
+            <defs>
+              <!-- Steel rim gradient -->
+              <linearGradient id="bk_rim_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <!-- Inner face light gradient -->
+              <linearGradient id="bk_face_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+              <!-- Inner face shadow gradient -->
+              <linearGradient id="bk_face_s_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#64748b"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Outer Steel Rim -->
+            <circle cx="16" cy="16" r="11" fill="url(#bk_rim_${id})" stroke="#05070a" stroke-width="1.8" />
+
+            <!-- Inner Face (Shadow - Left side) -->
+            <circle cx="16" cy="16" r="8.2" fill="url(#bk_face_s_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Inner Face (Light - Right side, drawn via arc boundary) -->
+            <path d="M16 7.8 A8.2 8.2 0 0 1 16 24.2 Z" fill="url(#bk_face_l_${id})" />
+
+            <!-- Specular Highlight (Gleam) -->
+            <path d="M16 7.8 A8.2 8.2 0 0 1 21.8 11.8 Z" fill="rgba(255,255,255,0.22)" />
+
+            <!-- Radiating Reinforcing Spikes (Crosshair array, Rarity Colored) -->
+            <!-- Top Spike -->
+            <polygon points="16,4.5 17.5,8 14.5,8" fill="${color}" stroke="#05070a" stroke-width="1.0" stroke-linejoin="round" />
+            <!-- Right Spike -->
+            <polygon points="27.5,16 24,17.5 24,14.5" fill="${color}" stroke="#05070a" stroke-width="1.0" stroke-linejoin="round" />
+            <!-- Bottom Spike -->
+            <polygon points="16,27.5 17.5,24 14.5,24" fill="${color}" stroke="#05070a" stroke-width="1.0" stroke-linejoin="round" />
+            <!-- Left Spike -->
+            <polygon points="4.5,16 8,17.5 8,14.5" fill="${color}" stroke="#05070a" stroke-width="1.0" stroke-linejoin="round" />
+
+            <!-- Central Heavy Steel Boss Dome -->
+            <circle cx="16" cy="16" r="4.2" fill="url(#bk_rim_${id})" stroke="#05070a" stroke-width="1.2" />
+            <circle cx="16" cy="16" r="2.2" fill="${color}" stroke="#05070a" stroke-width="1.0" />
+            <circle cx="15.2" cy="15.2" r="0.6" fill="#ffffff" />
+
+            <!-- Spike Rivets -->
+            <circle cx="16" cy="10" r="0.8" fill="#cbd5e1" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="22" cy="16" r="0.8" fill="#cbd5e1" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="16" cy="22" r="0.8" fill="#cbd5e1" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="10" cy="16" r="0.8" fill="#cbd5e1" stroke="#05070a" stroke-width="0.5" />
+          `;
     },
     heater_shield(id, color) {
       return `
-              ${window.AssetCatalog.gradients.shield(id, color)}
-              <path d="M6 5 H26 V14 C26 22, 16 29, 16 29 C16 29, 6 22, 6 14 Z" fill="url(#grad_sh_${id})" stroke="#000" stroke-width="2" stroke-linejoin="round" />
-              <path d="M12 9 H20 M16 9 V23" stroke="${color}" stroke-width="2" stroke-linecap="round" fill="none" />
-            `;
+            <defs>
+              <!-- Steel rim gradient -->
+              <linearGradient id="hs_rim_${id}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <!-- Inner plate light gradient -->
+              <linearGradient id="hs_face_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+              <!-- Inner plate shadow gradient -->
+              <linearGradient id="hs_face_s_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#64748b"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Outer Steel Rim -->
+            <path d="M6 5 H26 V14 C26 22, 16 29, 16 29 C16 29, 6 22, 6 14 Z" fill="url(#hs_rim_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Inner Plate (Shadow - Left side) -->
+            <path d="M16 6.5 H8 V14 C8 20.8, 16 27, 16 27 Z" fill="url(#hs_face_s_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Inner Plate (Light - Right side) -->
+            <path d="M16 6.5 H24 V14 C24 20.8, 16 27, 16 27 Z" fill="url(#hs_face_l_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Specular Highlight (Gleam) -->
+            <path d="M16 6.5 H22 V14 C22 19, 16 24, 16 24 Z" fill="rgba(255,255,255,0.22)" />
+
+            <!-- Central Heraldic Cross (Scales with Rarity Color) -->
+            <path d="M15 8 H17 V12 H20 V14 H17 V21 H15 V14 H12 V12 H15 Z" fill="${color}" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round" />
+
+            <!-- Center Core Gem Glistening -->
+            <circle cx="16" cy="13" r="1.5" fill="#ffffff" opacity="0.8" />
+
+            <!-- Steel Rim Rivets (Left side) -->
+            <circle cx="8" cy="7" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="8" cy="13" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="11" cy="20" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="14" cy="25" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+
+            <!-- Steel Rim Rivets (Right side) -->
+            <circle cx="24" cy="7" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="24" cy="13" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="21" cy="20" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="18" cy="25" r="1.0" fill="#cbd5e1" stroke="#05070a" stroke-width="0.8" />
+          `;
     },
     aegis(id, color) {
       return `
@@ -361,237 +707,1302 @@ window.AssetCatalog = {
     },
     grimoire(id, color) {
       return `
-              <!-- Deep Purple/Black Ritual Binding -->
-              <rect x="5" y="4" width="22" height="24" rx="2" fill="#1b002a" stroke="#000" stroke-width="1.8" />
-              <rect x="5" y="4" width="4.5" height="24" fill="#0d001a" stroke="#000" stroke-width="1" />
-              <!-- Occult Golden Crescent Moon and Star -->
-              <path d="M19 12 C19 16, 14 20, 14 20 C14 20, 18 18, 18 12 C18 6, 14 4, 14 4 C14 4, 19 8, 19 12 Z" fill="#f1c40f" stroke="#000" stroke-width="0.8" transform="translate(1, 0)" />
-              <polygon points="15,10 16,12 14,12" fill="${color}" />
-              <!-- Forbidden Seal Lock -->
-              <rect x="25" y="13" width="3" height="6" rx="0.5" fill="#f1c40f" stroke="#000" stroke-width="1" />
-            `;
+                <defs>
+                  <!-- Cel-shaded cover face: light and dark splits -->
+                  <linearGradient id="gr_cover_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#2d0044" />
+                    <stop offset="100%" stop-color="#1b002c" />
+                  </linearGradient>
+                  <linearGradient id="gr_cover_s_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#140020" />
+                    <stop offset="100%" stop-color="#08000d" />
+                  </linearGradient>
+                  <!-- Metal plating corner guards & clasps -->
+                  <linearGradient id="gr_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffe875" />
+                    <stop offset="50%" stop-color="#9c7a10" />
+                    <stop offset="100%" stop-color="#5a4504" />
+                  </linearGradient>
+                  <!-- Dynamic core magic aura glow -->
+                  <radialGradient id="gr_glow_core_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+                    <stop offset="40%" stop-color="${color}" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Drop projection shadow (Subtle back lift) -->
+                <rect x="6" y="5" width="22" height="24" rx="2.5" fill="rgba(0,0,0,0.4)" />
+
+                <!-- Book spine base & bind wraps -->
+                <rect x="5" y="4" width="5" height="24" rx="1.5" fill="#08000d" stroke="#05070a" stroke-width="1.8" />
+                <!-- Spine Horizontal Ribbing -->
+                <line x1="5" y1="8" x2="10" y2="8" stroke="url(#gr_brass_${id})" stroke-width="1.5" />
+                <line x1="5" y1="13" x2="10" y2="13" stroke="url(#gr_brass_${id})" stroke-width="1.5" />
+                <line x1="5" y1="18" x2="10" y2="18" stroke="url(#gr_brass_${id})" stroke-width="1.5" />
+                <line x1="5" y1="23" x2="10" y2="23" stroke="url(#gr_brass_${id})" stroke-width="1.5" />
+
+                <!-- Stacked Parchment Page Edges (Visible at the right and bottom) -->
+                <!-- Base page block -->
+                <rect x="9.5" y="4.5" width="16.5" height="23" fill="#eae1c8" />
+                <!-- Page layering lines -->
+                <line x1="26" y1="5" x2="26" y2="27" stroke="#9e957e" stroke-width="1" stroke-dasharray="1 1" />
+                <line x1="10" y1="27.5" x2="26" y2="27.5" stroke="#9e957e" stroke-width="1" stroke-dasharray="1 1" />
+
+                <!-- Main Leather Cover Face (Highlight / Light Side) -->
+                <path d="M10 4 L25.5 4 L25.5 28 L10 28 Z" fill="url(#gr_cover_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Cel-shaded Cover Split (Shadow / Dark Side overlay) -->
+                <path d="M10 4 L17 4 L10 28 Z" fill="url(#gr_cover_s_${id})" stroke="#05070a" stroke-width="1.2" opacity="0.9" />
+
+                <!-- Gilded Corner Brackets (Top-Right & Bottom-Right Protection Plates) -->
+                <!-- Top Right Guard -->
+                <polygon points="21,4 25.5,4 25.5,8.5" fill="url(#gr_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="23.5" cy="6" r="0.6" fill="#fff" />
+                <!-- Bottom Right Guard -->
+                <polygon points="21,28 25.5,28 25.5,23.5" fill="url(#gr_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="23.5" cy="26" r="0.6" fill="#fff" />
+
+                <!-- Dynamic Magic Spell Circle Radial Glow -->
+                <circle cx="18" cy="16" r="7.5" fill="url(#gr_glow_core_${id})" opacity="0.85" />
+
+                <!-- Central Occult Hex-Ring / Runic Sigil -->
+                <circle cx="18" cy="16" r="5" fill="none" stroke="url(#gr_brass_${id})" stroke-width="1" />
+                <circle cx="18" cy="16" r="3.8" fill="none" stroke="${color}" stroke-width="0.8" stroke-dasharray="1.5 1.5" />
+                <!-- Star of Knowledge glyph -->
+                <polygon points="18,12.5 19.5,15.5 21.5,16 19.8,17.5 20.2,19.5 18,18.2 15.8,19.5 16.2,17.5 14.5,16 16.5,15.5" fill="#ffffff" stroke="${color}" stroke-width="0.6" />
+                <circle cx="18" cy="16" r="1" fill="#ffffff" />
+
+                <!-- Strap-lock plate & lock mechanism -->
+                <!-- Leather security strap -->
+                <rect x="23.5" y="13.5" width="3" height="5" fill="#5c3a21" stroke="#05070a" stroke-width="1" />
+                <!-- Forbidden Padlock Base -->
+                <rect x="24.5" y="11.5" width="4" height="9" rx="1" fill="url(#gr_brass_${id})" stroke="#05070a" stroke-width="1.2" />
+                <!-- Central Seal Gem (Pulsating Tier Color) -->
+                <circle cx="26.5" cy="16" r="1" fill="${color}" stroke="#05070a" stroke-width="0.6" />
+                <circle cx="26.2" cy="15.7" r="0.3" fill="#fff" />
+              `;
     },
     codex(id, color) {
       return `
-                   <!-- Brass and Bronze Clad Cover -->
-                   <rect x="6" y="4" width="20" height="24" rx="2" fill="#784212" stroke="#000" stroke-width="2" />
-                   <rect x="6" y="4" width="4" height="24" fill="#4a2306" stroke="#000" stroke-width="1" />
-                   <!-- Rotating Mechanical Gears -->
-                   <circle cx="17" cy="16" r="6" fill="none" stroke="#bdc3c7" stroke-dasharray="2 1.5" stroke-width="1.8" />
-                   <circle cx="17" cy="16" r="4" fill="${color}" stroke="#111" stroke-width="1" />
-                   <circle cx="17" cy="16" r="1.5" fill="#fff" />
-                 `;
+                <defs>
+                  <!-- Cel-shaded Wood cover grain -->
+                  <linearGradient id="cx_wood_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#4d290c" />
+                    <stop offset="100%" stop-color="#2e1805" />
+                  </linearGradient>
+                  <!-- Heavy brass frame and fixtures -->
+                  <linearGradient id="cx_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffe875" />
+                    <stop offset="50%" stop-color="#9c7a10" />
+                    <stop offset="100%" stop-color="#5a4504" />
+                  </linearGradient>
+                  <!-- Dynamic steam-engine kinetic glow -->
+                  <radialGradient id="cx_glow_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="45%" stop-color="${color}" />
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Drop shadow projection -->
+                <rect x="6" y="5" width="21" height="24" rx="2.5" fill="rgba(0,0,0,0.4)" />
+
+                <!-- Spine binding wraps -->
+                <rect x="5" y="4" width="5" height="24" rx="1.5" fill="#1c0f07" stroke="#05070a" stroke-width="1.8" />
+                <line x1="5" y1="9" x2="10" y2="9" stroke="url(#cx_brass_${id})" stroke-width="1.2" />
+                <line x1="5" y1="16" x2="10" y2="16" stroke="url(#cx_brass_${id})" stroke-width="1.2" />
+                <line x1="5" y1="23" x2="10" y2="23" stroke="url(#cx_brass_${id})" stroke-width="1.2" />
+
+                <!-- Yellowed Relic Parchment Sheet Layers (Visible right & bottom) -->
+                <rect x="9.5" y="4.5" width="16" height="23" fill="#eae1c8" />
+                <line x1="25.5" y1="5" x2="25.5" y2="27" stroke="#9e957e" stroke-width="1" stroke-dasharray="1 1" />
+                <line x1="10" y1="27" x2="25.5" y2="27" stroke="#9e957e" stroke-width="1" stroke-dasharray="1 1" />
+
+                <!-- Core Wood Cover Face -->
+                <path d="M10 4 L25 4 L25 28 L10 28 Z" fill="url(#cx_wood_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Heavy Brass Binding Plates (Top & Bottom reinforcing bands) -->
+                <path d="M10 4 H25 V7.5 H10 Z" fill="url(#cx_brass_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M10 24.5 H25 V28 H10 Z" fill="url(#cx_brass_${id})" stroke="#05070a" stroke-width="1.2" />
+                <!-- Rivet Details -->
+                <circle cx="12" cy="5.8" r="0.6" fill="#fff" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="17.5" cy="5.8" r="0.6" fill="#fff" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="23" cy="5.8" r="0.6" fill="#fff" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="12" cy="26.2" r="0.6" fill="#fff" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="17.5" cy="26.2" r="0.6" fill="#fff" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="23" cy="26.2" r="0.6" fill="#fff" stroke="#05070a" stroke-width="0.3" />
+
+                <!-- Steampunk Conduit Pipe Accents -->
+                <path d="M10 11.5 H14" stroke="#05070a" stroke-width="1" stroke-linecap="round" />
+                <path d="M22 11.5 H25" stroke="#05070a" stroke-width="1" stroke-linecap="round" />
+
+                <!-- Dynamic Kinetic Pressure Center Core Glow -->
+                <circle cx="18" cy="16" r="6" fill="url(#cx_glow_${id})" opacity="0.85" />
+
+                <!-- Master Brass 8-Tooth Cog Assembly -->
+                <g stroke="url(#cx_brass_${id})" stroke-width="1.8" stroke-linecap="round">
+                  <line x1="18" y1="10" x2="18" y2="22" />
+                  <line x1="12" y1="16" x2="24" y2="16" />
+                  <line x1="13.7" y1="11.7" x2="22.3" y2="20.3" />
+                  <line x1="13.7" y1="20.3" x2="22.3" y2="11.7" />
+                </g>
+                <!-- Solid gear plate covering the crosshairs to create teeth spokes -->
+                <circle cx="18" cy="16" r="4.5" fill="#0c0702" stroke="#05070a" stroke-width="1.2" />
+                <!-- Hot glowing energy core matching rarity -->
+                <circle cx="18" cy="16" r="2.2" fill="${color}" stroke="#fff" stroke-width="0.8" />
+
+                <!-- Secondary Interlocking Mini Brass Cog Assembly -->
+                <g stroke="url(#cx_brass_${id})" stroke-width="1.2" stroke-linecap="round" opacity="0.85">
+                  <line x1="13" y1="18.5" x2="13" y2="24.5" />
+                  <line x1="10" y1="21.5" x2="16" y2="21.5" />
+                  <line x1="10.8" y1="19.3" x2="15.2" y2="23.7" />
+                  <line x1="10.8" y1="23.7" x2="15.2" y2="19.3" />
+                </g>
+                <circle cx="13" cy="21.5" r="2.2" fill="#0c0702" stroke="#05070a" stroke-width="1" />
+                <circle cx="13" cy="21.5" r="0.8" fill="#fff" />
+              `;
     },
     lexicon(id, color) {
       return `
-                   <!-- Heavy Academic Blue Bound Cover -->
-                   <rect x="6" y="4" width="20" height="24" rx="2" fill="#1b4f72" stroke="#000" stroke-width="2" />
-                   <rect x="6" y="4" width="4.5" height="24" fill="#113047" stroke="#000" stroke-width="1" />
-                   <!-- Gold spine Ribs -->
-                   <line x1="6" y1="9" x2="10" y2="9" stroke="#f1c40f" stroke-width="1" />
-                   <line x1="6" y1="16" x2="10" y2="16" stroke="#f1c40f" stroke-width="1" />
-                   <line x1="6" y1="23" x2="10" y2="23" stroke="#f1c40f" stroke-width="1" />
-                   <!-- Scholar's Glowing Eye of Knowledge -->
-                   <path d="M11 16 Q17 10, 23 16 Q17 22, 11 16 Z" fill="none" stroke="#fff" stroke-width="1.5" />
-                   <circle cx="17" cy="16" r="3" fill="${color}" stroke="#000" stroke-width="1" />
-                 `;
+                <defs>
+                  <!-- Academic royal velvet cover gradient -->
+                  <linearGradient id="lx_velvet_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#255182" />
+                    <stop offset="100%" stop-color="#0e2035" />
+                  </linearGradient>
+                  <!-- Polished gold emboss/filigrees -->
+                  <linearGradient id="lx_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffe875" />
+                    <stop offset="50%" stop-color="#d4af37" />
+                    <stop offset="100%" stop-color="#8a6d1c" />
+                  </linearGradient>
+                  <!-- Dynamic magical iris lens glow -->
+                  <radialGradient id="lx_iris_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="55%" stop-color="${color}" />
+                    <stop offset="100%" stop-color="#05070a" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Drop shadow projection -->
+                <rect x="6" y="5" width="21" height="24" rx="2.5" fill="rgba(0,0,0,0.4)" />
+
+                <!-- Hanging Silk Bookmark Ribbon (Dangles from page margins) -->
+                <path d="M13.5 25.5 L13.5 30.5 Q14.5 31.5, 15.5 30.5 L15.5 25.5 Z" fill="#e74c3c" stroke="#05070a" stroke-width="0.8" />
+
+                <!-- Spine binding wraps -->
+                <rect x="5" y="4" width="5" height="24" rx="1.5" fill="#0b172a" stroke="#05070a" stroke-width="1.8" />
+                <!-- Heavy Gilded Spine Ribs -->
+                <line x1="5" y1="9" x2="10" y2="9" stroke="url(#lx_gold_${id})" stroke-width="1.5" />
+                <line x1="5" y1="16" x2="10" y2="16" stroke="url(#lx_gold_${id})" stroke-width="1.5" />
+                <line x1="5" y1="23" x2="10" y2="23" stroke="url(#lx_gold_${id})" stroke-width="1.5" />
+
+                <!-- Layered Academic Ivory Page Edges (Visible right & bottom) -->
+                <rect x="9.5" y="4.5" width="16" height="23" fill="#faf6eb" />
+                <line x1="25.5" y1="5" x2="25.5" y2="27" stroke="#c2bdae" stroke-width="1" stroke-dasharray="1 1" />
+                <line x1="10" y1="27" x2="25.5" y2="27" stroke="#c2bdae" stroke-width="1" stroke-dasharray="1 1" />
+
+                <!-- Royal Blue Velvet Cover Plate -->
+                <path d="M10 4 L25 4 L25 28 L10 28 Z" fill="url(#lx_velvet_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Ornate Gold-Embossed Corner Reinforcements -->
+                <!-- Top Right Guard -->
+                <polygon points="21,4 25,4 25,8" fill="url(#lx_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="23.5" cy="5.5" r="0.4" fill="#fff" />
+                <!-- Bottom Right Guard -->
+                <polygon points="21,28 25,28 25,24" fill="url(#lx_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="23.5" cy="26.5" r="0.4" fill="#fff" />
+
+                <!-- Gilded Scholarly Eye of Wisdom Frame -->
+                <path d="M11.5 16 Q17.5 10.5, 23.5 16 Q17.5 21.5, 11.5 16 Z" fill="none" stroke="url(#lx_gold_${id})" stroke-width="1.5" stroke-linejoin="round" />
+                <!-- Eye Whites (Sclera) -->
+                <path d="M12.5 16 Q17.5 11.5, 22.5 16 Q17.5 20.5, 12.5 16 Z" fill="#ffffff" stroke="#05070a" stroke-width="0.8" />
+                <!-- Dynamic Glowing Iris (Reflects rarity color with reflective white gloss) -->
+                <circle cx="17.5" cy="16" r="3.2" fill="url(#lx_iris_${id})" stroke="#05070a" stroke-width="0.8" />
+                <!-- Piercing Pupil -->
+                <circle cx="17.5" cy="16" r="1.2" fill="#000000" />
+                <!-- Specular Light Reflection Glint -->
+                <circle cx="16.5" cy="15" r="0.6" fill="#ffffff" />
+              `;
     },
     chronicle(id, color) {
       return `
-                   <!-- Relic leather book of past lives -->
-                   <rect x="6" y="4" width="20" height="24" rx="2" fill="#4d1a00" stroke="#000" stroke-width="2" />
-                   <rect x="6" y="4" width="4" height="24" fill="#2d1000" stroke="#000" stroke-width="1" />
-                   <!-- Golden Hourglass symbol -->
-                   <path d="M13 10 L21 10 L17 16 L21 22 L13 22 Z" fill="none" stroke="#f1c40f" stroke-width="1.5" />
-                   <!-- Sand hourglass vials inside -->
-                   <polygon points="14,11 20,11 17,15" fill="${color}" />
-                   <polygon points="17,17 19,21 15,21" fill="${color}" />
-                 `;
+                <defs>
+                  <!-- Aged mahogany relic leather gradient -->
+                  <linearGradient id="ch_relic_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#4a1a02" />
+                    <stop offset="100%" stop-color="#140600" />
+                  </linearGradient>
+                  <!-- Antique gold/brass for hourglass frames -->
+                  <linearGradient id="ch_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffd54f" />
+                    <stop offset="50%" stop-color="#b7950b" />
+                    <stop offset="100%" stop-color="#5d4037" />
+                  </linearGradient>
+                  <!-- Glowing cosmic sand reserves -->
+                  <linearGradient id="ch_sand_${id}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="100%" stop-color="${color}" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Drop shadow projection -->
+                <rect x="6" y="5" width="21" height="24" rx="2.5" fill="rgba(0,0,0,0.4)" />
+
+                <!-- Spine binding wraps with antique gold rivets -->
+                <rect x="5" y="4" width="5" height="24" rx="1.5" fill="#1c0700" stroke="#05070a" stroke-width="1.8" />
+                <circle cx="7.5" cy="8" r="0.8" fill="url(#ch_gold_${id})" stroke="#05070a" stroke-width="0.4" />
+                <circle cx="7.5" cy="16" r="0.8" fill="url(#ch_gold_${id})" stroke="#05070a" stroke-width="0.4" />
+                <circle cx="7.5" cy="24" r="0.8" fill="url(#ch_gold_${id})" stroke="#05070a" stroke-width="0.4" />
+
+                <!-- Yellowed & Weathered Stacked Pages (Visible right & bottom) -->
+                <rect x="9" y="4.5" width="16" height="23" fill="#dfd0b0" />
+                <!-- Uneven aging layers -->
+                <line x1="25" y1="5" x2="25" y2="27" stroke="#8c7a56" stroke-width="1.2" stroke-dasharray="2 1.5" />
+                <line x1="10" y1="27" x2="25" y2="27" stroke="#8c7a56" stroke-width="1.2" stroke-dasharray="2 1.5" />
+
+                <!-- Mahogany Relic Leather Cover Face -->
+                <path d="M10 4 L24 4 L24 28 L10 28 Z" fill="url(#ch_relic_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Cracked Leather Creases (Visual aging detail) -->
+                <path d="M10 10 L14 7" stroke="#05070a" stroke-width="1.2" opacity="0.65" stroke-linecap="round" />
+                <path d="M11 22 L14 25" stroke="#05070a" stroke-width="1.2" opacity="0.65" stroke-linecap="round" />
+                <path d="M19 5 L22 8" stroke="#05070a" stroke-width="1.2" opacity="0.65" stroke-linecap="round" />
+                <path d="M19 27 L22 24" stroke="#05070a" stroke-width="1.2" opacity="0.65" stroke-linecap="round" />
+
+                <!-- Temporal Gravity Orbit Halo (Dotted background cycle) -->
+                <circle cx="17" cy="16" r="7.5" fill="none" stroke="${color}" stroke-width="1" stroke-dasharray="2 3" opacity="0.75" />
+
+                <!-- Hourglass Support Frame (Braces & Pillars) -->
+                <!-- Top & Bottom Braces -->
+                <rect x="13.5" y="9" width="7" height="1.8" fill="url(#ch_gold_${id})" stroke="#05070a" stroke-width="0.8" rx="0.3" />
+                <rect x="13.5" y="21.2" width="7" height="1.8" fill="url(#ch_gold_${id})" stroke="#05070a" stroke-width="0.8" rx="0.3" />
+                <!-- Left & Right Bracing Pillars -->
+                <line x1="14" y1="10.8" x2="14" y2="21.2" stroke="url(#ch_gold_${id})" stroke-width="1" />
+                <line x1="20" y1="10.8" x2="20" y2="21.2" stroke="url(#ch_gold_${id})" stroke-width="1" />
+
+                <!-- Hourglass Glass Bulbs Shape -->
+                <path d="M14.5 10.8 Q17 16, 14.5 21.2 M19.5 10.8 Q17 16, 19.5 21.2" stroke="rgba(255,255,255,0.4)" stroke-width="1" fill="none" />
+
+                <!-- Glowing Cosmic Sand Reserves -->
+                <!-- Upper sand funnel (Draining downwards) -->
+                <polygon points="14.8,11.2 19.2,11.2 17.5,14.5" fill="url(#ch_sand_${id})" stroke="#05070a" stroke-width="0.5" />
+                <!-- Lower sand pile (Amassing in the base) -->
+                <path d="M15,20.8 C15,19 19,19 19,20.8 Z" fill="url(#ch_sand_${id})" stroke="#05070a" stroke-width="0.5" />
+                <!-- Sand trickle flow line -->
+                <line x1="17" y1="14.5" x2="17" y2="19.2" stroke="${color}" stroke-width="0.8" stroke-dasharray="1.5 1" opacity="0.9" />
+
+                <!-- Glass Reflection glare highlights -->
+                <path d="M15.5 11.5 Q16.5 13, 16 13.8" stroke="#fff" stroke-width="0.6" stroke-linecap="round" opacity="0.6" fill="none" />
+                <path d="M18.5 20.5 Q17.5 19, 18 18.2" stroke="#fff" stroke-width="0.6" stroke-linecap="round" opacity="0.6" fill="none" />
+              `;
     },
     greathelm(id, color) {
       return `
-              <!-- Bucket Knight Helm -->
-              <path d="M9 8 H23 V23 L16 29 L9 23 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-              <!-- Crest plume on top matching quality tiers -->
-              <path d="M16 8 Q12 1, 16 2 Q20 1, 16 8" fill="${color}" stroke="#000" stroke-width="1" />
-              <!-- Golden T-shaped visor bar -->
-              <path d="M12 12 H20 M16 12 V22" stroke="#f1c40f" stroke-width="2.5" stroke-linecap="round" fill="none" />
-              <path d="M12 12 H20 M16 12 V22" stroke="#000" stroke-width="1" stroke-linecap="round" fill="none" />
-              <!-- Breathing vents -->
-              <circle cx="12" cy="17" r="0.8" fill="#111" /><circle cx="14" cy="17" r="0.8" fill="#111" />
-              <circle cx="18" cy="17" r="0.8" fill="#111" /><circle cx="20" cy="17" r="0.8" fill="#111" />
-              <circle cx="12" cy="20" r="0.8" fill="#111" /><circle cx="14" cy="20" r="0.8" fill="#111" />
-              <circle cx="18" cy="20" r="0.8" fill="#111" /><circle cx="20" cy="20" r="0.8" fill="#111" />
-            `;
+                <defs>
+                  <!-- Right side: bright polished steel plates -->
+                  <linearGradient id="gh_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#f8fafc" />
+                    <stop offset="60%" stop-color="#94a3b8" />
+                    <stop offset="100%" stop-color="#475569" />
+                  </linearGradient>
+                  <!-- Left side: cold, shadowed dark iron plates -->
+                  <linearGradient id="gh_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569" />
+                    <stop offset="100%" stop-color="#1e293b" />
+                  </linearGradient>
+                  <!-- Crusader cross plate: gold/bronze trim -->
+                  <linearGradient id="gh_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7" />
+                    <stop offset="50%" stop-color="#d4af37" />
+                    <stop offset="100%" stop-color="#8a6d1c" />
+                  </linearGradient>
+                  <!-- Plume crest color interpolation matching tier rarity -->
+                  <linearGradient id="gh_plume_${id}" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stop-color="${color}" />
+                    <stop offset="70%" stop-color="${color}" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#ffffff" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Flowing Feather Plume Crest (Flowing backwards & left) -->
+                <path d="M16 8 C11 4, 7 5, 4 10 C8 5, 12 6, 16 8 Z" fill="url(#gh_plume_${id})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round" />
+                <path d="M16 8 C13 2, 9 2, 6 6 C10 2, 13 4, 16 8 Z" fill="url(#gh_plume_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+
+                <!-- Left Helmet Plate (Shadowed Side) -->
+                <path d="M16 8 H9 V23 L16 29 Z" fill="url(#gh_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Right Helmet Plate (Highlighted Side) -->
+                <path d="M16 8 H23 V23 L16 29 Z" fill="url(#gh_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Center welding weld seam line -->
+                <line x1="16" y1="8" x2="16" y2="29" stroke="#05070a" stroke-width="1" opacity="0.4" />
+
+                <!-- Solid Crusader Cross Visor Plate (Reinforcement Brass Overlay) -->
+                <path d="M14.5 9 H17.5 V12 H21.5 V15 H17.5 V23.5 H14.5 V15 H10.5 V12 H14.5 Z" fill="url(#gh_brass_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+                <!-- Narrow Vision Eye Slits (Inset inside the crossbar) -->
+                <rect x="11.2" y="13" width="3.2" height="1.2" fill="#05070a" rx="0.3" />
+                <rect x="17.6" y="13" width="3.2" height="1.2" fill="#05070a" rx="0.3" />
+                <!-- Glowing Eyes of Power (Pulsating dynamic rarity color) -->
+                                <circle cx="12.8" cy="13.6" r="0.6" fill="${color}" />
+                                <circle cx="19.2" cy="13.6" r="0.6" fill="${color}" />
+                              `;
     },
     armet(id, color) {
       return `
-              <!-- Renaissance Armet Helm -->
-              <path d="M9 10 C9 4, 23 4, 23 10 L24 23 L16 29 L8 23 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-              <!-- Articulated Visor Plate with tier highlighted line -->
-              <path d="M9 12 Q16 7, 23 12 L21 19 L11 19 Z" fill="#95a5a6" stroke="#000" stroke-width="1.2" />
-              <!-- Eye slits -->
-              <line x1="11" y1="13.5" x2="21" y2="13.5" stroke="#111" stroke-width="1.5" />
-              <circle cx="16" cy="16" r="1.2" fill="${color}" stroke="#000" stroke-width="0.8" />
-            `;
+                <defs>
+                  <!-- Polished outer plate-steel gradients -->
+                  <linearGradient id="ar_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="45%" stop-color="#cbd5e1" />
+                    <stop offset="100%" stop-color="#64748b" />
+                  </linearGradient>
+                  <!-- Cold blue-grey shadowed steel gradients -->
+                  <linearGradient id="ar_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569" />
+                    <stop offset="100%" stop-color="#1e293b" />
+                  </linearGradient>
+                  <!-- Brass locks and pivots -->
+                  <linearGradient id="ar_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7" />
+                    <stop offset="50%" stop-color="#d4af37" />
+                    <stop offset="100%" stop-color="#5d4037" />
+                  </linearGradient>
+                  <!-- Pressurized dynamic magical pressure vent glow -->
+                  <radialGradient id="ar_glow_vent_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="45%" stop-color="${color}" />
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Anatomical Skullcap Dome: Left Plate (Shadow) -->
+                <path d="M16 4.2 C11 4.5, 9 6, 9 10 L8 23 L16 29 Z" fill="url(#ar_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Anatomical Skullcap Dome: Right Plate (Highlighted) -->
+                <path d="M16 4.2 C21 4.5, 23 6, 23 10 L24 23 L16 29 Z" fill="url(#ar_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Gilded Skullcap Comb Ridge with Inset Rarity Jewel -->
+                <path d="M14.5 5 C14.5 2, 17.5 2, 17.5 5 L16 8 Z" fill="url(#ar_brass_${id})" stroke="#05070a" stroke-width="1" />
+                <circle cx="16" cy="3" r="1" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+
+                <!-- Articulated Sparrow's Beak Visor: Left Beak Facet (Shadow) -->
+                <path d="M9 11.5 Q16 6.5, 16 19.5 L10.5 19 Z" fill="url(#ar_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+                <!-- Articulated Sparrow's Beak Visor: Right Beak Facet (Highlighted) -->
+                <path d="M16 19.5 Q16 6.5, 23 11.5 L21.5 19 Z" fill="url(#ar_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+                <!-- Visor center beak line seam -->
+                <line x1="16" y1="7.2" x2="16" y2="19.5" stroke="#05070a" stroke-width="1" opacity="0.25" />
+
+                <!-- Gilded Pivot Hinges with Rarity-Core Rivets -->
+                <circle cx="9" cy="12" r="1.5" fill="url(#ar_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="9" cy="12" r="0.6" fill="${color}" />
+                <circle cx="23" cy="12" r="1.5" fill="url(#ar_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="23" cy="12" r="0.6" fill="${color}" />
+
+                <!-- Beveled Eye Vision Slots (Inset into Beak facets) -->
+                <polygon points="10.8,12 15,13.5 15,12 10.8,11.5" fill="#05070a" stroke="#05070a" stroke-width="0.5" />
+                <polygon points="21.2,12 17,13.5 17,12 21.2,11.5" fill="#05070a" stroke="#05070a" stroke-width="0.5" />
+                <!-- Glowing ocular focus glints -->
+                <circle cx="12.6" cy="12.2" r="0.5" fill="${color}" />
+                <circle cx="19.4" cy="12.2" r="0.5" fill="${color}" />
+
+                <!-- Glowing Magically Pressurized Breathing Vents -->
+                <!-- Backplate Glows -->
+                <circle cx="13" cy="16.5" r="2" fill="url(#ar_glow_vent_${id})" opacity="0.8" />
+                <circle cx="19" cy="16.5" r="2" fill="url(#ar_glow_vent_${id})" opacity="0.8" />
+                <!-- Angled Cheek Vent Slits -->
+                <line x1="11.5" y1="15.5" x2="13.5" y2="17.5" stroke="#05070a" stroke-width="1.2" stroke-linecap="round" />
+                <line x1="13.5" y1="15.5" x2="15" y2="17" stroke="#05070a" stroke-width="1.2" stroke-linecap="round" />
+                <line x1="20.5" y1="15.5" x2="18.5" y2="17.5" stroke="#05070a" stroke-width="1.2" stroke-linecap="round" />
+                <line x1="18.5" y1="15.5" x2="17" y2="17" stroke="#05070a" stroke-width="1.2" stroke-linecap="round" />
+
+                <!-- Bottom Neck Guard articulating flange line -->
+                <path d="M8.5 24 C12 22, 20 22, 23.5 24" stroke="#05070a" stroke-width="1.5" fill="none" opacity="0.3" />
+              `;
     },
     bascinet(id, color) {
       return `
-              <!-- Pointed houndskull helmet -->
-              <path d="M9 12 C9 5, 23 5, 23 12 L24 23 L16 29 L8 23 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-              <!-- Snout-like pointed visor -->
-              <polygon points="10,11 16,15 22,11 20,20 16,24 12,20" fill="#95a5a6" stroke="#000" stroke-width="1.2" />
-              <!-- Angled squint slits -->
-              <line x1="11" y1="13" x2="15" y2="14" stroke="#111" stroke-width="1.8" stroke-linecap="round" />
-              <line x1="21" y1="13" x2="17" y2="14" stroke="#111" stroke-width="1.8" stroke-linecap="round" />
-              <!-- Breath ventilation dots on snout matching quality color -->
-              <circle cx="15" cy="18" r="0.8" fill="${color}" />
-              <circle cx="17" cy="18" r="0.8" fill="${color}" />
-              <circle cx="14" cy="20" r="0.8" fill="${color}" />
-              <circle cx="18" cy="20" r="0.8" fill="${color}" />
-            `;
+                <defs>
+                  <!-- Mirror-polished high-shine steel gradient -->
+                  <linearGradient id="ba_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="50%" stop-color="#cbd5e1" />
+                    <stop offset="100%" stop-color="#475569" />
+                  </linearGradient>
+                  <!-- Cold blue-grey shadowed steel gradient -->
+                  <linearGradient id="ba_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569" />
+                    <stop offset="100%" stop-color="#1e293b" />
+                  </linearGradient>
+                  <!-- Antique gold/brass for joints & borders -->
+                  <linearGradient id="ba_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7" />
+                    <stop offset="50%" stop-color="#d4af37" />
+                    <stop offset="100%" stop-color="#5d4037" />
+                  </linearGradient>
+                  <!-- Pressurized dynamic magical snout exhaust glow -->
+                  <radialGradient id="ba_glow_snout_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="45%" stop-color="${color}" />
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Conical Skullcap Dome: Left Facet (Shadow) -->
+                <path d="M16 3 C12 4, 9 7, 9 12 L8 23 L16 29 Z" fill="url(#ba_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Conical Skullcap Dome: Right Facet (Highlighted) -->
+                <path d="M16 3 C20 4, 23 7, 23 12 L24 23 L16 29 Z" fill="url(#ba_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Gilded Crown Spike Socket & Rarity Jewel -->
+                <polygon points="15,3 17,3 16,1" fill="url(#ba_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="16" cy="1" r="0.6" fill="${color}" />
+
+                <!-- Pointed Houndskull Visor Face: Left Side (Shadow) -->
+                <path d="M10 11 L16 15 L16 24 L12 20 Z" fill="url(#ba_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+                <!-- Pointed Houndskull Visor Face: Right Side (Highlighted) -->
+                <path d="M22 11 L16 15 L16 24 L20 20 Z" fill="url(#ba_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+                <!-- Visor pivot joints at temples -->
+                <circle cx="10" cy="11.5" r="1.2" fill="url(#ba_gold_${id})" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="22" cy="11.5" r="1.2" fill="url(#ba_gold_${id})" stroke="#05070a" stroke-width="0.5" />
+
+                <!-- Angled vision squint slots -->
+                <polygon points="11,12.5 15,13.5 14.8,14.5 11,13.5" fill="#05070a" stroke="#05070a" stroke-width="0.5" />
+                <polygon points="21,12.5 17,13.5 17.2,14.5 21,13.5" fill="#05070a" stroke="#05070a" stroke-width="0.5" />
+                <!-- Glowing focus sparks -->
+                <circle cx="13" cy="13.2" r="0.5" fill="${color}" />
+                <circle cx="19" cy="13.2" r="0.5" fill="${color}" />
+
+                <!-- Magical breathing vents background pressure glows -->
+                <circle cx="14" cy="19.5" r="2.2" fill="url(#ba_glow_snout_${id})" opacity="0.8" />
+                <circle cx="18" cy="19.5" r="2.2" fill="url(#ba_glow_snout_${id})" opacity="0.8" />
+
+                <!-- Punched metal respiration ports -->
+                <circle cx="14" cy="18.5" r="0.8" fill="#05070a" />
+                <circle cx="18" cy="18.5" r="0.8" fill="#05070a" />
+                <circle cx="13.5" cy="20.5" r="0.8" fill="#05070a" />
+                <circle cx="18.5" cy="20.5" r="0.8" fill="#05070a" />
+                <circle cx="15.5" cy="22.2" r="0.8" fill="#05070a" />
+                <circle cx="16.5" cy="22.2" r="0.8" fill="#05070a" />
+
+                <!-- Decorative neckguard aventail verveilles collar -->
+                <path d="M8 23 C12 21.5, 20 21.5, 24 23" fill="none" stroke="url(#ba_gold_${id})" stroke-width="1.8" />
+              `;
     },
     barbuta(id, color) {
       return `
-              <!-- Classical Italian T-vent helmet -->
-              <path d="M9 10 C9 4, 23 4, 23 10 L24 24 L16 29 L8 24 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-              <!-- Distinct T-shaped face opening -->
-              <path d="M12 10 H20 V16 L17 16 V24 H15 V16 L12 16 Z" fill="#111" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" />
-              <!-- Center ridge line -->
-              <path d="M16 4 V10" stroke="#000" stroke-width="2" />
-            `;
+                <defs>
+                  <!-- Sleek polished blue-grey steel plate gradient -->
+                  <linearGradient id="bb_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="50%" stop-color="#cbd5e1" />
+                    <stop offset="100%" stop-color="#475569" />
+                  </linearGradient>
+                  <!-- Deep, rich slate-iron shadow gradient -->
+                  <linearGradient id="bb_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569" />
+                    <stop offset="100%" stop-color="#1e293b" />
+                  </linearGradient>
+                  <!-- Polished gold-brass for the faceplate trim & rivets -->
+                  <linearGradient id="bb_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7" />
+                    <stop offset="50%" stop-color="#d4af37" />
+                    <stop offset="100%" stop-color="#8a6d1c" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Corinthian Skullcap: Left Half (Shadow Side) -->
+                <path d="M16 4 C11 4.5, 9 6, 9 10 L8 24 L16 29 Z" fill="url(#bb_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Corinthian Skullcap: Right Half (Highlighted Side) -->
+                <path d="M16 4 C21 4.5, 23 6, 23 10 L24 24 L16 29 Z" fill="url(#bb_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Gilded Crown Comb Ridge with embedded dynamic rarity groove -->
+                <path d="M15 4 C15 2.5, 17 2.5, 17 4 L16.5 10 H15.5 Z" fill="url(#bb_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <line x1="16" y1="3.2" x2="16" y2="9" stroke="${color}" stroke-width="0.8" stroke-linecap="round" />
+
+                <!-- Dark Void Helmet Interior (Deep shadow base) -->
+                <path d="M12 10 H20 V16 L17 16 V24 H15 V16 L12 16 Z" fill="#05070a" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+
+                <!-- Gilded T-Shaped Opening Outer Trim Frame -->
+                <path d="M12 10 H20 V16 L17 16 V24 H15 V16 L12 16 Z" fill="none" stroke="url(#bb_gold_${id})" stroke-width="1.2" stroke-linejoin="round" />
+
+                <!-- Piercing Ocular Focus Sparks (Pulsating dynamic rarity color inside void) -->
+                <circle cx="14" cy="13.5" r="0.6" fill="${color}" />
+                <circle cx="18" cy="13.5" r="0.6" fill="${color}" />
+                <!-- Ocular Glint Highlight -->
+                <circle cx="13.8" cy="13.3" r="0.2" fill="#fff" />
+                <circle cx="17.8" cy="13.3" r="0.2" fill="#fff" />
+
+                <!-- Decorative Cheek Lining Rivets (Tracks inner liner margin) -->
+                <!-- Left Side Rivets -->
+                <circle cx="9.5" cy="15" r="0.6" fill="url(#bb_gold_${id})" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="9.2" cy="19" r="0.6" fill="url(#bb_gold_${id})" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="9.5" cy="23" r="0.6" fill="url(#bb_gold_${id})" stroke="#05070a" stroke-width="0.3" />
+                <!-- Right Side Rivets -->
+                <circle cx="22.5" cy="15" r="0.6" fill="url(#bb_gold_${id})" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="22.8" cy="19" r="0.6" fill="url(#bb_gold_${id})" stroke="#05070a" stroke-width="0.3" />
+                <circle cx="22.5" cy="23" r="0.6" fill="url(#bb_gold_${id})" stroke="#05070a" stroke-width="0.3" />
+              `;
     },
     circlet(id, color) {
       return `
-              <path d="M6 18 Q16 11, 26 18 Q16 23, 6 18 Z" fill="none" stroke="${color}" stroke-width="2.5" />
-              <polygon points="16,11 19,15 13,15" fill="${color}" stroke="#000" stroke-width="1" />
-              <circle cx="16" cy="9.5" r="1.5" fill="#fff" stroke="#000" stroke-width="0.8" />
-              <circle cx="10" cy="15.5" r="1.2" fill="#fff" stroke="#000" stroke-width="0.8" />
-              <circle cx="22" cy="15.5" r="1.2" fill="#fff" stroke="#000" stroke-width="0.8" />
-            `;
+                <defs>
+                  <!-- Silver/Platinum band gradient -->
+                  <linearGradient id="ci_plat_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="50%" stop-color="#cbd5e1" />
+                    <stop offset="100%" stop-color="#64748b" />
+                  </linearGradient>
+                  <!-- Royal gold band & filigree gradient -->
+                  <linearGradient id="ci_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fff275" />
+                    <stop offset="50%" stop-color="#d4af37" />
+                    <stop offset="100%" stop-color="#8a6d1c" />
+                  </linearGradient>
+                  <!-- Faceted gemstone radial gradient mapping rarity -->
+                  <radialGradient id="ci_gem_${id}" cx="50%" cy="30%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="45%" stop-color="${color}" />
+                    <stop offset="100%" stop-color="#090d16" />
+                  </radialGradient>
+                  <!-- Soft magic background aura glow -->
+                  <radialGradient id="ci_halo_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="${color}" stop-opacity="0.6" />
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Soft Magic Back Glow (Centers on the teardrop gem) -->
+                <circle cx="16" cy="12.5" r="7.5" fill="url(#ci_halo_${id})" />
+
+                <!-- Woven Double-Band Tiara Base -->
+                <!-- Gold Band (lower sweeping loop) -->
+                <path d="M5.5 17 Q16 22, 26.5 17" fill="none" stroke="url(#ci_gold_${id})" stroke-width="1.8" stroke-linecap="round" />
+                <!-- Platinum Band (upper woven sweeping loop) -->
+                <path d="M5.5 18 Q16 13, 26.5 18" fill="none" stroke="url(#ci_plat_${id})" stroke-width="1.2" stroke-linecap="round" />
+
+                <!-- Central Elven Gold Filigree Crown Base -->
+                <path d="M11 16 Q16 8, 21 16 L19 18 Q16 12, 13 18 Z" fill="url(#ci_gold_${id})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round" />
+
+                <!-- Top Crown Jewel Peak -->
+                <polygon points="16,5.5 18.5,8.5 13.5,8.5" fill="url(#ci_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="16" cy="5.2" r="1.2" fill="url(#ci_gem_${id})" stroke="#05070a" stroke-width="0.6" />
+
+                <!-- Suspended Teardrop Gemstone (Brooch-style center anchor) -->
+                <path d="M16 10 C14 13.5, 14 16, 16 16 C18 16, 18 13.5, 16 10 Z" fill="url(#ci_gem_${id})" stroke="#05070a" stroke-width="1.0" />
+                <!-- Specular Glint Highlight -->
+                <ellipse cx="15.5" cy="12.5" rx="0.5" ry="1.2" fill="#ffffff" transform="rotate(-15 15.5 12.5)" />
+
+                <!-- Gilded Symmetrical Wing Gem Sockets -->
+                <!-- Left Wing Gem -->
+                <circle cx="10" cy="16.5" r="2.2" fill="url(#ci_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="10" cy="16.5" r="1.2" fill="url(#ci_gem_${id})" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="9.6" cy="16.1" r="0.4" fill="#fff" />
+                <!-- Right Wing Gem -->
+                <circle cx="22" cy="16.5" r="2.2" fill="url(#ci_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="22" cy="16.5" r="1.2" fill="url(#ci_gem_${id})" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="21.6" cy="16.1" r="0.4" fill="#fff" />
+
+                <!-- Floating Magical Stardust Halo (Orbiting above peak points) -->
+                <circle cx="16" cy="3" r="0.6" fill="${color}" opacity="0.85" />
+                <circle cx="12" cy="4.5" r="0.6" fill="${color}" opacity="0.65" />
+                <circle cx="20" cy="4.5" r="0.6" fill="${color}" opacity="0.65" />
+                <circle cx="8.5" cy="7" r="0.6" fill="${color}" opacity="0.45" />
+                <circle cx="23.5" cy="7" r="0.6" fill="${color}" opacity="0.45" />
+              `;
     },
     coif(id, color) {
       return `
-              <path d="M9 10 C9 5, 23 5, 23 10 L24 22 L16 28 L8 22 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-              <path d="M12 15 Q16 13, 20 15 L18 22 Q16 24, 16 24 L14 22 Z" fill="#2c3e50" stroke="#000" stroke-width="1.2" />
-              <circle cx="16" cy="16" r="6" fill="none" stroke="#ffffff" stroke-dasharray="2 2" stroke-width="1" opacity="0.6" />
-            `;
+            <defs>
+              <!-- Steel mail mesh light gradient -->
+              <linearGradient id="cf_mail_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Dark steel mail shadow gradient -->
+              <linearGradient id="cf_mail_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Quilted leather lining gradient -->
+              <linearGradient id="cf_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+              <!-- Brass/Gold strap fixtures -->
+              <linearGradient id="cf_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Draped Shoulder Mantle (Shadow Left Side) -->
+            <path d="M16 4 C10 4, 7 8, 7 14 L5 24 L16 29 Z" fill="url(#cf_mail_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Draped Shoulder Mantle (Light Right Side) -->
+            <path d="M16 4 C22 4, 25 8, 25 14 L27 24 L16 29 Z" fill="url(#cf_mail_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Interlocking Chainmail Texture Pattern Lines -->
+            <path d="M8 12 Q16 10, 24 12 M7 16 Q16 14, 25 16 M6 20 Q16 18, 26 20 M6 24 Q16 22, 26 24" fill="none" stroke="#05070a" stroke-width="1" stroke-dasharray="2 1.5" opacity="0.6" />
+
+            <!-- Quilted Gambeson Padded Face Cutout Interior -->
+            <path d="M12 11 C12 7, 20 7, 20 11 L20 19 C20 22, 12 22, 12 19 Z" fill="url(#cf_leather_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Quilted Diamond Stitching on Leather Liner -->
+            <path d="M13 10 L19 16 M13 14 L18 19 M17 10 L12 15 M19 13 L13 19" stroke="#3d1d0b" stroke-width="0.8" opacity="0.8" />
+
+            <!-- Deep Shadow Void Inside Face Hole -->
+            <ellipse cx="16" cy="14" rx="2.8" ry="3.8" fill="#05070a" />
+            <circle cx="15" cy="13.5" r="0.5" fill="${color}" />
+            <circle cx="17" cy="13.5" r="0.5" fill="${color}" />
+
+            <!-- Reinforced Brow Leather Band with Rarity Stitching -->
+            <path d="M9.5 9 Q16 7.5, 22.5 9" fill="none" stroke="url(#cf_leather_${id})" stroke-width="2.2" stroke-linecap="round" />
+            <path d="M9.5 9 Q16 7.5, 22.5 9" fill="none" stroke="${color}" stroke-width="0.8" stroke-linecap="round" stroke-dasharray="1.5 1.5" />
+
+            <!-- Gilded Forehead Plate & Gem Anchor -->
+            <polygon points="16,6.5 17.5,8.5 14.5,8.5" fill="url(#cf_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="6.2" r="1" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="5.9" r="0.3" fill="#ffffff" />
+          `;
     },
     visor(id, color) {
       return `
-              <!-- Heavy helm with pivoting visor -->
-              <path d="M9 10 C9 4, 23 4, 23 10 L24 24 L16 29 L8 24 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-              <!-- Visor plate with V-vent -->
-              <path d="M9 10 L23 10 L21 21 L16 24 L11 21 Z" fill="#95a5a6" stroke="#000" stroke-width="1.2" />
-              <rect x="11.5" y="12" width="9" height="1.8" fill="#111" />
-              <!-- Pivot rivets on sides -->
-              <circle cx="8" cy="12" r="1.5" fill="${color}" stroke="#000" stroke-width="0.8" />
-              <circle cx="24" cy="12" r="1.5" fill="${color}" stroke="#000" stroke-width="0.8" />
-              <!-- Slit breathers -->
-              <line x1="14" y1="17" x2="18" y2="17" stroke="#111" stroke-width="1" />
-              <line x1="13" y1="19" x2="19" y2="19" stroke="#111" stroke-width="1" />
-            `;
+            <defs>
+              <!-- Polished outer plate steel gradients -->
+              <linearGradient id="vr_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Shadowed steel gradients -->
+              <linearGradient id="vr_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Brass/Gold hinge and pivot fixtures -->
+              <linearGradient id="vr_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+              <!-- Breathing vent pressure glow -->
+              <radialGradient id="vr_glow_vent_${id}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="${color}"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Main Skullcap Dome: Left Facet (Shadow Side) -->
+            <path d="M16 4 C11 4.5, 9 6, 9 10 L8 23 L16 29 Z" fill="url(#vr_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Skullcap Dome: Right Facet (Highlight Side) -->
+            <path d="M16 4 C21 4.5, 23 6, 23 10 L24 23 L16 29 Z" fill="url(#vr_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Gilded Crest Comb Ridge -->
+            <path d="M15 4.5 C15 2.5, 17 2.5, 17 4.5 L16.5 9.5 H15.5 Z" fill="url(#vr_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="3.5" r="0.8" fill="${color}" stroke="#05070a" stroke-width="0.4" />
+
+            <!-- Pivoting Face Visor Plate: Left Facet (Shadow) -->
+            <path d="M8.5 10 L16 11.5 L16 23 L10.5 21 Z" fill="url(#vr_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Pivoting Face Visor Plate: Right Facet (Highlight) -->
+            <path d="M23.5 10 L16 11.5 L16 23 L21.5 21 Z" fill="url(#vr_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Brow Hinge Reinforcement Band -->
+            <path d="M8.5 10.2 Q16 8.5, 23.5 10.2 L23 12 Q16 10.5, 9 12 Z" fill="url(#vr_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+            <!-- Side Temple Pivot Hinge Pins -->
+            <circle cx="8" cy="11" r="1.8" fill="url(#vr_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="8" cy="11" r="0.8" fill="${color}" />
+            <circle cx="24" cy="11" r="1.8" fill="url(#vr_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="24" cy="11" r="0.8" fill="${color}" />
+
+            <!-- Angled Vision Slits (Eye Openings) -->
+            <polygon points="10,13 15,14 15,12.5 10,12" fill="#05070a" stroke="#05070a" stroke-width="0.5" />
+            <polygon points="22,13 17,14 17,12.5 22,12" fill="#05070a" stroke="#05070a" stroke-width="0.5" />
+            <!-- Ocular Focus Sparks -->
+            <circle cx="12" cy="13" r="0.5" fill="${color}" />
+            <circle cx="20" cy="13" r="0.5" fill="${color}" />
+
+            <!-- Pressurized Breathing Vents Backglow -->
+            <ellipse cx="16" cy="18" rx="4" ry="2" fill="url(#vr_glow_vent_${id})" opacity="0.8" />
+
+            <!-- Respiration Slit Breathers -->
+            <line x1="12" y1="16.5" x2="20" y2="16.5" stroke="#05070a" stroke-width="1.2" stroke-linecap="round" />
+            <line x1="12.5" y1="18.5" x2="19.5" y2="18.5" stroke="#05070a" stroke-width="1.2" stroke-linecap="round" />
+            <line x1="13.5" y1="20.5" x2="18.5" y2="20.5" stroke="#05070a" stroke-width="1.2" stroke-linecap="round" />
+          `;
     },
     cuirass(id, color) {
       return `
-              <!-- heavy sculpted steel breastplate with tier pauldrons -->
-              <path d="M8 8 L24 8 L22 22 L16 26 L10 22 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-              <path d="M4 9 Q8 6, 9 12 L7 14 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-              <path d="M28 9 Q20 6, 23 12 L25 14 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-              <path d="M12 13 Q16 15, 20 13" fill="none" stroke="#333" stroke-width="1.5" />
-              <path d="M11 18 Q16 20, 21 18" fill="none" stroke="#333" stroke-width="1.5" />
-              <line x1="16" y1="8" x2="16" y2="24" stroke="#333" stroke-width="1.5" />
-            `;
+            <defs>
+              <!-- Polished outer plate steel gradients -->
+              <linearGradient id="cr_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Cold shadowed steel gradients -->
+              <linearGradient id="cr_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Gold/Brass trim and rivets -->
+              <linearGradient id="cr_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+              <!-- Core crest energy glow -->
+              <radialGradient id="cr_glow_core_${id}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="40%" stop-color="${color}"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Left Pauldron (Shadowed Shoulder Guard) -->
+            <path d="M4 11 C4 6, 11 7, 11 13 L8 16 Z" fill="url(#cr_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M3 11 Q8 9, 10 13" fill="none" stroke="url(#cr_brass_${id})" stroke-width="1.5" />
+
+            <!-- Right Pauldron (Highlighted Shoulder Guard) -->
+            <path d="M28 11 C28 6, 21 7, 21 13 L24 16 Z" fill="url(#cr_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M29 11 Q24 9, 22 13" fill="none" stroke="url(#cr_brass_${id})" stroke-width="1.5" />
+
+            <!-- Main Breastplate Body: Left Facet (Shadow) -->
+            <path d="M16 6 L9 8 L8 21 L16 26 Z" fill="url(#cr_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Breastplate Body: Right Facet (Highlight) -->
+            <path d="M16 6 L23 8 L24 21 L16 26 Z" fill="url(#cr_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Central Ridge Seam (Tapul) -->
+            <line x1="16" y1="6" x2="16" y2="26" stroke="#05070a" stroke-width="1.2" opacity="0.4" />
+
+            <!-- Fluted Anatomical Chest Ridges -->
+            <path d="M11 11 Q16 13, 21 11" fill="none" stroke="#05070a" stroke-width="1.2" opacity="0.3" />
+            <path d="M10 15 Q16 17, 22 15" fill="none" stroke="#05070a" stroke-width="1.2" opacity="0.3" />
+            <path d="M10 19 Q16 21, 22 19" fill="none" stroke="#05070a" stroke-width="1.2" opacity="0.3" />
+
+            <!-- Neck Gorget Plate Collar -->
+            <path d="M11 6 Q16 9, 21 6 L20 8 Q16 10, 12 8 Z" fill="url(#cr_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+            <!-- Central Core Emblem / Rarity Diamond Crest -->
+            <circle cx="16" cy="15" r="4" fill="url(#cr_glow_core_${id})" opacity="0.85" />
+            <polygon points="16,11.5 18.8,15 16,18.5 13.2,15" fill="${color}" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+            <circle cx="16" cy="15" r="1" fill="#ffffff" />
+
+            <!-- Bottom Fauld / Waist Plate Trims -->
+            <path d="M8 21 Q16 24, 24 21 L23 23.5 Q16 26, 9 23.5 Z" fill="url(#cr_brass_${id})" stroke="#05070a" stroke-width="1" />
+            <circle cx="10" cy="22.5" r="0.6" fill="#fff" />
+            <circle cx="22" cy="22.5" r="0.6" fill="#fff" />
+          `;
     },
     hauberk(id, color) {
       return `
-              <!-- Chainmail vest -->
-              <path d="M8 7 L24 7 L24 23 L16 28 L8 23 Z" fill="#95a5a6" stroke="#000" stroke-width="1.8" />
-              <path d="M8 12 H24 M8 17 H24 M8 22 H24" stroke="rgba(0,0,0,0.25)" stroke-width="1.5" stroke-dasharray="2 2" />
-              <rect x="11" y="5" width="10" height="4" fill="${color}" stroke="#000" stroke-width="1" />
-            `;
+            <defs>
+              <!-- Steel chainmail light gradient -->
+              <linearGradient id="hb_mail_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Steel chainmail shadow gradient -->
+              <linearGradient id="hb_mail_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Leather trim & harness gradient -->
+              <linearGradient id="hb_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+              <!-- Gilded brass fixtures -->
+              <linearGradient id="hb_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Padded Gambeson Sleeve/Hem Base (Left Side Shadow) -->
+            <path d="M5 9 L10 6 L10 24 L7 28 Z" fill="url(#hb_leather_${id})" stroke="#05070a" stroke-width="1.5" />
+
+            <!-- Padded Gambeson Sleeve/Hem Base (Right Side Light) -->
+            <path d="M27 9 L22 6 L22 24 L25 28 Z" fill="url(#hb_leather_${id})" stroke="#05070a" stroke-width="1.5" />
+
+            <!-- Main Chainmail Body: Left Facet (Shadow) -->
+            <path d="M16 6 L8 8 L7 22 L16 27 Z" fill="url(#hb_mail_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Chainmail Body: Right Facet (Highlight) -->
+            <path d="M16 6 L24 8 L25 22 L16 27 Z" fill="url(#hb_mail_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Chainmail Ring Weave Dash Pattern -->
+            <path d="M9 11 H23 M8 14 H24 M8 17 H24 M8 20 H24 M9 23 H23" fill="none" stroke="#05070a" stroke-width="1" stroke-dasharray="2 1.5" opacity="0.65" />
+
+            <!-- Reinforced Neck Collar with Gilded Trim -->
+            <path d="M10 6 H22 V10 C22 12, 10 12, 10 10 Z" fill="url(#hb_leather_${id})" stroke="#05070a" stroke-width="1.5" />
+            <path d="M10 6 H22 V8 H10 Z" fill="url(#hb_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+
+            <!-- Central Decorative Tabard Strap & Rarity Core Gem -->
+            <path d="M14 8 H18 V22 H14 Z" fill="url(#hb_leather_${id})" stroke="#05070a" stroke-width="1" />
+            <circle cx="16" cy="12" r="2.2" fill="url(#hb_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="12" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="11.7" r="0.4" fill="#ffffff" />
+
+            <!-- Cinch Belt & Brass Buckle -->
+            <rect x="7" y="20" width="18" height="3" fill="url(#hb_leather_${id})" stroke="#05070a" stroke-width="1" />
+            <rect x="14" y="19" width="4" height="5" rx="0.8" fill="url(#hb_brass_${id})" stroke="#05070a" stroke-width="1" />
+            <rect x="15" y="20" width="2" height="3" fill="#05070a" />
+          `;
     },
     brigandine(id, color) {
       return `
-              <!-- Studded leather/velvet armor doublet -->
-              <path d="M8 8 L24 8 L22 22 L16 26 L10 22 Z" fill="#2c3e50" stroke="#000" stroke-width="1.8" />
-              <!-- Rivet studs (dots) matching Tier Color -->
-              <circle cx="12" cy="11" r="1" fill="${color}" /><circle cx="16" cy="11" r="1" fill="${color}" /><circle cx="20" cy="11" r="1" fill="${color}" />
-              <circle cx="10" cy="15" r="1" fill="${color}" /><circle cx="14" cy="15" r="1" fill="${color}" /><circle cx="18" cy="15" r="1" fill="${color}" /><circle cx="22" cy="15" r="1" fill="${color}" />
-              <circle cx="12" cy="19" r="1" fill="${color}" /><circle cx="16" cy="19" r="1" fill="${color}" /><circle cx="20" cy="19" r="1" fill="${color}" />
-              <!-- Neck guard -->
-              <path d="M10 8 Q16 11, 22 8" fill="none" stroke="#5c3a21" stroke-width="1.5" />
-            `;
+            <defs>
+              <!-- Velvet fabric light gradient -->
+              <linearGradient id="bg_velvet_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#3b82f6"/>
+                <stop offset="60%" stop-color="#1d4ed8"/>
+                <stop offset="100%" stop-color="#1e3a8a"/>
+              </linearGradient>
+              <!-- Velvet fabric shadow gradient -->
+              <linearGradient id="bg_velvet_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <!-- Gold/Brass rivet & trim gradient -->
+              <linearGradient id="bg_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+              <!-- Leather trim gradient -->
+              <linearGradient id="bg_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Shoulder Guard (Shadow) -->
+            <path d="M4 11 C4 6, 11 7, 11 13 L8 16 Z" fill="url(#bg_leather_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M3 11 Q8 9, 10 13" fill="none" stroke="url(#bg_brass_${id})" stroke-width="1.2" />
+
+            <!-- Right Shoulder Guard (Highlight) -->
+            <path d="M28 11 C28 6, 21 7, 21 13 L24 16 Z" fill="url(#bg_leather_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M29 11 Q24 9, 22 13" fill="none" stroke="url(#bg_brass_${id})" stroke-width="1.2" />
+
+            <!-- Main Brigandine Body: Left Facet (Shadow) -->
+            <path d="M16 6 L9 8 L8 21 L16 26 Z" fill="url(#bg_velvet_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Brigandine Body: Right Facet (Highlight) -->
+            <path d="M16 6 L23 8 L24 21 L16 26 Z" fill="url(#bg_velvet_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- High Stiff Neck Collar -->
+            <path d="M10 6 Q16 8, 22 6 L21 9 Q16 11, 11 9 Z" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+            <!-- Central Fastening Leather Strap & Buckles -->
+            <line x1="16" y1="9" x2="16" y2="25" stroke="url(#bg_leather_${id})" stroke-width="2.5" />
+            <line x1="16" y1="9" x2="16" y2="25" stroke="url(#bg_brass_${id})" stroke-width="0.8" />
+
+            <!-- Central Clasp Rarity Gem -->
+            <circle cx="16" cy="14" r="2" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="14" r="1.1" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="13.7" r="0.3" fill="#ffffff" />
+
+            <!-- Rivet Stud Grid (Plate fastening rivets with spec glints) -->
+            <!-- Row 1 -->
+            <circle cx="11.5" cy="11.5" r="1" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="20.5" cy="11.5" r="1" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="0.5" />
+            <!-- Row 2 -->
+            <circle cx="11" cy="15.5" r="1" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="21" cy="15.5" r="1" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="0.5" />
+            <!-- Row 3 -->
+            <circle cx="11.5" cy="19.5" r="1" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="20.5" cy="19.5" r="1" fill="url(#bg_brass_${id})" stroke="#05070a" stroke-width="0.5" />
+
+            <!-- Specular Highlights on Rivet Studs -->
+            <circle cx="11.2" cy="11.2" r="0.3" fill="#fff" />
+            <circle cx="20.2" cy="11.2" r="0.3" fill="#fff" />
+            <circle cx="10.7" cy="15.2" r="0.3" fill="#fff" />
+            <circle cx="20.7" cy="15.2" r="0.3" fill="#fff" />
+            <circle cx="11.2" cy="19.2" r="0.3" fill="#fff" />
+            <circle cx="20.2" cy="19.2" r="0.3" fill="#fff" />
+
+            <!-- Bottom Waist Hem Band -->
+            <path d="M8 21 Q16 24, 24 21 L23 23 Q16 25, 9 23 Z" fill="url(#bg_leather_${id})" stroke="#05070a" stroke-width="1" />
+          `;
     },
     plate_mail(id, color) {
       return `
-              <!-- Heavy segmented horizontal plates -->
-              <path d="M8 8 L24 8 L22 22 L16 26 L10 22 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-              <!-- Segmented plate seams -->
-              <path d="M9 12 C9 12, 16 14, 23 12" fill="none" stroke="#333" stroke-width="1.5" />
-              <path d="M9.5 16 C9.5 16, 16 18, 22.5 16" fill="none" stroke="#333" stroke-width="1.5" />
-              <path d="M10 20 C10 20, 16 22, 22 20" fill="none" stroke="#333" stroke-width="1.5" />
-              <!-- Colored vertical bracing harness straps -->
-              <line x1="12" y1="8" x2="12" y2="23" stroke="${color}" stroke-width="1.5" />
-              <line x1="20" y1="8" x2="20" y2="23" stroke="${color}" stroke-width="1.5" />
-            `;
+            <defs>
+              <!-- Steel plate light gradient -->
+              <linearGradient id="pm_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Steel plate shadow gradient -->
+              <linearGradient id="pm_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Leather bracing strap gradient -->
+              <linearGradient id="pm_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+              <!-- Gold/Brass fittings -->
+              <linearGradient id="pm_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Pauldron (Shadowed Shoulder Guard) -->
+            <path d="M4 11 C4 6, 11 7, 11 13 L8 16 Z" fill="url(#pm_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M3 11 Q8 9, 10 13" fill="none" stroke="url(#pm_brass_${id})" stroke-width="1.2" />
+
+            <!-- Right Pauldron (Highlighted Shoulder Guard) -->
+            <path d="M28 11 C28 6, 21 7, 21 13 L24 16 Z" fill="url(#pm_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M29 11 Q24 9, 22 13" fill="none" stroke="url(#pm_brass_${id})" stroke-width="1.2" />
+
+            <!-- Laminated Segmented Horizontal Plate Stack (Shadow Left) -->
+            <path d="M16 6 L9 8 L8.2 12 L16 12 Z" fill="url(#pm_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+            <path d="M16 11.5 L8.2 11.5 L8.5 16 L16 16 Z" fill="url(#pm_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+            <path d="M16 15.5 L8.5 15.5 L8.8 20 L16 20 Z" fill="url(#pm_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+            <path d="M16 19.5 L8.8 19.5 L9.5 24 L16 26 Z" fill="url(#pm_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Laminated Segmented Horizontal Plate Stack (Highlight Right) -->
+            <path d="M16 6 L23 8 L23.8 12 L16 12 Z" fill="url(#pm_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+            <path d="M16 11.5 L23.8 11.5 L23.5 16 L16 16 Z" fill="url(#pm_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+            <path d="M16 15.5 L23.5 15.5 L23.2 20 L16 20 Z" fill="url(#pm_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+            <path d="M16 19.5 L23.2 19.5 L22.5 24 L16 26 Z" fill="url(#pm_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Vertical Bracing Harness Straps -->
+            <rect x="11.5" y="7" width="2" height="17" fill="url(#pm_leather_${id})" stroke="#05070a" stroke-width="0.8" />
+            <rect x="18.5" y="7" width="2" height="17" fill="url(#pm_leather_${id})" stroke="#05070a" stroke-width="0.8" />
+
+            <!-- Harness Buckles & Rivets -->
+            <circle cx="12.5" cy="10" r="0.8" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+            <circle cx="19.5" cy="10" r="0.8" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+            <circle cx="12.5" cy="15" r="0.8" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+            <circle cx="19.5" cy="15" r="0.8" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+            <circle cx="12.5" cy="19" r="0.8" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+            <circle cx="19.5" cy="19" r="0.8" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+
+            <!-- Neck Gorget Collar -->
+            <path d="M10 6 Q16 8.5, 22 6 L21 8.5 Q16 11, 11 8.5 Z" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+            <!-- Central Chest Clasp Rarity Gem -->
+            <circle cx="16" cy="13.5" r="2.2" fill="url(#pm_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="13.5" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="13.2" r="0.4" fill="#ffffff" />
+          `;
     },
     doublet(id, color) {
       return `
-              <!-- Fabric vest with white undershirt and gold buttons -->
-              <path d="M8 8 L24 8 L22 22 L16 26 L10 22 Z" fill="${color}" stroke="#000" stroke-width="1.8" />
-              <polygon points="12,8 16,13 20,8" fill="#fff" stroke="#000" stroke-width="1" />
-              <line x1="16" y1="8" x2="16" y2="13" stroke="#000" stroke-width="1" />
-              <path d="M8 8 L12 14 L10 16" fill="none" stroke="#111" stroke-width="1.5" />
-              <path d="M24 8 L20 14 L22 16" fill="none" stroke="#111" stroke-width="1.5" />
-              <circle cx="16" cy="15" r="1.2" fill="#f1c40f" stroke="#000" stroke-width="0.8" />
-              <circle cx="16" cy="19" r="1.2" fill="#f1c40f" stroke="#000" stroke-width="0.8" />
-            `;
+            <defs>
+              <!-- Noble fabric light gradient (interpolates tier color) -->
+              <linearGradient id="db_fabric_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="40%" stop-color="${color}"/>
+                <stop offset="100%" stop-color="#1e1b4b"/>
+              </linearGradient>
+              <!-- Noble fabric shadow gradient -->
+              <linearGradient id="db_fabric_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="${color}"/>
+                <stop offset="100%" stop-color="#0f0f23"/>
+              </linearGradient>
+              <!-- Gilded gold embroidery and buttons -->
+              <linearGradient id="db_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Puffed Epaulet (Shadow) -->
+            <path d="M4 11 C4 6, 11 7, 11 13 L8 16 Z" fill="url(#db_fabric_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M4 11 Q8 9, 10 13" fill="none" stroke="url(#db_gold_${id})" stroke-width="1.2" />
+
+            <!-- Right Puffed Epaulet (Highlight) -->
+            <path d="M28 11 C28 6, 21 7, 21 13 L24 16 Z" fill="url(#db_fabric_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M28 11 Q24 9, 22 13" fill="none" stroke="url(#db_gold_${id})" stroke-width="1.2" />
+
+            <!-- Main Doublet Body: Left Facet (Shadow) -->
+            <path d="M16 6 L9 8 L8 21 L16 26 Z" fill="url(#db_fabric_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Doublet Body: Right Facet (Highlight) -->
+            <path d="M16 6 L23 8 L24 21 L16 26 Z" fill="url(#db_fabric_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- White Silk V-Neck Undershirt & Lapels -->
+            <polygon points="12,6 16,13 20,6" fill="#f8fafc" stroke="#05070a" stroke-width="1" />
+            <path d="M12 6 L16 13 L20 6" fill="none" stroke="url(#db_gold_${id})" stroke-width="1.2" />
+
+            <!-- Center Seam Line -->
+            <line x1="16" y1="13" x2="16" y2="26" stroke="#05070a" stroke-width="1" opacity="0.5" />
+
+            <!-- Vertical Row of Gilded Buttons -->
+            <circle cx="16" cy="15.5" r="1.2" fill="url(#db_gold_${id})" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="15.2" r="0.3" fill="#ffffff" />
+
+            <circle cx="16" cy="18.5" r="1.2" fill="url(#db_gold_${id})" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="18.2" r="0.3" fill="#ffffff" />
+
+            <circle cx="16" cy="21.5" r="1.2" fill="url(#db_gold_${id})" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="21.2" r="0.3" fill="#ffffff" />
+
+            <!-- Gold Brooch Pin with Rarity Gem Anchor -->
+            <circle cx="16" cy="12" r="2.2" fill="url(#db_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="12" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="11.7" r="0.4" fill="#ffffff" />
+
+            <!-- Bottom Hem Gold Trim -->
+            <path d="M8 21 Q16 24, 24 21 L23 23 Q16 25, 9 23 Z" fill="url(#db_gold_${id})" stroke="#05070a" stroke-width="1" />
+          `;
     },
     inquisitor_robes(id, color) {
       return `
-              <!-- Fabric draped robes with hood -->
-              <path d="M6 14 L26 14 L23 29 L16 30 L9 29 Z" fill="#34495e" stroke="#000" stroke-width="1.8" />
-              <path d="M8 12 Q16 16, 24 12 L22 18 Q16 22, 10 18 Z" fill="${color}" stroke="#000" stroke-width="1.5" />
-              <path d="M11 12 C11 5, 21 5, 21 12 Z" fill="#2c3e50" stroke="#000" stroke-width="1.5" />
-              <path d="M13 12 C13 8, 19 8, 19 12 Z" fill="#111" />
-              <line x1="16" y1="18" x2="16" y2="29" stroke="#f1c40f" stroke-width="1.2" />
-            `;
+            <defs>
+              <!-- Robe cloth light gradient -->
+              <linearGradient id="ir_cloth_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="60%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <!-- Robe cloth shadow gradient -->
+              <linearGradient id="ir_cloth_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#020617"/>
+              </linearGradient>
+              <!-- Ceremonial stole / cowl accent gradient -->
+              <linearGradient id="ir_accent_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7e22ce"/>
+                <stop offset="100%" stop-color="#3b0764"/>
+              </linearGradient>
+              <!-- Gold embroidery and seal fixtures -->
+              <linearGradient id="ir_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Draped Skirt Base (Shadow Left Side) -->
+            <path d="M16 14 L8 16 L6 27 L16 30 Z" fill="url(#ir_cloth_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Draped Skirt Base (Highlight Right Side) -->
+            <path d="M16 14 L24 16 L26 27 L16 30 Z" fill="url(#ir_cloth_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Cloth Fold Creases -->
+            <path d="M10 18 L8 27 M14 16 L12 28 M18 16 L20 28 M22 18 L24 27" stroke="#05070a" stroke-width="1" opacity="0.4" />
+
+            <!-- Ceremonial Draped Stole / Shoulder Mantle -->
+            <path d="M7 13 Q16 17, 25 13 L23 18 Q16 22, 9 18 Z" fill="url(#ir_accent_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M7 13 Q16 17, 25 13" fill="none" stroke="url(#ir_gold_${id})" stroke-width="1.2" />
+            <path d="M9 18 Q16 22, 23 18" fill="none" stroke="url(#ir_gold_${id})" stroke-width="1.2" />
+
+            <!-- Pointed Inquisitor Hood (Outer Shell) -->
+            <path d="M16 3 C10 3, 9 7, 9 13 L23 13 C23 7, 22 3, 16 3 Z" fill="url(#ir_cloth_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Deep Pitch-Black Inner Hood Void -->
+            <path d="M11 13 C11 8, 21 8, 21 13 Z" fill="#05070a" stroke="#05070a" stroke-width="1" />
+
+            <!-- Piercing Eye Glints (Matching Tier Color) -->
+            <circle cx="14" cy="11" r="0.6" fill="${color}" />
+            <circle cx="18" cy="11" r="0.6" fill="${color}" />
+            <circle cx="13.8" cy="10.8" r="0.2" fill="#ffffff" />
+            <circle cx="17.8" cy="10.8" r="0.2" fill="#ffffff" />
+
+            <!-- Inquisitorial Pectoral Cross / Seal Medallion -->
+            <path d="M15 16 H17 V18 H19 V20 H17 V26 H15 V20 H13 V18 H15 Z" fill="url(#ir_gold_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+            <circle cx="16" cy="19" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="18.7" r="0.3" fill="#ffffff" />
+          `;
     },
     full_plate_armor(id, color) {
       return `
-              <!-- Articulated full steel suit -->
-              <path d="M8 6 L24 6 L22 20 L16 24 L10 20 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-              <path d="M10 20 H22 L24 28 H8 Z" fill="#95a5a6" stroke="#000" stroke-width="1.5" />
-              <!-- Rounded heavy pauldrons with tier color trims -->
-              <path d="M4 10 C4 6, 10 7, 10 13 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-              <path d="M28 10 C28 6, 22 7, 22 13 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-              <!-- Fluted chest detailing -->
-              <path d="M12 11 L16 16 L20 11 M12 15 L16 19 L20 15" fill="none" stroke="#333" stroke-width="1.2" />
-              <!-- Heavy iron belt buckle -->
-              <rect x="14" y="19" width="4" height="3" fill="#f1c40f" stroke="#000" stroke-width="1" />
-            `;
+            <defs>
+              <!-- Polished full plate steel light gradient -->
+              <linearGradient id="fp_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Shadowed full plate steel gradient -->
+              <linearGradient id="fp_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Gilded gold/brass fittings -->
+              <linearGradient id="fp_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+              <!-- Leather belt gradient -->
+              <linearGradient id="fp_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Heavy Pauldron Stack (Shadow) -->
+            <path d="M3 10 C3 5, 11 6, 11 12 L7 16 Z" fill="url(#fp_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M2 11 Q7 9, 10 13" fill="none" stroke="url(#fp_brass_${id})" stroke-width="1.5" />
+
+            <!-- Right Heavy Pauldron Stack (Highlight) -->
+            <path d="M29 10 C29 5, 21 6, 21 12 L25 16 Z" fill="url(#fp_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M30 11 Q25 9, 22 13" fill="none" stroke="url(#fp_brass_${id})" stroke-width="1.5" />
+
+            <!-- Main Torso Armor: Left Facet (Shadow) -->
+            <path d="M16 5 L8 7 L7 20 L16 24 Z" fill="url(#fp_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Torso Armor: Right Facet (Highlight) -->
+            <path d="M16 5 L24 7 L25 20 L16 24 Z" fill="url(#fp_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Articulated Lower Fauld Lames (Skirts) -->
+            <path d="M8.5 20 L16 24 L23.5 20 L25 28 L16 30 L7 28 Z" fill="url(#fp_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M16 24 L23.5 20 L25 28 L16 30 Z" fill="url(#fp_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Fluted Gothic Chest Ridges -->
+            <path d="M11 9 L16 14 L21 9 M11 13 L16 18 L21 13" fill="none" stroke="#05070a" stroke-width="1.2" opacity="0.35" />
+
+            <!-- Neck Gorget Plate Collar -->
+            <path d="M10 5 Q16 7.5, 22 5 L21 7.5 Q16 10, 11 7.5 Z" fill="url(#fp_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+            <!-- Heavy Belt & Buckle Assembly -->
+            <rect x="8" y="18" width="16" height="3" fill="url(#fp_leather_${id})" stroke="#05070a" stroke-width="1" />
+            <rect x="14" y="17" width="4" height="5" rx="0.8" fill="url(#fp_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+            <!-- Central Rarity Core Gem Clasp -->
+            <circle cx="16" cy="12" r="2.2" fill="url(#fp_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="12" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="11.7" r="0.4" fill="#ffffff" />
+          `;
     },
     exosuit(id, color) {
       return `
-          <!-- Sci-fi mechanical armature with chest core -->
-          <rect x="7" y="6" width="18" height="21" rx="3" fill="#2c3e50" stroke="#000" stroke-width="2" />
-          <path d="M4 10 Q8 6, 9 12 Z M28 10 Q24 6, 23 12 Z" fill="#34495e" stroke="#000" stroke-width="1.2" />
-          <path d="M12 12 L16 16 L20 12" fill="none" stroke="${color}" stroke-width="1.5" />
-          <path d="M12 18 L16 16 L20 18" fill="none" stroke="${color}" stroke-width="1.5" />
-          <circle cx="16" cy="16" r="3.5" fill="#fff" stroke="${color}" stroke-width="1.5" />
-        `;
+            <defs>
+              <!-- Cyber alloy plate light gradient -->
+              <linearGradient id="exo_metal_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#cbd5e1"/>
+                <stop offset="50%" stop-color="#64748b"/>
+                <stop offset="100%" stop-color="#334155"/>
+              </linearGradient>
+              <!-- Cyber alloy plate shadow gradient -->
+              <linearGradient id="exo_metal_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#334155"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <!-- Reactor core radial energy glow -->
+              <radialGradient id="exo_glow_core_${id}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="${color}"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Left Servo Pauldron (Shadowed Hydraulics) -->
+            <path d="M3 10 C3 5, 11 6, 11 12 L7 16 Z" fill="url(#exo_metal_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <rect x="4" y="10" width="4" height="2" fill="#05070a" />
+
+            <!-- Right Servo Pauldron (Highlighted Hydraulics) -->
+            <path d="M29 10 C29 5, 21 6, 21 12 L25 16 Z" fill="url(#exo_metal_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <rect x="24" y="10" width="4" height="2" fill="#05070a" />
+
+            <!-- Main Cyber Torso Frame: Left Facet (Shadow) -->
+            <path d="M16 5 L8 7 L7 20 L16 26 Z" fill="url(#exo_metal_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Cyber Torso Frame: Right Facet (Highlight) -->
+            <path d="M16 5 L24 7 L25 20 L16 26 Z" fill="url(#exo_metal_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Energy Conduit Channels (Tracing Chest Lines) -->
+            <path d="M10 9 L16 14 L22 9 M10 21 L16 16 L22 21" fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round" />
+
+            <!-- Radial Energy Core Reactor Backglow -->
+            <circle cx="16" cy="15" r="6" fill="url(#exo_glow_core_${id})" opacity="0.85" />
+
+            <!-- Heavy Titanium Arc Core Ring -->
+            <circle cx="16" cy="15" r="4.2" fill="#0f172a" stroke="#05070a" stroke-width="1.2" />
+            <circle cx="16" cy="15" r="3" fill="${color}" stroke="#ffffff" stroke-width="0.8" />
+            <circle cx="16" cy="15" r="1.2" fill="#ffffff" />
+
+            <!-- Reinforced Abdominal Armor Plating -->
+            <rect x="11" y="21" width="10" height="3" rx="1" fill="#0f172a" stroke="#05070a" stroke-width="1" />
+            <line x1="13" y1="22.5" x2="19" y2="22.5" stroke="${color}" stroke-width="1" stroke-linecap="round" />
+          `;
     },
     trenchcoat(id, color) {
       return `
-          <!-- Sleek draped coat with popped collar -->
-          <path d="M7 6 L25 6 L22 29 L16 30 L10 29 Z" fill="#2c3e50" stroke="#000" stroke-width="1.8" />
-          <polygon points="7,6 12,14 10,6" fill="${color}" stroke="#000" stroke-width="1" />
-          <polygon points="25,6 20,14 22,6" fill="${color}" stroke="#000" stroke-width="1" />
-          <rect x="9.5" y="16" width="13" height="3" fill="#111" stroke="#000" stroke-width="1" />
-          <rect x="15" y="15.5" width="2" height="4" fill="#f1c40f" stroke="#000" stroke-width="0.8" />
-          <line x1="16" y1="19" x2="16" y2="29" stroke="#111" stroke-width="1.5" />
-        `;
+            <defs>
+              <!-- Trenchcoat leather light gradient -->
+              <linearGradient id="tc_leather_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="60%" stop-color="#334155"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Trenchcoat leather shadow gradient -->
+              <linearGradient id="tc_leather_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <!-- Lapel inner lining gradient (tier color accent) -->
+              <linearGradient id="tc_lining_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="${color}"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <!-- Gold/Brass fittings -->
+              <linearGradient id="tc_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Shoulder Storm Flaps (Capelet Overlay) -->
+            <path d="M4 11 C4 6, 11 7, 11 13 L8 16 Z" fill="url(#tc_leather_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M28 11 C28 6, 21 7, 21 13 L24 16 Z" fill="url(#tc_leather_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Main Coat Body: Left Facet (Shadow) -->
+            <path d="M16 6 L9 8 L7 27 L16 30 Z" fill="url(#tc_leather_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Main Coat Body: Right Facet (Highlight) -->
+            <path d="M16 6 L23 8 L25 27 L16 30 Z" fill="url(#tc_leather_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+            <!-- Popped Collar & Wide Inner Lapels -->
+            <polygon points="8,5 12,12 16,8 12,4" fill="url(#tc_lining_${id})" stroke="#05070a" stroke-width="1" />
+            <polygon points="24,5 20,12 16,8 20,4" fill="url(#tc_lining_${id})" stroke="#05070a" stroke-width="1" />
+
+            <path d="M8 5 L12 12 L16 8 M24 5 L20 12 L16 8" fill="none" stroke="url(#tc_brass_${id})" stroke-width="1.2" />
+
+            <!-- Front Center Open Seam -->
+            <line x1="16" y1="12" x2="16" y2="30" stroke="#05070a" stroke-width="1.2" />
+
+            <!-- Double-Looped Waist Cinch Belt & Brass Buckle -->
+            <rect x="8" y="18" width="16" height="3.5" fill="#05070a" stroke="#05070a" stroke-width="1" />
+            <rect x="14" y="17" width="4" height="5.5" rx="1" fill="url(#tc_brass_${id})" stroke="#05070a" stroke-width="1" />
+            <rect x="15" y="18.5" width="2" height="2.5" fill="#05070a" />
+
+            <!-- Lapel Brooch Pin with Rarity Gem Anchor -->
+            <circle cx="16" cy="8" r="2.2" fill="url(#tc_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="16" cy="8" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="15.7" cy="7.7" r="0.4" fill="#ffffff" />
+
+            <!-- Storm Flap Shoulder Rivets -->
+            <circle cx="9" cy="12" r="0.8" fill="url(#tc_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+            <circle cx="23" cy="12" r="0.8" fill="url(#tc_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+          `;
     },
 
     // --- GENERIC SLOT Blueprints ---
@@ -663,169 +2074,662 @@ window.AssetCatalog = {
     },
     leggings(id, color) {
       return `
-                <rect x="7" y="6" width="18" height="5" rx="1.5" fill="${color}" stroke="#000" stroke-width="1.5" />
-                <path d="M7 11 L13 11 L12 18 L7 17 Z M19 11 L25 11 L25 17 L20 18 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
-                <path d="M9 18 L14 18 L13 28 L9 28 Z" fill="#95a5a6" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
-                <circle cx="11.5" cy="20" r="2.2" fill="${color}" stroke="#000" stroke-width="1" />
-                <path d="M18 18 L23 18 L23 28 L19 28 Z" fill="#95a5a6" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
-                <circle cx="20.5" cy="20" r="2.2" fill="${color}" stroke="#000" stroke-width="1" />
-              `;
+            <defs>
+              <!-- Steel leg plate light gradient -->
+              <linearGradient id="lg_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Steel leg plate shadow gradient -->
+              <linearGradient id="lg_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Leather strap gradient -->
+              <linearGradient id="lg_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+              <!-- Gold/Brass fittings -->
+              <linearGradient id="lg_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Leather Waist Belt & Hanging Suspension Tassets -->
+            <rect x="7" y="5" width="18" height="3" fill="url(#lg_leather_${id})" stroke="#05070a" stroke-width="1" />
+            <rect x="14" y="4" width="4" height="5" rx="0.8" fill="url(#lg_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+            <!-- Back Leather Straps (Thighs & Calves) -->
+            <line x1="5" y1="12" x2="13" y2="12" stroke="url(#lg_leather_${id})" stroke-width="1.8" />
+            <line x1="5" y1="24" x2="13" y2="24" stroke="url(#lg_leather_${id})" stroke-width="1.8" />
+            <line x1="19" y1="12" x2="27" y2="12" stroke="url(#lg_leather_${id})" stroke-width="1.8" />
+            <line x1="19" y1="24" x2="27" y2="24" stroke="url(#lg_leather_${id})" stroke-width="1.8" />
+
+            <!-- Left Thigh & Shin Plates (Shadow Side) -->
+            <path d="M7 9 H13 L12 17 H6 Z" fill="url(#lg_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M6 21 H12 L11 29 H7 Z" fill="url(#lg_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Right Thigh & Shin Plates (Highlight Side) -->
+            <path d="M19 9 H25 L26 17 H20 Z" fill="url(#lg_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M20 21 H26 L25 29 H19 Z" fill="url(#lg_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+            <!-- Left Knee Guard Poleyn Dome -->
+            <circle cx="9.5" cy="19" r="2.8" fill="url(#lg_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="9.5" cy="19" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="9.1" cy="18.6" r="0.4" fill="#ffffff" />
+
+            <!-- Right Knee Guard Poleyn Dome -->
+            <circle cx="22.5" cy="19" r="2.8" fill="url(#lg_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <circle cx="22.5" cy="19" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="22.1" cy="18.6" r="0.4" fill="#ffffff" />
+          `;
     },
     greaves(id, color) {
       return `
-                    <!-- Leather back straps wrapping behind -->
-                    <path d="M4 14 H14 M4 22 H14 M18 14 H28 M18 22 H28" stroke="#5c3a21" stroke-width="2.2" stroke-linecap="round" fill="none" />
-                    <!-- Left Shin Guard: Curved/Tapered Plate -->
-                    <path d="M5 10 L13 10 L12 28 H6 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-                    <!-- Left Highlight (Specular Reflection) -->
-                    <path d="M9 10 L12 10 L11 27 H9 Z" fill="#ffffff" opacity="0.25" />
-                    <!-- Left Knee Guard (Poleyn) -->
-                    <path d="M4 8 Q9 5, 14 8 L13 12 H5 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-                    <circle cx="9" cy="10" r="1.2" fill="#fff" />
+            <defs>
+              <!-- Steel greave light gradient -->
+              <linearGradient id="gr_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Steel greave shadow gradient -->
+              <linearGradient id="gr_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Leather strap gradient -->
+              <linearGradient id="gr_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5c3a21"/>
+                <stop offset="100%" stop-color="#2d1d0b"/>
+              </linearGradient>
+              <!-- Gold/Brass fittings -->
+              <linearGradient id="gr_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
 
-                    <!-- Right Shin Guard: Curved/Tapered Plate -->
-                    <path d="M19 8 L27 8 L26 28 H20 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-                    <circle cx="23" cy="12" r="1.5" fill="${color}" stroke="#000" stroke-width="0.8" />
-                    <!-- Right Highlight (Specular Reflection) -->
-                    <path d="M23 10 L26 10 L25 27 H23 Z" fill="#ffffff" opacity="0.25" />
-                    <!-- Right Knee Guard (Poleyn) -->
-                    <path d="M18 8 Q23 5, 28 8 L27 12 H19 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-                    <circle cx="23" cy="10" r="1.2" fill="#fff" />
-                  `;
+            <!-- Behind Calf Fastening Leather Straps -->
+            <line x1="4" y1="14" x2="14" y2="14" stroke="url(#gr_leather_${id})" stroke-width="2" stroke-linecap="round" />
+            <line x1="4" y1="22" x2="14" y2="22" stroke="url(#gr_leather_${id})" stroke-width="2" stroke-linecap="round" />
+            <line x1="18" y1="14" x2="28" y2="14" stroke="url(#gr_leather_${id})" stroke-width="2" stroke-linecap="round" />
+            <line x1="18" y1="22" x2="28" y2="22" stroke="url(#gr_leather_${id})" stroke-width="2" stroke-linecap="round" />
+
+            <!-- Left Shin Greave Plate (Shadow Side) -->
+            <path d="M5 11 L13 11 L12 28 H6 Z" fill="url(#gr_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+            <line x1="9" y1="11" x2="9" y2="28" stroke="#05070a" stroke-width="0.8" opacity="0.4" />
+
+            <!-- Left Knee Guard Poleyn Fan Wing -->
+            <path d="M4 8 Q9 5, 14 8 L13 12 H5 Z" fill="url(#gr_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+            <circle cx="9" cy="9.5" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="8.7" cy="9.2" r="0.4" fill="#ffffff" />
+
+            <!-- Right Shin Greave Plate (Highlight Side) -->
+            <path d="M19 11 L27 11 L26 28 H20 Z" fill="url(#gr_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+            <line x1="23" y1="11" x2="23" y2="28" stroke="#05070a" stroke-width="0.8" opacity="0.4" />
+
+            <!-- Right Knee Guard Poleyn Fan Wing -->
+            <path d="M18 8 Q23 5, 28 8 L27 12 H19 Z" fill="url(#gr_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+            <circle cx="23" cy="9.5" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+            <circle cx="22.7" cy="9.2" r="0.4" fill="#ffffff" />
+
+            <!-- Gilded Ankle Flange Cuffs -->
+            <path d="M6 26 H12 V28 H6 Z" fill="url(#gr_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+            <path d="M20 26 H26 V28 H20 Z" fill="url(#gr_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+          `;
     },
     legplates(id, color) {
       return `
-                    <!-- Heavy overlapping segmented plate guard -->
-                    <rect x="7" y="6" width="18" height="5" rx="1.5" fill="${color}" stroke="#000" stroke-width="1.5" />
-                    <!-- Left leg plate stack -->
-                    <path d="M7 11 H13 V28 H7 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-                    <path d="M7 16 H13 M7 21 H13 M7 25 H13" stroke="#333" stroke-width="1.5" />
-                    <!-- Left Highlight -->
-                    <path d="M10 11 L13 11 L13 27 H10 Z" fill="#fff" opacity="0.15" />
-                    <!-- Right leg plate stack -->
-                    <path d="M19 11 H25 V28 H19 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-                    <path d="M19 16 H25 M19 21 H25 M19 25 H25" stroke="#333" stroke-width="1.5" />
-                    <!-- Right Highlight -->
-                    <path d="M22 11 L25 11 L25 27 H22 Z" fill="#fff" opacity="0.15" />
-                  `;
+                <defs>
+                  <!-- Steel leg plate light gradient -->
+                  <linearGradient id="lp_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="#cbd5e1"/>
+                    <stop offset="100%" stop-color="#64748b"/>
+                  </linearGradient>
+                  <!-- Steel leg plate shadow gradient -->
+                  <linearGradient id="lp_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Leather strap gradient -->
+                  <linearGradient id="lp_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#5c3a21"/>
+                    <stop offset="100%" stop-color="#2d1d0b"/>
+                  </linearGradient>
+                  <!-- Gold/Brass fittings -->
+                  <linearGradient id="lp_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Leather Waist Belt & Harness -->
+                <rect x="7" y="4" width="18" height="3" fill="url(#lp_leather_${id})" stroke="#05070a" stroke-width="1" />
+                <rect x="14" y="3" width="4" height="5" rx="0.8" fill="url(#lp_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+                <!-- Behind Calf & Thigh Harness Straps -->
+                <line x1="5" y1="10" x2="13" y2="10" stroke="url(#lp_leather_${id})" stroke-width="1.8" />
+                <line x1="5" y1="24" x2="13" y2="24" stroke="url(#lp_leather_${id})" stroke-width="1.8" />
+                <line x1="19" y1="10" x2="27" y2="10" stroke="url(#lp_leather_${id})" stroke-width="1.8" />
+                <line x1="19" y1="24" x2="27" y2="24" stroke="url(#lp_leather_${id})" stroke-width="1.8" />
+
+                <!-- Left Segmented Plate Lames (Shadow Side) -->
+                <path d="M6 8 L13 8 L12.5 12 L6.5 12 Z" fill="url(#lp_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M6.3 11.5 L12.7 11.5 L12.2 15.5 L6.8 15.5 Z" fill="url(#lp_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M6.5 20.5 L12.5 20.5 L12 24.5 L7 24.5 Z" fill="url(#lp_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M6.8 24 L12.2 24 L11.5 28.5 L7.5 28.5 Z" fill="url(#lp_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+
+                <!-- Right Segmented Plate Lames (Highlight Side) -->
+                <path d="M19 8 L26 8 L25.5 12 L19.5 12 Z" fill="url(#lp_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M19.3 11.5 L25.7 11.5 L25.2 15.5 L19.8 15.5 Z" fill="url(#lp_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M19.5 20.5 L25.5 20.5 L25 24.5 L20 24.5 Z" fill="url(#lp_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M19.8 24 L25.2 24 L24.5 28.5 L20.5 28.5 Z" fill="url(#lp_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+
+                <!-- Left Knee Guard Poleyn Dome & Rarity Gem Core -->
+                <circle cx="9.5" cy="18" r="2.8" fill="url(#lp_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="9.5" cy="18" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="9.1" cy="17.6" r="0.4" fill="#ffffff" />
+
+                <!-- Right Knee Guard Poleyn Dome & Rarity Gem Core -->
+                <circle cx="22.5" cy="18" r="2.8" fill="url(#lp_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="22.5" cy="18" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="22.1" cy="17.6" r="0.4" fill="#ffffff" />
+              `;
     },
     chausses(id, color) {
       return `
-                <!-- Chainmail leg wraps with colored leather belts -->
-                <rect x="7" y="5" width="18" height="4" fill="${color}" stroke="#000" stroke-width="1.5" />
-                <path d="M7 9 L13 9 L11 28 H7 Z" fill="#95a5a6" stroke="#000" stroke-width="1.8" />
-                <path d="M19 9 L25 9 L25 28 H21 Z" fill="#95a5a6" stroke="#000" stroke-width="1.8" />
-                <!-- Chain weave indicators -->
-                <path d="M7 12 H13 M7 16 H13 M7 20 H13 M7 24 H13 M19 12 H25 M19 16 H25 M19 20 H25 M19 24 H25" stroke="rgba(0,0,0,0.3)" stroke-width="1" stroke-dasharray="2 1" />
+                <defs>
+                  <!-- Steel chainmail light gradient -->
+                  <linearGradient id="ch_mail_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="#cbd5e1"/>
+                    <stop offset="100%" stop-color="#64748b"/>
+                  </linearGradient>
+                  <!-- Steel chainmail shadow gradient -->
+                  <linearGradient id="ch_mail_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Padded leather garter strap gradient -->
+                  <linearGradient id="ch_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#5c3a21"/>
+                    <stop offset="100%" stop-color="#2d1d0b"/>
+                  </linearGradient>
+                  <!-- Brass fittings & buckles -->
+                  <linearGradient id="ch_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Leather Waist Belt & Garter Suspension Straps -->
+                <rect x="7" y="4" width="18" height="3" fill="url(#ch_leather_${id})" stroke="#05070a" stroke-width="1" />
+                <rect x="14" y="3" width="4" height="5" rx="0.8" fill="url(#ch_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+                <!-- Diagonal Garter Suspension Straps to Thighs -->
+                <line x1="10" y1="7" x2="8.5" y2="11" stroke="url(#ch_leather_${id})" stroke-width="1.8" />
+                <line x1="22" y1="7" x2="23.5" y2="11" stroke="url(#ch_leather_${id})" stroke-width="1.8" />
+
+                <!-- Behind Calf & Thigh Fastening Straps -->
+                <line x1="5" y1="14" x2="13" y2="14" stroke="url(#ch_leather_${id})" stroke-width="1.5" />
+                <line x1="5" y1="24" x2="13" y2="24" stroke="url(#ch_leather_${id})" stroke-width="1.5" />
+                <line x1="19" y1="14" x2="27" y2="14" stroke="url(#ch_leather_${id})" stroke-width="1.5" />
+                <line x1="19" y1="24" x2="27" y2="24" stroke="url(#ch_leather_${id})" stroke-width="1.5" />
+
+                <!-- Left Mail Leg (Shadow Side) -->
+                <path d="M6 10 H13 L12 28 H6.5 Z" fill="url(#ch_mail_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Right Mail Leg (Highlight Side) -->
+                <path d="M19 10 H26 L25.5 28 H19.5 Z" fill="url(#ch_mail_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Ring Weave Dash Texture Overlay -->
+                <path d="M6.5 12.5 Q9.5 11.5, 12.5 12.5 M6.5 16 Q9.5 15, 12.5 16 M6.5 19.5 Q9.5 18.5, 12.5 19.5 M6.5 23 Q9.5 22, 12.5 23 M6.5 26.5 Q9.5 25.5, 12.5 26.5" fill="none" stroke="#05070a" stroke-width="0.8" stroke-dasharray="1.5 1" opacity="0.65" />
+                <path d="M19.5 12.5 Q22.5 11.5, 25.5 12.5 M19.5 16 Q22.5 15, 25.5 16 M19.5 19.5 Q22.5 18.5, 25.5 19.5 M19.5 23 Q22.5 22, 25.5 23 M19.5 26.5 Q22.5 25.5, 25.5 26.5" fill="none" stroke="#05070a" stroke-width="0.8" stroke-dasharray="1.5 1" opacity="0.65" />
+
+                <!-- Left Knee Poleyn Cup & Rarity Gem -->
+                <circle cx="9.5" cy="18" r="2.8" fill="url(#ch_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="9.5" cy="18" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="9.1" cy="17.6" r="0.4" fill="#ffffff" />
+
+                <!-- Right Knee Poleyn Cup & Rarity Gem -->
+                <circle cx="22.5" cy="18" r="2.8" fill="url(#ch_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="22.5" cy="18" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="22.1" cy="17.6" r="0.4" fill="#ffffff" />
+
+                <!-- Leather Cinch Garters around knees -->
+                <path d="M6.5 18 H12.5" stroke="url(#ch_leather_${id})" stroke-width="1.2" opacity="0.4" />
+                <path d="M19.5 18 H25.5" stroke="url(#ch_leather_${id})" stroke-width="1.2" opacity="0.4" />
               `;
     },
     cuisses(id, color) {
       return `
-                <!-- Leather padded cuisses with color knee caps -->
-                <path d="M7 8 L13 8 L11 24 H7 Z" fill="#5c3a21" stroke="#000" stroke-width="1.8" />
-                <path d="M19 8 L25 8 L25 24 H21 Z" fill="#5c3a21" stroke="#000" stroke-width="1.8" />
-                <!-- Padded stich details -->
-                <path d="M7 12 L13 16 M7 16 L11 20 M19 12 L25 16 M19 16 L23 20" stroke="rgba(255,255,255,0.15)" stroke-width="1.2" />
-                <!-- Knee caps -->
-                <circle cx="9" cy="24" r="3.2" fill="${color}" stroke="#000" stroke-width="1.2" />
-                <circle cx="23" cy="24" r="3.2" fill="${color}" stroke="#000" stroke-width="1.2" />
+                <defs>
+                  <!-- Quilted leather light gradient -->
+                  <linearGradient id="cs_quilt_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="60%" stop-color="#5c3a21"/>
+                    <stop offset="100%" stop-color="#3d2312"/>
+                  </linearGradient>
+                  <!-- Quilted leather shadow gradient -->
+                  <linearGradient id="cs_quilt_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#3d2312"/>
+                    <stop offset="100%" stop-color="#241309"/>
+                  </linearGradient>
+                  <!-- Steel knee plate gradient -->
+                  <linearGradient id="cs_steel_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="#cbd5e1"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                  <!-- Brass trim fittings -->
+                  <linearGradient id="cs_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Leather Waist Belt & Harness -->
+                <rect x="7" y="4" width="18" height="3" fill="url(#cs_quilt_d_${id})" stroke="#05070a" stroke-width="1" />
+                <rect x="14" y="3" width="4" height="5" rx="0.8" fill="url(#cs_brass_${id})" stroke="#05070a" stroke-width="1" />
+
+                <!-- Rear Thigh Fastening Leather Cords -->
+                <line x1="5" y1="12" x2="13" y2="12" stroke="#241309" stroke-width="1.8" />
+                <line x1="5" y1="23" x2="13" y2="23" stroke="#241309" stroke-width="1.8" />
+                <line x1="19" y1="12" x2="27" y2="12" stroke="#241309" stroke-width="1.8" />
+                <line x1="19" y1="23" x2="27" y2="23" stroke="#241309" stroke-width="1.8" />
+
+                <!-- Left Padded Thigh Cuisse (Shadow Side) -->
+                <path d="M6 8 H13 L12 27 H6.5 Z" fill="url(#cs_quilt_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Right Padded Thigh Cuisse (Highlight Side) -->
+                <path d="M19 8 H26 L25.5 27 H19.5 Z" fill="url(#cs_quilt_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Quilted Diamond Stitch Pattern Overlay -->
+                <path d="M6.5 10 L12.5 15 M6.5 14 L12.2 19 M6.5 18 L12 23 M6.5 22 L11.8 27 M12.5 10 L6.5 15 M12.2 14 L6.5 19 M12 18 L6.5 23 M11.8 22 L6.5 27" fill="none" stroke="#241309" stroke-width="0.8" opacity="0.8" />
+                <path d="M19.5 10 L25.5 15 M19.5 14 L25.2 19 M19.5 18 L25 23 M19.5 22 L24.8 27 M25.5 10 L19.5 15 M25.2 14 L19.5 19 M25 18 L19.5 23 M24.8 22 L19.5 27" fill="none" stroke="#241309" stroke-width="0.8" opacity="0.8" />
+
+                <!-- Brass Stitching Rivets along edges -->
+                <circle cx="7" cy="9" r="0.5" fill="url(#cs_brass_${id})" />
+                <circle cx="12" cy="9" r="0.5" fill="url(#cs_brass_${id})" />
+                <circle cx="20" cy="9" r="0.5" fill="url(#cs_brass_${id})" />
+                <circle cx="25" cy="9" r="0.5" fill="url(#cs_brass_${id})" />
+
+                <!-- Left Steel Knee Poleyn Fan Wing & Cup -->
+                <path d="M4 18 Q9 15, 14 18 L13 22 H5 Z" fill="url(#cs_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="9.5" cy="20" r="3" fill="url(#cs_steel_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="9.5" cy="20" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="9.1" cy="19.6" r="0.4" fill="#ffffff" />
+
+                <!-- Right Steel Knee Poleyn Fan Wing & Cup -->
+                <path d="M18 18 Q23 15, 28 18 L27 22 H19 Z" fill="url(#cs_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="22.5" cy="20" r="3" fill="url(#cs_steel_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="22.5" cy="20" r="1.5" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="22.1" cy="19.6" r="0.4" fill="#ffffff" />
               `;
     },
     overall(id, color) {
       return `
-            <!-- Full Suit Base Shading -->
-            <path d="M8 6 L24 6 L22 20 L16 24 L10 20 Z" fill="#506272" stroke="#000" stroke-width="1.8" />
-            <path d="M10 20 H22 L24 28 H8 Z" fill="#34495e" stroke="#000" stroke-width="1.5" />
-            <!-- Shoulder Padding Trims -->
-            <path d="M4 11 Q10 8, 10 14 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-            <path d="M28 11 Q22 8, 22 14 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-            <!-- Central Seam & Emblem Glimmer -->
-            <line x1="16" y1="8" x2="16" y2="26" stroke="${color}" stroke-width="2.5" stroke-linecap="round" />
-          `;
+                <defs>
+                  <!-- Steel plate light gradient -->
+                  <linearGradient id="ov_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="#cbd5e1"/>
+                    <stop offset="100%" stop-color="#64748b"/>
+                  </linearGradient>
+                  <!-- Steel plate shadow gradient -->
+                  <linearGradient id="ov_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Undersuit fabric light gradient -->
+                  <linearGradient id="ov_cloth_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Undersuit fabric shadow gradient -->
+                  <linearGradient id="ov_cloth_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#1e293b"/>
+                    <stop offset="100%" stop-color="#0f172a"/>
+                  </linearGradient>
+                  <!-- Brass fittings & rivets -->
+                  <linearGradient id="ov_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                  <!-- Sternum core backglow -->
+                  <radialGradient id="ov_glow_core_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="40%" stop-color="${color}"/>
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- Shoulder Pauldrons (Left Shadow / Right Light) -->
+                <path d="M3 10 C3 5, 10 6, 10 12 L7 15 Z" fill="url(#ov_steel_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+                <path d="M29 10 C29 5, 22 6, 22 12 L25 15 Z" fill="url(#ov_steel_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+                <!-- Main Torso Undersuit (Shadow Left / Light Right) -->
+                <path d="M16 5 L8 7 L7 18 L16 20 Z" fill="url(#ov_cloth_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <path d="M16 5 L24 7 L25 18 L16 20 Z" fill="url(#ov_cloth_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+
+                <!-- Padded Leg Suits (Shadow Left / Light Right) -->
+                <path d="M7 18 L16 20 L16 29 L6 28 Z" fill="url(#ov_cloth_d_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+                <path d="M25 18 L16 20 L16 29 L26 28 Z" fill="url(#ov_cloth_l_${id})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round" />
+
+                <!-- Thigh & Shin Reinforcement Plates -->
+                <path d="M7.5 19 H13 L12 27 H7 Z" fill="url(#ov_steel_d_${id})" stroke="#05070a" stroke-width="1.2" />
+                <path d="M19 19 H24.5 L25 27 H19 Z" fill="url(#ov_steel_l_${id})" stroke="#05070a" stroke-width="1.2" />
+
+                <!-- Waist Belt & Buckle Assembly -->
+                <rect x="8" y="16.5" width="16" height="2.5" fill="url(#ov_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <rect x="14" y="15.5" width="4" height="4.5" rx="0.8" fill="url(#ov_brass_${id})" stroke="#05070a" stroke-width="1" />
+                <rect x="15" y="16.5" width="2" height="2.5" fill="#05070a" />
+
+                <!-- Neck Gorget Plate Collar -->
+                <path d="M10 5 Q16 7.5, 22 5 L21 7.5 Q16 9.5, 11 7.5 Z" fill="url(#ov_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+
+                <!-- Sternum Core Energy Diamond & Glow -->
+                <circle cx="16" cy="11.5" r="3.5" fill="url(#ov_glow_core_${id})" opacity="0.85" />
+                <polygon points="16,8.5 18.2,11.5 16,14.5 13.8,11.5" fill="${color}" stroke="#05070a" stroke-width="0.8" stroke-linejoin="round" />
+                <circle cx="16" cy="11.5" r="0.8" fill="#ffffff" />
+
+                <!-- Knee Poleyn Caps -->
+                <circle cx="9.5" cy="22" r="2.2" fill="url(#ov_brass_${id})" stroke="#05070a" stroke-width="0.6" />
+                <circle cx="9.5" cy="22" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.4" />
+                <circle cx="22.5" cy="22" r="2.2" fill="url(#ov_brass_${id})" stroke="#05070a" stroke-width="0.6" />
+                <circle cx="22.5" cy="22" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.4" />
+              `;
     },
     boots(id, color) {
       return `
-            <!-- Left Leather Boot -->
-            <!-- Flared cuff matching quality tier -->
-            <path d="M3 11 L11 11 L10 15 H4 Z" fill="${color}" stroke="#000" stroke-width="1.5" />
-            <path d="M4 14 L10 14 L12 22 L15 25 L13 28 L4 27 Z" fill="#5c3a21" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <!-- Specular Highlight -->
-            <path d="M5 15 L10 15 L11 21 H5 Z" fill="#ffffff" opacity="0.15" />
-            <path d="M4 27 L13 28" stroke="#111" stroke-width="2.2" />
+                <defs>
+                  <!-- Leather boot light gradient -->
+                  <linearGradient id="bt_leather_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="50%" stop-color="#5c3a21"/>
+                    <stop offset="100%" stop-color="#3d2312"/>
+                  </linearGradient>
+                  <!-- Leather boot shadow gradient -->
+                  <linearGradient id="bt_leather_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#3d2312"/>
+                    <stop offset="100%" stop-color="#241309"/>
+                  </linearGradient>
+                  <!-- Outsole gradient -->
+                  <linearGradient id="bt_sole_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#334155"/>
+                    <stop offset="100%" stop-color="#0f172a"/>
+                  </linearGradient>
+                  <!-- Brass buckle fittings -->
+                  <linearGradient id="bt_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                </defs>
 
-            <!-- Right Leather Boot -->
-            <!-- Flared cuff matching quality tier -->
-            <path d="M17 11 L25 11 L24 15 H18 Z" fill="${color}" stroke="#000" stroke-width="1.5" />
-            <path d="M18 14 L24 14 L26 22 L29 25 L27 28 L18 27 Z" fill="#5c3a21" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <!-- Specular Highlight -->
-            <path d="M19 15 L24 15 L25 21 H19 Z" fill="#ffffff" opacity="0.15" />
-            <path d="M18 27 L27 28" stroke="#111" stroke-width="2.2" />
-          `;
+                <!-- Left Leather Boot (Shadow Side) -->
+                <!-- Main Upper & Foot Body -->
+                <path d="M4 14 L11 12 L12 21 L15 25 L13 28 L3 27 Z" fill="url(#bt_leather_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Heavy Outsole -->
+                <path d="M3 27 L13 28 L14 29 L3 28.5 Z" fill="url(#bt_sole_${id})" stroke="#05070a" stroke-width="1" />
+                <!-- Flared Turned Cuff -->
+                <path d="M3 10 H12 L11 14 H4 Z" fill="url(#bt_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="7.5" cy="12" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <!-- Ankle Cinch Strap & Buckle -->
+                <path d="M4.5 21 L12.5 22" stroke="url(#bt_leather_d_${id})" stroke-width="2" />
+                <rect x="7" y="20.5" width="2.5" height="3" rx="0.5" fill="url(#bt_brass_${id})" stroke="#05070a" stroke-width="0.6" />
+
+                <!-- Right Leather Boot (Highlight Side) -->
+                <!-- Main Upper & Foot Body -->
+                <path d="M17 14 L24 12 L25 21 L28 25 L26 28 L16 27 Z" fill="url(#bt_leather_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Heavy Outsole -->
+                <path d="M16 27 L26 28 L27 29 L16 28.5 Z" fill="url(#bt_sole_${id})" stroke="#05070a" stroke-width="1" />
+                <!-- Flared Turned Cuff -->
+                <path d="M16 10 H25 L24 14 H17 Z" fill="url(#bt_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="20.5" cy="12" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <!-- Ankle Cinch Strap & Buckle -->
+                <path d="M17.5 21 L25.5 22" stroke="url(#bt_leather_l_${id})" stroke-width="2" />
+                <rect x="20" y="20.5" width="2.5" height="3" rx="0.5" fill="url(#bt_brass_${id})" stroke="#05070a" stroke-width="0.6" />
+
+                <!-- Specular Sheen Highlights -->
+                <path d="M18 15 L23 13.5 L23.5 19 L18.5 20 Z" fill="#ffffff" opacity="0.15" />
+              `;
     },
     sabatons(id, color) {
       return `
-            <!-- Gothic Sabatons with spec highlights -->
-            <path d="M3 15 L9 11 L12 21 L16 26 L13 29 L3 27 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <path d="M15 15 L21 11 L24 21 L28 26 L25 29 L15 27 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <polygon points="3,27 6,25 3,25" fill="${color}" stroke="#000" stroke-width="0.8" />
-            <polygon points="15,27 18,25 15,25" fill="${color}" stroke="#000" stroke-width="0.8" />
-            <!-- Specular reflections -->
-            <path d="M4 16 L9 13 L10 21 H4 Z" fill="#ffffff" opacity="0.25" />
-            <path d="M16 16 L21 13 L22 21 H16 Z" fill="#ffffff" opacity="0.25" />
-          `;
+                <defs>
+                  <!-- Steel plate light gradient -->
+                  <linearGradient id="sb_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="#cbd5e1"/>
+                    <stop offset="100%" stop-color="#64748b"/>
+                  </linearGradient>
+                  <!-- Steel plate shadow gradient -->
+                  <linearGradient id="sb_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Brass trim fittings -->
+                  <linearGradient id="sb_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                  <!-- Ankle strap leather -->
+                  <linearGradient id="sb_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#5c3a21"/>
+                    <stop offset="100%" stop-color="#2d1d0b"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Left Gothic Sabaton (Shadow Side) -->
+                <!-- Ankle Collar -->
+                <path d="M3 12 H11 L10 16 H4 Z" fill="url(#sb_brass_${id})" stroke="#05070a" stroke-width="1" />
+                <!-- Main Foot Lames Stack -->
+                <path d="M3.5 15 L10.5 13 L12 21 L15.5 25 L12.5 28 L3 27 Z" fill="url(#sb_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Overlapping Instep Lame Seams -->
+                <path d="M4 18 H11 M4.2 21 H12 M4.5 24 H13.5" stroke="#05070a" stroke-width="1" opacity="0.6" />
+                <!-- Pointed Gothic Toe Cap & Rarity Gem -->
+                <polygon points="15.5,25 12.5,28 10,27" fill="url(#sb_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="13.2" cy="26" r="1" fill="${color}" stroke="#05070a" stroke-width="0.4" />
+                <circle cx="13" cy="25.8" r="0.3" fill="#ffffff" />
+
+                <!-- Right Gothic Sabaton (Highlight Side) -->
+                <!-- Ankle Collar -->
+                <path d="M16 12 H24 L23 16 H17 Z" fill="url(#sb_brass_${id})" stroke="#05070a" stroke-width="1" />
+                <!-- Main Foot Lames Stack -->
+                <path d="M16.5 15 L23.5 13 L25 21 L28.5 25 L25.5 28 L16 27 Z" fill="url(#sb_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Overlapping Instep Lame Seams -->
+                <path d="M17 18 H24 M17.2 21 H25 M17.5 24 H26.5" stroke="#05070a" stroke-width="1" opacity="0.6" />
+                <!-- Pointed Gothic Toe Cap & Rarity Gem -->
+                <polygon points="28.5,25 25.5,28 23,27" fill="url(#sb_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="26.2" cy="26" r="1" fill="${color}" stroke="#05070a" stroke-width="0.4" />
+                <circle cx="26" cy="25.8" r="0.3" fill="#ffffff" />
+
+                <!-- Specular Facet Highlights -->
+                <path d="M17 15 L22 13.5 L23.5 20 H18.5 Z" fill="#ffffff" opacity="0.2" />
+              `;
     },
     sollerets(id, color) {
       return `
-            <!-- Left Solleret scale plates -->
-            <path d="M4 11 L10 8 L12 26 L4 25 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <!-- Overlapping lamination lines -->
-            <path d="M4 15 H11 M4 19 H12 M4 23 H11" stroke="#333" stroke-width="1.5" />
-            <!-- Left strap buckle -->
-            <rect x="4" y="11" width="7" height="2.5" fill="${color}" stroke="#000" stroke-width="1" />
+                <defs>
+                  <!-- Steel scale plate light gradient -->
+                  <linearGradient id="sl_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="#cbd5e1"/>
+                    <stop offset="100%" stop-color="#64748b"/>
+                  </linearGradient>
+                  <!-- Steel scale plate shadow gradient -->
+                  <linearGradient id="sl_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Brass buckle & trim fittings -->
+                  <linearGradient id="sl_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                  <!-- Leather strap gradient -->
+                  <linearGradient id="sl_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#5c3a21"/>
+                    <stop offset="100%" stop-color="#2d1d0b"/>
+                  </linearGradient>
+                </defs>
 
-            <!-- Right Solleret scale plates -->
-            <path d="M16 11 L22 8 L24 26 L16 25 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <!-- Overlapping lamination lines -->
-            <path d="M16 15 H23 M16 19 H24 M16 23 H23" stroke="#333" stroke-width="1.5" />
-            <!-- Right strap buckle -->
-            <rect x="16" y="11" width="7" height="2.5" fill="${color}" stroke="#000" stroke-width="1" />
-          `;
+                <!-- Left Solleret Scale Assembly (Shadow Side) -->
+                <!-- Ankle Strap & Buckle -->
+                <path d="M4 10 H12 L11 14 H4.5 Z" fill="url(#sl_leather_${id})" stroke="#05070a" stroke-width="1" />
+                <rect x="7" y="10.5" width="3" height="3" fill="url(#sl_brass_${id})" stroke="#05070a" stroke-width="0.6" />
+                <circle cx="8.5" cy="12" r="0.6" fill="${color}" />
+                <!-- Overlapping Scale Foot Body -->
+                <path d="M4 13.5 L11 12 L12.5 22 L15 26 L12 28 L3.5 27 Z" fill="url(#sl_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Lamination Seam Lines -->
+                <path d="M4.2 17 H11.5 M4.5 20.5 H12 M4.8 24 H13.5" stroke="#05070a" stroke-width="1" opacity="0.65" />
+                <!-- Toe Cap & Rivet -->
+                <polygon points="15,26 12,28 9.5,27" fill="url(#sl_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="12" cy="27" r="0.5" fill="#ffffff" />
+
+                <!-- Right Solleret Scale Assembly (Highlight Side) -->
+                <!-- Ankle Strap & Buckle -->
+                <path d="M16 10 H24 L23 14 H16.5 Z" fill="url(#sl_leather_${id})" stroke="#05070a" stroke-width="1" />
+                <rect x="19" y="10.5" width="3" height="3" fill="url(#sl_brass_${id})" stroke="#05070a" stroke-width="0.6" />
+                <circle cx="20.5" cy="12" r="0.6" fill="${color}" />
+                <!-- Overlapping Scale Foot Body -->
+                <path d="M16 13.5 L23 12 L24.5 22 L27 26 L24 28 L15.5 27 Z" fill="url(#sl_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Lamination Seam Lines -->
+                <path d="M16.2 17 H23.5 M16.5 20.5 H24 M16.8 24 H25.5" stroke="#05070a" stroke-width="1" opacity="0.65" />
+                <!-- Toe Cap & Rivet -->
+                <polygon points="27,26 24,28 21.5,27" fill="url(#sl_brass_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="24" cy="27" r="0.5" fill="#ffffff" />
+
+                <!-- Specular Facet Highlights -->
+                <path d="M16.5 14 L22 12.5 L23 19 H17.5 Z" fill="#ffffff" opacity="0.2" />
+              `;
     },
     steel_boots(id, color) {
       return `
-            <!-- Left Steel Boot -->
-            <!-- Flared Ankle Collar -->
-            <path d="M4 10 H14 L12 15 H6 Z" fill="${color}" stroke="#000" stroke-width="1.5" />
-            <path d="M5 15 L13 15 L14 24 L12 27 L4 26 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <!-- Heavy Steel Toe Cap -->
-            <path d="M4 23 L12 24 L11 27 H5 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.2" />
-            <!-- Reflection Highlight -->
-            <path d="M5 16 L12 16 L13 22 H5 Z" fill="#ffffff" opacity="0.25" />
+                <defs>
+                  <!-- Steel plate light gradient -->
+                  <linearGradient id="st_steel_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="#cbd5e1"/>
+                    <stop offset="100%" stop-color="#64748b"/>
+                  </linearGradient>
+                  <!-- Steel plate shadow gradient -->
+                  <linearGradient id="st_steel_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Collar brass trim -->
+                  <linearGradient id="st_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                  <!-- Outsole gradient -->
+                  <linearGradient id="st_sole_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#334155"/>
+                    <stop offset="100%" stop-color="#0f172a"/>
+                  </linearGradient>
+                </defs>
 
-            <!-- Right Steel Boot -->
-            <!-- Flared Ankle Collar -->
-            <path d="M18 10 H28 L26 15 H20 Z" fill="${color}" stroke="#000" stroke-width="1.5" />
-            <path d="M19 15 L27 15 L28 24 L26 27 L18 26 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <!-- Heavy Steel Toe Cap -->
-            <path d="M18 23 L26 24 L25 27 H19 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.2" />
-            <!-- Reflection Highlight -->
-            <path d="M19 16 L26 16 L27 22 H19 Z" fill="#ffffff" opacity="0.25" />
-          `;
+                <!-- Left Steel Boot (Shadow Side) -->
+                <!-- Flared Ankle Collar & Gem -->
+                <path d="M3 10 H12 L11 14 H4 Z" fill="url(#st_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="7.5" cy="12" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <!-- Main Steel Body -->
+                <path d="M4 14 L11 12.5 L12 21 L15 25 L12.5 28 L3 27 Z" fill="url(#st_steel_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Heavy Toe Cap Overlay -->
+                <path d="M3.5 23 L13 24.5 L12.5 28 H3 Z" fill="url(#st_steel_l_${id})" stroke="#05070a" stroke-width="1" />
+                <!-- Ankle Hinge Rivets -->
+                <circle cx="10" cy="18" r="0.8" fill="url(#st_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+
+                <!-- Right Steel Boot (Highlight Side) -->
+                <!-- Flared Ankle Collar & Gem -->
+                <path d="M16 10 H25 L24 14 H17 Z" fill="url(#st_brass_${id})" stroke="#05070a" stroke-width="1" stroke-linejoin="round" />
+                <circle cx="20.5" cy="12" r="1.2" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <!-- Main Steel Body -->
+                <path d="M17 14 L24 12.5 L25 21 L28 25 L25.5 28 L16 27 Z" fill="url(#st_steel_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Heavy Toe Cap Overlay -->
+                <path d="M16.5 23 L26 24.5 L25.5 28 H16 Z" fill="url(#st_steel_l_${id})" stroke="#05070a" stroke-width="1" />
+                <!-- Ankle Hinge Rivets -->
+                <circle cx="23" cy="18" r="0.8" fill="url(#st_brass_${id})" stroke="#05070a" stroke-width="0.4" />
+
+                <!-- Specular Reflections -->
+                <path d="M18 15 L23 13.5 L23.8 20 H18.5 Z" fill="#ffffff" opacity="0.22" />
+                <circle cx="23" cy="25" r="0.5" fill="#ffffff" />
+              `;
     },
     treads(id, color) {
       return `
-            <!-- Leather boots with thick black rubber outsoles and laces -->
-            <path d="M4 11 L10 8 L12 21 L16 24 L14 28 L4 27 Z" fill="#5c3a21" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <path d="M16 11 L22 7 L24 18 L28 23 L27 28 L16 27 Z" fill="#5c3a21" stroke="#000" stroke-width="1.8" stroke-linejoin="round" />
-            <!-- Outsoles -->
-            <path d="M4 26 L14 27 L14 28 L4 27 Z" fill="#111" stroke="#000" stroke-width="1" />
-            <path d="M16 26 L26 27 L26 28 L16 27 Z" fill="#111" stroke="#000" stroke-width="1" />
-            <!-- Color laces buckle highlights -->
-            <rect x="6" y="13" width="4" height="2" fill="${color}" stroke="#000" stroke-width="0.8" />
-            <rect x="18" y="13" width="4" height="2" fill="${color}" stroke="#000" stroke-width="0.8" />
-            <rect x="5.5" y="18" width="4.5" height="2" fill="${color}" stroke="#000" stroke-width="0.8" />
-            <rect x="17.5" y="18" width="4.5" height="2" fill="${color}" stroke="#000" stroke-width="0.8" />
-          `;
+                <defs>
+                  <!-- Tactical boot light gradient -->
+                  <linearGradient id="tr_boot_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="60%" stop-color="#334155"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <!-- Tactical boot shadow gradient -->
+                  <linearGradient id="tr_boot_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#1e293b"/>
+                    <stop offset="100%" stop-color="#0f172a"/>
+                  </linearGradient>
+                  <!-- Heavy rubber tread outsole gradient -->
+                  <linearGradient id="tr_sole_${id}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#1e293b"/>
+                    <stop offset="100%" stop-color="#020617"/>
+                  </linearGradient>
+                  <!-- Eyelets & brass fittings -->
+                  <linearGradient id="tr_brass_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffeaa7"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Left Tread Boot (Shadow Side) -->
+                <!-- Main Upper & Foot Body -->
+                <path d="M4 11 L10 8 L12 21 L16 24 L14 27 L4 26 Z" fill="url(#tr_boot_d_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Deep Rubber Lugged Outsole -->
+                <path d="M3.5 26 H14.5 V28.5 H3.5 Z" fill="url(#tr_sole_${id})" stroke="#05070a" stroke-width="1" />
+                <path d="M5 28.5 V29.5 M8 28.5 V29.5 M11 28.5 V29.5" stroke="#05070a" stroke-width="1.2" />
+                <!-- Speed Lace Hooks & Eyelets -->
+                <circle cx="6.5" cy="13" r="0.8" fill="url(#tr_brass_${id})" />
+                <circle cx="6.5" cy="16" r="0.8" fill="url(#tr_brass_${id})" />
+                <circle cx="6.5" cy="19" r="0.8" fill="url(#tr_brass_${id})" />
+                <!-- Rarity Buckle Strap -->
+                <rect x="5.5" y="14.5" width="4.5" height="2" rx="0.4" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <rect x="5.5" y="17.5" width="4.5" height="2" rx="0.4" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+
+                <!-- Right Tread Boot (Highlight Side) -->
+                <!-- Main Upper & Foot Body -->
+                <path d="M16 11 L22 7 L24 21 L28 24 L26 27 L16 26 Z" fill="url(#tr_boot_l_${id})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round" />
+                <!-- Deep Rubber Lugged Outsole -->
+                <path d="M15.5 26 H26.5 V28.5 H15.5 Z" fill="url(#tr_sole_${id})" stroke="#05070a" stroke-width="1" />
+                <path d="M17 28.5 V29.5 M20 28.5 V29.5 M23 28.5 V29.5" stroke="#05070a" stroke-width="1.2" />
+                <!-- Speed Lace Hooks & Eyelets -->
+                <circle cx="18.5" cy="13" r="0.8" fill="url(#tr_brass_${id})" />
+                <circle cx="18.5" cy="16" r="0.8" fill="url(#tr_brass_${id})" />
+                <circle cx="18.5" cy="19" r="0.8" fill="url(#tr_brass_${id})" />
+                <!-- Rarity Buckle Strap -->
+                <rect x="17.5" y="14.5" width="4.5" height="2" rx="0.4" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+                <rect x="17.5" y="17.5" width="4.5" height="2" rx="0.4" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+
+                <!-- Specular Highlights -->
+                <path d="M17 12 L21 8.5 L22 17 H17.5 Z" fill="#ffffff" opacity="0.15" />
+              `;
     },
     sigil(id, color) {
       return `
@@ -858,107 +2762,244 @@ window.AssetCatalog = {
     },
     signet_ring(id, color) {
       return `
-            <defs>
-              <linearGradient id="ring_band_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#ffeaa7" />
-                <stop offset="100%" stop-color="#d4af37" />
-              </linearGradient>
-              <linearGradient id="ring_gem_${id}" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#ffffff" />
-                <stop offset="50%" stop-color="${color}" />
-                <stop offset="100%" stop-color="#111116" />
-              </linearGradient>
-            </defs>
-            <!-- Gold Band -->
-            <ellipse cx="16" cy="18" rx="8" ry="9" fill="none" stroke="url(#ring_band_${id})" stroke-width="2.5" />
-            <!-- Gemstone Mount -->
-            <path d="M11 9 L21 9 L22 13 L16 16 L10 13 Z" fill="url(#ring_band_${id})" stroke="#000" stroke-width="1" />
-            <!-- Shield Faceted Gemstone -->
-            <path d="M12 8 L20 8 L21 11 L16 15 L11 11 Z" fill="url(#ring_gem_${id})" stroke="#000" stroke-width="1.2" />
-            <!-- Specular Chime -->
-            <circle cx="14" cy="10" r="1" fill="#fff" opacity="0.8" />
-          `;
+                <defs>
+                  <!-- Royal Gold Band multi-stop gradient -->
+                  <linearGradient id="sn_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fff275"/>
+                    <stop offset="40%" stop-color="#d4af37"/>
+                    <stop offset="80%" stop-color="#8a6d1c"/>
+                    <stop offset="100%" stop-color="#5a4504"/>
+                  </linearGradient>
+                  <!-- Signet Shield Gemstone gradient -->
+                  <linearGradient id="sn_gem_${id}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="${color}"/>
+                    <stop offset="100%" stop-color="#05070a"/>
+                  </linearGradient>
+                  <!-- Ambient Gem backglow -->
+                  <radialGradient id="sn_glow_${id}" cx="50%" cy="30%" r="50%">
+                    <stop offset="0%" stop-color="${color}" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- Gem Ambient Glow -->
+                <circle cx="16" cy="11" r="7" fill="url(#sn_glow_${id})" />
+
+                <!-- Outer Gold Ring Band -->
+                <ellipse cx="16" cy="19" rx="8.5" ry="9.5" fill="none" stroke="url(#sn_gold_${id})" stroke-width="3" />
+                <!-- Inner Ring Band Depth Shadow -->
+                <ellipse cx="16" cy="19" rx="7" ry="8" fill="none" stroke="#05070a" stroke-width="1.2" opacity="0.6" />
+
+                <!-- Gold Bezel Shield Mount & Claw Prongs -->
+                <path d="M9.5 8 L22.5 8 L24 13.5 L16 18.5 L8 13.5 Z" fill="url(#sn_gold_${id})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round" />
+
+                <!-- Shield Faceted Gemstone -->
+                <path d="M11 7.5 L21 7.5 L22.2 12.5 L16 16.5 L9.8 12.5 Z" fill="url(#sn_gem_${id})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round" />
+
+                <!-- Inner Heraldic Engraved Diamond Emblem -->
+                <polygon points="16,9.2 18.5,12 16,14.8 13.5,12" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.85" />
+                <circle cx="16" cy="12" r="0.8" fill="#ffffff" />
+
+                <!-- Specular Light Glint Highlights -->
+                <polygon points="11,7.8 14,7.8 12.5,11.5" fill="#ffffff" opacity="0.6" />
+                <ellipse cx="13.5" cy="9.5" rx="0.6" ry="1.2" fill="#ffffff" transform="rotate(-20 13.5 9.5)" />
+              `;
     },
     loop_ring(id, color) {
       return `
-            <defs>
-              <linearGradient id="ring_band_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#ffeaa7" />
-                <stop offset="100%" stop-color="#d4af37" />
-              </linearGradient>
-              <linearGradient id="ring_gem_${id}" x1="0" y1="1" x2="0" y2="0">
-                <stop offset="0%" stop-color="rgba(0,0,0,0.3)" />
-                <stop offset="70%" stop-color="${color}" />
-                <stop offset="100%" stop-color="#ffffff" />
-              </linearGradient>
-            </defs>
-            <!-- Crossed Double Loop Band -->
-            <ellipse cx="16" cy="19" rx="9" ry="8" fill="none" stroke="url(#ring_band_${id})" stroke-width="1.5" transform="rotate(-10 16 19)" />
-            <ellipse cx="16" cy="19" rx="9" ry="8" fill="none" stroke="url(#ring_band_${id})" stroke-width="1.5" transform="rotate(10 16 19)" />
-            <!-- Outer Bezel -->
-            <circle cx="16" cy="10" r="5" fill="url(#ring_band_${id})" stroke="#000" stroke-width="1" />
-            <!-- Circular Gemstone -->
-            <circle cx="16" cy="10" r="3.5" fill="url(#ring_gem_${id})" stroke="#000" stroke-width="1" />
-            <!-- Shine Sparkle -->
-            <polygon points="16,4 17,9 16,10 15,9" fill="#fff" opacity="0.7" />
-          `;
+                <defs>
+                  <!-- Interlocking Gold Loop multi-stop gradient -->
+                  <linearGradient id="lp_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fff275"/>
+                    <stop offset="40%" stop-color="#d4af37"/>
+                    <stop offset="80%" stop-color="#8a6d1c"/>
+                    <stop offset="100%" stop-color="#5a4504"/>
+                  </linearGradient>
+                  <!-- Solitaire Gemstone gradient -->
+                  <radialGradient id="lp_gem_${id}" cx="35%" cy="30%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="${color}"/>
+                    <stop offset="100%" stop-color="#07090e"/>
+                  </radialGradient>
+                  <!-- Solitaire Gem backglow -->
+                  <radialGradient id="lp_glow_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="${color}" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- Gem Soft Backglow -->
+                <circle cx="16" cy="10" r="7" fill="url(#lp_glow_${id})" />
+
+                <!-- Interwoven Crossed Double Loop Bands -->
+                <!-- Left Loop Band -->
+                <ellipse cx="16" cy="19.5" rx="9" ry="8" fill="none" stroke="url(#lp_gold_${id})" stroke-width="2.2" transform="rotate(-12 16 19.5)" />
+                <!-- Right Loop Band -->
+                <ellipse cx="16" cy="19.5" rx="9" ry="8" fill="none" stroke="url(#lp_gold_${id})" stroke-width="2.2" transform="rotate(12 16 19.5)" />
+                <!-- Inner Shadow Rings for woven depth -->
+                <ellipse cx="16" cy="19.5" rx="7.5" ry="6.5" fill="none" stroke="#05070a" stroke-width="0.8" opacity="0.6" transform="rotate(-12 16 19.5)" />
+                <ellipse cx="16" cy="19.5" rx="7.5" ry="6.5" fill="none" stroke="#05070a" stroke-width="0.8" opacity="0.6" transform="rotate(12 16 19.5)" />
+
+                <!-- Circular Gold Bezel Crown Mount -->
+                <circle cx="16" cy="10" r="5.2" fill="url(#lp_gold_${id})" stroke="#05070a" stroke-width="1.2" />
+
+                <!-- Solitaire Gemstone -->
+                <circle cx="16" cy="10" r="3.8" fill="url(#lp_gem_${id})" stroke="#05070a" stroke-width="1" />
+                <ellipse cx="14.8" cy="8.8" rx="1" ry="0.6" fill="#ffffff" opacity="0.8" transform="rotate(-20 14.8 8.8)" />
+
+                <!-- Four-Point Starburst Flare Reflection -->
+                <polygon points="16,3.5 17,9 16,10 15,9" fill="#ffffff" opacity="0.85" />
+                <polygon points="16,10 21.5,10 16,10 10.5,10" fill="#ffffff" opacity="0.5" />
+              `;
     },
     band_ring(id, color) {
       return `
-            <defs>
-              <linearGradient id="ring_band_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#abb2b9" />
-                <stop offset="100%" stop-color="#566573" />
-              </linearGradient>
-              <linearGradient id="ring_gem_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#ffeaa7" />
-                <stop offset="100%" stop-color="#d4af37" />
-              </linearGradient>
-            </defs>
-            <!-- Wide Engraved Band -->
-            <ellipse cx="16" cy="16" rx="10" ry="10" fill="none" stroke="url(#ring_band_${id})" stroke-width="4.5" />
-            <ellipse cx="16" cy="16" rx="10" ry="10" fill="none" stroke="#000000" stroke-width="1" />
-            <!-- Gold Inset Runes/Lines -->
-            <ellipse cx="16" cy="16" rx="10" ry="10" fill="none" stroke="url(#ring_gem_${id})" stroke-width="1.5" stroke-dasharray="4 6" />
-            <!-- Small Inset Rarity Studs -->
-            <circle cx="16" cy="6" r="1.8" fill="${color}" stroke="#000" stroke-width="0.8" />
-            <circle cx="9.5" cy="10.5" r="1.2" fill="${color}" stroke="#000" stroke-width="0.6" />
-            <circle cx="22.5" cy="10.5" r="1.2" fill="${color}" stroke="#000" stroke-width="0.6" />
-          `;
+                <defs>
+                  <!-- Heavy Platinum Band multi-stop gradient -->
+                  <linearGradient id="bn_plat_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="40%" stop-color="#cbd5e1"/>
+                    <stop offset="80%" stop-color="#64748b"/>
+                    <stop offset="100%" stop-color="#334155"/>
+                  </linearGradient>
+                  <!-- Gold Runic Inlay gradient -->
+                  <linearGradient id="bn_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fff275"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                  <!-- Inset Gemstone Stud gradient -->
+                  <radialGradient id="bn_gem_${id}" cx="35%" cy="30%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="${color}"/>
+                    <stop offset="100%" stop-color="#05070a"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- Wide Heavy Platinum Ring Band Base -->
+                <ellipse cx="16" cy="17" rx="10.5" ry="10.5" fill="none" stroke="url(#bn_plat_${id})" stroke-width="5" />
+                <!-- Outer & Inner Edge Outlines -->
+                <ellipse cx="16" cy="17" rx="13" ry="13" fill="none" stroke="#05070a" stroke-width="1.2" />
+                <ellipse cx="16" cy="17" rx="8" ry="8" fill="none" stroke="#05070a" stroke-width="1.2" />
+
+                <!-- Gilded Inlaid Runic Script Groove -->
+                <ellipse cx="16" cy="17" rx="10.5" ry="10.5" fill="none" stroke="url(#bn_gold_${id})" stroke-width="1.8" stroke-dasharray="3.5 2.5" />
+
+                <!-- Flush Inset Gemstone Stud 1: Top Center Crest -->
+                <circle cx="16" cy="6.5" r="2.2" fill="url(#bn_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="16" cy="6.5" r="1.4" fill="url(#bn_gem_${id})" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="15.6" cy="6.1" r="0.4" fill="#ffffff" />
+
+                <!-- Flush Inset Gemstone Stud 2: Upper Left Arch -->
+                <circle cx="9.2" cy="10" r="1.8" fill="url(#bn_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="9.2" cy="10" r="1.1" fill="url(#bn_gem_${id})" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="8.9" cy="9.7" r="0.3" fill="#ffffff" />
+
+                <!-- Flush Inset Gemstone Stud 3: Upper Right Arch -->
+                <circle cx="22.8" cy="10" r="1.8" fill="url(#bn_gold_${id})" stroke="#05070a" stroke-width="0.8" />
+                <circle cx="22.8" cy="10" r="1.1" fill="url(#bn_gem_${id})" stroke="#05070a" stroke-width="0.5" />
+                <circle cx="22.5" cy="9.7" r="0.3" fill="#ffffff" />
+
+                <!-- Specular Highlight Glints -->
+                <path d="M12 6 C14 5, 18 5, 20 6" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.7" />
+              `;
     },
     seal_ring(id, color) {
       return `
-            <defs>
-              <linearGradient id="ring_band_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#95a5a6" />
-                <stop offset="100%" stop-color="#2c3e50" />
-              </linearGradient>
-              <linearGradient id="ring_seal_${id}" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#111116" />
-                <stop offset="100%" stop-color="${color}" />
-              </linearGradient>
-            </defs>
-            <!-- Heavy Signet Band -->
-            <ellipse cx="16" cy="18" rx="8" ry="9" fill="none" stroke="url(#ring_band_${id})" stroke-width="3" />
-            <!-- Oval Seal Plate -->
-            <ellipse cx="16" cy="9.5" rx="8.5" ry="5.5" fill="url(#ring_band_${id})" stroke="#000" stroke-width="1.2" />
-            <!-- Engraved Seal Center -->
-            <ellipse cx="16" cy="9.5" rx="6.5" ry="3.8" fill="url(#ring_seal_${id})" stroke="#000" stroke-width="0.8" />
-            <!-- Engraved Seal Emblem -->
-            <polygon points="16,7.5 17,9.5 19,9.5 17.5,10.5 18,12.5 16,11.2 14,12.5 14.5,10.5 13,9.5 15,9.5" fill="#fff" opacity="0.8" />
-          `;
+                <defs>
+                  <!-- Dark Steel Band multi-stop gradient -->
+                  <linearGradient id="sl_metal_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#64748b"/>
+                    <stop offset="40%" stop-color="#334155"/>
+                    <stop offset="80%" stop-color="#1e293b"/>
+                    <stop offset="100%" stop-color="#0f172a"/>
+                  </linearGradient>
+                  <!-- Gilded Oval Bezel Rim gradient -->
+                  <linearGradient id="sl_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fff275"/>
+                    <stop offset="50%" stop-color="#d4af37"/>
+                    <stop offset="100%" stop-color="#8a6d1c"/>
+                  </linearGradient>
+                  <!-- Arcane Seal Core gradient -->
+                  <radialGradient id="sl_seal_${id}" cx="50%" cy="40%" r="60%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="55%" stop-color="${color}"/>
+                    <stop offset="100%" stop-color="#05070a"/>
+                  </radialGradient>
+                  <!-- Ambient Seal glow -->
+                  <radialGradient id="sl_glow_${id}" cx="50%" cy="30%" r="50%">
+                    <stop offset="0%" stop-color="${color}" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- Seal Soft Backglow -->
+                <ellipse cx="16" cy="10" rx="9" ry="6" fill="url(#sl_glow_${id})" />
+
+                <!-- Heavy Dark Steel Ring Band -->
+                <ellipse cx="16" cy="19" rx="8.5" ry="9.5" fill="none" stroke="url(#sl_metal_${id})" stroke-width="3" />
+                <ellipse cx="16" cy="19" rx="7" ry="8" fill="none" stroke="#05070a" stroke-width="1.2" opacity="0.6" />
+
+                <!-- Gilded Oval Bezel Mount Plate -->
+                <ellipse cx="16" cy="10" rx="9" ry="6" fill="url(#sl_gold_${id})" stroke="#05070a" stroke-width="1.2" />
+
+                <!-- Glowing Arcane Seal Core Center -->
+                <ellipse cx="16" cy="10" rx="7" ry="4.2" fill="url(#sl_seal_${id})" stroke="#05070a" stroke-width="0.8" />
+
+                <!-- Engraved 8-Point Arcane Star Sigil Emblem -->
+                <polygon points="16,7 17.2,9 19.5,10 17.2,11 16,13 14.8,11 12.5,10 14.8,9" fill="#ffffff" opacity="0.85" />
+                <circle cx="16" cy="10" r="0.8" fill="#ffffff" />
+
+                <!-- Specular Glare Arc -->
+                <path d="M10 8.5 C12 7, 18 7, 21 8.5" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.6" />
+              `;
     },
     ring(id, color) {
       return `
-            <defs>
-              <linearGradient id="ring_band_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#ffeaa7" />
-                <stop offset="100%" stop-color="#d4af37" />
-              </linearGradient>
-            </defs>
-            <ellipse cx="16" cy="17" rx="8" ry="9" fill="none" stroke="url(#ring_band_${id})" stroke-width="2" />
-            <circle cx="16" cy="8" r="3.2" fill="${color}" stroke="#000" stroke-width="1" />
-          `;
+                <defs>
+                  <!-- Gold Band multi-stop gradient -->
+                  <linearGradient id="rn_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fff275"/>
+                    <stop offset="40%" stop-color="#d4af37"/>
+                    <stop offset="80%" stop-color="#8a6d1c"/>
+                    <stop offset="100%" stop-color="#5a4504"/>
+                  </linearGradient>
+                  <!-- Gemstone radial gradient -->
+                  <radialGradient id="rn_gem_${id}" cx="35%" cy="30%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="50%" stop-color="${color}"/>
+                    <stop offset="100%" stop-color="#05070a"/>
+                  </radialGradient>
+                  <!-- Gemstone soft backglow -->
+                  <radialGradient id="rn_glow_${id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="${color}" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- Gem Soft Backglow -->
+                <circle cx="16" cy="8" r="6.5" fill="url(#rn_glow_${id})" />
+
+                <!-- Outer Gold Ring Band -->
+                <ellipse cx="16" cy="18" rx="8.5" ry="9.5" fill="none" stroke="url(#rn_gold_${id})" stroke-width="2.5" />
+                <ellipse cx="16" cy="18" rx="7" ry="8" fill="none" stroke="#05070a" stroke-width="1" opacity="0.6" />
+
+                <!-- Gold Bezel Crown & Claw Prongs -->
+                <circle cx="16" cy="8" r="4.8" fill="url(#rn_gold_${id})" stroke="#05070a" stroke-width="1" />
+
+                <!-- Central Round Gemstone -->
+                <circle cx="16" cy="8" r="3.5" fill="url(#rn_gem_${id})" stroke="#05070a" stroke-width="0.8" />
+
+                <!-- Bezel Claw Prongs -->
+                <circle cx="12.5" cy="8" r="0.6" fill="url(#rn_gold_${id})" />
+                <circle cx="19.5" cy="8" r="0.6" fill="url(#rn_gold_${id})" />
+                <circle cx="16" cy="4.5" r="0.6" fill="url(#rn_gold_${id})" />
+                <circle cx="16" cy="11.5" r="0.6" fill="url(#rn_gold_${id})" />
+
+                <!-- Specular Light Glint -->
+                <ellipse cx="14.8" cy="6.8" rx="1" ry="0.6" fill="#ffffff" opacity="0.8" transform="rotate(-20 14.8 6.8)" />
+              `;
     },
   },
 
@@ -1306,34 +3347,202 @@ window.AssetCatalog = {
   artifacts: {
     frenzy(uid) {
       return `
-        <defs><radialGradient id="g_fz_${uid}" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ff5555"/><stop offset="100%" stop-color="#4a0008"/></radialGradient></defs>
-        <rect x="3" y="3" width="26" height="26" rx="6" fill="url(#g_fz_${uid})" stroke="#111" stroke-width="1.8"/>
-        <path d="M16 6 L12 16 L20 18 L16 26" fill="none" stroke="#f1c40f" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" style="filter: drop-shadow(0 0 3px #ff3300);"/>
-        <circle cx="16" cy="16" r="3" fill="#ffffff" stroke="#ff3333" stroke-width="1"/>
-      `;
+            <defs>
+              <!-- Crystal Fiery Gradient -->
+              <linearGradient id="g_fz_cryst_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ff6b6b"/>
+                <stop offset="40%" stop-color="#e74c3c"/>
+                <stop offset="80%" stop-color="#900c3f"/>
+                <stop offset="100%" stop-color="#4a000d"/>
+              </linearGradient>
+              <!-- Iron Bracket Metal Gradient -->
+              <linearGradient id="g_fz_iron_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#718096"/>
+                <stop offset="50%" stop-color="#4a5568"/>
+                <stop offset="100%" stop-color="#1a202c"/>
+              </linearGradient>
+              <!-- Core Flare Radial Glow -->
+              <radialGradient id="g_fz_glow_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#ff3366"/>
+                <stop offset="100%" stop-color="#ff3366" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Drop Shadow Frame -->
+            <rect x="3" y="3" width="26" height="26" rx="5" fill="#080005" stroke="#05070a" stroke-width="1.8"/>
+
+            <!-- Fiery Core Ambient Backglow -->
+            <circle cx="16" cy="16" r="10" fill="url(#g_fz_glow_${uid})" opacity="0.85"/>
+
+            <!-- Jagged Crystal Shard Facets (Dark Shadow Left) -->
+            <polygon points="16,4 8,15 12,28 16,24" fill="#660014" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Jagged Crystal Shard Facets (Bright Light Right) -->
+            <polygon points="16,4 24,15 20,28 16,24" fill="url(#g_fz_cryst_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Crystal Specular Gleam Facet Overlay -->
+            <polygon points="16,4 22,14 17,23 16,22" fill="#ffffff" opacity="0.4"/>
+
+            <!-- Lightning/Frenzy Core Fissure -->
+            <path d="M16 6 L13 14 L18 17 L15 26" stroke="#f1c40f" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 6 L13 14 L18 17 L15 26" stroke="#ffffff" stroke-width="0.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- Iron Binding Brackets (Top & Bottom Collars) -->
+            <path d="M6 13 L26 13 L24 16 L8 16 Z" fill="url(#g_fz_iron_${uid})" stroke="#05070a" stroke-width="1" stroke-linejoin="round"/>
+            <path d="M8 21 L24 21 L26 24 L6 24 Z" fill="url(#g_fz_iron_${uid})" stroke="#05070a" stroke-width="1" stroke-linejoin="round"/>
+
+            <!-- Bracket Gold Rivets -->
+            <circle cx="9" cy="14.5" r="0.8" fill="#f1c40f" stroke="#05070a" stroke-width="0.4"/>
+            <circle cx="23" cy="14.5" r="0.8" fill="#f1c40f" stroke="#05070a" stroke-width="0.4"/>
+            <circle cx="9" cy="22.5" r="0.8" fill="#f1c40f" stroke="#05070a" stroke-width="0.4"/>
+            <circle cx="23" cy="22.5" r="0.8" fill="#f1c40f" stroke="#05070a" stroke-width="0.4"/>
+
+            <!-- Floating Spark/Ember Nodes -->
+            <circle cx="6" cy="8" r="0.7" fill="#f1c40f"/>
+            <circle cx="26" cy="9" r="0.6" fill="#ff3366"/>
+            <circle cx="5" cy="22" r="0.5" fill="#ff3366"/>
+            <circle cx="27" cy="20" r="0.7" fill="#f1c40f"/>
+          `;
     },
     vampirism(uid) {
       return `
-        <defs>
-          <linearGradient id="g_vp_g_${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff59d"/><stop offset="50%" stop-color="#f1c40f"/><stop offset="100%" stop-color="#9a7d0a"/></linearGradient>
-          <radialGradient id="g_vp_b_${uid}" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ff4d4d"/><stop offset="100%" stop-color="#7a0010"/></radialGradient>
-        </defs>
-        <path d="M8 6 L24 6 L22 16 C22 22, 16 24, 16 24 C16 24, 10 22, 10 16 Z" fill="url(#g_vp_g_${uid})" stroke="#111" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M9.5 8 L22.5 8 C21 13, 11 13, 9.5 8 Z" fill="url(#g_vp_b_${uid})" stroke="#111" stroke-width="1"/>
-        <line x1="16" y1="24" x2="16" y2="28" stroke="url(#g_vp_g_${uid})" stroke-width="3" stroke-linecap="round"/>
-        <path d="M9 28 L23 28 Q16 31, 9 28 Z" fill="url(#g_vp_g_${uid})" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/>
-      `;
+            <defs>
+              <!-- Silver Goblet Light Gradient -->
+              <linearGradient id="g_vp_silver_l_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#f8fafc"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Silver Goblet Shadow Gradient -->
+              <linearGradient id="g_vp_silver_d_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Sanguine Liquid Radial Glow -->
+              <radialGradient id="g_vp_liquid_${uid}" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#ff3355"/>
+                <stop offset="55%" stop-color="#c0392b"/>
+                <stop offset="100%" stop-color="#4a000d"/>
+              </radialGradient>
+              <!-- Gold Rim Gradient -->
+              <linearGradient id="g_vp_gold_${uid}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Goblet Shadow Base -->
+            <ellipse cx="16" cy="29" rx="8" ry="2" fill="rgba(0,0,0,0.5)"/>
+
+            <!-- Bat Wing Left Filigree (Shadow side) -->
+            <path d="M8 8 C3 7, 2 12, 6 16 C3 18, 5 22, 10 20 Z" fill="url(#g_vp_silver_d_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Bat Wing Right Filigree (Highlight side) -->
+            <path d="M24 8 C29 7, 30 12, 26 16 C29 18, 27 22, 22 20 Z" fill="url(#g_vp_silver_l_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Main Goblet Bowl (Shadow Left Side) -->
+            <path d="M16 6 C10 6, 8 11, 8 18 C8 23, 12 26, 16 26 Z" fill="url(#g_vp_silver_d_${uid})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round"/>
+
+            <!-- Main Goblet Bowl (Light Right Side) -->
+            <path d="M16 6 C22 6, 24 11, 24 18 C24 23, 20 26, 16 26 Z" fill="url(#g_vp_silver_l_${uid})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round"/>
+
+            <!-- Chalice Stem & Knop -->
+            <rect x="14.5" y="25" width="3" height="4" fill="url(#g_vp_silver_d_${uid})" stroke="#05070a" stroke-width="1"/>
+            <circle cx="16" cy="26" r="1.8" fill="url(#g_vp_gold_${uid})" stroke="#05070a" stroke-width="0.8"/>
+
+            <!-- Chalice Flared Base -->
+            <path d="M11 29 L21 29 L23 31 L9 31 Z" fill="url(#g_vp_silver_l_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+            <line x1="9" y1="31" x2="23" y2="31" stroke="url(#g_vp_gold_${uid})" stroke-width="1"/>
+
+            <!-- Inner Glowing Sanguine Blood Pool -->
+            <ellipse cx="16" cy="11" rx="7" ry="4" fill="url(#g_vp_liquid_${uid})" stroke="#05070a" stroke-width="1"/>
+            <ellipse cx="16" cy="11" rx="5" ry="2.5" fill="none" stroke="#ff3355" stroke-width="0.8" opacity="0.7"/>
+
+            <!-- Specular Liquid Highlight Arc -->
+            <path d="M11 11 C12 9, 15 8, 18 9" stroke="#ffffff" stroke-width="0.8" fill="none" opacity="0.75" stroke-linecap="round"/>
+
+            <!-- Gilded Outer Chalice Lip Trim -->
+            <ellipse cx="16" cy="6" rx="8" ry="1.8" fill="none" stroke="url(#g_vp_gold_${uid})" stroke-width="1.5"/>
+
+            <!-- Sanguine Drip / Ember Drops -->
+            <circle cx="16" cy="14" r="0.8" fill="#ffffff"/>
+            <circle cx="13" cy="18" r="0.6" fill="#ff3355"/>
+            <circle cx="16" cy="22" r="0.5" fill="#ff3355"/>
+          `;
     },
     gold_hoard(uid) {
       return `
-        <defs><linearGradient id="g_gh_${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffd54f"/><stop offset="100%" stop-color="#a77c00"/></linearGradient></defs>
-        <circle cx="16" cy="8" r="4.5" fill="none" stroke="url(#g_gh_${uid})" stroke-width="2.5"/>
-        <line x1="16" y1="11" x2="16" y2="25" stroke="url(#g_gh_${uid})" stroke-width="3.5" stroke-linecap="round"/>
-        <line x1="9" y1="15" x2="23" y2="15" stroke="url(#g_gh_${uid})" stroke-width="3" stroke-linecap="round"/>
-        <path d="M7 20 C7 27, 25 27, 25 20" fill="none" stroke="url(#g_gh_${uid})" stroke-width="3.5" stroke-linecap="round"/>
-        <polygon points="7,19 4,22 9,21" fill="url(#g_gh_${uid})" stroke="#111" stroke-width="1"/>
-        <polygon points="25,19 28,22 23,21" fill="url(#g_gh_${uid})" stroke="#111" stroke-width="1"/>
-      `;
+            <defs>
+              <!-- Polished Gold Light Gradient -->
+              <linearGradient id="g_gh_gold_l_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fff275"/>
+                <stop offset="45%" stop-color="#f1c40f"/>
+                <stop offset="85%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+              <!-- Polished Gold Shadow Gradient -->
+              <linearGradient id="g_gh_gold_d_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#5a4504"/>
+              </linearGradient>
+              <!-- Amber Gemstone Radial Glow -->
+              <radialGradient id="g_gh_gem_${uid}" cx="35%" cy="30%" r="65%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#f39c12"/>
+                <stop offset="100%" stop-color="#7e3800"/>
+              </radialGradient>
+              <!-- Ambient Gold Glow -->
+              <radialGradient id="g_gh_glow_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffd700" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#ffd700" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Ambient Backglow -->
+            <circle cx="16" cy="16" r="11" fill="url(#g_gh_glow_${uid})"/>
+
+            <!-- Pedestal Base (Shadow & Light facets) -->
+            <path d="M9 28 L23 28 L25 30.5 L7 30.5 Z" fill="url(#g_gh_gold_l_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+            <rect x="11" y="26" width="10" height="2" fill="url(#g_gh_gold_d_${uid})" stroke="#05070a" stroke-width="0.8"/>
+
+            <!-- Central Vertical Column -->
+            <rect x="14.8" y="10" width="2.4" height="16" fill="url(#g_gh_gold_l_${uid})" stroke="#05070a" stroke-width="1"/>
+            <circle cx="16" cy="18" r="1.5" fill="url(#g_gh_gold_d_${uid})" stroke="#05070a" stroke-width="0.6"/>
+
+            <!-- Balanced Crossbar Beam -->
+            <path d="M5 11 Q16 8, 27 11 L26.5 12.5 Q16 10, 5.5 12.5 Z" fill="url(#g_gh_gold_l_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Top Finial Pivot Ring & Gem -->
+            <circle cx="16" cy="6" r="2.8" fill="url(#g_gh_gold_l_${uid})" stroke="#05070a" stroke-width="1"/>
+            <circle cx="16" cy="6" r="1.5" fill="url(#g_gh_gem_${uid})" stroke="#05070a" stroke-width="0.5"/>
+            <circle cx="15.6" cy="5.6" r="0.4" fill="#ffffff"/>
+
+            <!-- Left Scale Pan & Suspension Chains -->
+            <line x1="6" y1="12" x2="4" y2="20" stroke="#cbd5e1" stroke-width="0.8"/>
+            <line x1="6" y1="12" x2="10" y2="20" stroke="#cbd5e1" stroke-width="0.8"/>
+            <!-- Left Pan Body -->
+            <path d="M3 20 C3 23, 11 23, 11 20 Z" fill="url(#g_gh_gold_l_${uid})" stroke="#05070a" stroke-width="1"/>
+            <!-- Left Pan Stacked Gold Coins -->
+            <ellipse cx="7" cy="19" rx="2.5" ry="1" fill="#f1c40f" stroke="#05070a" stroke-width="0.5"/>
+            <ellipse cx="7" cy="17.8" rx="2.5" ry="1" fill="#ffeaa7" stroke="#05070a" stroke-width="0.5"/>
+
+            <!-- Right Scale Pan & Suspension Chains -->
+            <line x1="26" y1="12" x2="22" y2="20" stroke="#cbd5e1" stroke-width="0.8"/>
+            <line x1="26" y1="12" x2="28" y2="20" stroke="#cbd5e1" stroke-width="0.8"/>
+            <!-- Right Pan Body -->
+            <path d="M21 20 C21 23, 29 23, 29 20 Z" fill="url(#g_gh_gold_l_${uid})" stroke="#05070a" stroke-width="1"/>
+            <!-- Right Pan Stacked Gold Coins -->
+            <ellipse cx="25" cy="19" rx="2.5" ry="1" fill="#f1c40f" stroke="#05070a" stroke-width="0.5"/>
+            <ellipse cx="25" cy="17.8" rx="2.5" ry="1" fill="#ffeaa7" stroke="#05070a" stroke-width="0.5"/>
+            <ellipse cx="25" cy="16.6" rx="2.5" ry="1" fill="#ffffff" stroke="#05070a" stroke-width="0.5"/>
+
+            <!-- Floating Gold Sparkles -->
+            <circle cx="4" cy="15" r="0.6" fill="#ffffff"/>
+            <circle cx="28" cy="14" r="0.6" fill="#ffffff"/>
+            <circle cx="16" cy="23" r="0.7" fill="#ffd700"/>
+          `;
     },
     magic_find(uid) {
       return `
@@ -2065,6 +4274,38 @@ window.getCanvasIconImage = function (itemOrName) {
   img.src = "data:image/svg+xml;utf8," + encodeURIComponent(svgString);
 
   window.canvasIconImageCache[key] = img;
+  return img;
+};
+
+window.canvasCutoutImageCache = window.canvasCutoutImageCache || {};
+
+window.getCanvasCutoutImage = function (itemOrName) {
+  if (!itemOrName) return null;
+  let key =
+    typeof itemOrName === "string"
+      ? itemOrName
+      : `${itemOrName.type}_${itemOrName.statsRolled || 0}_${itemOrName.name}_${itemOrName.isUniqueStaff ? "staff" : ""}_${itemOrName.isUniqueSword ? "sword" : ""}_${itemOrName.isUniqueSingularity ? "sing" : ""}_${itemOrName.isUniqueMaelstrom ? "mael" : ""}_${itemOrName.isUniqueAegis ? "aegis" : ""}_${itemOrName.isUniqueWatch ? "watch" : ""}_${itemOrName.isUniqueChronicle ? "chron" : ""}_${itemOrName.isUniqueWarpCore ? "warp" : ""}_${itemOrName.isUniqueTempest ? "temp" : ""}`;
+
+  if (window.canvasCutoutImageCache[key]) {
+    return window.canvasCutoutImageCache[key];
+  }
+
+  let data = window.getIconSvgData(itemOrName);
+  if (!data) return null;
+
+  let is64 = data.viewBox === "0 0 64 64";
+  let boxSize = is64 ? 64 : 32;
+
+  let svgString = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="${data.viewBox}" width="${boxSize}" height="${boxSize}">
+        ${data.innerSvg}
+      </svg>
+    `;
+
+  let img = new Image();
+  img.src = "data:image/svg+xml;utf8," + encodeURIComponent(svgString);
+
+  window.canvasCutoutImageCache[key] = img;
   return img;
 };
 

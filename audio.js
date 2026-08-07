@@ -26,10 +26,10 @@ window.SoundManager = {
   },
 
   init() {
-    // Force iOS AudioSession to "playback" category to bypass physical silent switch
+    // Set iOS AudioSession to "ambient" category to allow background media (Spotify) to mix
     if (navigator.audioSession) {
       try {
-        navigator.audioSession.type = "playback";
+        navigator.audioSession.type = "ambient";
       } catch (e) {
         console.warn("Could not set iOS AudioSession category:", e);
       }
@@ -43,13 +43,13 @@ window.SoundManager = {
         this.masterGain = this.ctx.createGain();
         this.sfxGain = this.ctx.createGain();
 
-        // Subphase 1.1 Dynamics Stage: Master Limiter (Threshold -12 dB, Ratio 20:1, Knee 12 dB, Attack 3ms, Release 100ms)
+        // Subphase 1.1 Dynamics Stage: Master Limiter (Threshold -15 dB, Ratio 20:1, Knee 8 dB, Attack 1ms, Release 50ms for swift transient clipping safety)
         this.limiter = this.ctx.createDynamicsCompressor();
-        this.limiter.threshold.setValueAtTime(-12, this.ctx.currentTime);
+        this.limiter.threshold.setValueAtTime(-15, this.ctx.currentTime);
         this.limiter.ratio.setValueAtTime(20.0, this.ctx.currentTime);
-        this.limiter.knee.setValueAtTime(12.0, this.ctx.currentTime);
-        this.limiter.attack.setValueAtTime(0.003, this.ctx.currentTime);
-        this.limiter.release.setValueAtTime(0.1, this.ctx.currentTime);
+        this.limiter.knee.setValueAtTime(8.0, this.ctx.currentTime);
+        this.limiter.attack.setValueAtTime(0.001, this.ctx.currentTime);
+        this.limiter.release.setValueAtTime(0.05, this.ctx.currentTime);
 
         this.sfxGain.connect(this.masterGain);
         this.masterGain.connect(this.limiter);
@@ -112,7 +112,7 @@ window.SoundManager = {
     const settings = this.getSafeSettings();
     if (navigator.audioSession) {
       try {
-        navigator.audioSession.type = settings.mute ? "ambient" : "playback";
+        navigator.audioSession.type = "ambient";
       } catch (e) {}
     }
     const now = this.ctx.currentTime;
@@ -252,6 +252,23 @@ window.SoundManager = {
     let fallback = this.ctx.createBiquadFilter();
     fallback.freeAt = releaseTime;
     return fallback;
+  },
+
+  registerDisposal(nodes, duration) {
+    setTimeout(
+      () => {
+        nodes.forEach((node) => {
+          if (!node) return;
+          try {
+            node.stop();
+          } catch (e) {}
+          try {
+            node.disconnect();
+          } catch (e) {}
+        });
+      },
+      duration * 1000 + 100,
+    );
   },
 
   play(type) {
@@ -396,6 +413,8 @@ window.SoundManager = {
     noiseSource.stop(now + duration);
     bladeOsc.stop(now + duration);
 
+    this.registerDisposal([noiseSource, bladeOsc], duration);
+
     setTimeout(
       () => {
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
@@ -444,6 +463,8 @@ window.SoundManager = {
 
     noiseSource.stop(now + duration);
     tickOsc.stop(now + duration);
+
+    this.registerDisposal([noiseSource, tickOsc], duration);
 
     setTimeout(
       () => {
@@ -495,6 +516,8 @@ window.SoundManager = {
     noiseSource.stop(now + duration);
     thudOsc.stop(now + duration);
 
+    this.registerDisposal([noiseSource, thudOsc], duration);
+
     setTimeout(
       () => {
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
@@ -545,6 +568,8 @@ window.SoundManager = {
 
     noiseSource.stop(now + duration);
     whistleOsc.stop(now + duration);
+
+    this.registerDisposal([noiseSource, whistleOsc], duration);
 
     setTimeout(
       () => {
@@ -651,10 +676,11 @@ window.SoundManager = {
     noiseSource.stop(creakTime + creakDuration);
     lfo.stop(creakTime + creakDuration);
 
+    this.registerDisposal([latchOsc1, latchOsc2, noiseSource, lfo], duration);
+
     setTimeout(
       () => {
         try {
-          lfo.disconnect();
           lfoGain.disconnect();
         } catch (e) {}
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
@@ -756,17 +782,16 @@ window.SoundManager = {
       coinOscillators.push(osc);
     });
 
+    this.registerDisposal(
+      [noiseSource, lfo, ...chimeOscillators, ...coinOscillators],
+      duration,
+    );
+
     setTimeout(
       () => {
         try {
-          lfo.disconnect();
           lfoGain.disconnect();
         } catch (e) {}
-        coinOscillators.forEach((osc) => {
-          try {
-            osc.disconnect();
-          } catch (e) {}
-        });
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
       },
       duration * 1000 + 40,
@@ -844,7 +869,7 @@ window.SoundManager = {
     subOsc.frequency.setValueAtTime(65, now + 0.1);
     subOsc.frequency.linearRampToValueAtTime(45, now + duration);
 
-    const subGain = this.acquireGainNode(now, duration);
+    const subGain = this.ctx.createGain();
     subGain.gain.setValueAtTime(0, now + 0.1);
     subGain.gain.linearRampToValueAtTime(0.25, now + 0.3);
     subGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
@@ -855,19 +880,17 @@ window.SoundManager = {
     subOsc.start(now + 0.1);
     subOsc.stop(now + duration);
 
+    this.registerDisposal(
+      [modOsc, carrierOsc, subOsc, ...sweepOscillators],
+      duration,
+    );
+
     setTimeout(
       () => {
         try {
-          modOsc.disconnect();
           modGain.disconnect();
-          carrierOsc.disconnect();
-          subOsc.disconnect();
+          subGain.disconnect();
         } catch (e) {}
-        sweepOscillators.forEach((osc) => {
-          try {
-            osc.disconnect();
-          } catch (e) {}
-        });
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
       },
       duration * 1000 + 40,
@@ -914,6 +937,8 @@ window.SoundManager = {
     osc.start(now);
     noiseSource.stop(now + duration);
     osc.stop(now + duration);
+
+    this.registerDisposal([noiseSource, osc], duration);
 
     setTimeout(
       () =>
@@ -967,8 +992,9 @@ window.SoundManager = {
     noiseGain.connect(gainNode);
 
     // 3. High-Register Critical Splat ring (Critical hit only)
+    let splatOsc = null;
     if (isCrit) {
-      const splatOsc = this.ctx.createOscillator();
+      splatOsc = this.ctx.createOscillator();
       splatOsc.type = "sine";
       splatOsc.frequency.setValueAtTime(950 * pitchFactor, now);
       splatOsc.frequency.exponentialRampToValueAtTime(
@@ -992,6 +1018,8 @@ window.SoundManager = {
 
     thudOsc.stop(now + duration);
     noiseSource.stop(now + duration);
+
+    this.registerDisposal([thudOsc, noiseSource, splatOsc], duration);
 
     setTimeout(
       () => {
@@ -1058,6 +1086,8 @@ window.SoundManager = {
     noiseSource.stop(now + duration);
     osc1.stop(now + duration);
     osc2.stop(now + duration);
+
+    this.registerDisposal([noiseSource, osc1, osc2], duration);
 
     setTimeout(
       () => {
@@ -1128,13 +1158,10 @@ window.SoundManager = {
     noiseSource.start(now);
     noiseSource.stop(now + duration);
 
+    this.registerDisposal([noiseSource, ...pingOscillators], duration);
+
     setTimeout(
       () => {
-        pingOscillators.forEach((osc) => {
-          try {
-            osc.disconnect();
-          } catch (e) {}
-        });
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
       },
       duration * 1000 + 40,
@@ -1239,6 +1266,11 @@ window.SoundManager = {
     ironChime2.stop(now + duration);
     noiseSource.stop(now + duration);
 
+    this.registerDisposal(
+      [baseOsc, ironChime1, ironChime2, noiseSource],
+      duration,
+    );
+
     setTimeout(
       () =>
         (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
@@ -1305,6 +1337,8 @@ window.SoundManager = {
     oscillators.forEach((o) => o.stop(now + duration));
     pingOsc.stop(now + duration);
     noiseSource.stop(now + duration);
+
+    this.registerDisposal([...oscillators, pingOsc, noiseSource], duration);
 
     setTimeout(
       () =>
@@ -1382,10 +1416,11 @@ window.SoundManager = {
     oscillators.forEach((osc) => osc.stop(now + duration));
     noiseSource.stop(now + duration);
 
+    this.registerDisposal([lfo, ...oscillators, noiseSource], duration);
+
     setTimeout(
       () => {
         try {
-          lfo.disconnect();
           lfoGain.disconnect();
         } catch (e) {}
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
@@ -1472,19 +1507,17 @@ window.SoundManager = {
     boomOsc2.stop(now + 0.3);
     noiseSource.stop(now + duration);
 
+    this.registerDisposal(
+      [boomOsc1, boomOsc2, noiseSource, ...crackleOscillators],
+      duration,
+    );
+
     setTimeout(
       () => {
         try {
-          boomOsc1.disconnect();
-          boomOsc2.disconnect();
           boomFilter.disconnect();
           noiseFilter.disconnect();
         } catch (e) {}
-        crackleOscillators.forEach((osc) => {
-          try {
-            osc.disconnect();
-          } catch (e) {}
-        });
         this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
       },
       duration * 1000 + 40,
@@ -1548,11 +1581,11 @@ window.SoundManager = {
     AMMod.stop(now + 0.18);
     noiseSource.stop(now + duration);
 
+    this.registerDisposal([zapOsc, AMMod, noiseSource], duration);
+
     setTimeout(
       () => {
         try {
-          zapOsc.disconnect();
-          AMMod.disconnect();
           AMGain.disconnect();
           noiseFilter.disconnect();
         } catch (e) {}
@@ -1622,10 +1655,11 @@ window.SoundManager = {
     windLFO.stop(now + duration);
     noiseSource.stop(now + duration);
 
+    this.registerDisposal([...oscillators, windLFO, noiseSource], duration);
+
     setTimeout(
       () => {
         try {
-          windLFO.disconnect();
           windLFOGain.disconnect();
           noiseFilter.disconnect();
         } catch (e) {}
@@ -1638,9 +1672,11 @@ window.SoundManager = {
   synthesizeFairy(now, dest) {
     const notes = [987.77, 1318.51, 1975.53];
     const noteLength = 0.05;
+    const oscs = [];
     notes.forEach((freq, idx) => {
       const noteTime = now + idx * 0.045;
       const osc = this.ctx.createOscillator();
+      oscs.push(osc);
       const noteGain = this.acquireGainNode(noteTime, noteLength);
       osc.type = "sine";
       osc.frequency.setValueAtTime(freq, noteTime);
@@ -1651,6 +1687,9 @@ window.SoundManager = {
       osc.start(noteTime);
       osc.stop(noteTime + noteLength);
     });
+
+    this.registerDisposal(oscs, 0.25);
+
     setTimeout(
       () =>
         (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
@@ -1709,6 +1748,8 @@ window.SoundManager = {
     noiseSource.stop(now + duration);
     soulOsc.stop(now + duration);
 
+    this.registerDisposal([lowOsc, noiseSource, soulOsc], duration);
+
     setTimeout(
       () =>
         (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
@@ -1755,6 +1796,8 @@ window.SoundManager = {
     oscillators.forEach((o) => o.stop(now + duration));
     subOsc.stop(now + duration);
 
+    this.registerDisposal([...oscillators, subOsc], duration);
+
     setTimeout(
       () =>
         (this.activeChannelCount = Math.max(0, this.activeChannelCount - 1)),
@@ -1769,6 +1812,7 @@ window.SoundManager = {
     gainNode.gain.linearRampToValueAtTime(0.32, now + 0.15); // Boosted from 0.15
     gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
+    const chimeOscs = [];
     const chord = [261.63, 329.63, 392.0, 523.25, 659.25, 783.99, 1046.5];
     chord.forEach((freq, idx) => {
       const delay = idx * 0.08;
@@ -1784,6 +1828,7 @@ window.SoundManager = {
       chimeGain.connect(gainNode);
       chimeOsc.start(noteTime);
       chimeOsc.stop(noteTime + 0.65);
+      chimeOscs.push(chimeOsc);
     });
 
     const padOsc1 = this.ctx.createOscillator();
@@ -1803,6 +1848,8 @@ window.SoundManager = {
     padOsc2.start(now);
     padOsc1.stop(now + duration);
     padOsc2.stop(now + duration);
+
+    this.registerDisposal([...chimeOscs, padOsc1, padOsc2], duration);
 
     setTimeout(
       () =>

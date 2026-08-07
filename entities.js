@@ -321,20 +321,88 @@
     }
 
     spawnDamageEffect(
-      x,
-      y,
-      amount,
-      type = "slash",
-      isCrit = false,
-      targetObj = null,
-    ) {
-      // Award active combat Mastery XP based on trigger action types
-      if (
-        window.equippedSlots &&
-        window.equippedSlots.subweapon &&
-        window.gainSubweaponXp &&
-        window.SkillTreeManager
-      ) {
+          x,
+          y,
+          amount,
+          type = "slash",
+          isCrit = false,
+          targetObj = null,
+        ) {
+          if (type === "block") {
+            if (window.SkillTreeManager) {
+              if (window.SkillTreeManager.getSkillLevel("shield_retaliatory_strike") > 0) {
+                if (window.playerStats) window.playerStats.retaliatoryStrikeActive = true;
+              }
+              let aegisPulseLvl = window.SkillTreeManager.getSkillLevel("shield_aegis_pulse");
+              if (aegisPulseLvl > 0 && window.playerStats) {
+                window.playerStats.aegisPulseCount = (window.playerStats.aegisPulseCount || 0) + 1;
+                if (window.playerStats.aegisPulseCount >= 5) {
+                  window.playerStats.aegisPulseCount = 0;
+                  let pStats = window.resolvePlayerStats ? window.resolvePlayerStats() : {};
+                  let maxHp = pStats.maxHp || 100;
+                  let healAmount = maxHp * (aegisPulseLvl * 0.03);
+
+                  if (window.player) {
+                    if (window.player.hp && typeof window.player.hp.add === "function") {
+                      let healBig = BigNum.from(Math.round(healAmount));
+                      window.player.hp = BigNum.min(window.player.maxHp || window.player.hp, window.player.hp.add(healBig));
+                    } else if (typeof window.player.hp === "number") {
+                      window.player.hp = Math.min(window.player.maxHp || window.player.hp, window.player.hp + healAmount);
+                    }
+
+                    window.spawnAegisPulseVisual(window.player.x, window.player.y);
+                    this.spawnDamageEffect(window.player.x, window.player.y - 15, Math.round(healAmount), "regen");
+                  }
+                }
+              }
+            }
+          }
+
+          let expLvl = (window.playerStats && window.playerStats.exposeWeaknessLvl) || (window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("dagger_expose_weakness") : 0);
+                if ((type === "dagger" || type === "riposte") && expLvl > 0 && targetObj) {
+                  targetObj.exposeWeaknessTimer = 300; // 5 seconds at 60fps
+                }
+
+                if (type === "parry" || type === "parry_counter") {
+                        let sS = window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("dagger_shadow_step") : 0;
+                        if (sS > 0 && window.playerStats) {
+                          window.playerStats.shadowStepTimer = 240; // 4 seconds at 60fps
+                          window.playerStats.shadowStepLevel = sS;
+                        }
+
+                        let hasDecoy = window.SkillTreeManager &&
+                          (window.SkillTreeManager.getSkillLevel("dagger_shadow_decoy") > 0 ||
+                           window.SkillTreeManager.getSkillLevel("dagger_keystone_assassin") > 0);
+                        if (hasDecoy && window.player) {
+                          let spawnX = targetObj ? targetObj.x + (targetObj.w||24)/2 : window.player.x + (Math.random() - 0.5) * 30;
+                          let spawnY = targetObj ? targetObj.y + (targetObj.h||24)/2 : window.player.y + (Math.random() - 0.5) * 30;
+                          window.spawnShadowDecoyVisual(spawnX, spawnY);
+                        }
+                      }
+
+                      let hasSanguine = window.SkillTreeManager &&
+                        (window.SkillTreeManager.getSkillLevel("dagger_sanguine_rupture") > 0 ||
+                         window.SkillTreeManager.getSkillLevel("dagger_keystone_sanguine") > 0);
+
+                if (isCrit && hasSanguine && targetObj) {
+                  let bStacks = targetObj.bleedStacks || 0;
+                  if (bStacks > 0) {
+                    targetObj.bleedStacks = 0; // Consume the bleed
+                    window.spawnSanguineRuptureVisual(x, y);
+                    this.triggerScreenShake(6, 12);
+                  }
+                }
+
+                if (type === "slash" && window.playerStats && window.playerStats.retaliatoryStrikeActive) {
+                  window.playerStats.retaliatoryStrikeActive = false;
+                }
+          // Award active combat Mastery XP based on trigger action types
+          if (
+            window.equippedSlots &&
+            window.equippedSlots.subweapon &&
+            window.gainSubweaponXp &&
+            window.SkillTreeManager
+          ) {
         let activeSub = window.equippedSlots.subweapon;
         let subType = activeSub.subType || activeSub.type;
 
@@ -499,54 +567,20 @@
         else if (type === "static") hitColor = "#e74c3c";
 
         this.effectPool.get(
-          type,
-          x + offsetX,
-          y + offsetY,
-          (Math.random() - 0.5) * 2.4,
-          -(Math.random() * 0.9 + 0.6),
-          amount,
-          hitColor,
-          40,
-          "",
-          false,
-          targetId,
-        );
-      }
-
-      let activeEffects = this.effectPool.pool.filter((e) => e.active);
-      let existingTotal = activeEffects.find(
-        (e) => e.isCumulative && e.targetId === targetId && e.life > 0,
-      );
-      if (existingTotal) {
-        let addVal =
-          typeof amount === "object"
-            ? amount.m * Math.pow(10, amount.e)
-            : amount;
-        let curVal =
-          typeof existingTotal.amount === "object"
-            ? existingTotal.amount.m * Math.pow(10, existingTotal.amount.e)
-            : existingTotal.amount;
-        existingTotal.amount = curVal + addVal;
-        existingTotal.text = `TOTAL: ${this.formatNumber(existingTotal.amount)}`;
-        existingTotal.life = 55;
-        existingTotal.x = x - 25;
-        existingTotal.y = y - 35;
-      } else {
-        this.effectPool.get(
-          "cumulative",
-          x - 25,
-          y - 35,
-          0,
-          -0.4,
-          amount,
-          "#f1c40f",
-          55,
-          `TOTAL: ${this.formatNumber(amount)}`,
-          true,
-          targetId,
-        );
-      }
-    }
+                  type,
+                  x + offsetX,
+                  y + offsetY,
+                  (Math.random() - 0.5) * 2.4,
+                  -(Math.random() * 0.9 + 0.6),
+                  amount,
+                  hitColor,
+                  40,
+                  "",
+                  false,
+                  targetId,
+                );
+              }
+            }
 
     update() {
       if (this.screenShakeTimer > 0) {
@@ -880,34 +914,85 @@
         let hy = eff.y;
 
         if (eff.type === "regen") {
-          ctx.beginPath();
-          ctx.moveTo(hx, hy - 4);
-          ctx.bezierCurveTo(hx - 4, hy - 9, hx - 9, hy - 4, hx - 9, hy + 1);
-          ctx.quadraticCurveTo(hx - 9, hy + 6, hx, hy + 12);
-          ctx.quadraticCurveTo(hx + 9, hy + 6, hx + 9, hy + 1);
-          ctx.bezierCurveTo(hx + 9, hy - 4, hx + 4, hy - 9, hx, hy - 4);
-          ctx.closePath();
-          ctx.fillStyle = "#e74c3c";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.lineJoin = "round";
-          ctx.stroke();
-          ctx.fill();
+                  ctx.save();
+                  ctx.translate(hx, hy);
 
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.arc(hx - 2.5, hy - 3.5, 1.5, 0, Math.PI * 2);
-          ctx.fill();
+                  let time = Date.now();
+                  let pulse = Math.sin(time / 100) * 0.1;
+                  let scale = 1.0 + pulse;
 
-          let text = `+${this.formatNumber(eff.amount)}`;
-          ctx.font = "bold 15px monospace";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.lineJoin = "round";
-          ctx.strokeText(text, hx + 14, hy + 4);
-          ctx.fillStyle = eff.color || "#2ecc71";
-          ctx.fillText(text, hx + 14, hy + 4);
-        } else if (eff.type === "crit") {
+                  // 1. Radiant Emerald Healing Glow (Soft ambient background)
+                  let glow = ctx.createRadialGradient(0, 1, 1, 0, 1, 15);
+                  glow.addColorStop(0, "rgba(46, 204, 113, 0.35)");
+                  glow.addColorStop(0.6, "rgba(46, 204, 113, 0.12)");
+                  glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+                  ctx.fillStyle = glow;
+                  ctx.beginPath();
+                  ctx.arc(0, 1, 15, 0, Math.PI * 2);
+                  ctx.fill();
+
+                  // 2. Restorative Golden Cross-Flares (Drawn behind the heart)
+                  ctx.strokeStyle = "rgba(241, 196, 15, 0.75)";
+                  ctx.lineWidth = 1.2;
+                  ctx.beginPath();
+                  ctx.moveTo(-10 * scale, 1);
+                  ctx.lineTo(10 * scale, 1);
+                  ctx.moveTo(0, 1 - 10 * scale);
+                  ctx.lineTo(0, 1 + 10 * scale);
+                  ctx.stroke();
+
+                  // 3. Faceted Gemstone Heart Body
+                  ctx.scale(scale, scale);
+                  ctx.strokeStyle = "#000000";
+                  ctx.lineWidth = 1.6;
+                  ctx.lineJoin = "round";
+
+                  ctx.beginPath();
+                  ctx.moveTo(0, -3);
+                  ctx.bezierCurveTo(-3, -7, -7, -3, -7, 1);
+                  ctx.quadraticCurveTo(-7, 5, 0, 10);
+                  ctx.quadraticCurveTo(7, 5, 7, 1);
+                  ctx.bezierCurveTo(7, -3, 3, -7, 0, -3);
+                  ctx.closePath();
+
+                  let heartGrad = ctx.createRadialGradient(-2, -2, 1, 0, 2, 8);
+                  heartGrad.addColorStop(0, "#a3fd83");
+                  heartGrad.addColorStop(0.5, "#2ecc71");
+                  heartGrad.addColorStop(1, "#155e37");
+                  ctx.fillStyle = heartGrad;
+                  ctx.fill();
+                  ctx.stroke();
+
+                  // 4. Gemstone Cut Highlights (Faceted inner depth lines)
+                  ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+                  ctx.lineWidth = 0.8;
+                  ctx.beginPath();
+                  ctx.moveTo(0, -3);
+                  ctx.lineTo(0, 10);
+                  ctx.moveTo(-7, 1);
+                  ctx.lineTo(0, 2);
+                  ctx.moveTo(7, 1);
+                  ctx.lineTo(0, 2);
+                  ctx.stroke();
+
+                  // 5. Glossy Specular Highlight Spot
+                  ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+                  ctx.beginPath();
+                  ctx.arc(-2.5, -2, 1.2, 0, Math.PI * 2);
+                  ctx.fill();
+
+                  ctx.restore();
+
+                  // 6. Balanced High-Contrast Typography
+                  let text = `+${this.formatNumber(eff.amount)}`;
+                  ctx.font = "bold 15px monospace";
+                  ctx.strokeStyle = "#000000";
+                  ctx.lineWidth = 3.5;
+                  ctx.lineJoin = "round";
+                  ctx.strokeText(text, hx + 14, hy + 4);
+                  ctx.fillStyle = eff.color || "#2ecc71";
+                  ctx.fillText(text, hx + 14, hy + 4);
+                } else if (eff.type === "crit") {
           let fixedAngle = 0.35;
           let spikes = 6;
 
@@ -964,105 +1049,267 @@
           ctx.fillStyle = textGrad;
           ctx.fillText(text, hx + 16, hy + 5);
         } else if (eff.type === "block") {
-          ctx.beginPath();
-          ctx.moveTo(hx - 6, hy - 6);
-          ctx.lineTo(hx + 6, hy - 6);
-          ctx.quadraticCurveTo(hx + 6, hy, hx + 5, hy + 3);
-          ctx.quadraticCurveTo(hx, hy + 10, hx, hy + 10);
-          ctx.quadraticCurveTo(hx - 5, hy + 3, hx - 6, hy);
-          ctx.closePath();
-          ctx.fillStyle = "#3498db";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.lineJoin = "round";
-          ctx.stroke();
-          ctx.fill();
+                  ctx.save();
+                  ctx.translate(hx, hy);
 
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(hx, hy - 5);
-          ctx.lineTo(hx, hy + 8);
-          ctx.moveTo(hx - 4, hy + 1);
-          ctx.lineTo(hx + 4, hy + 1);
-          ctx.stroke();
+                  let time = Date.now();
+                  let scale = 1.0 + Math.sin(time / 80) * 0.1;
 
-          ctx.font = "bold 15px monospace";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.lineJoin = "round";
-          ctx.strokeText("BLOCK", hx + 13, hy + 4);
-          ctx.fillStyle = "#3498db";
-          ctx.fillText("BLOCK", hx + 13, hy + 4);
-        } else if (eff.type === "parry") {
-          ctx.save();
-          ctx.translate(hx, hy);
+                  // 1. Neon Defensive Pulse Wave Ring (Radial background glow)
+                  ctx.strokeStyle = "rgba(56, 189, 248, 0.45)";
+                  ctx.lineWidth = 1.5;
+                  ctx.beginPath();
+                  ctx.arc(0, 0, 14 * scale, 0, Math.PI * 2);
+                  ctx.stroke();
 
-          ctx.save();
-          ctx.rotate(Math.PI / 4);
-          ctx.fillStyle = "#ecf0f1";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.rect(-2.5, -18, 5, 22);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#f1c40f";
-          ctx.fillRect(-6, 4, 12, 3);
-          ctx.strokeRect(-6, 4, 12, 3);
-          ctx.restore();
+                  ctx.strokeStyle = "#000000";
+                  ctx.lineWidth = 1.8;
+                  ctx.lineJoin = "round";
 
-          ctx.save();
-          ctx.rotate(-Math.PI / 4);
-          ctx.fillStyle = "#ecf0f1";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.rect(-2.5, -18, 5, 22);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#f1c40f";
-          ctx.fillRect(-6, 4, 12, 3);
-          ctx.strokeRect(-6, 4, 12, 3);
-          ctx.restore();
+                  // 2. Linear Gradients for Premium Materials
+                  let goldGrad = ctx.createLinearGradient(-9, -10, 9, 11);
+                  goldGrad.addColorStop(0, "#ffeaa7");
+                  goldGrad.addColorStop(0.5, "#f1c40f");
+                  goldGrad.addColorStop(1, "#d35400");
 
-          ctx.restore();
+                  let metalGrad = ctx.createLinearGradient(-8, -9, 8, 10);
+                  metalGrad.addColorStop(0, "#4a5568");
+                  metalGrad.addColorStop(0.5, "#718096");
+                  metalGrad.addColorStop(1, "#2d3748");
 
-          ctx.font = "bold 15px monospace";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.lineJoin = "round";
-          ctx.strokeText("PARRY", hx + 13, hy + 4);
-          ctx.fillStyle = "#9b59b6";
-          ctx.fillText("PARRY", hx + 13, hy + 4);
-        } else if (eff.type === "barrier") {
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 4.0;
-          ctx.beginPath();
-          ctx.arc(hx, hy, 8, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-          ctx.stroke();
+                  // 3. Draw Outer Gold/Bronze Shield Rim
+                  ctx.fillStyle = goldGrad;
+                  ctx.beginPath();
+                  ctx.moveTo(-7.5, -9);
+                  ctx.lineTo(7.5, -9);
+                  ctx.lineTo(9.5, 0);
+                  ctx.lineTo(0, 11);
+                  ctx.lineTo(-9.5, 0);
+                  ctx.closePath();
+                  ctx.fill();
+                  ctx.stroke();
 
-          ctx.strokeStyle = "#9b59b6";
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.arc(hx, hy, 8, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-          ctx.stroke();
+                  // 4. Draw Inner Dark Iron Core Face
+                  ctx.fillStyle = metalGrad;
+                  ctx.beginPath();
+                  ctx.moveTo(-5.5, -7.5);
+                  ctx.lineTo(5.5, -7.5);
+                  ctx.lineTo(7.5, -0.5);
+                  ctx.lineTo(0, 9);
+                  ctx.lineTo(-7.5, -0.5);
+                  ctx.closePath();
+                  ctx.fill();
 
-          let text = `BARRIER -${this.formatNumber(eff.amount)}`;
-          ctx.font = "bold 15px monospace";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 3.5;
-          ctx.lineJoin = "round";
-          ctx.strokeText(text, hx + 14, hy + 4);
-          ctx.fillStyle = "#9b59b6";
-          ctx.fillText(text, hx + 14, hy + 4);
-        } else if (eff.type === "lightning") {
+                  // 5. Draw Highly Polished Silver Cross Emblem
+                  ctx.strokeStyle = "#ffffff";
+                  ctx.lineWidth = 1.2;
+                  ctx.beginPath();
+                  ctx.moveTo(0, -7.5);
+                  ctx.lineTo(0, 7.5);
+                  ctx.moveTo(-4.5, -0.5);
+                  ctx.lineTo(4.5, -0.5);
+                  ctx.stroke();
+
+                  // 6. Real-Time Diagonal Specular Light Reflect Sweep
+                  let sweepX = (time / 15) % 40 - 20;
+                  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+                  ctx.lineWidth = 1.5;
+                  ctx.beginPath();
+                  ctx.moveTo(sweepX - 4, -9);
+                  ctx.lineTo(sweepX + 4, 11);
+                  ctx.stroke();
+
+                  ctx.restore();
+
+                  // 7. Sleek typography in modern sky blue
+                  ctx.font = "900 14px monospace";
+                  ctx.strokeStyle = "#000000";
+                  ctx.lineWidth = 3.5;
+                  ctx.lineJoin = "round";
+                  ctx.strokeText("BLOCK", hx + 16, hy + 4);
+                  ctx.fillStyle = "#38bdf8";
+                  ctx.fillText("BLOCK", hx + 16, hy + 4);
+                } else if (eff.type === "parry") {
+                  ctx.save();
+                  ctx.translate(hx, hy);
+
+                  let time = Date.now();
+                  let scale = 1.0 + Math.sin(time / 80) * 0.1; // Subtle energy pulse
+
+                  // 1. Central Glowing Sky-Blue Starburst Flare
+                  let grad = ctx.createRadialGradient(0, -6, 1, 0, -6, 12);
+                  grad.addColorStop(0, "#ffffff");
+                  grad.addColorStop(0.35, "#00d2ff");
+                  grad.addColorStop(1, "rgba(0, 210, 255, 0)");
+                  ctx.fillStyle = grad;
+                  ctx.beginPath();
+                  ctx.arc(0, -6, 12, 0, Math.PI * 2);
+                  ctx.fill();
+
+                  // High-Fidelity Weapon drawing routine
+                  let drawSwords = (rot) => {
+                    ctx.save();
+                    ctx.rotate(rot);
+
+                    // Blade (Tapered silver steel)
+                    ctx.fillStyle = "#f1f2f6";
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(-2, 4);
+                    ctx.lineTo(-0.8, -20);
+                    ctx.lineTo(0.8, -20);
+                    ctx.lineTo(2, 4);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Blade Fuller (Centerline highlight)
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 0.8;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 4);
+                    ctx.lineTo(0, -18);
+                    ctx.stroke();
+
+                    // Curved Crossguard (Gold)
+                                        ctx.fillStyle = "#eccc68";
+                                        ctx.strokeStyle = "#000000";
+                                        ctx.lineWidth = 1.2;
+                                        ctx.beginPath();
+                                        ctx.moveTo(-6, 4);
+                                        ctx.quadraticCurveTo(0, 1, 6, 4);
+                                        ctx.lineTo(5, 6);
+                                        ctx.quadraticCurveTo(0, 3, -5, 6);
+                                        ctx.closePath();
+                                        ctx.fill();
+                                        ctx.stroke();
+
+                                        // Grip
+                                        ctx.fillStyle = "#2f3542";
+                                        ctx.beginPath();
+                                        ctx.rect(-1, 6, 2, 7);
+                                        ctx.fill();
+                                        ctx.stroke();
+
+                                        // Pommel
+                                        ctx.fillStyle = "#eccc68";
+                                        ctx.beginPath();
+                                        ctx.arc(0, 14, 1.8, 0, Math.PI * 2);
+                                        ctx.fill();
+                                        ctx.stroke();
+
+                                        ctx.restore();
+                                      };
+
+                                      // Draw crossed swords
+                                      drawSwords(-Math.PI / 5);
+                                      drawSwords(Math.PI / 5);
+
+                                      ctx.restore();
+
+                                      ctx.font = "bold 15px monospace";
+                                      ctx.strokeStyle = "#000000";
+                                      ctx.lineWidth = 3.5;
+                                      ctx.lineJoin = "round";
+                                      ctx.strokeText("PARRY", hx + 13, hy + 4);
+                                      ctx.fillStyle = "#00d2ff";
+                                      ctx.fillText("PARRY", hx + 13, hy + 4);
+                            } else if (eff.type === "barrier") {
+                                      ctx.save();
+                                      ctx.translate(hx, hy);
+
+                                      let time = Date.now();
+                                      let pulse = Math.sin(time / 100) * 0.12;
+                                      let rot = (time / 600) % (Math.PI * 2);
+
+                                      // 1. Translucent Cosmic Glow Backplate
+                                      let glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 14);
+                                      glow.addColorStop(0, "rgba(232, 67, 147, 0.22)");
+                                      glow.addColorStop(0.5, "rgba(155, 89, 182, 0.1)");
+                                      glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+                                      ctx.fillStyle = glow;
+                                      ctx.beginPath();
+                                      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+                                      ctx.fill();
+
+                                      // 2. Outer Rotating Runic Sigil Ring
+                                      ctx.save();
+                                      ctx.rotate(rot);
+                                      ctx.strokeStyle = "#e84393"; // Hot magenta
+                                      ctx.lineWidth = 1.2;
+                                      ctx.beginPath();
+                                      ctx.arc(0, 0, 9 * (1 + pulse), 0, Math.PI * 2);
+                                      ctx.stroke();
+
+                                      // 3. Spawning 8 perimeter warding spikes
+                                      for (let i = 0; i < 8; i++) {
+                                        ctx.rotate(Math.PI / 4);
+                                        ctx.fillStyle = "#ffffff";
+                                        ctx.strokeStyle = "#9b59b6";
+                                        ctx.lineWidth = 0.8;
+                                        ctx.beginPath();
+                                        ctx.moveTo(-1.5, -9.5 * (1 + pulse));
+                                        ctx.lineTo(1.5, -9.5 * (1 + pulse));
+                                        ctx.lineTo(0, -12 * (1 + pulse));
+                                        ctx.closePath();
+                                        ctx.fill();
+                                        ctx.stroke();
+                                      }
+                                      ctx.restore();
+
+                                      // 4. Inner Counter-Rotating Hexagram Star
+                                      ctx.save();
+                                      ctx.rotate(-rot * 1.5);
+                                      ctx.strokeStyle = "#9b59b6"; // Deep purple
+                                      ctx.lineWidth = 1.0;
+
+                                      // Triangle 1
+                                      ctx.beginPath();
+                                      for (let i = 0; i < 4; i++) {
+                                        let angle = (i * Math.PI * 2) / 3;
+                                        let x = Math.cos(angle) * 5;
+                                        let y = Math.sin(angle) * 5;
+                                        if (i === 0) ctx.moveTo(x, y);
+                                        else ctx.lineTo(x, y);
+                                      }
+                                      ctx.closePath();
+                                      ctx.stroke();
+
+                                      // Triangle 2 (Inverted offset)
+                                      ctx.beginPath();
+                                      for (let i = 0; i < 4; i++) {
+                                        let angle = (i * Math.PI * 2) / 3 + Math.PI;
+                                        let x = Math.cos(angle) * 5;
+                                        let y = Math.sin(angle) * 5;
+                                        if (i === 0) ctx.moveTo(x, y);
+                                        else ctx.lineTo(x, y);
+                                      }
+                                      ctx.closePath();
+                                      ctx.stroke();
+                                      ctx.restore();
+
+                                      // 5. White-Hot Arcane Singularity Core
+                                      ctx.fillStyle = "#ffffff";
+                                      ctx.shadowBlur = 6;
+                                      ctx.shadowColor = "#e84393";
+                                      ctx.beginPath();
+                                      ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+                                      ctx.fill();
+                                      ctx.shadowBlur = 0;
+
+                                      ctx.restore();
+
+                                      // 6. Balanced, high-contrast typography
+                                      let text = `BARRIER -${this.formatNumber(eff.amount)}`;
+                                      ctx.font = "bold 15px monospace";
+                                      ctx.strokeStyle = "#000000";
+                                      ctx.lineWidth = 3.5;
+                                      ctx.lineJoin = "round";
+                                      ctx.strokeText(text, hx + 16, hy + 4);
+                                      ctx.fillStyle = "#a855f7";
+                                      ctx.fillText(text, hx + 16, hy + 4);
+                                    } else if (eff.type === "lightning") {
           ctx.beginPath();
           ctx.moveTo(hx + 2.5, hy - 9);
           ctx.lineTo(hx - 5, hy + 1.5);
@@ -3480,30 +3727,93 @@
     }
 
     drawStatusDots(ctx, startX, y, stacks, color) {
-      if (stacks <= 0) return;
-      let dotSize = 2.0;
-      let dotSpacing = 3;
-      for (let i = 0; i < 5; i++) {
-        ctx.beginPath();
-        ctx.arc(
-          startX + i * (dotSize * 2 + dotSpacing) + dotSize,
-          y,
-          dotSize,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fillStyle = i < stacks ? color : "rgba(44, 62, 80, 0.7)";
-        ctx.fill();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-      }
-    }
+          if (stacks <= 0) return;
+          let isBleed = (color === "#e74c3c" || color === "#960018");
+          let dotSize = 2.2;
+          let dotSpacing = 3.5;
+
+          for (let i = 0; i < 5; i++) {
+            let cx = startX + i * (dotSize * 2 + dotSpacing) + dotSize;
+            let cy = y;
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            let isActive = (i < stacks);
+
+            if (isBleed) {
+              // --- HIGH FIDELITY BLEED DROPLIT ---
+              ctx.beginPath();
+              ctx.moveTo(0, -dotSize * 1.5);
+              ctx.quadraticCurveTo(dotSize, -dotSize * 0.1, dotSize, dotSize);
+              ctx.arc(0, dotSize, dotSize, 0, Math.PI);
+              ctx.quadraticCurveTo(-dotSize, -dotSize * 0.1, 0, -dotSize * 1.5);
+              ctx.closePath();
+
+              if (isActive) {
+                // Glistening Crimson Drop
+                let bleedGrad = ctx.createRadialGradient(-0.6, -0.6, 0.2, 0, 0, dotSize * 1.35);
+                bleedGrad.addColorStop(0, "#ff4d4d");
+                bleedGrad.addColorStop(0.7, "#c0392b");
+                bleedGrad.addColorStop(1, "#960018");
+                ctx.fillStyle = bleedGrad;
+              } else {
+                ctx.fillStyle = "rgba(30, 41, 59, 0.4)";
+              }
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+              ctx.fill();
+
+              // Tiny Specular Glisten
+              if (isActive) {
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(-0.6, -0.3, 0.5, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            } else {
+              // --- HIGH FIDELITY POISON TOXIC GLOBULE ---
+              ctx.beginPath();
+              ctx.moveTo(0, -dotSize * 1.3);
+              ctx.lineTo(dotSize * 1.1, -dotSize * 0.6);
+              ctx.lineTo(dotSize * 1.1, dotSize * 0.6);
+              ctx.lineTo(0, dotSize * 1.3);
+              ctx.lineTo(-dotSize * 1.1, dotSize * 0.6);
+              ctx.lineTo(-dotSize * 1.1, -dotSize * 0.6);
+              ctx.closePath();
+
+              if (isActive) {
+                // Radioactive Emerald-to-Lime bubble
+                let poisonGrad = ctx.createRadialGradient(-0.5, -0.5, 0.2, 0, 0, dotSize * 1.35);
+                poisonGrad.addColorStop(0, "#a3fd83");
+                poisonGrad.addColorStop(0.6, "#2ecc71");
+                poisonGrad.addColorStop(1, "#1b5f33");
+                ctx.fillStyle = poisonGrad;
+              } else {
+                ctx.fillStyle = "rgba(30, 41, 59, 0.4)";
+              }
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+              ctx.fill();
+
+              // Inner toxic core bubble
+              if (isActive && Math.sin(Date.now() / 120 + i) > 0.0) {
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(-0.6, -0.3, 0.4, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+            ctx.restore();
+          }
+        }
   }
 
   window.combatVisuals = new CombatVisualsEngine();
+    window.ParticlePool = window.combatVisuals.particlePool;
 
-  window.spawnCombatImpactParticles = function (
+    window.spawnCombatImpactParticles = function (
     worldX,
     worldY,
     isCrit,
@@ -3703,45 +4013,179 @@
   };
 
   window.spawnResonantAegisRipple = function (x, y) {
-    if (
-      window.equippedSlots &&
-      window.equippedSlots.subweapon &&
-      window.gainSubweaponXp &&
-      window.SkillTreeManager
-    ) {
-      let activeSub = window.equippedSlots.subweapon;
-      let subType = activeSub.subType || activeSub.type;
-      if (subType === "shield") {
-        let rA =
-          window.SkillTreeManager.getSkillLevel("shield_impact_tremor") || 0;
-        let baseXp = 10 + rA * 5;
-        let depth = 1;
-        if (
-          window.playerStats &&
-          window.playerStats.isDungeonMode &&
-          window.player
-        ) {
-          depth = window.player.depth || 1;
-        } else if (window.playerStats) {
-          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
+      if (
+        window.equippedSlots &&
+        window.equippedSlots.subweapon &&
+        window.gainSubweaponXp &&
+        window.SkillTreeManager
+      ) {
+        let activeSub = window.equippedSlots.subweapon;
+        let subType = activeSub.subType || activeSub.type;
+        if (subType === "shield") {
+          let rA =
+            window.SkillTreeManager.getSkillLevel("shield_impact_tremor") || 0;
+          let baseXp = 10 + rA * 5;
+          let depth = 1;
+          if (
+            window.playerStats &&
+            window.playerStats.isDungeonMode &&
+            window.player
+          ) {
+            depth = window.player.depth || 1;
+          } else if (window.playerStats) {
+            depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
+          }
+          let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
+          window.gainSubweaponXp("shield", Math.round(baseXp * triggerMult));
         }
-        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
-        window.gainSubweaponXp("shield", Math.round(baseXp * triggerMult));
       }
-    }
-    if (!window.activeSpellAnims) return;
-    window.activeSpellAnims.push({
-      type: "resonant_aegis",
-      x: x,
-      y: y,
-      radius: 4,
-      maxRadius: 45, // Dynamic vibrational boundary limit
-      life: 20,
-      maxLife: 20,
-    });
-  };
+      if (!window.activeSpellAnims) return;
+      window.activeSpellAnims.push({
+        type: "resonant_aegis",
+        x: x,
+        y: y,
+        radius: 4,
+        maxRadius: 45, // Dynamic vibrational boundary limit
+        life: 20,
+        maxLife: 20,
+      });
+    };
 
-  window.spawnEarthBreakerBashVisual = function (x, y, angle) {
+    window.spawnAegisPulseVisual = function (x, y) {
+          if (!window.activeSpellAnims) return;
+          window.activeSpellAnims.push({
+            type: "aegis_pulse",
+            x: x,
+            y: y,
+            radius: 4,
+            maxRadius: 55, // Concentric emerald and golden limit
+            life: 25,
+            maxLife: 25,
+          });
+        };
+
+        window.spawnNoxiousBloomVisual = function (x, y) {
+              if (!window.activeSpellAnims) return;
+              window.activeSpellAnims.push({
+                type: "noxious_bloom",
+                x: x,
+                y: y,
+                radius: 35,
+                life: 90,
+                maxLife: 90,
+                bubbles: Array.from({ length: 6 }, () => ({
+                  angle: Math.random() * Math.PI * 2,
+                  radius: window.randFloat(10, 30),
+                  size: window.randFloat(1.8, 4.2),
+                  offsetY: 0,
+                  speed: window.randFloat(0.3, 0.7)
+                }))
+              });
+            };
+
+            window.spawnSanguineRuptureVisual = function (x, y) {
+                  if (!window.activeSpellAnims) return;
+                  window.activeSpellAnims.push({
+                    type: "sanguine_rupture",
+                    x: x,
+                    y: y,
+                    radius: 4,
+                    maxRadius: 65,
+                    life: 18,
+                    maxLife: 18,
+                  });
+
+                  // Spawn sharp polygonal blood shards
+                  if (window.ParticlePool && window.particles) {
+                    for (let i = 0; i < 16; i++) {
+                      let angle = Math.random() * Math.PI * 2;
+                      let speed = window.randFloat(3.5, 7.5);
+                      let pt = window.ParticlePool.get(
+                        x,
+                        y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed - window.randFloat(1, 2),
+                        window.randFloat(1.8, 3.8),
+                        Math.random() < 0.6 ? "#960018" : "#c0392b",
+                        0.95,
+                        window.randInt(15, 32),
+                        0.12,
+                        true
+                      );
+                      pt.style = "polygon";
+                      pt.angle = Math.random() * Math.PI * 2;
+                      pt.spinSpeed = window.randFloat(-0.25, 0.25);
+                      window.particles.push(pt);
+                    }
+                  }
+                };
+
+                window.spawnShadowDecoyVisual = function (x, y) {
+                      if (!window.activeSpellAnims) return;
+                      window.activeSpellAnims.push({
+                        type: "shadow_decoy",
+                        x: x,
+                        y: y,
+                        life: 120, // 2 seconds
+                        maxLife: 120,
+                        facing: window.player ? -window.player.facing : -1,
+                        equippedSlots: window.equippedSlots ? JSON.parse(JSON.stringify(window.equippedSlots)) : {},
+                        playerStats: window.playerStats ? { ...window.playerStats, shadowStepTimer: 0, fortitudeStacks: 0 } : {}
+                      });
+                    };
+
+                    window.spawnArcaneSyphonVisual = function (p, m) {
+                          if (!window.activeSpellAnims) return;
+                          window.activeSpellAnims.push({
+                            type: "arcane_syphon",
+                            playerX: p.x,
+                            playerY: p.y - 8,
+                            targetX: m.x + (m.w || 24) / 2,
+                            targetY: m.y + (m.h || 24) / 2,
+                            targetObj: m,
+                            life: 35,
+                            maxLife: 35,
+                          });
+                        };
+
+                        window.spawnBarrierShatterVisual = function (x, y) {
+                          if (!window.activeSpellAnims) return;
+                          window.activeSpellAnims.push({
+                            type: "barrier_shatter",
+                            x: x,
+                            y: y,
+                            radius: 4,
+                            maxRadius: 75,
+                            life: 24,
+                            maxLife: 24,
+                          });
+
+                          // Spawn brilliant glass/crystal shard particles immediately
+                          if (window.ParticlePool && window.particles) {
+                            for (let i = 0; i < 20; i++) {
+                              let angle = Math.random() * Math.PI * 2;
+                              let speed = window.randFloat(4.0, 9.0);
+                              let pt = window.ParticlePool.get(
+                                x,
+                                y,
+                                Math.cos(angle) * speed,
+                                Math.sin(angle) * speed - window.randFloat(1, 3),
+                                window.randFloat(1.5, 4.0),
+                                Math.random() < 0.5 ? "#00ffff" : "#e84393",
+                                0.95,
+                                window.randInt(20, 35),
+                                0.2,
+                                true
+                              );
+                              pt.style = "polygon";
+                              pt.angle = Math.random() * Math.PI * 2;
+                              pt.spinSpeed = window.randFloat(-0.35, 0.35);
+                              window.particles.push(pt);
+                            }
+                          }
+                        };
+
+                        window.spawnEarthBreakerBashVisual = function (x, y, angle) {
     if (!window.activeSpellAnims) return;
     window.activeSpellAnims.push({
       type: "earth_breaker_bash",
@@ -3836,15 +4280,16 @@
           window.gainSubweaponXp("tome", Math.round(baseXp * triggerMult));
         }
         // Arcane Syphon: +15 Base XP when an active Syphon stack is gained on spell proc
-        let syphonLvl =
-          window.SkillTreeManager.getSkillLevel("tome_arcane_syphon") || 0;
-        if (syphonLvl > 0) {
-          window.gainSubweaponXp("tome", Math.round(15 * triggerMult));
-        }
-      }
-    }
+                let syphonLvl =
+                  window.SkillTreeManager.getSkillLevel("tome_arcane_syphon") || 0;
+                if (syphonLvl > 0) {
+                  window.gainSubweaponXp("tome", Math.round(15 * triggerMult));
+                  window.spawnArcaneSyphonVisual(p, m);
+                }
+              }
+            }
 
-    let mainTargetX = m.x + (m.w || 24) / 2;
+            let mainTargetX = m.x + (m.w || 24) / 2;
     let mainTargetY = m.y + (m.h || 24) / 2;
 
     let targets = [{ x: mainTargetX, y: mainTargetY, obj: m }];
@@ -4129,35 +4574,212 @@
             }
           }
         } else if (anim.type === "resonant_aegis") {
-          anim.life--;
-          if (anim.life <= 0) {
-            window.activeSpellAnims.splice(i, 1);
-          } else {
-            let tRatio = 1.0 - anim.life / anim.maxLife;
-            anim.radius = anim.maxRadius * tRatio;
+                  anim.life--;
+                  if (anim.life <= 0) {
+                    window.activeSpellAnims.splice(i, 1);
+                  } else {
+                    let tRatio = 1.0 - anim.life / anim.maxLife;
+                    anim.radius = anim.maxRadius * tRatio;
 
-            // Emit a few trailing golden sparks from the ring
-            if (window.ParticlePool && Math.random() < 0.4) {
-              let angle = Math.random() * Math.PI * 2;
-              let sx = anim.x + Math.cos(angle) * anim.radius;
-              let sy = anim.y + Math.sin(angle) * anim.radius;
-              let pt = window.ParticlePool.get(
-                sx,
-                sy,
-                Math.cos(angle) * 0.8,
-                Math.sin(angle) * 0.8,
-                window.randFloat(1.0, 2.2),
-                "#ffd700",
-                0.9,
-                12,
-                0,
-                true,
-              );
-              pt.style = "sparkle_star";
-              window.particles.push(pt);
-            }
-          }
-        } else if (anim.type === "earth_breaker_bash") {
+                    // Emit a few trailing golden sparks from the ring
+                    if (window.ParticlePool && Math.random() < 0.4) {
+                      let angle = Math.random() * Math.PI * 2;
+                      let sx = anim.x + Math.cos(angle) * anim.radius;
+                      let sy = anim.y + Math.sin(angle) * anim.radius;
+                      let pt = window.ParticlePool.get(
+                        sx,
+                        sy,
+                        Math.cos(angle) * 0.8,
+                        Math.sin(angle) * 0.8,
+                        window.randFloat(1.0, 2.2),
+                        "#ffd700",
+                        0.9,
+                        12,
+                        0,
+                        true,
+                      );
+                      pt.style = "sparkle_star";
+                      window.particles.push(pt);
+                    }
+                  }
+                } else if (anim.type === "aegis_pulse") {
+                                  anim.life--;
+                                  if (anim.life <= 0) {
+                                    window.activeSpellAnims.splice(i, 1);
+                                  } else {
+                                    let tRatio = 1.0 - anim.life / anim.maxLife;
+                                    anim.radius = anim.maxRadius * tRatio;
+
+                                    // Golden and emerald sparks
+                                    if (window.ParticlePool && Math.random() < 0.5) {
+                                      let angle = Math.random() * Math.PI * 2;
+                                      let sx = anim.x + Math.cos(angle) * anim.radius;
+                                      let sy = anim.y + Math.sin(angle) * anim.radius;
+                                      let pt = window.ParticlePool.get(
+                                        sx,
+                                        sy,
+                                        Math.cos(angle) * 0.8,
+                                        Math.sin(angle) * 0.8,
+                                        window.randFloat(1.0, 2.2),
+                                        Math.random() < 0.5 ? "#ffd700" : "#2ecc71",
+                                        0.9,
+                                        12,
+                                        0,
+                                        true,
+                                      );
+                                      pt.style = "sparkle_star";
+                                      window.particles.push(pt);
+                                    }
+                                  }
+                                } else if (anim.type === "noxious_bloom") {
+                                  anim.life--;
+                                  if (anim.life <= 0) {
+                                    window.activeSpellAnims.splice(i, 1);
+                                  } else {
+                                    if (anim.bubbles) {
+                                      anim.bubbles.forEach(b => {
+                                        b.offsetY -= b.speed;
+                                        if (b.offsetY < -15) {
+                                          b.offsetY = 0;
+                                          b.radius = window.randFloat(8, anim.radius - 6);
+                                          b.angle = Math.random() * Math.PI * 2;
+                                        }
+                                      });
+                                    }
+
+                                    if (window.ParticlePool && Math.random() < 0.35) {
+                                                                          let angle = Math.random() * Math.PI * 2;
+                                                                          let dist = window.randFloat(0, anim.radius);
+                                                                          let sx = anim.x + Math.cos(angle) * dist;
+                                                                          let sy = anim.y + Math.sin(angle) * dist * 0.45;
+
+                                                                          let pt = window.ParticlePool.get(
+                                                                            sx,
+                                                                            sy,
+                                                                            window.randFloat(-0.3, 0.3),
+                                                                            -window.randFloat(0.4, 1.2),
+                                                                            window.randFloat(1.5, 3.5),
+                                                                            Math.random() < 0.65 ? "#2ecc71" : "#a855f7",
+                                                                            0.8,
+                                                                            window.randInt(30, 50),
+                                                                            -0.02,
+                                                                            true,
+                                                                            0.02,
+                                                                          );
+                                                                          pt.style = "circle";
+                                                                          window.particles.push(pt);
+                                                                        }
+                                                                      }
+                                                                    } else if (anim.type === "sanguine_rupture") {
+                                                                      anim.life--;
+                                                                      if (anim.life <= 0) {
+                                                                        window.activeSpellAnims.splice(i, 1);
+                                                                      }
+                                                                    } else if (anim.type === "shadow_decoy") {
+                                                                      anim.life--;
+                                                                      if (anim.life <= 0) {
+                                                                        window.activeSpellAnims.splice(i, 1);
+                                                                      } else {
+                                                                        // Deal rapid mirrored weapon damage every 15 frames
+                                                                        if (anim.life % 15 === 0 && window.combatVisuals) {
+                                                                          let dmgRange = 32;
+                                                                          let applyDecoySlash = (targetMob) => {
+                                                                            if (targetMob.hp && targetMob.hp.gt && targetMob.hp.gt(0) && !targetMob.isFriendlyWisp) {
+                                                                              let mCx = targetMob.x + (targetMob.w || 24) / 2;
+                                                                              let mCy = targetMob.y + (targetMob.h || 24) / 2;
+                                                                              let dist = Math.hypot(anim.x - mCx, anim.y - mCy);
+                                                                              if (dist <= dmgRange + (targetMob.w || 24) / 2) {
+                                                                                let pStats = window.resolvePlayerStats ? window.resolvePlayerStats() : {};
+                                                                                let baseDmg = pStats.atk || 10;
+                                                                                let decoyDmg = Math.round(baseDmg * 0.15); // 15% Attack Power per swing
+
+                                                                                let damageBig = typeof targetMob.hp === "object" ? BigNum.from(decoyDmg) : decoyDmg;
+                                                                                if (typeof targetMob.hp === "object") {
+                                                                                  targetMob.hp = targetMob.hp.sub(damageBig);
+                                                                                } else {
+                                                                                  targetMob.hp -= decoyDmg;
+                                                                                }
+                                                                                targetMob.flashTimer = 5;
+                                                                                targetMob.hasTakenDamage = true;
+
+                                                                                window.combatVisuals.spawnDamageEffect(
+                                                                                  mCx,
+                                                                                  mCy,
+                                                                                  decoyDmg,
+                                                                                  "dagger",
+                                                                                  false,
+                                                                                  targetMob
+                                                                                );
+                                                                              }
+                                                                            }
+                                                                          };
+
+                                                                          if (window.activeDungeonMobs) {
+                                                                            window.activeDungeonMobs.forEach(applyDecoySlash);
+                                                                          }
+                                                                          if (window.mob) {
+                                                                            applyDecoySlash(window.mob);
+                                                                          }
+                                                                        }
+
+                                                                        // Emit trailing shadow-ash particles
+                                                                        if (window.ParticlePool && Math.random() < 0.25) {
+                                                                                              let pt = window.ParticlePool.get(
+                                                                                                anim.x + window.randFloat(-10, 10),
+                                                                                                anim.y + window.randFloat(-10, 10),
+                                                                                                window.randFloat(-0.4, 0.4),
+                                                                                                -window.randFloat(0.3, 0.9),
+                                                                                                window.randFloat(1.0, 2.0),
+                                                                                                "#a855f7",
+                                                                                                0.8,
+                                                                                                15,
+                                                                                                -0.01,
+                                                                                                true
+                                                                                              );
+                                                                                              pt.style = "circle";
+                                                                                              window.particles.push(pt);
+                                                                                            }
+                                                                                          }
+                                                                                        } else if (anim.type === "arcane_syphon") {
+                                                                                                          anim.life--;
+                                                                                                          if (anim.life <= 0) {
+                                                                                                            window.activeSpellAnims.splice(i, 1);
+                                                                                                          } else {
+                                                                                                            // Occasionally emit flowing syphon micro-particles along vector
+                                                                                                            if (window.ParticlePool && Math.random() < 0.3) {
+                                                                                                              let t = Math.random();
+                                                                                                              let x1 = anim.targetObj && anim.targetObj.hp && anim.targetObj.hp.gt && anim.targetObj.hp.gt(0)
+                                                                                                                ? anim.targetObj.x + (anim.targetObj.w || 24) / 2
+                                                                                                                : anim.targetX;
+                                                                                                              let y1 = anim.targetObj && anim.targetObj.hp && anim.targetObj.hp.gt && anim.targetObj.hp.gt(0)
+                                                                                                                ? anim.targetObj.y + (anim.targetObj.h || 24) / 2
+                                                                                                                : anim.targetY;
+                                                                                                              let x2 = window.player ? window.player.x : anim.playerX;
+                                                                                                              let y2 = window.player ? window.player.y - 8 : anim.playerY;
+
+                                                                                                              let px = x1 + (x2 - x1) * t;
+                                                                                                              let py = y1 + (y2 - y1) * t;
+                                                                                                              let pt = window.ParticlePool.get(
+                                                                                                                px,
+                                                                                                                py,
+                                                                                                                window.randFloat(-0.2, 0.2),
+                                                                                                                -window.randFloat(0.1, 0.5),
+                                                                                                                window.randFloat(0.8, 1.8),
+                                                                                                                Math.random() < 0.5 ? "#00ffff" : "#a855f7",
+                                                                                                                0.8,
+                                                                                                                12,
+                                                                                                                0,
+                                                                                                                true
+                                                                                                              );
+                                                                                                              window.particles.push(pt);
+                                                                                                            }
+                                                                                                          }
+                                                                                                        } else if (anim.type === "barrier_shatter") {
+                                                                                                          anim.life--;
+                                                                                                          if (anim.life <= 0) {
+                                                                                                            window.activeSpellAnims.splice(i, 1);
+                                                                                                          }
+                                                                                                        } else if (anim.type === "earth_breaker_bash") {
           anim.life--;
           if (anim.life <= 0) {
             window.activeSpellAnims.splice(i, 1);
@@ -4410,30 +5032,250 @@
         ctx.setLineDash([]);
         ctx.restore();
       } else if (anim.type === "resonant_aegis") {
-        ctx.save();
-        let alpha = anim.life / anim.maxLife;
-        let r = anim.radius;
+              ctx.save();
+              let alpha = anim.life / anim.maxLife;
+              let r = anim.radius;
 
-        // Pulsing Gold Outer Ring
-        ctx.strokeStyle = `rgba(241, 196, 15, ${alpha * 0.85})`;
-        ctx.lineWidth = 2.2;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = "#f1c40f";
+              // Pulsing Gold Outer Ring
+              ctx.strokeStyle = `rgba(241, 196, 15, ${alpha * 0.85})`;
+              ctx.lineWidth = 2.2;
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#f1c40f";
 
-        ctx.beginPath();
-        ctx.arc(anim.x, anim.y, Math.max(0.1, r), 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
+              ctx.beginPath();
+              ctx.arc(anim.x, anim.y, Math.max(0.1, r), 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.shadowBlur = 0;
 
-        // Translucent Gold Inner Ring
-        ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.45})`;
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.arc(anim.x, anim.y, Math.max(0.1, r * 0.65), 0, Math.PI * 2);
-        ctx.stroke();
+              // Translucent Gold Inner Ring
+              ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.45})`;
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.arc(anim.x, anim.y, Math.max(0.1, r * 0.65), 0, Math.PI * 2);
+              ctx.stroke();
 
-        ctx.restore();
-      } else if (anim.type === "earth_breaker_bash") {
+              ctx.restore();
+            } else if (anim.type === "aegis_pulse") {
+                          ctx.save();
+                          let alpha = anim.life / anim.maxLife;
+                          let r = anim.radius;
+
+                          // Outer Gold Wave
+                          ctx.strokeStyle = `rgba(241, 196, 15, ${alpha * 0.8})`;
+                          ctx.lineWidth = 2.5;
+                          ctx.shadowBlur = 10;
+                          ctx.shadowColor = "#f1c40f";
+                          ctx.beginPath();
+                          ctx.arc(anim.x, anim.y, Math.max(0.1, r), 0, Math.PI * 2);
+                          ctx.stroke();
+
+                          // Inner Emerald Wave (slightly offset behind)
+                          let rInner = Math.max(0.1, r * 0.7);
+                          ctx.strokeStyle = `rgba(46, 204, 113, ${alpha * 0.9})`;
+                          ctx.lineWidth = 2.0;
+                          ctx.shadowColor = "#2ecc71";
+                          ctx.beginPath();
+                          ctx.arc(anim.x, anim.y, rInner, 0, Math.PI * 2);
+                          ctx.stroke();
+
+                          ctx.shadowBlur = 0;
+                          ctx.restore();
+                        } else if (anim.type === "noxious_bloom") {
+                          ctx.save();
+                          let alpha = anim.life / anim.maxLife;
+                          let r = anim.radius;
+
+                          ctx.strokeStyle = `rgba(46, 204, 113, ${alpha * 0.75})`;
+                          ctx.fillStyle = `rgba(168, 85, 247, ${alpha * 0.08})`;
+                          ctx.lineWidth = 2.5;
+                          ctx.shadowBlur = 12;
+                          ctx.shadowColor = "#2ecc71";
+
+                          ctx.beginPath();
+                          ctx.ellipse(anim.x, anim.y, r, r * 0.45, 0, 0, Math.PI * 2);
+                          ctx.fill();
+                          ctx.stroke();
+                          ctx.shadowBlur = 0;
+
+                          ctx.strokeStyle = `rgba(168, 85, 247, ${alpha * 0.5})`;
+                          ctx.lineWidth = 1.2;
+                          ctx.beginPath();
+                          ctx.ellipse(anim.x, anim.y, r * 0.7, r * 0.32, 0, 0, Math.PI * 2);
+                          ctx.stroke();
+
+                          if (anim.bubbles) {
+                                          ctx.fillStyle = `rgba(46, 204, 113, ${alpha * 0.8})`;
+                                          ctx.strokeStyle = `rgba(168, 85, 247, ${alpha * 0.9})`;
+                                          ctx.lineWidth = 0.8;
+                                          anim.bubbles.forEach(b => {
+                                            let bx = anim.x + Math.cos(b.angle) * b.radius;
+                                            let by = anim.y + Math.sin(b.angle) * b.radius * 0.45 + b.offsetY;
+
+                                            ctx.beginPath();
+                                            ctx.arc(bx, by, b.size * (1.0 - Math.abs(b.offsetY) / 20), 0, Math.PI * 2);
+                                            ctx.fill();
+                                            ctx.stroke();
+                                          });
+                                        }
+
+                                        ctx.restore();
+                                      } else if (anim.type === "sanguine_rupture") {
+                                        ctx.save();
+                                        let tRatio = 1.0 - anim.life / anim.maxLife;
+
+                                        // Wave 1 (Deep blood red)
+                                        let r1 = anim.maxRadius * tRatio;
+                                        ctx.strokeStyle = `rgba(150, 0, 24, ${1.0 - tRatio})`;
+                                        ctx.lineWidth = 3.0 * (1.0 - tRatio);
+                                        ctx.shadowBlur = 15 * (1.0 - tRatio);
+                                        ctx.shadowColor = "#960018";
+                                        ctx.beginPath();
+                                        ctx.ellipse(anim.x, anim.y, r1, r1 * 0.45, 0, 0, Math.PI * 2);
+                                        ctx.stroke();
+
+                                        // Wave 2 (Middle crimson with offset start)
+                                        if (tRatio > 0.25) {
+                                          let tRatio2 = (tRatio - 0.25) / 0.75;
+                                          let r2 = anim.maxRadius * 0.7 * tRatio2;
+                                          ctx.strokeStyle = `rgba(192, 57, 43, ${1.0 - tRatio2})`;
+                                          ctx.lineWidth = 2.0 * (1.0 - tRatio2);
+                                          ctx.beginPath();
+                                          ctx.ellipse(anim.x, anim.y, r2, r2 * 0.45, 0, 0, Math.PI * 2);
+                                          ctx.stroke();
+                                        }
+
+                                        // Wave 3 (Sharp inner flare)
+                                                      let r3 = anim.maxRadius * 0.4 * tRatio;
+                                                      ctx.strokeStyle = `rgba(231, 76, 60, ${1.0 - tRatio})`;
+                                                      ctx.lineWidth = 1.5;
+                                                      ctx.beginPath();
+                                                      ctx.ellipse(anim.x, anim.y, r3, r3 * 0.45, 0, 0, Math.PI * 2);
+                                                      ctx.stroke();
+
+                                                      ctx.shadowBlur = 0;
+                                                      ctx.restore();
+                                                    } else if (anim.type === "shadow_decoy") {
+                                                                  ctx.save();
+                                                                  let alpha = anim.life / anim.maxLife;
+                                                                  let scale = 1.0;
+                                                                  let bounce = Math.sin(Date.now() / 50) * 1.5; // High frequency shaking
+                                                                  let slashFrame = Math.floor(Date.now() / 120) % 2 === 0; // Rapid slashes
+
+                                                                  ctx.globalAlpha = alpha * 0.55; // Ghostly translucency
+
+                                                                  window.drawSingleHero(
+                                                                    ctx,
+                                                                    anim.x,
+                                                                    anim.y,
+                                                                    scale,
+                                                                    anim.equippedSlots,
+                                                                    anim.playerStats,
+                                                                    bounce,
+                                                                    {
+                                                                      facing: anim.facing,
+                                                                      isTrail: true, // Forces translucent purple "void" skin
+                                                                      isMainHero: false,
+                                                                      slashFrame: slashFrame
+                                                                    }
+                                                                  );
+                                                                  ctx.restore();
+                                                                } else if (anim.type === "arcane_syphon") {
+                                                                  ctx.save();
+                                                                  let alpha = anim.life / anim.maxLife;
+
+                                                                  let x1 = anim.targetObj && anim.targetObj.hp && anim.targetObj.hp.gt && anim.targetObj.hp.gt(0)
+                                                                    ? anim.targetObj.x + (anim.targetObj.w || 24) / 2
+                                                                    : anim.targetX;
+                                                                  let y1 = anim.targetObj && anim.targetObj.hp && anim.targetObj.hp.gt && anim.targetObj.hp.gt(0)
+                                                                    ? anim.targetObj.y + (anim.targetObj.h || 24) / 2
+                                                                    : anim.targetY;
+
+                                                                  let x2 = window.player ? window.player.x : anim.playerX;
+                                                                  let y2 = window.player ? window.player.y - 8 : anim.playerY;
+
+                                                                  let dx = x2 - x1;
+                                                                  let dy = y2 - y1;
+                                                                  let len = Math.hypot(dx, dy);
+                                                                  let angle = Math.atan2(dy, dx);
+
+                                                                  let nx = -Math.sin(angle);
+                                                                  let ny = Math.cos(angle);
+
+                                                                  let timeOffset = Date.now() * 0.015;
+                                                                  let helixAmp = 7.5;
+                                                                  let twists = Math.PI * 4; // 2 full waves
+
+                                                                  // Render Pass 1: Cyan Ribbon
+                                                                  ctx.strokeStyle = `rgba(0, 240, 255, ${alpha})`;
+                                                                  ctx.lineWidth = 2.0;
+                                                                  ctx.shadowBlur = 8;
+                                                                  ctx.shadowColor = "#00f0ff";
+                                                                  ctx.beginPath();
+                                                                  for (let j = 0; j <= 20; j++) {
+                                                                    let t = j / 20;
+                                                                    let px = x1 + dx * t;
+                                                                    let py = y1 + dy * t;
+                                                                    let offset = Math.sin(t * twists - timeOffset) * helixAmp * (1.0 - t * 0.3);
+                                                                    let hx = px + nx * offset;
+                                                                    let hy = py + ny * offset;
+                                                                    if (j === 0) ctx.moveTo(hx, hy);
+                                                                    else ctx.lineTo(hx, hy);
+                                                                  }
+                                                                  ctx.stroke();
+
+                                                                  // Render Pass 2: Purple Ribbon (180 deg phase offset)
+                                                                                ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
+                                                                                ctx.shadowColor = "#a855f7";
+                                                                                ctx.beginPath();
+                                                                                for (let j = 0; j <= 20; j++) {
+                                                                                  let t = j / 20;
+                                                                                  let px = x1 + dx * t;
+                                                                                  let py = y1 + dy * t;
+                                                                                  let offset = Math.sin(t * twists - timeOffset + Math.PI) * helixAmp * (1.0 - t * 0.3);
+                                                                                  let hx = px + nx * offset;
+                                                                                  let hy = py + ny * offset;
+                                                                                  if (j === 0) ctx.moveTo(hx, hy);
+                                                                                  else ctx.lineTo(hx, hy);
+                                                                                }
+                                                                                ctx.stroke();
+
+                                                                                ctx.shadowBlur = 0;
+                                                                                ctx.restore();
+                                                                              } else if (anim.type === "barrier_shatter") {
+                                                                                ctx.save();
+                                                                                let tRatio = 1.0 - anim.life / anim.maxLife;
+                                                                                let r = anim.maxRadius * tRatio;
+                                                                                ctx.strokeStyle = `rgba(0, 240, 255, ${1.0 - tRatio})`;
+                                                                                ctx.lineWidth = 1.8 * (1.0 - tRatio);
+                                                                                ctx.shadowBlur = 15 * (1.0 - tRatio);
+                                                                                ctx.shadowColor = "#00ffff";
+
+                                                                                // Draw outer expanding crystalline octagon
+                                                                                ctx.beginPath();
+                                                                                for (let j = 0; j < 8; j++) {
+                                                                                  let angle = (j * Math.PI) / 4;
+                                                                                  let px = anim.x + Math.cos(angle) * r;
+                                                                                  let py = anim.y + Math.sin(angle) * r * 0.5; // isometric squash
+                                                                                  ctx.lineTo(px, py);
+                                                                                }
+                                                                                ctx.closePath();
+                                                                                ctx.stroke();
+
+                                                                                // Draw inner concentric offset octagon
+                                                                                ctx.strokeStyle = `rgba(232, 67, 147, ${1.0 - tRatio})`;
+                                                                                ctx.beginPath();
+                                                                                for (let j = 0; j < 8; j++) {
+                                                                                  let angle = (j * Math.PI) / 4 + Math.PI / 8;
+                                                                                  let px = anim.x + Math.cos(angle) * r * 0.65;
+                                                                                  let py = anim.y + Math.sin(angle) * r * 0.65 * 0.5;
+                                                                                  ctx.lineTo(px, py);
+                                                                                }
+                                                                                ctx.closePath();
+                                                                                ctx.stroke();
+
+                                                                                ctx.shadowBlur = 0;
+                                                                                ctx.restore();
+                                                                              } else if (anim.type === "earth_breaker_bash") {
         ctx.save();
         let alpha = anim.life / anim.maxLife;
         let r = anim.radius;
@@ -4779,29 +5621,59 @@
       }
 
       for (let i = 0; i < count; i++) {
-        let angle = Math.random() * Math.PI * 2;
-        let velocity = window.randFloat(1, speed);
-        let randLife = window.randInt(25, 45);
-        window.particles.push(
-          window.ParticlePool.get(
-            x,
-            y,
-            Math.cos(angle) * velocity,
-            Math.sin(angle) * velocity - window.randFloat(1, 3),
-            window.randFloat(1.5, 4.5),
-            colors[Math.floor(Math.random() * colors.length)],
-            1,
-            randLife,
-            randLife,
-            undefined,
-            true,
-          ),
-        );
-      }
-    },
-  });
+              let angle = Math.random() * Math.PI * 2;
+              let velocity = window.randFloat(1, speed);
+              let randLife = window.randInt(25, 45);
+              window.particles.push(
+                window.ParticlePool.get(
+                  x,
+                  y,
+                  Math.cos(angle) * velocity,
+                  Math.sin(angle) * velocity - window.randFloat(1, 3),
+                  window.randFloat(1.5, 4.5),
+                  colors[Math.floor(Math.random() * colors.length)],
+                  1,
+                  randLife,
+                  randLife,
+                  undefined,
+                  true,
+                ),
+              );
+            }
 
-  // Legacy Compatibility Aliases to protect references
+            // Noxious Bloom Check
+            let isNoxiousBloomEligible = false;
+            if (window.SkillTreeManager && window.SkillTreeManager.getSkillLevel("dagger_noxious_bloom") > 0) {
+              let isHpLteZero = (mobObj) => {
+                if (!mobObj || mobObj.hp === undefined) return false;
+                if (typeof mobObj.hp === "object" && typeof mobObj.hp.lte === "function") {
+                  return mobObj.hp.lte(0);
+                }
+                return mobObj.hp <= 0;
+              };
+
+              if (window.activeDungeonMobs) {
+                let dyingMob = window.activeDungeonMobs.find(m =>
+                  Math.hypot(m.x + (m.w||24)/2 - x, m.y + (m.h||24)/2 - y) < 40 &&
+                  isHpLteZero(m) &&
+                  ((m.poisonStacks && m.poisonStacks > 0) || (m.poisonTimer && m.poisonTimer > 0))
+                );
+                if (dyingMob) isNoxiousBloomEligible = true;
+              }
+              if (!isNoxiousBloomEligible && window.mob &&
+                  Math.hypot(window.mob.x + (window.mob.w||48)/2 - x, window.mob.y + (window.mob.h||48)/2 - y) < 60 &&
+                  isHpLteZero(window.mob) &&
+                  ((window.mob.poisonStacks && window.mob.poisonStacks > 0) || (window.mob.poisonTimer && window.mob.poisonTimer > 0))) {
+                isNoxiousBloomEligible = true;
+              }
+            }
+            if (isNoxiousBloomEligible) {
+              window.spawnNoxiousBloomVisual(x, y);
+            }
+          },
+        });
+
+        // Legacy Compatibility Aliases to protect references
   window.spawnDeathParticles = (x, y, mobType) =>
     window.RenderEngine.spawnDeathParticles(x, y, mobType);
 
@@ -9924,84 +10796,285 @@
     }
 
     // Kinetic Reflectors Energy Shield Arc Rendering
-    if (
-      window.isCavernEffectActive &&
-      window.isCavernEffectActive("kinetic_reflectors") &&
-      m.type === "mob" &&
-      !m.isFriendlyWisp
-    ) {
-      c.save();
-      let cx = m.x + m.w / 2;
-      let cy = m.y + m.h / 2;
-      let radius = m.w * 0.8;
-      let time = Date.now();
-      let pulse = Math.sin(time / 100) * 1.5;
+        if (
+          window.isCavernEffectActive &&
+          window.isCavernEffectActive("kinetic_reflectors") &&
+          m.type === "mob" &&
+          !m.isFriendlyWisp
+        ) {
+          c.save();
+          let cx = m.x + m.w / 2;
+          let cy = m.y + m.h / 2;
+          let radius = m.w * 0.8;
+          let time = Date.now();
+          let pulse = Math.sin(time / 100) * 1.5;
 
-      c.strokeStyle = "#00d2ff";
-      c.lineWidth = 2.0;
-      c.shadowBlur = 8;
-      c.shadowColor = "#00d2ff";
+          c.strokeStyle = "#00d2ff";
+          c.lineWidth = 2.0;
+          c.shadowBlur = 8;
+          c.shadowColor = "#00d2ff";
 
-      let rot = (time / 800) % (Math.PI * 2);
-      for (let i = 0; i < 3; i++) {
-        let segmentStart = Math.PI * 0.7 + rot + (i * Math.PI * 2) / 3;
-        let segmentEnd = segmentStart + 0.35;
-        c.beginPath();
-        c.arc(cx, cy, radius + pulse, segmentStart, segmentEnd);
-        c.stroke();
-      }
+          let rot = (time / 800) % (Math.PI * 2);
+          for (let i = 0; i < 3; i++) {
+            let segmentStart = Math.PI * 0.7 + rot + (i * Math.PI * 2) / 3;
+            let segmentEnd = segmentStart + 0.35;
+            c.beginPath();
+            c.arc(cx, cy, radius + pulse, segmentStart, segmentEnd);
+            c.stroke();
+          }
 
-      c.strokeStyle = "rgba(0, 210, 255, 0.75)";
-      c.lineWidth = 1.5;
-      c.beginPath();
-      c.arc(cx, cy, radius + 2, Math.PI * 0.75, Math.PI * 1.25);
-      c.stroke();
-      c.restore();
-    }
+          c.strokeStyle = "rgba(0, 210, 255, 0.75)";
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.arc(cx, cy, radius + 2, Math.PI * 0.75, Math.PI * 1.25);
+          c.stroke();
+          c.restore();
+        }
 
-    c.restore();
-  };
+        // Expose Weakness Floating Indicator
+        if (m.exposeWeaknessTimer > 0) {
+          if (!window.isGamePaused) {
+            m.exposeWeaknessTimer--;
+          }
+          let exX = m.x + m.w / 2;
+          let exY = m.y - 12;
+          let bob = Math.sin(Date.now() / 150) * 2;
+
+          c.save();
+          c.translate(exX, exY - 8 + bob);
+
+          c.strokeStyle = "#e74c3c";
+          c.fillStyle = "rgba(231, 76, 60, 0.22)";
+          c.lineWidth = 1.2;
+          c.shadowBlur = 6;
+          c.shadowColor = "#e74c3c";
+
+          c.beginPath();
+          c.moveTo(-4, -5);
+          c.lineTo(4, -5);
+          c.lineTo(5, 0);
+          c.lineTo(0, 6);
+          c.lineTo(-5, 0);
+          c.closePath();
+          c.fill();
+          c.stroke();
+          c.shadowBlur = 0;
+
+          // Jagged fracture seam down the middle
+          c.strokeStyle = "#111116";
+          c.lineWidth = 1.0;
+          c.beginPath();
+          c.moveTo(0, -5);
+          c.lineTo(-1.5, -2);
+          c.lineTo(1.5, 1);
+          c.lineTo(-0.5, 3);
+          c.lineTo(0, 6);
+          c.stroke();
+
+          c.restore();
+        }
+
+        c.restore();
+      };
   // --- MISSING DPS CALCULATOR ---
-  window.calculateActiveDps = function () {
-    const now = window.nowMs || Date.now();
-    let startIdx = 0;
-    // Scan forward in-place to calculate expired record counts
-    while (
-      startIdx < window.damageHistory.length &&
-      now - window.damageHistory[startIdx].time > 3000
-    ) {
-      startIdx++;
-    }
-    if (startIdx > 0) {
-      window.damageHistory.splice(0, startIdx);
-    }
-    if (window.damageHistory.length === 0) return "0.0";
-    let totalDamage = 0;
-    for (let i = 0; i < window.damageHistory.length; i++) {
-      totalDamage += window.damageHistory[i].amount;
-    }
-    let avgDps = totalDamage / 3;
-    return window.formatNumber(avgDps);
-  };
+    window.calculateActiveDps = function () {
+      const now = window.nowMs || Date.now();
+      let startIdx = 0;
+      // Scan forward in-place to calculate expired record counts
+      while (
+        startIdx < window.damageHistory.length &&
+        now - window.damageHistory[startIdx].time > 3000
+      ) {
+        startIdx++;
+      }
+      if (startIdx > 0) {
+        window.damageHistory.splice(0, startIdx);
+      }
+      if (window.damageHistory.length === 0) {
+        let badge = document.getElementById("dps-overlay-badge");
+        if (badge && window.playerStats && window.playerStats.showDpsOverlay) {
+          badge.innerText = "DPS: 0.0";
+        }
+        return "0.0";
+      }
+      let totalDamage = 0;
+      for (let i = 0; i < window.damageHistory.length; i++) {
+        totalDamage += window.damageHistory[i].amount;
+      }
+      let avgDps = totalDamage / 3;
+      let formatted = window.formatNumber(avgDps);
+      let badge = document.getElementById("dps-overlay-badge");
+      if (badge && window.playerStats && window.playerStats.showDpsOverlay) {
+        badge.innerText = "DPS: " + formatted;
+      }
+      return formatted;
+    };
 
   window.drawSingleHero = function (
-    ctx,
-    x,
-    y,
-    scale,
-    equippedSlots,
-    playerStats,
-    bounce,
-    options = {},
-  ) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
+        ctx,
+        x,
+        y,
+        scale,
+        equippedSlots,
+        playerStats,
+        bounce,
+        options = {},
+      ) {
+        let equipped = equippedSlots ? { ...equippedSlots } : {};
+        let stats = playerStats || {};
 
-    let equipped = equippedSlots ? { ...equippedSlots } : {};
-    let stats = playerStats || {};
+        let drawColossusPhantom = () => {
+          if (typeof window.drawColossusPhantom === "function") {
+            window.drawColossusPhantom(ctx, x, y, scale, equippedSlots, playerStats, bounce, options);
+          } else if (typeof window.drawColossusPhantomVisual === "function") {
+            window.drawColossusPhantomVisual(ctx, x, y, scale, equippedSlots, playerStats, bounce, options);
+          }
+        };
 
-    // Ground Drop Shadow Pass (Ambient Occlusion)
+        // --- Shadow Step Trail Logic ---
+      if (options.isMainHero && !options.isTrail) {
+        if (!window.shadowStepHistory) {
+          window.shadowStepHistory = [];
+        }
+
+        let isStepActive = !!(stats.shadowStepTimer > 0 || (window.playerStats && window.playerStats.shadowStepTimer > 0));
+
+        if (isStepActive) {
+          if (!window.isGamePaused) {
+            // Safeguard: decrement the buff timer cleanly each frame
+            if (stats.shadowStepTimer > 0) {
+              stats.shadowStepTimer--;
+              if (window.playerStats) window.playerStats.shadowStepTimer = stats.shadowStepTimer;
+            }
+
+            let last = window.shadowStepHistory[window.shadowStepHistory.length - 1];
+            let dist = last ? Math.hypot(x - last.x, y - last.y) : 999;
+            if (dist > 6) {
+              window.shadowStepHistory.push({
+                x: x,
+                y: y,
+                bounce: bounce,
+                facing: options.facing !== undefined ? options.facing : -1,
+                equippedSlots: JSON.parse(JSON.stringify(equippedSlots || {})),
+                playerStats: { ...stats, shadowStepTimer: 0 }, // Prevent infinite recursion
+                time: Date.now()
+              });
+              if (window.shadowStepHistory.length > 4) {
+                window.shadowStepHistory.shift();
+              }
+            }
+          }
+        } else {
+          if (window.shadowStepHistory.length > 0 && !window.isGamePaused) {
+            window.shadowStepHistory.shift();
+          }
+        }
+
+        // Draw phantoms behind the hero in world space
+        window.shadowStepHistory.forEach((trail, idx) => {
+          ctx.save();
+          ctx.globalAlpha = 0.08 + (idx / window.shadowStepHistory.length) * 0.22;
+          window.drawSingleHero(
+            ctx,
+            trail.x,
+            trail.y,
+            scale,
+            trail.equippedSlots,
+            trail.playerStats,
+            trail.bounce,
+            { facing: trail.facing, isTrail: true, isMainHero: false }
+          );
+          ctx.restore();
+        });
+      }
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // --- Fortified Guard (Hexagonal Cage Shield) Setup ---
+      let drawHexagon = (cx, cy, r, fill, stroke) => {
+        ctx.save();
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          let angle = (i * Math.PI) / 3;
+          ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      };
+
+      let fortitudePlates = [];
+      if (
+        stats.fortitudeStacks > 0 &&
+        (!stats.fortitudeTimer || stats.fortitudeTimer > 0) &&
+        (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+      ) {
+        let stacks = Math.min(5, stats.fortitudeStacks);
+        let time = Date.now();
+        let rot = time / 800;
+        let Rx = 15;
+        let Ry = 5.5;
+        let yOffset = 2 + bounce;
+
+        for (let i = 0; i < stacks; i++) {
+          let angle = rot + (i * Math.PI * 2) / stacks;
+          let px = Math.cos(angle) * Rx;
+          let py = Math.sin(angle) * Ry + yOffset;
+          let pz = Math.sin(angle); // Depth factor (-1 is back, 1 is front)
+          fortitudePlates.push({ x: px, y: py, z: pz, index: i });
+        }
+      }
+
+      let drawFortitudePass = (drawBehind) => {
+        if (fortitudePlates.length === 0) return;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.12)";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        let hasPoints = false;
+        for (let i = 0; i < fortitudePlates.length; i++) {
+          let current = fortitudePlates[i];
+          let next = fortitudePlates[(i + 1) % fortitudePlates.length];
+
+          let currentIsBehind = current.z < 0;
+          let nextIsBehind = next.z < 0;
+
+          if (drawBehind === currentIsBehind && drawBehind === nextIsBehind) {
+            if (!hasPoints) {
+              ctx.moveTo(current.x, current.y);
+              hasPoints = true;
+            }
+            ctx.lineTo(next.x, next.y);
+          } else {
+            hasPoints = false; // Break path line continuity on depth boundary crossings
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        fortitudePlates.forEach((plate) => {
+          let isBehind = plate.z < 0;
+          if (drawBehind === isBehind) {
+            let pulse = 2.5 + Math.sin(Date.now() / 150 + plate.index) * 0.5;
+            drawHexagon(
+              plate.x,
+              plate.y,
+              pulse,
+              "rgba(56, 189, 248, 0.22)",
+              "#38bdf8"
+            );
+          }
+        });
+      };
+
+      // Ground Drop Shadow Pass (Ambient Occlusion)
     ctx.save();
     let shadowScale = Math.max(0.65, 1.0 - Math.abs(bounce) * 0.05);
     ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
@@ -10148,12 +11221,13 @@
     }
 
     // Custom visual skin color profiles for future cosmetic extensibility (with fallback mapping for leaderboards & clan rosters)
-    let skin =
-      stats.cosmeticSkin ||
-      stats.cosmetic_skin ||
-      (equipped && (equipped.cosmeticSkin || equipped.cosmetic_skin)) ||
-      "default";
-    let bodyColor = "#95a5a6";
+        let skin = options.isTrail
+          ? "void"
+          : (stats.cosmeticSkin ||
+             stats.cosmetic_skin ||
+             (equipped && (equipped.cosmeticSkin || equipped.cosmetic_skin)) ||
+             "default");
+        let bodyColor = "#95a5a6";
     let armorColor = "#bdc3c7";
     let capeColor = "#c0392b";
     let eyeColor = stats.frenzyTimer > 0 ? "#f1c40f" : "#e74c3c";
@@ -10178,794 +11252,1054 @@
     }
 
     const drawSubweapon = () => {
-      if (!equipped.subweapon) return;
-      const subType = equipped.subweapon.subType;
-      let isAegis = equipped.subweapon.isUniqueAegis;
-      let isWatch = equipped.subweapon.isUniqueWatch;
-      let isChronicle = equipped.subweapon.isUniqueChronicle;
+          if (!equipped.subweapon) return;
+          const subType = equipped.subweapon.subType;
+          let isAegis = equipped.subweapon.isUniqueAegis;
+          let isWatch = equipped.subweapon.isUniqueWatch;
+          let isChronicle = equipped.subweapon.isUniqueChronicle;
 
-      if (subType === "shield") {
-        // Heavy defensive arm sway rotation
-        let sway = Math.sin(Date.now() / 320) * 0.05;
+          let img = window.getCanvasCutoutImage(equipped.subweapon);
+          let tierColor = window.getTierColor(
+            equipped.subweapon ? (equipped.subweapon.statsRolled === "UNIQUE" ? 5 : equipped.subweapon.statsRolled) : 0,
+          );
 
-        ctx.save();
-        ctx.translate(6, 4 + bounce);
-        ctx.rotate(-sway + 0.15); // Held securely on the front of the body
+          // Priority 1: High-Fidelity Procedural Daggers (Always render procedurally if dagger)
+          if (subType === "dagger") {
+            let dItem = equipped.subweapon;
+            let stars = dItem
+              ? dItem.statsRolled === "UNIQUE"
+                ? 5
+                : dItem.statsRolled || 0
+              : 0;
+            let dRgb = window.hexToRgbValues
+              ? window.hexToRgbValues(tierColor)
+              : "46, 204, 113";
 
-        let shieldItem = equipped.subweapon;
-        let noun =
-          shieldItem && shieldItem.noun ? shieldItem.noun.toLowerCase() : "";
-        let tierColor = window.getTierColor(
-          shieldItem ? shieldItem.statsRolled : 0,
-        );
+            // Dynamic breathing sway rotation
+            let sway = Math.sin(Date.now() / 240) * 0.08;
 
-        if (isAegis) {
-          // --- UNIQUE: VOID-WARPED BULWARK ---
-          ctx.fillStyle = "#25033c";
-          ctx.beginPath();
-          ctx.moveTo(-6, -8);
-          ctx.lineTo(6, -8);
-          ctx.lineTo(8, 0);
-          ctx.lineTo(0, 10);
-          ctx.lineTo(-8, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "#8e44ad";
-          ctx.lineWidth = penHero + 0.5;
-          ctx.stroke();
+            ctx.save();
+            ctx.translate(14, 6 + bounce); // Extended forward to match sword reach
+            ctx.rotate((Math.PI * 3) / 4 - sway); // Rotate 180 degrees so the blade points out/forward (away from face)
 
-          ctx.strokeStyle = "#e84393";
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.moveTo(0, -6);
-          ctx.lineTo(0, 6);
-          ctx.moveTo(-5, 0);
-          ctx.lineTo(5, 0);
-          ctx.stroke();
-        } else if (noun.includes("kite")) {
-          // --- KITE SHIELD (Tall & Rounded Taper) ---
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.moveTo(-5.5, -9);
-          ctx.quadraticCurveTo(0, -11, 5.5, -9); // Curved top
-          ctx.lineTo(7, -1);
-          ctx.lineTo(0, 11); // Long pointer
-          ctx.lineTo(-7, -1);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penHero + 0.5;
-          ctx.stroke();
-
-          // Central heraldry cross matching quality tier
-          ctx.strokeStyle = tierColor;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(0, -8.5);
-          ctx.lineTo(0, 8);
-          ctx.moveTo(-4.5, -1.5);
-          ctx.lineTo(4.5, -1.5);
-          ctx.stroke();
-        } else if (noun.includes("tower")) {
-          // --- TOWER SHIELD (Heavy Protective Rectangle) ---
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.roundRect(-7, -9.5, 14, 19, [1.5]);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penHero + 0.5;
-          ctx.stroke();
-
-          // Inward border frame matching quality tier
-          ctx.strokeStyle = tierColor;
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.roundRect(-5, -7.5, 10, 15, [1]);
-          ctx.stroke();
-
-          // Central horizontal reinforcing band
-          ctx.strokeStyle = "#1c1c1f";
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(-7, 0);
-          ctx.lineTo(7, 0);
-          ctx.stroke();
-        } else if (noun.includes("buckler")) {
-          // --- BUCKLER (Small Circular Shield) ---
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.arc(0, 1, 9.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penHero + 0.5;
-          ctx.stroke();
-
-          // Quality indicator ring
-          ctx.strokeStyle = tierColor;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(0, 1, 6.5, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Core steel boss center rivet
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.arc(0, 1, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 0.8;
-          ctx.stroke();
-        } else {
-          // --- DEFAULT / HEATER SHIELD (The exact shape you love) ---
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.moveTo(-6, -8);
-          ctx.lineTo(6, -8);
-          ctx.lineTo(8, 0);
-          ctx.lineTo(0, 10);
-          ctx.lineTo(-8, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penHero + 0.5;
-          ctx.stroke();
-
-          // Draw inner quality-aligned framing border
-          ctx.beginPath();
-          ctx.moveTo(-4, -6.5);
-          ctx.lineTo(4, -6.5);
-          ctx.lineTo(5.5, -0.5);
-          ctx.lineTo(0, 7.5);
-          ctx.lineTo(-5.5, -0.5);
-          ctx.closePath();
-          ctx.strokeStyle = tierColor;
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-        }
-
-        // Searing Steel Glint Sweep (Diagonal light reflections)
-        let glintTime = (Date.now() / 2000) % 1.0;
-        if (glintTime < 0.3) {
-          let glintY = -9.5 + (glintTime / 0.3) * 19;
-          ctx.save();
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(-6, glintY);
-          ctx.lineTo(6, glintY - 3);
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        ctx.restore();
-
-        // Orbiting Void Sparks (Aegis Unique only)
-        if (
-          isAegis &&
-          (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-        ) {
-          ctx.save();
-          ctx.translate(6, 4 + bounce);
-          ctx.rotate(-sway + 0.15); // Aligned to follow the updated shield position
-          let orbitTime = Date.now() / 250;
-          ctx.fillStyle = "#110221";
-          ctx.strokeStyle = "#8e44ad";
-          ctx.lineWidth = 1.0;
-          for (let i = 0; i < 2; i++) {
-            let angle = orbitTime + i * Math.PI;
-            let ox = Math.cos(angle) * 14;
-            let oy = Math.sin(angle) * 6;
+            // 1. Draw Hilt Grip & Core Pommel
+            ctx.fillStyle = "#1c1c1f"; // Dark metallic hilt core
             ctx.beginPath();
-            ctx.arc(ox, oy, 2.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
-
-        // Active Block Forcefield Flash centred on the Hero
-        let timeSinceBlock = Date.now() - (stats.recentBlockTime || 0);
-        if (
-          timeSinceBlock < 250 &&
-          (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-        ) {
-          let opacity = (250 - timeSinceBlock) / 250;
-          let currentR = 24 + (1.0 - opacity) * 6;
-          ctx.save();
-          ctx.strokeStyle = tierColor;
-          ctx.fillStyle = window.hexToRgba
-            ? window.hexToRgba(tierColor, 0.15 * opacity)
-            : `rgba(52, 152, 219, ${0.15 * opacity})`;
-          ctx.lineWidth = 2.0;
-          ctx.globalAlpha = opacity;
-          ctx.beginPath();
-          for (let i = 0; i < 6; i++) {
-            let angle = (i * Math.PI) / 3;
-            let hx = Math.cos(angle) * currentR;
-            let hy = Math.sin(angle) * currentR + 4 + bounce;
-            ctx.lineTo(hx, hy);
-          }
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
-        }
-      } else if (subType === "tome") {
-        ctx.save();
-        let tomeFloat = Math.sin(Date.now() / 200) * 5;
-        ctx.translate(25, -15 + bounce + tomeFloat); // Elevated and extended further forward to float heroically
-        ctx.rotate(Math.PI / 12);
-        ctx.rotate(Math.PI / 12);
-
-        let tomeItem = equipped.subweapon;
-        let isUniqueConduit = tomeItem && tomeItem.isUniqueConduit;
-
-        // Unified Rarity/Stars Resolver (Uniques are treated as 5★)
-        let stars = tomeItem
-          ? tomeItem.statsRolled === "UNIQUE"
-            ? 5
-            : tomeItem.statsRolled || 0
-          : 0;
-        if (isWatch || isChronicle || isUniqueConduit) {
-          stars = 5;
-        }
-
-        let tierColor = window.getTierColor(
-          tomeItem
-            ? tomeItem.statsRolled === "UNIQUE"
-              ? 5
-              : tomeItem.statsRolled
-            : 0,
-        );
-        if (isWatch) tierColor = "#d4af37";
-        else if (isChronicle) tierColor = "#f1c40f";
-        else if (isUniqueConduit) tierColor = "#9b59b6";
-
-        let rgbVals = window.hexToRgbValues
-          ? window.hexToRgbValues(tierColor)
-          : "155, 89, 182";
-
-        // 3D Orbital properties
-        let R = 15;
-        let R_minor = 7;
-        let orbitTime = Date.now() / 280;
-
-        // Parametric calculation of points on 3D-tilted orbital planes
-        let getOrbPos = (i) => {
-          let phi = i * (Math.PI / stars) + Math.PI / 12;
-          let theta = orbitTime + i * ((Math.PI * 2) / stars);
-
-          let ox =
-            R * Math.cos(theta) * Math.cos(phi) -
-            R_minor * Math.sin(theta) * Math.sin(phi);
-          let oy =
-            R * Math.cos(theta) * Math.sin(phi) +
-            R_minor * Math.sin(theta) * Math.cos(phi) -
-            1;
-          let oz = Math.sin(theta); // Depth indicator
-
-          return { ox, oy, oz, phi };
-        };
-
-        // 1. Draw continuous translucent orbit rings behind the Tome
-        if (stars > 0) {
-          ctx.save();
-          ctx.lineWidth = 0.6;
-          for (let i = 0; i < stars; i++) {
-            let pos = getOrbPos(i);
-            ctx.strokeStyle = `rgba(${rgbVals}, 0.08)`;
-            ctx.beginPath();
-            ctx.ellipse(0, -1, R, R_minor, pos.phi, 0, Math.PI * 2);
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
-
-        // 2. Draw orbs that are rotating behind the book (oz < 0)
-        if (stars > 0) {
-          for (let i = 0; i < stars; i++) {
-            let pos = getOrbPos(i);
-            if (pos.oz < 0) {
-              ctx.save();
-              ctx.fillStyle = "#ffffff";
-              ctx.beginPath();
-              ctx.arc(pos.ox, pos.oy, 0.8, 0, Math.PI * 2);
-              ctx.fill();
-
-              ctx.fillStyle = tierColor;
-              ctx.beginPath();
-              ctx.arc(pos.ox, pos.oy, 2.0, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.restore();
-            }
-          }
-        }
-
-        // 3. Draw Book / Unique Tome Core Body Graphics
-        if (isWatch) {
-          ctx.fillStyle = "#d4af37";
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.arc(0, 0, 8, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#fdf6e2";
-          ctx.beginPath();
-          ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.strokeStyle = "#111";
-          ctx.lineWidth = 1.2;
-          let clockTime = Date.now() / 300;
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(Math.cos(clockTime) * 4.5, Math.sin(clockTime) * 4.5);
-          ctx.stroke();
-        } else if (isChronicle) {
-          ctx.fillStyle = "#111116";
-          ctx.strokeStyle = "#f1c40f";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.roundRect(-5, -7, 10, 14, [1.5]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#fff";
-          ctx.fillRect(3.5, -6, 1.5, 12);
-          let pulseRad = 12 + Math.sin(Date.now() / 150) * 2;
-          ctx.strokeStyle = "rgba(241, 196, 15, 0.25)";
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.arc(0, 0, pulseRad, 0, Math.PI * 2);
-          ctx.stroke();
-        } else if (isUniqueConduit) {
-          // --- UNIQUE: CONDUIT OF THE LEXICON ---
-          ctx.fillStyle = "#0c0515"; // Deep occult violet cover
-          ctx.strokeStyle = "#9b59b6";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.roundRect(-5, -7, 10, 14, [1.5]);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(3.5, -6, 1.5, 12); // Paper edges
-          ctx.fillStyle = "#2ecc71"; // Emerald core emblem
-          ctx.beginPath();
-          ctx.arc(0, 0, 3, 0, Math.PI * 2);
-          ctx.fill();
-          let pulseRad = 12 + Math.sin(Date.now() / 150) * 2;
-          ctx.strokeStyle = "rgba(46, 204, 113, 0.25)";
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.arc(0, 0, pulseRad, 0, Math.PI * 2);
-          ctx.stroke();
-        } else {
-          let noun =
-            tomeItem && tomeItem.noun ? tomeItem.noun.toLowerCase() : "";
-
-          // Magical Rarity Glow Aura (Behind-the-book baseline)
-          let auraRadius = 14 + Math.sin(Date.now() / 150) * 4;
-          let auraGrad = ctx.createRadialGradient(0, -1, 1, 0, -1, auraRadius);
-          auraGrad.addColorStop(0, `rgba(${rgbVals}, 0.65)`);
-          auraGrad.addColorStop(0.5, `rgba(${rgbVals}, 0.2)`);
-          auraGrad.addColorStop(1, `rgba(${rgbVals}, 0)`);
-          ctx.fillStyle = auraGrad;
-          ctx.beginPath();
-          ctx.arc(0, -1, auraRadius, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Resolve custom Book Cover styles
-          let coverColor = "#8e44ad"; // Default magic purple
-          if (noun.includes("grimoire"))
-            coverColor = "#1b002a"; // Deep occult black
-          else if (noun.includes("codex"))
-            coverColor = "#784212"; // Antique brass/bronze
-          else if (noun.includes("lexicon"))
-            coverColor = "#1b4f72"; // Scholar blue
-          else if (noun.includes("chronicle")) coverColor = "#4d1a00"; // Rustic relic leather
-
-          ctx.fillStyle = coverColor;
-          ctx.beginPath();
-          ctx.roundRect(-6, -8, 12, 14, [1.5]);
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penHero;
-          ctx.stroke();
-
-          // Draw book spine on left binding edge
-          ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-          ctx.fillRect(-6, -8, 3, 14);
-
-          // Draw paper edges on the right
-          ctx.fillStyle = "#f5f5dc";
-          ctx.beginPath();
-          ctx.rect(4, -7, 1.5, 12);
-          ctx.fill();
-          ctx.stroke();
-
-          // Render detailed central cover glyphs
-          ctx.save();
-          if (noun.includes("grimoire")) {
-            ctx.fillStyle = "#f1c40f";
-            ctx.beginPath();
-            ctx.arc(1, -1, 2.2, -Math.PI / 2, Math.PI / 2, false);
-            ctx.quadraticCurveTo(2.0, -1, 1, -3.2);
-            ctx.closePath();
-            ctx.fill();
-          } else if (noun.includes("codex")) {
-            ctx.strokeStyle = "#bdc3c7";
-            ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.arc(1, -1, 2, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.fillStyle = tierColor;
-            ctx.beginPath();
-            ctx.arc(1, -1, 1, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (noun.includes("lexicon")) {
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 0.7;
-            ctx.beginPath();
-            ctx.ellipse(1, -1, 2.5, 1.3, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.fillStyle = tierColor;
-            ctx.beginPath();
-            ctx.arc(1, -1, 0.8, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (noun.includes("chronicle")) {
-            ctx.fillStyle = "#f1c40f";
-            ctx.beginPath();
-            ctx.moveTo(-1, -3);
-            ctx.lineTo(3, -3);
-            ctx.lineTo(1, -1);
-            ctx.lineTo(3, 1);
-            ctx.lineTo(-1, 1);
-            ctx.closePath();
-            ctx.fill();
-          } else {
-            ctx.fillStyle = tierColor;
-            ctx.beginPath();
-            ctx.arc(1, -1, 2, 0, Math.PI * 2);
+            ctx.arc(0, 10, 2.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 0.8;
+            ctx.lineWidth = 1.2;
             ctx.stroke();
-          }
-          ctx.restore();
-        }
 
-        // 4. Draw orbs that are rotating in front of the book (oz >= 0)
-        if (stars > 0) {
-          for (let i = 0; i < stars; i++) {
-            let pos = getOrbPos(i);
-            if (pos.oz >= 0) {
-              ctx.save();
-              ctx.fillStyle = "#ffffff";
-              ctx.beginPath();
-              ctx.arc(pos.ox, pos.oy, 0.8, 0, Math.PI * 2);
-              ctx.fill();
+            // Custom pommel core gem matching active tier color
+            ctx.fillStyle = tierColor;
+            ctx.beginPath();
+            ctx.arc(0, 10, 1.2, 0, Math.PI * 2);
+            ctx.fill();
 
+            ctx.fillStyle = "#5c3a21"; // Padded wood hilt
+            ctx.beginPath();
+            ctx.rect(-1.5, 3, 3, 7);
+            ctx.fill();
+            ctx.stroke();
+
+            // 2. Resolve Custom Guards & Blades based on specific Dagger sub-class
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = penHero;
+
+            let noun = dItem && dItem.noun ? dItem.noun.toLowerCase() : "";
+
+            if (noun.includes("kris")) {
+              // Serpentine Kris Guard
               ctx.fillStyle = tierColor;
               ctx.beginPath();
-              ctx.arc(pos.ox, pos.oy, 2.0, 0, Math.PI * 2);
+              ctx.moveTo(-6, 3);
+              ctx.lineTo(6, 3);
+              ctx.lineTo(4, 5);
+              ctx.lineTo(-4, 5);
+              ctx.closePath();
               ctx.fill();
+              ctx.stroke();
+
+              // Wavy/Serpentine Kris Blade
+              ctx.fillStyle = "#95a5a6";
+              ctx.beginPath();
+              ctx.moveTo(-2.5, 3);
+              ctx.lineTo(-1.2, -1);
+              ctx.lineTo(-2.5, -4.5);
+              ctx.lineTo(-1.2, -8);
+              ctx.lineTo(0, -14); // Sharp wavy tip
+              ctx.lineTo(1.2, -8);
+              ctx.lineTo(2.5, -4.5);
+              ctx.lineTo(1.2, -1);
+              ctx.lineTo(2.5, 3);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              // Contrast Highlight Line
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.moveTo(0, 3);
+              ctx.lineTo(0, -14);
+              ctx.lineTo(1.2, -8);
+              ctx.lineTo(2.5, -4.5);
+              ctx.lineTo(1.2, -1);
+              ctx.lineTo(2.5, 3);
+              ctx.closePath();
+              ctx.fill();
+            } else if (noun.includes("baselard")) {
+              // Broad cross H-guard
+              ctx.fillStyle = tierColor;
+              ctx.fillRect(-6, 1.5, 12, 2);
+              ctx.strokeRect(-6, 1.5, 12, 2);
+              // Secondary matching H-pommel
+              ctx.fillRect(-5, 9, 10, 2);
+              ctx.strokeRect(-5, 9, 10, 2);
+
+              // Broad diamond-point blade
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.moveTo(-3, 1.5);
+              ctx.lineTo(0, -14); // tip
+              ctx.lineTo(3, 1.5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.moveTo(0, 1.5);
+              ctx.lineTo(0, -14);
+              ctx.lineTo(3, 1.5);
+              ctx.closePath();
+              ctx.fill();
+            } else if (noun.includes("dirk")) {
+              // Standard wide iron guard disc
+              ctx.fillStyle = "#343a40";
+              ctx.beginPath();
+              ctx.ellipse(0, 3, 5, 1.5, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+
+              // Heavy single-edged wedge blade
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.moveTo(-2.2, 3);
+              ctx.lineTo(-2.2, -10); // Flat blunt back edge
+              ctx.lineTo(0, -14); // Blade point
+              ctx.lineTo(2.2, 3); // Curved cutting slope front
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.moveTo(0, 3);
+              ctx.lineTo(0, -14);
+              ctx.lineTo(2.2, 3);
+              ctx.closePath();
+              ctx.fill();
+            } else if (dItem && dItem.isUniqueViper) {
+              // --- UNIQUE: VIPER'S PERFECT STILETTO ---
+              ctx.fillStyle = "#1e272e"; // Dark hilt
+              ctx.beginPath();
+              ctx.arc(0, 10, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1.2;
+              ctx.stroke();
+
+              ctx.fillStyle = "#2ecc71"; // Emerald pommel gem
+              ctx.beginPath();
+              ctx.arc(0, 10, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#4a2306"; // Dark leather wrap
+              ctx.beginPath();
+              ctx.rect(-1.5, 3, 3, 7);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#f1c40f"; // Gold crossguard
+              ctx.beginPath();
+              ctx.moveTo(-7, 3);
+              ctx.lineTo(7, 3);
+              ctx.lineTo(4, 5);
+              ctx.lineTo(-4, 5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              // Poison-etched serpentine blade
+              ctx.fillStyle = "#0c1711"; // Dark obsidian core
+              ctx.strokeStyle = "#2ecc71"; // Poison green edge glow
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(-2.5, 3);
+              ctx.lineTo(-1, -3);
+              ctx.lineTo(-2, -8);
+              ctx.lineTo(0, -15); // sharp tip
+              ctx.lineTo(2, -8);
+              ctx.lineTo(1, -3);
+              ctx.lineTo(2.5, 3);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              // Acidic fuller lines
+              ctx.strokeStyle = "#2ecc71";
+              ctx.lineWidth = 0.8;
+              ctx.beginPath();
+              ctx.moveTo(0, 2);
+              ctx.lineTo(0, -12);
+              ctx.stroke();
+            } else if (noun.includes("main")) {
+              // Main-Gauche Curved Parrying Guard
+              ctx.strokeStyle = tierColor;
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(-7, 3);
+              ctx.quadraticCurveTo(0, -1.5, 7, 3);
+              ctx.stroke();
+              // Finger protective basket loop
+              ctx.beginPath();
+              ctx.arc(0, 5.5, 3.5, 0, Math.PI);
+              ctx.stroke();
+
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = penHero;
+
+              // Narrow stiletto needle blade
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.moveTo(-1.8, 1.5);
+              ctx.lineTo(0, -14);
+              ctx.lineTo(1.8, 1.5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.moveTo(0, 1.5);
+              ctx.lineTo(0, -14);
+              ctx.lineTo(1.8, 1.5);
+              ctx.closePath();
+              ctx.fill();
+            } else {
+              // Default Stiletto Needle structure
+              ctx.fillStyle = tierColor; // Guard matching quality tier
+              ctx.beginPath();
+              ctx.moveTo(-8, 3);
+              ctx.quadraticCurveTo(0, -2, 8, 3);
+              ctx.quadraticCurveTo(0, 2, -8, 3);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              // Straight thin piercing blade
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.moveTo(-2.2, 2.5);
+              ctx.lineTo(0, -14);
+              ctx.lineTo(2.2, 2.5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.moveTo(0, 2.5);
+              ctx.lineTo(0, -14);
+              ctx.lineTo(2.2, 2.5);
+              ctx.closePath();
+              ctx.fill();
+            }
+
+            // 3. Procedural Metallic Glint Sweep Overlay
+            let glintTime = (Date.now() / 1500) % 1.0;
+            if (glintTime < 0.3) {
+              let glintY = 10 - (glintTime / 0.3) * 24;
+              ctx.save();
+              ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(-2, glintY);
+              ctx.lineTo(2, glintY - 2.5);
+              ctx.stroke();
               ctx.restore();
             }
+
+            ctx.restore();
+
+            // 4. Quality-Scaled Active Spark Trails (Spirals off the moving blade tip)
+            if (!window.isGamePaused && options.isMainHero && stars > 0) {
+              let spawnChance = window.playerStats.ecoMode ? 0.08 : 0.25;
+              if (Math.random() < spawnChance * stars) {
+                let theta = (Math.PI * 3) / 4 - sway; // Align particle emission angle with updated blade direction
+                let worldTipX = x + (14 + 14 * Math.sin(theta)) * scale; // Align tip spawn origin with hand translation
+                let worldTipY = y + (6 + bounce - 14 * Math.cos(theta)) * scale;
+
+                window.particles.push(
+                  window.ParticlePool.get(
+                    worldTipX,
+                    worldTipY,
+                    -Math.cos(theta) * window.randFloat(0.3, 0.8) -
+                      (window.playerStats.isDungeonMode ? 1.5 : 0),
+                    -window.randFloat(0.2, 0.6) + bounce * 0.05,
+                    window.randFloat(0.8, 1.8),
+                    tierColor,
+                    0.85,
+                    window.randInt(15, 30),
+                    undefined,
+                    undefined,
+                    true, // Fade out over time
+                  ),
+                );
+              }
+            }
+
+            // 5. Rising elemental vapor matching equipped quality color!
+            let mistCycle = (Date.now() / 150) % 6;
+            ctx.fillStyle = `rgba(${dRgb}, ${0.55 - mistCycle / 12})`;
+            ctx.beginPath();
+            ctx.arc(0, -16 - mistCycle, 1.2 + mistCycle / 3, 0, Math.PI * 2);
+            ctx.fill();
           }
-        }
+          // Priority 2: Image-based Cutouts (Shields, Tomes)
+          else if (img && img.complete) {
+            let renderSize = subType === "tome" ? 22 : 26; // Tomes smaller/floating, Shields larger
+            let pivotX = renderSize / 2;
+            let pivotY = renderSize / 2;
 
-        ctx.restore();
-      } else if (subType === "dagger") {
-        let dItem = equipped.subweapon;
-        let stars = dItem
-          ? dItem.statsRolled === "UNIQUE"
-            ? 5
-            : dItem.statsRolled || 0
-          : 0;
-        let tierColor = window.getTierColor(
-          dItem ? (dItem.statsRolled === "UNIQUE" ? 5 : dItem.statsRolled) : 0,
-        );
-        if (dItem && dItem.isUniqueViper) tierColor = "#2ecc71";
+            if (subType === "shield") {
+            let sway = Math.sin(Date.now() / 320) * 0.05;
 
-        // Dynamic breathing sway rotation
-        let sway = Math.sin(Date.now() / 240) * 0.08;
+            ctx.save();
+            ctx.translate(6, 4 + bounce);
+            ctx.rotate(-sway + 0.15); // Held securely on the front of the body
 
-        ctx.save();
-        ctx.translate(14, 6 + bounce); // Extended forward to match sword reach
-        ctx.rotate((Math.PI * 3) / 4 - sway); // Rotate 180 degrees so the blade points out/forward (away from face)
+            ctx.drawImage(img, -pivotX, -pivotY, renderSize, renderSize);
 
-        // 1. Draw Hilt Grip & Core Pommel
-        ctx.fillStyle = "#1c1c1f"; // Dark metallic hilt core
-        ctx.beginPath();
-        ctx.arc(0, 10, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
+            // Searing Steel Glint Sweep (Diagonal light reflections)
+            let glintTime = (Date.now() / 2000) % 1.0;
+            if (glintTime < 0.3) {
+              let glintY = -9.5 + (glintTime / 0.3) * 19;
+              ctx.save();
+              ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(-6, glintY);
+              ctx.lineTo(6, glintY - 3);
+              ctx.stroke();
+              ctx.restore();
+            }
 
-        // Custom pommel core gem matching active tier color
-        ctx.fillStyle = tierColor;
-        ctx.beginPath();
-        ctx.arc(0, 10, 1.2, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.restore();
 
-        ctx.fillStyle = "#5c3a21"; // Padded wood hilt
-        ctx.beginPath();
-        ctx.rect(-1.5, 3, 3, 7);
-        ctx.fill();
-        ctx.stroke();
+            // Orbiting Void Sparks (Aegis Unique only)
+            if (
+              isAegis &&
+              (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+            ) {
+              ctx.save();
+              ctx.translate(6, 4 + bounce);
+              ctx.rotate(-sway + 0.15); // Aligned to follow the updated shield position
+              let orbitTime = Date.now() / 250;
+              ctx.fillStyle = "#110221";
+              ctx.strokeStyle = "#8e44ad";
+              ctx.lineWidth = 1.0;
+              for (let i = 0; i < 2; i++) {
+                let angle = orbitTime + i * Math.PI;
+                let ox = Math.cos(angle) * 14;
+                let oy = Math.sin(angle) * 6;
+                ctx.beginPath();
+                ctx.arc(ox, oy, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+              }
+              ctx.restore();
+            }
 
-        // 2. Resolve Custom Guards & Blades based on specific Dagger sub-class
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = penHero;
+            // Active Block Forcefield Flash centred on the Hero
+            let timeSinceBlock = Date.now() - (stats.recentBlockTime || 0);
+            if (
+              timeSinceBlock < 250 &&
+              (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+            ) {
+              let opacity = (250 - timeSinceBlock) / 250;
+              let currentR = 24 + (1.0 - opacity) * 6;
+              ctx.save();
+              ctx.strokeStyle = tierColor;
+              ctx.fillStyle = window.hexToRgba
+                ? window.hexToRgba(tierColor, 0.15 * opacity)
+                : `rgba(52, 152, 219, ${0.15 * opacity})`;
+              ctx.lineWidth = 2.0;
+              ctx.globalAlpha = opacity;
+              ctx.beginPath();
+              for (let i = 0; i < 6; i++) {
+                let angle = (i * Math.PI) / 3;
+                let hx = Math.cos(angle) * currentR;
+                let hy = Math.sin(angle) * currentR + 4 + bounce;
+                ctx.lineTo(hx, hy);
+              }
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              ctx.restore();
+            }
+          } else if (subType === "tome") {
+            ctx.save();
+            let tomeFloat = Math.sin(Date.now() / 200) * 5;
+            ctx.translate(25, -15 + bounce + tomeFloat); // Elevated and extended further forward to float heroically
+            ctx.rotate(Math.PI / 12);
+            ctx.rotate(Math.PI / 12);
 
-        let noun = dItem && dItem.noun ? dItem.noun.toLowerCase() : "";
+            let tomeItem = equipped.subweapon;
+            let isUniqueConduit = tomeItem && tomeItem.isUniqueConduit;
 
-        if (noun.includes("kris")) {
-          // Serpentine Kris Guard
-          ctx.fillStyle = tierColor;
-          ctx.beginPath();
-          ctx.moveTo(-6, 3);
-          ctx.lineTo(6, 3);
-          ctx.lineTo(4, 5);
-          ctx.lineTo(-4, 5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+            // Unified Rarity/Stars Resolver (Uniques are treated as 5★)
+            let stars = tomeItem
+              ? tomeItem.statsRolled === "UNIQUE"
+                ? 5
+                : tomeItem.statsRolled || 0
+              : 0;
+            if (isWatch || isChronicle || isUniqueConduit) {
+              stars = 5;
+            }
 
-          // Wavy/Serpentine Kris Blade
-          ctx.fillStyle = "#95a5a6";
-          ctx.beginPath();
-          ctx.moveTo(-2.5, 3);
-          ctx.lineTo(-1.2, -1);
-          ctx.lineTo(-2.5, -4.5);
-          ctx.lineTo(-1.2, -8);
-          ctx.lineTo(0, -14); // Sharp wavy tip
-          ctx.lineTo(1.2, -8);
-          ctx.lineTo(2.5, -4.5);
-          ctx.lineTo(1.2, -1);
-          ctx.lineTo(2.5, 3);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+            if (isWatch) tierColor = "#d4af37";
+            else if (isChronicle) tierColor = "#f1c40f";
+            else if (isUniqueConduit) tierColor = "#9b59b6";
 
-          // Contrast Highlight Line
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.moveTo(0, 3);
-          ctx.lineTo(0, -14);
-          ctx.lineTo(1.2, -8);
-          ctx.lineTo(2.5, -4.5);
-          ctx.lineTo(1.2, -1);
-          ctx.lineTo(2.5, 3);
-          ctx.closePath();
-          ctx.fill();
-        } else if (noun.includes("baselard")) {
-          // Broad cross H-guard
-          ctx.fillStyle = tierColor;
-          ctx.fillRect(-6, 1.5, 12, 2);
-          ctx.strokeRect(-6, 1.5, 12, 2);
-          // Secondary matching H-pommel
-          ctx.fillRect(-5, 9, 10, 2);
-          ctx.strokeRect(-5, 9, 10, 2);
+            let rgbVals = window.hexToRgbValues
+              ? window.hexToRgbValues(tierColor)
+              : "155, 89, 182";
 
-          // Broad diamond-point blade
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.moveTo(-3, 1.5);
-          ctx.lineTo(0, -14); // tip
-          ctx.lineTo(3, 1.5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+            // 3D Orbital properties
+            let R = 15;
+            let R_minor = 7;
+            let orbitTime = Date.now() / 280;
 
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.moveTo(0, 1.5);
-          ctx.lineTo(0, -14);
-          ctx.lineTo(3, 1.5);
-          ctx.closePath();
-          ctx.fill();
-        } else if (noun.includes("dirk")) {
-          // Standard wide iron guard disc
-          ctx.fillStyle = "#343a40";
-          ctx.beginPath();
-          ctx.ellipse(0, 3, 5, 1.5, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
+            // Parametric calculation of points on 3D-tilted orbital planes
+            let getOrbPos = (i) => {
+              let phi = i * (Math.PI / stars) + Math.PI / 12;
+              let theta = orbitTime + i * ((Math.PI * 2) / stars);
 
-          // Heavy single-edged wedge blade
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.moveTo(-2.2, 3);
-          ctx.lineTo(-2.2, -10); // Flat blunt back edge
-          ctx.lineTo(0, -14); // Blade point
-          ctx.lineTo(2.2, 3); // Curved cutting slope front
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+              let ox =
+                R * Math.cos(theta) * Math.cos(phi) -
+                R_minor * Math.sin(theta) * Math.sin(phi);
+              let oy =
+                R * Math.cos(theta) * Math.sin(phi) +
+                R_minor * Math.sin(theta) * Math.cos(phi) -
+                1;
+              let oz = Math.sin(theta); // Depth indicator
 
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.moveTo(0, 3);
-          ctx.lineTo(0, -14);
-          ctx.lineTo(2.2, 3);
-          ctx.closePath();
-          ctx.fill();
-        } else if (dItem && dItem.isUniqueViper) {
-          // --- UNIQUE: VIPER'S PERFECT STILETTO ---
-          ctx.fillStyle = "#1e272e"; // Dark hilt
-          ctx.beginPath();
-          ctx.arc(0, 10, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
+              return { ox, oy, oz, phi };
+            };
 
-          ctx.fillStyle = "#2ecc71"; // Emerald pommel gem
-          ctx.beginPath();
-          ctx.arc(0, 10, 1.2, 0, Math.PI * 2);
-          ctx.fill();
+            // 1. Draw continuous translucent orbit rings behind the Tome
+            if (stars > 0) {
+              ctx.save();
+              ctx.lineWidth = 0.6;
+              for (let i = 0; i < stars; i++) {
+                let pos = getOrbPos(i);
+                ctx.strokeStyle = `rgba(${rgbVals}, 0.08)`;
+                ctx.beginPath();
+                ctx.ellipse(0, -1, R, R_minor, pos.phi, 0, Math.PI * 2);
+                ctx.stroke();
+              }
+              ctx.restore();
+            }
 
-          ctx.fillStyle = "#4a2306"; // Dark leather wrap
-          ctx.beginPath();
-          ctx.rect(-1.5, 3, 3, 7);
-          ctx.fill();
-          ctx.stroke();
+            // 2. Draw orbs that are rotating behind the book (oz < 0)
+            if (stars > 0) {
+              for (let i = 0; i < stars; i++) {
+                let pos = getOrbPos(i);
+                if (pos.oz < 0) {
+                  ctx.save();
+                  ctx.fillStyle = "#ffffff";
+                  ctx.beginPath();
+                  ctx.arc(pos.ox, pos.oy, 0.8, 0, Math.PI * 2);
+                  ctx.fill();
 
-          ctx.fillStyle = "#f1c40f"; // Gold crossguard
-          ctx.beginPath();
-          ctx.moveTo(-7, 3);
-          ctx.lineTo(7, 3);
-          ctx.lineTo(4, 5);
-          ctx.lineTo(-4, 5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+                  ctx.fillStyle = tierColor;
+                  ctx.beginPath();
+                  ctx.arc(pos.ox, pos.oy, 2.0, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.restore();
+                }
+              }
+            }
 
-          // Poison-etched serpentine blade
-          ctx.fillStyle = "#0c1711"; // Dark obsidian core
-          ctx.strokeStyle = "#2ecc71"; // Poison green edge glow
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(-2.5, 3);
-          ctx.lineTo(-1, -3);
-          ctx.lineTo(-2, -8);
-          ctx.lineTo(0, -15); // sharp tip
-          ctx.lineTo(2, -8);
-          ctx.lineTo(1, -3);
-          ctx.lineTo(2.5, 3);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+            ctx.drawImage(img, -pivotX, -pivotY, renderSize, renderSize);
 
-          // Acidic fuller lines
-          ctx.strokeStyle = "#2ecc71";
-          ctx.lineWidth = 0.8;
-          ctx.beginPath();
-          ctx.moveTo(0, 2);
-          ctx.lineTo(0, -12);
-          ctx.stroke();
-        } else if (noun.includes("main")) {
-          // Main-Gauche Curved Parrying Guard
-          ctx.strokeStyle = tierColor;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(-7, 3);
-          ctx.quadraticCurveTo(0, -1.5, 7, 3);
-          ctx.stroke();
-          // Finger protective basket loop
-          ctx.beginPath();
-          ctx.arc(0, 5.5, 3.5, 0, Math.PI);
-          ctx.stroke();
+            // 4. Draw orbs that are rotating in front of the book (oz >= 0)
+            if (stars > 0) {
+              for (let i = 0; i < stars; i++) {
+                let pos = getOrbPos(i);
+                if (pos.oz >= 0) {
+                  ctx.save();
+                  ctx.fillStyle = "#ffffff";
+                  ctx.beginPath();
+                  ctx.arc(pos.ox, pos.oy, 0.8, 0, Math.PI * 2);
+                  ctx.fill();
 
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = penHero;
+                  ctx.fillStyle = tierColor;
+                  ctx.beginPath();
+                  ctx.arc(pos.ox, pos.oy, 2.0, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.restore();
+                }
+              }
+            }
 
-          // Narrow stiletto needle blade
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.moveTo(-1.8, 1.5);
-          ctx.lineTo(0, -14);
-          ctx.lineTo(1.8, 1.5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+            ctx.restore();
+          } else if (subType === "dagger") {
+            let dItem = equipped.subweapon;
+            let stars = dItem
+              ? dItem.statsRolled === "UNIQUE"
+                ? 5
+                : dItem.statsRolled || 0
+              : 0;
+            let dRgb = window.hexToRgbValues
+              ? window.hexToRgbValues(tierColor)
+              : "46, 204, 113";
 
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.moveTo(0, 1.5);
-          ctx.lineTo(0, -14);
-          ctx.lineTo(1.8, 1.5);
-          ctx.closePath();
-          ctx.fill();
+            // Dynamic breathing sway rotation
+            let sway = Math.sin(Date.now() / 240) * 0.08;
+
+            ctx.save();
+            ctx.translate(14, 6 + bounce); // Extended forward to match sword reach
+            ctx.rotate((Math.PI * 3) / 4 - sway); // Rotate 180 degrees so the blade points out/forward (away from face)
+
+            // Draw the high-fidelity dagger cutout!
+            let dPivotY = boxSize * 0.8125;
+            ctx.drawImage(img, -pivotX, -dPivotY, boxSize, boxSize);
+
+            // 3. Procedural Metallic Glint Sweep Overlay
+            let glintTime = (Date.now() / 1500) % 1.0;
+            if (glintTime < 0.3) {
+              let glintY = 10 - (glintTime / 0.3) * 24;
+              ctx.save();
+              ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(-2, glintY);
+              ctx.lineTo(2, glintY - 2.5);
+              ctx.stroke();
+              ctx.restore();
+            }
+
+            ctx.restore();
+
+            // 4. Quality-Scaled Active Spark Trails (Spirals off the moving blade tip)
+            if (!window.isGamePaused && options.isMainHero && stars > 0) {
+              let spawnChance = window.playerStats.ecoMode ? 0.08 : 0.25;
+              if (Math.random() < spawnChance * stars) {
+                let theta = (Math.PI * 3) / 4 - sway; // Align particle emission angle with updated blade direction
+                let worldTipX = x + (14 + 14 * Math.sin(theta)) * scale; // Align tip spawn origin with hand translation
+                let worldTipY = y + (6 + bounce - 14 * Math.cos(theta)) * scale;
+
+                window.particles.push(
+                  window.ParticlePool.get(
+                    worldTipX,
+                    worldTipY,
+                    -Math.cos(theta) * window.randFloat(0.3, 0.8) -
+                      (window.playerStats.isDungeonMode ? 1.5 : 0),
+                    -window.randFloat(0.2, 0.6) + bounce * 0.05,
+                    window.randFloat(0.8, 1.8),
+                    tierColor,
+                    0.85,
+                    window.randInt(15, 30),
+                    undefined,
+                    undefined,
+                    true, // Fade out over time
+                  ),
+                );
+              }
+            }
+
+            // 5. Rising elemental vapor matching equipped quality color!
+            let mistCycle = (Date.now() / 150) % 6;
+            ctx.fillStyle = `rgba(${dRgb}, ${0.55 - mistCycle / 12})`;
+            ctx.beginPath();
+            ctx.arc(0, -16 - mistCycle, 1.2 + mistCycle / 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
         } else {
-          // Default Stiletto Needle structure
-          ctx.fillStyle = tierColor; // Guard matching quality tier
-          ctx.beginPath();
-          ctx.moveTo(-8, 3);
-          ctx.quadraticCurveTo(0, -2, 8, 3);
-          ctx.quadraticCurveTo(0, 2, -8, 3);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+          // Priority 3: Fallback Procedural Drawing (Shields, Tomes)
+          let shieldItem = equipped.subweapon;
+          let noun =
+            shieldItem && shieldItem.noun ? shieldItem.noun.toLowerCase() : "";
+          let tierColorFallback = window.getTierColor(
+            shieldItem ? (shieldItem.statsRolled === "UNIQUE" ? 5 : (shieldItem.statsRolled || 0)) : 0,
+          );
 
-          // Straight thin piercing blade
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.moveTo(-2.2, 2.5);
-          ctx.lineTo(0, -14);
-          ctx.lineTo(2.2, 2.5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+          if (subType === "shield") {
+            if (isAegis) {
+              // --- UNIQUE: VOID-WARPED BULWARK ---
+              ctx.fillStyle = "#25033c";
+              ctx.beginPath();
+              ctx.moveTo(-6, -8);
+              ctx.lineTo(6, -8);
+              ctx.lineTo(8, 0);
+              ctx.lineTo(0, 10);
+              ctx.lineTo(-8, 0);
+              ctx.closePath();
+              ctx.fill();
+              ctx.strokeStyle = "#8e44ad";
+              ctx.lineWidth = penHero + 0.5;
+              ctx.stroke();
 
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.moveTo(0, 2.5);
-          ctx.lineTo(0, -14);
-          ctx.lineTo(2.2, 2.5);
-          ctx.closePath();
-          ctx.fill();
-        }
+              ctx.strokeStyle = "#e84393";
+              ctx.lineWidth = 1.8;
+              ctx.beginPath();
+              ctx.moveTo(0, -6);
+              ctx.lineTo(0, 6);
+              ctx.moveTo(-5, 0);
+              ctx.lineTo(5, 0);
+              ctx.stroke();
+            } else if (noun.includes("kite")) {
+              // --- KITE SHIELD (Tall & Rounded Taper) ---
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.moveTo(-5.5, -9);
+              ctx.quadraticCurveTo(0, -11, 5.5, -9); // Curved top
+              ctx.lineTo(7, -1);
+              ctx.lineTo(0, 11); // Long pointer
+              ctx.lineTo(-7, -1);
+              ctx.closePath();
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = penHero + 0.5;
+              ctx.stroke();
 
-        // 3. Procedural Metallic Glint Sweep Overlay
-        let glintTime = (Date.now() / 1500) % 1.0;
-        if (glintTime < 0.3) {
-          let glintY = 10 - (glintTime / 0.3) * 24;
-          ctx.save();
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(-2, glintY);
-          ctx.lineTo(2, glintY - 2.5);
-          ctx.stroke();
-          ctx.restore();
-        }
+              // Central heraldry cross matching quality tier
+              ctx.strokeStyle = tierColorFallback;
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(0, -8.5);
+              ctx.lineTo(0, 8);
+              ctx.moveTo(-4.5, -1.5);
+              ctx.lineTo(4.5, -1.5);
+              ctx.stroke();
+            } else if (noun.includes("tower")) {
+              // --- TOWER SHIELD (Heavy Protective Rectangle) ---
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.roundRect(-7, -9.5, 14, 19, [1.5]);
+              ctx.closePath();
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = penHero + 0.5;
+              ctx.stroke();
 
-        ctx.restore();
+              // Inward border frame matching quality tier
+              ctx.strokeStyle = tierColorFallback;
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.roundRect(-5, -7.5, 10, 15, [1]);
+              ctx.stroke();
 
-        // 4. Quality-Scaled Active Spark Trails (Spirals off the moving blade tip)
-        if (!window.isGamePaused && options.isMainHero && stars > 0) {
-          let spawnChance = window.playerStats.ecoMode ? 0.08 : 0.25;
-          if (Math.random() < spawnChance * stars) {
-            let theta = (Math.PI * 3) / 4 - sway; // Align particle emission angle with updated blade direction
-            let worldTipX = x + (14 + 14 * Math.sin(theta)) * scale; // Align tip spawn origin with hand translation
-            let worldTipY = y + (6 + bounce - 14 * Math.cos(theta)) * scale;
+              // Central horizontal reinforcing band
+              ctx.strokeStyle = "#1c1c1f";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(-7, 0);
+              ctx.lineTo(7, 0);
+              ctx.stroke();
+            } else if (noun.includes("buckler")) {
+              // --- BUCKLER (Small Circular Shield) ---
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.arc(0, 1, 9.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = penHero + 0.5;
+              ctx.stroke();
 
-            window.particles.push(
-              window.ParticlePool.get(
-                worldTipX,
-                worldTipY,
-                -Math.cos(theta) * window.randFloat(0.3, 0.8) -
-                  (window.playerStats.isDungeonMode ? 1.5 : 0),
-                -window.randFloat(0.2, 0.6) + bounce * 0.05,
-                window.randFloat(0.8, 1.8),
-                tierColor,
-                0.85,
-                window.randInt(15, 30),
-                undefined,
-                undefined,
-                true, // Fade out over time
-              ),
+              // Quality indicator ring
+              ctx.strokeStyle = tierColorFallback;
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(0, 1, 6.5, 0, Math.PI * 2);
+              ctx.stroke();
+
+              // Core steel boss center rivet
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(0, 1, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            } else {
+              // --- DEFAULT / HEATER SHIELD (The exact shape you love) ---
+              ctx.fillStyle = "#7f8c8d";
+              ctx.beginPath();
+              ctx.moveTo(-6, -8);
+              ctx.lineTo(6, -8);
+              ctx.lineTo(8, 0);
+              ctx.lineTo(0, 10);
+              ctx.lineTo(-8, 0);
+              ctx.closePath();
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = penHero + 0.5;
+              ctx.stroke();
+
+              // Draw inner quality-aligned framing border
+              ctx.beginPath();
+              ctx.moveTo(-4, -6.5);
+              ctx.lineTo(4, -6.5);
+              ctx.lineTo(5.5, -0.5);
+              ctx.lineTo(0, 7.5);
+              ctx.lineTo(-5.5, -0.5);
+              ctx.closePath();
+              ctx.strokeStyle = tierColorFallback;
+              ctx.lineWidth = 1.2;
+              ctx.stroke();
+            }
+
+            // Searing Steel Glint Sweep (Diagonal light reflections)
+            let glintTime = (Date.now() / 2000) % 1.0;
+            if (glintTime < 0.3) {
+              let glintY = -9.5 + (glintTime / 0.3) * 19;
+              ctx.save();
+              ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(-6, glintY);
+              ctx.lineTo(6, glintY - 3);
+              ctx.stroke();
+              ctx.restore();
+            }
+
+            ctx.restore();
+
+            // Orbiting Void Sparks (Aegis Unique only)
+            if (
+              isAegis &&
+              (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+            ) {
+              ctx.save();
+              ctx.translate(6, 4 + bounce);
+              ctx.rotate(-sway + 0.15); // Aligned to follow the updated shield position
+              let orbitTime = Date.now() / 250;
+              ctx.fillStyle = "#110221";
+              ctx.strokeStyle = "#8e44ad";
+              ctx.lineWidth = 1.0;
+              for (let i = 0; i < 2; i++) {
+                let angle = orbitTime + i * Math.PI;
+                let ox = Math.cos(angle) * 14;
+                let oy = Math.sin(angle) * 6;
+                ctx.beginPath();
+                ctx.arc(ox, oy, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+              }
+              ctx.restore();
+            }
+
+            // Active Block Forcefield Flash centred on the Hero
+            let timeSinceBlock = Date.now() - (stats.recentBlockTime || 0);
+            if (
+              timeSinceBlock < 250 &&
+              (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+            ) {
+              let opacity = (250 - timeSinceBlock) / 250;
+              let currentR = 24 + (1.0 - opacity) * 6;
+              ctx.save();
+              ctx.strokeStyle = tierColorFallback;
+              ctx.fillStyle = window.hexToRgba
+                ? window.hexToRgba(tierColorFallback, 0.15 * opacity)
+                : `rgba(52, 152, 219, ${0.15 * opacity})`;
+              ctx.lineWidth = 2.0;
+              ctx.globalAlpha = opacity;
+              ctx.beginPath();
+              for (let i = 0; i < 6; i++) {
+                let angle = (i * Math.PI) / 3;
+                let hx = Math.cos(angle) * currentR;
+                let hy = Math.sin(angle) * currentR + 4 + bounce;
+                ctx.lineTo(hx, hy);
+              }
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              ctx.restore();
+            }
+          } else if (subType === "tome") {
+            ctx.save();
+            let tomeFloat = Math.sin(Date.now() / 200) * 5;
+            ctx.translate(25, -15 + bounce + tomeFloat); // Elevated and extended further forward to float heroically
+            ctx.rotate(Math.PI / 12);
+            ctx.rotate(Math.PI / 12);
+
+            let tomeItem = equipped.subweapon;
+            let isUniqueConduit = tomeItem && tomeItem.isUniqueConduit;
+
+            // Unified Rarity/Stars Resolver (Uniques are treated as 5★)
+            let stars = tomeItem
+              ? tomeItem.statsRolled === "UNIQUE"
+                ? 5
+                : tomeItem.statsRolled || 0
+              : 0;
+            if (isWatch || isChronicle || isUniqueConduit) {
+              stars = 5;
+            }
+
+            let tierColorFallbackTome = window.getTierColor(
+              tomeItem
+                ? tomeItem.statsRolled === "UNIQUE"
+                  ? 5
+                  : tomeItem.statsRolled
+                : 0,
             );
-          }
-        }
+            if (isWatch) tierColorFallbackTome = "#d4af37";
+            else if (isChronicle) tierColorFallbackTome = "#f1c40f";
+            else if (isUniqueConduit) tierColorFallbackTome = "#9b59b6";
 
-        // 5. Rising elemental vapor matching equipped quality color!
-        let dRgb = window.hexToRgbValues
-          ? window.hexToRgbValues(tierColor)
-          : "46, 204, 113";
-        let mistCycle = (Date.now() / 150) % 6;
-        ctx.fillStyle = `rgba(${dRgb}, ${0.55 - mistCycle / 12})`;
-        ctx.beginPath();
-        ctx.arc(0, -16 - mistCycle, 1.2 + mistCycle / 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    };
+            let rgbVals = window.hexToRgbValues
+              ? window.hexToRgbValues(tierColorFallbackTome)
+              : "155, 89, 182";
 
-    const drawBodyAndCostume = () => {
+            // 3D Orbital properties
+            let R = 15;
+            let R_minor = 7;
+            let orbitTime = Date.now() / 280;
+
+            // Parametric calculation of points on 3D-tilted orbital planes
+            let getOrbPos = (i) => {
+              let phi = i * (Math.PI / stars) + Math.PI / 12;
+              let theta = orbitTime + i * ((Math.PI * 2) / stars);
+
+              let ox =
+                R * Math.cos(theta) * Math.cos(phi) -
+                R_minor * Math.sin(theta) * Math.sin(phi);
+              let oy =
+                R * Math.cos(theta) * Math.sin(phi) +
+                R_minor * Math.sin(theta) * Math.cos(phi) -
+                1;
+              let oz = Math.sin(theta); // Depth indicator
+
+              return { ox, oy, oz, phi };
+            };
+
+            // 1. Draw continuous translucent orbit rings behind the Tome
+            if (stars > 0) {
+              ctx.save();
+              ctx.lineWidth = 0.6;
+              for (let i = 0; i < stars; i++) {
+                let pos = getOrbPos(i);
+                ctx.strokeStyle = `rgba(${rgbVals}, 0.08)`;
+                ctx.beginPath();
+                ctx.ellipse(0, -1, R, R_minor, pos.phi, 0, Math.PI * 2);
+                ctx.stroke();
+              }
+              ctx.restore();
+            }
+
+            // 2. Draw orbs that are rotating behind the book (oz < 0)
+            if (stars > 0) {
+              for (let i = 0; i < stars; i++) {
+                let pos = getOrbPos(i);
+                if (pos.oz < 0) {
+                  ctx.save();
+                  ctx.fillStyle = "#ffffff";
+                  ctx.beginPath();
+                  ctx.arc(pos.ox, pos.oy, 0.8, 0, Math.PI * 2);
+                  ctx.fill();
+
+                  ctx.fillStyle = tierColorFallbackTome;
+                  ctx.beginPath();
+                  ctx.arc(pos.ox, pos.oy, 2.0, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.restore();
+                }
+              }
+            }
+
+            // 3. Draw Book / Unique Tome Core Body Graphics
+            if (isWatch) {
+              ctx.fillStyle = "#d4af37";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1.8;
+              ctx.beginPath();
+              ctx.arc(0, 0, 8, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              ctx.fillStyle = "#fdf6e2";
+              ctx.beginPath();
+              ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              ctx.strokeStyle = "#111";
+              ctx.lineWidth = 1.2;
+              let clockTime = Date.now() / 300;
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              ctx.lineTo(Math.cos(clockTime) * 4.5, Math.sin(clockTime) * 4.5);
+              ctx.stroke();
+            } else if (isChronicle) {
+              ctx.fillStyle = "#111116";
+              ctx.strokeStyle = "#f1c40f";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.roundRect(-5, -7, 10, 14, [1.5]);
+              ctx.fill();
+              ctx.stroke();
+              ctx.fillStyle = "#fff";
+              ctx.fillRect(3.5, -6, 1.5, 12);
+              let pulseRad = 12 + Math.sin(Date.now() / 150) * 2;
+              ctx.strokeStyle = "rgba(241, 196, 15, 0.25)";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.arc(0, 0, pulseRad, 0, Math.PI * 2);
+              ctx.stroke();
+            } else if (isUniqueConduit) {
+              // --- UNIQUE: CONDUIT OF THE LEXICON ---
+              ctx.fillStyle = "#0c0515"; // Deep occult violet cover
+              ctx.strokeStyle = "#9b59b6";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.roundRect(-5, -7, 10, 14, [1.5]);
+              ctx.fill();
+              ctx.stroke();
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(3.5, -6, 1.5, 12); // Paper edges
+              ctx.fillStyle = "#2ecc71"; // Emerald core emblem
+              ctx.beginPath();
+              ctx.arc(0, 0, 3, 0, Math.PI * 2);
+              ctx.fill();
+              let pulseRad = 12 + Math.sin(Date.now() / 150) * 2;
+              ctx.strokeStyle = "rgba(46, 204, 113, 0.25)";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.arc(0, 0, pulseRad, 0, Math.PI * 2);
+              ctx.stroke();
+            } else {
+              let nounTome =
+                tomeItem && tomeItem.noun ? tomeItem.noun.toLowerCase() : "";
+
+              // Magical Rarity Glow Aura (Behind-the-book baseline)
+              let auraRadius = 14 + Math.sin(Date.now() / 150) * 4;
+              let auraGrad = ctx.createRadialGradient(0, -1, 1, 0, -1, auraRadius);
+              auraGrad.addColorStop(0, `rgba(${rgbVals}, 0.65)`);
+              auraGrad.addColorStop(0.5, `rgba(${rgbVals}, 0.2)`);
+              auraGrad.addColorStop(1, `rgba(${rgbVals}, 0)`);
+              ctx.fillStyle = auraGrad;
+              ctx.beginPath();
+              ctx.arc(0, -1, auraRadius, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Resolve custom Book Cover styles
+              let coverColor = "#8e44ad"; // Default magic purple
+              if (nounTome.includes("grimoire"))
+                coverColor = "#1b002a"; // Deep occult black
+              else if (nounTome.includes("codex"))
+                coverColor = "#784212"; // Antique brass/bronze
+              else if (nounTome.includes("lexicon"))
+                coverColor = "#1b4f72"; // Scholar blue
+              else if (nounTome.includes("chronicle")) coverColor = "#4d1a00"; // Rustic relic leather
+
+              ctx.fillStyle = coverColor;
+              ctx.beginPath();
+              ctx.roundRect(-6, -8, 12, 14, [1.5]);
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = penHero;
+              ctx.stroke();
+
+              // Draw book spine on left binding edge
+              ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+              ctx.fillRect(-6, -8, 3, 14);
+
+              // Draw paper edges on the right
+              ctx.fillStyle = "#f5f5dc";
+              ctx.beginPath();
+              ctx.rect(4, -7, 1.5, 12);
+              ctx.fill();
+              ctx.stroke();
+
+              // Render detailed central cover glyphs
+              ctx.save();
+              if (nounTome.includes("grimoire")) {
+                ctx.fillStyle = "#f1c40f";
+                ctx.beginPath();
+                ctx.arc(1, -1, 2.2, -Math.PI / 2, Math.PI / 2, false);
+                ctx.quadraticCurveTo(2.0, -1, 1, -3.2);
+                ctx.closePath();
+                ctx.fill();
+              } else if (nounTome.includes("codex")) {
+                ctx.strokeStyle = "#bdc3c7";
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                ctx.arc(1, -1, 2, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = tierColorFallbackTome;
+                ctx.beginPath();
+                ctx.arc(1, -1, 1, 0, Math.PI * 2);
+                ctx.fill();
+              } else if (nounTome.includes("lexicon")) {
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 0.7;
+                ctx.beginPath();
+                ctx.ellipse(1, -1, 2.5, 1.3, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = tierColorFallbackTome;
+                ctx.beginPath();
+                ctx.arc(1, -1, 0.8, 0, Math.PI * 2);
+                ctx.fill();
+              } else if (nounTome.includes("chronicle")) {
+                ctx.fillStyle = "#f1c40f";
+                ctx.beginPath();
+                ctx.moveTo(-1, -3);
+                ctx.lineTo(3, -3);
+                ctx.lineTo(1, -1);
+                ctx.lineTo(3, 1);
+                ctx.lineTo(-1, 1);
+                ctx.closePath();
+                ctx.fill();
+              } else {
+                ctx.fillStyle = tierColorFallbackTome;
+                ctx.beginPath();
+                ctx.arc(1, -1, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+              }
+              ctx.restore();
+            }
+
+            // 4. Draw orbs that are rotating in front of the book (oz >= 0)
+                            if (stars > 0) {
+                              for (let i = 0; i < stars; i++) {
+                                let pos = getOrbPos(i);
+                                if (pos.oz >= 0) {
+                                  ctx.save();
+                                  ctx.fillStyle = "#ffffff";
+                                  ctx.beginPath();
+                                  ctx.arc(pos.ox, pos.oy, 0.8, 0, Math.PI * 2);
+                                  ctx.fill();
+
+                                  ctx.fillStyle = tierColorFallbackTome;
+                                  ctx.beginPath();
+                                  ctx.arc(pos.ox, pos.oy, 2.0, 0, Math.PI * 2);
+                                  ctx.fill();
+                                  ctx.restore();
+                                }
+                              }
+                            }
+
+                            ctx.restore();
+                          }
+                        }
+                      };
+
+                const drawBodyAndCostume = () => {
       let costume =
         stats.equippedCostume ||
         stats.equipped_costume ||
@@ -12577,460 +13911,569 @@
           ctx.stroke();
 
           // Helmet Visor / Eyes
-          ctx.fillStyle = "#2c3e50";
-          ctx.beginPath();
-          ctx.rect(0, -8 + bounce, 6, 4);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = eyeColor;
-          ctx.beginPath();
-          ctx.rect(-5, -20 + bounce, 4, 6);
-          ctx.fill();
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.rect(-9, -16 + bounce, 8, 4);
-          ctx.fill();
-          ctx.stroke();
-          break;
-      }
-    };
+                    ctx.fillStyle = "#2c3e50";
+                    ctx.beginPath();
+                    ctx.rect(0, -8 + bounce, 6, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = eyeColor;
+                    ctx.beginPath();
+                    ctx.rect(-5, -20 + bounce, 4, 6);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.rect(-9, -16 + bounce, 8, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    break;
+                }
+              };
 
-    const drawMainWeapon = () => {
-      // Crown of Tempests Aura
-      if (
-        equipped.helmet &&
-        equipped.helmet.isUniqueTempest &&
-        (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-      ) {
-        ctx.save();
-        ctx.translate(0, -14 + bounce);
-        ctx.strokeStyle = "#00d2ff";
-        ctx.lineWidth = 2.0;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#00d2ff";
-        ctx.beginPath();
-        ctx.moveTo(-6, -2);
-        ctx.quadraticCurveTo(-14, -12, -18, -8);
-        ctx.quadraticCurveTo(-10, -5, -4, 0);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(6, -2);
-        ctx.quadraticCurveTo(14, -12, 18, -8);
-        ctx.quadraticCurveTo(10, -5, 4, 0);
-        ctx.stroke();
-        ctx.restore();
-      }
+              const drawMainWeapon = () => {
+                ctx.save();
+                ctx.translate(2, 6 + bounce);
 
-      // UNIQUE: Maelstrom Gale-Glaive "Gale Resonance" Canvas Aura
-      if (
-        stats.galeResonanceTimer > 0 &&
-        (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-      ) {
-        ctx.save();
-        ctx.translate(0, bounce);
-        ctx.strokeStyle = "rgba(0, 255, 204, 0.45)";
-        ctx.lineWidth = 1.8;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#00ffcc";
-        ctx.beginPath();
-        ctx.arc(0, 0, 24 + Math.sin(Date.now() / 100) * 3, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      }
+                let weapItem = equipped.weapon;
+                // Resolve rarity color for premium slash effects
+                let tierColor = window.getTierColor(
+                  weapItem
+                    ? weapItem.statsRolled === "UNIQUE"
+                      ? 5
+                      : weapItem.statsRolled || 0
+                    : 0,
+                );
+                let rgbVals = window.hexToRgbValues
+                  ? window.hexToRgbValues(tierColor)
+                  : "236, 240, 241";
 
-      // Weapon
-      ctx.save();
-      ctx.translate(2, 6 + bounce);
-      let isStaff = equipped.weapon && equipped.weapon.isUniqueStaff;
-      let isUniqueSword = equipped.weapon && equipped.weapon.isUniqueSword;
-      let isSingularity =
-        equipped.weapon && equipped.weapon.isUniqueSingularity;
-      let isMaelstrom = equipped.weapon && equipped.weapon.isUniqueMaelstrom;
+                let isMaelstrom = weapItem && weapItem.isUniqueMaelstrom;
+                let isSingularity = weapItem && weapItem.isUniqueSingularity;
+                let isStaff = weapItem && weapItem.isUniqueStaff;
+                let isUniqueSword = weapItem && weapItem.isUniqueSword;
 
-      if (isSingularity) {
-        ctx.rotate(-Math.PI / 8);
-        if (options.slashFrame) {
-          ctx.translate(15, -10);
-          ctx.rotate(-Math.PI / 2.3);
-        }
+                if (weapItem) {
+                  let img = window.getCanvasCutoutImage(weapItem);
+                  if (img && img.complete) {
+                    let renderH = 38; // Increased height for better visibility
+                    let renderW = renderH * (img.width / img.height);
+                    let pivotX = renderW / 2;
+                    let pivotY = renderH * 0.85;
 
-        // Calculate depth-sorted orbiting space particles
-        let orbitTime = Date.now() / 200;
-        let orbitalParticles = [];
-        for (let i = 0; i < 3; i++) {
-          let angle = orbitTime + (i * Math.PI * 2) / 3;
-          let ox = Math.cos(angle) * 7.5;
-          let oy = Math.sin(angle) * 2.5;
-          let oz = Math.sin(angle); // Depth factor
-          orbitalParticles.push({ ox, oy, oz });
-        }
+                    let rot = Math.PI / 4; // Point Northeast (up-right) by default
+                    if (options.slashFrame) {
+                      // Slashed/swinging state
+                      rot = Math.PI * 0.65;
+                      ctx.translate(6, -4);
 
-        // 1. Draw back particles (orbiting behind the blade)
-        orbitalParticles.forEach((p) => {
-          if (p.oz < 0) {
-            ctx.save();
-            ctx.fillStyle = "#ff007f";
-            ctx.beginPath();
-            ctx.arc(p.ox, 42 + p.oy, 1.2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-          }
-        });
+                      // Premium rarity-based slash trail
+                      ctx.save();
+                      ctx.fillStyle = `rgba(${rgbVals}, 0.35)`;
+                      ctx.beginPath();
+                      ctx.arc(0, 20, 40, 0, Math.PI / 2);
+                      ctx.lineTo(0, 0);
+                      ctx.closePath();
+                      ctx.fill();
+                      ctx.strokeStyle = `rgba(${rgbVals}, 0.55)`;
+                      ctx.lineWidth = 2.5;
+                      ctx.stroke();
+                      ctx.restore();
+                    } else {
+                      // Idle breathing sway
+                      rot += Math.sin(Date.now() / 240) * 0.04;
+                    }
 
-        // 2. Gravitational distortion field behind/around the blade tip
-        ctx.save();
-        let fieldPulse = 1.0 + Math.sin(Date.now() / 150) * 0.08;
-        ctx.strokeStyle = "rgba(142, 68, 173, 0.45)";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.ellipse(
-          0,
-          42,
-          11 * fieldPulse,
-          4 * fieldPulse,
-          -Math.PI / 12,
-          0,
-          Math.PI * 2,
-        );
-        ctx.stroke();
-        ctx.restore();
+                    ctx.rotate(rot);
+                    ctx.drawImage(img, -pivotX, -pivotY, renderW, renderH);
+                  } else if (isSingularity) {
+                    ctx.rotate(-Math.PI / 8);
+                    if (options.slashFrame) {
+                      ctx.translate(15, -10);
+                      ctx.rotate(-Math.PI / 2.3);
+                    }
 
-        // 3. Draw Weapon Components (Grip, Guard, Blade)
-        // Grip
-        ctx.fillStyle = "#1e1e24";
-        ctx.beginPath();
-        ctx.rect(-2, -2, 4, 10);
-        ctx.fill();
-        ctx.stroke();
+                    // Calculate depth-sorted orbiting space particles
+                    let orbitTime = Date.now() / 200;
+                    let orbitalParticles = [];
+                    for (let i = 0; i < 3; i++) {
+                      let angle = orbitTime + (i * Math.PI * 2) / 3;
+                      let ox = Math.cos(angle) * 7.5;
+                      let oy = Math.sin(angle) * 2.5;
+                      let oz = Math.sin(angle); // Depth factor
+                      orbitalParticles.push({ ox, oy, oz });
+                    }
 
-        // Crossguard
-        ctx.fillStyle = "#110221";
-        ctx.strokeStyle = "#8e44ad";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-9, 8);
-        ctx.lineTo(9, 8);
-        ctx.lineTo(12, 12);
-        ctx.lineTo(-12, 12);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+                    // 1. Draw back particles (orbiting behind the blade)
+                    orbitalParticles.forEach((p) => {
+                      if (p.oz < 0) {
+                        ctx.save();
+                        ctx.fillStyle = "#ff007f";
+                        ctx.beginPath();
+                        ctx.arc(p.ox, 42 + p.oy, 1.2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                      }
+                    });
 
-        // Metallic-Shaded Blade with glowing fuller line
-        let singPulse = Math.sin(Date.now() / 120) * 0.15 + 0.85;
-        let bladeGrad = ctx.createLinearGradient(-3, 12, 3, 12);
-        bladeGrad.addColorStop(0, "#0d011a");
-        bladeGrad.addColorStop(0.5, "#8e44ad");
-        bladeGrad.addColorStop(1, "#110221");
+                    // 2. Gravitational distortion field behind/around the blade tip
+                    ctx.save();
+                    let fieldPulse = 1.0 + Math.sin(Date.now() / 150) * 0.08;
+                    ctx.strokeStyle = "rgba(142, 68, 173, 0.45)";
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.ellipse(
+                      0,
+                      42,
+                      11 * fieldPulse,
+                      4 * fieldPulse,
+                      -Math.PI / 12,
+                      0,
+                      Math.PI * 2,
+                    );
+                    ctx.stroke();
+                    ctx.restore();
 
-        ctx.fillStyle = bladeGrad;
-        ctx.strokeStyle = "#e84393";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-3, 12);
-        ctx.lineTo(-1.5, 42);
-        ctx.lineTo(1.5, 42);
-        ctx.lineTo(3, 12);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+                    // 3. Draw Weapon Components (Grip, Guard, Blade)
+                    ctx.fillStyle = "#1e1e24";
+                    ctx.beginPath();
+                    ctx.rect(-2, -2, 4, 10);
+                    ctx.fill();
+                    ctx.stroke();
 
-        // Center fuller glow
-        ctx.save();
-        ctx.strokeStyle = `rgba(255, 0, 127, ${0.4 + singPulse * 0.4})`;
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo(0, 13);
-        ctx.lineTo(0, 40);
-        ctx.stroke();
-        ctx.restore();
+                    ctx.fillStyle = "#110221";
+                    ctx.strokeStyle = "#8e44ad";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-9, 8);
+                    ctx.lineTo(9, 8);
+                    ctx.lineTo(12, 12);
+                    ctx.lineTo(-12, 12);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
 
-        // 4. Draw front particles (orbiting in front of the blade)
-        orbitalParticles.forEach((p) => {
-          if (p.oz >= 0) {
-            ctx.save();
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(p.ox, 42 + p.oy, 0.8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = "#00ffff";
-            ctx.beginPath();
-            ctx.arc(p.ox, 42 + p.oy, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-          }
-        });
+                    // Metallic-Shaded Blade with glowing fuller line
+                    let singPulse = Math.sin(Date.now() / 120) * 0.15 + 0.85;
+                    let bladeGrad = ctx.createLinearGradient(-3, 12, 3, 12);
+                    bladeGrad.addColorStop(0, "#0d011a");
+                    bladeGrad.addColorStop(0.5, "#8e44ad");
+                    bladeGrad.addColorStop(1, "#110221");
 
-        // 5. High-fidelity slash trail and spatial tear
-        if (options.slashFrame) {
-          ctx.save();
-          let sweepGrad = ctx.createRadialGradient(0, 20, 10, 0, 20, 45);
-          sweepGrad.addColorStop(0, "rgba(232, 67, 147, 0.35)");
-          sweepGrad.addColorStop(0.5, "rgba(142, 68, 173, 0.12)");
-          sweepGrad.addColorStop(1, "rgba(0,0,0,0)");
-          ctx.fillStyle = sweepGrad;
-          ctx.beginPath();
-          ctx.arc(0, 20, 42, 0, Math.PI / 2);
-          ctx.lineTo(0, 0);
-          ctx.closePath();
-          ctx.fill();
+                    ctx.fillStyle = bladeGrad;
+                    ctx.strokeStyle = "#e84393";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-3, 12);
+                    ctx.lineTo(-1.5, 42);
+                    ctx.lineTo(1.5, 42);
+                    ctx.lineTo(3, 12);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
 
-          // Neon cyan spatial tear seam
-          ctx.strokeStyle = "#00ffff";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(0, 20, 36, 0, Math.PI / 2);
-          ctx.stroke();
+                    // Center fuller glow
+                    ctx.save();
+                    ctx.strokeStyle = `rgba(255, 0, 127, ${0.4 + singPulse * 0.4})`;
+                    ctx.lineWidth = 1.0;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 13);
+                    ctx.lineTo(0, 40);
+                    ctx.stroke();
+                    ctx.restore();
 
-          // Spatial sparks along the seam
-          ctx.fillStyle = "#ffffff";
-          for (let a = 0; a <= Math.PI / 2; a += Math.PI / 6) {
-            let sx = Math.cos(a) * 36;
-            let sy = 20 + Math.sin(a) * 36;
-            ctx.beginPath();
-            ctx.arc(sx, sy, 1.0, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          ctx.restore();
-        }
-      } else if (isMaelstrom) {
-        ctx.rotate(-Math.PI / 8);
-        if (options.slashFrame) {
-          ctx.translate(15, -10);
-          ctx.rotate(-Math.PI / 2.3);
-        }
-        ctx.fillStyle = "#5c503b";
-        ctx.beginPath();
-        ctx.rect(-1, -6, 2, 44);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#2ecc71";
-        ctx.beginPath();
-        ctx.moveTo(-4, 30);
-        ctx.lineTo(0, 48);
-        ctx.lineTo(4, 30);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#27ae60";
-        ctx.beginPath();
-        ctx.moveTo(-3, -2);
-        ctx.lineTo(0, -12);
-        ctx.lineTo(3, -2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        if (options.slashFrame) {
-          ctx.fillStyle = "rgba(46, 204, 113, 0.35)";
-          ctx.beginPath();
-          ctx.arc(0, 20, 35, 0, Math.PI / 2);
-          ctx.lineTo(0, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "rgba(39, 174, 96, 0.6)";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-      } else if (isStaff) {
-        ctx.rotate(-Math.PI / 8);
-        if (options.slashFrame) {
-          ctx.translate(15, -10);
-          ctx.rotate(-Math.PI / 2.3);
-        }
-        ctx.fillStyle = "#1e1e24";
-        ctx.beginPath();
-        ctx.rect(-1.5, -4, 3, 34);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#f1c40f";
-        ctx.beginPath();
-        ctx.moveTo(-7, 30);
-        ctx.quadraticCurveTo(0, 26, 7, 30);
-        ctx.lineTo(9, 36);
-        ctx.quadraticCurveTo(0, 32, -9, 36);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        let gemPulse = 3.5 + Math.sin(Date.now() / 150) * 1.2;
-        ctx.fillStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.arc(0, 34, gemPulse, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(-1, 33, 1, 0, Math.PI * 2);
-        ctx.fill();
-        if (options.slashFrame) {
-          ctx.fillStyle = "rgba(230, 126, 34, 0.35)";
-          ctx.beginPath();
-          ctx.arc(0, 20, 35, 0, Math.PI / 2);
-          ctx.lineTo(0, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "rgba(231, 76, 60, 0.6)";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-      } else if (isUniqueSword) {
-        ctx.rotate(-Math.PI / 8);
-        if (options.slashFrame) {
-          ctx.translate(15, -10);
-          ctx.rotate(-Math.PI / 2.3);
-        }
-        ctx.fillStyle = "#1e1e24";
-        ctx.beginPath();
-        ctx.rect(-2, -2, 4, 10);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#d4af37";
-        ctx.beginPath();
-        ctx.arc(0, -3, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.rect(-7, 8, 14, 4);
-        ctx.fill();
-        ctx.stroke();
-        let bleedPulse = Math.sin(Date.now() / 100) * 0.15 + 0.85;
-        let bladeColor = `rgba(192, 57, 43, ${bleedPulse})`;
-        ctx.fillStyle =
-          window.mob && window.mob.flashTimer > 0 ? "#ffffff" : bladeColor;
-        ctx.strokeStyle = "#960018";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-3.5, 12);
-        ctx.lineTo(-2, 37);
-        ctx.lineTo(2, 37);
-        ctx.lineTo(3.5, 12);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = "#ff7f7f";
-        ctx.beginPath();
-        ctx.rect(-0.8, 14, 1.6, 18);
-        ctx.fill();
-        if (options.slashFrame) {
-          ctx.fillStyle = "rgba(192, 57, 43, 0.35)";
-          ctx.beginPath();
-          ctx.arc(0, 20, 35, 0, Math.PI / 2);
-          ctx.lineTo(0, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "rgba(150, 0, 24, 0.6)";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-      } else {
-        let weapItem = equipped.weapon;
-        let tierColor = window.getTierColor(
-          weapItem ? weapItem.statsRolled : 0,
-        );
-        let rgbVals = window.hexToRgbValues
-          ? window.hexToRgbValues(tierColor)
-          : "236, 240, 241";
+                    // 4. Draw front particles (orbiting in front of the blade)
+                    orbitalParticles.forEach((p) => {
+                      if (p.oz >= 0) {
+                        ctx.save();
+                        ctx.fillStyle = "#ffffff";
+                        ctx.beginPath();
+                        ctx.arc(p.ox, 42 + p.oy, 0.8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = "#00ffff";
+                        ctx.beginPath();
+                        ctx.arc(p.ox, 42 + p.oy, 1.8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                      }
+                    });
 
-        if (options.slashFrame) {
-          ctx.translate(15, -10);
-          ctx.rotate(-Math.PI / 2.3);
+                    // 5. High-fidelity slash trail and spatial tear
+                    if (options.slashFrame) {
+                      ctx.save();
+                      let sweepGrad = ctx.createRadialGradient(0, 20, 10, 0, 20, 45);
+                      sweepGrad.addColorStop(0, "rgba(232, 67, 147, 0.35)");
+                      sweepGrad.addColorStop(0.5, "rgba(142, 68, 173, 0.12)");
+                      sweepGrad.addColorStop(1, "rgba(0,0,0,0)");
+                      ctx.fillStyle = sweepGrad;
+                      ctx.beginPath();
+                      ctx.arc(0, 20, 42, 0, Math.PI / 2);
+                      ctx.lineTo(0, 0);
+                      ctx.closePath();
+                      ctx.fill();
 
-          // --- Sleek, classic sword rendering ---
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.rect(-2, -2, 4, 10);
-          ctx.fill();
-          ctx.stroke();
+                      // Neon cyan spatial tear seam
+                      ctx.strokeStyle = "#00ffff";
+                      ctx.lineWidth = 1.5;
+                      ctx.beginPath();
+                      ctx.arc(0, 20, 36, 0, Math.PI / 2);
+                      ctx.stroke();
 
-          ctx.fillStyle = "#8e44ad";
-          ctx.beginPath();
-          ctx.rect(-5, 8, 10, 4);
-          ctx.fill();
-          ctx.stroke();
+                      // Spatial sparks along the seam
+                      ctx.fillStyle = "#ffffff";
+                      for (let a = 0; a <= Math.PI / 2; a += Math.PI / 6) {
+                        let sx = Math.cos(a) * 36;
+                        let sy = 20 + Math.sin(a) * 36;
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 1.0, 0, Math.PI * 2);
+                        ctx.fill();
+                      }
+                      ctx.restore();
+                    }
+                  } else if (isMaelstrom) {
+                    ctx.rotate(-Math.PI / 8);
+                    if (options.slashFrame) {
+                      ctx.translate(15, -10);
+                      ctx.rotate(-Math.PI / 2.3);
+                    }
+                    ctx.fillStyle = "#5c503b";
+                    ctx.beginPath();
+                    ctx.rect(-1, -6, 2, 44);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = "#2ecc71";
+                    ctx.beginPath();
+                    ctx.moveTo(-4, 30);
+                    ctx.lineTo(0, 48);
+                    ctx.lineTo(4, 30);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = "#27ae60";
+                    ctx.beginPath();
+                    ctx.moveTo(-3, -2);
+                    ctx.lineTo(0, -12);
+                    ctx.lineTo(3, -2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    if (options.slashFrame) {
+                      ctx.fillStyle = "rgba(46, 204, 113, 0.35)";
+                      ctx.beginPath();
+                      ctx.arc(0, 20, 35, 0, Math.PI / 2);
+                      ctx.lineTo(0, 0);
+                      ctx.closePath();
+                      ctx.fill();
+                      ctx.strokeStyle = "rgba(39, 174, 96, 0.6)";
+                      ctx.lineWidth = 2;
+                      ctx.stroke();
+                    }
+                  } else if (isStaff) {
+                    ctx.rotate(-Math.PI / 8);
+                    if (options.slashFrame) {
+                      ctx.translate(15, -10);
+                      ctx.rotate(-Math.PI / 2.3);
+                    }
+                    ctx.fillStyle = "#1e1e24";
+                    ctx.beginPath();
+                    ctx.rect(-1.5, -4, 3, 34);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = "#f1c40f";
+                    ctx.beginPath();
+                    ctx.moveTo(-7, 30);
+                    ctx.quadraticCurveTo(0, 26, 7, 30);
+                    ctx.lineTo(9, 36);
+                    ctx.quadraticCurveTo(0, 32, -9, 36);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    let gemPulse = 3.5 + Math.sin(Date.now() / 150) * 1.2;
+                    ctx.fillStyle = "#e74c3c";
+                    ctx.beginPath();
+                    ctx.arc(0, 34, gemPulse, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(-1, 33, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (options.slashFrame) {
+                      ctx.fillStyle = "rgba(230, 126, 34, 0.35)";
+                      ctx.beginPath();
+                      ctx.arc(0, 20, 35, 0, Math.PI / 2);
+                      ctx.lineTo(0, 0);
+                      ctx.closePath();
+                      ctx.fill();
+                      ctx.strokeStyle = "rgba(231, 76, 60, 0.6)";
+                      ctx.lineWidth = 2;
+                      ctx.stroke();
+                    }
+                  } else if (isUniqueSword) {
+                    ctx.rotate(-Math.PI / 8);
+                    if (options.slashFrame) {
+                      ctx.translate(15, -10);
+                      ctx.rotate(-Math.PI / 2.3);
+                    }
+                    ctx.fillStyle = "#1e1e24";
+                    ctx.beginPath();
+                    ctx.rect(-2, -2, 4, 10);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = "#d4af37";
+                    ctx.beginPath();
+                    ctx.arc(0, -3, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.rect(-7, 8, 14, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    let bleedPulse = Math.sin(Date.now() / 100) * 0.15 + 0.85;
+                    let bladeColor = `rgba(192, 57, 43, ${bleedPulse})`;
+                    ctx.fillStyle =
+                      window.mob && window.mob.flashTimer > 0 ? "#ffffff" : bladeColor;
+                    ctx.strokeStyle = "#960018";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-3.5, 12);
+                    ctx.lineTo(-2, 37);
+                    ctx.lineTo(2, 37);
+                    ctx.lineTo(3.5, 12);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = "#ff7f7f";
+                    ctx.beginPath();
+                    ctx.rect(-0.8, 14, 1.6, 18);
+                    ctx.fill();
+                    if (options.slashFrame) {
+                      ctx.fillStyle = "rgba(192, 57, 43, 0.35)";
+                      ctx.beginPath();
+                      ctx.arc(0, 20, 35, 0, Math.PI / 2);
+                      ctx.lineTo(0, 0);
+                      ctx.closePath();
+                      ctx.fill();
+                      ctx.strokeStyle = "rgba(150, 0, 24, 0.6)";
+                      ctx.lineWidth = 2;
+                      ctx.stroke();
+                    }
+                  } else {
+                    let tierColor = window.getTierColor(
+                      weapItem ? weapItem.statsRolled : 0,
+                    );
+                    let rgbVals = window.hexToRgbValues
+                      ? window.hexToRgbValues(tierColor)
+                      : "236, 240, 241";
 
-          ctx.fillStyle = "#ecf0f1";
-          ctx.beginPath();
-          ctx.rect(-2, 12, 4, 25);
-          ctx.fill();
-          ctx.stroke();
+                    if (options.slashFrame) {
+                      ctx.translate(15, -10);
+                      ctx.rotate(-Math.PI / 2.3);
 
-          // Premium dynamic slash color trail inheriting quality
-          ctx.fillStyle = `rgba(${rgbVals}, 0.35)`;
-          ctx.beginPath();
-          ctx.arc(0, 20, 35, 0, Math.PI / 2);
-          ctx.lineTo(0, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = `rgba(${rgbVals}, 0.55)`;
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        } else {
-          ctx.rotate(-Math.PI / 8);
+                      ctx.fillStyle = "#7f8c8d";
+                      ctx.beginPath();
+                      ctx.rect(-2, -2, 4, 10);
+                      ctx.fill();
+                      ctx.stroke();
 
-          ctx.fillStyle = "#7f8c8d";
-          ctx.beginPath();
-          ctx.rect(-2, -2, 4, 10);
-          ctx.fill();
-          ctx.stroke();
+                      ctx.fillStyle = "#8e44ad";
+                      ctx.beginPath();
+                      ctx.rect(-5, 8, 10, 4);
+                      ctx.fill();
+                      ctx.stroke();
 
-          ctx.fillStyle = "#8e44ad";
-          ctx.beginPath();
-          ctx.rect(-5, 8, 10, 4);
-          ctx.fill();
-          ctx.stroke();
+                      ctx.fillStyle = "#ecf0f1";
+                      ctx.beginPath();
+                      ctx.rect(-2, 12, 4, 25);
+                      ctx.fill();
+                      ctx.stroke();
 
-          ctx.fillStyle = "#ecf0f1";
-          ctx.beginPath();
-          ctx.rect(-2, 12, 4, 25);
-          ctx.fill();
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
+                      ctx.fillStyle = `rgba(${rgbVals}, 0.35)`;
+                      ctx.beginPath();
+                      ctx.arc(0, 20, 35, 0, Math.PI / 2);
+                      ctx.lineTo(0, 0);
+                      ctx.closePath();
+                      ctx.fill();
+                      ctx.strokeStyle = `rgba(${rgbVals}, 0.55)`;
+                      ctx.lineWidth = 2;
+                      ctx.stroke();
+                    } else {
+                      ctx.rotate(-Math.PI / 8);
 
-      if (
-        equipped.weapon &&
-        equipped.weapon.isUniqueSingularity &&
-        stats.singularityState === "pulsing" &&
-        (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
-      ) {
-        ctx.save();
-        ctx.translate(0, -35 + bounce);
-        ctx.rotate(Date.now() / 300);
-        ctx.strokeStyle = "#e84393";
-        ctx.lineWidth = 1.8;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#e84393";
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-          let angle = (i * Math.PI) / 3;
-          ctx.lineTo(Math.cos(angle) * 9, Math.sin(angle) * 9);
-        }
-        ctx.closePath();
-        ctx.stroke();
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-    };
+                      ctx.fillStyle = "#7f8c8d";
+                      ctx.beginPath();
+                      ctx.rect(-2, -2, 4, 10);
+                      ctx.fill();
+                      ctx.stroke();
+
+                      ctx.fillStyle = "#8e44ad";
+                      ctx.beginPath();
+                      ctx.rect(-5, 8, 10, 4);
+                      ctx.fill();
+                      ctx.stroke();
+
+                      ctx.fillStyle = "#ecf0f1";
+                      ctx.beginPath();
+                      ctx.rect(-2, 12, 4, 25);
+                      ctx.fill();
+                      ctx.stroke();
+                    }
+                  }
+                }
+
+                // Draw retaliatory strike spark on weapon tip inside weapon-space
+                let isRetaliatoryReady = !!(
+                  stats.retaliatoryStrikeActive ||
+                  stats.retaliatoryStrikeCharged ||
+                  stats.retaliatoryStrikeReady ||
+                  (window.playerStats &&
+                    (window.playerStats.retaliatoryStrikeActive ||
+                      window.playerStats.retaliatoryStrikeCharged ||
+                      window.playerStats.retaliatoryStrikeReady))
+                );
+
+                if (
+                  isRetaliatoryReady &&
+                  (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+                ) {
+                  let tipY = 37;
+                  if (isMaelstrom) tipY = 48;
+                  else if (isSingularity) tipY = 42;
+                  else if (isStaff) tipY = 34;
+
+                  ctx.save();
+                  ctx.translate(0, tipY);
+                  let time = Date.now();
+                  let scalePulse = 1.0 + Math.sin(time / 80) * 0.25;
+
+                  ctx.shadowBlur = 10 * scalePulse;
+                  ctx.shadowColor = "#e74c3c";
+                  ctx.fillStyle = "#ff4d4d";
+                  ctx.beginPath();
+                  ctx.arc(0, 0, 3 * scalePulse, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.shadowBlur = 0;
+
+                  ctx.strokeStyle = "#ffffff";
+                  ctx.lineWidth = 1.2;
+                  ctx.beginPath();
+                  ctx.moveTo(-6 * scalePulse, 0);
+                  ctx.lineTo(6 * scalePulse, 0);
+                  ctx.moveTo(0, -6 * scalePulse);
+                  ctx.lineTo(0, 6 * scalePulse);
+                  ctx.stroke();
+
+                  ctx.strokeStyle = "#ff4d4d";
+                  ctx.lineWidth = 0.8;
+                  ctx.beginPath();
+                  ctx.moveTo(-3.5 * scalePulse, -3.5 * scalePulse);
+                  ctx.lineTo(3.5 * scalePulse, 3.5 * scalePulse);
+                  ctx.moveTo(3.5 * scalePulse, -3.5 * scalePulse);
+                  ctx.lineTo(-3.5 * scalePulse, 3.5 * scalePulse);
+                  ctx.stroke();
+
+                  ctx.restore();
+                }
+
+                if (
+                  equipped.weapon &&
+                  equipped.weapon.isUniqueSingularity &&
+                  stats.singularityState === "pulsing" &&
+                  (!options.deathAnimationTimer || options.deathAnimationTimer === 0)
+                ) {
+                  ctx.save();
+                  ctx.translate(0, -35 + bounce);
+                  ctx.rotate(Date.now() / 300);
+                  ctx.strokeStyle = "#e84393";
+                  ctx.lineWidth = 1.8;
+                  ctx.shadowBlur = 10;
+                  ctx.shadowColor = "#e84393";
+                  ctx.beginPath();
+                  for (let i = 0; i < 6; i++) {
+                    let angle = (i * Math.PI) / 3;
+                    ctx.lineTo(Math.cos(angle) * 9, Math.sin(angle) * 9);
+                  }
+                  ctx.closePath();
+                  ctx.stroke();
+                  ctx.fillStyle = "#ffffff";
+                  ctx.beginPath();
+                  ctx.arc(0, 0, 2, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.restore();
+                }
+
+                ctx.restore();
+              };
 
     let isFacingLeft = options.facing === -1;
 
-    if (isFacingLeft) {
-      // Facing Left: Left hand (Subweapon) is in the back (drawn first), Right hand (Main Weapon) is in the front (drawn last)
-      drawSubweapon();
-      drawBodyAndCostume();
-      drawMainWeapon();
-    } else {
-      // Facing Right: Right hand (Main Weapon) is in the back (drawn first), Left hand (Subweapon) is in the front (drawn last)
-      drawMainWeapon();
-      drawBodyAndCostume();
-      drawSubweapon();
-    }
+        if (isFacingLeft) {
+          // Facing Left: Left hand (Subweapon) is in the back (drawn first), Right hand (Main Weapon) is in the front (drawn last)
+          drawColossusPhantom();
+          drawFortitudePass(true);
+          drawSubweapon();
+          drawBodyAndCostume();
+          drawMainWeapon();
+          drawFortitudePass(false);
+        } else {
+          // Facing Right: Right hand (Main Weapon) is in the back (drawn first), Left hand (Subweapon) is in the front (drawn last)
+          drawColossusPhantom();
+          drawFortitudePass(true);
+          drawMainWeapon();
+          drawBodyAndCostume();
+          drawSubweapon();
+          drawFortitudePass(false);
+        }
 
-    ctx.restore();
-  };
+        // --- Spell Weaving Runes (Orbital Crown) ---
+        let hasSpellWeaving = stats.spellWeavingLvl > 0 || (window.playerStats && window.playerStats.spellWeavingLvl > 0);
+        let hasTome = equipped.subweapon && equipped.subweapon.subType === "tome";
+
+        if (hasSpellWeaving && hasTome && (!options.deathAnimationTimer || options.deathAnimationTimer === 0)) {
+          ctx.save();
+          let orbitTime = Date.now() / 600;
+          let Rx = 11;
+          let Ry = 3;
+          let cy = -33 + bounce;
+
+          ctx.strokeStyle = "rgba(155, 89, 182, 0.22)";
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.ellipse(0, cy, Rx, Ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          let shards = [
+            { color: "#e67e22", coreColor: "#ff4d4d" }, // Fire
+            { color: "#f1c40f", coreColor: "#ffffff" }, // Lightning
+            { color: "#38bdf8", coreColor: "#e0f2fe" }  // Frost
+          ];
+
+          shards.forEach((shard, i) => {
+            let angle = orbitTime + (i * Math.PI * 2) / 3;
+            let px = Math.cos(angle) * Rx;
+            let py = Math.sin(angle) * Ry + cy;
+            let pz = Math.sin(angle); // Depth factor (-1 is back, 1 is front)
+
+            let shardSize = 1.8 + pz * 0.4;
+            ctx.save();
+            ctx.globalAlpha = 0.55 + pz * 0.35;
+
+            ctx.fillStyle = shard.coreColor;
+            ctx.strokeStyle = shard.color;
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            ctx.moveTo(px, py - shardSize * 1.5);
+            ctx.lineTo(px + shardSize, py);
+            ctx.lineTo(px, py + shardSize * 1.5);
+            ctx.lineTo(px - shardSize, py);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+          });
+          ctx.restore();
+        }
+
+        ctx.restore();
+      };
 
   window.toggleMenuHub = function () {
     let overlay = document.getElementById("menu-hub-overlay");
@@ -13206,96 +14649,109 @@
   };
 
   window.updateDpsOverlayPosition = function () {
-    let badge = document.getElementById("dps-overlay-badge");
-    let canvasContainer = document.getElementById("canvas-container");
-    if (!badge || !canvasContainer) return;
+      let badge = document.getElementById("dps-overlay-badge");
+      let canvasContainer = document.getElementById("canvas-container") || document.getElementById("game-container");
+      if (!badge || !canvasContainer) return;
 
-    if (!window.playerStats.showDpsOverlay) {
-      badge.style.display = "none";
-      return;
-    }
+      if (!window.playerStats || !window.playerStats.showDpsOverlay) {
+        badge.style.display = "none";
+        return;
+      }
 
-    badge.style.display = "flex";
-
-    let containerWidth = canvasContainer.clientWidth;
-    let containerHeight = canvasContainer.clientHeight;
-    let badgeWidth = badge.offsetWidth || 100;
-    let badgeHeight = badge.offsetHeight || 32;
-
-    let x = window.playerStats.dpsOverlayX;
-    let y = window.playerStats.dpsOverlayY;
-
-    if (x === null || y === null) {
-      x = containerWidth - badgeWidth - 10;
-      y = containerHeight - badgeHeight - 10;
-      window.playerStats.dpsOverlayX = x;
-      window.playerStats.dpsOverlayY = y;
-    }
-
-    x = Math.max(0, Math.min(containerWidth - badgeWidth, x));
-    y = Math.max(0, Math.min(containerHeight - badgeHeight, y));
-
-    badge.style.left = x + "px";
-    badge.style.top = y + "px";
-  };
-
-  window.initDpsOverlayDrag = function () {
-    let badge = document.getElementById("dps-overlay-badge");
-    let canvasContainer = document.getElementById("canvas-container");
-    if (!badge || !canvasContainer) return;
-
-    let isDragging = false;
-    let startX = 0,
-      startY = 0;
-    let initialLeft = 0,
-      initialTop = 0;
-
-    badge.addEventListener("pointerdown", function (e) {
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      initialLeft = window.playerStats.dpsOverlayX || 0;
-      initialTop = window.playerStats.dpsOverlayY || 0;
-      badge.setPointerCapture(e.pointerId);
-      e.stopPropagation();
-    });
-
-    badge.addEventListener("pointermove", function (e) {
-      if (!isDragging) return;
-      let dx = e.clientX - startX;
-      let dy = e.clientY - startY;
-
-      let x = initialLeft + dx;
-      let y = initialTop + dy;
+      badge.style.display = "flex";
 
       let containerWidth = canvasContainer.clientWidth;
       let containerHeight = canvasContainer.clientHeight;
-      let badgeWidth = badge.offsetWidth;
-      let badgeHeight = badge.offsetHeight;
+      let badgeWidth = badge.offsetWidth || 100;
+      let badgeHeight = badge.offsetHeight || 32;
+
+      let x = window.playerStats.dpsOverlayX;
+      let y = window.playerStats.dpsOverlayY;
+
+      if (x === null || y === null || x === undefined || y === undefined) {
+        x = containerWidth - badgeWidth - 10;
+        y = containerHeight - badgeHeight - 10;
+        window.playerStats.dpsOverlayX = x;
+        window.playerStats.dpsOverlayY = y;
+      }
 
       x = Math.max(0, Math.min(containerWidth - badgeWidth, x));
       y = Math.max(0, Math.min(containerHeight - badgeHeight, y));
 
-      window.playerStats.dpsOverlayX = x;
-      window.playerStats.dpsOverlayY = y;
-
       badge.style.left = x + "px";
       badge.style.top = y + "px";
-      e.stopPropagation();
-    });
-
-    const stopDrag = function (e) {
-      if (isDragging) {
-        isDragging = false;
-        badge.releasePointerCapture(e.pointerId);
-        if (typeof window.saveGame === "function") window.saveGame();
-        e.stopPropagation();
-      }
     };
 
-    badge.addEventListener("pointerup", stopDrag);
-    badge.addEventListener("pointercancel", stopDrag);
-  };
+    window.initDpsOverlayDrag = function () {
+      let badge = document.getElementById("dps-overlay-badge");
+      let canvasContainer = document.getElementById("canvas-container") || document.getElementById("game-container");
+      if (!badge || !canvasContainer) return;
+
+      let isDragging = false;
+      let startX = 0,
+        startY = 0;
+      let initialLeft = 0,
+        initialTop = 0;
+
+      badge.addEventListener("pointerdown", function (e) {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        initialLeft = (window.playerStats && window.playerStats.dpsOverlayX) || 0;
+        initialTop = (window.playerStats && window.playerStats.dpsOverlayY) || 0;
+        badge.setPointerCapture(e.pointerId);
+        e.stopPropagation();
+      });
+
+      badge.addEventListener("pointermove", function (e) {
+        if (!isDragging) return;
+        let dx = e.clientX - startX;
+        let dy = e.clientY - startY;
+
+        let x = initialLeft + dx;
+        let y = initialTop + dy;
+
+        let containerWidth = canvasContainer.clientWidth;
+        let containerHeight = canvasContainer.clientHeight;
+        let badgeWidth = badge.offsetWidth;
+        let badgeHeight = badge.offsetHeight;
+
+        x = Math.max(0, Math.min(containerWidth - badgeWidth, x));
+        y = Math.max(0, Math.min(containerHeight - badgeHeight, y));
+
+        if (window.playerStats) {
+          window.playerStats.dpsOverlayX = x;
+          window.playerStats.dpsOverlayY = y;
+        }
+
+        badge.style.left = x + "px";
+        badge.style.top = y + "px";
+        e.stopPropagation();
+      });
+
+      const stopDrag = function (e) {
+        if (isDragging) {
+          isDragging = false;
+          badge.releasePointerCapture(e.pointerId);
+          if (typeof window.saveGame === "function") window.saveGame();
+          e.stopPropagation();
+        }
+      };
+
+      badge.addEventListener("pointerup", stopDrag);
+      badge.addEventListener("pointercancel", stopDrag);
+    };
+
+    // Auto-init DPS overlay drag on load
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof window.initDpsOverlayDrag === "function") window.initDpsOverlayDrag();
+        if (typeof window.updateDpsOverlayStyle === "function") window.updateDpsOverlayStyle();
+      });
+    } else {
+      if (typeof window.initDpsOverlayDrag === "function") window.initDpsOverlayDrag();
+      if (typeof window.updateDpsOverlayStyle === "function") window.updateDpsOverlayStyle();
+    }
 
   window.updateTitleSelector = function () {
     let selector = document.getElementById("title-selector");

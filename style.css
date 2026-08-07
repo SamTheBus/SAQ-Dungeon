@@ -6037,3 +6037,38 @@ summary {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* --- GLASSMORPHIC DRAGGABLE DPS DISPLAY --- */
+.dps-overlay-badge {
+  position: absolute;
+  z-index: 2500;
+  background: rgba(10, 8, 18, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(0, 210, 255, 0.6);
+  border-radius: 6px;
+  color: #00d2ff;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.8),
+    inset 0 0 6px rgba(0, 210, 255, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.dps-overlay-badge:active {
+  cursor: grabbing;
+  border-color: #ffd700;
+  color: #ffd700;
+}

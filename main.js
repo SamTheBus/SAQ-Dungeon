@@ -5563,12 +5563,12 @@
           );
 
           attacker.hp = attacker.hp.sub(detonationDmg);
-                    attacker.poisonStacks = 0;
-                    attacker.bleedStacks = 0;
-                    attacker.poisonTimer = 0;
-                    attacker.bleedTimer = 0;
+          attacker.poisonStacks = 0;
+          attacker.bleedStacks = 0;
+          attacker.poisonTimer = 0;
+          attacker.bleedTimer = 0;
 
-                    if (window.combatVisuals) {
+          if (window.combatVisuals) {
             window.combatVisuals.spawnDamageEffect(
               attacker.x + attacker.w / 2,
               attacker.y + attacker.h / 2,
@@ -12356,25 +12356,27 @@
         if (m.rangedCooldown > 0) m.rangedCooldown--;
 
         // --- CELESTIAL STATUS DOT TICK ENGINE ---
-                if (m.hp && m.hp.gt && m.hp.gt(0)) {
-                  // Decrement and clear expired DoTs progressive duration
-                  if (m.poisonStacks > 0) {
-                    if (m.poisonTimer === undefined || m.poisonTimer === null) m.poisonTimer = 300;
-                    m.poisonTimer--;
-                    if (m.poisonTimer <= 0) m.poisonStacks = 0;
-                  }
-                  if (m.bleedStacks > 0) {
-                    if (m.bleedTimer === undefined || m.bleedTimer === null) m.bleedTimer = 300;
-                    m.bleedTimer--;
-                    if (m.bleedTimer <= 0) m.bleedStacks = 0;
-                  }
+        if (m.hp && m.hp.gt && m.hp.gt(0)) {
+          // Decrement and clear expired DoTs progressive duration
+          if (m.poisonStacks > 0) {
+            if (m.poisonTimer === undefined || m.poisonTimer === null)
+              m.poisonTimer = 300;
+            m.poisonTimer--;
+            if (m.poisonTimer <= 0) m.poisonStacks = 0;
+          }
+          if (m.bleedStacks > 0) {
+            if (m.bleedTimer === undefined || m.bleedTimer === null)
+              m.bleedTimer = 300;
+            m.bleedTimer--;
+            if (m.bleedTimer <= 0) m.bleedStacks = 0;
+          }
 
-                  if (
-                    (m.poisonStacks && m.poisonStacks > 0) ||
-                    (m.bleedStacks && m.bleedStacks > 0)
-                  ) {
-                    m.dotTickTimer = (m.dotTickTimer || 0) + 1;
-                    if (m.dotTickTimer >= 60) {
+          if (
+            (m.poisonStacks && m.poisonStacks > 0) ||
+            (m.bleedStacks && m.bleedStacks > 0)
+          ) {
+            m.dotTickTimer = (m.dotTickTimer || 0) + 1;
+            if (m.dotTickTimer >= 60) {
               // Ticks exactly every 1s
               m.dotTickTimer = 0;
               let baseAtk = pStats.atk || p.atk || 15;
@@ -12893,18 +12895,18 @@
         // -------------------------------------------------
 
         m.hp = m.hp.sub(pAtk);
-                m.hasTakenDamage = true;
-                m.flashTimer = 6;
+        m.hasTakenDamage = true;
+        m.flashTimer = 6;
 
-                // Roll bleed from dagger base bleedChance
-                if (pStats.bleedChance && pStats.bleedChance > 0) {
-                  if (Math.random() < pStats.bleedChance) {
-                    m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
-                    m.dotTickTimer = m.dotTickTimer || 0;
-                  }
-                }
+        // Roll bleed from dagger base bleedChance
+        if (pStats.bleedChance && pStats.bleedChance > 0) {
+          if (Math.random() < pStats.bleedChance) {
+            m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
+            m.dotTickTimer = m.dotTickTimer || 0;
+          }
+        }
 
-                // Track Critical Streaks for Wind-Razor Flurry
+        // Track Critical Streaks for Wind-Razor Flurry
         let windFlurryLevel = window.SkillTreeManager
           ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
           : 0;
@@ -13255,60 +13257,60 @@
         }
 
         // Unique: Sanguine Reaver (Sword Bleed Rupture)
-                if (window.hasUniquePassive("weapon_sword")) {
-                  bm.bleedStacks = (bm.bleedStacks || 0) + 1;
-                  bm.bleedTimer = 300; // 5-second duration
-                  if (bm.bleedStacks >= 5) {
-                    bm.bleedStacks = 0;
-                    bm.bleedTimer = 0;
-                    let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
-                    bm.hp = bm.hp.sub(ruptureDmg);
-                    let siphonedHp = Math.round(p.maxHp * 0.1);
-                    p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
-                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                      window.RenderEngine.spawnDamageEffect(
-                        bossCenterX,
-                        bossCenterY,
-                        ruptureDmg,
-                        "crit",
-                        true,
-                      );
-                    }
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(
-                        p.x,
-                        p.y - 20,
-                        `+${siphonedHp} HP (RUPTURE)`,
-                        "#2ecc71",
-                      );
-                    }
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnParticles(
-                        bossCenterX,
-                        bossCenterY,
-                        20,
-                        "magma_elemental",
-                        4,
-                      );
-                    }
-                  } else {
-                    let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
-                    if (pStats.bleedDamageMultiplier) {
-                      bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
-                    }
-                    bm.hp = bm.hp.sub(bleedTick);
-                    bm.bleedTimer = 300; // Refresh 5-second duration
-                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                      window.RenderEngine.spawnDamageEffect(
-                        bossCenterX,
-                        bossCenterY - 10,
-                        bleedTick,
-                        "bleed",
-                        false,
-                      );
-                    }
-                  }
-                }
+        if (window.hasUniquePassive("weapon_sword")) {
+          bm.bleedStacks = (bm.bleedStacks || 0) + 1;
+          bm.bleedTimer = 300; // 5-second duration
+          if (bm.bleedStacks >= 5) {
+            bm.bleedStacks = 0;
+            bm.bleedTimer = 0;
+            let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
+            bm.hp = bm.hp.sub(ruptureDmg);
+            let siphonedHp = Math.round(p.maxHp * 0.1);
+            p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bossCenterX,
+                bossCenterY,
+                ruptureDmg,
+                "crit",
+                true,
+              );
+            }
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 20,
+                `+${siphonedHp} HP (RUPTURE)`,
+                "#2ecc71",
+              );
+            }
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                bossCenterX,
+                bossCenterY,
+                20,
+                "magma_elemental",
+                4,
+              );
+            }
+          } else {
+            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
+            if (pStats.bleedDamageMultiplier) {
+              bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
+            }
+            bm.hp = bm.hp.sub(bleedTick);
+            bm.bleedTimer = 300; // Refresh 5-second duration
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                bossCenterX,
+                bossCenterY - 10,
+                bleedTick,
+                "bleed",
+                false,
+              );
+            }
+          }
+        }
 
         // Unique: Maelstrom Gale-Glaive (Wind Gales & Speed Stacks)
         if (isCrit && window.hasUniquePassive("weapon_maelstrom")) {
@@ -13453,16 +13455,16 @@
             }
 
             // Roll bleed from dagger base bleedChance
-                                if (pStats.bleedChance && pStats.bleedChance > 0) {
-                                  if (Math.random() < pStats.bleedChance) {
-                                    m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
-                                    m.dotTickTimer = m.dotTickTimer || 0;
-                                  }
-                                }
+            if (pStats.bleedChance && pStats.bleedChance > 0) {
+              if (Math.random() < pStats.bleedChance) {
+                m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
+                m.dotTickTimer = m.dotTickTimer || 0;
+              }
+            }
 
-                                // 1. Viper's Coating (Apply Stacking Poison & Bleeding)
-                                let vipersLvl = pStats.vipersCoatingLvl || 0;
-                                if (vipersLvl > 0) {
+            // 1. Viper's Coating (Apply Stacking Poison & Bleeding)
+            let vipersLvl = pStats.vipersCoatingLvl || 0;
+            if (vipersLvl > 0) {
               m.poisonStacks = Math.min(5, (m.poisonStacks || 0) + 1);
               m.poisonLevel = vipersLvl;
               m.dotTickTimer = m.dotTickTimer || 0;
@@ -14984,21 +14986,21 @@
         }
 
         bm.hp = bm.hp.sub(pAtk);
-                bm.hasTakenDamage = true;
-                bm.flashTimer = 6;
+        bm.hasTakenDamage = true;
+        bm.flashTimer = 6;
 
-                // Roll bleed from dagger base bleedChance
-                if (pStats.bleedChance && pStats.bleedChance > 0) {
-                  if (Math.random() < pStats.bleedChance) {
-                    bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
-                    bm.dotTickTimer = bm.dotTickTimer || 0;
-                  }
-                }
+        // Roll bleed from dagger base bleedChance
+        if (pStats.bleedChance && pStats.bleedChance > 0) {
+          if (Math.random() < pStats.bleedChance) {
+            bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
+            bm.dotTickTimer = bm.dotTickTimer || 0;
+          }
+        }
 
-                if (
-                  window.isCavernEffectActive &&
-                  window.isCavernEffectActive("temporal_echo")
-                ) {
+        if (
+          window.isCavernEffectActive &&
+          window.isCavernEffectActive("temporal_echo")
+        ) {
           window.temporalEchoQueue = window.temporalEchoQueue || [];
           window.temporalEchoQueue.push({
             targetId: bm.id,
@@ -15109,21 +15111,21 @@
             }
 
             // Roll bleed from dagger base bleedChance
-                                if (pStats.bleedChance && pStats.bleedChance > 0) {
-                                  if (Math.random() < pStats.bleedChance) {
-                                    bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
-                                    bm.dotTickTimer = bm.dotTickTimer || 0;
-                                  }
-                                }
+            if (pStats.bleedChance && pStats.bleedChance > 0) {
+              if (Math.random() < pStats.bleedChance) {
+                bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
+                bm.dotTickTimer = bm.dotTickTimer || 0;
+              }
+            }
 
-                                // 1. Viper's Coating
-                                let vipersLvl = pStats.vipersCoatingLvl || 0;
-                                if (vipersLvl > 0) {
-                                  bm.poisonStacks = Math.min(5, (bm.poisonStacks || 0) + 1);
-                                  bm.poisonLevel = vipersLvl;
-                                  bm.dotTickTimer = bm.dotTickTimer || 0;
+            // 1. Viper's Coating
+            let vipersLvl = pStats.vipersCoatingLvl || 0;
+            if (vipersLvl > 0) {
+              bm.poisonStacks = Math.min(5, (bm.poisonStacks || 0) + 1);
+              bm.poisonLevel = vipersLvl;
+              bm.dotTickTimer = bm.dotTickTimer || 0;
 
-                                  let bleedChance = vipersLvl * 0.05;
+              let bleedChance = vipersLvl * 0.05;
               if (Math.random() < bleedChance) {
                 bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
               }
@@ -15195,25 +15197,27 @@
         }
 
         // --- CELESTIAL STATUS DOT TICK ENGINE ON BOSS ---
-                if (bm.hp && bm.hp.gt && bm.hp.gt(0)) {
-                  // Decrement and clear expired DoTs progressive duration
-                  if (bm.poisonStacks > 0) {
-                    if (bm.poisonTimer === undefined || bm.poisonTimer === null) bm.poisonTimer = 300;
-                    bm.poisonTimer--;
-                    if (bm.poisonTimer <= 0) bm.poisonStacks = 0;
-                  }
-                  if (bm.bleedStacks > 0) {
-                    if (bm.bleedTimer === undefined || bm.bleedTimer === null) bm.bleedTimer = 300;
-                    bm.bleedTimer--;
-                    if (bm.bleedTimer <= 0) bm.bleedStacks = 0;
-                  }
+        if (bm.hp && bm.hp.gt && bm.hp.gt(0)) {
+          // Decrement and clear expired DoTs progressive duration
+          if (bm.poisonStacks > 0) {
+            if (bm.poisonTimer === undefined || bm.poisonTimer === null)
+              bm.poisonTimer = 300;
+            bm.poisonTimer--;
+            if (bm.poisonTimer <= 0) bm.poisonStacks = 0;
+          }
+          if (bm.bleedStacks > 0) {
+            if (bm.bleedTimer === undefined || bm.bleedTimer === null)
+              bm.bleedTimer = 300;
+            bm.bleedTimer--;
+            if (bm.bleedTimer <= 0) bm.bleedStacks = 0;
+          }
 
-                  if (
-                    (bm.poisonStacks && bm.poisonStacks > 0) ||
-                    (bm.bleedStacks && bm.bleedStacks > 0)
-                  ) {
-                    bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
-                    if (bm.dotTickTimer >= 60) {
+          if (
+            (bm.poisonStacks && bm.poisonStacks > 0) ||
+            (bm.bleedStacks && bm.bleedStacks > 0)
+          ) {
+            bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
+            if (bm.dotTickTimer >= 60) {
               bm.dotTickTimer = 0;
               let baseAtk = pStats.atk || p.atk || 15;
 
