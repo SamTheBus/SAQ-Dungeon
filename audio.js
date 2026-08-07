@@ -2710,15 +2710,10 @@ if (document.readyState === "loading") {
 
 window.MusicManager = {
   ctx: null,
-  source: null,
   gainNode: null,
-  trackGainNode: null,
   synthFilter: null,
-  activeBuffer: null,
   initialized: false,
-  isLoading: false,
   isPaused: false,
-  currentTrackIndex: 0,
   proceduralNodes: [],
   isProcedural: false,
   watcherIntervalId: null,
@@ -2727,15 +2722,77 @@ window.MusicManager = {
   // Lookahead Scheduler Clock Registers
   schedulerActive: false,
   schedulerTimeoutId: null,
-  tempo: 50,
+  tempo: 88,
   lookahead: 0.1, // schedule 100ms in advance
   scheduleInterval: 25, // check clock every 25ms
   nextNoteTime: 0.0,
   currentStep: 0,
   currentBGMState: "HUB",
 
-  // Playlist array: easily add more track filenames here in the future!
-  tracks: ["music.mp3"],
+  // Theme Registry Architecture
+  activeThemeKey: "HUB_HAVEN",
+  themes: {
+      HUB_HAVEN: {
+        name: "Safe Haven",
+        baseBPM: 88,
+        chords: [
+          { notes: [261.63, 329.63, 392.0, 493.88], drone: 65.41 },  // Cmaj7 (C3, E3, G3, B3)
+          { notes: [174.61, 220.0, 261.63, 329.63], drone: 87.31 },  // Fmaj7 (F3, A3, C4, E4)
+          { notes: [220.0, 261.63, 329.63, 392.0], drone: 110.0 },   // Am7   (A3, C4, E4, G4)
+          { notes: [196.0, 246.94, 293.66, 329.63], drone: 98.0 }    // G6    (G3, B3, D4, E4)
+        ],
+        arpPattern: [0, 2, 1, 3, 0, 3, 1, 2],
+        filterCutoff: 1200
+      },
+      DUNGEON_AEOLIAN: {
+                name: "Crypts of Aeolus",
+                baseBPM: 112,
+                chords: [
+                  { notes: [220.0, 261.63, 329.63, 440.0], drone: 55.0 },    // Am   (A3, C4, E4, A4)
+                  { notes: [174.61, 220.0, 261.63, 329.63], drone: 43.65 },  // Fmaj7 (F3, A3, C4, E4)
+                  { notes: [146.83, 174.61, 220.0, 329.63], drone: 36.71 },  // Dm9  (D3, F3, A3, E4)
+                  { notes: [164.81, 196.0, 246.94, 293.66], drone: 41.20 }   // Em7  (E3, G3, B3, D4)
+                ],
+                arpPattern: [0, 1, 2, 3, 2, 1, 3, 0],
+                filterCutoff: 1400
+              },
+              DUNGEON_PHRYGIAN: {
+                        name: "Phrygian Depths",
+                        baseBPM: 118,
+                        chords: [
+                          { notes: [164.81, 196.0, 246.94, 329.63], drone: 41.20 },  // Em    (E3, G3, B3, E4)
+                          { notes: [174.61, 220.0, 261.63, 329.63], drone: 41.20 },  // Fmaj7 (F3, A3, C4, E4)
+                          { notes: [146.83, 174.61, 220.0, 293.66], drone: 36.71 },  // Dm6   (D3, F3, A3, D4)
+                          { notes: [174.61, 220.0, 261.63, 349.23], drone: 43.65 }   // F     (F3, A3, C4, F4)
+                        ],
+                        arpPattern: [0, 3, 1, 2, 0, 2, 1, 3],
+                        filterCutoff: 1600
+                      },
+                      DUNGEON_DORIAN: {
+                                name: "Astral Ruins",
+                                baseBPM: 105,
+                                chords: [
+                                  { notes: [146.83, 174.61, 220.0, 261.63], drone: 36.71 },  // Dm7   (D3, F3, A3, C4)
+                                  { notes: [196.0, 246.94, 293.66, 349.23], drone: 49.0 },   // G7    (G3, B3, D4, F4)
+                                  { notes: [130.81, 164.81, 196.0, 246.94], drone: 65.41 },  // Cmaj7 (C3, E3, G3, B3)
+                                  { notes: [164.81, 196.0, 246.94, 293.66], drone: 41.20 }   // Em7   (E3, G3, B3, D4)
+                                ],
+                                arpPattern: [0, 2, 3, 1, 3, 2, 1, 0],
+                                filterCutoff: 1800
+                              },
+                              DUNGEON_HARMONIC: {
+                                name: "Volcanic Forge",
+                                baseBPM: 135,
+                                chords: [
+                                  { notes: [220.0, 261.63, 329.63, 440.0], drone: 55.0 },    // Am    (A3, C4, E4, A4)
+                                  { notes: [164.81, 207.65, 246.94, 293.66], drone: 41.20 },  // E7    (E3, G#3, B3, D4)
+                                  { notes: [174.61, 220.0, 261.63, 329.63], drone: 43.65 },  // Fmaj7 (F3, A3, C4, E4)
+                                  { notes: [164.81, 207.65, 246.94, 349.23], drone: 41.20 }   // E7b9  (E3, G#3, B3, F4)
+                                ],
+                                arpPattern: [0, 1, 3, 2, 3, 1, 2, 0],
+                                filterCutoff: 2200
+                              }
+                            },
 
   init() {
     if (this.initialized) return;
@@ -2743,7 +2800,7 @@ window.MusicManager = {
     this.ctx = window.SoundManager.ctx;
     this.initialized = true;
 
-    // Create the sweepable Lowpass Filter for Music Swells (Warmed up for cozy C418 vibes)
+    // Sweepable Lowpass Filter for Dynamic Atmosphere
     this.synthFilter = this.ctx.createBiquadFilter();
     this.synthFilter.type = "lowpass";
     this.synthFilter.frequency.setValueAtTime(1000, this.ctx.currentTime);
@@ -2752,33 +2809,10 @@ window.MusicManager = {
     this.gainNode = this.ctx.createGain();
     this.updateVolume();
 
-    // Connect Filter to Gain, and Gain to Main Destination
     this.synthFilter.connect(this.gainNode);
     this.gainNode.connect(this.ctx.destination);
 
-    // Dedicated track gain node to balance recorded BGM vs procedural BGM
-    this.trackGainNode = this.ctx.createGain();
-    this.trackGainNode.gain.setValueAtTime(0.35, this.ctx.currentTime); // Hard balanced to 35% of peak
-    this.trackGainNode.connect(this.gainNode);
-
-    this.loadTrack();
     this.startStateWatcher();
-  },
-
-  async loadTrack() {
-    if (this.isLoading || this.activeBuffer) return;
-    this.isLoading = true;
-    const trackUrl = this.tracks[this.currentTrackIndex];
-    try {
-      const response = await fetch(trackUrl);
-      if (!response.ok) throw new Error(`HTTP status ${response.status}`);
-      const arrayBuffer = await response.arrayBuffer();
-      this.activeBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-    } catch (err) {
-      console.warn(`[MusicManager] Failed to load track: ${trackUrl}`, err);
-    } finally {
-      this.isLoading = false;
-    }
   },
 
   startStateWatcher() {
@@ -2791,33 +2825,10 @@ window.MusicManager = {
   tickState() {
     if (!this.ctx || this.isPaused) return;
 
-    const states = window.GAME_STATES || { HUB: 0, DUNGEON: 1 };
-    const isDungeon = window.currentGameState === states.DUNGEON;
-
-    if (isDungeon) {
-      if (this.source) {
-        this.fadeOutAndStopSource();
-      }
-      if (!this.isProcedural) {
-        this.startProcedural();
-      }
-      this.updateBGMState();
-    } else {
-      if (this.activeBuffer) {
-        if (this.isProcedural) {
-          this.stopProcedural();
-        }
-        if (!this.source && !this.isLoading) {
-          this.startSource();
-        }
-      } else {
-        // Fallback to playing procedural music continuously in the Hub if no MP3 loaded
-        if (!this.isProcedural) {
-          this.startProcedural();
-        }
-        this.updateBGMState();
-      }
+    if (!this.isProcedural) {
+      this.startProcedural();
     }
+    this.updateBGMState();
   },
 
   play() {
@@ -2829,81 +2840,8 @@ window.MusicManager = {
     this.tickState();
   },
 
-  startSource() {
-    if (!this.ctx || !this.activeBuffer || this.isPaused || this.source) return;
-
-    this.source = this.ctx.createBufferSource();
-    this.source.buffer = this.activeBuffer;
-
-    if (this.tracks.length === 1) {
-      this.source.loop = true;
-    } else {
-      this.source.loop = false;
-      this.source.onended = () => {
-        if (!this.isPaused && !this.isLoading) {
-          this.nextTrack();
-        }
-      };
-    }
-
-    // Connect source to our dedicated, volume-balanced track gain node
-    this.source.connect(this.trackGainNode);
-
-    // Fade in the MP3 track cleanly over 1.5s to 0.35 peak level
-    const fadeTime = 1.5;
-    const now = this.ctx.currentTime;
-    this.trackGainNode.gain.cancelScheduledValues(now);
-    this.trackGainNode.gain.setValueAtTime(0.0001, now);
-    this.trackGainNode.gain.exponentialRampToValueAtTime(0.35, now + fadeTime);
-
-    this.source.start(0);
-  },
-
-  fadeOutAndStopSource() {
-    if (!this.source) return;
-    const currentSource = this.source;
-    this.source = null; // Detach immediately to prevent cross-ticks
-
-    const fadeTime = 1.0;
-    const now = this.ctx.currentTime;
-    this.trackGainNode.gain.cancelScheduledValues(now);
-    this.trackGainNode.gain.setValueAtTime(this.trackGainNode.gain.value, now);
-    this.trackGainNode.gain.exponentialRampToValueAtTime(
-      0.0001,
-      now + fadeTime,
-    );
-
-    setTimeout(
-      () => {
-        try {
-          currentSource.stop();
-        } catch (e) {}
-        try {
-          currentSource.disconnect();
-        } catch (e) {}
-      },
-      fadeTime * 1000 + 50,
-    );
-  },
-
-  stopSource() {
-    if (this.source) {
-      try {
-        this.source.stop();
-      } catch (e) {}
-      this.source.disconnect();
-      this.source = null;
-    }
-    if (this.ctx && this.trackGainNode) {
-      const now = this.ctx.currentTime;
-      this.trackGainNode.gain.cancelScheduledValues(now);
-      this.trackGainNode.gain.setValueAtTime(0, now);
-    }
-  },
-
   pause() {
     this.isPaused = true;
-    this.stopSource();
     this.stopProcedural();
   },
 
@@ -2914,26 +2852,13 @@ window.MusicManager = {
     }
   },
 
-  nextTrack() {
-    if (this.tracks.length <= 1) return;
-    this.currentTrackIndex = (this.currentTrackIndex + 1) % this.tracks.length;
-    this.play();
-  },
-
-  playTrack(index) {
-    if (index < 0 || index >= this.tracks.length) return;
-    if (this.currentTrackIndex === index && this.source) return; // Already playing
-    this.currentTrackIndex = index;
-    this.play();
-  },
-
   updateVolume() {
-    if (!this.ctx || !this.gainNode) return;
-    let now = this.ctx.currentTime;
-    const settings = window.SoundManager.getSafeSettings();
-    let finalVol = settings.mute ? 0 : settings.master * settings.music;
-    this.gainNode.gain.setTargetAtTime(finalVol, now, 0.015);
-  },
+      if (!this.ctx || !this.gainNode) return;
+      let now = this.ctx.currentTime;
+      const settings = window.SoundManager.getSafeSettings();
+      let finalVol = settings.mute ? 0 : settings.master * settings.music * 0.75; // Calibrated 75% headroom balance against SFX
+      this.gainNode.gain.setTargetAtTime(finalVol, now, 0.015);
+    },
 
   startProcedural() {
     if (this.isProcedural) return;
@@ -2944,20 +2869,22 @@ window.MusicManager = {
   },
 
   stopProcedural() {
-    this.isProcedural = false;
-    this.stopScheduler();
-    if (this.proceduralNodes) {
-      this.proceduralNodes.forEach((node) => {
-        try {
-          node.stop();
-        } catch (e) {}
-        try {
-          node.disconnect();
-        } catch (e) {}
-      });
-      this.proceduralNodes = [];
-    }
-  },
+      this.isProcedural = false;
+      this.stopScheduler();
+      if (this.proceduralNodes) {
+        this.proceduralNodes.forEach((node) => {
+          if (!node) return;
+          try {
+            if (typeof node.stop === "function") node.stop();
+          } catch (e) {}
+          try {
+            node.disconnect();
+          } catch (e) {}
+        });
+        this.proceduralNodes = [];
+      }
+      this.activeChordNotes = [];
+    },
 
   startScheduler() {
     if (this.schedulerActive) return;
@@ -2990,84 +2917,87 @@ window.MusicManager = {
     }
   },
 
-  synthesizePianoPing(time) {
-    if (
-      !this.ctx ||
-      !this.activeChordNotes ||
-      this.activeChordNotes.length === 0
-    )
-      return;
+  synthesizePianoPing(time, step = 0) {
+      if (
+        !this.ctx ||
+        !this.activeChordNotes ||
+        this.activeChordNotes.length === 0
+      )
+        return;
 
-    const baseNote =
-      this.activeChordNotes[
-        Math.floor(Math.random() * this.activeChordNotes.length)
-      ];
-    const octaveShift = Math.random() < 0.5 ? 2.0 : 4.0;
-    const freq = baseNote * octaveShift;
+      const currentTheme = this.themes[this.activeThemeKey] || this.themes.HUB_HAVEN;
+      const pattern = currentTheme.arpPattern || [0, 1, 2, 3];
+      const patternIndex = pattern[step % pattern.length] % this.activeChordNotes.length;
+      const baseNote = this.activeChordNotes[patternIndex] || this.activeChordNotes[0];
 
-    const duration = 1.0; // Snappy retro decay
-    const pingGain = this.ctx.createGain();
-    pingGain.gain.setValueAtTime(0, time);
-    pingGain.gain.linearRampToValueAtTime(0.045, time + 0.003); // Retro snap attack
-    pingGain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+      const isAccent = step % 4 === 0;
+      const octaveShift = (step % 4 === 2 || step % 4 === 3) ? 4.0 : 2.0;
+      const freq = baseNote * octaveShift;
 
-    pingGain.connect(this.synthFilter);
+      const duration = 1.0;
+      const targetVol = isAccent ? 0.055 : 0.038;
 
-    // Retro Vibrato LFO (6.5Hz frequency, depth of 6Hz detuning)
-    const vibratoOsc = this.ctx.createOscillator();
-    vibratoOsc.frequency.setValueAtTime(6.5, time);
-    const vibratoGain = this.ctx.createGain();
-    vibratoGain.gain.setValueAtTime(6.0, time);
+      const pingGain = this.ctx.createGain();
+      pingGain.gain.setValueAtTime(0, time);
+      pingGain.gain.linearRampToValueAtTime(targetVol, time + 0.003);
+      pingGain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
-    // Melodic retro square-wave oscillator
-    const osc1 = this.ctx.createOscillator();
-    osc1.type = "square";
+      pingGain.connect(this.synthFilter);
 
-    // Fast pitch sliding chip-chirp at the beginning of the note
-    osc1.frequency.setValueAtTime(freq * 1.12, time);
-    osc1.frequency.exponentialRampToValueAtTime(freq, time + 0.012);
+      // Retro Vibrato LFO
+      const vibratoOsc = this.ctx.createOscillator();
+      vibratoOsc.frequency.setValueAtTime(6.5, time);
+      const vibratoGain = this.ctx.createGain();
+      vibratoGain.gain.setValueAtTime(6.0, time);
 
-    // Chiptune Echo (A secondary, micro-delayed, quieter square-wave echo)
-    const delayTime = 0.16; // 160ms delay
-    const echoGain = this.ctx.createGain();
-    echoGain.gain.setValueAtTime(0, time + delayTime);
-    echoGain.gain.linearRampToValueAtTime(0.015, time + delayTime + 0.003);
-    echoGain.gain.exponentialRampToValueAtTime(0.0001, time + delayTime + 0.6);
-    echoGain.connect(this.synthFilter);
+      // Warm Triangle wave for Hub, Crisp Square wave for Dungeons
+      const osc1 = this.ctx.createOscillator();
+      osc1.type = this.activeThemeKey === "HUB_HAVEN" ? "triangle" : "square";
 
-    const echoOsc = this.ctx.createOscillator();
-    echoOsc.type = "square";
-    echoOsc.frequency.setValueAtTime(freq, time + delayTime);
+      osc1.frequency.setValueAtTime(freq * 1.12, time);
+      osc1.frequency.exponentialRampToValueAtTime(freq, time + 0.012);
 
-    vibratoOsc.connect(vibratoGain);
-    vibratoGain.connect(osc1.frequency);
-    vibratoGain.connect(echoOsc.frequency);
+      // Chiptune Echo
+      const delayTime = 0.16;
+      const echoGain = this.ctx.createGain();
+      echoGain.gain.setValueAtTime(0, time + delayTime);
+      echoGain.gain.linearRampToValueAtTime(targetVol * 0.35, time + delayTime + 0.003);
+      echoGain.gain.exponentialRampToValueAtTime(0.0001, time + delayTime + 0.6);
+      echoGain.connect(this.synthFilter);
 
-    osc1.connect(pingGain);
-    echoOsc.connect(echoGain);
+      const echoOsc = this.ctx.createOscillator();
+      echoOsc.type = osc1.type;
+      echoOsc.frequency.setValueAtTime(freq, time + delayTime);
 
-    vibratoOsc.start(time);
-    osc1.start(time);
-    echoOsc.start(time + delayTime);
+      vibratoOsc.connect(vibratoGain);
+      vibratoGain.connect(osc1.frequency);
+      vibratoGain.connect(echoOsc.frequency);
 
-    vibratoOsc.stop(time + duration + delayTime);
-    osc1.stop(time + duration);
-    echoOsc.stop(time + delayTime + 0.7);
+      osc1.connect(pingGain);
+      echoOsc.connect(echoGain);
 
-    setTimeout(
-      () => {
-        try {
-          vibratoOsc.disconnect();
-          vibratoGain.disconnect();
-          osc1.disconnect();
-          pingGain.disconnect();
-          echoOsc.disconnect();
-          echoGain.disconnect();
-        } catch (e) {}
-      },
-      (duration + delayTime) * 1000 + 100,
-    );
-  },
+      vibratoOsc.start(time);
+      osc1.start(time);
+      echoOsc.start(time + delayTime);
+
+      vibratoOsc.stop(time + duration + delayTime);
+      osc1.stop(time + duration);
+      echoOsc.stop(time + delayTime + 0.7);
+
+      setTimeout(
+        () => {
+          try {
+            vibratoOsc.disconnect();
+            vibratoGain.disconnect();
+            osc1.disconnect();
+            pingGain.disconnect();
+            echoOsc.disconnect();
+            echoGain.disconnect();
+          } catch (e) {}
+        },
+        (duration + delayTime) * 1000 + 100,
+      );
+    },
 
   advanceStep() {
     // 16th note step calculation based on current tempo
@@ -3080,141 +3010,141 @@ window.MusicManager = {
   },
 
   scheduleStep(step, time) {
-    // Chords are scheduled on Step 0 of Bar 0 (once every 4 bars)
-    if (step === 0 && (this.barCount === 0 || this.barCount === undefined)) {
-      this.playProceduralPad(time);
-    }
-
-    const state = this.currentBGMState;
-
-    if (state === "BOSS") {
-      // BOSS STATE: Relentless, Driving, High-Velocity Chiptune Action
-
-      // 1. Pounding Double-Kick Drum Pattern
-      if (
-        step === 0 ||
-        step === 4 ||
-        step === 8 ||
-        step === 10 ||
-        step === 12 ||
-        step === 14
-      ) {
-        this.synthesizeKick(time);
-      }
-      // 2. Snare Backbeats with Double Snare Rolls
-      if (step === 4 || step === 12 || step === 14 || step === 15) {
-        this.synthesizeSnare(time);
-      }
-      // 3. Fast 16th-note Chiptune Hi-Hats
-      this.synthesizeHiHat(time, step % 2 === 0 ? 0.045 : 0.02);
-
-      // 4. Frantic, continuous 16th-note walking bassline
-      this.synthesizeBasslineNote(
-        time,
-        this.currentDronePitch || 73.42,
-        step,
-        0.045,
-      );
-
-      // 5. Intense, high-speed melody cascades (rapid arpeggios on almost all steps)
-      const melodicStep = step % 2 === 0 ? 0.85 : 0.35;
-      if (Math.random() < melodicStep) {
-        this.synthesizePianoPing(time);
-      }
-    } else if (state === "COMBAT") {
-      // COMBAT STATE: Highly Syncopated, Energetic Groove
-
-      // 1. Driving Syncopated Kick
-      if (step === 0 || step === 8 || step === 11) {
-        this.synthesizeKick(time);
-      }
-      // 2. Snare Backbeat on beats 2 and 4
-      if (step === 4 || step === 12) {
-        this.synthesizeSnare(time);
-      }
-      // 3. Shuffling Double-Time Hats
-      if (step % 2 === 0) {
-        this.synthesizeHiHat(time, 0.04);
-      } else if (Math.random() < 0.3) {
-        this.synthesizeHiHat(time, 0.015);
+      // Chords are scheduled on Step 0 of Bar 0 (once every 4 bars)
+      if (step === 0 && (this.barCount === 0 || this.barCount === undefined)) {
+        this.playProceduralPad(time);
       }
 
-      // 4. Rolling 8th-note walking bassline on even steps
-      if (step % 2 === 0) {
-        this.synthesizeBasslineNote(
-          time,
-          this.currentDronePitch || 73.42,
-          step,
-          0.04,
-        );
-      }
+      const state = this.currentBGMState;
 
-      // 5. Melodic arpeggio cascades on upbeats and accents
-      if (step % 2 === 0 && Math.random() < 0.6) {
-        this.synthesizePianoPing(time);
-      }
-    } else if (state === "EXPLORE") {
-      // EXPLORE STATE: Relaxed, Adventurous Dungeon Exploration
+      if (state === "BOSS") {
+        // BOSS STATE: Relentless, Driving, High-Velocity Chiptune Action
 
-      // 1. Minimalistic Kick Drum for steady forward momentum
-      if (step === 0 || step === 8) {
-        this.synthesizeKick(time);
-      }
-      // 2. Snares only on Step 12 to resolve the bar
-      if (step === 12) {
-        this.synthesizeSnare(time);
-      }
-      // 3. Crisp Hi-Hats on quarter notes to keep timing
-      if (step === 0 || step === 4 || step === 8 || step === 12) {
-        this.synthesizeHiHat(time, 0.03);
-      }
-
-      // 4. Steady, bouncy walking bass on key interval steps
-      if (step === 0 || step === 4 || step === 8 || step === 12) {
-        this.synthesizeBasslineNote(
-          time,
-          this.currentDronePitch || 73.42,
-          step,
-          0.025,
-        );
-      }
-
-      // 5. Semi-frequent melodic retro pings
-      if (
-        (step === 0 ||
-          step === 3 ||
-          step === 6 ||
+        // 1. Pounding Double-Kick Drum Pattern
+        if (
+          step === 0 ||
+          step === 4 ||
           step === 8 ||
-          step === 11 ||
-          step === 14) &&
-        Math.random() < 0.45
-      ) {
-        this.synthesizePianoPing(time);
-      }
-    } else if (state === "HUB") {
-      // HUB STATE: Whimsical, Peaceful Town/Safezone Atmosphere
+          step === 10 ||
+          step === 12 ||
+          step === 14
+        ) {
+          this.synthesizeKick(time);
+        }
+        // 2. Snare Backbeats with Double Snare Rolls
+        if (step === 4 || step === 12 || step === 14 || step === 15) {
+          this.synthesizeSnare(time);
+        }
+        // 3. Fast 16th-note Chiptune Hi-Hats
+        this.synthesizeHiHat(time, step % 2 === 0 ? 0.045 : 0.02);
 
-      // 1. Slow, bouncy walking bassline on downbeats (super soft)
-      if (step === 0 || step === 8) {
+        // 4. Frantic, continuous 16th-note walking bassline
         this.synthesizeBasslineNote(
           time,
           this.currentDronePitch || 73.42,
           step,
-          0.015,
+          0.045,
         );
-      }
-      // 2. Calm, sparse melodic sequences
-      if (
-        (step === 0 || step === 4 || step === 8 || step === 12) &&
-        Math.random() < 0.3
-      ) {
-        this.synthesizePianoPing(time);
-      }
-      // 3. Playful environmental drips
-      if ((step === 6 || step === 14) && Math.random() < 0.15) {
-        this.synthesizeWaterDrip(time);
-      }
-    } else if (state === "LOW_HP") {
+
+        // 5. Intense, high-speed melody cascades
+        const melodicStep = step % 2 === 0 ? 0.85 : 0.35;
+        if (Math.random() < melodicStep) {
+          this.synthesizePianoPing(time, step);
+        }
+      } else if (state === "COMBAT") {
+        // COMBAT STATE: Highly Syncopated, Energetic Groove
+
+        // 1. Driving Syncopated Kick
+        if (step === 0 || step === 8 || step === 11) {
+          this.synthesizeKick(time);
+        }
+        // 2. Snare Backbeat on beats 2 and 4
+        if (step === 4 || step === 12) {
+          this.synthesizeSnare(time);
+        }
+        // 3. Shuffling Double-Time Hats
+        if (step % 2 === 0) {
+          this.synthesizeHiHat(time, 0.04);
+        } else if (Math.random() < 0.3) {
+          this.synthesizeHiHat(time, 0.015);
+        }
+
+        // 4. Rolling 8th-note walking bassline on even steps
+        if (step % 2 === 0) {
+          this.synthesizeBasslineNote(
+            time,
+            this.currentDronePitch || 73.42,
+            step,
+            0.04,
+          );
+        }
+
+        // 5. Melodic arpeggio cascades on upbeats and accents
+        if (step % 2 === 0 && Math.random() < 0.6) {
+          this.synthesizePianoPing(time, step);
+        }
+      } else if (state === "EXPLORE") {
+        // EXPLORE STATE: Relaxed, Adventurous Dungeon Exploration
+
+        // 1. Minimalistic Kick Drum for steady forward momentum
+        if (step === 0 || step === 8) {
+          this.synthesizeKick(time);
+        }
+        // 2. Snares only on Step 12 to resolve the bar
+        if (step === 12) {
+          this.synthesizeSnare(time);
+        }
+        // 3. Crisp Hi-Hats on quarter notes to keep timing
+        if (step === 0 || step === 4 || step === 8 || step === 12) {
+          this.synthesizeHiHat(time, 0.03);
+        }
+
+        // 4. Steady, bouncy walking bass on key interval steps
+        if (step === 0 || step === 4 || step === 8 || step === 12) {
+          this.synthesizeBasslineNote(
+            time,
+            this.currentDronePitch || 73.42,
+            step,
+            0.025,
+          );
+        }
+
+        // 5. Semi-frequent melodic retro pings
+        if (
+          (step === 0 ||
+            step === 3 ||
+            step === 6 ||
+            step === 8 ||
+            step === 11 ||
+            step === 14) &&
+          Math.random() < 0.45
+        ) {
+          this.synthesizePianoPing(time, step);
+        }
+      } else if (state === "HUB") {
+        // HUB STATE: Whimsical, Peaceful Town/Safezone Atmosphere
+
+        // 1. Slow, bouncy walking bassline on downbeats (super soft)
+        if (step === 0 || step === 8) {
+          this.synthesizeBasslineNote(
+            time,
+            this.currentDronePitch || 73.42,
+            step,
+            0.015,
+          );
+        }
+        // 2. Calm, sparse melodic sequences
+        if (
+          (step === 0 || step === 4 || step === 8 || step === 12) &&
+          Math.random() < 0.3
+        ) {
+          this.synthesizePianoPing(time, step);
+        }
+        // 3. Playful environmental drips
+        if ((step === 6 || step === 14) && Math.random() < 0.15) {
+          this.synthesizeWaterDrip(time);
+        }
+      } else if (state === "LOW_HP") {
       // LOW_HP STATE: Heavy tension focus - Relaxed cinematic pace
 
       // 1. Heartbeat on Beats 1 and 3 (Steps 0 and 8)
@@ -3287,49 +3217,57 @@ window.MusicManager = {
   },
 
   transitionToState(newState) {
-    this.currentBGMState = newState;
-    const now = this.ctx.currentTime;
+      this.currentBGMState = newState;
+      const now = this.ctx.currentTime;
 
-    this.synthFilter.frequency.cancelScheduledValues(now);
+      this.synthFilter.frequency.cancelScheduledValues(now);
 
-    if (newState === "HUB") {
-      this.tempo = 92; // Breezy retro hub pacing
-      this.synthFilter.frequency.exponentialRampToValueAtTime(1200, now + 0.4); // Bright chiptune open
-    } else if (newState === "EXPLORE") {
-      this.tempo = 112; // Adventurous underground tempo
-      this.synthFilter.frequency.exponentialRampToValueAtTime(1400, now + 0.4);
-    } else if (newState === "COMBAT") {
-      this.tempo = 124; // Energetic battle tempo
-      // COMBAT SWELL: Instantly sweeps open the filter cutoff to add brightness and raw bite
-      this.synthFilter.frequency.exponentialRampToValueAtTime(1800, now + 0.5);
-    } else if (newState === "BOSS") {
-      this.tempo = 135; // Fast-paced boss showdown pacing
-      // BOSS SWELL: Maximizes high-register square wave frequencies for intense 8-bit metal energy
-      this.synthFilter.frequency.exponentialRampToValueAtTime(2200, now + 0.3);
-    } else if (newState === "LOW_HP") {
+      if (newState === "HUB") {
+            this.activeThemeKey = "HUB_HAVEN";
+            const theme = this.themes.HUB_HAVEN;
+            this.tempo = theme.baseBPM;
+            this.synthFilter.frequency.exponentialRampToValueAtTime(theme.filterCutoff, now + 0.4);
+          } else if (newState === "EXPLORE") {
+                const floor = window.dungeonFloor || (window.playerStats && window.playerStats.currentFloor) || 1;
+                let themeKey = "DUNGEON_AEOLIAN";
+                if (floor % 5 === 0) {
+                  themeKey = "DUNGEON_HARMONIC";
+                } else if (floor % 3 === 0) {
+                  themeKey = "DUNGEON_DORIAN";
+                } else if (floor % 2 === 0) {
+                  themeKey = "DUNGEON_PHRYGIAN";
+                }
+                this.activeThemeKey = themeKey;
+                const theme = this.themes[themeKey] || this.themes.DUNGEON_AEOLIAN;
+                this.tempo = theme.baseBPM;
+                this.synthFilter.frequency.exponentialRampToValueAtTime(theme.filterCutoff, now + 0.4);
+              } else if (newState === "COMBAT") {
+                this.tempo = 124;
+                this.synthFilter.frequency.exponentialRampToValueAtTime(1800, now + 0.5);
+              } else if (newState === "BOSS") {
+                this.activeThemeKey = "DUNGEON_HARMONIC";
+                const theme = this.themes.DUNGEON_HARMONIC;
+                this.tempo = theme.baseBPM;
+                this.synthFilter.frequency.exponentialRampToValueAtTime(theme.filterCutoff, now + 0.3);
+              } else if (newState === "LOW_HP") {
       // LOW-HP CHOKE: Muffles ambient sounds to emphasize the raw heartbeat and adrenaline tinnitus
       this.synthFilter.frequency.setTargetAtTime(320, now, 0.1);
     }
   },
 
   playProceduralPad(time) {
-    if (!this.ctx || this.isPaused) return;
+      if (!this.ctx || this.isPaused) return;
 
-    const duration = (60.0 / this.tempo) * 16.0 + 1.5;
+      const currentTheme = this.themes[this.activeThemeKey] || this.themes.HUB_HAVEN;
+      const chords = currentTheme.chords;
+      const duration = (60.0 / this.tempo) * 16.0 + 1.5;
 
-    const chords = [
-      { notes: [130.81, 164.81, 196.0, 261.63], drone: 65.41 }, // C Major Chord
-      { notes: [146.83, 174.61, 220.0, 293.66], drone: 73.42 }, // D minor Chord
-      { notes: [164.81, 196.0, 246.94, 329.63], drone: 82.41 }, // E minor Chord
-      { notes: [174.61, 220.0, 261.63, 349.23], drone: 87.31 }, // F Major Chord
-    ];
-
-    const chordIndex = (this.proceduralChordIndex || 0) % chords.length;
-    this.proceduralChordIndex =
-      ((this.proceduralChordIndex || 0) + 1) % chords.length;
-    const chord = chords[chordIndex];
-    this.currentDronePitch = chord.drone;
-    this.activeChordNotes = chord.notes;
+      const chordIndex = (this.proceduralChordIndex || 0) % chords.length;
+      this.proceduralChordIndex =
+        ((this.proceduralChordIndex || 0) + 1) % chords.length;
+      const chord = chords[chordIndex];
+      this.currentDronePitch = chord.drone;
+      this.activeChordNotes = chord.notes;
 
     const chordGain = this.ctx.createGain();
     chordGain.gain.setValueAtTime(0, time);
@@ -3495,41 +3433,43 @@ window.MusicManager = {
   },
 
   synthesizeBasslineNote(time, pitch, step, vol = 0.05) {
-    const osc = this.ctx.createOscillator();
-    const gainNode = this.ctx.createGain();
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gainNode = this.ctx.createGain();
 
-    osc.type = "triangle";
+      osc.type = "triangle";
 
-    let actualPitch = pitch;
-    if (step === 2 || step === 10) {
-      actualPitch = pitch * 1.5;
-    } else if (step === 6 || step === 14) {
-      actualPitch = pitch * 2.0;
-    } else if (step === 4 || step === 12) {
-      actualPitch = pitch * 1.25;
-    }
+      let actualPitch = pitch;
+      if (step === 2 || step === 10) {
+        actualPitch = pitch * 1.5;
+      } else if (step === 6 || step === 14) {
+        actualPitch = pitch * 2.0;
+      } else if (step === 4 || step === 12) {
+        actualPitch = pitch * 1.25;
+      }
 
-    osc.frequency.setValueAtTime(actualPitch, time);
+      osc.frequency.setValueAtTime(actualPitch, time);
 
-    // Calculate dynamic decay based on step duration to force a clean staccato gap
-    const stepDuration = 60.0 / this.tempo / 4.0;
-    const decayTime = stepDuration * 0.8; // Note fully decays within 80% of step length
+      const stepDuration = 60.0 / Math.max(40, this.tempo) / 4.0;
+      const decayTime = stepDuration * 0.8;
 
-    gainNode.gain.setValueAtTime(0, time);
-    gainNode.gain.linearRampToValueAtTime(vol * 1.3, time + 0.004); // Snappy 8-bit punch
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + decayTime);
+      gainNode.gain.setValueAtTime(0, time);
+      gainNode.gain.linearRampToValueAtTime(vol * 1.3, time + 0.004);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, time + decayTime);
 
-    osc.connect(gainNode);
-    gainNode.connect(this.synthFilter);
+      osc.connect(gainNode);
+      gainNode.connect(this.synthFilter);
 
-    osc.start(time);
-    osc.stop(time + stepDuration);
+      osc.start(time);
+      osc.stop(time + stepDuration);
 
-    setTimeout(() => {
-      osc.disconnect();
-      gainNode.disconnect();
-    }, 250);
-  },
+      setTimeout(() => {
+        try {
+          osc.disconnect();
+          gainNode.disconnect();
+        } catch (e) {}
+      }, (stepDuration + 0.1) * 1000);
+    },
 
   synthesizeWaterDrip(time) {
     const osc = this.ctx.createOscillator();
