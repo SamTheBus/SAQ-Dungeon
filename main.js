@@ -1267,18 +1267,45 @@
   };
 
   // --- ENGINE INITIALIZATION ---
-  window.addEventListener("load", function () {
-    canvas = document.getElementById("gameCanvas");
-    if (!canvas) return;
-    ctx = canvas.getContext("2d");
+    window.addEventListener("load", function () {
+      canvas = document.getElementById("gameCanvas");
+      if (!canvas) return;
+      ctx = canvas.getContext("2d");
 
-    window.canvas = canvas;
-    window.ctx = ctx;
+      window.canvas = canvas;
+      window.ctx = ctx;
 
-    window.resizeCanvas();
-    window.addEventListener("resize", window.resizeCanvas);
+      window.resizeCanvas();
+      window.addEventListener("resize", window.resizeCanvas);
 
-    // Check and trigger daily/weekly resets on initial boot
+      // Auto-scan global namespace for other anonymous AudioContext instances
+      if (window.AudioContext || window.webkitAudioContext) {
+        for (let key in window) {
+          try {
+            let val = window[key];
+            if (val && (val instanceof (window.AudioContext || window.webkitAudioContext))) {
+              if (val.state === "suspended") {
+                val.resume().catch(() => {});
+              }
+            }
+          } catch (e) {}
+        }
+      }
+
+      const unlockAudio = () => {
+        if (window.SoundManager && typeof window.SoundManager.unlockMobileAudio === "function") {
+          window.SoundManager.unlockMobileAudio();
+        }
+        canvas.removeEventListener("pointerdown", unlockAudio);
+        canvas.removeEventListener("touchstart", unlockAudio);
+        document.removeEventListener("click", unlockAudio);
+      };
+
+      canvas.addEventListener("pointerdown", unlockAudio, { passive: true });
+            canvas.addEventListener("touchstart", unlockAudio, { passive: true });
+            document.addEventListener("click", unlockAudio, { passive: true });
+
+            // Check and trigger daily/weekly resets on initial boot
     if (typeof window.checkAndResetMissions === "function") {
       window.checkAndResetMissions();
     }
@@ -9738,29 +9765,34 @@
         }
 
         // O(1) Index-Swapping Recycle upon death (Zero GC pressure)
-        if (pt.life <= 0 || (pt.scaleDecay && pt.scale <= 0)) {
-          if (window.ParticlePool) window.ParticlePool.recycle(pt);
+                if (pt.life <= 0 || (pt.scaleDecay && pt.scale <= 0)) {
+                  if (window.ParticlePool) window.ParticlePool.recycle(pt);
 
-          let lastActiveIdx = window.particles.length - 1;
-          if (i !== lastActiveIdx) {
-            window.particles[i] = window.particles[lastActiveIdx];
+                  let lastActiveIdx = window.particles.length - 1;
+                  if (i !== lastActiveIdx) {
+                    window.particles[i] = window.particles[lastActiveIdx];
+                  }
+                  window.particles.pop(); // Decrements array length with zero allocation/GC pressure
+                }
+              }
+            }
+
+            // Update Floating Text Timers
+            for (let i = window.floatingTexts.length - 1; i >= 0; i--) {
+              let ft = window.floatingTexts[i];
+              ft.life--;
+              ft.y -= 0.4;
+              if (ft.offsetY !== undefined) ft.offsetY -= 0.4;
+              if (ft.life <= 0) window.floatingTexts.splice(i, 1);
+            }
+
+            // Update the DPS overlay badge periodically
+            if (typeof window.calculateActiveDps === "function" && window.logicClock % 10 === 0) {
+              window.calculateActiveDps();
+            }
           }
-          window.particles.pop(); // Decrements array length with zero allocation/GC pressure
-        }
-      }
-    }
 
-    // Update Floating Text Timers
-    for (let i = window.floatingTexts.length - 1; i >= 0; i--) {
-      let ft = window.floatingTexts[i];
-      ft.life--;
-      ft.y -= 0.4;
-      if (ft.offsetY !== undefined) ft.offsetY -= 0.4;
-      if (ft.life <= 0) window.floatingTexts.splice(i, 1);
-    }
-  }
-
-  window.spawnCalamitySpecter = function () {
+          window.spawnCalamitySpecter = function () {
     if (window.calamitySpecterActive) return;
     window.calamitySpecterActive = true;
 
@@ -19921,9 +19953,10 @@
                                   <div class="stat-line"><span class="stat-label">${iconSvg("block")} BLOCK RATE</span><span class="stat-val">${formatStatValWithDiff("block", curStats.block, draftStats.block, true, 1)} (Cap: ${formatStatValWithDiff("maxBlockCap", curStats.maxBlockCap, draftStats.maxBlockCap, true, 1)})</span></div>
                                                                     <div class="stat-line"><span class="stat-label">${iconSvg("parry")} PARRY RATE</span><span class="stat-val">${formatStatValWithDiff("parry", curStats.parry, draftStats.parry, true, 1)} (Cap: ${formatStatValWithDiff("maxParryCap", curStats.maxParryCap, draftStats.maxParryCap, true, 1)})</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("barrier")} BARRIER</span><span class="stat-val">${formatStatValWithDiff("arcaneBarrier", curStats.arcaneBarrier, draftStats.arcaneBarrier, true, 1)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("dropRate")} DROP RATE</span><span class="stat-val">${formatStatValWithDiff("drop", curStats.drop, draftStats.drop, true, 0)}</span></div>
-                                  <div class="stat-line"><span class="stat-label">${iconSvg("goldMulti")} GOLD MULTI</span><span class="stat-val">${formatStatValWithDiff("gold", curStats.gold, draftStats.gold, true, 0)}</span></div>
-                                `;
+                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("dropRate")} DROP RATE</span><span class="stat-val">${formatStatValWithDiff("drop", curStats.drop, draftStats.drop, true, 0)}</span></div>
+                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("quality")} DROP QUALITY</span><span class="stat-val">${formatStatValWithDiff("qly", curStats.qly, draftStats.qly, true, 0)}</span></div>
+                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("goldMulti")} GOLD MULTI</span><span class="stat-val">${formatStatValWithDiff("gold", curStats.gold, draftStats.gold, true, 0)}</span></div>
+                                                                  `;
 
     // 2. Render Paperdoll Equipment Slots
     let slotKeys = [

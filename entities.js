@@ -321,14 +321,31 @@
     }
 
     spawnDamageEffect(
-          x,
-          y,
-          amount,
-          type = "slash",
-          isCrit = false,
-          targetObj = null,
-        ) {
-          if (type === "block") {
+              x,
+              y,
+              amount,
+              type = "slash",
+              isCrit = false,
+              targetObj = null,
+            ) {
+              // Push valid player-dealt damage instances to window.damageHistory
+              let dmgVal = 0;
+              if (amount !== undefined && amount !== null) {
+                dmgVal = typeof amount === "object" && amount.valueOf ? amount.valueOf() : Number(amount);
+              }
+              if (
+                !isNaN(dmgVal) &&
+                dmgVal > 0 &&
+                type !== "block" &&
+                type !== "parry" &&
+                type !== "barrier" &&
+                type !== "regen"
+              ) {
+                window.damageHistory = window.damageHistory || [];
+                window.damageHistory.push({ time: Date.now(), amount: dmgVal });
+              }
+
+              if (type === "block") {
             if (window.SkillTreeManager) {
               if (window.SkillTreeManager.getSkillLevel("shield_retaliatory_strike") > 0) {
                 if (window.playerStats) window.playerStats.retaliatoryStrikeActive = true;

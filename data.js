@@ -1053,14 +1053,14 @@ window.rarityProbCache = window.rarityProbCache || {};
 
 // Universal Normalized Weight-Based Rarity Probability Solver
 window.calculateRarityProbabilities = function (
-  qly = 1.0,
-  isGacha = false,
-  floorNumber = 1,
-) {
-  let fl = isGacha
-    ? Math.max(1, Number(floorNumber) || 1)
-    : window.playerStats.maxFloorCleared || 0;
-  let cacheKey = `${qly}_${isGacha}_${fl}`;
+      qly = 1.0,
+      isGacha = false,
+      floorNumber = 1,
+    ) {
+      let fl = isGacha
+        ? Math.max(1, Number(floorNumber) || 1)
+        : Math.max(Number(floorNumber) || 1, window.playerStats.maxFloorCleared || 0);
+      let cacheKey = `${qly}_${isGacha}_${fl}`;
   if (window.rarityProbCache[cacheKey]) {
     return window.rarityProbCache[cacheKey];
   }
@@ -5061,11 +5061,11 @@ window.playerStats = {
   equippedCostume: "knight",
   unlockedCostumes: ["knight"],
   playerName: "Hero",
-  clanId: null,
-  activeSpecialChallenge: null,
-  bountyRerollsToday: 0,
-  audioSessionMode: "ambient",
-  clanName: null,
+    clanId: null,
+    activeSpecialChallenge: null,
+    bountyRerollsToday: 0,
+    mixWithBackground: false, // Default false bypasses the physical ringer/silent switch so sound works out-of-the-box
+    clanName: null,
   clanEmblem: null,
   clanLevel: 1,
   clanSkills: {

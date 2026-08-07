@@ -3558,56 +3558,378 @@ window.AssetCatalog = {
       `;
     },
     move_speed(uid) {
-      return `
-        <defs>
-          <linearGradient id="g_ms_s_${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#7f8c8d"/></linearGradient>
-          <linearGradient id="g_ms_w_${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#81ecec"/><stop offset="100%" stop-color="#0984e3"/></linearGradient>
-        </defs>
-        <path d="M10 24 L15 9 L24 15 L19 26 Z" fill="url(#g_ms_s_${uid})" stroke="#111" stroke-width="1.8"/>
-        <path d="M5 14 C5 10, 11 8, 14 15 C11 15, 7 13, 5 14 Z" fill="url(#g_ms_w_${uid})" stroke="#111" stroke-width="1.2"/>
-        <path d="M3 18 C3 14, 9 12, 12 19 C9 19, 5 17, 3 18 Z" fill="url(#g_ms_w_${uid})" stroke="#111" stroke-width="1.2"/>
-      `;
-    },
+          return `
+            <defs>
+              <!-- Platinum Greave Light Gradient -->
+              <linearGradient id="g_ms_steel_l_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Platinum Greave Shadow Gradient -->
+              <linearGradient id="g_ms_steel_d_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Velocity Wing Light Gradient -->
+              <linearGradient id="g_ms_wing_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="40%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#0284c7"/>
+              </linearGradient>
+              <!-- Speed Aura Radial Backglow -->
+              <radialGradient id="g_ms_glow_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#00f3ff" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#00f3ff" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Speed Trail Backglow -->
+            <circle cx="16" cy="16" r="11" fill="url(#g_ms_glow_${uid})"/>
+
+            <!-- Wind Velocity Streamlines Trailing Behind Boot -->
+            <path d="M2 13 Q10 11, 14 15" stroke="#00f3ff" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+            <path d="M1 18 Q8 16, 12 20" stroke="#00f3ff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M3 23 Q9 21, 13 25" stroke="#38bdf8" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.8"/>
+
+            <!-- Mercury Wing Feathers at Ankle (Lower Feather Shadow) -->
+            <path d="M6 21 C6 14, 12 11, 16 16 C12 18, 8 19, 6 21 Z" fill="url(#g_ms_steel_d_${uid})" stroke="#05070a" stroke-width="1" stroke-linejoin="round"/>
+
+            <!-- Mercury Wing Feathers at Ankle (Upper Main Wings Light) -->
+            <path d="M4 16 C4 8, 12 6, 18 12 C13 14, 8 15, 4 16 Z" fill="url(#g_ms_wing_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+            <path d="M7 11 C8 6, 15 4, 21 10 C16 12, 11 12, 7 11 Z" fill="url(#g_ms_wing_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Main Boot & Greave Body (Shadow Left Side) -->
+            <path d="M13 8 L22 6 L23 16 L28 21 L26 26 L15 25 L12 18 Z" fill="url(#g_ms_steel_d_${uid})" stroke="#05070a" stroke-width="1.5" stroke-linejoin="round"/>
+
+            <!-- Main Boot & Greave Body (Highlight Right Side) -->
+            <path d="M18 7 L22 6 L23 16 L28 21 L26 26 L19 25 L17 18 Z" fill="url(#g_ms_steel_l_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Gold Ankle Cinch Buckle & Wing Anchor Gem -->
+            <circle cx="16" cy="16" r="2.2" fill="#ffd700" stroke="#05070a" stroke-width="0.8"/>
+            <circle cx="16" cy="16" r="1.2" fill="#00f3ff" stroke="#05070a" stroke-width="0.5"/>
+            <circle cx="15.7" cy="15.7" r="0.4" fill="#ffffff"/>
+
+            <!-- Pointed Toe Cap Overlay -->
+            <path d="M23 21 L28 21 L26 26 L21 25 Z" fill="url(#g_ms_wing_${uid})" stroke="#05070a" stroke-width="0.8"/>
+
+            <!-- Specular Highlight Sheen on Shin Greave -->
+            <path d="M19 8 L21 7 L21.8 15 L19.8 16 Z" fill="#ffffff" opacity="0.45"/>
+
+            <!-- Floating Speed Sparks -->
+            <circle cx="30" cy="22" r="0.8" fill="#ffffff"/>
+            <circle cx="28" cy="28" r="0.6" fill="#00f3ff"/>
+            <circle cx="31" cy="17" r="0.7" fill="#00f3ff"/>
+          `;
+        },
     defense(uid) {
-      return `
-        <defs><linearGradient id="g_df_${uid}" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#4ba3e3"/><stop offset="100%" stop-color="#1c304a"/></linearGradient></defs>
-        <path d="M16 3 L27 9 L23 23 L16 29 L9 23 L5 9 Z" fill="url(#g_df_${uid})" stroke="#111" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M16 7 L23 11 L20 20 L16 25 L12 20 L9 11 Z" fill="none" stroke="#fff" opacity="0.3" stroke-width="1.8"/>
-        <circle cx="16" cy="15" r="3.2" fill="#fff" style="filter: drop-shadow(0 0 4px #fff);"/>
-      `;
-    },
+          return `
+            <defs>
+              <!-- Polished Gold Rim Gradient -->
+              <linearGradient id="g_df_gold_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="45%" stop-color="#d4af37"/>
+                <stop offset="85%" stop-color="#9a7d0a"/>
+                <stop offset="100%" stop-color="#5a4504"/>
+              </linearGradient>
+              <!-- Cobalt Shield Plate Light Gradient -->
+              <linearGradient id="g_df_plate_l_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#60a5fa"/>
+                <stop offset="50%" stop-color="#2563eb"/>
+                <stop offset="100%" stop-color="#1e3a8a"/>
+              </linearGradient>
+              <!-- Cobalt Shield Plate Shadow Gradient -->
+              <linearGradient id="g_df_plate_d_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e3a8a"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <!-- Defense Barrier Backglow -->
+              <radialGradient id="g_df_glow_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Defensive Barrier Backglow -->
+            <circle cx="16" cy="16" r="12" fill="url(#g_df_glow_${uid})"/>
+
+            <!-- Outer Defensive Deflection Ring Arc -->
+            <path d="M16 2 Q28 2, 29 16 Q28 30, 16 30 Q4 30, 3 16 Q4 2, 16 2" fill="none" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.85"/>
+
+            <!-- Outer Shield Rim (Gold Frame Base) -->
+            <path d="M16 4 L27 9 L24 23 L16 29 L8 23 L5 9 Z" fill="url(#g_df_gold_${uid})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round"/>
+
+            <!-- Inner Plate Facet (Shadow Left) -->
+            <path d="M16 6.5 L8.5 10.2 L10 21.5 L16 26.5 Z" fill="url(#g_df_plate_d_${uid})" stroke="#05070a" stroke-width="1"/>
+
+            <!-- Inner Plate Facet (Highlight Right) -->
+            <path d="M16 6.5 L23.5 10.2 L22 21.5 L16 26.5 Z" fill="url(#g_df_plate_l_${uid})" stroke="#05070a" stroke-width="1"/>
+
+            <!-- Heraldic Cross Reinforcement Overlay (Gold) -->
+            <path d="M15 8 H17 V14 H21 V16 H17 V24 H15 V16 H11 V14 H15 Z" fill="url(#g_df_gold_${uid})" stroke="#05070a" stroke-width="0.8" stroke-linejoin="round"/>
+
+            <!-- Central Core Diamond Gemstone & Specular Glint -->
+            <polygon points="16,12 18.5,15 16,18 13.5,15" fill="#ffffff" stroke="#05070a" stroke-width="0.8"/>
+            <polygon points="16,12 18.5,15 16,18" fill="#38bdf8" opacity="0.6"/>
+            <circle cx="15.5" cy="14" r="0.5" fill="#ffffff"/>
+
+            <!-- Frame Rivet Details -->
+            <circle cx="8" cy="10" r="0.6" fill="#ffffff"/>
+            <circle cx="24" cy="10" r="0.6" fill="#ffffff"/>
+            <circle cx="9.5" cy="21" r="0.6" fill="#ffffff"/>
+            <circle cx="22.5" cy="21" r="0.6" fill="#ffffff"/>
+
+            <!-- Specular Facet Highlight Sheen -->
+            <path d="M16 6.5 L22 10 L21 19 Z" fill="#ffffff" opacity="0.25"/>
+          `;
+        },
     parry_strike(uid) {
-      return `
-        <defs><linearGradient id="g_ps_${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#555555"/></linearGradient></defs>
-        <path d="M7 10 L16 5 L25 10 L23 22 L16 28 L9 22 Z" fill="url(#g_ps_${uid})" stroke="#111" stroke-width="2" stroke-linejoin="round"/>
-        <line x1="8" y1="14" x2="24" y2="14" stroke="#c0392b" stroke-width="3" stroke-linecap="round"/>
-        <path d="M16 10 L16 22" stroke="#111" stroke-width="3" stroke-linecap="round"/><path d="M16 10 L16 22" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
-      `;
-    },
+          return `
+            <defs>
+              <!-- Polished Steel Light Gradient -->
+              <linearGradient id="g_ps_steel_l_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#64748b"/>
+              </linearGradient>
+              <!-- Polished Steel Shadow Gradient -->
+              <linearGradient id="g_ps_steel_d_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <!-- Gilded Rim & Boss Gradient -->
+              <linearGradient id="g_ps_gold_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+              <!-- Deflection Spark Radial Glow -->
+              <radialGradient id="g_ps_spark_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="40%" stop-color="#ff3366"/>
+                <stop offset="100%" stop-color="#900c3f" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Deflection Spark Backglow -->
+            <circle cx="16" cy="16" r="10" fill="url(#g_ps_spark_${uid})"/>
+
+            <!-- Outer Steel Buckler Shield (Shadow Left) -->
+            <path d="M16 4 L8 9 L7 23 L16 28 Z" fill="url(#g_ps_steel_d_${uid})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round"/>
+
+            <!-- Outer Steel Buckler Shield (Highlight Right) -->
+            <path d="M16 4 L24 9 L25 23 L16 28 Z" fill="url(#g_ps_steel_l_${uid})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round"/>
+
+            <!-- Gilded Rim Border Lines -->
+            <path d="M16 5.5 L9.5 9.8 L8.8 21.8 L16 26 Z" fill="none" stroke="url(#g_ps_gold_${uid})" stroke-width="1"/>
+            <path d="M16 5.5 L22.5 9.8 L23.2 21.8 L16 26 Z" fill="none" stroke="url(#g_ps_gold_${uid})" stroke-width="1"/>
+
+            <!-- Diagonal Crossed Parrying Stiletto 1 (Top-Left to Bottom-Right) -->
+            <line x1="5" y1="5" x2="27" y2="27" stroke="#05070a" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="5" y1="5" x2="27" y2="27" stroke="url(#g_ps_steel_l_${uid})" stroke-width="1.5" stroke-linecap="round"/>
+
+            <!-- Diagonal Crossed Parrying Stiletto 2 (Bottom-Left to Top-Right) -->
+            <line x1="5" y1="27" x2="27" y2="5" stroke="#05070a" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="5" y1="27" x2="27" y2="5" stroke="url(#g_ps_steel_l_${uid})" stroke-width="1.5" stroke-linecap="round"/>
+
+            <!-- Central Heavy Gold Boss Dome -->
+            <circle cx="16" cy="16" r="4.2" fill="url(#g_ps_gold_${uid})" stroke="#05070a" stroke-width="1.2"/>
+            <circle cx="16" cy="16" r="2.2" fill="#e74c3c" stroke="#05070a" stroke-width="0.8"/>
+            <circle cx="15.2" cy="15.2" r="0.6" fill="#ffffff"/>
+
+            <!-- Riposte Impact Spark Flares (4-Point Starburst) -->
+            <polygon points="16,10 17.5,14.5 22,16 17.5,17.5 16,22 14.5,17.5 10,16 14.5,14.5" fill="#ffffff" opacity="0.9"/>
+            <polygon points="16,12 17,15 20,16 17,17 16,20 15,17 12,16 15,15" fill="#f1c40f"/>
+
+            <!-- Floating Deflection Sparks -->
+            <circle cx="9" cy="8" r="0.8" fill="#ffffff"/>
+            <circle cx="23" cy="8" r="0.8" fill="#ff3366"/>
+            <circle cx="8" cy="23" r="0.6" fill="#f1c40f"/>
+            <circle cx="24" cy="24" r="0.8" fill="#ffffff"/>
+          `;
+        },
     echo_strike(uid) {
-      return `
-        <defs><linearGradient id="g_es_b_${uid}" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#020d1a"/><stop offset="100%" stop-color="#00ffcc"/></linearGradient></defs>
-        <path d="M4 28 L24 8 L28 12 L8 32 Z" fill="url(#g_es_b_${uid})" stroke="rgba(0, 255, 204, 0.4)" stroke-width="1.5" style="opacity:0.45;"/>
-        <path d="M8 24 L24 8 L28 12 L12 28 Z" fill="url(#g_es_b_${uid})" stroke="#111" stroke-width="1.8"/>
-        <path d="M12 28 L28 12" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-      `;
-    },
+          return `
+            <defs>
+              <!-- Primary Blade Light Gradient -->
+              <linearGradient id="g_es_blade_l_${uid}" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#38bdf8"/>
+                <stop offset="85%" stop-color="#0284c7"/>
+                <stop offset="100%" stop-color="#0369a1"/>
+              </linearGradient>
+              <!-- Echo Phantom Blade Gradient -->
+              <linearGradient id="g_es_phantom_${uid}" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+                <stop offset="50%" stop-color="#00f3ff" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#8e44ad" stop-opacity="0.2"/>
+              </linearGradient>
+              <!-- Gold Guard Gradient -->
+              <linearGradient id="g_es_gold_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="50%" stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8a6d1c"/>
+              </linearGradient>
+              <!-- Cyan Energy Backglow -->
+              <radialGradient id="g_es_glow_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#00f3ff" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#00f3ff" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Cyan Energy Ambient Glow -->
+            <circle cx="16" cy="16" r="11" fill="url(#g_es_glow_${uid})"/>
+
+            <!-- Echo Phantom Slash Waves (Back Shadow Trail) -->
+            <path d="M4 22 L20 6 L24 10 L8 26 Z" fill="url(#g_es_phantom_${uid})" stroke="#00f3ff" stroke-width="0.8" stroke-dasharray="2 1" opacity="0.6"/>
+
+            <!-- Phantom Echo Secondary Blade (Offset Left) -->
+            <path d="M2 24 L18 8 L21 11 L5 27 Z" fill="url(#g_es_phantom_${uid})" stroke="#00f3ff" stroke-width="1" opacity="0.75"/>
+            <line x1="3" y1="25.5" x2="19.5" y2="9.5" stroke="#ffffff" stroke-width="0.8" opacity="0.8"/>
+
+            <!-- Primary Steel-Cyan Blade (Main Foreground) -->
+            <path d="M8 28 L24 12 L28 8 L26 16 L12 30 Z" fill="url(#g_es_blade_l_${uid})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round"/>
+
+            <!-- Primary Blade Specular Edge Gleam -->
+            <path d="M8 28 L28 8 L24 12 Z" fill="#ffffff" opacity="0.6"/>
+            <line x1="9" y1="27" x2="27" y2="9" stroke="#ffffff" stroke-width="1" stroke-linecap="round"/>
+
+            <!-- Primary Hilt & Crossguard -->
+            <path d="M6 26 L12 32 L10 33 L4 27 Z" fill="url(#g_es_gold_${uid})" stroke="#05070a" stroke-width="1.2" stroke-linejoin="round"/>
+            <rect x="3.5" y="29.5" width="2.5" height="2.5" rx="0.5" fill="#1e293b" stroke="#05070a" stroke-width="0.8" transform="rotate(-45 4.75 30.75)"/>
+            <circle cx="3" cy="32" r="1" fill="url(#g_es_gold_${uid})" stroke="#05070a" stroke-width="0.5"/>
+
+            <!-- Arc Slash Trail Lines -->
+            <path d="M12 4 Q22 6, 28 16" fill="none" stroke="#00f3ff" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
+            <path d="M16 2 Q25 4, 30 12" fill="none" stroke="#ffffff" stroke-width="0.8" stroke-linecap="round"/>
+
+            <!-- Floating Echo Particle Sparks -->
+            <circle cx="28" cy="6" r="0.8" fill="#ffffff"/>
+            <circle cx="23" cy="3" r="0.6" fill="#00f3ff"/>
+            <circle cx="30" cy="18" r="0.6" fill="#00f3ff"/>
+            <circle cx="16" cy="27" r="0.8" fill="#ffffff"/>
+          `;
+        },
     idle_spd(uid) {
-      return `
-        <defs><linearGradient id="g_is_${uid}" x1="0%" y1="0%" x2="1" y2="1"><stop offset="0%" stop-color="#2c3e50"/><stop offset="100%" stop-color="#07090c"/></linearGradient></defs>
-        <circle cx="16" cy="16" r="11" fill="url(#g_is_${uid})" stroke="#ffd700" stroke-width="2.2"/>
-        <circle cx="16" cy="16" r="8" fill="none" stroke="#e67e22" stroke-width="1" stroke-dasharray="3 3"/>
-        <line x1="16" y1="16" x2="16" y2="9.5" stroke="#f1c40f" stroke-width="2.2" stroke-linecap="round"/>
-        <line x1="16" y1="16" x2="21.5" y2="16" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
-      `;
-    },
+          return `
+            <defs>
+              <!-- Polished Brass Casing Gradient -->
+              <linearGradient id="g_is_brass_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffeaa7"/>
+                <stop offset="45%" stop-color="#d4af37"/>
+                <stop offset="85%" stop-color="#9a7d0a"/>
+                <stop offset="100%" stop-color="#5a4504"/>
+              </linearGradient>
+              <!-- Clockface Void Gradient -->
+              <radialGradient id="g_is_face_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="70%" stop-color="#0f172a"/>
+                <stop offset="100%" stop-color="#020617"/>
+              </radialGradient>
+              <!-- Glowing Hands Gradient -->
+              <linearGradient id="g_is_hands_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#f1c40f"/>
+                <stop offset="100%" stop-color="#e67e22"/>
+              </linearGradient>
+              <!-- Amber Time Glow -->
+              <radialGradient id="g_is_glow_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#f1c40f" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#f1c40f" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Ambient Time Backglow -->
+            <circle cx="16" cy="17" r="12" fill="url(#g_is_glow_${uid})"/>
+
+            <!-- Pocket-Watch Top Ring & Winding Stem -->
+            <circle cx="16" cy="3.5" r="2.5" fill="none" stroke="url(#g_is_brass_${uid})" stroke-width="1.2"/>
+            <rect x="14.8" y="5" width="2.4" height="2.5" fill="url(#g_is_brass_${uid})" stroke="#05070a" stroke-width="0.8"/>
+
+            <!-- Outer Gear Teeth (8 Spoke Cog Nobs) -->
+            <g fill="url(#g_is_brass_${uid})" stroke="#05070a" stroke-width="0.8">
+              <rect x="14.5" y="5.5" width="3" height="2" rx="0.5"/>
+              <rect x="14.5" y="26.5" width="3" height="2" rx="0.5"/>
+              <rect x="4" y="15.5" width="2" height="3" rx="0.5"/>
+              <rect x="26" y="15.5" width="2" height="3" rx="0.5"/>
+              <rect x="6.5" y="8" width="2.5" height="2.5" rx="0.5" transform="rotate(45 7.75 9.25)"/>
+              <rect x="21.5" y="23.5" width="2.5" height="2.5" rx="0.5" transform="rotate(45 22.75 24.75)"/>
+              <rect x="21.5" y="8" width="2.5" height="2.5" rx="0.5" transform="rotate(-45 22.75 9.25)"/>
+              <rect x="6.5" y="23.5" width="2.5" height="2.5" rx="0.5" transform="rotate(-45 7.75 24.75)"/>
+            </g>
+
+            <!-- Main Outer Casing Ring -->
+            <circle cx="16" cy="17" r="10.5" fill="url(#g_is_brass_${uid})" stroke="#05070a" stroke-width="1.5"/>
+
+            <!-- Inner Void Faceplate -->
+            <circle cx="16" cy="17" r="8.2" fill="url(#g_is_face_${uid})" stroke="#05070a" stroke-width="1"/>
+
+            <!-- Roman Hour Marks / Dotted Track -->
+            <circle cx="16" cy="17" r="7" fill="none" stroke="url(#g_is_brass_${uid})" stroke-width="0.8" stroke-dasharray="1.5 2"/>
+
+            <!-- Hour & Minute Clock Hands -->
+            <!-- Hour Hand (Pointing 12 o'clock) -->
+            <line x1="16" y1="17" x2="16" y2="11" stroke="#05070a" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16" y1="17" x2="16" y2="11" stroke="url(#g_is_hands_${uid})" stroke-width="1.2" stroke-linecap="round"/>
+            <polygon points="16,10 17,12 15,12" fill="#ffffff"/>
+
+            <!-- Minute Hand (Pointing 3 o'clock) -->
+            <line x1="16" y1="17" x2="21.5" y2="17" stroke="#05070a" stroke-width="2" stroke-linecap="round"/>
+            <line x1="16" y1="17" x2="21.5" y2="17" stroke="url(#g_is_hands_${uid})" stroke-width="1.2" stroke-linecap="round"/>
+            <polygon points="22.5,17 20.5,16 20.5,18" fill="#ffffff"/>
+
+            <!-- Central Axle Boss Nut -->
+            <circle cx="16" cy="17" r="1.8" fill="url(#g_is_brass_${uid})" stroke="#05070a" stroke-width="0.8"/>
+            <circle cx="16" cy="17" r="0.8" fill="#ffffff"/>
+
+            <!-- Specular Glass Lens Reflection Arc -->
+            <path d="M10 12 C12 10, 17 10, 20 12" stroke="#ffffff" stroke-width="1" fill="none" opacity="0.6" stroke-linecap="round"/>
+            <circle cx="21" cy="20" r="0.6" fill="#ffffff" opacity="0.8"/>
+          `;
+        },
     active_spd(uid) {
-      return `
-        <defs><linearGradient id="g_as_${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff9a6"/><stop offset="50%" stop-color="#f39c12"/><stop offset="100%" stop-color="#d35400"/></linearGradient></defs>
-        <path d="M16 2 L20 10 L28 10 L22 16 L25 24 L16 19 L7 24 L10 16 L4 10 L12 10 Z" fill="url(#g_as_${uid})" stroke="#111" stroke-width="1.8" stroke-linejoin="round"/>
-        <circle cx="16" cy="13.5" r="4.2" fill="#fff" opacity="0.3"/>
-      `;
-    },
+          return `
+            <defs>
+              <!-- Starburst Flame Gradient -->
+              <linearGradient id="g_as_flame_${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fff9a6"/>
+                <stop offset="35%" stop-color="#f39c12"/>
+                <stop offset="70%" stop-color="#e67e22"/>
+                <stop offset="100%" stop-color="#d35400"/>
+              </linearGradient>
+              <!-- Overclock Core Radial Glow -->
+              <radialGradient id="g_as_core_${uid}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="40%" stop-color="#ffcc00"/>
+                <stop offset="75%" stop-color="#ff3300"/>
+                <stop offset="100%" stop-color="#ff3300" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Kinetic Overclock Energy Backglow -->
+            <circle cx="16" cy="16" r="12" fill="url(#g_as_core_${uid})" opacity="0.85"/>
+
+            <!-- 10-Pointed Overclock Starburst Core Shell -->
+            <path d="M16 2 L19.2 8.5 L26.2 6 L24 13 L30 16 L24 19 L26.2 26 L19.2 23.5 L16 30 L12.8 23.5 L5.8 26 L8 19 L2 16 L8 13 L5.8 6 L12.8 8.5 Z" fill="url(#g_as_flame_${uid})" stroke="#05070a" stroke-width="1.8" stroke-linejoin="round"/>
+
+            <!-- Inner Facet Starburst Shading Overlay -->
+            <path d="M16 5 L18 10 L23 8 L21.5 13.5 L26 16 L21.5 18.5 L23 24 L18 22 L16 27 L14 22 L9 24 L10.5 18.5 L5 16 L10.5 13.5 L9 8 L14 10 Z" fill="#ffffff" opacity="0.3"/>
+
+            <!-- Central High-Voltage Core Ring -->
+            <circle cx="16" cy="16" r="6" fill="#05070a" stroke="#ffffff" stroke-width="1"/>
+            <circle cx="16" cy="16" r="4.5" fill="url(#g_as_core_${uid})" stroke="#05070a" stroke-width="0.8"/>
+            <circle cx="16" cy="16" r="2" fill="#ffffff"/>
+
+            <!-- Lightning Kinetic Discharges (Discharging outwards) -->
+            <path d="M16 10 L13 14 L18 17 M22 16 L18 19 L21 23 M10 16 L14 13 L11 9" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+            <!-- Floating Kinetic Spark Sparks -->
+            <circle cx="4" cy="5" r="0.8" fill="#ffffff"/>
+            <circle cx="28" cy="4" r="0.8" fill="#ffcc00"/>
+            <circle cx="29" cy="27" r="0.6" fill="#ffffff"/>
+            <circle cx="3" cy="26" r="0.8" fill="#ffcc00"/>
+          `;
+        },
     dodge_buff(uid) {
       return `
         <defs><linearGradient id="g_db_${uid}" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2ecc71"/><stop offset="100%" stop-color="#145a32"/></linearGradient></defs>
