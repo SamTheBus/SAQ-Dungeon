@@ -5383,9 +5383,10 @@
     // Start inside Adventurer's Hub
     window.loadHub();
 
-    // Decorate damagePlayer globally to monitor and trigger defensive counters
-    const originalDamagePlayer = window.damagePlayer;
-    window.damagePlayer = function (amount, attacker) {
+    // Decorate damagePlayer globally with safe double-wrap protection to monitor and trigger defensive counters
+        if (window.damagePlayer && !window.damagePlayer.__wrappedByMain) {
+          const originalDamagePlayer = window.damagePlayer;
+          window.damagePlayer = function (amount, attacker) {
       let p = window.player;
       let pStats =
         typeof window.resolvePlayerStats === "function"
@@ -5613,9 +5614,11 @@
       }
 
       return result;
-    };
+          };
+          window.damagePlayer.__wrappedByMain = true;
+        }
 
-    window.handleVanguardBlockTrigger = function (attacker) {
+          window.handleVanguardBlockTrigger = function (attacker) {
       let p = window.player;
       let pStats =
         typeof window.resolvePlayerStats === "function"

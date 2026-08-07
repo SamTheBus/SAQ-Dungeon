@@ -1991,13 +1991,17 @@ if (window.playerStats && window.playerStats.usp === undefined) {
 }
 
 (function () {
-  const originalResolve = window.resolvePlayerStats;
-  window.resolvePlayerStats = function (isDraft = false) {
-    let stats = originalResolve ? originalResolve(isDraft) : {};
-    if (!stats) return stats;
+  if (window.resolvePlayerStats && !window.resolvePlayerStats.__wrappedBySkills) {
+    const originalResolve = window.resolvePlayerStats;
+    window.resolvePlayerStats = function (isDraft = false) {
+      let rawStats = originalResolve ? originalResolve(isDraft) : {};
+      if (!rawStats) return rawStats;
 
-    let getLevel = (id) =>
-      window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel(id) : 0;
+      // Shallow clone to protect persistent base stats from compounding reference mutations!
+      let stats = { ...rawStats };
+
+      let getLevel = (id) =>
+        window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel(id) : 0;
 
     // Apply Tome Spell Scaling & Type mapping
     if (window.equippedSlots && window.equippedSlots.subweapon) {
@@ -2300,5 +2304,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
     }
 
     return stats;
-  };
-})();
+      };
+      window.resolvePlayerStats.__wrappedBySkills = true;
+    }
+    })();
