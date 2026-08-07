@@ -3931,7 +3931,7 @@ window.AssetCatalog = {
           `;
     },
     dodge_buff(uid) {
-          return `
+      return `
             <defs>
               <!-- Emerald Feather Light Gradient -->
               <linearGradient id="g_db_feather_l_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -3987,9 +3987,9 @@ window.AssetCatalog = {
             <circle cx="28" cy="22" r="0.8" fill="#ffffff"/>
             <circle cx="10" cy="27" r="0.6" fill="#a3fd83"/>
           `;
-        },
+    },
     extend_buffs(uid) {
-          return `
+      return `
             <defs>
               <!-- Polished Gold Locket Frame Gradient -->
               <linearGradient id="g_eb_gold_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4049,9 +4049,9 @@ window.AssetCatalog = {
             <circle cx="6" cy="23" r="0.6" fill="#00f3ff"/>
             <circle cx="26" cy="24" r="0.8" fill="#ffffff"/>
           `;
-        },
+    },
     bag_space(uid) {
-          return `
+      return `
             <defs>
               <!-- Leather Satchel Body Light Gradient -->
               <linearGradient id="g_bs_leather_l_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4118,9 +4118,9 @@ window.AssetCatalog = {
             <circle cx="4" cy="8" r="0.8" fill="#ffffff"/>
             <circle cx="28" cy="9" r="0.7" fill="#c084fc"/>
           `;
-        },
+    },
     second_wind(uid) {
-          return `
+      return `
             <defs>
               <!-- Phoenix Flame Light Gradient -->
               <linearGradient id="g_sw_flame_l_${uid}" x1="0" y1="1" x2="0" y2="0">
@@ -4171,9 +4171,9 @@ window.AssetCatalog = {
             <circle cx="26" cy="22" r="0.8" fill="#ff3300"/>
             <circle cx="16" cy="29" r="0.7" fill="#ffcc00"/>
           `;
-        },
+    },
     golem_stance(uid) {
-          return `
+      return `
             <defs>
               <!-- Granite Stone Light Facet Gradient -->
               <linearGradient id="g_gs_stone_l_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4242,9 +4242,9 @@ window.AssetCatalog = {
             <circle cx="3" cy="24" r="0.6" fill="#ff4500"/>
             <circle cx="29" cy="23" r="0.7" fill="#ffaa00"/>
           `;
-        },
+    },
     fairy_wealth(uid) {
-          return `
+      return `
             <defs>
               <!-- Fairy Wing Light Gradient -->
               <linearGradient id="g_fw_wing_l_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4309,9 +4309,9 @@ window.AssetCatalog = {
             <circle cx="7" cy="27" r="0.6" fill="#ff9ff3"/>
             <circle cx="25" cy="28" r="0.8" fill="#ffffff"/>
           `;
-        },
+    },
     void_pull(uid) {
-          return `
+      return `
             <defs>
               <!-- Obsidian Gyro Frame Gradient -->
               <linearGradient id="g_vp_metal_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4364,9 +4364,9 @@ window.AssetCatalog = {
             <circle cx="6" cy="24" r="0.6" fill="#a855f7"/>
             <circle cx="26" cy="23" r="0.8" fill="#ffffff"/>
           `;
-        },
+    },
     titan_grip(uid) {
-          return `
+      return `
             <defs>
               <!-- Titan Iron Gauntlet Light Gradient -->
               <linearGradient id="g_tg_iron_l_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4434,9 +4434,9 @@ window.AssetCatalog = {
             <circle cx="27" cy="10" r="0.8" fill="#ffaa00"/>
             <circle cx="16" cy="24.5" r="0.6" fill="#ffffff"/>
           `;
-        },
+    },
     alchemist_alembic(uid) {
-          return `
+      return `
             <defs>
               <!-- Glowing Transmuted Liquid Radial Gradient -->
               <radialGradient id="g_aa_liquid_${uid}" cx="35%" cy="35%" r="65%">
@@ -4494,9 +4494,9 @@ window.AssetCatalog = {
             <circle cx="28" cy="8" r="0.6" fill="#ffffff"/>
             <circle cx="29" cy="27" r="0.8" fill="#1abc9c"/>
           `;
-        },
+    },
     philosopher_catalyst(uid) {
-          return `
+      return `
             <defs>
               <!-- Golden Pyramid Light Facet Gradient -->
               <linearGradient id="g_pc_gold_l_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4557,9 +4557,9 @@ window.AssetCatalog = {
             <circle cx="28" cy="27" r="0.8" fill="#a3fd83"/>
             <circle cx="27" cy="8" r="0.6" fill="#ffffff"/>
           `;
-        },
+    },
     cauldron_eternity(uid) {
-          return `
+      return `
             <defs>
               <!-- Cast Iron Cauldron Light Gradient -->
               <linearGradient id="g_ce_iron_l_${uid}" x1="0" y1="0" x2="1" y2="1">
@@ -4634,13 +4634,13 @@ window.AssetCatalog = {
             <!-- Specular Highlight Sheen on Cauldron Belly -->
             <path d="M20 15 C23 16, 24 20, 22 24 C25 21, 24 17, 21 15 Z" fill="#ffffff" opacity="0.3"/>
           `;
-        },
+    },
   },
 
   // Centralized configurations of unique weapons
   uniques: {
     staff(uid) {
-          return `
+      return `
             <defs>
               <!-- Polished Wood Shaft Gradient -->
               <linearGradient id="g_un_st_wood_${uid}" x1="0" y1="1" x2="1" y2="0">
@@ -4707,7 +4707,7 @@ window.AssetCatalog = {
             <circle cx="31" cy="13" r="0.8" fill="#ffaa00"/>
             <circle cx="16" cy="18" r="0.6" fill="#ffffff"/>
           `;
-        },
+    },
     sword(uid) {
       return `
         <defs><linearGradient id="g_un_sw_${uid}" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#3a0202"/><stop offset="100%" stop-color="#ff0000"/></linearGradient></defs>

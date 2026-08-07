@@ -11846,6 +11846,1536 @@
       });
     };
 
+    const drawUniqueCharacterVisuals = (isBehind) => {
+      if (options.deathAnimationTimer && options.deathAnimationTimer > 0)
+        return;
+      let time = Date.now();
+
+      // --- 1. PHOENIX IGNITION STAFF (Solar Phoenix Halo & Orbiting Embers) ---
+      let hasStaff =
+        equipped.weapon &&
+        (equipped.weapon.isUniqueStaff ||
+          equipped.weapon.id === "weapon_staff");
+      if (hasStaff) {
+        let cy = -2 + bounce;
+        let headY = -22 + bounce;
+        let orbitRadiusX = 18;
+        let orbitRadiusY = 6;
+        let emberCount = 4;
+        let rotSpeed = time / 350;
+
+        if (isBehind) {
+          // A. Fiery Solar Ground Halo (Foot Ring)
+          ctx.save();
+          let auraPulse = 1.0 + Math.sin(time / 180) * 0.08;
+          let groundGrad = ctx.createRadialGradient(
+            0,
+            16,
+            2,
+            0,
+            16,
+            18 * auraPulse,
+          );
+          groundGrad.addColorStop(0, "rgba(255, 85, 0, 0.35)");
+          groundGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.15)");
+          groundGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = groundGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 16, 18 * auraPulse, 7 * auraPulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "rgba(255, 85, 0, 0.5)";
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            16,
+            15 * auraPulse,
+            5.5 * auraPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+          ctx.restore();
+
+          // B. Orbiting Solar Embers (Back-Pass: Z < 0)
+          for (let i = 0; i < emberCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / emberCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#ff5500";
+              ctx.shadowBlur = 6;
+              ctx.shadowColor = "#ff5500";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Solar Embers (Front-Pass: Z >= 0)
+          for (let i = 0; i < emberCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / emberCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.0, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#f1c40f";
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#ff5500";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+
+          // D. Flaming Phoenix Solar Crown / Halo (Above Hero's Head)
+          ctx.save();
+          let crownPulse = Math.sin(time / 120) * 1.5;
+          ctx.translate(0, headY);
+
+          // Crown Solar Back Glow
+          let crownGlow = ctx.createRadialGradient(
+            0,
+            -2,
+            1,
+            0,
+            -2,
+            12 + crownPulse,
+          );
+          crownGlow.addColorStop(0, "rgba(255, 240, 150, 0.8)");
+          crownGlow.addColorStop(0.5, "rgba(255, 85, 0, 0.35)");
+          crownGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = crownGlow;
+          ctx.beginPath();
+          ctx.arc(0, -2, 12 + crownPulse, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Crown Base Arch (Golden Solar Crest)
+          ctx.strokeStyle = "#f1c40f";
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 10, 3.5, 0, Math.PI, 0);
+          ctx.stroke();
+
+          // 3 Flaming Phoenix Spikes
+          ctx.fillStyle = "#ff5500";
+          ctx.strokeStyle = "#f1c40f";
+          ctx.lineWidth = 1.0;
+
+          // Center Spike
+          ctx.beginPath();
+          ctx.moveTo(-2.5, -2);
+          ctx.quadraticCurveTo(0, -10 - crownPulse, 0, -11 - crownPulse);
+          ctx.quadraticCurveTo(0, -10 - crownPulse, 2.5, -2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Left Spike
+          ctx.beginPath();
+          ctx.moveTo(-8, -1);
+          ctx.quadraticCurveTo(
+            -6,
+            -7 - crownPulse * 0.7,
+            -6.5,
+            -8 - crownPulse * 0.7,
+          );
+          ctx.quadraticCurveTo(-4, -6, -4, -1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Right Spike
+          ctx.beginPath();
+          ctx.moveTo(4, -1);
+          ctx.quadraticCurveTo(4, -6, 6.5, -8 - crownPulse * 0.7);
+          ctx.quadraticCurveTo(6, -7 - crownPulse * 0.7, 8, -1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Core White-Hot Solar Gem in Crown
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(0, -2, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 2. CRIMSON SANGUINE REAVER (Swirling Blood Mist & Orbiting Blood Droplets) ---
+      let hasSword =
+        equipped.weapon &&
+        (equipped.weapon.isUniqueSword ||
+          equipped.weapon.id === "weapon_sword");
+      if (hasSword) {
+        let cy = 0 + bounce;
+        let orbitRadiusX = 16;
+        let orbitRadiusY = 5.5;
+        let dropletCount = 5;
+        let rotSpeed = time / 300;
+
+        if (isBehind) {
+          // A. Crimson Blood-Pool Aura (Foot/Waist Halo)
+          ctx.save();
+          let auraPulse = 1.0 + Math.sin(time / 160) * 0.1;
+          let groundGrad = ctx.createRadialGradient(
+            0,
+            16,
+            2,
+            0,
+            16,
+            17 * auraPulse,
+          );
+          groundGrad.addColorStop(0, "rgba(150, 0, 24, 0.45)");
+          groundGrad.addColorStop(0.6, "rgba(192, 57, 43, 0.18)");
+          groundGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = groundGrad;
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            16,
+            17 * auraPulse,
+            6.5 * auraPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+
+          ctx.strokeStyle = "rgba(150, 0, 24, 0.6)";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            16,
+            13 * auraPulse,
+            5.0 * auraPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+          ctx.restore();
+
+          // B. Orbiting Blood Droplets (Back-Pass: Z < 0)
+          for (let i = 0; i < dropletCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / dropletCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#960018";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 0.8;
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Blood Droplets (Front-Pass: Z >= 0)
+          for (let i = 0; i < dropletCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / dropletCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#c0392b";
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 0.8;
+              ctx.shadowBlur = 6;
+              ctx.shadowColor = "#ff0055";
+
+              // Tear-drop shape
+              ctx.beginPath();
+              ctx.moveTo(ox, oy - 2.5);
+              ctx.quadraticCurveTo(ox + 1.8, oy, ox, oy + 1.8);
+              ctx.quadraticCurveTo(ox - 1.8, oy, ox, oy - 2.5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              // Specular glisten
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox - 0.5, oy - 0.5, 0.6, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Crimson Eye-Flares (Sinister Sanguine Glint)
+          ctx.save();
+          let eyeGlintPulse = Math.sin(time / 100) * 0.4 + 0.6;
+          let eyeX = options.facing === -1 ? -2 : 2;
+          let eyeY = -9 + bounce;
+
+          ctx.fillStyle = `rgba(255, 0, 85, ${eyeGlintPulse})`;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "#ff0055";
+          ctx.beginPath();
+          ctx.arc(eyeX, eyeY, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(eyeX - 2.5, eyeY);
+          ctx.lineTo(eyeX + 2.5, eyeY);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // --- 3. VOID-SOVEREIGN GREATSWORD (Accretion Vortex & Micro-Singularity Nodes) ---
+      let hasSingularity =
+        equipped.weapon &&
+        (equipped.weapon.isUniqueSingularity ||
+          equipped.weapon.id === "weapon_singularity");
+      if (hasSingularity) {
+        let cy = -4 + bounce;
+        let orbitRadiusX = 20;
+        let orbitRadiusY = 7;
+        let nodeCount = 3;
+        let rotSpeed = time / 450;
+
+        if (isBehind) {
+          // A. Tilted Void Event-Horizon Accretion Disk (Ground/Foot Ring)
+          ctx.save();
+          let auraPulse = 1.0 + Math.sin(time / 140) * 0.12;
+          ctx.translate(0, 16);
+          ctx.rotate(-Math.PI / 12);
+
+          let voidGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            22 * auraPulse,
+          );
+          voidGrad.addColorStop(0, "rgba(13, 1, 26, 0.7)");
+          voidGrad.addColorStop(0.5, "rgba(142, 68, 173, 0.25)");
+          voidGrad.addColorStop(0.85, "rgba(232, 67, 147, 0.15)");
+          voidGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = voidGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 22 * auraPulse, 8 * auraPulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#e84393";
+          ctx.lineWidth = 1.6;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "#e84393";
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 18 * auraPulse, 6.5 * auraPulse, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = "#00ffff";
+          ctx.lineWidth = 1.0;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 14 * auraPulse, 5 * auraPulse, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          // B. Micro-Singularity Nodes (Back-Pass: Z < 0)
+          for (let i = 0; i < nodeCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / nodeCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.translate(ox, oy);
+
+              // Event horizon ring behind core
+              ctx.strokeStyle = "#8e44ad";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.ellipse(0, 0, 4.5, 1.8, angle, Math.PI, 0);
+              ctx.stroke();
+
+              // Black Hole Core
+              ctx.fillStyle = "#0c011a";
+              ctx.strokeStyle = "#e84393";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Micro-Singularity Nodes (Front-Pass: Z >= 0)
+          for (let i = 0; i < nodeCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / nodeCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.translate(ox, oy);
+
+              // Black Hole Core
+              ctx.fillStyle = "#0c011a";
+              ctx.strokeStyle = "#ff007f";
+              ctx.lineWidth = 1.2;
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#ff007f";
+              ctx.beginPath();
+              ctx.arc(0, 0, 3.0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+
+              // Front Event Horizon Ring
+              ctx.strokeStyle = "#00ffff";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.ellipse(0, 0, 5.5, 2.2, angle, 0, Math.PI);
+              ctx.stroke();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Spatial Collapse Chest Singularity Core
+          ctx.save();
+          let singPulse = Math.sin(time / 100) * 0.8 + 2.2;
+          let chestY = -5 + bounce;
+
+          ctx.fillStyle = "#0c011a";
+          ctx.strokeStyle = "#00ffff";
+          ctx.lineWidth = 1.2;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "#e84393";
+
+          ctx.beginPath();
+          ctx.arc(0, chestY, singPulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(0, chestY, 0.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 4. MAELSTROM GALE-GLAIVE (Gale Cyclones & Swirling Wind Wisps) ---
+      let hasMaelstrom =
+        equipped.weapon &&
+        (equipped.weapon.isUniqueMaelstrom ||
+          equipped.weapon.id === "weapon_maelstrom");
+      if (hasMaelstrom) {
+        let cy = 2 + bounce;
+        let orbitRadiusX = 17;
+        let orbitRadiusY = 6;
+        let wispCount = 4;
+        let rotSpeed = time / 250;
+
+        if (isBehind) {
+          // A. Swirling Gale Ground Cyclones (Dual Foot Spirals)
+          ctx.save();
+          let galePulse = Math.sin(time / 100) * 0.15 + 1.0;
+          ctx.translate(0, 16);
+
+          // Emerald Wind Ground Aura
+          let galeGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            19 * galePulse,
+          );
+          galeGrad.addColorStop(0, "rgba(46, 204, 113, 0.45)");
+          galeGrad.addColorStop(0.6, "rgba(30, 215, 255, 0.2)");
+          galeGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = galeGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 19 * galePulse, 7 * galePulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Counter-rotating wind arcs
+          let windRot = (time / 200) % (Math.PI * 2);
+          ctx.strokeStyle = "#2ecc71";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            16 * galePulse,
+            5.5 * galePulse,
+            windRot,
+            0,
+            Math.PI * 1.2,
+          );
+          ctx.stroke();
+
+          ctx.strokeStyle = "#00f0ff";
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            12 * galePulse,
+            4.0 * galePulse,
+            -windRot * 1.3,
+            0,
+            Math.PI * 1.2,
+          );
+          ctx.stroke();
+
+          ctx.restore();
+
+          // B. Orbiting Wind Wisps (Back-Pass: Z < 0)
+          for (let i = 0; i < wispCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / wispCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.strokeStyle = "rgba(46, 204, 113, 0.8)";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Wind Wisps (Front-Pass: Z >= 0)
+          for (let i = 0; i < wispCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / wispCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              // Wind Wisp Streak Line
+              let tailX = Math.cos(angle - 0.4) * orbitRadiusX;
+              let tailY = Math.sin(angle - 0.4) * orbitRadiusY + cy;
+
+              ctx.strokeStyle = "rgba(0, 240, 255, 0.9)";
+              ctx.lineWidth = 1.6;
+              ctx.beginPath();
+              ctx.moveTo(tailX, tailY);
+              ctx.lineTo(ox, oy);
+              ctx.stroke();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Gale Ankle Wind Wings (Aerodynamic Speed Wisps)
+          ctx.save();
+          let wingFlutter = Math.sin(time / 80) * 1.5;
+          let wingX = options.facing === -1 ? 6 : -6;
+          ctx.translate(wingX, 12 + bounce);
+
+          ctx.fillStyle = "#2ecc71";
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 0.8;
+
+          // Upper Feather Wisp
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(
+            -6 * options.facing,
+            -4 + wingFlutter,
+            -10 * options.facing,
+            -2,
+          );
+          ctx.quadraticCurveTo(-5 * options.facing, 0, 0, 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 5. VIPER'S PERFECT STILETTO (Venom Seal & Orbiting Poison Motes) ---
+      let hasViper =
+        equipped.subweapon &&
+        (equipped.subweapon.isUniqueViper ||
+          equipped.subweapon.id === "dagger_viper");
+      if (hasViper) {
+        let cy = 0 + bounce;
+        let orbitRadiusX = 16;
+        let orbitRadiusY = 5.5;
+        let moteCount = 3;
+        let rotSpeed = time / 280;
+
+        if (isBehind) {
+          // A. Acidic Venom Ground Seal (Foot Ring)
+          ctx.save();
+          let sealPulse = Math.sin(time / 130) * 0.12 + 1.0;
+          ctx.translate(0, 16);
+
+          // Radial Toxic Green Glow
+          let viperGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            17 * sealPulse,
+          );
+          viperGrad.addColorStop(0, "rgba(46, 204, 113, 0.45)");
+          viperGrad.addColorStop(0.6, "rgba(39, 174, 96, 0.2)");
+          viperGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = viperGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 17 * sealPulse, 6.5 * sealPulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Poison Seal Outer Circle
+          ctx.strokeStyle = "#2ecc71";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 14 * sealPulse, 5.0 * sealPulse, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Viper Fang Mark
+          ctx.strokeStyle = "#a3fd83";
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.moveTo(-4, -2);
+          ctx.lineTo(-2, 3);
+          ctx.moveTo(4, -2);
+          ctx.lineTo(2, 3);
+          ctx.stroke();
+
+          ctx.restore();
+
+          // B. Orbiting Poison Motes (Back-Pass: Z < 0)
+          for (let i = 0; i < moteCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / moteCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#1e8449";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Poison Motes (Front-Pass: Z >= 0)
+          for (let i = 0; i < moteCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / moteCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#a3fd83";
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#2ecc71";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox - 0.4, oy - 0.4, 0.7, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Venom Shadow Eye Glint
+          ctx.save();
+          let eyePulse = Math.sin(time / 90) * 0.35 + 0.65;
+          let eyeX = options.facing === -1 ? -2 : 2;
+          let eyeY = -9 + bounce;
+
+          ctx.fillStyle = `rgba(163, 253, 131, ${eyePulse})`;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "#2ecc71";
+          ctx.beginPath();
+          ctx.arc(eyeX, eyeY, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 6. VOID-WARPED BULWARK (Translucent Hex Shield & Void Barrier) ---
+      let hasAegis =
+        equipped.subweapon &&
+        (equipped.subweapon.isUniqueAegis ||
+          equipped.subweapon.id === "shield_aegis");
+      if (hasAegis) {
+        let cy = 0 + bounce;
+        let orbitRadiusX = 17;
+        let orbitRadiusY = 6;
+        let moteCount = 3;
+        let rotSpeed = time / 320;
+
+        if (isBehind) {
+          // A. Dark Purple Void Distortion Ring (Foot Ring)
+          ctx.save();
+          let aegisPulse = Math.sin(time / 140) * 0.12 + 1.0;
+          ctx.translate(0, 16);
+
+          let aegisGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            18 * aegisPulse,
+          );
+          aegisGrad.addColorStop(0, "rgba(37, 3, 60, 0.5)");
+          aegisGrad.addColorStop(0.6, "rgba(142, 68, 173, 0.2)");
+          aegisGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = aegisGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 18 * aegisPulse, 7 * aegisPulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#8e44ad";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            15 * aegisPulse,
+            5.5 * aegisPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+
+          ctx.restore();
+
+          // B. Orbiting Void Shield Motes (Back-Pass: Z < 0)
+          for (let i = 0; i < moteCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / moteCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#110221";
+              ctx.strokeStyle = "#8e44ad";
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Void Shield Motes (Front-Pass: Z >= 0)
+          for (let i = 0; i < moteCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / moteCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#00ffff";
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#8e44ad";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox - 0.4, oy - 0.4, 0.7, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Floating Hexagonal Void Energy Shield Barrier Projection
+          ctx.save();
+          let shieldX = options.facing === -1 ? -12 : 12;
+          let shieldY = -2 + bounce;
+          let shieldPulse = Math.sin(time / 110) * 1.2 + 8.5;
+
+          ctx.translate(shieldX, shieldY);
+          ctx.strokeStyle = "rgba(0, 255, 255, 0.75)";
+          ctx.fillStyle = "rgba(142, 68, 173, 0.22)";
+          ctx.lineWidth = 1.4;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "#8e44ad";
+
+          // Hexagon Projection Path
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            let a = (i * Math.PI) / 3;
+            let hx = Math.cos(a) * shieldPulse;
+            let hy = Math.sin(a) * shieldPulse * 1.2;
+            if (i === 0) ctx.moveTo(hx, hy);
+            else ctx.lineTo(hx, hy);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Core White-Hot Node
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 7. CHRONOS DIAL-WATCH (Clockwork Gear Halo & Roman Hour Marks) ---
+      let hasWatch =
+        equipped.subweapon &&
+        (equipped.subweapon.isUniqueWatch ||
+          equipped.subweapon.id === "tome_watch");
+      if (hasWatch) {
+        let cy = 0 + bounce;
+        let orbitRadiusX = 18;
+        let orbitRadiusY = 6;
+        let sparkCount = 4;
+        let rotSpeed = time / 400;
+
+        if (isBehind) {
+          // A. Rotating Golden Clockwork Dial (Waist/Ground Gear Halo)
+          ctx.save();
+          let dialPulse = Math.sin(time / 160) * 0.08 + 1.0;
+          ctx.translate(0, 16);
+
+          let watchGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            18 * dialPulse,
+          );
+          watchGrad.addColorStop(0, "rgba(212, 175, 55, 0.45)");
+          watchGrad.addColorStop(0.6, "rgba(241, 196, 15, 0.15)");
+          watchGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = watchGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 18 * dialPulse, 7 * dialPulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#d4af37";
+          ctx.lineWidth = 1.4;
+          let gearRot = (time / 300) % (Math.PI * 2);
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            15 * dialPulse,
+            5.5 * dialPulse,
+            gearRot,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+
+          // Ticks on Dial Ring
+          ctx.strokeStyle = "#f1c40f";
+          ctx.lineWidth = 1.0;
+          for (let i = 0; i < 12; i++) {
+            let tickAngle = gearRot + (i * Math.PI * 2) / 12;
+            let tx1 = Math.cos(tickAngle) * (13 * dialPulse);
+            let ty1 = Math.sin(tickAngle) * (4.8 * dialPulse);
+            let tx2 = Math.cos(tickAngle) * (15 * dialPulse);
+            let ty2 = Math.sin(tickAngle) * (5.5 * dialPulse);
+
+            ctx.beginPath();
+            ctx.moveTo(tx1, ty1);
+            ctx.lineTo(tx2, ty2);
+            ctx.stroke();
+          }
+
+          ctx.restore();
+
+          // B. Orbiting Temporal Gear Sparks (Back-Pass: Z < 0)
+          for (let i = 0; i < sparkCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / sparkCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#b7950b";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Temporal Gear Sparks (Front-Pass: Z >= 0)
+          for (let i = 0; i < sparkCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / sparkCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.0, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#f1c40f";
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#d4af37";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.4, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+
+          // D. Rotating Clock Hands (Chest / Offhand Temporal Anchor)
+          ctx.save();
+          let clockX = options.facing === -1 ? -12 : 12;
+          let clockY = -4 + bounce;
+          ctx.translate(clockX, clockY);
+
+          let handAngle1 = (time / 150) % (Math.PI * 2);
+          let handAngle2 = (time / 800) % (Math.PI * 2);
+
+          // Hour Hand
+          ctx.strokeStyle = "#d4af37";
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(handAngle2) * 5, Math.sin(handAngle2) * 5);
+          ctx.stroke();
+
+          // Minute Hand
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(handAngle1) * 7.5, Math.sin(handAngle1) * 7.5);
+          ctx.stroke();
+
+          // Pivot Center Node
+          ctx.fillStyle = "#f1c40f";
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 8. CHRONICLE OF PAST LIVES (Orbiting Golden Codex & Runic Glyphs) ---
+      let hasChronicle =
+        equipped.subweapon &&
+        (equipped.subweapon.isUniqueChronicle ||
+          equipped.subweapon.id === "tome_chronicle");
+      if (hasChronicle) {
+        let cy = -2 + bounce;
+        let orbitRadiusX = 18;
+        let orbitRadiusY = 6;
+        let glyphCount = 4;
+        let rotSpeed = time / 350;
+
+        if (isBehind) {
+          // A. Golden Wisdom Ground Halo (Foot Ring)
+          ctx.save();
+          let chronPulse = Math.sin(time / 150) * 0.1 + 1.0;
+          ctx.translate(0, 16);
+
+          let chronGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            17 * chronPulse,
+          );
+          chronGrad.addColorStop(0, "rgba(241, 196, 15, 0.4)");
+          chronGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.15)");
+          chronGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = chronGrad;
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            17 * chronPulse,
+            6.5 * chronPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+
+          ctx.strokeStyle = "#f1c40f";
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            14 * chronPulse,
+            5.0 * chronPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+
+          ctx.restore();
+
+          // B. Orbiting Golden Runic Glyphs (Back-Pass: Z < 0)
+          for (let i = 0; i < glyphCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / glyphCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#d4af37";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Golden Runic Glyphs (Front-Pass: Z >= 0)
+          for (let i = 0; i < glyphCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / glyphCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.0, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#f1c40f";
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#f1c40f";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Tiny Rune Cross
+              ctx.strokeStyle = "#ffffff";
+              ctx.lineWidth = 0.8;
+              ctx.beginPath();
+              ctx.moveTo(ox - 1.2, oy);
+              ctx.lineTo(ox + 1.2, oy);
+              ctx.moveTo(ox, oy - 1.2);
+              ctx.lineTo(ox, oy + 1.2);
+              ctx.stroke();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Floating Open Golden Parchment Codex (Chest/Shoulder Level)
+          ctx.save();
+          let bookX = options.facing === -1 ? -13 : 13;
+          let bookY = -6 + bounce + Math.sin(time / 200) * 1.5;
+          ctx.translate(bookX, bookY);
+          ctx.rotate(options.facing * (Math.PI / 12));
+
+          // Open Codex Parchment Pages
+          ctx.fillStyle = "#fef08a";
+          ctx.strokeStyle = "#111116";
+          ctx.lineWidth = 1.0;
+
+          // Left Page
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(-3, -4, -6, -3);
+          ctx.lineTo(-6, 3);
+          ctx.quadraticCurveTo(-3, 2, 0, 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Right Page
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(3, -4, 6, -3);
+          ctx.lineTo(6, 3);
+          ctx.quadraticCurveTo(3, 2, 0, 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Golden Spine
+          ctx.fillStyle = "#f1c40f";
+          ctx.fillRect(-0.8, -3.5, 1.6, 7.5);
+
+          // Glowing Golden Page Lines
+          ctx.strokeStyle = "rgba(212, 175, 55, 0.8)";
+          ctx.lineWidth = 0.7;
+          ctx.beginPath();
+          ctx.moveTo(-4, -1);
+          ctx.lineTo(-2, -1);
+          ctx.moveTo(-4, 1);
+          ctx.lineTo(-2, 1);
+          ctx.moveTo(2, -1);
+          ctx.lineTo(4, -1);
+          ctx.moveTo(2, 1);
+          ctx.lineTo(4, 1);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 9. CONDUIT OF THE LEXICON (Tri-Element Arcane Helix & Elemental Orbs) ---
+      let hasConduit =
+        equipped.subweapon &&
+        (equipped.subweapon.isUniqueConduit ||
+          equipped.subweapon.id === "tome_conduit");
+      if (hasConduit) {
+        let cy = -12 + bounce;
+        let orbitRadiusX = 16;
+        let orbitRadiusY = 5.5;
+        let elemOrbs = [
+          { color: "#e67e22", glow: "#ff5500", name: "fire" },
+          { color: "#f1c40f", glow: "#ffffff", name: "lightning" },
+          { color: "#38bdf8", glow: "#00ffff", name: "frost" },
+        ];
+        let rotSpeed = time / 300;
+
+        if (isBehind) {
+          // A. Tri-Elemental Arcane Ground Seal
+          ctx.save();
+          let elemPulse = Math.sin(time / 140) * 0.12 + 1.0;
+          ctx.translate(0, 16);
+
+          let elemGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            18 * elemPulse,
+          );
+          elemGrad.addColorStop(0, "rgba(155, 89, 182, 0.45)");
+          elemGrad.addColorStop(0.5, "rgba(56, 189, 248, 0.2)");
+          elemGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = elemGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 18 * elemPulse, 7 * elemPulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#9b59b6";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 15 * elemPulse, 5.5 * elemPulse, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.restore();
+
+          // B. Orbiting Elemental Orbs (Back-Pass: Z < 0)
+          for (let i = 0; i < elemOrbs.length; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / elemOrbs.length;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = elemOrbs[i].color;
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Elemental Orbs (Front-Pass: Z >= 0)
+          for (let i = 0; i < elemOrbs.length; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / elemOrbs.length;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = elemOrbs[i].glow;
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = elemOrbs[i].color;
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.6, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox - 0.4, oy - 0.4, 0.8, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Aetheric Conduit Eye Glint
+          ctx.save();
+          let eyePulse = Math.sin(time / 110) * 0.35 + 0.65;
+          let eyeX = options.facing === -1 ? -2 : 2;
+          let eyeY = -9 + bounce;
+
+          ctx.fillStyle = `rgba(0, 240, 255, ${eyePulse})`;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "#9b59b6";
+          ctx.beginPath();
+          ctx.arc(eyeX, eyeY, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 10. WARP-CORE GREAVES (Cyan Plasma Thrusters & Warp Lines) ---
+      let hasWarpCore =
+        equipped.boots &&
+        (equipped.boots.isUniqueWarpCore ||
+          equipped.boots.id === "boots_warpcore");
+      if (hasWarpCore) {
+        let cy = 12 + bounce;
+        let orbitRadiusX = 14;
+        let orbitRadiusY = 5.0;
+        let particleCount = 3;
+        let rotSpeed = time / 220;
+
+        if (isBehind) {
+          // A. Cyan Plasma Thruster Plume (Ground Foot Halo)
+          ctx.save();
+          let warpPulse = Math.sin(time / 80) * 0.18 + 1.0;
+          ctx.translate(0, 16);
+
+          let warpGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            16 * warpPulse,
+          );
+          warpGrad.addColorStop(0, "rgba(0, 240, 255, 0.55)");
+          warpGrad.addColorStop(0.5, "rgba(0, 150, 255, 0.2)");
+          warpGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = warpGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 16 * warpPulse, 6 * warpPulse, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#00ffff";
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 13 * warpPulse, 4.5 * warpPulse, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.restore();
+
+          // B. Orbiting Warp Particles (Back-Pass: Z < 0)
+          for (let i = 0; i < particleCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / particleCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#0284c7";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Warp Particles (Front-Pass: Z >= 0)
+          for (let i = 0; i < particleCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / particleCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.0, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#00ffff";
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#00ffff";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Plasma Jet Thruster Streaks at Boot Heels
+          ctx.save();
+          let jetFlutter = Math.sin(time / 60) * 1.8;
+          let heelX = options.facing === -1 ? 4 : -4;
+          let heelY = 13 + bounce;
+
+          ctx.translate(heelX, heelY);
+          ctx.fillStyle = "#00ffff";
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "#00ffff";
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-6 * options.facing, 3 + jetFlutter);
+          ctx.lineTo(-2 * options.facing, 6);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // --- 11. CROWN OF TEMPESTS (Crackling Static Crown & Electric Arcs) ---
+      let hasTempest =
+        equipped.helmet &&
+        (equipped.helmet.isUniqueTempest ||
+          equipped.helmet.id === "helmet_tempest");
+      if (hasTempest) {
+        let cy = -16 + bounce;
+        let orbitRadiusX = 16;
+        let orbitRadiusY = 5.0;
+        let sparkCount = 4;
+        let rotSpeed = time / 260;
+
+        if (isBehind) {
+          // A. Crackling Storm Ground Aura (Foot Ring)
+          ctx.save();
+          let tempestPulse = Math.sin(time / 90) * 0.15 + 1.0;
+          ctx.translate(0, 16);
+
+          let tempestGrad = ctx.createRadialGradient(
+            0,
+            0,
+            2,
+            0,
+            0,
+            17 * tempestPulse,
+          );
+          tempestGrad.addColorStop(0, "rgba(241, 196, 15, 0.45)");
+          tempestGrad.addColorStop(0.6, "rgba(0, 240, 255, 0.18)");
+          tempestGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = tempestGrad;
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            17 * tempestPulse,
+            6.5 * tempestPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+
+          ctx.strokeStyle = "#f1c40f";
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([3, 2]);
+          ctx.beginPath();
+          ctx.ellipse(
+            0,
+            0,
+            14 * tempestPulse,
+            5.0 * tempestPulse,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+
+          ctx.restore();
+
+          // B. Orbiting Lightning Sparks (Back-Pass: Z < 0)
+          for (let i = 0; i < sparkCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / sparkCount;
+            let oz = Math.sin(angle);
+            if (oz < 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#f1c40f";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.8, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+        } else {
+          // C. Orbiting Lightning Sparks (Front-Pass: Z >= 0)
+          for (let i = 0; i < sparkCount; i++) {
+            let angle = rotSpeed + (i * Math.PI * 2) / sparkCount;
+            let oz = Math.sin(angle);
+            if (oz >= 0) {
+              let ox = Math.cos(angle) * orbitRadiusX;
+              let oy = oz * orbitRadiusY + cy;
+
+              ctx.save();
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 1.0, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = "#00ffff";
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = "#f1c40f";
+              ctx.beginPath();
+              ctx.arc(ox, oy, 2.4, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // D. Crackling Static Lightning Crown (Above Helmet)
+          ctx.save();
+          let crownHeadY = -22 + bounce;
+          ctx.translate(0, crownHeadY);
+
+          // Electric Halo Back Glow
+          let crownPulse = Math.sin(time / 80) * 1.5;
+          let haloGlow = ctx.createRadialGradient(
+            0,
+            -2,
+            1,
+            0,
+            -2,
+            11 + crownPulse,
+          );
+          haloGlow.addColorStop(0, "rgba(255, 255, 255, 0.9)");
+          haloGlow.addColorStop(0.5, "rgba(241, 196, 15, 0.4)");
+          haloGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = haloGlow;
+          ctx.beginPath();
+          ctx.arc(0, -2, 11 + crownPulse, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Electric Lightning Spikes
+          ctx.strokeStyle = "#f1c40f";
+          ctx.fillStyle = "#00ffff";
+          ctx.lineWidth = 1.2;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "#00ffff";
+
+          ctx.beginPath();
+          // Center Bolt Spike
+          ctx.moveTo(-2, -2);
+          ctx.lineTo(-1, -7 - crownPulse);
+          ctx.lineTo(1, -7 - crownPulse);
+          ctx.lineTo(0, -12 - crownPulse);
+          ctx.lineTo(-0.5, -6 - crownPulse);
+          ctx.lineTo(2, -2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Left Bolt Spike
+          ctx.beginPath();
+          ctx.moveTo(-7, -1);
+          ctx.lineTo(-5, -6 - crownPulse * 0.7);
+          ctx.lineTo(-8, -9 - crownPulse * 0.7);
+          ctx.lineTo(-4, -4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Right Bolt Spike
+          ctx.beginPath();
+          ctx.moveTo(7, -1);
+          ctx.lineTo(5, -6 - crownPulse * 0.7);
+          ctx.lineTo(8, -9 - crownPulse * 0.7);
+          ctx.lineTo(4, -4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Core White-Hot Lightning Gem
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(0, -2, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+    };
+
     // Ground Drop Shadow Pass (Ambient Occlusion)
     ctx.save();
     let shadowScale = Math.max(0.65, 1.0 - Math.abs(bounce) * 0.05);
@@ -15196,17 +16726,21 @@
       // Facing Left: Left hand (Subweapon) is in the back (drawn first), Right hand (Main Weapon) is in the front (drawn last)
       drawColossusPhantom();
       drawFortitudePass(true);
+      drawUniqueCharacterVisuals(true);
       drawSubweapon();
       drawBodyAndCostume();
       drawMainWeapon();
+      drawUniqueCharacterVisuals(false);
       drawFortitudePass(false);
     } else {
       // Facing Right: Right hand (Main Weapon) is in the back (drawn first), Left hand (Subweapon) is in the front (drawn last)
       drawColossusPhantom();
       drawFortitudePass(true);
+      drawUniqueCharacterVisuals(true);
       drawMainWeapon();
       drawBodyAndCostume();
       drawSubweapon();
+      drawUniqueCharacterVisuals(false);
       drawFortitudePass(false);
     }
 
