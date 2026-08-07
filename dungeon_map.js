@@ -583,29 +583,29 @@
     }
 
     generateMerchantStock() {
-          this.merchantStock = [];
-          let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-          let stageScale = this.depth;
-          let pStats =
-            typeof window.resolvePlayerStats === "function"
-              ? window.resolvePlayerStats()
-              : {};
-          // Substantial quality multiplier boost representing exclusive wanderer wares
-          let playerQuality = (pStats.qly || 1.0) * 2.5;
+      this.merchantStock = [];
+      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+      let stageScale = this.depth;
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      // Substantial quality multiplier boost representing exclusive wanderer wares
+      let playerQuality = (pStats.qly || 1.0) * 2.5;
 
-          for (let i = 0; i < 3; i++) {
-                  let chosenType = types[Math.floor(Math.random() * types.length)];
-                  let rolledRarity = window.rollItemRarity(
-                    Math.max(this.depth, window.playerStats.maxFloorCleared || 0) * 8,
-                    playerQuality,
-                    false,
-                  );
-                  let item = window.createItemObject(
-                    chosenType,
-                    rolledRarity,
-                    stageScale,
-                    0,
-                  );
+      for (let i = 0; i < 3; i++) {
+        let chosenType = types[Math.floor(Math.random() * types.length)];
+        let rolledRarity = window.rollItemRarity(
+          Math.max(this.depth, window.playerStats.maxFloorCleared || 0) * 8,
+          playerQuality,
+          false,
+        );
+        let item = window.createItemObject(
+          chosenType,
+          rolledRarity,
+          stageScale,
+          0,
+        );
 
         let costMult =
           150 * (1 + stageScale * 0.65) * Math.pow(1.65, rolledRarity) * 0.85;
@@ -1031,17 +1031,17 @@
   window.activeDungeonMap = new DungeonMapGenerator();
 
   window.preRenderStaticMap = function (map) {
-      if (!map || !map.grid || map.grid.length === 0) return;
-      let tileSize = map.tileSize;
+    if (!map || !map.grid || map.grid.length === 0) return;
+    let tileSize = map.tileSize;
 
-      if (!window.sharedPreRenderCanvas) {
-        window.sharedPreRenderCanvas = document.createElement("canvas");
-      }
-      let pCanvas = window.sharedPreRenderCanvas;
-      pCanvas.width = map.width * tileSize;
-      pCanvas.height = map.height * tileSize;
-      map.preRenderCanvas = pCanvas;
-      let pCtx = pCanvas.getContext("2d");
+    if (!window.sharedPreRenderCanvas) {
+      window.sharedPreRenderCanvas = document.createElement("canvas");
+    }
+    let pCanvas = window.sharedPreRenderCanvas;
+    pCanvas.width = map.width * tileSize;
+    pCanvas.height = map.height * tileSize;
+    map.preRenderCanvas = pCanvas;
+    let pCtx = pCanvas.getContext("2d");
 
     let isHub = window.currentGameState === window.GAME_STATES.HUB;
     let depth = window.player ? window.player.depth || 1 : 1;
@@ -1901,15 +1901,25 @@
     ctx.translate(-Math.floor(camera.x), -Math.floor(camera.y));
 
     // PASS 1: Base Terrain & Floor Grid Rendering
-        if (map.needsPreRender || !map.preRenderCanvas) {
-          window.preRenderStaticMap(map);
-        }
+    if (map.needsPreRender || !map.preRenderCanvas) {
+      window.preRenderStaticMap(map);
+    }
 
-        let sx = startCol * tileSize;
-        let sy = startRow * tileSize;
-        let sWidth = Math.max(1, (endCol - startCol + 1) * tileSize);
-        let sHeight = Math.max(1, (endRow - startRow + 1) * tileSize);
-        ctx.drawImage(map.preRenderCanvas, sx, sy, sWidth, sHeight, sx, sy, sWidth, sHeight);
+    let sx = startCol * tileSize;
+    let sy = startRow * tileSize;
+    let sWidth = Math.max(1, (endCol - startCol + 1) * tileSize);
+    let sHeight = Math.max(1, (endRow - startRow + 1) * tileSize);
+    ctx.drawImage(
+      map.preRenderCanvas,
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+    );
 
     // PASS 2: Object & Station Overlay Pass (Renders cleanly over floor grid without clipping)
     for (let r = startRow; r <= endRow; r++) {
@@ -5068,15 +5078,19 @@
         ctx.fillRect(cx + 9, cy - 3, 2, 2);
 
         // 5. Draw the specific item floating above this pedestal (hidden if Marcus is being robbed)
-                if (map && map.merchantWares && map.merchantStock) {
-                  let tileC = Math.floor(px / tileSize);
-                  let tileR = Math.floor(py / tileSize);
-                  let ware = map.merchantWares.find(
-                    (w) => w.x === tileC && w.y === tileR,
-                  );
-                  if (ware) {
-                    let item = map.merchantStock[ware.itemIdx];
-                    if (item && !item.purchased && !(window.playerStats && window.playerStats.robbingMarcusActive)) {
+        if (map && map.merchantWares && map.merchantStock) {
+          let tileC = Math.floor(px / tileSize);
+          let tileR = Math.floor(py / tileSize);
+          let ware = map.merchantWares.find(
+            (w) => w.x === tileC && w.y === tileR,
+          );
+          if (ware) {
+            let item = map.merchantStock[ware.itemIdx];
+            if (
+              item &&
+              !item.purchased &&
+              !(window.playerStats && window.playerStats.robbingMarcusActive)
+            ) {
               let itemBob = Math.sin(time / 200 + ware.itemIdx * 1.5) * 1.8;
               let itemY = cy - 12 + itemBob;
 

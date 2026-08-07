@@ -2674,11 +2674,11 @@ window.NEW_ARTIFACT_SVGS.synergy_sanguine = function (size) {
             <path d="M22.5 32 C25 25, 29 22, 32 22 C35 22, 39 25, 41.5 32 C35.5 30, 28.5 30, 22.5 32 Z" fill="url(#sanguine_glass_${size})" opacity="0.6" />
           </svg>
         `;
-      };
+};
 
-      // Register 1.11: Kinetic Momentum Converter SVG
-      window.NEW_ARTIFACT_SVGS.speed_to_momentum = function (size) {
-        return `
+// Register 1.11: Kinetic Momentum Converter SVG
+window.NEW_ARTIFACT_SVGS.speed_to_momentum = function (size) {
+  return `
           <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
             <circle cx="32" cy="32" r="24" fill="url(#momentum_glow_${size})" opacity="0.15" />
             <defs>
@@ -2721,11 +2721,11 @@ window.NEW_ARTIFACT_SVGS.synergy_sanguine = function (size) {
             <path d="M43 21 L38 23" stroke="#a855f7" stroke-width="1.0" stroke-linecap="round" />
           </svg>
         `;
-      };
+};
 
-      // Global interceptor hook executing modular dynamic lookups
-      (function () {
-        const originalGetArtifactIcon = window.getArtifactIconHtml;
+// Global interceptor hook executing modular dynamic lookups
+(function () {
+  const originalGetArtifactIcon = window.getArtifactIconHtml;
   window.getArtifactIconHtml = function (trait, size = 56) {
     if (window.NEW_ARTIFACT_SVGS && window.NEW_ARTIFACT_SVGS[trait]) {
       return window.NEW_ARTIFACT_SVGS[trait](size);

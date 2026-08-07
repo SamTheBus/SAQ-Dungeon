@@ -385,7 +385,7 @@
           desc: "Start dungeon runs with a Common (0★) Starter Dagger equipped if offhand is empty. (Requires Hero Level 2)",
         },
         {
-          id: "dagger_crit",
+          id: "dagger_crit_chance",
           name: "Lethal Precision",
           iconKey: "dagger_crit",
           x: 25,
@@ -398,20 +398,7 @@
           getStatText: (rank) => `+${(rank * 1.5).toFixed(1)}% Crit Chance`,
         },
         {
-          id: "dagger_crit_dmg",
-          name: "Savage Ferocity",
-          iconKey: "dagger_crit_dmg",
-          x: 75,
-          y: 72,
-          tier: 1,
-          maxRank: 3,
-          costPerRank: 1,
-          prereqs: ["dagger_starter"],
-          desc: "Increases Critical Strike Damage multiplier by +6% per rank.",
-          getStatText: (rank) => `+${rank * 6}% Crit Damage`,
-        },
-        {
-          id: "dagger_lethal_precision",
+          id: "dagger_offhand_precision",
           name: "Offhand Precision",
           iconKey: "dagger_starter",
           x: 15,
@@ -419,7 +406,7 @@
           tier: 2,
           maxRank: 3,
           costPerRank: 1,
-          prereqs: ["dagger_crit"],
+          prereqs: ["dagger_crit_chance"],
           desc: "Offhand strikes deal +8% damage, and increase offhand flurry double-strike damage by +10% per rank.",
           getStatText: (rank) =>
             `+${rank * 8}% Offhand Strike Dmg & +${rank * 10}% Flurry`,
@@ -433,7 +420,7 @@
           tier: 2,
           maxRank: 3,
           costPerRank: 1,
-          prereqs: ["dagger_crit"],
+          prereqs: ["dagger_crit_chance"],
           desc: "Offhand Strikes apply stacking Poison (10%/20%/30% Atk/sec) and have a +5% chance per rank to cause Sanguine Bleeding.",
           getStatText: (rank) =>
             `Poison: ${rank * 10}% Atk/sec & +${rank * 5}% Bleed`,
@@ -474,7 +461,7 @@
           tier: 3,
           maxRank: 1,
           costPerRank: 2,
-          prereqs: ["dagger_lethal_precision"],
+          prereqs: ["dagger_offhand_precision"],
           desc: "Main weapon Critical Strikes trigger a guaranteed Offhand Strike with +50% Critical Damage.",
           getStatText: () => "Offhand Strike on Crit with +50% Crit Dmg",
         },
@@ -2050,27 +2037,36 @@ if (window.playerStats && window.playerStats.usp === undefined) {
       stats.maxBlockCap = (stats.maxBlockCap || 0.3) + shieldIronWallLvl * 0.02;
     }
     let shieldFortifiedGuardLvl = getLevel("shield_fortified_guard");
-    if (shieldFortifiedGuardLvl > 0 && window.playerStats && window.playerStats.fortitudeTimer > 0 && window.playerStats.fortitudeStacks > 0) {
-      stats.def = (stats.def || 5) * (1 + window.playerStats.fortitudeStacks * shieldFortifiedGuardLvl * 0.04);
+    if (
+      shieldFortifiedGuardLvl > 0 &&
+      window.playerStats &&
+      window.playerStats.fortitudeTimer > 0 &&
+      window.playerStats.fortitudeStacks > 0
+    ) {
+      stats.def =
+        (stats.def || 5) *
+        (1 +
+          window.playerStats.fortitudeStacks * shieldFortifiedGuardLvl * 0.04);
     }
     let shieldImpactTremorLvl = getLevel("shield_impact_tremor");
     if (shieldImpactTremorLvl > 0) {
-      stats.resonantAegisChance = shieldImpactTremorLvl * 0.20;
+      stats.resonantAegisChance = shieldImpactTremorLvl * 0.2;
     }
     let shieldFortitudeLvl = getLevel("shield_fortitude");
     if (shieldFortitudeLvl > 0) {
-      stats.blockMitigationBonus = shieldFortitudeLvl * 0.10;
+      stats.blockMitigationBonus = shieldFortitudeLvl * 0.1;
     }
     let shieldRetaliationLvl = getLevel("shield_retaliation");
     if (shieldRetaliationLvl > 0) {
-      stats.shieldBashMultiplier = (stats.shieldBashMultiplier || 1.0) + shieldRetaliationLvl * 0.15;
+      stats.shieldBashMultiplier =
+        (stats.shieldBashMultiplier || 1.0) + shieldRetaliationLvl * 0.15;
       stats.shieldDefScalingCounter = shieldRetaliationLvl * 0.12;
     }
     if (getLevel("shield_keystone_colossus") > 0) {
       stats.colossusBlock = true;
     }
     if (getLevel("shield_keystone_reflect") > 0) {
-      stats.atk = (stats.atk || 15) + (stats.def || 5) * 0.40;
+      stats.atk = (stats.atk || 15) + (stats.def || 5) * 0.4;
       stats.reflectSingularityActive = true;
     }
 
@@ -2085,8 +2081,10 @@ if (window.playerStats && window.playerStats.usp === undefined) {
     }
     let daggerLethalPrecisionLvl = getLevel("dagger_lethal_precision");
     if (daggerLethalPrecisionLvl > 0) {
-      stats.offhandDmgMultiplier = (stats.offhandDmgMultiplier || 1.0) + daggerLethalPrecisionLvl * 0.08;
-      stats.offhandFlurryMultiplier = (stats.offhandFlurryMultiplier || 1.0) + daggerLethalPrecisionLvl * 0.10;
+      stats.offhandDmgMultiplier =
+        (stats.offhandDmgMultiplier || 1.0) + daggerLethalPrecisionLvl * 0.08;
+      stats.offhandFlurryMultiplier =
+        (stats.offhandFlurryMultiplier || 1.0) + daggerLethalPrecisionLvl * 0.1;
     }
     let daggerVipersCoatingLvl = getLevel("dagger_vipers_coating");
     if (daggerVipersCoatingLvl > 0) {
@@ -2120,15 +2118,20 @@ if (window.playerStats && window.playerStats.usp === undefined) {
       stats.hasKeystoneAssassin = true;
     }
     if (getLevel("dagger_keystone_duellist") > 0) {
-      stats.maxParryCap = 0.40;
+      stats.maxParryCap = 0.4;
       stats.hasKeystoneDuellist = true;
     }
 
     // Auto-initialize base Dagger attributes if equipped
-    if (window.equippedSlots && window.equippedSlots.subweapon && (window.equippedSlots.subweapon.type === "dagger" || window.equippedSlots.subweapon.subType === "dagger")) {
+    if (
+      window.equippedSlots &&
+      window.equippedSlots.subweapon &&
+      (window.equippedSlots.subweapon.type === "dagger" ||
+        window.equippedSlots.subweapon.subType === "dagger")
+    ) {
       stats.subType = "dagger";
-      stats.offhandChance = 0.35;
-      stats.offhandDmg = 0.45;
+      stats.offhandChance = stats.offhandChance || 0.35;
+      stats.offhandDmg = stats.offhandDmg || 0.45;
     }
 
     // 3. Tome Tree Branching Nodes
@@ -2139,7 +2142,8 @@ if (window.playerStats && window.playerStats.usp === undefined) {
     }
     let tomeExpLvl = getLevel("tome_exp");
     if (tomeExpLvl > 0) {
-      stats.expGainMultiplier = (stats.expGainMultiplier || 1.0) + tomeExpLvl * 0.03;
+      stats.expGainMultiplier =
+        (stats.expGainMultiplier || 1.0) + tomeExpLvl * 0.03;
     }
     let tomeEmpoweredCatalystsLvl = getLevel("tome_empowered_catalysts");
     if (tomeEmpoweredCatalystsLvl > 0) {
@@ -2148,7 +2152,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
     }
     let tomeRunicBarrierLvl = getLevel("tome_runic_barrier");
     if (tomeRunicBarrierLvl > 0) {
-      stats.arcaneBarrier = 0.20 + tomeRunicBarrierLvl * 0.04;
+      stats.arcaneBarrier = 0.2 + tomeRunicBarrierLvl * 0.04;
     }
     let tomeElementalOverloadLvl = getLevel("tome_elemental_overload");
     if (tomeElementalOverloadLvl > 0) {
@@ -2177,7 +2181,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
     }
     if (getLevel("tome_keystone_singularity") > 0) {
       stats.arcaneBarrier = 0.45;
-      stats.atk = (stats.atk || 15) + (stats.int || 5) * 0.80;
+      stats.atk = (stats.atk || 15) + (stats.int || 5) * 0.8;
     }
 
     // --- STANDARD FILLER SKILLS RESOLUTION ---
@@ -2279,11 +2283,19 @@ if (window.playerStats && window.playerStats.usp === undefined) {
 
     // Apply active timers and modifications
     if (window.playerStats) {
-      if (window.playerStats.colossusAtkBonusTimer > 0 && window.playerStats.colossusAtkBonusVal > 0) {
+      if (
+        window.playerStats.colossusAtkBonusTimer > 0 &&
+        window.playerStats.colossusAtkBonusVal > 0
+      ) {
         stats.atk = (stats.atk || 15) + window.playerStats.colossusAtkBonusVal;
       }
-      if (window.playerStats.shadowStepTimer > 0 && window.playerStats.shadowStepLevel > 0) {
-        stats.moveSpeed = (stats.moveSpeed || window.playerStats.baseMoveSpeed) * (1 + window.playerStats.shadowStepLevel * 0.15);
+      if (
+        window.playerStats.shadowStepTimer > 0 &&
+        window.playerStats.shadowStepLevel > 0
+      ) {
+        stats.moveSpeed =
+          (stats.moveSpeed || window.playerStats.baseMoveSpeed) *
+          (1 + window.playerStats.shadowStepLevel * 0.15);
       }
     }
 

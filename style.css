@@ -5966,11 +5966,20 @@ summary {
   max-width: 840px !important;
   width: 94vw !important;
   max-height: 90vh !important;
-  background: radial-gradient(circle at top, rgba(168, 85, 247, 0.14) 0%, rgba(10, 8, 20, 0.98) 75%), #060410 !important;
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(168, 85, 247, 0.14) 0%,
+      rgba(10, 8, 20, 0.98) 75%
+    ),
+    #060410 !important;
   border: 2.5px solid var(--border-gold-filigree) !important;
   outline: 1px solid var(--border-aged-bronze) !important;
   outline-offset: -4px !important;
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.98), 0 0 35px rgba(168, 85, 247, 0.22), inset 0 0 25px rgba(212, 175, 55, 0.05) !important;
+  box-shadow:
+    0 25px 70px rgba(0, 0, 0, 0.98),
+    0 0 35px rgba(168, 85, 247, 0.22),
+    inset 0 0 25px rgba(212, 175, 55, 0.05) !important;
   border-radius: 10px !important;
 }
 
@@ -5990,7 +5999,9 @@ summary {
   overflow-y: auto;
   min-height: 0;
   touch-action: pan-y;
-  box-shadow: inset 0 4px 18px rgba(0, 0, 0, 0.95), 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 4px 18px rgba(0, 0, 0, 0.95),
+    0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .trial-selection-btn {

@@ -1196,10 +1196,10 @@ Object.assign(window.GameState, {
       }
 
       // Calculate next xpReq safely using polynomial scaling
-            let lvl = window.playerStats.level || 1;
-            let rawXpReq = Math.round(350 * Math.pow(lvl, 1.8));
-            xpReq = BigNum.from(rawXpReq);
-            leveledUp = true;
+      let lvl = window.playerStats.level || 1;
+      let rawXpReq = Math.round(350 * Math.pow(lvl, 1.8));
+      xpReq = BigNum.from(rawXpReq);
+      leveledUp = true;
     }
 
     if (leveledUp) {
@@ -1966,10 +1966,10 @@ window.ARTIFACT_BASE_STATS = {
   friction_kinetic: { dex: 3 },
   friction_tenacity: { str: 4 },
   friction_accretion: { quality: 0.05 },
-    synergy_nexus: { int: 4 },
-    synergy_sanguine: { critChance: 0.03 },
-    speed_to_momentum: { dex: 5 },
-  };
+  synergy_nexus: { int: 4 },
+  synergy_sanguine: { critChance: 0.03 },
+  speed_to_momentum: { dex: 5 },
+};
 
 window.resolvePlayerStats = function (useDraft = false) {
   if (!useDraft && !window.playerStatsDirty && window.cachedPlayerStats) {
@@ -2010,6 +2010,66 @@ window.resolvePlayerStats = function (useDraft = false) {
     atkPct: 0,
     maxHpPct: 0,
   };
+
+  // Initialize subweapon parameters early to protect from downstream overrides
+  p.subType = null;
+  p.spellType = null;
+  p.spellChance = 0;
+  p.spellPower = 1.0;
+  p.riposteDamage = 0.8;
+  p.bleedChance = 0;
+  p.offhandChance = 0;
+  p.offhandDmg = 0.35;
+  p.reflectDamage = 0.4;
+  p.bashAtkBonus = 0;
+  p.parryMitigation = 0.6;
+  p.blockCapBonus = 0;
+  p.parryCapBonus = 0;
+  p.vipersCoatingLvl = 0;
+
+  let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
+  if (subItem) {
+    p.subType = subItem.subType || subItem.type;
+    p.subArchetype = subItem.subArchetype || null;
+    if (
+      p.subType === "tome" ||
+      subItem.type === "tome" ||
+      subItem.isUniqueWatch ||
+      subItem.isUniqueChronicle ||
+      subItem.isUniqueConduit
+    ) {
+      p.subType = "tome";
+      p.spellType = subItem.spellType || "tri";
+      p.spellChance =
+        subItem.spellChance !== undefined ? subItem.spellChance : 0.33;
+      p.spellPower = subItem.spellPower || 1.5;
+    } else {
+      p.spellType = subItem.spellType || null;
+      p.spellChance = subItem.spellChance || 0;
+      p.spellPower = subItem.spellPower || 1.0;
+    }
+    p.riposteDamage = subItem.riposteDamage || 0.8;
+    p.bleedChance = subItem.bleedChance || 0;
+    p.offhandChance =
+      subItem.offhandChance !== undefined
+        ? subItem.offhandChance
+        : p.subType === "dagger"
+          ? 0.35
+          : 0;
+    p.offhandDmg =
+      subItem.offhandDmg !== undefined
+        ? subItem.offhandDmg
+        : p.subType === "dagger"
+          ? 0.45
+          : 0.35;
+    p.reflectDamage =
+      subItem.reflectDamage !== undefined ? subItem.reflectDamage : 1.0;
+    p.bashAtkBonus = subItem.bashAtkBonus || 0;
+    p.parryMitigation =
+      subItem.parryMitigation !== undefined ? subItem.parryMitigation : 0.6;
+    p.blockCapBonus = subItem.blockCapBonus || 0;
+    p.parryCapBonus = subItem.parryCapBonus || 0;
+  }
 
   // Secure Local Slot Bonus Matrix to prevent runaway persistent state compounding
   p.crucibleSlotBonuses = {
@@ -2447,11 +2507,11 @@ window.resolvePlayerStats = function (useDraft = false) {
   p.int = Math.floor(p.int * achIntPct);
 
   let effectiveStr = Math.max(0, p.str - 5);
-    let effectiveDex = Math.max(0, p.dex - 5);
-    let effectiveInt = Math.max(0, p.int - 5);
+  let effectiveDex = Math.max(0, p.dex - 5);
+  let effectiveInt = Math.max(0, p.int - 5);
 
-    // Realigned DEX: Decoupled from native Crit Chance & Move Speed. Scales Crit Damage infinitely.
-    p.critDamage += effectiveDex * 0.0001; // +0.01% Crit Damage per point of DEX
+  // Realigned DEX: Decoupled from native Crit Chance & Move Speed. Scales Crit Damage infinitely.
+  p.critDamage += effectiveDex * 0.0001; // +0.01% Crit Damage per point of DEX
 
   // Dynamically adjust offensive percentage scaling based on equipped subweapon archetype
   let activeSubForPct = window.equippedSlots
@@ -2514,38 +2574,41 @@ window.resolvePlayerStats = function (useDraft = false) {
     .add(BigNum.from(setCtx.flatDefBonus));
 
   // Suffixes multipliers applied on total flat base
-    p.atk = p.atk.mul(1.0 + itemAtkPct).mul(achAtkPct);
-    p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
+  p.atk = p.atk.mul(1.0 + itemAtkPct).mul(achAtkPct);
+  p.maxHp = p.maxHp.mul(1.0 + itemHpPct).mul(achMaxHpPct);
 
-    // Over-Crit Conversion Pipeline
-      p.rawCritChance = p.critChance;
-      if (p.critChance > 1.0) {
-        let excessCrit = p.critChance - 1.0;
-        p.critChance = 1.0;
-        p.critDamage += excessCrit * 2.0; // 1% Over-Crit = +2% Crit Damage
-      }
+  // Over-Crit Conversion Pipeline
+  p.rawCritChance = p.critChance;
+  if (p.critChance > 1.0) {
+    let excessCrit = p.critChance - 1.0;
+    p.critChance = 1.0;
+    p.critDamage += excessCrit * 2.0; // 1% Over-Crit = +2% Crit Damage
+  }
 
-    // Compute raw, uncapped speed bonus multiplier
-      let speedFactor = achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0);
-      let totalSpeedMult = (1 + flatSpeedBonus / 100) * speedFactor;
-      let rawSpeedBonus = totalSpeedMult - 1.0;
-      p.rawSpeedBonus = rawSpeedBonus;
+  // Compute raw, uncapped speed bonus multiplier
+  let speedFactor =
+    achMoveSpeedPct + itemSpdPct + (setCtx.moveSpeedPctBonus || 0);
+  let totalSpeedMult = (1 + flatSpeedBonus / 100) * speedFactor;
+  let rawSpeedBonus = totalSpeedMult - 1.0;
+  p.rawSpeedBonus = rawSpeedBonus;
 
-      if (rawSpeedBonus > 1.5) {
-      let excessSpeed = rawSpeedBonus - 1.5;
-      totalSpeedMult = 2.5; // Cap physical speed multiplier at 2.5x base (+150% speed increase)
+  if (rawSpeedBonus > 1.5) {
+    let excessSpeed = rawSpeedBonus - 1.5;
+    totalSpeedMult = 2.5; // Cap physical speed multiplier at 2.5x base (+150% speed increase)
 
-      // Convert excess speed if Kinetic Momentum Converter is active
-      if (window.checkArtifactTrait("speed_to_momentum")) {
-        let slotLvl = window.getArtifactTemperLevel ? window.getArtifactTemperLevel("speed_to_momentum") : 0;
-        let slotMult = 1.0 + slotLvl * 0.01;
-        p.critDamage += excessSpeed * 2.5 * slotMult;
-      }
+    // Convert excess speed if Kinetic Momentum Converter is active
+    if (window.checkArtifactTrait("speed_to_momentum")) {
+      let slotLvl = window.getArtifactTemperLevel
+        ? window.getArtifactTemperLevel("speed_to_momentum")
+        : 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+      p.critDamage += excessSpeed * 2.5 * slotMult;
     }
+  }
 
-    p.moveSpeed = window.playerStats.baseMoveSpeed * totalSpeedMult;
+  p.moveSpeed = window.playerStats.baseMoveSpeed * totalSpeedMult;
 
-    // Calculate Arcane Barrier for Inspected Player holding a Tome
+  // Calculate Arcane Barrier for Inspected Player holding a Tome
   let insSub = window.equippedSlots.subweapon;
   if (insSub && insSub.subType === "tome") {
     let insEffInt = Math.max(0, p.int - 5);
@@ -2654,6 +2717,7 @@ window.resolvePlayerStats = function (useDraft = false) {
       p.hasViperCoating = true;
       p.viperPoisonStrength = vipersCoatingRank * 0.1;
       p.bleedChance = (p.bleedChance || 0) + vipersCoatingRank * 0.05; // Restored Bleed DoT chance
+      p.vipersCoatingLvl = vipersCoatingRank;
     }
 
     let daggerParryRank = st.getSkillLevel("dagger_parry");
@@ -2774,39 +2838,21 @@ window.resolvePlayerStats = function (useDraft = false) {
     }
   }
 
-  // Fortitude stack decay
-  if (window.playerStats.fortitudeTimer > 0) {
-    window.playerStats.fortitudeTimer--;
-    if (window.playerStats.fortitudeTimer <= 0) {
-      window.playerStats.fortitudeStacks = 0;
-    }
-  }
+  // Fortitude stack check
   if ((window.playerStats.fortitudeStacks || 0) > 0) {
     let multiplier =
       window.playerStats.fortitudeStacks * (p.fortifiedGuardMultiplier || 0.04);
     p.defPctBonus = (p.defPctBonus || 0) + multiplier;
   }
 
-  // Arcane Syphon stack decay
-  if (window.playerStats.syphonIntTimer > 0) {
-    window.playerStats.syphonIntTimer--;
-    if (window.playerStats.syphonIntTimer <= 0) {
-      window.playerStats.syphonIntStacks = 0;
-    }
-  }
+  // Arcane Syphon stack check
   if ((window.playerStats.syphonIntStacks || 0) > 0) {
     let multiplier =
       window.playerStats.syphonIntStacks * ((p.arcaneSyphonLevel || 1) * 0.04);
     p.intPctBonus = (p.intPctBonus || 0) + multiplier;
   }
 
-  // Spell Weaving stack decay
-  if (window.playerStats.spellWeavingTimer > 0) {
-    window.playerStats.spellWeavingTimer--;
-    if (window.playerStats.spellWeavingTimer <= 0) {
-      window.playerStats.spellWeavingStacks = 0;
-    }
-  }
+  // Spell Weaving stack check
   if ((window.playerStats.spellWeavingStacks || 0) > 0) {
     let extraPower =
       window.playerStats.spellWeavingStacks * (p.spellWeavingPower || 0.15);
@@ -2814,30 +2860,20 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   // Bulwark Colossus AP temporary bonus
-  if (window.playerStats.colossusApTimer > 0) {
-    window.playerStats.colossusApTimer--;
-    if (window.playerStats.colossusApTimer <= 0) {
-      window.playerStats.colossusApBonus = 0;
-    }
-  }
   if ((window.playerStats.colossusApBonus || 0) > 0) {
     p.atk = p.atk.add(window.playerStats.colossusApBonus);
   }
 
   // Shadow Step speed/haste bonus
   if (window.playerStats.shadowStepTimer > 0) {
-    window.playerStats.shadowStepTimer--;
-    if (window.playerStats.shadowStepTimer > 0) {
-      let lvl = p.shadowStepLevel || 1;
-      p.moveSpeed *= 1.0 + lvl * 0.15;
-      activeSpeedPct += lvl * 0.1;
-      idleSpeedPct += lvl * 0.1;
-    }
+    let lvl = p.shadowStepLevel || 1;
+    p.moveSpeed *= 1.0 + lvl * 0.15;
+    activeSpeedPct += lvl * 0.1;
+    idleSpeedPct += lvl * 0.1;
   }
 
   // Fortune's Favor Keystone Gold Multiplier Timer
   if (window.playerStats.fortunesFavorTimer > 0) {
-    window.playerStats.fortunesFavorTimer--;
     p.gold += 0.5; // +50% Gold Multiplier
   }
 
@@ -2953,8 +2989,9 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   // Asymptotic Soft-Cap Curve on Potion Potency
-    let potStrengthMultiplier = 1.0 + (effectiveInt * 1.0) / (effectiveInt + 1000);
-    if (window.playerStats.unlockedAchievements && window.AchievementsData) {
+  let potStrengthMultiplier =
+    1.0 + (effectiveInt * 1.0) / (effectiveInt + 1000);
+  if (window.playerStats.unlockedAchievements && window.AchievementsData) {
     window.playerStats.unlockedAchievements.forEach((id) => {
       let ach = window.AchievementsData.find((a) => a.id === id);
       if (ach && ach.stats && ach.stats.potStrengthPct)
@@ -3077,7 +3114,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   let maxBlockCap = 0.4; // Elevated base block cap
   let maxParryCap = 0.35; // Elevated base parry cap
 
-  let subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
+  subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
   let hasShield =
     subItem && (subItem.subType === "shield" || subItem.type === "shield");
   let hasDagger =
@@ -3140,8 +3177,7 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   // Calculate Tome passive Arcane Barrier
-  let hasTome =
-    subItem && (subItem.subType === "tome" || subItem.type === "tome");
+  hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
   if (hasTome) {
     // Base 20% absorption, scaling up to 35% with INT
     let intBonus = Math.min(0.15, (effectiveInt * 0.15) / (effectiveInt + 150));
@@ -3482,48 +3518,6 @@ window.resolvePlayerStats = function (useDraft = false) {
 
   window.playerStats.crucibleSelfDmgReduction = p.crucibleSelfDmgReduction;
 
-  subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
-  if (subItem) {
-    p.subType = subItem.subType || subItem.type;
-    p.subArchetype = subItem.subArchetype || null;
-    if (
-      p.subType === "tome" ||
-      subItem.type === "tome" ||
-      subItem.isUniqueWatch ||
-      subItem.isUniqueChronicle ||
-      subItem.isUniqueConduit
-    ) {
-      p.subType = "tome";
-      p.spellType = subItem.spellType || "tri";
-      p.spellChance =
-        subItem.spellChance !== undefined ? subItem.spellChance : 0.33;
-      p.spellPower = subItem.spellPower || 1.5;
-    } else {
-      p.spellType = subItem.spellType || null;
-      p.spellChance = subItem.spellChance || 0;
-      p.spellPower = subItem.spellPower || 1.0;
-    }
-    p.riposteDamage = subItem.riposteDamage || 0.8;
-    p.bleedChance = subItem.bleedChance || 0;
-    p.offhandChance = subItem.offhandChance || 0;
-    p.offhandDmg = subItem.offhandDmg || 0.35;
-    p.reflectDamage = subItem.reflectDamage || 1.0;
-    p.bashAtkBonus = subItem.bashAtkBonus || 0;
-    p.parryMitigation = subItem.parryMitigation || 0.6;
-    p.blockCapBonus = subItem.blockCapBonus || 0;
-    p.parryCapBonus = subItem.parryCapBonus || 0;
-  } else {
-    p.subType = null;
-    p.spellType = null;
-    p.spellChance = 0;
-    p.spellPower = 1.0;
-    p.riposteDamage = 0.8;
-    p.bleedChance = 0;
-    p.offhandChance = 0;
-    p.offhandDmg = 0.35;
-    p.reflectDamage = 0.4;
-  }
-
   // --- SUBPHASE 3: SPECIAL CAVERN SIGIL MUTATORS PIPELINE ---
   let subItemRef = window.equippedSlots ? window.equippedSlots.subweapon : null;
   let hasShieldRef =
@@ -3688,15 +3682,15 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   // Hard physical engine limit safeguard: No combination of temporary buffs can exceed 3x base speed
-    p.moveSpeed = Math.min(window.playerStats.baseMoveSpeed * 3.0, p.moveSpeed);
+  p.moveSpeed = Math.min(window.playerStats.baseMoveSpeed * 3.0, p.moveSpeed);
 
-    if (!useDraft) {
-      window.cachedPlayerStats = p;
-      window.playerStatsDirty = false;
-    }
+  if (!useDraft) {
+    window.cachedPlayerStats = p;
+    window.playerStatsDirty = false;
+  }
 
-    return p;
-  };
+  return p;
+};
 
 // --- REAL-TIME COMBAT DAMAGE RESOLUTION PIPELINE ---
 window.damagePlayer = function (rawDmg, sourceMob = null) {
@@ -4879,17 +4873,17 @@ window.playerStats = {
   hasTriggeredFullBag: false,
   hasTriggeredSoulBound: false,
   bossKillRegistry: {
-      arachnid_treant: 0,
-      brimstone_colossus: 0,
-      corrosive_abomination: 0,
-      void_overseer: 0,
-      overlord_iron_vault: 0,
-      hooktail: 0,
-      aegis_goliath: 0,
-      chronos_arbitrator: 0,
-      nexus_overseer: 0,
-      gilded_vault_keeper: 0,
-    },
+    arachnid_treant: 0,
+    brimstone_colossus: 0,
+    corrosive_abomination: 0,
+    void_overseer: 0,
+    overlord_iron_vault: 0,
+    hooktail: 0,
+    aegis_goliath: 0,
+    chronos_arbitrator: 0,
+    nexus_overseer: 0,
+    gilded_vault_keeper: 0,
+  },
   targetsRequired: 3, // Reduced from 5 to 3 for snappier stage runs
   isBossMode: false,
   isFarmingLoop: false,
@@ -5104,11 +5098,11 @@ window.playerStats = {
   flaskX: null,
   flaskY: null,
   editHudMode: false,
-    activePortalEvent: "expedition",
-    highestRiftLevelCleared: 0,
-  };
+  activePortalEvent: "expedition",
+  highestRiftLevelCleared: 0,
+};
 
-  window.toggleControlMode = function () {
+window.toggleControlMode = function () {
   let current = window.playerStats.controlMode || "joystick";
   window.playerStats.controlMode =
     current === "joystick" ? "cursor" : "joystick";
@@ -6370,6 +6364,28 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
   };
 };
 
+window.sanitizeBasePlayerStats = function () {
+  if (!window.playerStats) return;
+  window.playerStats.baseStr = 5;
+  window.playerStats.baseDex = 5;
+  window.playerStats.baseInt = 5;
+  window.playerStats.baseAtk = 10;
+  window.playerStats.baseMaxHp = 100;
+  window.playerStats.baseDef = 0;
+  window.playerStats.baseMoveSpeed = 8;
+  window.playerStats.baseIdleSpeed = 60;
+  window.playerStats.baseActiveSpeed = 15;
+  window.playerStats.baseDrop = 1.0;
+  window.playerStats.baseQuality = 1.0;
+  window.playerStats.baseGold = 1.0;
+  window.playerStats.baseCritChance = 0.05;
+  window.playerStats.baseCritDamage = 1.5;
+  window.playerStats.baseBlock = 0.0;
+  window.playerStats.baseParry = 0.0;
+  window.playerStats.baseRareSpawn = 0.01;
+  window.playerStats.baseFairySpawn = 1.0;
+};
+
 window.loadGame = function () {
   try {
     let saved = localStorage.getItem("extraction_crawler_save");
@@ -6379,6 +6395,7 @@ window.loadGame = function () {
 
     if (parsed.playerStats) {
       Object.assign(window.playerStats, parsed.playerStats);
+      window.sanitizeBasePlayerStats();
 
       // Ensure stage and lifetimePeakStage are synchronized with maxFloorCleared
       let maxClearedFloor = window.playerStats.maxFloorCleared || 1;
@@ -6464,19 +6481,23 @@ window.loadGame = function () {
       });
 
       window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
-            window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
-            window.playerStats.currentHp = BigNum.from(
-              window.playerStats.currentHp || 100,
-            );
-            window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
-            window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
+      window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
+      window.playerStats.currentHp = BigNum.from(
+        window.playerStats.currentHp || 100,
+      );
+      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
+      window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
 
-            // Convert legacy prestigePoints to Astral Shards if present
-            if (window.playerStats.prestigePoints && window.playerStats.prestigePoints > 0) {
-              let pts = window.playerStats.prestigePoints;
-              window.playerStats.astralShards = (window.playerStats.astralShards || 0) + (pts * 10);
-              window.playerStats.prestigePoints = 0;
-            }
+      // Convert legacy prestigePoints to Astral Shards if present
+      if (
+        window.playerStats.prestigePoints &&
+        window.playerStats.prestigePoints > 0
+      ) {
+        let pts = window.playerStats.prestigePoints;
+        window.playerStats.astralShards =
+          (window.playerStats.astralShards || 0) + pts * 10;
+        window.playerStats.prestigePoints = 0;
+      }
 
       if (
         window.playerStats.recoveryLoot &&
@@ -6488,19 +6509,19 @@ window.loadGame = function () {
       }
 
       // Fallback initializer for Boss Kill progress tracking
-            window.playerStats.bossKillRegistry = window.playerStats
-              .bossKillRegistry || {
-              arachnid_treant: 0,
-              brimstone_colossus: 0,
-              corrosive_abomination: 0,
-              void_overseer: 0,
-              overlord_iron_vault: 0,
-              hooktail: 0,
-              aegis_goliath: 0,
-              chronos_arbitrator: 0,
-              nexus_overseer: 0,
-              gilded_vault_keeper: 0,
-            };
+      window.playerStats.bossKillRegistry = window.playerStats
+        .bossKillRegistry || {
+        arachnid_treant: 0,
+        brimstone_colossus: 0,
+        corrosive_abomination: 0,
+        void_overseer: 0,
+        overlord_iron_vault: 0,
+        hooktail: 0,
+        aegis_goliath: 0,
+        chronos_arbitrator: 0,
+        nexus_overseer: 0,
+        gilded_vault_keeper: 0,
+      };
 
       // Fallback initializers for separate Utility SP
       if (window.playerStats.usp === undefined) {
@@ -6517,11 +6538,11 @@ window.loadGame = function () {
 
       // Fallback initializers for Special Challenges and Bounty Boards
       if (window.playerStats.activeSpecialChallenge === undefined) {
-              window.playerStats.activeSpecialChallenge = null;
-            }
-            if (window.playerStats.highestRiftLevelCleared === undefined) {
-              window.playerStats.highestRiftLevelCleared = 0;
-            }
+        window.playerStats.activeSpecialChallenge = null;
+      }
+      if (window.playerStats.highestRiftLevelCleared === undefined) {
+        window.playerStats.highestRiftLevelCleared = 0;
+      }
       if (window.playerStats.bountyRerollsToday === undefined) {
         window.playerStats.bountyRerollsToday = 0;
       }
