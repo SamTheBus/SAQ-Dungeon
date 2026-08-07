@@ -2745,21 +2745,47 @@ window.AssetCatalog = {
                     <path d="M16 9 L16 23 M11 16 L21 16" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
                   `;
     },
-    card(id, color) {
-      return `
-                    <defs>
-                      <linearGradient id="g_card_b_${id}" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#ffffff"/>
-                        <stop offset="60%" stop-color="${color}"/>
-                        <stop offset="100%" stop-color="#0c051a"/>
-                      </linearGradient>
-                    </defs>
-                    <rect x="7" y="4" width="18" height="24" rx="2.5" fill="url(#g_card_b_${id})" stroke="#000" stroke-width="1.8" />
-                    <rect x="9.5" y="6.5" width="13" height="19" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.3" />
-                    <circle cx="16" cy="16" r="4.5" fill="none" stroke="#ffffff" stroke-dasharray="2 1.5" stroke-width="1" opacity="0.8" />
-                    <polygon points="16,12.5 19,16 16,19.5 13,16" fill="${color}" stroke="#000" stroke-width="0.8" />
-                  `;
-    },
+    card(id, color, cardKey = "") {
+          // Procedural Monster Cutout Silhouette Renderer for Monster Cards
+          let cutoutSvg = "";
+          let key = (cardKey || "").toLowerCase();
+
+          if (key.includes("slime")) {
+            cutoutSvg = `<path d="M12 18 C12 13, 14 11, 16 11 C18 11, 20 13, 20 18 C20 20, 12 20, 12 18 Z" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="14.5" cy="15" r="0.6" fill="#fff"/><circle cx="17.5" cy="15" r="0.6" fill="#fff"/>`;
+          } else if (key.includes("sprout") || key.includes("treant")) {
+            cutoutSvg = `<path d="M16 20 V14 M16 14 C13 12, 11 14, 12 11 C14 11, 16 13, 16 14 M16 14 C19 12, 21 14, 20 11 C18 11, 16 13, 16 14" stroke="${color}" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="16" cy="11" r="1" fill="#fff"/>`;
+          } else if (key.includes("wyrm") || key.includes("serpent")) {
+            cutoutSvg = `<path d="M12 20 Q16 16, 13 13 T19 10" stroke="${color}" stroke-width="1.5" fill="none" stroke-linecap="round"/><polygon points="19,10 21,8 20,11" fill="${color}"/>`;
+          } else if (key.includes("golem") || key.includes("vault") || key.includes("goliath")) {
+            cutoutSvg = `<rect x="12" y="11" width="8" height="8" rx="1.5" fill="${color}" stroke="#000" stroke-width="0.8"/><line x1="13" y1="14" x2="19" y2="14" stroke="#fff" stroke-width="1"/><rect x="13.5" y="19" width="5" height="2" fill="${color}"/>`;
+          } else if (key.includes("gargoyle") || key.includes("bat") || key.includes("fly")) {
+            cutoutSvg = `<path d="M16 16 L10 11 Q13 16, 16 16 Q19 16, 22 11 Z" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="16" cy="14" r="1.5" fill="#fff"/>`;
+          } else if (key.includes("orb") || key.includes("singularity") || key.includes("spore")) {
+            cutoutSvg = `<circle cx="16" cy="15" r="4" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="16" cy="15" r="2" fill="#fff" opacity="0.8"/><circle cx="16" cy="15" r="5.5" stroke="${color}" stroke-width="0.6" stroke-dasharray="1.5 1.5" fill="none"/>`;
+          } else if (key.includes("spectre") || key.includes("ghost") || key.includes("specter")) {
+            cutoutSvg = `<path d="M12 19 C12 13, 16 10, 16 10 C16 10, 20 13, 20 19 L18 18 L16 20 L14 18 Z" fill="${color}" opacity="0.85" stroke="#000" stroke-width="0.8"/><circle cx="14.5" cy="13" r="0.6" fill="#fff"/><circle cx="17.5" cy="13" r="0.6" fill="#fff"/>`;
+          } else if (key.includes("spider") || key.includes("scarab") || key.includes("nibbler")) {
+            cutoutSvg = `<ellipse cx="16" cy="15" rx="3" ry="2.5" fill="${color}" stroke="#000" stroke-width="0.8"/><path d="M13 13 L10 11 M13 15 L9 15 M13 17 L10 19 M19 13 L22 11 M19 15 L23 15 M19 17 L22 19" stroke="${color}" stroke-width="0.8" fill="none"/>`;
+          } else if (key.includes("blade") || key.includes("armor") || key.includes("keeper") || key.includes("marcus")) {
+            cutoutSvg = `<polygon points="16,9 18,14 16,19 14,14" fill="${color}" stroke="#000" stroke-width="0.8"/><line x1="12" y1="16" x2="20" y2="16" stroke="${color}" stroke-width="1.2"/>`;
+          } else {
+            cutoutSvg = `<polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="16" cy="15" r="1" fill="#fff"/>`;
+          }
+
+          return `
+                        <defs>
+                          <linearGradient id="g_card_b_${id}" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="50%" stop-color="${color}"/>
+                            <stop offset="100%" stop-color="#0c051a"/>
+                          </linearGradient>
+                        </defs>
+                        <rect x="7" y="4" width="18" height="24" rx="2.5" fill="url(#g_card_b_${id})" stroke="#000" stroke-width="1.8" />
+                        <rect x="9.5" y="6.5" width="13" height="19" fill="#090514" stroke="${color}" stroke-width="1" opacity="0.9" />
+                        <circle cx="16" cy="15" r="5.5" fill="none" stroke="${color}" stroke-dasharray="2 1.5" stroke-width="0.8" opacity="0.6" />
+                        ${cutoutSvg}
+                      `;
+        },
     signet_ring(id, color) {
       return `
                 <defs>
@@ -5174,18 +5200,18 @@ window.getIconSvgData = function (itemOrName) {
       : "#00d2ff";
 
     if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
-      let cardData = window.MONSTER_CARDS_DATA[item.cardKey];
-      let setColors = {
-        "Whispering Woods": "#2ecc71",
-        "Mountain Peaks": "#3498db",
-        "Inferno Depths": "#e74c3c",
-        "Fungal Swamp": "#1abc9c",
-        "Void Singularity": "#9b59b6",
-        "Cosmic Wardens": "#f1c40f",
-      };
-      color = setColors[cardData.set] || "#ffd700";
-      innerSvg = window.AssetCatalog.genericEquipment.card(uid, color);
-    } else if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
+          let cardData = (window.MONSTER_CARDS_DATA && window.MONSTER_CARDS_DATA[item.cardKey]) || { set: "Whispering Woods" };
+          let setColors = {
+            "Whispering Woods": "#2ecc71",
+            "Mountain Peaks": "#3498db",
+            "Inferno Depths": "#e74c3c",
+            "Fungal Swamp": "#1abc9c",
+            "Void Singularity": "#9b59b6",
+            "Cosmic Wardens": "#f1c40f",
+          };
+          color = setColors[cardData.set] || "#ffd700";
+          innerSvg = window.AssetCatalog.genericEquipment.card(uid, color, item.cardKey);
+        } else if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
       innerSvg = window.AssetCatalog.uniques.staff(uid);
     else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
       innerSvg = window.AssetCatalog.uniques.sword(uid);
@@ -5967,13 +5993,26 @@ window.NEW_ARTIFACT_SVGS.speed_to_momentum = function (size) {
         `;
 };
 
-// Global interceptor hook executing modular dynamic lookups
-(function () {
-  const originalGetArtifactIcon = window.getArtifactIconHtml;
-  window.getArtifactIconHtml = function (trait, size = 56) {
-    if (window.NEW_ARTIFACT_SVGS && window.NEW_ARTIFACT_SVGS[trait]) {
-      return window.NEW_ARTIFACT_SVGS[trait](size);
+// Global interceptor hook executing modular dynamic lookups for all artifact traits
+window.getArtifactIconHtml = function (trait, size = 36) {
+  if (!trait) return "";
+
+  // 1. Check newly registered standalone SVG generators
+  if (window.NEW_ARTIFACT_SVGS && window.NEW_ARTIFACT_SVGS[trait]) {
+    return window.NEW_ARTIFACT_SVGS[trait](size);
+  }
+
+  // 2. Check standard AssetCatalog artifact SVG blueprints
+  if (
+    window.AssetCatalog &&
+    window.AssetCatalog.artifacts &&
+    window.AssetCatalog.artifacts[trait]
+  ) {
+    let mockItem = { type: "artifact", trait: trait, statsRolled: 3 };
+    if (typeof window.getEquipIconHtml === "function") {
+      return window.getEquipIconHtml(mockItem, size);
     }
-    return originalGetArtifactIcon ? originalGetArtifactIcon(trait, size) : "";
-  };
-})();
+  }
+
+  return "";
+};

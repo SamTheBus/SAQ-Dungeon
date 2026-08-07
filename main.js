@@ -11,13 +11,48 @@
   window.floatingTexts = [];
   window.xpOrbs = [];
 
-  // Safe global state fallback initializer
-  if (
-    window.playerStats &&
-    window.playerStats.robbingMarcusActive === undefined
-  ) {
-    window.playerStats.robbingMarcusActive = false;
-  }
+  // --- BESTIARY MONSTER CARDS DATABASE ---
+    window.MONSTER_CARDS_DATA = window.MONSTER_CARDS_DATA || {
+      slime: { name: "Green Slime", set: "Whispering Woods", hint: "Floors 1-12" },
+      sprout: { name: "Eldritch Sprout", set: "Whispering Woods", hint: "Floors 1-12" },
+      thorn_wyrm: { name: "Thorn Wyrm", set: "Whispering Woods", hint: "Floors 1-12" },
+      arachnid_treant: { name: "Arachnid Treant", set: "Whispering Woods", hint: "Floor 12 Boss" },
+      golem: { name: "Stone Golem", set: "Mountain Peaks", hint: "Floors 13-24" },
+      wyrmling: { name: "Frost Wyrmling", set: "Mountain Peaks", hint: "Floors 13-24" },
+      gargoyle: { name: "Gargoyle Warden", set: "Mountain Peaks", hint: "Floors 13-24" },
+      rust_nibbler: { name: "Rust Nibbler", set: "Mountain Peaks", hint: "Floors 13-24" },
+      aegis_goliath: { name: "Aegis Goliath", set: "Mountain Peaks", hint: "Floor 24 Boss" },
+      magma_elemental: { name: "Magma Elemental", set: "Inferno Depths", hint: "Floors 25-36" },
+      lava_serpent: { name: "Lava Serpent", set: "Inferno Depths", hint: "Floors 25-36" },
+      hell_bat: { name: "Hell Bat", set: "Inferno Depths", hint: "Floors 25-36" },
+      slag_slime: { name: "Slag Slime", set: "Inferno Depths", hint: "Floors 25-36" },
+      overlord_iron_vault: { name: "Overlord Iron Vault", set: "Inferno Depths", hint: "Floor 36 Boss" },
+      swamp_basilisk: { name: "Swamp Basilisk", set: "Fungal Swamp", hint: "Floors 37-48" },
+      toxic_fly: { name: "Toxic Fly", set: "Fungal Swamp", hint: "Floors 37-48" },
+      marsh_ghost: { name: "Marsh Ghost", set: "Fungal Swamp", hint: "Floors 37-48" },
+      corroded_golem: { name: "Corroded Golem", set: "Fungal Swamp", hint: "Floors 37-48" },
+      corrosive_abomination: { name: "Corrosive Abomination", set: "Fungal Swamp", hint: "Floor 48 Boss" },
+      void_orb: { name: "Void Orb", set: "Void Singularity", hint: "Floors 49-60" },
+      void_crawler: { name: "Void Crawler", set: "Void Singularity", hint: "Floors 49-60" },
+      void_spectre: { name: "Void Spectre", set: "Void Singularity", hint: "Floors 49-60" },
+      void_overseer: { name: "Void Overseer", set: "Void Singularity", hint: "Floor 60 Boss" },
+      clockwork_scarab: { name: "Clockwork Scarab", set: "Cosmic Wardens", hint: "Floors 61+" },
+      star_weaver: { name: "Star Weaver", set: "Cosmic Wardens", hint: "Floors 61+" },
+      neon_spider: { name: "Neon Spider", set: "Cosmic Wardens", hint: "Floors 61+" },
+      wireframe_orb: { name: "Wireframe Orb", set: "Cosmic Wardens", hint: "Floors 61+" },
+      cursed_blade: { name: "Cursed Blade", set: "Cosmic Wardens", hint: "Floors 61+" },
+      animated_armor: { name: "Animated Armor", set: "Cosmic Wardens", hint: "Floors 61+" },
+      chronos_arbitrator: { name: "Chronos Arbitrator", set: "Cosmic Wardens", hint: "Floor 72 Boss" },
+      nexus_overseer: { name: "Nexus Overseer", set: "Cosmic Wardens", hint: "Floor 84 Boss" }
+    };
+
+    // Safe global state fallback initializer
+    if (
+      window.playerStats &&
+      window.playerStats.robbingMarcusActive === undefined
+    ) {
+      window.playerStats.robbingMarcusActive = false;
+    }
   if (window.playerStats) {
     if (window.playerStats.deflectionFatigueTimer === undefined) {
       window.playerStats.deflectionFatigueTimer = 0;
@@ -681,18 +716,23 @@
           spawnTieredEquipment(playerQuality * 1.25, 1);
 
           // 3. 15% Chance for Cavern Sigil (max 3★)
-          if (Math.random() < 0.15) {
-            let rolledSigilRarity = window.rollSigilRarity(3, playerQuality);
-            let sigilItem = window.createItemObject(
-              "sigil",
-              rolledSigilRarity,
-              stageScale,
-              0,
-            );
-            window.spawnGroundLoot(sigilItem, p.x, p.y - 10);
-          }
-        } else {
-          // --- ASTRAL VAULT LOOT TABLE ---
+                    if (Math.random() < 0.15) {
+                      let rolledSigilRarity = window.rollSigilRarity(3, playerQuality);
+                      let sigilItem = window.createItemObject(
+                        "sigil",
+                        rolledSigilRarity,
+                        stageScale,
+                        0,
+                      );
+                      window.spawnGroundLoot(sigilItem, p.x, p.y - 10);
+                    }
+
+                    // 4. 20% Chance for Monster Card Sack
+                    if (Math.random() < 0.20) {
+                      window.addUseDrop("Monster Card Sack", 1, false);
+                    }
+                  } else {
+                    // --- ASTRAL VAULT LOOT TABLE ---
           // 1. Guaranteed colossal gold payload
           let chestGold = Math.floor(400 * (1 + stageScale * 1.25));
           window.spawnHomingGold(p.x, p.y - 10, chestGold);
@@ -732,17 +772,20 @@
           window.spawnGroundLoot(sigilItem, p.x, p.y - 10);
 
           // 4. 20% Chance for Rare Crafting Material
-          if (Math.random() < 0.2) {
-            let mats = ["Ancient Core", "Astral Essence", "Eridium Shard"];
-            let chosenMat = mats[Math.floor(Math.random() * mats.length)];
-            if (typeof window.spawnGroundMaterial === "function") {
-              window.spawnGroundMaterial(chosenMat, 1, p.x, p.y - 10);
-            }
-          }
-        }
-      }
-    }
-  };
+                    if (Math.random() < 0.2) {
+                      let mats = ["Ancient Core", "Astral Essence", "Eridium Shard"];
+                      let chosenMat = mats[Math.floor(Math.random() * mats.length)];
+                      if (typeof window.spawnGroundMaterial === "function") {
+                        window.spawnGroundMaterial(chosenMat, 1, p.x, p.y - 10);
+                      }
+                    }
+
+                    // 5. Guaranteed 1x Monster Card Sack
+                    window.addUseDrop("Monster Card Sack", 1, false);
+                  }
+                }
+              }
+            };
 
   window.setChestOpened = function (x, y) {
     if (!window.activeDungeonMap) return;
@@ -1324,23 +1367,38 @@
       window.checkAndResetMissions();
     }
 
-    // Dynamically inject the RELIQUARY tab button if not present in index.html
-    let tabBar = document.querySelector(".profile-tab-bar");
-    if (tabBar && !document.getElementById("profile-tab-relics")) {
-      let btn = document.createElement("button");
-      btn.id = "profile-tab-relics";
-      btn.className = "profile-tab-btn";
-      btn.innerText = "RELIQUARY";
-      btn.onclick = () => window.switchProfileTab("relics");
+    // Enforce standardized profile tab order
+        window.reorderProfileTabs = function () {
+          let tabBar = document.querySelector(".profile-tab-bar");
+          if (!tabBar) return;
 
-      // Insert after the ARMORY (profile-tab-gear) tab button
-      let gearBtn = document.getElementById("profile-tab-gear");
-      if (gearBtn && gearBtn.nextSibling) {
-        tabBar.insertBefore(btn, gearBtn.nextSibling);
-      } else {
-        tabBar.appendChild(btn);
-      }
-    }
+          if (!document.getElementById("profile-tab-relics")) {
+            let btn = document.createElement("button");
+            btn.id = "profile-tab-relics";
+            btn.className = "profile-tab-btn";
+            btn.innerText = "RELIQUARY";
+            btn.onclick = () => window.switchProfileTab("relics");
+            tabBar.appendChild(btn);
+          }
+
+          const orderedIds = [
+            "profile-tab-stats",
+            "profile-tab-gear",
+            "profile-tab-satchel",
+            "profile-tab-relics",
+            "profile-tab-album",
+            "profile-tab-achievements",
+          ];
+
+          orderedIds.forEach((id) => {
+            let btn = document.getElementById(id);
+            if (btn) {
+              tabBar.appendChild(btn);
+            }
+          });
+        };
+
+        window.reorderProfileTabs();
 
     // Dynamically inject the RELIQUARY content panel if not present in index.html
     let profileCard = document.querySelector(".profile-card");
@@ -7535,8 +7593,29 @@
     window.player.targetX = window.player.x;
     window.player.targetY = window.player.y;
 
-    // Spawning Bosses (Warden, Major, Mini, or Rift Guardian)
-    if (isRift) {
+    // Fairy Sanctuary Spawn Check
+        let fairyLevel = window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary") : 0;
+        let fairyChance = fairyLevel * 0.05;
+        if (fairyChance > 0 && Math.random() < fairyChance && !isMiniBoss && !isMajorBoss && !window.playerStats.isCrucibleMode && !isRift) {
+          let fPos = window.getOnslaughtSpawnPosition ? window.getOnslaughtSpawnPosition(map) : { x: Math.floor(map.width / 2), y: Math.floor(map.height / 2) };
+          let fTileSize = map.tileSize || 32;
+          window.cavernInteractives = window.cavernInteractives || [];
+          window.cavernInteractives.push({
+            id: window.idCounter++,
+            type: "glimmering_fairy",
+            x: fPos.x * fTileSize + fTileSize / 2,
+            y: fPos.y * fTileSize + fTileSize / 2,
+            w: 18,
+            h: 18,
+            isTriggeredByTouch: true,
+            life: 1800,
+            maxLife: 1800,
+            angleSeed: Math.random() * 100,
+          });
+        }
+
+        // Spawning Bosses (Warden, Major, Mini, or Rift Guardian)
+        if (isRift) {
       let cx = Math.floor(map.width / 2);
       let cy = Math.floor(map.height / 2);
       window.spawnRiftGuardianEncounter(cx, cy);
@@ -8965,12 +9044,57 @@
       if (window.inventory) window.inventory.EQUIP = window.player.stash;
       if (typeof window.saveGame === "function") window.saveGame();
     } else {
-      window.player.pendingScraps = {};
-      titleEl.innerText = isAbandon ? "RUN ABANDONED" : "CRITICAL DEFEAT";
-      titleEl.style.color = isAbandon ? "#e67e22" : "#e74c3c";
+      let salvageRank = window.SkillTreeManager
+              ? window.SkillTreeManager.getSkillLevel("utility_emergency_salvage")
+              : 0;
+            let salvageRatio = salvageRank * 0.05; // 5% to 25%
 
-      // Reset active run pocket gold
-      window.playerStats.runGold = BigNum.from(0);
+            let retainedGold = BigNum.from(0);
+            let retainedScraps = [];
+
+            if (salvageRatio > 0) {
+              // 1. Gold Salvage
+              if (activeRunGold.gt(0)) {
+                retainedGold = BigNum.from(
+                  Math.floor(activeRunGold.mul(salvageRatio).valueOf())
+                );
+                if (retainedGold.gt(0)) {
+                  window.playerStats.coins = BigNum.from(
+                    window.playerStats.coins || 0
+                  ).add(retainedGold);
+                  activeRunGold = activeRunGold.sub(retainedGold);
+                }
+              }
+
+              // 2. Scraps & Souls Salvage
+              if (window.player && window.player.pendingScraps) {
+                for (let sName in window.player.pendingScraps) {
+                  let qty = window.player.pendingScraps[sName] || 0;
+                  if (qty > 0) {
+                    let retQty = Math.floor(qty * salvageRatio);
+                    if (retQty > 0) {
+                      window.addEtcDrop(sName, retQty, true);
+                      window.player.pendingScraps[sName] -= retQty;
+                      retainedScraps.push(`${retQty}x ${sName}`);
+                    }
+                  }
+                }
+              }
+
+              if (retainedGold.gt(0) || retainedScraps.length > 0) {
+                let toastMsg = `✦ Emergency Evac (${salvageRank * 5}%): Saved ${retainedGold.gt(0) ? window.formatNumber(retainedGold) + " Gold" : ""}${retainedGold.gt(0) && retainedScraps.length > 0 ? " & " : ""}${retainedScraps.join(", ")} to Vault!`;
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast(toastMsg, "#34d399");
+                }
+              }
+            }
+
+            window.player.pendingScraps = {};
+            titleEl.innerText = isAbandon ? "RUN ABANDONED" : "CRITICAL DEFEAT";
+            titleEl.style.color = isAbandon ? "#e67e22" : "#e74c3c";
+
+            // Reset active run pocket gold
+            window.playerStats.runGold = BigNum.from(0);
 
       // Process Carried Bag Items (Locked items survive in Stash)
       extractedLoot.forEach((item) => {
@@ -10285,17 +10409,62 @@
     }
   };
 
-  window.addEtcDrop = function (name, qty, silent = false) {
-    if (!window.inventory)
-      window.inventory = {
-        EQUIP: [],
-        ARTIFACT: [],
-        SIGIL: [],
-        ETC: {},
-        USE: {},
-      };
-    if (!window.inventory.ETC) window.inventory.ETC = {};
-    window.inventory.ETC[name] = (window.inventory.ETC[name] || 0) + qty;
+  // --- MYSTICAL EXCHANGE TRADE REGISTRY & HANDLER ---
+    if (!window.MYSTICAL_TRADES) window.MYSTICAL_TRADES = [];
+    if (!window.MYSTICAL_TRADES.some((t) => t.id === "card_sack_trade")) {
+      window.MYSTICAL_TRADES.push({
+        id: "card_sack_trade",
+        name: "Monster Card Sack",
+        costName: "Luminous Soul",
+        costQty: 5,
+        yieldName: "Monster Card Sack",
+        yieldQty: 1,
+        desc: "Exchange 5 Luminous Souls for 1 Monster Card Sack.",
+      });
+    }
+
+    window.executeMysticalTrade = function (tradeId) {
+      if (tradeId === "card_sack_trade" || tradeId === "card_sack") {
+        let souls =
+          (window.inventory &&
+            window.inventory.ETC &&
+            window.inventory.ETC["Luminous Soul"]) ||
+          0;
+        if (souls < 5) {
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast("[X] Requires 5x Luminous Souls!", "#e74c3c");
+          }
+          return false;
+        }
+        window.inventory.ETC["Luminous Soul"] -= 5;
+        if (window.inventory.ETC["Luminous Soul"] <= 0) {
+          delete window.inventory.ETC["Luminous Soul"];
+        }
+        window.addUseDrop("Monster Card Sack", 1, false);
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("✦ Acquired 1x Monster Card Sack!", "#34d399");
+        }
+        if (window.SoundManager && typeof window.SoundManager.play === "function") {
+          window.SoundManager.play("revive");
+        }
+        if (typeof window.updateUI === "function") window.updateUI();
+        if (typeof window.saveGame === "function") window.saveGame();
+        return true;
+      }
+      return false;
+    };
+
+    window.addEtcDrop = function (name, qty, silent = false) {
+      if (!window.inventory)
+        window.inventory = {
+          EQUIP: [],
+          ARTIFACT: [],
+          SIGIL: [],
+          ETC: {},
+          USE: {},
+        };
+      if (!window.inventory.ETC) window.inventory.ETC = {};
+      window.inventory.ETC[name] = (window.inventory.ETC[name] || 0) + qty;
 
     if (
       name === "Luminous Soul" &&
@@ -10571,39 +10740,53 @@
       );
       if (typeof window.pushToast === "function") window.pushToast(newItem);
     } else if (name.includes("Sack") || name.includes("Crate")) {
-      let peakRunStage = Math.max(
-        p.lifetimePeakStage || 1,
-        p.stage || 1,
-        p.maxFloorCleared || 1,
-      );
-      let stageScale = peakRunStage;
-      let rolledRarity = window.rollItemRarity(
-        peakRunStage,
-        p.baseQuality || 1.0,
-        false,
-      );
-      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-      let chosenType = types[Math.floor(Math.random() * types.length)];
-      let newItem = window.createItemObject(
-        chosenType,
-        rolledRarity,
-        stageScale,
-        0,
-      );
+          let peakRunStage = Math.max(
+            p.lifetimePeakStage || 1,
+            p.stage || 1,
+            p.maxFloorCleared || 1,
+          );
+          let stageScale = peakRunStage;
+          let rolledRarity = window.rollItemRarity(
+            peakRunStage,
+            p.baseQuality || 1.0,
+            false,
+          );
+          let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+          let chosenType = types[Math.floor(Math.random() * types.length)];
+          let newItem = window.createItemObject(
+            chosenType,
+            rolledRarity,
+            stageScale,
+            0,
+          );
 
-      if (window.currentGameState === window.GAME_STATES.HUB) {
-        if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
-        window.inventory.EQUIP.push(newItem);
-      } else {
-        if (!window.player.bag) window.player.bag = [];
-        window.player.bag.push(newItem);
-      }
-      window.pushHeaderToast(
-        `Opened ${name}! Found: ${newItem.name}`,
-        "#f1c40f",
-      );
-      if (typeof window.pushToast === "function") window.pushToast(newItem);
-    }
+          // Grant 1-2 random Basic Elixirs on opening sacks
+          const basicElixirs = [
+            "Basic Attack Elixir",
+            "Basic Vitality Elixir",
+            "Basic Armored Elixir",
+            "Basic Haste Elixir",
+          ];
+          let numElixirs = window.randInt(1, 2);
+          for (let eIdx = 0; eIdx < numElixirs; eIdx++) {
+            let chosenElixir =
+              basicElixirs[Math.floor(Math.random() * basicElixirs.length)];
+            window.addUseDrop(chosenElixir, 1, false);
+          }
+
+          if (window.currentGameState === window.GAME_STATES.HUB) {
+            if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
+            window.inventory.EQUIP.push(newItem);
+          } else {
+            if (!window.player.bag) window.player.bag = [];
+            window.player.bag.push(newItem);
+          }
+          window.pushHeaderToast(
+            `Opened ${name}! Found: ${newItem.name} (+${numElixirs} Elixir)`,
+            "#f1c40f",
+          );
+          if (typeof window.pushToast === "function") window.pushToast(newItem);
+        }
 
     if (typeof window.invalidatePlayerStats === "function")
       window.invalidatePlayerStats();
@@ -11129,36 +11312,53 @@
         continue;
       }
 
-      if (item.type === "glimmering_pixie") {
-        item.angleSeed += 0.05;
-        let dx = Math.sin(item.angleSeed) * 1.5;
-        let dy = Math.cos(item.angleSeed * 0.7) * 1.0;
-        let nextX = item.x + dx;
-        let nextY = item.y + dy;
-        let map = window.activeDungeonMap;
+      if (item.type === "glimmering_pixie" || item.type === "glimmering_fairy") {
+              item.angleSeed += 0.05;
+              let dx = Math.sin(item.angleSeed) * 1.5;
+              let dy = Math.cos(item.angleSeed * 0.7) * 1.0;
+              let nextX = item.x + dx;
+              let nextY = item.y + dy;
+              let map = window.activeDungeonMap;
 
-        if (map && map.grid) {
-          // Verify both X and Y movement axes against walls using a safe 8px physical radius
-          let collideX = window.checkCollisionAt(map, nextX, item.y, 8);
-          let collideY = window.checkCollisionAt(map, item.x, nextY, 8);
+              if (map && map.grid) {
+                // Verify both X and Y movement axes against walls using a safe 8px physical radius
+                let collideX = window.checkCollisionAt(map, nextX, item.y, 8);
+                let collideY = window.checkCollisionAt(map, item.x, nextY, 8);
 
-          if (!collideX) {
-            item.x = nextX;
-          } else {
-            // Invert the trajectory seed to bounce away from the obstacle
-            item.angleSeed += Math.PI;
-          }
+                if (!collideX) {
+                  item.x = nextX;
+                } else {
+                  // Invert the trajectory seed to bounce away from the obstacle
+                  item.angleSeed += Math.PI;
+                }
 
-          if (!collideY) {
-            item.y = nextY;
-          } else {
-            item.angleSeed += Math.PI;
-          }
-        } else {
-          item.x = nextX;
-          item.y = nextY;
-        }
-      }
+                if (!collideY) {
+                  item.y = nextY;
+                } else {
+                  item.angleSeed += Math.PI;
+                }
+              } else {
+                item.x = nextX;
+                item.y = nextY;
+              }
+
+              if (item.type === "glimmering_fairy" && window.logicClock % 6 === 0 && window.ParticlePool) {
+                let pt = window.ParticlePool.get(
+                  item.x + window.randFloat(-4, 4),
+                  item.y + window.randFloat(-4, 4),
+                  window.randFloat(-0.3, 0.3),
+                  -window.randFloat(0.3, 1.0),
+                  window.randFloat(1.5, 3.0),
+                  "#ffd700",
+                  0.85,
+                  window.randInt(15, 30),
+                  0,
+                  true,
+                );
+                pt.style = "sparkle_star";
+                window.particles.push(pt);
+              }
+            }
 
       if (item.isTriggeredByTouch) {
         let dist = Math.hypot(p.x - item.x, p.y - item.y);
@@ -11354,36 +11554,99 @@
     }
 
     if (item.type === "glimmering_pixie") {
-      const options = [
-        "Supernal Attack Elixir",
-        "Supernal Vitality Elixir",
-        "Supernal Armored Elixir",
-        "Supernal Haste Elixir",
-      ];
-      let chosen = options[Math.floor(Math.random() * options.length)];
-      let pStats = window.playerStats;
-      if (pStats) {
-        if (chosen.includes("Attack")) {
-          pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
-          pStats.atkPotionStrength = 0.35;
-        } else if (chosen.includes("Vitality")) {
-          pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
-          pStats.hpPotionStrength = 0.35;
-        } else if (chosen.includes("Armored")) {
-          pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
-          pStats.defPotionStrength = 0.35;
-        } else if (chosen.includes("Haste")) {
-          pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
-          pStats.hastePotionStrength = 3;
-        }
-      }
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast(
-          `[✦] Caught the Pixie! Activated: ${chosen} (Current Run Only)!`,
-          "#2ecc71",
-        );
-      }
-    } else if (item.type === "aetheric_spark") {
+          const options = [
+            "Supernal Attack Elixir",
+            "Supernal Vitality Elixir",
+            "Supernal Armored Elixir",
+            "Supernal Haste Elixir",
+          ];
+          let chosen = options[Math.floor(Math.random() * options.length)];
+          let pStats = window.playerStats;
+          if (pStats) {
+            if (chosen.includes("Attack")) {
+              pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
+              pStats.atkPotionStrength = 0.35;
+            } else if (chosen.includes("Vitality")) {
+              pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
+              pStats.hpPotionStrength = 0.35;
+            } else if (chosen.includes("Armored")) {
+              pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
+              pStats.defPotionStrength = 0.35;
+            } else if (chosen.includes("Haste")) {
+              pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
+              pStats.hastePotionStrength = 3;
+            }
+          }
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              `✦ Caught the Pixie! Activated: ${chosen} (Current Run Only)!`,
+              "#2ecc71",
+            );
+          }
+        } else if (item.type === "glimmering_fairy") {
+          let fairyGold = Math.floor(120 * (1 + (window.player ? window.player.depth || 1 : 1) * 0.8));
+          window.spawnHomingGold(item.x, item.y, fairyGold);
+          window.addDungeonRunScrap("Monster Soul", window.randInt(2, 4), item.x, item.y);
+
+          let depth = window.player ? window.player.depth || 1 : 1;
+          let fairyEquip = window.createItemObject(
+            "weapon",
+            Math.max(1, window.rollItemRarity(depth * 8, 1.2, false)),
+            depth,
+            0
+          );
+          window.spawnGroundLoot(fairyEquip, item.x, item.y);
+
+          let fairyRank = window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary") : 0;
+          let elixirChance = fairyRank === 4 ? 0.35 : fairyRank === 5 ? 0.50 : 0.0;
+
+          if (Math.random() < elixirChance) {
+            const options = [
+              "Supernal Attack Elixir",
+              "Supernal Vitality Elixir",
+              "Supernal Armored Elixir",
+              "Supernal Haste Elixir",
+            ];
+            let chosen = options[Math.floor(Math.random() * options.length)];
+            let pStats = window.playerStats;
+            if (pStats) {
+              if (chosen.includes("Attack")) {
+                pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
+                pStats.atkPotionStrength = 0.35;
+              } else if (chosen.includes("Vitality")) {
+                pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
+                pStats.hpPotionStrength = 0.35;
+              } else if (chosen.includes("Armored")) {
+                pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
+                pStats.defPotionStrength = 0.35;
+              } else if (chosen.includes("Haste")) {
+                pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
+                pStats.hastePotionStrength = 3;
+              }
+            }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                `✦ Fairy Sanctuary Blessing! Activated: ${chosen}!`,
+                "#ffd700",
+              );
+            }
+          } else {
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "✦ Glimmering Fairy Blessing Claimed!",
+                "#34d399",
+              );
+            }
+          }
+
+          if (window.combatVisuals) {
+            window.combatVisuals.spawnBeam(item.x, "#ffd700", 60, true);
+            window.combatVisuals.spawnParticles(item.x, item.y, 25, "gold_dungeon", 4);
+          }
+          if (window.SoundManager && typeof window.SoundManager.play === "function") {
+            window.SoundManager.play("fairy");
+          }
+        } else if (item.type === "aetheric_spark") {
       let step = item.step;
       if (step >= 5) {
         window.playerStats.astralAwakeningTimer = 900; // 15s
@@ -11483,7 +11746,65 @@
       window.combatVisuals.spawnParticles(item.x, item.y, 8, "slag_slime", 2);
     }
 
-    if (item.type === "anomalous_shard") {
+    if (item.type === "glimmering_fairy") {
+          let time = Date.now();
+          let pulse = Math.sin(time / 120) * 2;
+          ctx.save();
+
+          // Outer Aura
+          let fairyGrad = ctx.createRadialGradient(
+            item.x,
+            item.y,
+            1,
+            item.x,
+            item.y,
+            Math.max(0.1, 14 + pulse),
+          );
+          fairyGrad.addColorStop(0, "#ffffff");
+          fairyGrad.addColorStop(0.4, "#00ffff");
+          fairyGrad.addColorStop(1, "rgba(0, 210, 255, 0)");
+          ctx.fillStyle = fairyGrad;
+          ctx.beginPath();
+          ctx.arc(item.x, item.y, Math.max(0.1, 14 + pulse), 0, Math.PI * 2);
+          ctx.fill();
+
+          // Translucent Fluttering Wings
+          let wingAngle = Math.sin(time / 40) * 0.4;
+          ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+          ctx.strokeStyle = "#00ffff";
+          ctx.lineWidth = 1.0;
+
+          // Left Wing
+          ctx.save();
+          ctx.translate(item.x - 2, item.y - 2);
+          ctx.rotate(-0.3 + wingAngle);
+          ctx.beginPath();
+          ctx.ellipse(-6, -2, 7, 3, Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+
+          // Right Wing
+          ctx.save();
+          ctx.translate(item.x + 2, item.y - 2);
+          ctx.rotate(0.3 - wingAngle);
+          ctx.beginPath();
+          ctx.ellipse(6, -2, 7, 3, -Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+
+          // Glowing Core
+          ctx.fillStyle = "#ffd700";
+          ctx.beginPath();
+          ctx.arc(item.x, item.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+          return;
+        }
+
+        if (item.type === "anomalous_shard") {
       if (typeof window.pushHeaderToast === "function") {
         window.pushHeaderToast("[✦] Anomalous Shard shattered!", "#2ecc71");
       }
@@ -14659,9 +14980,20 @@
           window.playerStats.totalLifetimeKills =
             (window.playerStats.totalLifetimeKills || 0) + 1;
           if (m.isRare) {
-            window.playerStats.rareSpawnsSlain =
-              (window.playerStats.rareSpawnsSlain || 0) + 1;
-          }
+                      window.playerStats.rareSpawnsSlain =
+                        (window.playerStats.rareSpawnsSlain || 0) + 1;
+                    }
+
+                    if ((m.isRare || m.eliteAffix) && Math.random() < 0.40) {
+                      const elixirs = [
+                        "Basic Attack Elixir",
+                        "Basic Vitality Elixir",
+                        "Basic Armored Elixir",
+                        "Basic Haste Elixir",
+                      ];
+                      let rolledElixir = elixirs[Math.floor(Math.random() * elixirs.length)];
+                      window.addUseDrop(rolledElixir, 1, false);
+                    }
 
           if (typeof window.progressMission === "function") {
             window.progressMission("kills", 1);
@@ -14902,10 +15234,10 @@
             window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
           }
 
-          // Procedural Card Drop Roll (Regular: 0.15% base, Rare: 1% base, multiplied by Drop Rate)
-          dropMult = pStats.drop || 1.0;
-          let cardBaseChance = m.isRare ? 0.01 : 0.0015;
-          if (Math.random() < cardBaseChance * dropMult) {
+          // Procedural Card Drop Roll (Regular: 0.5% base, Rare: 20% base, multiplied by Drop Rate)
+                    dropMult = pStats.drop || 1.0;
+                    let cardBaseChance = m.isRare ? 0.20 : 0.005;
+                    if (Math.random() < cardBaseChance * dropMult) {
             let cardKey = m.visualType || m.type;
             if (window.MONSTER_CARDS_DATA[cardKey]) {
               let cardItem = {
@@ -15981,9 +16313,9 @@
               );
             }
 
-            // Boss Card Drop Roll (5% base chance, multiplied by Drop Rate)
-            let dropMult = pStats.drop || 1.0;
-            if (Math.random() < 0.05 * dropMult) {
+            // Boss Card Drop Roll (25% base chance, multiplied by Drop Rate)
+                      let dropMult = pStats.drop || 1.0;
+                      if (Math.random() < 0.25 * dropMult) {
               let cardKey = bm.visualType || bm.type;
               if (window.MONSTER_CARDS_DATA[cardKey]) {
                 let cardItem = {
@@ -18981,19 +19313,58 @@
 
   // --- SHOW TOOLTIP HANDLERS ---
   window.showItemTooltip = function (e, item) {
-    if (!item) return;
-    if (e && e.stopPropagation) e.stopPropagation();
+      if (!item) return;
+      if (e && e.stopPropagation) e.stopPropagation();
 
-    let tt = document.getElementById("game-tooltip");
-    if (!tt) return;
+      let tt = document.getElementById("game-tooltip");
+      if (!tt) return;
 
-    tt.innerHTML = window.buildGeneralTooltipHtml(item, true);
-    tt.style.borderColor = window.getTierColor
-      ? window.getTierColor(item.statsRolled)
-      : "#3498db";
-    tt.style.display = "block";
-    window.positionTooltip(e, tt);
-  };
+      if (item.type === "card") {
+        let cardKey = item.cardKey;
+        let cardData = (window.MONSTER_CARDS_DATA && window.MONSTER_CARDS_DATA[cardKey]) || { name: item.name || "Monster Card", set: "Whispering Woods" };
+        let setColors = {
+          "Whispering Woods": "#2ecc71",
+          "Mountain Peaks": "#3498db",
+          "Inferno Depths": "#e74c3c",
+          "Fungal Swamp": "#1abc9c",
+          "Void Singularity": "#9b59b6",
+          "Cosmic Wardens": "#f1c40f",
+        };
+        let setCol = setColors[cardData.set] || "#ffd700";
+        let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 44) : "";
+        let ownedQty = (window.playerStats && window.playerStats.monsterCards && window.playerStats.monsterCards[cardKey]) || 1;
+
+        tt.innerHTML = `
+          <div class="tooltip-card" style="border: 2px solid ${setCol}; border-radius: 6px; background: rgba(10, 8, 20, 0.96); padding: 12px; width: 250px; box-sizing: border-box;">
+            <div style="font-size: 8px; font-weight: bold; color: ${setCol}; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
+              [ BESTIARY CARD • ${cardData.set.toUpperCase()} ]
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+              ${iconHtml}
+              <div style="display: flex; flex-direction: column; min-width: 0; text-align: left;">
+                <span class="tt-title" style="color: ${setCol}; font-weight: bold; font-size: 13px; margin: 0;">${cardData.name || item.name}</span>
+                <span style="color: #94a3b8; font-size: 9px; font-family: monospace;">Collected: <strong style="color: #ffffff;">x${ownedQty}</strong></span>
+              </div>
+            </div>
+            <div style="font-size: 9.5px; color: #cbd5e1; font-family: monospace; line-height: 1.4; text-align: left;">
+              <strong style="color: #ffd700; display: block; margin-bottom: 2px;">[ALBUM AFFILIATION]</strong>
+              Belongs to the <strong>${cardData.set}</strong> set. Collect all set cards to unlock passive set bonuses in the Bestiary Album!
+            </div>
+          </div>
+        `;
+        tt.style.borderColor = setCol;
+        tt.style.display = "block";
+        window.positionTooltip(e, tt);
+        return;
+      }
+
+      tt.innerHTML = window.buildGeneralTooltipHtml(item, true);
+      tt.style.borderColor = window.getTierColor
+        ? window.getTierColor(item.statsRolled)
+        : "#3498db";
+      tt.style.display = "block";
+      window.positionTooltip(e, tt);
+    };
 
   window.showModifierTooltip = function (e, id, isBuff, customDesc = null) {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -19208,26 +19579,68 @@
 
   window.activeProfileMobileTab = "stats";
 
-  window.openSkillTree = function () {
-    if (typeof window.hideTooltip === "function") window.hideTooltip();
-    let modal = document.getElementById("mastery-modal");
-    if (!modal) return;
-    modal.style.display = "flex";
-    if (window.SkillTreeManager) {
-      window.SkillTreeManager.renderSkillTreeUI();
-    }
-  };
+  // --- CONSTELLATION VIEWPORT AUTO-FIT & BOUNDS CENTERER ---
+    window.fitConstellationTreeToViewport = function () {
+      let viewport = document.querySelector(".constellation-viewport");
+      let nodesLayer = document.querySelector(".constellation-nodes-layer");
+      let canvas = document.getElementById("skill-constellation-canvas");
+      if (!viewport || !nodesLayer) return;
 
-  window.toggleMasteryModal = function () {
-    if (typeof window.hideTooltip === "function") window.hideTooltip();
-    let modal = document.getElementById("mastery-modal");
-    if (!modal) return;
-    if (modal.style.display === "none" || modal.style.display === "") {
+      let nodes = nodesLayer.querySelectorAll(".constellation-node");
+      if (nodes.length === 0) return;
+
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+
+      nodes.forEach((node) => {
+        let x = parseFloat(node.style.left) || 0;
+        let y = parseFloat(node.style.top) || 0;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      });
+
+      let viewW = viewport.clientWidth || 600;
+      let viewH = viewport.clientHeight || 380;
+
+      let treeW = maxX - minX + 90; // 90px node size buffer
+      let treeH = maxY - minY + 110; // 110px label buffer
+
+      let scale = Math.min(0.95, Math.min(viewW / treeW, viewH / treeH));
+      let offsetX = (viewW - (minX + maxX) * scale) / 2;
+      let offsetY = (viewH - (minY + maxY) * scale) / 2;
+
+      nodesLayer.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+      nodesLayer.style.transformOrigin = "0 0";
+      if (canvas) {
+        canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+        canvas.style.transformOrigin = "0 0";
+      }
+    };
+
+    window.openSkillTree = function () {
+      if (typeof window.hideTooltip === "function") window.hideTooltip();
+      let modal = document.getElementById("mastery-modal");
+      if (!modal) return;
       modal.style.display = "flex";
       if (window.SkillTreeManager) {
         window.SkillTreeManager.renderSkillTreeUI();
+        setTimeout(window.fitConstellationTreeToViewport, 50);
       }
-    } else {
+    };
+
+  window.toggleMasteryModal = function () {
+      if (typeof window.hideTooltip === "function") window.hideTooltip();
+      let modal = document.getElementById("mastery-modal");
+      if (!modal) return;
+      if (modal.style.display === "none" || modal.style.display === "") {
+        modal.style.display = "flex";
+        if (window.SkillTreeManager) {
+          window.SkillTreeManager.renderSkillTreeUI();
+          setTimeout(window.fitConstellationTreeToViewport, 50);
+        }
+      } else {
       modal.style.display = "none";
       window.lastModalCloseTime = Date.now();
       if (
@@ -19240,15 +19653,15 @@
   };
 
   window.switchProfileTab = function (tabKey) {
-    window.activeProfileMobileTab = tabKey;
-    const tabs = [
-      "stats",
-      "gear",
-      "satchel",
-      "achievements",
-      "album",
-      "relics",
-    ];
+      window.activeProfileMobileTab = tabKey;
+      const tabs = [
+        "stats",
+        "gear",
+        "satchel",
+        "relics",
+        "album",
+        "achievements",
+      ];
     tabs.forEach((t) => {
       let btn = document.getElementById(`profile-tab-${t}`);
       let sec = document.getElementById(`profile-sec-${t}`);
@@ -19276,9 +19689,229 @@
     window.renderProfileModal();
   };
 
-  window.renderReliquaryTab = function () {
-    let container = document.getElementById("reliquary-content-panel");
-    if (!container) return;
+  // --- BESTIARY ANIMATED VIEWPORT LOOP & SET REWARD HANDLERS ---
+    window.bestiaryAnimFrameId = null;
+
+    window.stopBestiaryAnimLoop = function () {
+      if (window.bestiaryAnimFrameId) {
+        cancelAnimationFrame(window.bestiaryAnimFrameId);
+        window.bestiaryAnimFrameId = null;
+      }
+    };
+
+    window.startBestiaryAnimLoop = function () {
+      window.stopBestiaryAnimLoop();
+
+      function step() {
+        let albumSec = document.getElementById("profile-sec-album");
+        if (!albumSec || !albumSec.classList.contains("active-mobile-section")) {
+          window.bestiaryAnimFrameId = null;
+          return;
+        }
+
+        let canvases = document.querySelectorAll(".bestiary-card-canvas");
+        let time = Date.now();
+
+        canvases.forEach((canvas) => {
+          let type = canvas.dataset.visualType;
+          let isUnlocked = canvas.dataset.unlocked === "true";
+          let ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          let mockMob = {
+            visualType: type,
+            type: "mob",
+            x: canvas.width / 2 - 16,
+            y: canvas.height / 2 - 12,
+            w: 32,
+            h: 32,
+            facing: 1,
+            walkTimer: time / 150,
+            hopTimer: Math.floor(time / 50) % 30,
+            flashTimer: 0,
+            buffStacks: { haste: 0, def: 0, atk: 0 },
+            buffTimers: { haste: 0, def: 0, atk: 0 }
+          };
+
+          if (isUnlocked) {
+            if (typeof window.drawSingleMob === "function") {
+              window.drawSingleMob(ctx, mockMob);
+            }
+          } else {
+            // Render Undiscovered Dark Silhouette
+            ctx.save();
+            if (typeof window.drawSingleMob === "function") {
+              window.drawSingleMob(ctx, mockMob);
+            }
+            ctx.globalCompositeOperation = "source-atop";
+            ctx.fillStyle = "rgba(5, 3, 12, 0.94)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Glowing ? Overlay
+            ctx.globalCompositeOperation = "source-over";
+            ctx.font = "bold 18px monospace";
+            ctx.fillStyle = "rgba(255, 215, 0, 0.75)";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("?", canvas.width / 2, canvas.height / 2 + 2);
+            ctx.restore();
+          }
+        });
+
+        window.bestiaryAnimFrameId = requestAnimationFrame(step);
+      }
+
+      window.bestiaryAnimFrameId = requestAnimationFrame(step);
+    };
+
+    window.claimBestiarySetReward = function (setKey) {
+      if (!window.playerStats) return;
+      if (!window.playerStats.claimedBestiarySets) {
+        window.playerStats.claimedBestiarySets = {};
+      }
+
+      if (window.playerStats.claimedBestiarySets[setKey]) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("[!] Set rewards already claimed!", "#e74c3c");
+        }
+        return;
+      }
+
+      let setCards = Object.keys(window.MONSTER_CARDS_DATA).filter(
+        (k) => window.MONSTER_CARDS_DATA[k].set === setKey,
+      );
+
+      let ownedMap = window.playerStats.monsterCards || {};
+      let isComplete = setCards.every((k) => (ownedMap[k] || 0) >= 1);
+
+      if (!isComplete) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast("[!] Complete the full card set to claim rewards!", "#e74c3c");
+        }
+        return;
+      }
+
+      window.playerStats.claimedBestiarySets[setKey] = true;
+
+      // Award +2x Monster Card Sacks
+      window.addUseDrop("Monster Card Sack", 2, false);
+
+      // Award +50 Astral Dust
+      window.playerStats.astralDust = (window.playerStats.astralDust || 0) + 50;
+
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(`✦ Claimed ${setKey} Set Bonus (+2 Sacks, +50 Astral Dust)!`, "#ffd700");
+      }
+
+      if (window.SoundManager && typeof window.SoundManager.play === "function") {
+        window.SoundManager.play("revive");
+      }
+
+      if (typeof window.invalidatePlayerStats === "function") window.invalidatePlayerStats();
+      if (typeof window.updateUI === "function") window.updateUI();
+      if (typeof window.renderBestiaryAlbum === "function") window.renderBestiaryAlbum();
+      if (typeof window.saveGame === "function") window.saveGame();
+    };
+
+    window.renderBestiaryAlbum = function () {
+      let sec = document.getElementById("profile-sec-album");
+      if (!sec) return;
+
+      if (!window.playerStats.claimedBestiarySets) {
+        window.playerStats.claimedBestiarySets = {};
+      }
+
+      let ownedMap = window.playerStats.monsterCards || {};
+      let claimedMap = window.playerStats.claimedBestiarySets || {};
+
+      let setsList = [
+        "Whispering Woods",
+        "Mountain Peaks",
+        "Inferno Depths",
+        "Fungal Swamp",
+        "Void Singularity",
+        "Cosmic Wardens",
+      ];
+
+      let setColors = {
+        "Whispering Woods": "#2ecc71",
+        "Mountain Peaks": "#3498db",
+        "Inferno Depths": "#e74c3c",
+        "Fungal Swamp": "#1abc9c",
+        "Void Singularity": "#9b59b6",
+        "Cosmic Wardens": "#f1c40f",
+      };
+
+      let setBlocksHtml = setsList
+        .map((setName) => {
+          let setCol = setColors[setName] || "#ffd700";
+          let cardsInSet = Object.keys(window.MONSTER_CARDS_DATA).filter(
+            (k) => window.MONSTER_CARDS_DATA[k].set === setName,
+          );
+
+          let unlockedInSet = cardsInSet.filter(
+            (k) => (ownedMap[k] || 0) >= 1,
+          ).length;
+          let isSetComplete = unlockedInSet === cardsInSet.length;
+          let isClaimed = !!claimedMap[setName];
+
+          let claimBtnHtml = "";
+          if (isClaimed) {
+            claimBtnHtml = `<span style="font-size:8.5px; font-weight:bold; color:#34d399; font-family:monospace; background:rgba(52,211,153,0.12); padding:3px 8px; border-radius:4px; border:1px solid #10b981;">[SET BONUS CLAIMED]</span>`;
+          } else if (isSetComplete) {
+            claimBtnHtml = `<button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 10px;" onclick="event.stopPropagation(); window.claimBestiarySetReward('${setName}')">CLAIM SET BONUS (+2 SACKS, +50 DUST)</button>`;
+          } else {
+            claimBtnHtml = `<span style="font-size:8.5px; color:#64748b; font-family:monospace;">Collect all ${cardsInSet.length} cards to unlock</span>`;
+          }
+
+          let cardCardsHtml = cardsInSet
+            .map((cardKey) => {
+              let cData = window.MONSTER_CARDS_DATA[cardKey];
+              let ownedQty = ownedMap[cardKey] || 0;
+              let isUnlocked = ownedQty > 0;
+
+              return `
+                <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"}" style="border-color:${isUnlocked ? setCol : "#334155"}; background:${isUnlocked ? "rgba(10,14,23,0.7)" : "rgba(5,3,12,0.85)"};">
+                  <div style="font-size:7.5px; color:${isUnlocked ? setCol : "#64748b"}; font-weight:bold; font-family:monospace;">${isUnlocked ? "COLLECTED" : "UNDISCOVERED"}</div>
+                  <canvas class="bestiary-card-canvas" data-visual-type="${cardKey}" data-unlocked="${isUnlocked}" width="64" height="64" style="width:52px; height:52px; display:block; margin:4px auto;"></canvas>
+                  <div class="bestiary-card-title" style="color:${isUnlocked ? "#ffffff" : "#64748b"}; font-size:9.5px; margin-bottom:2px;">${isUnlocked ? cData.name : "???"}</div>
+                  <div style="font-size:8px; color:${isUnlocked ? "#ffd700" : "#94a3b8"}; font-family:monospace;">${isUnlocked ? `Owned: x${ownedQty}` : cData.hint || "Unknown Area"}</div>
+                </div>
+              `;
+            })
+            .join("");
+
+          return `
+            <div style="background:rgba(15,23,42,0.4); border:1.5px solid ${setCol}; border-radius:8px; padding:10px; margin-bottom:12px; text-align:left;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:12px; font-weight:900; color:${setCol}; text-transform:uppercase; letter-spacing:0.8px;">${setName} SET</span>
+                  <span style="font-size:9px; font-family:monospace; color:#cbd5e1;">(${unlockedInSet}/${cardsInSet.length} Collected)</span>
+                </div>
+                ${claimBtnHtml}
+              </div>
+              <div class="bestiary-grid">
+                ${cardCardsHtml}
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      sec.innerHTML = `
+        <div id="bestiary-content-panel" style="width:100%; height:100%; box-sizing:border-box; overflow-y:auto; padding-right:4px;">
+          ${setBlocksHtml}
+        </div>
+      `;
+
+      window.startBestiaryAnimLoop();
+    };
+
+    window.renderReliquaryTab = function () {
+      let container = document.getElementById("reliquary-content-panel");
+      if (!container) return;
 
     let stats = window.playerStats;
     let activeRelics = stats.activeRelics || [];
@@ -19377,99 +20010,167 @@
     }
 
     let libraryHtml = "";
-    let totalUnlocked = 0;
+        let totalUnlocked = 0;
+        let selectedTrait = window.state ? window.state.selectedAspectTrait : null;
 
-    let pool = window.ARTIFACT_POOL || [];
-    pool.forEach((art) => {
-      let power = codex[art.trait] || 0.0;
-      let isUnlocked = power > 0;
-      if (isUnlocked) totalUnlocked++;
+        let pool = window.ARTIFACT_POOL || [];
+        pool.forEach((art) => {
+          let power = codex[art.trait] || 0.0;
+          let isUnlocked = power > 0;
+          if (isUnlocked) totalUnlocked++;
 
-      let col = isUnlocked ? "#1abc9c" : "#334155";
-      let op = isUnlocked ? "1.0" : "0.35";
-      let iconHtml = window.getArtifactIconHtml
-        ? window.getArtifactIconHtml(art.trait, 36)
-        : "";
+          let isSelected = art.trait === selectedTrait;
+          let col = isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#334155";
+          let op = isUnlocked ? "1.0" : "0.35";
+          let iconHtml = window.getArtifactIconHtml
+            ? window.getArtifactIconHtml(art.trait, 36)
+            : "";
 
-      let assignButtons = "";
-      if (isUnlocked) {
-        let isSlotted = activeRelics.includes(art.trait);
-        if (isSlotted) {
-          assignButtons = `<span style="color:#2ecc71; font-size:8px; font-weight:bold; font-family:monospace; margin-top:6px;">[SLOTTED]</span>`;
-        } else {
-          assignButtons = `
-              <div style="display:flex; gap:3px; width:100%; margin-top:6px;">
-                <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 0)">SLOT 1</button>
-                <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 1)">SLOT 2</button>
-                <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 2)">SLOT 3</button>
+          let assignButtons = "";
+          if (isUnlocked) {
+            let isSlotted = activeRelics.includes(art.trait);
+            if (isSlotted) {
+              assignButtons = `<span style="color:#2ecc71; font-size:8px; font-weight:bold; font-family:monospace; margin-top:6px;">[SLOTTED]</span>`;
+            } else {
+              assignButtons = `
+                  <div style="display:flex; gap:3px; width:100%; margin-top:6px;">
+                    <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 0)">SLOT 1</button>
+                    <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 1)">SLOT 2</button>
+                    <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 2)">SLOT 3</button>
+                  </div>
+                `;
+            }
+          } else {
+            assignButtons = `<span style="color:#475569; font-size:7.5px; font-family:monospace; margin-top:6px; font-style:italic;">[LOCKED]</span>`;
+          }
+
+          libraryHtml += `
+              <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"} ${isSelected ? "selected-aspect-card" : ""}" style="border-color:${col}; background:${isSelected ? "rgba(212,175,55,0.15)" : "rgba(10,14,23,0.45)"}; opacity:${op}; display:flex; flex-direction:column; justify-content:space-between; padding:8px; min-height:130px; box-shadow: ${isSelected ? "0 0 15px rgba(255,215,0,0.4)" : "inset 0 0 10px " + col + "0d"}; cursor:pointer;" onclick="event.stopPropagation(); window.showRelicDetails('${art.trait}')">
+                <div style="font-size:7px; color:${isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#475569"}; font-weight:bold; font-family:monospace;">${isUnlocked ? "CODEX ASPECT" : "LOCKED"}</div>
+                <div style="margin:4px 0;">${iconHtml || '<span style="color:#334155;">?</span>'}</div>
+                <div class="bestiary-card-title" style="color:${isUnlocked ? "#ffffff" : "#475569"}; font-size:10px; margin-bottom:2px;">${art.name}</div>
+                ${isUnlocked ? `<div style="font-size:8.5px; color:#ffd700; font-family:monospace; font-weight:bold;">Roll: ${Math.round(power * 100)}%</div>` : `<div style="font-size:8.5px; color:#475569; font-family:monospace;">Aspect: Locked</div>`}
+                ${assignButtons}
               </div>
             `;
-        }
-      } else {
-        assignButtons = `<span style="color:#475569; font-size:7.5px; font-family:monospace; margin-top:6px; font-style:italic;">[LOCKED]</span>`;
-      }
+        });
 
-      libraryHtml += `
-          <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"}" style="border-color:${col}; background:rgba(10,14,23,0.45); opacity:${op}; display:flex; flex-direction:column; justify-content:space-between; padding:8px; min-height:130px; box-shadow: inset 0 0 10px ${col}0d;" onclick="event.stopPropagation(); window.showRelicDetails('${art.trait}')">
-            <div style="font-size:7px; color:${isUnlocked ? "#1abc9c" : "#475569"}; font-weight:bold; font-family:monospace;">${isUnlocked ? "CODEX ASPECT" : "LOCKED"}</div>
-            <div style="margin:4px 0;">${iconHtml || '<span style="color:#334155;">?</span>'}</div>
-            <div class="bestiary-card-title" style="color:${isUnlocked ? "#ffffff" : "#475569"}; font-size:10px; margin-bottom:2px;">${art.name}</div>
-            ${isUnlocked ? `<div style="font-size:8.5px; color:#ffd700; font-family:monospace; font-weight:bold;">Roll: ${Math.round(power * 100)}%</div>` : `<div style="font-size:8.5px; color:#475569; font-family:monospace;">Aspect: Locked</div>`}
-            ${assignButtons}
-          </div>
-        `;
-    });
+        let progressPct = Math.round((totalUnlocked / pool.length) * 100) || 0;
 
-    let progressPct = Math.round((totalUnlocked / pool.length) * 100) || 0;
+        // Render In-Tab Aspect Inspector Drawer
+        let inspectorHtml = "";
+        if (selectedTrait) {
+          let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === selectedTrait);
+          if (poolMatch) {
+            let power = codex[selectedTrait] || 0.0;
+            let isUnlocked = power > 0;
+            let iconHtml = window.getArtifactIconHtml ? window.getArtifactIconHtml(selectedTrait, 32) : "";
+            let isSlotted = activeRelics.includes(selectedTrait);
 
-    container.innerHTML = `
-        <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; box-sizing:border-box;">
-          <!-- Codex Summary Banner -->
-          <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #091a18 0%, #050a09 100%); border: 1.5px solid #1abc9c; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-              <span style="font-size:11px; font-weight:900; color:#1abc9c; letter-spacing:1px; text-transform:uppercase;">SACRED RELIQUARY CODEX</span>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#00ffff; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(0,210,255,0.3);">${totalUnlocked} / ${pool.length} Unlocked (${progressPct}%)</span>
-                <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#df9ffb; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(168,85,247,0.3);">Astral Dust: ${dust.toLocaleString()}</span>
-              </div>
-            </div>
-            <div class="gacha-pity-bg" style="width:100%; height:6px; background:#06040a;">
-              <div class="gacha-pity-fill" style="width:${progressPct}%; height:100%; background:linear-gradient(90deg, #1abc9c, #00ffff);"></div>
-            </div>
-            <div style="font-size:8.5px; font-family:monospace; color:#34d399; line-height:1.35; border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px; word-break:break-word; text-align:left;">
-              <strong>ACTIVE RELIC ENHANCEMENTS:</strong> ${activeStatsSummaryStr}
-            </div>
-          </div>
+            let powerBadge = isUnlocked
+              ? `<span style="color:#ffd700; font-weight:bold; font-family:monospace; font-size:9.5px;">UNLOCKED (${Math.round(power * 100)}% Roll Strength)</span>`
+              : `<span style="color:#ef4444; font-weight:bold; font-family:monospace; font-size:9.5px;">LOCKED</span>`;
 
-          <!-- Main Split Panels -->
-          <div style="flex:1; display:flex; gap:12px; min-height:0; overflow:hidden;">
-            <!-- Left: Active Slots -->
-            <div style="width:230px; display:flex; flex-direction:column; gap:6px; background:rgba(15,23,42,0.4); border:1px solid #1e293b; border-radius:8px; padding:10px; box-sizing:border-box; flex-shrink:0;">
-              <strong style="color:#df9ffb; font-size:9.5px; font-family:monospace; text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid #1e293b; padding-bottom:4px; margin-bottom:4px; text-align:left;">ACTIVE ATTUNEMENTS</strong>
-              <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
-                ${activeSlotsHtml}
-              </div>
-              <div style="background:rgba(255,255,255,0.01); border:1px dashed #334155; padding:6px 8px; border-radius:4px; font-size:8.5px; color:#94a3b8; line-height:1.45; text-align:left;">
-                              Altar slots remain attuned permanently! Slotted relic modifiers are multiplied by your Forge Slot level.
+            let actionBtns = "";
+            if (isUnlocked) {
+              if (isSlotted) {
+                let slotIdx = activeRelics.indexOf(selectedTrait);
+                actionBtns = `<button class="action-btn-sm" style="background:rgba(231,76,60,0.2); border-color:#e74c3c; color:#ff7675; padding:4px 10px; font-size:8.5px;" onclick="event.stopPropagation(); window.unassignRelic(${slotIdx})">UNSLOT FROM ALTAR</button>`;
+              } else {
+                actionBtns = `
+                  <div style="display:flex; gap:6px;">
+                    <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 0)">SLOT 1</button>
+                    <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 1)">SLOT 2</button>
+                    <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 2)">SLOT 3</button>
+                  </div>
+                `;
+              }
+            } else {
+              actionBtns = `<span style="color:#64748b; font-size:8.5px; font-family:monospace; font-style:italic;">Extract this artifact from dungeon runs to unlock its Codex Aspect.</span>`;
+            }
+
+            inspectorHtml = `
+                      <div class="relic-inspector-drawer">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; margin-bottom:6px;">
+                          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                            ${iconHtml}
+                            <div style="display:flex; flex-direction:column; text-align:left; min-width:0;">
+                              <span style="color:#1abc9c; font-weight:900; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${poolMatch.name}</span>
+                              ${powerBadge}
                             </div>
                           </div>
-
-                          <!-- Right: Codex Grid -->
-                          <div style="flex:1; display:flex; flex-direction:column; gap:6px; background:rgba(15,23,42,0.4); border:1px solid #1e293b; border-radius:8px; padding:10px; box-sizing:border-box;">
-                            <strong style="color:#1abc9c; font-size:9.5px; font-family:monospace; text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid #1e293b; padding-bottom:4px; margin-bottom:4px; text-align:left;">ASPECT LIBRARY</strong>
-                            <div class="bestiary-album-scrollable" style="flex:1; overflow-y:auto; padding-right:2px; touch-action:pan-y;">
-                              <div class="bestiary-grid" style="grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));">
-                                ${libraryHtml}
-                              </div>
-                            </div>
-                          </div>
+                          <button class="close-btn" style="padding:3px 8px; font-size:8.5px; flex-shrink:0; margin-left:8px;" onclick="event.stopPropagation(); window.showRelicDetails(null)">DISMISS</button>
+                        </div>
+                        <div style="font-family:monospace; font-size:9px; color:#cbd5e1; line-height:1.35; text-align:left; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:6px 8px; border-radius:5px; margin-bottom:6px; max-height:55px; overflow-y:auto;">
+                          ${poolMatch.breakdown || poolMatch.desc}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                          <span style="font-size:8px; color:#94a3b8; font-family:monospace; font-weight:bold;">ATTUNEMENT:</span>
+                          ${actionBtns}
                         </div>
                       </div>
-                    </div>
-                  `;
-  };
+                    `;
+          }
+        }
 
-  window.assignRelic = function (trait, slotIndex) {
+        container.innerHTML = `
+            <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; box-sizing:border-box;">
+              <!-- Codex Summary Banner -->
+              <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #091a18 0%, #050a09 100%); border: 1.5px solid #1abc9c; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                  <span style="font-size:11px; font-weight:900; color:#1abc9c; letter-spacing:1px; text-transform:uppercase;">SACRED RELIQUARY CODEX</span>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#00ffff; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(0,210,255,0.3);">${totalUnlocked} / ${pool.length} Unlocked (${progressPct}%)</span>
+                    <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#df9ffb; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(168,85,247,0.3);">Astral Dust: ${dust.toLocaleString()}</span>
+                  </div>
+                </div>
+                <div class="gacha-pity-bg" style="width:100%; height:6px; background:#06040a;">
+                  <div class="gacha-pity-fill" style="width:${progressPct}%; height:100%; background:linear-gradient(90deg, #1abc9c, #00ffff);"></div>
+                </div>
+                <div style="font-size:8.5px; font-family:monospace; color:#34d399; line-height:1.35; border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px; word-break:break-word; text-align:left;">
+                  <strong>ACTIVE RELIC ENHANCEMENTS:</strong> ${activeStatsSummaryStr}
+                </div>
+              </div>
+
+              <!-- Main Split Panels -->
+              <div class="reliquary-split-container">
+                <!-- Left: Active Slots -->
+                <div class="reliquary-left-pane">
+                  <strong style="color:#df9ffb; font-size:9.5px; font-family:monospace; text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid #1e293b; padding-bottom:4px; margin-bottom:4px; text-align:left;">ACTIVE ATTUNEMENTS</strong>
+                  <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+                    ${activeSlotsHtml}
+                  </div>
+                  <div style="background:rgba(255,255,255,0.01); border:1px dashed #334155; padding:6px 8px; border-radius:4px; font-size:8.5px; color:#94a3b8; line-height:1.45; text-align:left;">
+                    Altar slots remain attuned permanently! Slotted relic modifiers are multiplied by your Forge Slot level.
+                  </div>
+                </div>
+
+                <!-- Right: Codex Grid -->
+                                <div class="reliquary-right-pane">
+                                  <strong style="color:#1abc9c; font-size:9.5px; font-family:monospace; text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid #1e293b; padding-bottom:4px; margin-bottom:4px; text-align:left;">ASPECT LIBRARY</strong>
+                                  ${inspectorHtml}
+                                  <div class="bestiary-album-scrollable" style="flex:1; overflow-y:auto; padding-right:2px; touch-action:pan-y;">
+                                    <div class="bestiary-grid" style="grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));">
+                                      ${libraryHtml}
+                                    </div>
+                                  </div>
+                                </div>
+              </div>
+            </div>
+          `;
+      };
+
+      window.showRelicDetails = function (trait) {
+        window.state = window.state || {};
+        if (window.state.selectedAspectTrait === trait) {
+          window.state.selectedAspectTrait = null;
+        } else {
+          window.state.selectedAspectTrait = trait;
+        }
+        window.renderReliquaryTab();
+      };
+
+      window.assignRelic = function (trait, slotIndex) {
     let stats = window.playerStats;
     stats.activeRelics = stats.activeRelics || [];
 
@@ -19490,51 +20191,36 @@
   };
 
   window.unassignRelic = function (slotIndex) {
-    let stats = window.playerStats;
-    stats.activeRelics = stats.activeRelics || [];
-    stats.activeRelics[slotIndex] = null;
+      let stats = window.playerStats;
+      stats.activeRelics = stats.activeRelics || [];
+      stats.activeRelics[slotIndex] = null;
 
-    if (window.SoundManager) window.SoundManager.play("death");
-    window.invalidatePlayerStats();
-    window.updateUI();
-    window.renderReliquaryTab();
-    window.saveGame();
-  };
+      if (window.SoundManager) window.SoundManager.play("death");
+      window.invalidatePlayerStats();
+      window.updateUI();
+      window.renderReliquaryTab();
+      window.saveGame();
+    };
 
-  window.showRelicDetails = function (trait) {
-    let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === trait);
-    if (!poolMatch) return;
-
-    let stats = window.playerStats;
-    let power = (stats.artifactCodex && stats.artifactCodex[trait]) || 0.0;
-    let isUnlocked = power > 0;
-
-    let title = poolMatch.name;
-    let powerText = isUnlocked
-      ? `<strong style="color:#ffd700;">${Math.round(power * 100)}% Roll Strength</strong>`
-      : `<strong style="color:#ef4444;">Locked</strong>`;
-    let descText = poolMatch.breakdown || poolMatch.desc;
-
-    let contentHtml = `
-                    <div style="font-family:monospace; text-align:left; font-size:11px; line-height:1.55; color:#cbd5e1; white-space:normal; width:100%;">
-                      <div style="margin-bottom:10px; padding:6px; background:rgba(26,188,156,0.06); border:1px solid rgba(26,188,156,0.2); border-radius:4px;">
-                        <strong>Codex Status:</strong> ${powerText}
-                      </div>
-                      <div style="background:rgba(0,0,0,0.3); border:1px solid #222; border-radius:6px; padding:12px; margin-top:8px;">
-                        ${descText}
-                      </div>
-                    </div>
-                  `;
-
-    window.showCustomConfirm(
-      title.toUpperCase(),
-      contentHtml,
-      "CLOSE",
-      "BACK",
-      "#1abc9c",
-      null,
-    );
-  };
+    // Protected accessor enforcing the in-tab Aspect Inspector Drawer
+    Object.defineProperty(window, "showRelicDetails", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return function (trait) {
+          window.state = window.state || {};
+          if (window.state.selectedAspectTrait === trait) {
+            window.state.selectedAspectTrait = null;
+          } else {
+            window.state.selectedAspectTrait = trait;
+          }
+          window.renderReliquaryTab();
+        };
+      },
+      set() {
+        // Guarded no-op: Blocks duplicate assignments from restoring full-screen modals
+      },
+    });
 
   window.state.achievementFilter = "all";
 
@@ -19825,29 +20511,32 @@
   };
 
   window.toggleProfileModal = function () {
-    window.hideTooltip();
-    let modal = document.getElementById("profile-modal");
-    if (!modal) return;
+      window.hideTooltip();
+      let modal = document.getElementById("profile-modal");
+      if (!modal) return;
 
-    if (modal.style.display === "none" || modal.style.display === "") {
-      modal.style.display = "flex";
-      window.switchProfileTab(window.activeProfileMobileTab || "stats");
-      window.renderProfileModal();
-    } else {
-      modal.style.display = "none";
-      window.lastModalCloseTime = Date.now();
-      let profileCard = document.querySelector(".profile-card");
-      if (profileCard) {
-        profileCard.classList.remove("skills-fullscreen-mode");
+      if (modal.style.display === "none" || modal.style.display === "") {
+        modal.style.display = "flex";
+        window.switchProfileTab(window.activeProfileMobileTab || "stats");
+        window.renderProfileModal();
+      } else {
+        modal.style.display = "none";
+        window.lastModalCloseTime = Date.now();
+        let profileCard = document.querySelector(".profile-card");
+        if (profileCard) {
+          profileCard.classList.remove("skills-fullscreen-mode");
+        }
+        if (
+          window.SkillTreeManager &&
+          typeof window.SkillTreeManager.stopAnimationLoop === "function"
+        ) {
+          window.SkillTreeManager.stopAnimationLoop();
+        }
+        if (typeof window.stopBestiaryAnimLoop === "function") {
+          window.stopBestiaryAnimLoop();
+        }
       }
-      if (
-        window.SkillTreeManager &&
-        typeof window.SkillTreeManager.stopAnimationLoop === "function"
-      ) {
-        window.SkillTreeManager.stopAnimationLoop();
-      }
-    }
-  };
+    };
 
   window.renderProfileModal = function () {
     let statsListEl = document.getElementById("profile-stats-list");
@@ -21038,9 +21727,13 @@
     }
 
     // Add the "Reward Sack" item (Daily or Weekly)
-    window.addUseDrop(quest.treat, quest.treatQty || 1, false);
+        window.addUseDrop(quest.treat, quest.treatQty || 1, false);
 
-    if (typeof window.pushHeaderToast === "function") {
+        // Add Monster Card Sack rewards (+1x for Daily, +2x for Weekly Guild Quests)
+        let cardSackQty = isWeekly ? 2 : 1;
+        window.addUseDrop("Monster Card Sack", cardSackQty, false);
+
+        if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast(`Claimed Reward: ${quest.desc}!`, "#2ecc71");
     }
     if (window.SoundManager && typeof window.SoundManager.play === "function") {
