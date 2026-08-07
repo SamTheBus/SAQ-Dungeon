@@ -16,28 +16,30 @@ window.SoundManager = {
   filterPoolSize: 15,
 
   getSafeSettings() {
-      const stats = window.playerStats || {};
-      return {
-        mute: stats.mute ?? false,
-        master: stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5,
-        sfx: stats.volumeSFX !== undefined ? stats.volumeSFX : 0.5,
-        music: stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5,
-        mixWithBackground: stats.mixWithBackground ?? false, // Default false ensures "playback" mode bypasses physical silent switch
-      };
-    },
+    const stats = window.playerStats || {};
+    return {
+      mute: stats.mute ?? false,
+      master: stats.volumeMaster !== undefined ? stats.volumeMaster : 0.5,
+      sfx: stats.volumeSFX !== undefined ? stats.volumeSFX : 0.5,
+      music: stats.volumeMusic !== undefined ? stats.volumeMusic : 0.5,
+      mixWithBackground: stats.mixWithBackground ?? false, // Default false ensures "playback" mode bypasses physical silent switch
+    };
+  },
 
   init() {
     // Configure iOS AudioSession category based on background mixing preference
-        if (navigator.audioSession) {
-          try {
-            const settings = this.getSafeSettings();
-            // "playback" mode bypasses the physical silent switch (standard for games)
-            // "ambient" mode allows background audio (Spotify) to mix but is muted by the silent switch
-            navigator.audioSession.type = settings.mixWithBackground ? "ambient" : "playback";
-          } catch (e) {
-            console.warn("Could not set iOS AudioSession category:", e);
-          }
-        }
+    if (navigator.audioSession) {
+      try {
+        const settings = this.getSafeSettings();
+        // "playback" mode bypasses the physical silent switch (standard for games)
+        // "ambient" mode allows background audio (Spotify) to mix but is muted by the silent switch
+        navigator.audioSession.type = settings.mixWithBackground
+          ? "ambient"
+          : "playback";
+      } catch (e) {
+        console.warn("Could not set iOS AudioSession category:", e);
+      }
+    }
 
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return false;
@@ -112,14 +114,16 @@ window.SoundManager = {
   },
 
   updateVolumes() {
-      if (!this.ctx) return;
-      const settings = this.getSafeSettings();
-      if (navigator.audioSession) {
-        try {
-          navigator.audioSession.type = settings.mixWithBackground ? "ambient" : "playback";
-        } catch (e) {}
-      }
-      const now = this.ctx.currentTime;
+    if (!this.ctx) return;
+    const settings = this.getSafeSettings();
+    if (navigator.audioSession) {
+      try {
+        navigator.audioSession.type = settings.mixWithBackground
+          ? "ambient"
+          : "playback";
+      } catch (e) {}
+    }
+    const now = this.ctx.currentTime;
     const targetMaster = settings.mute ? 0 : settings.master;
     const targetSFX = settings.sfx;
     this.masterGain.gain.setTargetAtTime(

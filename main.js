@@ -125,47 +125,55 @@
 
   window.spawnResonantAegisRipple = function (x, y) {
     if (!window.particles || !window.ParticlePool) return;
-    for (let i = 0; i < 20; i++) {
-      let angle = (i * Math.PI * 2) / 20;
-      let speed = 2.8;
+
+    // 1. Spawning high-density golden runic shards
+    for (let i = 0; i < 14; i++) {
+      let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.15, 0.15);
+      let speed = window.randFloat(3.2, 5.8);
       let pt = window.ParticlePool.get(
         x,
         y,
         Math.cos(angle) * speed,
-        Math.sin(angle) * speed,
-        3.0,
-        "#38bdf8",
-        0.8,
-        25,
-        0,
+        Math.sin(angle) * speed - window.randFloat(0.5, 1.5),
+        window.randFloat(2.0, 4.0),
+        Math.random() < 0.6 ? "#f1c40f" : "#ffd700",
+        0.95,
+        window.randInt(20, 35),
+        0.15, // light gravity to pull debris down
         true,
+        0.92, // deceleration drag
       );
-      pt.style = "streak";
+      pt.style = "polygon";
+      pt.angle = Math.random() * Math.PI * 2;
+      pt.spinSpeed = window.randFloat(-0.25, 0.25);
+      pt.scaleDecay = 0.015;
+      window.particles.push(pt);
+    }
+
+    // 2. Spawning expanding floor dust waves
+    for (let i = 0; i < 14; i++) {
+      let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.1, 0.1);
+      let speed = window.randFloat(2.0, 3.8);
+      let pt = window.ParticlePool.get(
+        x,
+        y,
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed * 0.45, // flat ellipse scatter
+        window.randFloat(3.5, 6.0),
+        "#b58700", // sand-gold
+        0.75,
+        window.randInt(15, 25),
+        0.0,
+        true,
+        0.88, // rapid deceleration
+      );
+      pt.style = "glowing_orb";
+      pt.scaleDecay = 0.02;
       window.particles.push(pt);
     }
   };
 
-  window.spawnEarthBreakerBashVisual = function (x, y, angle) {
-    if (!window.particles || !window.ParticlePool) return;
-    for (let i = 0; i < 15; i++) {
-      let spreadAngle = angle + window.randFloat(-0.45, 0.45);
-      let speed = window.randFloat(3.0, 5.5);
-      let pt = window.ParticlePool.get(
-        x,
-        y,
-        Math.cos(spreadAngle) * speed,
-        Math.sin(spreadAngle) * speed,
-        window.randFloat(2.0, 4.0),
-        "#e67e22",
-        0.9,
-        20,
-        0.1,
-        true,
-      );
-      pt.style = "polygon";
-      window.particles.push(pt);
-    }
-  };
+  // Unified Earth-Breaker Bash visual spawner lives in entities.js
 
   // Intercept and bind any local particle pool assignments to unified ParticlePool (Subphase A.1)
   let existingCombatVisuals = window.combatVisuals;
@@ -1267,45 +1275,51 @@
   };
 
   // --- ENGINE INITIALIZATION ---
-    window.addEventListener("load", function () {
-      canvas = document.getElementById("gameCanvas");
-      if (!canvas) return;
-      ctx = canvas.getContext("2d");
+  window.addEventListener("load", function () {
+    canvas = document.getElementById("gameCanvas");
+    if (!canvas) return;
+    ctx = canvas.getContext("2d");
 
-      window.canvas = canvas;
-      window.ctx = ctx;
+    window.canvas = canvas;
+    window.ctx = ctx;
 
-      window.resizeCanvas();
-      window.addEventListener("resize", window.resizeCanvas);
+    window.resizeCanvas();
+    window.addEventListener("resize", window.resizeCanvas);
 
-      // Auto-scan global namespace for other anonymous AudioContext instances
-      if (window.AudioContext || window.webkitAudioContext) {
-        for (let key in window) {
-          try {
-            let val = window[key];
-            if (val && (val instanceof (window.AudioContext || window.webkitAudioContext))) {
-              if (val.state === "suspended") {
-                val.resume().catch(() => {});
-              }
+    // Auto-scan global namespace for other anonymous AudioContext instances
+    if (window.AudioContext || window.webkitAudioContext) {
+      for (let key in window) {
+        try {
+          let val = window[key];
+          if (
+            val &&
+            val instanceof (window.AudioContext || window.webkitAudioContext)
+          ) {
+            if (val.state === "suspended") {
+              val.resume().catch(() => {});
             }
-          } catch (e) {}
-        }
+          }
+        } catch (e) {}
       }
+    }
 
-      const unlockAudio = () => {
-        if (window.SoundManager && typeof window.SoundManager.unlockMobileAudio === "function") {
-          window.SoundManager.unlockMobileAudio();
-        }
-        canvas.removeEventListener("pointerdown", unlockAudio);
-        canvas.removeEventListener("touchstart", unlockAudio);
-        document.removeEventListener("click", unlockAudio);
-      };
+    const unlockAudio = () => {
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.unlockMobileAudio === "function"
+      ) {
+        window.SoundManager.unlockMobileAudio();
+      }
+      canvas.removeEventListener("pointerdown", unlockAudio);
+      canvas.removeEventListener("touchstart", unlockAudio);
+      document.removeEventListener("click", unlockAudio);
+    };
 
-      canvas.addEventListener("pointerdown", unlockAudio, { passive: true });
-            canvas.addEventListener("touchstart", unlockAudio, { passive: true });
-            document.addEventListener("click", unlockAudio, { passive: true });
+    canvas.addEventListener("pointerdown", unlockAudio, { passive: true });
+    canvas.addEventListener("touchstart", unlockAudio, { passive: true });
+    document.addEventListener("click", unlockAudio, { passive: true });
 
-            // Check and trigger daily/weekly resets on initial boot
+    // Check and trigger daily/weekly resets on initial boot
     if (typeof window.checkAndResetMissions === "function") {
       window.checkAndResetMissions();
     }
@@ -5411,241 +5425,330 @@
     window.loadHub();
 
     // Decorate damagePlayer globally with safe double-wrap protection to monitor and trigger defensive counters
-        if (window.damagePlayer && !window.damagePlayer.__wrappedByMain) {
-          const originalDamagePlayer = window.damagePlayer;
-          window.damagePlayer = function (amount, attacker) {
-      let p = window.player;
-      let pStats =
-        typeof window.resolvePlayerStats === "function"
-          ? window.resolvePlayerStats()
-          : {};
-      let shieldFortifiedGuardLvl = window.SkillTreeManager
-        ? window.SkillTreeManager.getSkillLevel("shield_fortified_guard")
-        : 0;
-
-      // Compute block mitigation modifications
-      let blockMit = 0.7;
-      if (pStats.blockMitigation) blockMit = pStats.blockMitigation;
-      if (pStats.blockMitigationBonus)
-        blockMit = Math.min(1.0, blockMit + pStats.blockMitigationBonus);
-      if (pStats.colossusBlock) blockMit = 1.0;
-
-      let prevBlockTime =
-        (window.playerStats && window.playerStats.recentBlockTime) || 0;
-      let prevParryTime =
-        (window.playerStats && window.playerStats.recentParryTime) || 0;
-
-      let result = originalDamagePlayer
-        ? originalDamagePlayer.call(this, amount, attacker)
-        : null;
-
-      let postBlockTime =
-        (window.playerStats && window.playerStats.recentBlockTime) || 0;
-      let postParryTime =
-        (window.playerStats && window.playerStats.recentParryTime) || 0;
-
-      if (postBlockTime > prevBlockTime) {
-        // Successful Block retro-active adjustments
-        if (blockMit >= 1.0 && p.hp > 0) {
-          let baseDamageTaken = Math.round(amount * 0.3);
-          p.hp = Math.min(p.maxHp, p.hp + baseDamageTaken);
-        } else if (pStats.blockMitigationBonus && p.hp > 0) {
-          let extraReduction = Math.round(amount * pStats.blockMitigationBonus);
-          p.hp = Math.min(p.maxHp, p.hp + extraReduction);
-        }
-
-        // Colossus AP Bonus Conversion
-        if (pStats.colossusBlock) {
-          window.playerStats.colossusAtkBonusTimer = 600;
-          window.playerStats.colossusAtkBonusVal = Math.round(
-            (pStats.def || 5) * 0.5,
-          );
-          if (typeof window.spawnFloatingText === "function") {
-            window.spawnFloatingText(
-              p.x,
-              p.y - 25,
-              "COLOSSUS MIGHT!",
-              "#2ecc71",
-              true,
-            );
-          }
-        }
-
-        // Aegis Pulse Healing
-        let pulseLvl = window.SkillTreeManager
-          ? window.SkillTreeManager.getSkillLevel("shield_aegis_pulse")
+    if (window.damagePlayer && !window.damagePlayer.__wrappedByMain) {
+      const originalDamagePlayer = window.damagePlayer;
+      window.damagePlayer = function (amount, attacker) {
+        let p = window.player;
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : {};
+        let shieldFortifiedGuardLvl = window.SkillTreeManager
+          ? window.SkillTreeManager.getSkillLevel("shield_fortified_guard")
           : 0;
-        if (pulseLvl > 0) {
-          window.playerStats.blockCount =
-            (window.playerStats.blockCount || 0) + 1;
-          if (window.playerStats.blockCount >= 5) {
-            window.playerStats.blockCount = 0;
-            let healVal = Math.round(p.maxHp * (pulseLvl * 0.03));
-            p.hp = Math.min(p.maxHp, p.hp + healVal);
+
+        // Compute block mitigation modifications
+        let blockMit = 0.7;
+        if (pStats.blockMitigation) blockMit = pStats.blockMitigation;
+        if (pStats.blockMitigationBonus)
+          blockMit = Math.min(1.0, blockMit + pStats.blockMitigationBonus);
+        if (pStats.colossusBlock) blockMit = 1.0;
+
+        let prevBlockTime =
+          (window.playerStats && window.playerStats.recentBlockTime) || 0;
+        let prevParryTime =
+          (window.playerStats && window.playerStats.recentParryTime) || 0;
+
+        let result = originalDamagePlayer
+          ? originalDamagePlayer.call(this, amount, attacker)
+          : null;
+
+        let postBlockTime =
+          (window.playerStats && window.playerStats.recentBlockTime) || 0;
+        let postParryTime =
+          (window.playerStats && window.playerStats.recentParryTime) || 0;
+
+        if (postBlockTime > prevBlockTime) {
+          // Successful Block retro-active adjustments
+          if (blockMit >= 1.0 && p.hp > 0) {
+            let baseDamageTaken = Math.round(amount * 0.3);
+            p.hp = Math.min(p.maxHp, p.hp + baseDamageTaken);
+          } else if (pStats.blockMitigationBonus && p.hp > 0) {
+            let extraReduction = Math.round(
+              amount * pStats.blockMitigationBonus,
+            );
+            p.hp = Math.min(p.maxHp, p.hp + extraReduction);
+          }
+
+          // Colossus AP Bonus Conversion
+          if (pStats.colossusBlock) {
+            window.playerStats.colossusAtkBonusTimer = 600;
+            window.playerStats.colossusAtkBonusVal = Math.round(
+              (pStats.def || 5) * 0.5,
+            );
             if (typeof window.spawnFloatingText === "function") {
               window.spawnFloatingText(
                 p.x,
-                p.y - 12,
-                `+${healVal} HP (AEGIS PULSE)`,
+                p.y - 25,
+                "COLOSSUS MIGHT!",
                 "#2ecc71",
                 true,
               );
             }
+          }
+
+          // Aegis Pulse Healing
+          let pulseLvl = window.SkillTreeManager
+            ? window.SkillTreeManager.getSkillLevel("shield_aegis_pulse")
+            : 0;
+          if (pulseLvl > 0) {
+            window.playerStats.blockCount =
+              (window.playerStats.blockCount || 0) + 1;
+            if (window.playerStats.blockCount >= 5) {
+              window.playerStats.blockCount = 0;
+              let healVal = Math.round(p.maxHp * (pulseLvl * 0.03));
+              p.hp = Math.min(p.maxHp, p.hp + healVal);
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 12,
+                  `+${healVal} HP (AEGIS PULSE)`,
+                  "#2ecc71",
+                  true,
+                );
+              }
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnBeam(p.x, "#2ecc71", 30, true);
+              }
+            }
+          }
+
+          // Retaliatory Strike Guaranteed Crit flag
+          if (
+            window.SkillTreeManager &&
+            window.SkillTreeManager.getSkillLevel("shield_retaliatory_strike") >
+              0
+          ) {
+            window.playerStats.guaranteedCrit = true;
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 20,
+                "CRIT GUARANTEED!",
+                "#ffd700",
+                true,
+              );
+            }
+          }
+
+          window.handleVanguardBlockTrigger(attacker);
+        }
+
+        if (postParryTime > prevParryTime) {
+          // Successful Parry retro-active adjustments (Master Duellist 100% negation & Decoy Spawn)
+          if (pStats.hasKeystoneDuellist && p.hp > 0) {
+            let baseDamageTaken = Math.round(amount * 0.5);
+            p.hp = Math.min(p.maxHp, p.hp + baseDamageTaken);
+
+            window.activeDungeonMobs = window.activeDungeonMobs || [];
+            window.activeDungeonMobs.push({
+              id: window.idCounter++,
+              type: "mob",
+              visualTier: 4,
+              visualType: "marsh_ghost",
+              x: p.x + window.randFloat(-15, 15),
+              y: p.y + window.randFloat(-15, 15),
+              w: 24,
+              h: 24,
+              hp: BigNum.from(1),
+              maxHp: BigNum.from(1),
+              atk: Math.round((pStats.atk || 15) * 0.8),
+              flashTimer: 0,
+              isFriendlyWisp: true,
+              wispTimer: 240,
+              discovered: true,
+              hopTimer: 0,
+            });
+
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 25,
+                "SHADOW DECOY!",
+                "#a855f7",
+                true,
+              );
+            }
+          }
+
+          // Shadow Step Buff trigger
+          if (pStats.shadowStepLvl && pStats.shadowStepLvl > 0) {
+            window.playerStats.shadowStepTimer = 240;
+            window.playerStats.shadowStepLevel = pStats.shadowStepLvl;
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 25,
+                "SHADOW STEP!",
+                "#a855f7",
+                true,
+              );
+            }
+          }
+
+          // Sanguine Rupture dot detonation trigger
+          if (
+            pStats.sanguineRuptureLvl &&
+            pStats.sanguineRuptureLvl > 0 &&
+            attacker &&
+            (attacker.poisonStacks > 0 || attacker.bleedStacks > 0)
+          ) {
+            let baseAtk = pStats.atk || p.atk || 15;
+            let remainingPoison = BigNum.from(baseAtk)
+              .mul(0.1 * (attacker.poisonLevel || 1))
+              .mul(attacker.poisonStacks)
+              .mul(10);
+            let remainingBleed = BigNum.from(baseAtk)
+              .mul(0.05)
+              .mul(attacker.bleedStacks)
+              .mul(10);
+            let totalRemaining = remainingPoison.add(remainingBleed);
+            let detonationDmg = totalRemaining.mul(
+              pStats.sanguineRuptureLvl === 1 ? 1.5 : 3.0,
+            );
+
+            attacker.hp = attacker.hp.sub(detonationDmg);
+            attacker.poisonStacks = 0;
+            attacker.bleedStacks = 0;
+            attacker.poisonTimer = 0;
+            attacker.bleedTimer = 0;
+
             if (window.combatVisuals) {
-              window.combatVisuals.spawnBeam(p.x, "#2ecc71", 30, true);
+              window.combatVisuals.spawnDamageEffect(
+                attacker.x + attacker.w / 2,
+                attacker.y + attacker.h / 2,
+                detonationDmg,
+                "crit",
+                true,
+                attacker,
+              );
+            }
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                attacker.x + attacker.w / 2,
+                attacker.y - 15,
+                "SANGUINE RUPTURE!",
+                "#e74c3c",
+              );
+            }
+          }
+
+          window.handleVanguardParryTrigger(attacker);
+        }
+
+        // 4. Fortified Guard Stack Builder
+        if (pStats.def && shieldFortifiedGuardLvl > 0 && amount > 0) {
+          window.playerStats.fortitudeStacks = Math.min(
+            5,
+            (window.playerStats.fortitudeStacks || 0) + 1,
+          );
+          window.playerStats.fortitudeTimer = 360;
+          if (
+            typeof window.spawnFloatingText === "function" &&
+            Math.random() < 0.3
+          ) {
+            window.spawnFloatingText(
+              p.x,
+              p.y - 15,
+              `FORTITUDE x${window.playerStats.fortitudeStacks}`,
+              "#3498db",
+              true,
+            );
+          }
+        }
+
+        // 5. Tome Barrier Shatter Core Detection
+        let absorbed = 0;
+        if (pStats.arcaneBarrier && pStats.arcaneBarrier > 0 && amount > 0) {
+          absorbed = Math.round(amount * pStats.arcaneBarrier);
+        }
+        if (pStats.hasBarrierShatter && absorbed > 0) {
+          window.playerStats.absorbedBarrierDamage =
+            (window.playerStats.absorbedBarrierDamage || 0) + absorbed;
+          let threshold = p.maxHp;
+          if (window.playerStats.absorbedBarrierDamage >= threshold) {
+            window.playerStats.absorbedBarrierDamage = 0; // Reset
+
+            let intVal = pStats.int || p.int || 5;
+            let detDmg = BigNum.from(intVal).mul(2.5);
+
+            if (window.spawnBarrierShatterVisual) {
+              window.spawnBarrierShatterVisual(p.x, p.y);
+            }
+
+            let range = 75;
+            if (window.activeDungeonMobs) {
+              window.activeDungeonMobs.forEach((m) => {
+                if (m.hp.gt(0) && !m.isFriendlyWisp) {
+                  let mCx = m.x + (m.w || 24) / 2;
+                  let mCy = m.y + (m.h || 24) / 2;
+                  let dist = Math.hypot(p.x - mCx, p.y - mCy);
+                  if (dist <= range) {
+                    m.hp = m.hp.sub(detDmg);
+                    m.flashTimer = 8;
+                    m.hasTakenDamage = true;
+
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        mCx,
+                        mCy,
+                        detDmg,
+                        "frost",
+                        true,
+                        m,
+                      );
+                    }
+                  }
+                }
+              });
+            }
+            if (window.mob && window.mob.hp.gt(0)) {
+              let m = window.mob;
+              let mCx = m.x + m.w / 2;
+              let mCy = m.y + m.h / 2;
+              let dist = Math.hypot(p.x - mCx, p.y - mCy);
+              if (dist <= range) {
+                m.hp = m.hp.sub(detDmg);
+                m.flashTimer = 8;
+                m.hasTakenDamage = true;
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnDamageEffect(
+                    mCx,
+                    mCy,
+                    detDmg,
+                    "frost",
+                    true,
+                    m,
+                  );
+                }
+              }
+            }
+
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 25,
+                "BARRIER SHATTER DETONATION!",
+                "#00ffff",
+                true,
+              );
+            }
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_frost");
             }
           }
         }
 
-        // Retaliatory Strike Guaranteed Crit flag
-        if (
-          window.SkillTreeManager &&
-          window.SkillTreeManager.getSkillLevel("shield_retaliatory_strike") > 0
-        ) {
-          window.playerStats.guaranteedCrit = true;
-          if (typeof window.spawnFloatingText === "function") {
-            window.spawnFloatingText(
-              p.x,
-              p.y - 20,
-              "CRIT GUARANTEED!",
-              "#ffd700",
-              true,
-            );
-          }
-        }
+        return result;
+      };
+      window.damagePlayer.__wrappedByMain = true;
+    }
 
-        window.handleVanguardBlockTrigger(attacker);
-      }
-
-      if (postParryTime > prevParryTime) {
-        // Successful Parry retro-active adjustments (Master Duellist 100% negation & Decoy Spawn)
-        if (pStats.hasKeystoneDuellist && p.hp > 0) {
-          let baseDamageTaken = Math.round(amount * 0.5);
-          p.hp = Math.min(p.maxHp, p.hp + baseDamageTaken);
-
-          window.activeDungeonMobs = window.activeDungeonMobs || [];
-          window.activeDungeonMobs.push({
-            id: window.idCounter++,
-            type: "mob",
-            visualTier: 4,
-            visualType: "marsh_ghost",
-            x: p.x + window.randFloat(-15, 15),
-            y: p.y + window.randFloat(-15, 15),
-            w: 24,
-            h: 24,
-            hp: BigNum.from(1),
-            maxHp: BigNum.from(1),
-            atk: Math.round((pStats.atk || 15) * 0.8),
-            flashTimer: 0,
-            isFriendlyWisp: true,
-            wispTimer: 240,
-            discovered: true,
-            hopTimer: 0,
-          });
-
-          if (typeof window.spawnFloatingText === "function") {
-            window.spawnFloatingText(
-              p.x,
-              p.y - 25,
-              "SHADOW DECOY!",
-              "#a855f7",
-              true,
-            );
-          }
-        }
-
-        // Shadow Step Buff trigger
-        if (pStats.shadowStepLvl && pStats.shadowStepLvl > 0) {
-          window.playerStats.shadowStepTimer = 240;
-          window.playerStats.shadowStepLevel = pStats.shadowStepLvl;
-          if (typeof window.spawnFloatingText === "function") {
-            window.spawnFloatingText(
-              p.x,
-              p.y - 25,
-              "SHADOW STEP!",
-              "#a855f7",
-              true,
-            );
-          }
-        }
-
-        // Sanguine Rupture dot detonation trigger
-        if (
-          pStats.sanguineRuptureLvl &&
-          pStats.sanguineRuptureLvl > 0 &&
-          attacker &&
-          (attacker.poisonStacks > 0 || attacker.bleedStacks > 0)
-        ) {
-          let baseAtk = pStats.atk || p.atk || 15;
-          let remainingPoison = BigNum.from(baseAtk)
-            .mul(0.1 * (attacker.poisonLevel || 1))
-            .mul(attacker.poisonStacks)
-            .mul(10);
-          let remainingBleed = BigNum.from(baseAtk)
-            .mul(0.05)
-            .mul(attacker.bleedStacks)
-            .mul(10);
-          let totalRemaining = remainingPoison.add(remainingBleed);
-          let detonationDmg = totalRemaining.mul(
-            pStats.sanguineRuptureLvl === 1 ? 1.5 : 3.0,
-          );
-
-          attacker.hp = attacker.hp.sub(detonationDmg);
-          attacker.poisonStacks = 0;
-          attacker.bleedStacks = 0;
-          attacker.poisonTimer = 0;
-          attacker.bleedTimer = 0;
-
-          if (window.combatVisuals) {
-            window.combatVisuals.spawnDamageEffect(
-              attacker.x + attacker.w / 2,
-              attacker.y + attacker.h / 2,
-              detonationDmg,
-              "crit",
-              true,
-              attacker,
-            );
-          }
-          if (typeof window.spawnFloatingText === "function") {
-            window.spawnFloatingText(
-              attacker.x + attacker.w / 2,
-              attacker.y - 15,
-              "SANGUINE RUPTURE!",
-              "#e74c3c",
-            );
-          }
-        }
-
-        window.handleVanguardParryTrigger(attacker);
-      }
-
-      // 4. Fortified Guard Stack Builder
-      if (pStats.def && shieldFortifiedGuardLvl > 0 && amount > 0) {
-        window.playerStats.fortitudeStacks = Math.min(
-          5,
-          (window.playerStats.fortitudeStacks || 0) + 1,
-        );
-        window.playerStats.fortitudeTimer = 360;
-        if (
-          typeof window.spawnFloatingText === "function" &&
-          Math.random() < 0.3
-        ) {
-          window.spawnFloatingText(
-            p.x,
-            p.y - 15,
-            `FORTITUDE x${window.playerStats.fortitudeStacks}`,
-            "#3498db",
-            true,
-          );
-        }
-      }
-
-      return result;
-          };
-          window.damagePlayer.__wrappedByMain = true;
-        }
-
-          window.handleVanguardBlockTrigger = function (attacker) {
+    window.handleVanguardBlockTrigger = function (attacker) {
       let p = window.player;
       let pStats =
         typeof window.resolvePlayerStats === "function"
@@ -5663,8 +5766,28 @@
           }
 
           let defVal = pStats.def || p.def || 5;
-          let dmg = BigNum.from(defVal).mul(1.2);
-          let range = 45;
+          let bashMult = pStats.shieldBashMultiplier || 1.0;
+          let defScaling = pStats.shieldDefScalingCounter || 0.0;
+          let dmg = BigNum.from(defVal)
+            .mul(1.2)
+            .mul(bashMult)
+            .add(BigNum.from(defVal).mul(defScaling));
+
+          let bashLevel = window.SkillTreeManager
+            ? window.SkillTreeManager.getSkillLevel("shield_earth_breaker_bash")
+            : 0;
+
+          let range = bashLevel > 0 ? 60 : 45;
+          let attackAngle = attacker
+            ? Math.atan2(
+                attacker.y + (attacker.h || 24) / 2 - p.y,
+                attacker.x + (attacker.w || 24) / 2 - p.x,
+              )
+            : 0;
+
+          if (bashLevel > 0 && window.spawnEarthBreakerBashVisual && attacker) {
+            window.spawnEarthBreakerBashVisual(p.x, p.y, attackAngle);
+          }
 
           if (window.activeDungeonMobs) {
             window.activeDungeonMobs.forEach((m) => {
@@ -5672,45 +5795,119 @@
                 let mCx = m.x + (m.w || 24) / 2;
                 let mCy = m.y + (m.h || 24) / 2;
                 let dist = Math.hypot(p.x - mCx, p.y - mCy);
-                if (dist <= range) {
-                  m.hp = m.hp.sub(dmg);
-                  m.flashTimer = 8;
-                  m.hasTakenDamage = true;
 
-                  if (!m.isBoss) {
-                    let pushAngle = Math.atan2(mCy - p.y, mCx - p.x);
-                    let pushDist = 14;
-                    let targetX = m.x + Math.cos(pushAngle) * pushDist;
-                    let targetY = m.y + Math.sin(pushAngle) * pushDist;
-                    if (
-                      window.activeDungeonMap &&
-                      typeof window.checkCollisionAt === "function" &&
-                      !window.checkCollisionAt(
-                        window.activeDungeonMap,
-                        targetX + 12,
-                        targetY + 12,
-                        12,
-                      )
-                    ) {
-                      m.x = targetX;
-                      m.y = targetY;
-                    }
+                if (dist <= range) {
+                  let isHit = true;
+                  if (bashLevel > 0 && attacker) {
+                    let targetAngle = Math.atan2(mCy - p.y, mCx - p.x);
+                    let angleDiff = Math.abs(
+                      Math.atan2(
+                        Math.sin(targetAngle - attackAngle),
+                        Math.cos(targetAngle - attackAngle),
+                      ),
+                    );
+                    let coneWidth = 0.45; // ~25 degrees each side
+                    isHit = angleDiff <= coneWidth;
                   }
 
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnDamageEffect(
-                      mCx,
-                      mCy,
-                      dmg,
-                      "counter",
-                      false,
-                      m,
-                    );
+                  if (isHit) {
+                    m.hp = m.hp.sub(dmg);
+                    m.flashTimer = 8;
+                    m.hasTakenDamage = true;
+
+                    if (bashLevel > 0 && !m.isBoss) {
+                      let stunChance = bashLevel * 0.15;
+                      if (Math.random() < stunChance) {
+                        m.speedMultiplier = 0;
+                        m.stunTimer = 90; // 1.5s stun
+                        if (typeof window.spawnFloatingText === "function") {
+                          window.spawnFloatingText(
+                            mCx,
+                            m.y - 12,
+                            "STUNNED!",
+                            "#38bdf8",
+                          );
+                        }
+                      }
+                    }
+
+                    if (!m.isBoss) {
+                      let pushAngle = attacker
+                        ? attackAngle
+                        : Math.atan2(mCy - p.y, mCx - p.x);
+                      let pushDist = 14;
+                      let targetX = m.x + Math.cos(pushAngle) * pushDist;
+                      let targetY = m.y + Math.sin(pushAngle) * pushDist;
+                      if (
+                        window.activeDungeonMap &&
+                        typeof window.checkCollisionAt === "function" &&
+                        !window.checkCollisionAt(
+                          window.activeDungeonMap,
+                          targetX + 12,
+                          targetY + 12,
+                          12,
+                        )
+                      ) {
+                        m.x = targetX;
+                        m.y = targetY;
+                      }
+                    }
+
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        mCx,
+                        mCy,
+                        dmg,
+                        bashLevel > 0 ? "shield_bash" : "counter",
+                        false,
+                        m,
+                      );
+                    }
                   }
                 }
               }
             });
           }
+
+          if (window.mob && window.mob.hp.gt(0)) {
+            let m = window.mob;
+            let mCx = m.x + m.w / 2;
+            let mCy = m.y + m.h / 2;
+            let dist = Math.hypot(p.x - mCx, p.y - mCy);
+
+            if (dist <= range) {
+              let isHit = true;
+              if (bashLevel > 0 && attacker) {
+                let targetAngle = Math.atan2(mCy - p.y, mCx - p.x);
+                let angleDiff = Math.abs(
+                  Math.atan2(
+                    Math.sin(targetAngle - attackAngle),
+                    Math.cos(targetAngle - attackAngle),
+                  ),
+                );
+                let coneWidth = 0.45;
+                isHit = angleDiff <= coneWidth;
+              }
+
+              if (isHit) {
+                m.hp = m.hp.sub(dmg);
+                m.flashTimer = 8;
+                m.hasTakenDamage = true;
+
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnDamageEffect(
+                    mCx,
+                    mCy,
+                    dmg,
+                    bashLevel > 0 ? "shield_bash" : "counter",
+                    false,
+                    m,
+                  );
+                }
+              }
+            }
+          }
+
           if (
             window.SoundManager &&
             typeof window.SoundManager.play === "function"
@@ -5722,10 +5919,45 @@
     };
 
     window.handleVanguardParryTrigger = function (attacker) {
+      if (!attacker) return;
+      let p = window.player;
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+
+      let shadowStepLvl = window.SkillTreeManager
+        ? window.SkillTreeManager.getSkillLevel("dagger_shadow_step")
+        : 0;
+
+      // Base Riposte deals 150% Attack Power, boosted by +20% per rank of Shadow Step
+      let baseAtk = pStats.atk || p.atk || 15;
+      let riposteMult = 1.5 * (1 + shadowStepLvl * 0.2);
+      let dmg = BigNum.from(baseAtk).mul(riposteMult);
+
+      attacker.hp = attacker.hp.sub(dmg);
+      attacker.flashTimer = 8;
+      attacker.hasTakenDamage = true;
+
+      let mCx = attacker.x + (attacker.w || 24) / 2;
+      let mCy = attacker.y + (attacker.h || 24) / 2;
+
+      if (window.combatVisuals) {
+        window.combatVisuals.spawnDamageEffect(
+          mCx,
+          mCy,
+          dmg,
+          "riposte",
+          false,
+          attacker,
+        );
+        window.combatVisuals.spawnParticles(mCx, mCy, 8, "cursed_blade", 2.5);
+      }
+
       let parryFlurryLevel = window.SkillTreeManager
         ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
         : 0;
-      if (parryFlurryLevel > 0 && attacker) {
+      if (parryFlurryLevel > 0) {
         window.triggerWindRazorStrike(attacker);
       }
     };
@@ -9765,34 +9997,37 @@
         }
 
         // O(1) Index-Swapping Recycle upon death (Zero GC pressure)
-                if (pt.life <= 0 || (pt.scaleDecay && pt.scale <= 0)) {
-                  if (window.ParticlePool) window.ParticlePool.recycle(pt);
+        if (pt.life <= 0 || (pt.scaleDecay && pt.scale <= 0)) {
+          if (window.ParticlePool) window.ParticlePool.recycle(pt);
 
-                  let lastActiveIdx = window.particles.length - 1;
-                  if (i !== lastActiveIdx) {
-                    window.particles[i] = window.particles[lastActiveIdx];
-                  }
-                  window.particles.pop(); // Decrements array length with zero allocation/GC pressure
-                }
-              }
-            }
-
-            // Update Floating Text Timers
-            for (let i = window.floatingTexts.length - 1; i >= 0; i--) {
-              let ft = window.floatingTexts[i];
-              ft.life--;
-              ft.y -= 0.4;
-              if (ft.offsetY !== undefined) ft.offsetY -= 0.4;
-              if (ft.life <= 0) window.floatingTexts.splice(i, 1);
-            }
-
-            // Update the DPS overlay badge periodically
-            if (typeof window.calculateActiveDps === "function" && window.logicClock % 10 === 0) {
-              window.calculateActiveDps();
-            }
+          let lastActiveIdx = window.particles.length - 1;
+          if (i !== lastActiveIdx) {
+            window.particles[i] = window.particles[lastActiveIdx];
           }
+          window.particles.pop(); // Decrements array length with zero allocation/GC pressure
+        }
+      }
+    }
 
-          window.spawnCalamitySpecter = function () {
+    // Update Floating Text Timers
+    for (let i = window.floatingTexts.length - 1; i >= 0; i--) {
+      let ft = window.floatingTexts[i];
+      ft.life--;
+      ft.y -= 0.4;
+      if (ft.offsetY !== undefined) ft.offsetY -= 0.4;
+      if (ft.life <= 0) window.floatingTexts.splice(i, 1);
+    }
+
+    // Update the DPS overlay badge periodically
+    if (
+      typeof window.calculateActiveDps === "function" &&
+      window.logicClock % 10 === 0
+    ) {
+      window.calculateActiveDps();
+    }
+  }
+
+  window.spawnCalamitySpecter = function () {
     if (window.calamitySpecterActive) return;
     window.calamitySpecterActive = true;
 
@@ -12929,7 +13164,11 @@
         }
         // -------------------------------------------------
 
-        m.hp = m.hp.sub(pAtk);
+        let finalDmg = pAtk;
+        if (m.shredPercent && m.shredPercent > 0) {
+          finalDmg = finalDmg.mul(1 + m.shredPercent);
+        }
+        m.hp = m.hp.sub(finalDmg);
         m.hasTakenDamage = true;
         m.flashTimer = 6;
 
@@ -12955,90 +13194,6 @@
             }
           } else {
             window.playerStats.critStreak = 0; // Reset streak on non-crit
-          }
-        }
-
-        // --- Earth-Breaker Bash Cone Splash ---
-        let bashLevel = window.SkillTreeManager
-          ? window.SkillTreeManager.getSkillLevel("shield_earth_breaker_bash")
-          : 0;
-        let isShield =
-          pStats.subType === "shield" ||
-          (window.equippedSlots &&
-            window.equippedSlots.subweapon &&
-            window.equippedSlots.subweapon.subType === "shield");
-
-        if (isShield && bashLevel > 0) {
-          let attackAngle = Math.atan2(
-            m.y + (m.h || 24) / 2 - p.y,
-            m.x + (m.w || 24) / 2 - p.x,
-          );
-          if (window.spawnEarthBreakerBashVisual) {
-            window.spawnEarthBreakerBashVisual(p.x, p.y, attackAngle);
-          }
-
-          let coneWidth = 0.45; // ~25 degrees each side (~50 degree cone)
-          let range = 60;
-          let splashDmg = pAtk.mul(0.5); // Deals 50% splash damage inside the cone
-
-          if (window.activeDungeonMobs) {
-            window.activeDungeonMobs.forEach((otherMob) => {
-              if (
-                otherMob.id !== m.id &&
-                otherMob.hp.gt(0) &&
-                !otherMob.isFriendlyWisp
-              ) {
-                let omCx = otherMob.x + (otherMob.w || 24) / 2;
-                let omCy = otherMob.y + (otherMob.h || 24) / 2;
-                let dist = Math.hypot(p.x - omCx, p.y - omCy);
-                if (dist <= range) {
-                  let targetAngle = Math.atan2(omCy - p.y, omCx - p.x);
-                  let angleDiff = Math.abs(
-                    Math.atan2(
-                      Math.sin(targetAngle - attackAngle),
-                      Math.cos(targetAngle - attackAngle),
-                    ),
-                  );
-                  if (angleDiff <= coneWidth) {
-                    otherMob.hp = otherMob.hp.sub(splashDmg);
-                    otherMob.flashTimer = 6;
-                    otherMob.hasTakenDamage = true;
-
-                    // Apply Stun Chance (15% per rank) to non-bosses
-                    let stunChance = bashLevel * 0.15;
-                    if (Math.random() < stunChance && !otherMob.isBoss) {
-                      otherMob.speedMultiplier = 0;
-                      otherMob.stunTimer = 90; // 1.5s stun
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(
-                          omCx,
-                          otherMob.y - 12,
-                          "STUNNED!",
-                          "#38bdf8",
-                        );
-                      }
-                    }
-
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnDamageEffect(
-                        omCx,
-                        omCy,
-                        splashDmg,
-                        "counter",
-                        false,
-                        otherMob,
-                      );
-                    }
-                  }
-                }
-              }
-            });
-          }
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("block");
           }
         }
 
@@ -15020,7 +15175,11 @@
           }
         }
 
-        bm.hp = bm.hp.sub(pAtk);
+        let finalDmg = pAtk;
+        if (bm.shredPercent && bm.shredPercent > 0) {
+          finalDmg = finalDmg.mul(1 + bm.shredPercent);
+        }
+        bm.hp = bm.hp.sub(finalDmg);
         bm.hasTakenDamage = true;
         bm.flashTimer = 6;
 
