@@ -7231,142 +7231,201 @@
           c.fill();
         }
       } else if (vType === "golem") {
-        let hover = Math.sin(Date.now() / 120) * 2.5;
-        let bodyColor = m.flashTimer > 0 ? "#ffffff" : "#7f8c8d"; // Granite grey
-        let trimColor = m.flashTimer > 0 ? "#ffffff" : "#95a5a6"; // Light stone
-        let runeColor = m.isRare ? "#ff007f" : "#00d2ff"; // Glowing sapphire
-
-        // Levitating Stone Shoulders
-        c.fillStyle = trimColor;
-        c.beginPath();
-        c.roundRect(m.x + 2, m.y + 2 + hover, 6, 8, [1]);
-        c.roundRect(m.x + m.w - 8, m.y + 2 + hover, 6, 8, [1]);
-        c.fill();
-        c.stroke();
-
-        // Main Granite Torso
-        c.fillStyle = bodyColor;
-        c.beginPath();
-        c.roundRect(m.x + 3, m.y + 12 + hover, m.w - 6, m.h - 14, [6]);
-        c.fill();
-        c.stroke();
-
-        // Chiseled Head
-        c.fillStyle = trimColor;
-        c.beginPath();
-        c.roundRect(m.x + 6, m.y + 4 + hover, m.w - 12, 10, [2]);
-        c.fill();
-        c.stroke();
-
-        // Glowing Core Eye
-        if (m.flashTimer === 0) {
-          c.fillStyle = runeColor;
-          c.shadowBlur = 8;
-          c.shadowColor = runeColor;
-          c.beginPath();
-          c.rect(m.x + 9, m.y + 8 + hover, m.w - 18, 2.5);
-          c.fill();
-          c.shadowBlur = 0;
-        }
-
-        // Giant Fists
-        c.fillStyle = bodyColor;
-        c.beginPath();
-        c.roundRect(m.x - 5, m.y + 14 + hover, 8, 12, [3]);
-        c.roundRect(m.x + m.w - 3, m.y + 14 + hover, 8, 12, [3]);
-        c.fill();
-        c.stroke();
-
-        // Crystals on Fists
-        c.fillStyle = runeColor;
-        c.beginPath();
-        c.arc(m.x - 1, m.y + 18 + hover, 1.5, 0, Math.PI * 2);
-        c.arc(m.x + m.w + 1, m.y + 18 + hover, 1.5, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-
-        // Crystal geode core fissure
-        if (m.flashTimer === 0) {
-          c.strokeStyle = runeColor;
-          c.lineWidth = 2;
-          c.beginPath();
-          c.moveTo(m.x + m.w / 2, m.y + 15 + hover);
-          c.lineTo(m.x + m.w / 2, m.y + m.h - 11 + hover);
-          c.moveTo(m.x + m.w / 2 - 3, m.y + 21 + hover);
-          c.lineTo(m.x + m.w / 2 + 3, m.y + 21 + hover);
-          c.stroke();
-        }
-      } else if (vType === "wyrmling") {
+        // --- MOUNTAIN PEAK OVERHAUL: ANCIENT STONE GOLEM ---
+        let time = Date.now();
+        let hover = Math.sin(time / 200) * 3.5;
         let cx = m.x + m.w / 2;
-        let cy = m.y + m.h / 2 + Math.sin(Date.now() / 100) * 3;
-        let bodyColor =
-          m.flashTimer > 0 ? "#ffffff" : m.isRare ? "#8e44ad" : "#3498db"; // Sky blue scale
-        let ringColor = m.isRare ? "#ff007f" : "rgba(255, 255, 255, 0.55)"; // Swirling frost
+        let cy = m.y + m.h / 2 + hover;
 
-        // Segmented winged body drakes
-        for (let i = 3; i >= 0; i--) {
-          let segX = cx + i * 8;
-          let segY = cy + Math.sin(Date.now() / 150 - i) * 5;
+        let bodyColor = m.flashTimer > 0 ? "#ffffff" : "#4a5568"; // Dark basalt
+        let mossColor = m.flashTimer > 0 ? "#ffffff" : "#2d5a27"; // Overgrown moss
+        let coreColor = m.isRare ? "#ff007f" : "#38bdf8"; // Azure energy
 
-          // Swirling icy particles orbiting the segmented tail
-          if (m.flashTimer === 0) {
-            c.strokeStyle = ringColor;
-            c.lineWidth = 1.2;
-            c.save();
-            c.translate(segX, segY);
-            c.rotate(Date.now() / 250 + i);
-            c.beginPath();
-            c.ellipse(0, 0, 11 - i * 1.5, 4 - i * 0.5, 0, 0, Math.PI * 2);
-            c.stroke();
-            c.restore();
-          }
-
-          c.fillStyle = bodyColor;
+        // 1. Draw Large Levitating Boulders (Back Shoulders)
+        c.fillStyle = bodyColor;
+        for (let i = -1; i <= 1; i += 2) {
+          c.save();
+          c.translate(cx + i * 11, cy - 10);
+          c.rotate(i * 0.2 + Math.sin(time / 400 + i) * 0.1);
           c.beginPath();
-          c.arc(segX, segY, 8.5 - i * 1.3, 0, Math.PI * 2);
+          c.roundRect(-5, -5, 10, 12, [2]);
           c.fill();
           c.stroke();
+          // Chiseled highlights
+          if (m.flashTimer === 0) {
+            c.strokeStyle = "rgba(255,255,255,0.15)";
+            c.lineWidth = 1;
+            c.strokeRect(-3, -3, 2.5, 2.5);
+          }
+          c.restore();
         }
 
-        // Feathered Drake Head
+        // 2. Main Basalt Core Torso
         c.fillStyle = bodyColor;
         c.beginPath();
-        c.arc(cx, cy - 13, 8.5, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-
-        // White beak/horns
-        c.fillStyle = "#ffffff";
-        c.beginPath();
-        c.moveTo(cx - 3, cy - 20);
-        c.lineTo(cx, cy - 26);
-        c.lineTo(cx + 3, cy - 20);
+        c.moveTo(cx - 12, cy - 7);
+        c.lineTo(cx + 12, cy - 7);
+        c.lineTo(cx + 15, cy + 5);
+        c.lineTo(cx, cy + 16);
+        c.lineTo(cx - 15, cy + 5);
         c.closePath();
         c.fill();
         c.stroke();
 
-        // Sub-zero frost vapors
+        // 3. Mossy Overgrowth Patches
         if (m.flashTimer === 0) {
-          c.fillStyle = "#81ecec";
-          c.shadowBlur = 6;
-          c.shadowColor = "#81ecec";
+          c.fillStyle = mossColor;
           c.beginPath();
-          c.arc(cx - 3, cy - 14, 1.5, 0, Math.PI * 2);
-          c.arc(cx + 3, cy - 14, 1.5, 0, Math.PI * 2);
+          c.ellipse(cx - 5, cy - 3, 4, 2.5, Math.PI / 4, 0, Math.PI * 2);
+          c.ellipse(cx + 7, cy + 3, 3.5, 2, -Math.PI / 6, 0, Math.PI * 2);
+          c.fill();
+        }
+
+        // 4. Floating Granite Head
+        let headY = cy - 20;
+        c.fillStyle = "#718096";
+        c.beginPath();
+        c.roundRect(cx - 8, headY - 7, 16, 14, [4]);
+        c.fill();
+        c.stroke();
+
+        // 5. Pulsing Runic Core Eye
+        if (m.flashTimer === 0) {
+          let pulse = 0.8 + Math.sin(time / 150) * 0.2;
+          c.save();
+          c.shadowBlur = 10 * pulse;
+          c.shadowColor = coreColor;
+          c.fillStyle = coreColor;
+          c.beginPath();
+          c.arc(cx, headY, 3.2 * pulse, 0, Math.PI * 2);
+          c.fill();
+          c.fillStyle = "#ffffff";
+          c.beginPath();
+          c.arc(cx, headY, 1.0, 0, Math.PI * 2);
+          c.fill();
+          c.restore();
+        }
+
+        // 6. Heavy Floating Gauntlets
+        for (let i = -1; i <= 1; i += 2) {
+          let handX = cx + i * 18;
+          let handY = cy + 3 + Math.sin(time / 250 + i) * 2;
+          c.save();
+          c.translate(handX, handY);
+          c.rotate(i * 0.15);
+          c.fillStyle = bodyColor;
+          c.beginPath();
+          c.roundRect(-6, -7, 12, 16, [3]);
+          c.fill();
+          c.stroke();
+          // Runic Markings on Fists
+          if (m.flashTimer === 0) {
+            c.strokeStyle = coreColor;
+            c.lineWidth = 1.2;
+            c.globalAlpha = 0.6 + Math.sin(time / 150) * 0.4;
+            c.beginPath();
+            c.moveTo(-2.5, -1.5);
+            c.lineTo(2.5, -1.5);
+            c.moveTo(0, -3.5);
+            c.lineTo(0, 1.5);
+            c.stroke();
+          }
+          c.restore();
+        }
+      } else if (vType === "wyrmling") {
+        // --- MOUNTAIN PEAK OVERHAUL: CRYSTAL FROST WYRM ---
+        let time = Date.now();
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + Math.sin(time / 150) * 4;
+
+        let bodyColor = m.flashTimer > 0 ? "#ffffff" : "#2b6cb0"; // Deep sapphire
+        let crystalColor = m.isRare ? "#a855f7" : "#81ecec"; // Cyan/Purple ice
+
+        // 1. Render Segmented Serpentine Body
+        for (let i = 4; i >= 0; i--) {
+          let segX = cx + i * 7.5;
+          let segY = cy + Math.sin(time / 200 - i * 0.8) * 6;
+          let radius = 8 - i * 1.2;
+
+          // Back Ice Shards (rendered behind segment)
+          if (m.flashTimer === 0) {
+            c.fillStyle = crystalColor;
+            c.globalAlpha = 0.6;
+            c.beginPath();
+            c.moveTo(segX - 2, segY - radius);
+            c.lineTo(segX, segY - radius - 6 + i);
+            c.lineTo(segX + 2, segY - radius);
+            c.closePath();
+            c.fill();
+            c.globalAlpha = 1.0;
+          }
+
+          // Main Segment Body
+          let segGrad = c.createRadialGradient(segX - 2, segY - 2, 1, segX, segY, radius);
+          if (m.flashTimer > 0) {
+            segGrad.addColorStop(0, "#ffffff");
+            segGrad.addColorStop(1, "#ffffff");
+          } else {
+            segGrad.addColorStop(0, crystalColor);
+            segGrad.addColorStop(1, bodyColor);
+          }
+          c.fillStyle = segGrad;
+          c.beginPath();
+          c.arc(segX, segY, radius, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+        }
+
+        // 2. Slender Draconic Head
+        let headY = cy - 14;
+        c.fillStyle = bodyColor;
+        c.beginPath();
+        c.ellipse(cx, headY, 8, 7, 0, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // 3. Crystalline Horns
+        for (let i = -1; i <= 1; i += 2) {
+          c.fillStyle = crystalColor;
+          c.beginPath();
+          c.moveTo(cx + i * 3, headY - 4);
+          c.lineTo(cx + i * 6, headY - 12);
+          c.lineTo(cx + i * 1, headY - 6);
+          c.closePath();
+          c.fill();
+          c.stroke();
+        }
+
+        // 4. Glowing Sub-Zero Eyes
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#ffffff";
+          c.shadowBlur = 6;
+          c.shadowColor = crystalColor;
+          c.beginPath();
+          c.arc(cx - 3, headY - 2, 1.5, 0, Math.PI * 2);
+          c.arc(cx + 3, headY - 2, 1.5, 0, Math.PI * 2);
           c.fill();
           c.shadowBlur = 0;
+        }
 
-          if (Math.random() < 0.15 && !window.isGamePaused) {
-            window.particles.push({
-              x: cx + window.randFloat(-5, 5),
-              y: cy - 14,
-              vx: -window.randFloat(1, 3),
-              vy: window.randFloat(-1, 1),
-              radius: window.randFloat(1, 2.2),
-              color: m.isRare ? "#ff007f" : "#ffffff",
-              alpha: 0.85,
-              life: window.randInt(12, 22),
-            });
+        // 5. Frost Breath Vapor
+        if (m.flashTimer === 0 && !window.isGamePaused && Math.random() < 0.22) {
+          if (window.particles && window.ParticlePool) {
+            let pt = window.ParticlePool.get(
+              cx + window.randFloat(-4, 4),
+              headY + 2,
+              window.randFloat(-1.2, -0.4), // blow slightly forward (left)
+              window.randFloat(-0.3, 0.3),
+              window.randFloat(1.5, 3.2),
+              "#ffffff",
+              0.7,
+              window.randInt(15, 25),
+              0,
+              true
+            );
+            pt.style = "glowing_orb";
+            pt.scaleDecay = 0.04;
+            window.particles.push(pt);
           }
         }
       } else if (vType === "rift_drifter") {

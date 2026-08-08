@@ -2365,6 +2365,9 @@ window.resolvePlayerStats = function (useDraft = false) {
   ) {
     const relicSlotsKeys = ["art1", "art2", "art3"];
     relicSlotsKeys.forEach((slotKey, idx) => {
+      // Prioritize Physical Artifact if one is equipped in this slot
+      if (window.equippedSlots && window.equippedSlots[slotKey]) return;
+
       let trait = window.playerStats.activeRelics[idx];
       if (trait) {
         let savedPower = window.playerStats.artifactCodex[trait] || 0.0;

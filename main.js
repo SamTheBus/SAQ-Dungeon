@@ -6383,8 +6383,13 @@
             ? window.tryAutoEquip(gl.item)
             : false;
           if (!isEquipped && window.player) {
-            if (!window.player.stash) window.player.stash = [];
-            window.player.stash.push(gl.item);
+            if (gl.item.type === "artifact") {
+              if (!window.inventory.ARTIFACT) window.inventory.ARTIFACT = [];
+              window.inventory.ARTIFACT.push(gl.item);
+            } else {
+              if (!window.player.stash) window.player.stash = [];
+              window.player.stash.push(gl.item);
+            }
           }
         }
       });
@@ -7108,7 +7113,7 @@
                           </div>
                         </div>
                         <button class="tactical-insure-btn ${btnStatusClass}" onclick="event.stopPropagation(); window.toggleDeploymentInsurance('${slotKey}')">
-                          ${isLocked ? "[ SOUL BOUND ]" : "[ RISKING LOSS ]"}
+                          ${isLocked ? "[ SOUL INSURED ]" : "[ AT RISK ]"}
                         </button>
                       </div>
                     `;
@@ -7875,7 +7880,7 @@
           attackCooldown: 0,
           rangedCooldown: window.randInt(30, 90),
           isRanged: isRanged,
-          projectileType: projType,
+          projectileType: projType, moveProfile: (mobInfo.type === 'golem' || mobInfo.type === 'corroded_golem' ? 'relentless' : 'standard'),
           facing: -1,
           isRare: isRare,
           eliteAffix: eliteAffix,
@@ -9169,6 +9174,9 @@
         if (item.type === "sigil") {
           if (!window.inventory.SIGIL) window.inventory.SIGIL = [];
           window.inventory.SIGIL.push(item);
+        } else if (item.type === "artifact") {
+          if (!window.inventory.ARTIFACT) window.inventory.ARTIFACT = [];
+          window.inventory.ARTIFACT.push(item);
         } else {
           window.player.stash.push(item);
         }
@@ -9233,7 +9241,12 @@
       extractedLoot.forEach((item) => {
         if (item.locked) {
           savedInsuredItems.push(item);
-          window.player.stash.push(item);
+          if (item.type === "artifact") {
+            if (!window.inventory.ARTIFACT) window.inventory.ARTIFACT = [];
+            window.inventory.ARTIFACT.push(item);
+          } else {
+            window.player.stash.push(item);
+          }
         } else {
           lostItems.push(item);
         }
@@ -9365,7 +9378,7 @@
         .map(
           (i) => `
                   <div style="background:#0a1a10; border:1px solid #1e4620; border-left:3px solid #2ecc71; padding:5px 8px; border-radius:4px; font-size:10px; display:flex; justify-content:space-between;">
-                    <span style="color:#2ecc71; font-weight:bold;">[SOUL BOUND] ${i.name}</span>
+                    <span style="color:#2ecc71; font-weight:bold;">[ SOUL INSURED ] ${i.name}</span>
                     <span style="color:#81ecec; font-family:monospace;">SAVED</span>
                   </div>
                 `,
@@ -13493,9 +13506,9 @@
 
         if (m.isAggroed && dist < 800 && dist > 14) {
           m.hopTimer = (m.hopTimer || 0) + 1;
-          let cycle = m.hopTimer % 30; // 15 frames jumping, 15 frames resting
+          let isRelentless = m.moveProfile === 'relentless'; let cycle = isRelentless ? 0 : (m.hopTimer % 30); // 15 frames jumping, 15 frames resting
           if (cycle < 15) {
-            let speed = m.isRare ? 2.2 : 1.8;
+            let speed = (m.isRare ? 2.2 : 1.8) * (isRelentless ? 0.65 : 1.0);
             let mRadius = 6;
             let mCenterX = m.x + m.w / 2;
             let mCenterY = m.y + m.h / 2;
@@ -20149,6 +20162,39 @@
     window.bestiaryAnimFrameId = requestAnimationFrame(step);
   };
 
+  window.switchReliquarySubTab = function (tabKey) {
+    window.state.reliquarySubTab = tabKey;
+    window.renderReliquaryTab();
+  };
+
+  window.equipRelicItem = function (itemId, slotIdx) {
+    let item = window.inventory.ARTIFACT.find(i => i.id === itemId);
+    if (!item) return;
+
+    let slotKey = ["art1", "art2", "art3"][slotIdx];
+    
+    // Clear Codex Aspect in this slot
+    let stats = window.playerStats;
+    stats.activeRelics = stats.activeRelics || [null, null, null];
+    stats.activeRelics[slotIdx] = null;
+
+    // Equip physical artifact
+    if (window.equippedSlots[slotKey]) {
+      window.unequipItem(slotKey);
+    }
+    
+    // Manual equip to bypass standard bag logic
+    window.inventory.ARTIFACT.splice(window.inventory.ARTIFACT.indexOf(item), 1);
+    window.equippedSlots[slotKey] = item;
+    item.isEquippedSlot = slotKey;
+
+    if (window.SoundManager) window.SoundManager.play("swing");
+    window.invalidatePlayerStats();
+    window.updateUI();
+    window.renderReliquaryTab();
+    window.saveGame();
+  };
+
   window.claimBestiarySetReward = function (setKey) {
     if (!window.playerStats) return;
     if (!window.playerStats.claimedBestiarySets) {
@@ -20211,254 +20257,219 @@
     if (!container) return;
 
     let stats = window.playerStats;
-    let activeRelics = stats.activeRelics || [];
+    let activeRelics = stats.activeRelics || [null, null, null];
     let codex = stats.artifactCodex || {};
     let dust = stats.astralDust || 0;
+    let subTab = window.state.reliquarySubTab || "codex";
 
     let activeStatsTexts = [];
 
-    activeRelics.forEach((trait, idx) => {
-      if (trait) {
+    // 1. Calculate Active Multipliers
+    const slotNames = ["art1", "art2", "art3"];
+    for (let i = 0; i < 3; i++) {
+      let slotKey = slotNames[i];
+      let trait = activeRelics[i];
+      let item = window.equippedSlots[slotKey];
+      let slotLvl = (stats.slotUpgrades && stats.slotUpgrades[slotKey]) || 0;
+      let slotMult = 1.0 + slotLvl * 0.01;
+
+      if (item) {
+        // Physical Item Power
+        if (item.atk) activeStatsTexts.push(`ATK +${window.formatNumber(item.atk)}`);
+        if (item.def) activeStatsTexts.push(`DEF +${window.formatNumber(item.def)}`);
+        if (item.maxHp) activeStatsTexts.push(`HP +${window.formatNumber(item.maxHp)}`);
+      } else if (trait) {
+        // Codex Aspect Power
         let power = codex[trait] || 0.0;
         let baseStats = window.ARTIFACT_BASE_STATS[trait];
         if (baseStats && power > 0) {
-          let slotKey = ["art1", "art2", "art3"][idx];
-          let slotLvl =
-            (stats.slotUpgrades && stats.slotUpgrades[slotKey]) || 0;
-          let slotMult = 1.0 + slotLvl * 0.01;
-
           for (let sKey in baseStats) {
             let val = baseStats[sKey];
             let scaledVal = val * power * slotMult;
-            let isPct = [
-              "dropRate",
-              "quality",
-              "critChance",
-              "critDamage",
-              "block",
-              "parry",
-              "goldMulti",
-              "idleAttackSpeed",
-              "activeAttackSpeed",
-              "maxHpPct",
-            ].includes(sKey);
-            let valStr = isPct
-              ? `+${(scaledVal * 100).toFixed(1)}%`
-              : `+${Math.ceil(scaledVal)}`;
-            let label = window.getStatLabel
-              ? window.getStatLabel(sKey)
-              : sKey.toUpperCase();
+            let isPct = ["dropRate","quality","critChance","critDamage","block","parry","goldMulti","idleAttackSpeed","activeAttackSpeed","maxHpPct"].includes(sKey);
+            let valStr = isPct ? `+${(scaledVal * 100).toFixed(1)}%` : `+${Math.ceil(scaledVal)}`;
+            let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey.toUpperCase();
             activeStatsTexts.push(`${label} ${valStr}`);
           }
         }
       }
-    });
-    let activeStatsSummaryStr =
-      activeStatsTexts.length > 0
-        ? activeStatsTexts.join(" • ")
-        : "No active relic multipliers.";
+    }
+    let activeStatsSummaryStr = activeStatsTexts.length > 0 ? activeStatsTexts.join(" • ") : "No active relic multipliers.";
 
+    // 2. Render Left Pane (Active Slots)
     let activeSlotsHtml = "";
-    const slotNames = ["art1", "art2", "art3"];
-    const slotLabels = [
-      "SACRED ALTAR SLOT 1",
-      "SACRED ALTAR SLOT 2",
-      "SACRED ALTAR SLOT 3",
-    ];
+    const slotLabels = ["SACRED ALTAR SLOT 1", "SACRED ALTAR SLOT 2", "SACRED ALTAR SLOT 3"];
 
     for (let i = 0; i < 3; i++) {
-      let trait = activeRelics[i];
       let slotKey = slotNames[i];
+      let trait = activeRelics[i];
+      let item = window.equippedSlots[slotKey];
       let slotLvl = (stats.slotUpgrades && stats.slotUpgrades[slotKey]) || 0;
 
-      if (trait) {
-        let power = codex[trait] || 0.0;
-        let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === trait);
-        let powerPct = Math.round(power * 100);
-        let color = "#1abc9c";
-        let iconHtml = window.getArtifactIconHtml
-          ? window.getArtifactIconHtml(trait, 32)
-          : "";
-
+      if (item) {
+        // Physical Item Slotted
+        let col = window.getTierColor(item.statsRolled);
+        let iconHtml = window.getItemIconSvg(item, 32);
         activeSlotsHtml += `
-            <div class="paperdoll-slot" style="border-left: 3px solid ${color}; background: rgba(26,188,156,0.1); margin-bottom: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; box-shadow: inset 0 0 10px rgba(26,188,156,0.05); height: 50px;">
+            <div class="paperdoll-slot" style="border-left: 3px solid ${col}; background: rgba(255,215,0,0.08); margin-bottom: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; height: 50px;">
+              <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;" onclick="event.stopPropagation(); window.showItemTooltip(event, window.equippedSlots['${slotKey}'])">
+                ${iconHtml}
+                <div style="display: flex; flex-direction: column; text-align: left; min-width: 0;">
+                  <span style="font-size: 8px; color: #ffd700; font-weight: bold; font-family: monospace;">${slotLabels[i]} (ITEM)</span>
+                  <span style="color: #ffffff; font-weight: bold; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>
+                  <span style="color: #94a3b8; font-size: 8.5px; font-family: monospace;">Lv. ${item.stageLevel} • <strong style="color:#df9ffb;">Atn +${slotLvl}%</strong></span>
+                </div>
+              </div>
+              <button class="action-btn-sm" style="background: rgba(231,76,60,0.2); border-color:#e74c3c; color:#ff7675; padding: 4px 8px; font-size: 8.5px;" onclick="event.stopPropagation(); window.unequipItem('${slotKey}')">UNSLOT</button>
+            </div>
+        `;
+      } else if (trait) {
+        // Codex Aspect Slotted
+        let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === trait);
+        let powerPct = Math.round((codex[trait] || 0) * 100);
+        let iconHtml = window.getArtifactIconHtml(trait, 32);
+        activeSlotsHtml += `
+            <div class="paperdoll-slot" style="border-left: 3px solid #1abc9c; background: rgba(26,188,156,0.08); margin-bottom: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; height: 50px;">
               <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;" onclick="event.stopPropagation(); window.showRelicDetails('${trait}')">
                 ${iconHtml}
                 <div style="display: flex; flex-direction: column; text-align: left; min-width: 0;">
-                  <span style="font-size: 8px; color: #a855f7; font-weight: bold; font-family: monospace; letter-spacing: 0.5px;">${slotLabels[i]}</span>
+                  <span style="font-size: 8px; color: #1abc9c; font-weight: bold; font-family: monospace;">${slotLabels[i]} (CODEX)</span>
                   <span style="color: #ffffff; font-weight: bold; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${poolMatch ? poolMatch.name : trait}</span>
-                  <span style="color: #94a3b8; font-size: 8.5px; font-family: monospace;">Power: <strong style="color:#ffd700;">${powerPct}%</strong> • Level: <strong style="color:#df9ffb;">Lv. ${slotLvl}</strong></span>
+                  <span style="color: #94a3b8; font-size: 8.5px; font-family: monospace;">Power: ${powerPct}% • <strong style="color:#df9ffb;">Atn +${slotLvl}%</strong></span>
                 </div>
               </div>
               <button class="action-btn-sm" style="background: rgba(231,76,60,0.2); border-color:#e74c3c; color:#ff7675; padding: 4px 8px; font-size: 8.5px;" onclick="event.stopPropagation(); window.unassignRelic(${i})">UNSLOT</button>
             </div>
-          `;
+        `;
       } else {
         activeSlotsHtml += `
             <div class="paperdoll-slot empty" style="border: 1px dashed #334155; background: rgba(0,0,0,0.22); margin-bottom: 8px; padding: 12px 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; height: 50px;">
               <div style="display: flex; flex-direction: column; text-align: left;">
-                <span style="font-size: 8px; color: #64748b; font-weight: bold; font-family: monospace; letter-spacing: 0.5px;">${slotLabels[i]}</span>
+                <span style="font-size: 8px; color: #64748b; font-weight: bold; font-family: monospace;">${slotLabels[i]}</span>
                 <span style="color: #64748b; font-size: 10px; font-weight: bold; font-style: italic;">[ VACANT ALTAR ]</span>
               </div>
-              <span style="font-size: 8px; color: #64748b; font-family: monospace;">Empty Altar</span>
             </div>
-          `;
+        `;
       }
     }
 
-    let libraryHtml = "";
-    let totalUnlocked = 0;
-    let selectedTrait = window.state ? window.state.selectedAspectTrait : null;
+    // 3. Render Sub-Tab Bar
+    let tabBarHtml = `
+      <div class="shop-tab-bar" style="margin-bottom: 8px; height: 32px;">
+        <button class="shop-tab-btn ${subTab === "codex" ? "active" : ""}" onclick="window.switchReliquarySubTab('codex')" style="font-size: 9.5px;">CODEX ASPECTS</button>
+        <button class="shop-tab-btn ${subTab === "physical" ? "active" : ""}" onclick="window.switchReliquarySubTab('physical')" style="font-size: 9.5px;">PHYSICAL VAULT</button>
+      </div>
+    `;
 
-    let pool = window.ARTIFACT_POOL || [];
-    pool.forEach((art) => {
-      let power = codex[art.trait] || 0.0;
-      let isUnlocked = power > 0;
-      if (isUnlocked) totalUnlocked++;
-
-      let isSelected = art.trait === selectedTrait;
-      let col = isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#334155";
-      let op = isUnlocked ? "1.0" : "0.35";
-      let iconHtml = window.getArtifactIconHtml
-        ? window.getArtifactIconHtml(art.trait, 36)
-        : "";
-
-      let assignButtons = "";
-      if (isUnlocked) {
-        let isSlotted = activeRelics.includes(art.trait);
-        if (isSlotted) {
-          assignButtons = `<span style="color:#2ecc71; font-size:8px; font-weight:bold; font-family:monospace; margin-top:6px;">[SLOTTED]</span>`;
-        } else {
-          assignButtons = `
-                  <div style="display:flex; gap:3px; width:100%; margin-top:6px;">
-                    <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 0)">SLOT 1</button>
-                    <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 1)">SLOT 2</button>
-                    <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 2)">SLOT 3</button>
-                  </div>
-                `;
-        }
-      } else {
-        assignButtons = `<span style="color:#475569; font-size:7.5px; font-family:monospace; margin-top:6px; font-style:italic;">[LOCKED]</span>`;
-      }
-
-      libraryHtml += `
-              <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"} ${isSelected ? "selected-aspect-card" : ""}" style="border-color:${col}; background:${isSelected ? "rgba(212,175,55,0.15)" : "rgba(10,14,23,0.45)"}; opacity:${op}; display:flex; flex-direction:column; justify-content:space-between; padding:8px; min-height:130px; box-shadow: ${isSelected ? "0 0 15px rgba(255,215,0,0.4)" : "inset 0 0 10px " + col + "0d"}; cursor:pointer;" onclick="event.stopPropagation(); window.showRelicDetails('${art.trait}')">
-                <div style="font-size:7px; color:${isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#475569"}; font-weight:bold; font-family:monospace;">${isUnlocked ? "CODEX ASPECT" : "LOCKED"}</div>
-                <div style="margin:4px 0;">${iconHtml || '<span style="color:#334155;">?</span>'}</div>
-                <div class="bestiary-card-title" style="color:${isUnlocked ? "#ffffff" : "#475569"}; font-size:10px; margin-bottom:2px;">${art.name}</div>
-                ${isUnlocked ? `<div style="font-size:8.5px; color:#ffd700; font-family:monospace; font-weight:bold;">Roll: ${Math.round(power * 100)}%</div>` : `<div style="font-size:8.5px; color:#475569; font-family:monospace;">Aspect: Locked</div>`}
-                ${assignButtons}
-              </div>
-            `;
-    });
-
-    let progressPct = Math.round((totalUnlocked / pool.length) * 100) || 0;
-
-    // Render In-Tab Aspect Inspector Drawer
-    let inspectorHtml = "";
-    if (selectedTrait) {
-      let poolMatch = window.ARTIFACT_POOL.find(
-        (a) => a.trait === selectedTrait,
-      );
-      if (poolMatch) {
-        let power = codex[selectedTrait] || 0.0;
+    // 4. Render Right Pane (Library or Physical Vault)
+    let rightContentHtml = "";
+    if (subTab === "codex") {
+      let libraryHtml = "";
+      let totalUnlocked = 0;
+      let selectedTrait = window.state.selectedAspectTrait;
+      let pool = window.ARTIFACT_POOL || [];
+      pool.forEach((art) => {
+        let power = codex[art.trait] || 0.0;
         let isUnlocked = power > 0;
-        let iconHtml = window.getArtifactIconHtml
-          ? window.getArtifactIconHtml(selectedTrait, 32)
-          : "";
-        let isSlotted = activeRelics.includes(selectedTrait);
-
-        let powerBadge = isUnlocked
-          ? `<span style="color:#ffd700; font-weight:bold; font-family:monospace; font-size:9.5px;">UNLOCKED (${Math.round(power * 100)}% Roll Strength)</span>`
-          : `<span style="color:#ef4444; font-weight:bold; font-family:monospace; font-size:9.5px;">LOCKED</span>`;
-
-        let actionBtns = "";
+        if (isUnlocked) totalUnlocked++;
+        let isSelected = art.trait === selectedTrait;
+        let col = isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#334155";
+        let isSlotted = activeRelics.includes(art.trait);
+        let assignBtns = "";
         if (isUnlocked) {
-          if (isSlotted) {
-            let slotIdx = activeRelics.indexOf(selectedTrait);
-            actionBtns = `<button class="action-btn-sm" style="background:rgba(231,76,60,0.2); border-color:#e74c3c; color:#ff7675; padding:4px 10px; font-size:8.5px;" onclick="event.stopPropagation(); window.unassignRelic(${slotIdx})">UNSLOT FROM ALTAR</button>`;
-          } else {
-            actionBtns = `
-                  <div style="display:flex; gap:6px;">
-                    <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 0)">SLOT 1</button>
-                    <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 1)">SLOT 2</button>
-                    <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 2)">SLOT 3</button>
-                  </div>
-                `;
-          }
-        } else {
-          actionBtns = `<span style="color:#64748b; font-size:8.5px; font-family:monospace; font-style:italic;">Extract this artifact from dungeon runs to unlock its Codex Aspect.</span>`;
+          if (isSlotted) assignBtns = `<span style="color:#2ecc71; font-size:7.5px; font-weight:bold; margin-top:4px;">[SLOTTED]</span>`;
+          else assignBtns = `<div style="display:flex; gap:2px; margin-top:4px; width:100%;"><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',0)">S1</button><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',1)">S2</button><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',2)">S3</button></div>`;
         }
+        libraryHtml += `<div class="bestiary-card-item" style="border-color:${col}; opacity:${isUnlocked?1:0.4}; min-height:120px; padding:6px; background:${isSelected?'rgba(212,175,55,0.12)':'rgba(0,0,0,0.3)'}; cursor:pointer;" onclick="window.showRelicDetails('${art.trait}')">
+          <div style="font-size:7px; font-weight:bold; color:${col};">${isUnlocked?'ASPECT':'LOCKED'}</div>
+          ${window.getArtifactIconHtml(art.trait, 28)}
+          <div style="font-size:9.5px; font-weight:bold; color:#fff; margin-top:4px;">${art.name}</div>
+          <div style="font-size:8px; color:#aaa; font-family:monospace;">Roll: ${Math.round(power*100)}%</div>
+          ${assignBtns}
+        </div>`;
+      });
 
-        inspectorHtml = `
-                      <div class="relic-inspector-drawer">
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; margin-bottom:6px;">
-                          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                            ${iconHtml}
-                            <div style="display:flex; flex-direction:column; text-align:left; min-width:0;">
-                              <span style="color:#1abc9c; font-weight:900; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${poolMatch.name}</span>
-                              ${powerBadge}
-                            </div>
-                          </div>
-                          <button class="close-btn" style="padding:3px 8px; font-size:8.5px; flex-shrink:0; margin-left:8px;" onclick="event.stopPropagation(); window.showRelicDetails(null)">DISMISS</button>
-                        </div>
-                        <div style="font-family:monospace; font-size:9px; color:#cbd5e1; line-height:1.35; text-align:left; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:6px 8px; border-radius:5px; margin-bottom:6px; max-height:55px; overflow-y:auto;">
-                          ${poolMatch.breakdown || poolMatch.desc}
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                          <span style="font-size:8px; color:#94a3b8; font-family:monospace; font-weight:bold;">ATTUNEMENT:</span>
-                          ${actionBtns}
-                        </div>
-                      </div>
-                    `;
+      let inspectorHtml = "";
+      if (selectedTrait) {
+        let art = pool.find(a => a.trait === selectedTrait);
+        if (art) {
+          inspectorHtml = `<div class="relic-inspector-drawer" style="padding:10px; margin-bottom:10px; background:rgba(0,0,0,0.5); border:1px solid #1abc9c; border-radius:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:#1abc9c; font-size:12px;">${art.name}</strong>
+              <button class="close-btn" onclick="window.showRelicDetails(null)">CLOSE</button>
+            </div>
+            <p style="font-size:10px; color:#cbd5e1; margin:6px 0;">${art.breakdown || art.desc}</p>
+          </div>`;
+        }
       }
+
+      rightContentHtml = `
+        <strong style="color:#1abc9c; font-size:9.5px; font-family:monospace; text-transform:uppercase; margin-bottom:4px; display:block;">CODEX ASPECT LIBRARY</strong>
+        ${inspectorHtml}
+        <div class="bestiary-album-scrollable" style="flex:1; overflow-y:auto; touch-action:pan-y;">
+          <div class="bestiary-grid" style="grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));">
+            ${libraryHtml}
+          </div>
+        </div>
+      `;
+    } else {
+      let physicalHtml = "";
+      let artifacts = window.inventory.ARTIFACT || [];
+      if (artifacts.length === 0) {
+        physicalHtml = `<div style="color:#64748b; font-style:italic; text-align:center; padding:40px 10px; font-size:11px; border:1px dashed #334155; border-radius:8px;">No unequipped physical artifacts found.<br>Extract loot from dungeon runs to fill your vault!</div>`;
+      } else {
+        artifacts.forEach((item) => {
+          let col = window.getTierColor(item.statsRolled);
+          let powerPct = Math.round((item.relicPower || 1.0) * 100);
+          physicalHtml += `<div class="stash-card" style="border-left:3px solid ${col}; background:rgba(0,0,0,0.4); padding:8px; margin-bottom:4px; cursor:pointer;" onclick="window.showItemTooltip(event, window.inventory.ARTIFACT.find(i=>i.id==${item.id}))">
+            ${window.getItemIconSvg(item, 28)}
+            <div class="item-info">
+              <span class="item-title" style="color:${col}; font-size:11px;">${item.name}</span>
+              <span class="item-sub" style="font-size:8.5px;">Roll Power: <strong style="color:#ffd700;">${powerPct}%</strong></span>
+            </div>
+            <div style="display:flex; gap:3px;">
+              <button class="action-btn-sm" style="font-size:7px; padding:3px 5px;" onclick="event.stopPropagation(); window.equipRelicItem(${item.id},0)">S1</button>
+              <button class="action-btn-sm" style="font-size:7px; padding:3px 5px;" onclick="event.stopPropagation(); window.equipRelicItem(${item.id},1)">S2</button>
+              <button class="action-btn-sm" style="font-size:7px; padding:3px 5px;" onclick="event.stopPropagation(); window.equipRelicItem(${item.id},2)">S3</button>
+              <button class="action-btn-sm action-btn-salvage" style="font-size:7px; padding:3px 5px;" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderReliquaryTab();">SLV</button>
+            </div>
+          </div>`;
+        });
+      }
+      rightContentHtml = `
+        <strong style="color:#ffd700; font-size:9.5px; font-family:monospace; text-transform:uppercase; margin-bottom:4px; display:block;">PHYSICAL ARTIFACT VAULT</strong>
+        <div style="flex:1; overflow-y:auto; padding-right:2px; touch-action:pan-y;">
+          ${physicalHtml}
+        </div>
+      `;
     }
 
     container.innerHTML = `
-            <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; box-sizing:border-box;">
-              <!-- Codex Summary Banner -->
-              <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #091a18 0%, #050a09 100%); border: 1.5px solid #1abc9c; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                  <span style="font-size:11px; font-weight:900; color:#1abc9c; letter-spacing:1px; text-transform:uppercase;">SACRED RELIQUARY CODEX</span>
-                  <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#00ffff; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(0,210,255,0.3);">${totalUnlocked} / ${pool.length} Unlocked (${progressPct}%)</span>
-                    <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#df9ffb; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(168,85,247,0.3);">Astral Dust: ${dust.toLocaleString()}</span>
-                  </div>
-                </div>
-                <div class="gacha-pity-bg" style="width:100%; height:6px; background:#06040a;">
-                  <div class="gacha-pity-fill" style="width:${progressPct}%; height:100%; background:linear-gradient(90deg, #1abc9c, #00ffff);"></div>
-                </div>
-                <div style="font-size:8.5px; font-family:monospace; color:#34d399; line-height:1.35; border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px; word-break:break-word; text-align:left;">
-                  <strong>ACTIVE RELIC ENHANCEMENTS:</strong> ${activeStatsSummaryStr}
-                </div>
-              </div>
+      <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; box-sizing:border-box;">
+        <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #091a18 0%, #050a09 100%); border: 1.5px solid #1abc9c; border-radius:8px; padding:10px 14px; flex-shrink:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; font-weight:900; color:#1abc9c; letter-spacing:1px;">SACRED RELIQUARY CODEX</span>
+            <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#df9ffb;">Astral Dust: ${dust.toLocaleString()}</span>
+          </div>
+          <div style="font-size:8.5px; font-family:monospace; color:#34d399; line-height:1.35; border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px; margin-top:6px; text-align:left;">
+            <strong>ACTIVE ENHANCEMENTS:</strong> ${activeStatsSummaryStr}
+          </div>
+        </div>
 
-              <!-- Main Split Panels -->
-              <div class="reliquary-split-container">
-                <!-- Left: Active Slots -->
-                <div class="reliquary-left-pane">
-                  <strong style="color:#df9ffb; font-size:9.5px; font-family:monospace; text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid #1e293b; padding-bottom:4px; margin-bottom:4px; text-align:left;">ACTIVE ATTUNEMENTS</strong>
-                  <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
-                    ${activeSlotsHtml}
-                  </div>
-                  <div style="background:rgba(255,255,255,0.01); border:1px dashed #334155; padding:6px 8px; border-radius:4px; font-size:8.5px; color:#94a3b8; line-height:1.45; text-align:left;">
-                    Altar slots remain attuned permanently! Slotted relic modifiers are multiplied by your Forge Slot level.
-                  </div>
-                </div>
-
-                <!-- Right: Codex Grid -->
-                                <div class="reliquary-right-pane">
-                                  <strong style="color:#1abc9c; font-size:9.5px; font-family:monospace; text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid #1e293b; padding-bottom:4px; margin-bottom:4px; text-align:left;">ASPECT LIBRARY</strong>
-                                  ${inspectorHtml}
-                                  <div class="bestiary-album-scrollable" style="flex:1; overflow-y:auto; padding-right:2px; touch-action:pan-y;">
-                                    <div class="bestiary-grid" style="grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));">
-                                      ${libraryHtml}
-                                    </div>
-                                  </div>
-                                </div>
-              </div>
+        <div class="reliquary-split-container" style="display:flex; gap:10px; flex:1; overflow:hidden;">
+          <div class="reliquary-left-pane" style="width:38%; display:flex; flex-direction:column; gap:6px;">
+            <strong style="color:#df9ffb; font-size:9.5px; font-family:monospace; text-transform:uppercase; border-bottom:1px solid #1e293b; padding-bottom:4px;">ACTIVE ALTAR</strong>
+            <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+              ${activeSlotsHtml}
             </div>
-          `;
+          </div>
+          <div class="reliquary-right-pane" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+            ${tabBarHtml}
+            ${rightContentHtml}
+          </div>
+        </div>
+      </div>
+    `;
   };
 
   window.showRelicDetails = function (trait) {
@@ -20473,7 +20484,13 @@
 
   window.assignRelic = function (trait, slotIndex) {
     let stats = window.playerStats;
-    stats.activeRelics = stats.activeRelics || [];
+    stats.activeRelics = stats.activeRelics || [null, null, null];
+
+    // Unequip physical artifact in this slot
+    let slotKey = ["art1", "art2", "art3"][slotIndex];
+    if (window.equippedSlots[slotKey]) {
+      window.unequipItem(slotKey);
+    }
 
     // Ensure this trait isn't already assigned in another slot
     let existingIdx = stats.activeRelics.indexOf(trait);
@@ -20504,24 +20521,6 @@
   };
 
   // Protected accessor enforcing the in-tab Aspect Inspector Drawer
-  Object.defineProperty(window, "showRelicDetails", {
-    configurable: true,
-    enumerable: true,
-    get() {
-      return function (trait) {
-        window.state = window.state || {};
-        if (window.state.selectedAspectTrait === trait) {
-          window.state.selectedAspectTrait = null;
-        } else {
-          window.state.selectedAspectTrait = trait;
-        }
-        window.renderReliquaryTab();
-      };
-    },
-    set() {
-      // Guarded no-op: Blocks duplicate assignments from restoring full-screen modals
-    },
-  });
 
   window.state.achievementFilter = "all";
 
@@ -21118,9 +21117,6 @@
       { key: "boots", label: "BOOTS" },
       { key: "ring1", label: "RING 1" },
       { key: "ring2", label: "RING 2" },
-      { key: "art1", label: "RELIC 1" },
-      { key: "art2", label: "RELIC 2" },
-      { key: "art3", label: "RELIC 3" },
     ];
 
     if (!window.equippedSlots) {
@@ -21893,7 +21889,7 @@
     if (typeof window.pushHeaderToast === "function") {
       if (targetItem.locked) {
         window.pushHeaderToast(
-          `[SOUL BOUND] Protected ${targetItem.name}!`,
+          `[ SOUL INSURED ] Protected ${targetItem.name}!`,
           "#2ecc71",
         );
       } else {
@@ -24134,7 +24130,7 @@
           attackCooldown: 0,
           rangedCooldown: window.randInt(30, 90),
           isRanged: isRanged,
-          projectileType: projType,
+          projectileType: projType, moveProfile: (mobInfo.type === 'golem' || mobInfo.type === 'corroded_golem' ? 'relentless' : 'standard'),
           facing: -1,
           isRare: isRare,
           eliteAffix: eliteAffix,
