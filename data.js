@@ -5979,16 +5979,15 @@ window.renderBestiaryAlbum = function () {
         let cost = cardData.set === "Cosmic Wardens" ? 250 : 50;
         let dustOwned = window.playerStats.astralDust || 0;
         let canCraft = dustOwned >= cost;
+        let isUnlocked = count > 0;
+
+        let iconHtml = `<canvas class="bestiary-card-canvas" data-visual-type="${cKey}" data-unlocked="${isUnlocked}" width="64" height="64" style="width:52px; height:52px; display:block; margin:4px auto;"></canvas>`;
 
         if (tier >= 0) {
           let cardColor = rankColors[tier] || "#ffd700";
           let val = window.getCardValue(cardData.baseVal, tier);
           let isPct = cardData.isPct;
           let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
-          let iconHtml = window.getEquipIconHtml(
-            { type: "card", cardKey: cKey },
-            36,
-          );
 
           let thresholds = window.CARD_UPGRADE_THRESHOLDS;
           let nextThreshold = thresholds[tier + 1];
@@ -6022,7 +6021,6 @@ window.renderBestiaryAlbum = function () {
               </div>
             `;
         } else {
-          let iconHtml = `<span style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(255,255,255,0.01); border:1px dashed #334155; border-radius:4px; font-weight:bold; font-size:16px; color:#334155; flex-shrink:0;">?</span>`;
           let craftBtnHtml = `<button class="action-btn-sm" style="font-size:7px; padding:2.5px 6px; margin:0; line-height:1.2; background:${canCraft ? "linear-gradient(180deg, #10b981, #047857)" : "#1e293b"}; border-color:${canCraft ? "#34d399" : "#334155"}; color:${canCraft ? "#ffffff" : "#64748b"}; width:100%; margin-top:4px;" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} Dust)</button>`;
 
           return `
@@ -6081,6 +6079,10 @@ window.renderBestiaryAlbum = function () {
           </div>
         </div>
       `;
+
+  if (typeof window.startBestiaryAnimLoop === "function") {
+    window.startBestiaryAnimLoop();
+  }
 };
 
 window.craftCard = function (cKey) {
@@ -6204,29 +6206,29 @@ window.salvageAllDuplicateCards = function () {
 };
 
 window.openMonsterCardSackAnimation = function (rolledCards) {
-  window.isGamePaused = true;
-  let overlay = document.createElement("div");
-  overlay.id = "card-opening-overlay";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.backgroundColor = "rgba(4, 3, 9, 0.95)";
-  overlay.style.display = "flex";
-  overlay.style.flexDirection = "column";
-  overlay.style.justifyContent = "center";
-  overlay.style.alignItems = "center";
-  overlay.style.zIndex = "45000";
-  overlay.style.backdropFilter = "blur(12px)";
-  overlay.style.fontFamily = "monospace";
-  overlay.style.color = "#f1f5f9";
-  overlay.style.boxSizing = "border-box";
-  overlay.style.padding = "20px";
-  document.body.appendChild(overlay);
+    window.isGamePaused = true;
+    let overlay = document.createElement("div");
+    overlay.id = "card-opening-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(4, 3, 9, 0.95)";
+    overlay.style.display = "flex";
+    overlay.style.flexDirection = "column";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.zIndex = "45000";
+    overlay.style.backdropFilter = "blur(12px)";
+    overlay.style.fontFamily = "monospace";
+    overlay.style.color = "#f1f5f9";
+    overlay.style.boxSizing = "border-box";
+    overlay.style.padding = "20px";
+    document.body.appendChild(overlay);
 
-  let style = document.createElement("style");
-  style.innerHTML = `
+    let style = document.createElement("style");
+    style.innerHTML = `
       .unboxing-grid {
         display: flex;
         gap: 12px;
@@ -6286,27 +6288,24 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
         pointer-events: auto;
       }
     `;
-  document.head.appendChild(style);
+    document.head.appendChild(style);
 
-  let cardsHtml = rolledCards
-    .map((cKey, idx) => {
-      let cardData = window.MONSTER_CARDS_DATA[cKey];
-      let setColors = {
-        "Whispering Woods": "#2ecc71",
-        "Mountain Peaks": "#3498db",
-        "Inferno Depths": "#e74c3c",
-        "Fungal Swamp": "#1abc9c",
-        "Void Singularity": "#9b59b6",
-        "Cosmic Wardens": "#f1c40f",
-      };
-      let color = setColors[cardData.set] || "#ffd700";
-      let iconHtml = window.getEquipIconHtml(
-        { type: "card", cardKey: cKey },
-        42,
-      );
-      let ownedCount = window.playerStats.monsterCards[cKey] || 0;
+    let cardsHtml = rolledCards
+      .map((cKey, idx) => {
+        let cardData = window.MONSTER_CARDS_DATA[cKey];
+        let setColors = {
+          "Whispering Woods": "#2ecc71",
+          "Mountain Peaks": "#3498db",
+          "Inferno Depths": "#e74c3c",
+          "Fungal Swamp": "#1abc9c",
+          "Void Singularity": "#9b59b6",
+          "Cosmic Wardens": "#f1c40f",
+        };
+        let color = setColors[cardData.set] || "#ffd700";
+        let iconHtml = `<canvas class="unboxing-card-canvas" data-visual-type="${cKey}" width="128" height="128" style="width:72px; height:72px; display:block; margin:4px auto; filter: drop-shadow(0 0 8px ${color});"></canvas>`;
+        let ownedCount = window.playerStats.monsterCards[cKey] || 0;
 
-      return `
+        return `
         <div class="card-container" id="card-item-${idx}" onclick="window.flipUnboxedCard(this, ${idx})">
           <div class="card-flipper">
             <!-- Back -->
@@ -6327,10 +6326,10 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
           </div>
         </div>
       `;
-    })
-    .join("");
+      })
+      .join("");
 
-  overlay.innerHTML = `
+    overlay.innerHTML = `
       <div style="text-align:center; max-width:650px; width:95%; animation: toastFadeIn 0.3s ease-out;">
         <h2 style="margin:0 0 4px 0; color:#ffd700; letter-spacing:3px; text-transform:uppercase; font-size:18px; text-shadow:0 0 10px rgba(241,196,15,0.3);">✦ BOOSTER UNBOXED! ✦</h2>
         <div style="font-size:10px; color:#94a3b8; margin-bottom:15px; text-transform:uppercase; letter-spacing:0.8px;">Tap each card to break the runic seal</div>
@@ -6345,27 +6344,115 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
       </div>
     `;
 
-  let flippedCount = 0;
-  window.flipUnboxedCard = function (el, idx) {
-    if (el.classList.contains("flipped")) return;
-    el.classList.add("flipped");
+    let flippedCount = 0;
+    window.flipUnboxedCard = function (el, idx) {
+      if (el.classList.contains("flipped")) return;
+      el.classList.add("flipped");
 
-    if (
-      window.SoundManager &&
-      typeof window.SoundManager.playClick === "function"
-    ) {
-      window.SoundManager.playClick();
-    }
-
-    flippedCount++;
-    if (flippedCount >= 5) {
-      let collectContainer = document.getElementById("collect-btn-container");
-      if (collectContainer) {
-        collectContainer.classList.add("show");
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.playClick === "function"
+      ) {
+        window.SoundManager.playClick();
       }
-    }
+
+      flippedCount++;
+      if (flippedCount >= 5) {
+        let collectContainer = document.getElementById("collect-btn-container");
+        if (collectContainer) {
+          collectContainer.classList.add("show");
+        }
+      }
+    };
+
+    window.startUnboxingAnimLoop = function () {
+      let overlayEl = document.getElementById("card-opening-overlay");
+      if (!overlayEl) return;
+
+      let animFrameId = null;
+      function step() {
+        if (!document.getElementById("card-opening-overlay")) {
+          cancelAnimationFrame(animFrameId);
+          return;
+        }
+
+        let canvases = document.querySelectorAll(".unboxing-card-canvas");
+        let time = Date.now();
+
+        canvases.forEach((canvas) => {
+          let cardContainer = canvas.closest(".card-container");
+          if (!cardContainer || !cardContainer.classList.contains("flipped")) return;
+
+          let type = canvas.dataset.visualType;
+          let ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          let mobTypeVal = "mob";
+          let visualTierVal = 0;
+          if (type === "aegis_goliath") {
+            mobTypeVal = "aegis_goliath";
+            visualTierVal = 1;
+          } else if (type === "chronos_arbitrator") {
+            mobTypeVal = "chronos_arbitrator";
+            visualTierVal = 5;
+          } else if (type === "nexus_overseer") {
+            mobTypeVal = "nexus_overseer";
+            visualTierVal = 6;
+          } else if (type === "hooktail") {
+            mobTypeVal = "prestige_boss";
+            visualTierVal = 7;
+          } else if (type === "arachnid_treant") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 0;
+          } else if (type === "overlord_iron_vault") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 2;
+          } else if (type === "corrosive_abomination") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 3;
+          } else if (type === "void_overseer") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 4;
+          } else if (type === "gilded_vault_keeper") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 1;
+          }
+
+          let mockMob = {
+            visualType: type,
+            type: mobTypeVal,
+            visualTier: visualTierVal,
+            x: canvas.width / 2 - 16,
+            y: canvas.height / 2 - 12,
+            w: 32,
+            h: 32,
+            facing: 1,
+            walkTimer: time / 150,
+            hopTimer: Math.floor(time / 50) % 30,
+            flashTimer: 0,
+            buffStacks: { haste: 0, def: 0, atk: 0 },
+            buffTimers: { haste: 0, def: 0, atk: 0 },
+          };
+
+          if (typeof window.drawSingleMob === "function") {
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(1.5, 1.5);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+            window.drawSingleMob(ctx, mockMob);
+            ctx.restore();
+          }
+        });
+
+        animFrameId = requestAnimationFrame(step);
+      }
+
+      animFrameId = requestAnimationFrame(step);
+    };
+    window.startUnboxingAnimLoop();
   };
-};
 
 window.sanitizeBasePlayerStats = function () {
   if (!window.playerStats) return;

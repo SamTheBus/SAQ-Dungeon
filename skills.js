@@ -385,33 +385,33 @@
           desc: "Start dungeon runs with a Common (0★) Starter Dagger equipped if offhand is empty. (Requires Hero Level 2)",
         },
         {
-                  id: "dagger_crit_chance",
-                  name: "Lethal Precision",
-                  iconKey: "dagger_crit",
-                  x: 25,
-                  y: 72,
-                  tier: 1,
-                  maxRank: 3,
-                  costPerRank: 1,
-                  prereqs: ["dagger_starter"],
-                  desc: "Increases Critical Strike Chance by +1.5% per rank.",
-                  getStatText: (rank) => `+${(rank * 1.5).toFixed(1)}% Crit Chance`,
-                },
-                {
-                  id: "dagger_crit_dmg",
-                  name: "Critical Ferocity",
-                  iconKey: "dagger_crit_dmg",
-                  x: 75,
-                  y: 72,
-                  tier: 1,
-                  maxRank: 3,
-                  costPerRank: 1,
-                  prereqs: ["dagger_starter"],
-                  desc: "Increases Critical Strike Damage multiplier by +6% per rank.",
-                  getStatText: (rank) => `+${rank * 6}% Crit Damage`,
-                },
-                {
-                  id: "dagger_offhand_precision",
+          id: "dagger_crit_chance",
+          name: "Lethal Precision",
+          iconKey: "dagger_crit",
+          x: 25,
+          y: 72,
+          tier: 1,
+          maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["dagger_starter"],
+          desc: "Increases Critical Strike Chance by +1.5% per rank.",
+          getStatText: (rank) => `+${(rank * 1.5).toFixed(1)}% Crit Chance`,
+        },
+        {
+          id: "dagger_crit_dmg",
+          name: "Critical Ferocity",
+          iconKey: "dagger_crit_dmg",
+          x: 75,
+          y: 72,
+          tier: 1,
+          maxRank: 3,
+          costPerRank: 1,
+          prereqs: ["dagger_starter"],
+          desc: "Increases Critical Strike Damage multiplier by +6% per rank.",
+          getStatText: (rank) => `+${rank * 6}% Crit Damage`,
+        },
+        {
+          id: "dagger_offhand_precision",
           name: "Offhand Precision",
           iconKey: "dagger_starter",
           x: 15,
@@ -1002,44 +1002,45 @@
           getStatText: () => "Recovery Chest spawns in Portal Room",
         },
         {
-                  id: "utility_insurance",
-                  name: "Insurance Underwriter",
-                  iconKey: "utility_insurance",
-                  x: 68,
-                  y: 28,
-                  currency: "global",
-                  maxRank: 3,
-                  costPerRank: 4,
-                  prereqs: ["utility_vitality", "utility_elixir"],
-                  desc: "Reduces Gold insurance premium costs by -10% per rank.",
-                  getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
-                },
-                {
-                  id: "utility_emergency_salvage",
-                  name: "Emergency Evac",
-                  iconKey: "utility_insurance",
-                  x: 18,
-                  y: 28,
-                  currency: "global",
-                  maxRank: 5,
-                  costPerRank: 1,
-                  prereqs: ["utility_gold", "utility_quality"],
-                  desc: "Retains a portion of carried Run Gold, Scraps, and Monster Souls upon defeat in dungeons.",
-                  getStatText: (rank) => `Retain +${rank * 5}% Gold, Scraps & Souls on Death`,
-                },
-                {
-                  id: "utility_fairy_sanctuary",
-                  name: "Fairy Sanctuary",
-                  iconKey: "utility_pioneer",
-                  x: 82,
-                  y: 28,
-                  currency: "global",
-                  maxRank: 5,
-                  costPerRank: 1,
-                  prereqs: ["utility_vitality", "utility_elixir"],
-                  desc: "Grants a chance for a Glimmering Fairy to spawn on each dungeon floor.",
-                  getStatText: (rank) => `+${rank * 5}% Glimmering Fairy Spawn Chance`,
-                },
+          id: "utility_insurance",
+          name: "Insurance Underwriter",
+          iconKey: "utility_insurance",
+          x: 68,
+          y: 28,
+          currency: "global",
+          maxRank: 3,
+          costPerRank: 4,
+          prereqs: ["utility_vitality", "utility_elixir"],
+          desc: "Reduces Gold insurance premium costs by -10% per rank.",
+          getStatText: (rank) => `-${rank * 10}% Insurance Premium Cost`,
+        },
+        {
+          id: "utility_emergency_salvage",
+          name: "Emergency Evac",
+          iconKey: "utility_insurance",
+          x: 18,
+          y: 28,
+          currency: "global",
+          maxRank: 5,
+          costPerRank: 1,
+          prereqs: ["utility_gold", "utility_quality"],
+          desc: "Retains a portion of carried Run Gold, Scraps, and Monster Souls upon defeat in dungeons.",
+          getStatText: (rank) =>
+            `Retain +${rank * 5}% Gold, Scraps & Souls on Death`,
+        },
+        {
+          id: "utility_fairy_sanctuary",
+          name: "Fairy Sanctuary",
+          iconKey: "utility_pioneer",
+          x: 82,
+          y: 28,
+          currency: "global",
+          maxRank: 5,
+          costPerRank: 1,
+          prereqs: ["utility_vitality", "utility_elixir"],
+          desc: "Grants a chance for a Glimmering Fairy to spawn on each dungeon floor.",
+          getStatText: (rank) => `+${rank * 5}% Glimmering Fairy Spawn Chance`,
+        },
         {
           id: "utility_treasure_hunter",
           name: "Relic Hunter",
@@ -1597,6 +1598,10 @@
       if (nodesLayer) {
         nodesLayer.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
         nodesLayer.style.transformOrigin = "0 0";
+      }
+      let canvas = document.getElementById("skill-constellation-canvas");
+      if (canvas) {
+        canvas.style.transform = "none";
       }
       let activeTreeId = window.activeSkillTreeTab || "shield";
       let activeTree = window.SKILL_TREE_DATA[activeTreeId];
@@ -2328,12 +2333,12 @@ if (window.playerStats && window.playerStats.usp === undefined) {
         stats.gold = (stats.gold || 1.0) + goldBonus;
       }
       let AstralProspectorLvl = getLevel("utility_inf_drop");
-            if (AstralProspectorLvl > 0) {
-              let dropBonus = 0.015 * Math.pow(AstralProspectorLvl, 0.65);
-              stats.qly = (stats.qly || 1.0) + dropBonus;
-            }
-            stats.emergencySalvageRate = getLevel("utility_emergency_salvage") * 0.05;
-            stats.fairySpawnChance = getLevel("utility_fairy_sanctuary") * 0.05;
+      if (AstralProspectorLvl > 0) {
+        let dropBonus = 0.015 * Math.pow(AstralProspectorLvl, 0.65);
+        stats.qly = (stats.qly || 1.0) + dropBonus;
+      }
+      stats.emergencySalvageRate = getLevel("utility_emergency_salvage") * 0.05;
+      stats.fairySpawnChance = getLevel("utility_fairy_sanctuary") * 0.05;
 
       // Apply active timers and modifications
       if (window.playerStats) {

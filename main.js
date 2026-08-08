@@ -12,47 +12,159 @@
   window.xpOrbs = [];
 
   // --- BESTIARY MONSTER CARDS DATABASE ---
-    window.MONSTER_CARDS_DATA = window.MONSTER_CARDS_DATA || {
-      slime: { name: "Green Slime", set: "Whispering Woods", hint: "Floors 1-12" },
-      sprout: { name: "Eldritch Sprout", set: "Whispering Woods", hint: "Floors 1-12" },
-      thorn_wyrm: { name: "Thorn Wyrm", set: "Whispering Woods", hint: "Floors 1-12" },
-      arachnid_treant: { name: "Arachnid Treant", set: "Whispering Woods", hint: "Floor 12 Boss" },
-      golem: { name: "Stone Golem", set: "Mountain Peaks", hint: "Floors 13-24" },
-      wyrmling: { name: "Frost Wyrmling", set: "Mountain Peaks", hint: "Floors 13-24" },
-      gargoyle: { name: "Gargoyle Warden", set: "Mountain Peaks", hint: "Floors 13-24" },
-      rust_nibbler: { name: "Rust Nibbler", set: "Mountain Peaks", hint: "Floors 13-24" },
-      aegis_goliath: { name: "Aegis Goliath", set: "Mountain Peaks", hint: "Floor 24 Boss" },
-      magma_elemental: { name: "Magma Elemental", set: "Inferno Depths", hint: "Floors 25-36" },
-      lava_serpent: { name: "Lava Serpent", set: "Inferno Depths", hint: "Floors 25-36" },
-      hell_bat: { name: "Hell Bat", set: "Inferno Depths", hint: "Floors 25-36" },
-      slag_slime: { name: "Slag Slime", set: "Inferno Depths", hint: "Floors 25-36" },
-      overlord_iron_vault: { name: "Overlord Iron Vault", set: "Inferno Depths", hint: "Floor 36 Boss" },
-      swamp_basilisk: { name: "Swamp Basilisk", set: "Fungal Swamp", hint: "Floors 37-48" },
-      toxic_fly: { name: "Toxic Fly", set: "Fungal Swamp", hint: "Floors 37-48" },
-      marsh_ghost: { name: "Marsh Ghost", set: "Fungal Swamp", hint: "Floors 37-48" },
-      corroded_golem: { name: "Corroded Golem", set: "Fungal Swamp", hint: "Floors 37-48" },
-      corrosive_abomination: { name: "Corrosive Abomination", set: "Fungal Swamp", hint: "Floor 48 Boss" },
-      void_orb: { name: "Void Orb", set: "Void Singularity", hint: "Floors 49-60" },
-      void_crawler: { name: "Void Crawler", set: "Void Singularity", hint: "Floors 49-60" },
-      void_spectre: { name: "Void Spectre", set: "Void Singularity", hint: "Floors 49-60" },
-      void_overseer: { name: "Void Overseer", set: "Void Singularity", hint: "Floor 60 Boss" },
-      clockwork_scarab: { name: "Clockwork Scarab", set: "Cosmic Wardens", hint: "Floors 61+" },
-      star_weaver: { name: "Star Weaver", set: "Cosmic Wardens", hint: "Floors 61+" },
-      neon_spider: { name: "Neon Spider", set: "Cosmic Wardens", hint: "Floors 61+" },
-      wireframe_orb: { name: "Wireframe Orb", set: "Cosmic Wardens", hint: "Floors 61+" },
-      cursed_blade: { name: "Cursed Blade", set: "Cosmic Wardens", hint: "Floors 61+" },
-      animated_armor: { name: "Animated Armor", set: "Cosmic Wardens", hint: "Floors 61+" },
-      chronos_arbitrator: { name: "Chronos Arbitrator", set: "Cosmic Wardens", hint: "Floor 72 Boss" },
-      nexus_overseer: { name: "Nexus Overseer", set: "Cosmic Wardens", hint: "Floor 84 Boss" }
-    };
+  window.MONSTER_CARDS_DATA = window.MONSTER_CARDS_DATA || {
+    slime: {
+      name: "Green Slime",
+      set: "Whispering Woods",
+      hint: "Floors 1-12",
+    },
+    sprout: {
+      name: "Eldritch Sprout",
+      set: "Whispering Woods",
+      hint: "Floors 1-12",
+    },
+    thorn_wyrm: {
+      name: "Thorn Wyrm",
+      set: "Whispering Woods",
+      hint: "Floors 1-12",
+    },
+    arachnid_treant: {
+      name: "Arachnid Treant",
+      set: "Whispering Woods",
+      hint: "Floor 12 Boss",
+    },
+    golem: { name: "Stone Golem", set: "Mountain Peaks", hint: "Floors 13-24" },
+    wyrmling: {
+      name: "Frost Wyrmling",
+      set: "Mountain Peaks",
+      hint: "Floors 13-24",
+    },
+    gargoyle: {
+      name: "Gargoyle Warden",
+      set: "Mountain Peaks",
+      hint: "Floors 13-24",
+    },
+    rust_nibbler: {
+      name: "Rust Nibbler",
+      set: "Mountain Peaks",
+      hint: "Floors 13-24",
+    },
+    aegis_goliath: {
+      name: "Aegis Goliath",
+      set: "Mountain Peaks",
+      hint: "Floor 24 Boss",
+    },
+    magma_elemental: {
+      name: "Magma Elemental",
+      set: "Inferno Depths",
+      hint: "Floors 25-36",
+    },
+    lava_serpent: {
+      name: "Lava Serpent",
+      set: "Inferno Depths",
+      hint: "Floors 25-36",
+    },
+    hell_bat: { name: "Hell Bat", set: "Inferno Depths", hint: "Floors 25-36" },
+    slag_slime: {
+      name: "Slag Slime",
+      set: "Inferno Depths",
+      hint: "Floors 25-36",
+    },
+    overlord_iron_vault: {
+      name: "Overlord Iron Vault",
+      set: "Inferno Depths",
+      hint: "Floor 36 Boss",
+    },
+    swamp_basilisk: {
+      name: "Swamp Basilisk",
+      set: "Fungal Swamp",
+      hint: "Floors 37-48",
+    },
+    toxic_fly: { name: "Toxic Fly", set: "Fungal Swamp", hint: "Floors 37-48" },
+    marsh_ghost: {
+      name: "Marsh Ghost",
+      set: "Fungal Swamp",
+      hint: "Floors 37-48",
+    },
+    corroded_golem: {
+      name: "Corroded Golem",
+      set: "Fungal Swamp",
+      hint: "Floors 37-48",
+    },
+    corrosive_abomination: {
+      name: "Corrosive Abomination",
+      set: "Fungal Swamp",
+      hint: "Floor 48 Boss",
+    },
+    void_orb: {
+      name: "Void Orb",
+      set: "Void Singularity",
+      hint: "Floors 49-60",
+    },
+    void_crawler: {
+      name: "Void Crawler",
+      set: "Void Singularity",
+      hint: "Floors 49-60",
+    },
+    void_spectre: {
+      name: "Void Spectre",
+      set: "Void Singularity",
+      hint: "Floors 49-60",
+    },
+    void_overseer: {
+      name: "Void Overseer",
+      set: "Void Singularity",
+      hint: "Floor 60 Boss",
+    },
+    clockwork_scarab: {
+      name: "Clockwork Scarab",
+      set: "Cosmic Wardens",
+      hint: "Floors 61+",
+    },
+    star_weaver: {
+      name: "Star Weaver",
+      set: "Cosmic Wardens",
+      hint: "Floors 61+",
+    },
+    neon_spider: {
+      name: "Neon Spider",
+      set: "Cosmic Wardens",
+      hint: "Floors 61+",
+    },
+    wireframe_orb: {
+      name: "Wireframe Orb",
+      set: "Cosmic Wardens",
+      hint: "Floors 61+",
+    },
+    cursed_blade: {
+      name: "Cursed Blade",
+      set: "Cosmic Wardens",
+      hint: "Floors 61+",
+    },
+    animated_armor: {
+      name: "Animated Armor",
+      set: "Cosmic Wardens",
+      hint: "Floors 61+",
+    },
+    chronos_arbitrator: {
+      name: "Chronos Arbitrator",
+      set: "Cosmic Wardens",
+      hint: "Floor 72 Boss",
+    },
+    nexus_overseer: {
+      name: "Nexus Overseer",
+      set: "Cosmic Wardens",
+      hint: "Floor 84 Boss",
+    },
+  };
 
-    // Safe global state fallback initializer
-    if (
-      window.playerStats &&
-      window.playerStats.robbingMarcusActive === undefined
-    ) {
-      window.playerStats.robbingMarcusActive = false;
-    }
+  // Safe global state fallback initializer
+  if (
+    window.playerStats &&
+    window.playerStats.robbingMarcusActive === undefined
+  ) {
+    window.playerStats.robbingMarcusActive = false;
+  }
   if (window.playerStats) {
     if (window.playerStats.deflectionFatigueTimer === undefined) {
       window.playerStats.deflectionFatigueTimer = 0;
@@ -716,23 +828,23 @@
           spawnTieredEquipment(playerQuality * 1.25, 1);
 
           // 3. 15% Chance for Cavern Sigil (max 3★)
-                    if (Math.random() < 0.15) {
-                      let rolledSigilRarity = window.rollSigilRarity(3, playerQuality);
-                      let sigilItem = window.createItemObject(
-                        "sigil",
-                        rolledSigilRarity,
-                        stageScale,
-                        0,
-                      );
-                      window.spawnGroundLoot(sigilItem, p.x, p.y - 10);
-                    }
+          if (Math.random() < 0.15) {
+            let rolledSigilRarity = window.rollSigilRarity(3, playerQuality);
+            let sigilItem = window.createItemObject(
+              "sigil",
+              rolledSigilRarity,
+              stageScale,
+              0,
+            );
+            window.spawnGroundLoot(sigilItem, p.x, p.y - 10);
+          }
 
-                    // 4. 20% Chance for Monster Card Sack
-                    if (Math.random() < 0.20) {
-                      window.addUseDrop("Monster Card Sack", 1, false);
-                    }
-                  } else {
-                    // --- ASTRAL VAULT LOOT TABLE ---
+          // 4. 20% Chance for Monster Card Sack
+          if (Math.random() < 0.2) {
+            window.addUseDrop("Monster Card Sack", 1, false);
+          }
+        } else {
+          // --- ASTRAL VAULT LOOT TABLE ---
           // 1. Guaranteed colossal gold payload
           let chestGold = Math.floor(400 * (1 + stageScale * 1.25));
           window.spawnHomingGold(p.x, p.y - 10, chestGold);
@@ -772,20 +884,20 @@
           window.spawnGroundLoot(sigilItem, p.x, p.y - 10);
 
           // 4. 20% Chance for Rare Crafting Material
-                    if (Math.random() < 0.2) {
-                      let mats = ["Ancient Core", "Astral Essence", "Eridium Shard"];
-                      let chosenMat = mats[Math.floor(Math.random() * mats.length)];
-                      if (typeof window.spawnGroundMaterial === "function") {
-                        window.spawnGroundMaterial(chosenMat, 1, p.x, p.y - 10);
-                      }
-                    }
+          if (Math.random() < 0.2) {
+            let mats = ["Ancient Core", "Astral Essence", "Eridium Shard"];
+            let chosenMat = mats[Math.floor(Math.random() * mats.length)];
+            if (typeof window.spawnGroundMaterial === "function") {
+              window.spawnGroundMaterial(chosenMat, 1, p.x, p.y - 10);
+            }
+          }
 
-                    // 5. Guaranteed 1x Monster Card Sack
-                    window.addUseDrop("Monster Card Sack", 1, false);
-                  }
-                }
-              }
-            };
+          // 5. Guaranteed 1x Monster Card Sack
+          window.addUseDrop("Monster Card Sack", 1, false);
+        }
+      }
+    }
+  };
 
   window.setChestOpened = function (x, y) {
     if (!window.activeDungeonMap) return;
@@ -1368,37 +1480,37 @@
     }
 
     // Enforce standardized profile tab order
-        window.reorderProfileTabs = function () {
-          let tabBar = document.querySelector(".profile-tab-bar");
-          if (!tabBar) return;
+    window.reorderProfileTabs = function () {
+      let tabBar = document.querySelector(".profile-tab-bar");
+      if (!tabBar) return;
 
-          if (!document.getElementById("profile-tab-relics")) {
-            let btn = document.createElement("button");
-            btn.id = "profile-tab-relics";
-            btn.className = "profile-tab-btn";
-            btn.innerText = "RELIQUARY";
-            btn.onclick = () => window.switchProfileTab("relics");
-            tabBar.appendChild(btn);
-          }
+      if (!document.getElementById("profile-tab-relics")) {
+        let btn = document.createElement("button");
+        btn.id = "profile-tab-relics";
+        btn.className = "profile-tab-btn";
+        btn.innerText = "RELIQUARY";
+        btn.onclick = () => window.switchProfileTab("relics");
+        tabBar.appendChild(btn);
+      }
 
-          const orderedIds = [
-            "profile-tab-stats",
-            "profile-tab-gear",
-            "profile-tab-satchel",
-            "profile-tab-relics",
-            "profile-tab-album",
-            "profile-tab-achievements",
-          ];
+      const orderedIds = [
+        "profile-tab-stats",
+        "profile-tab-gear",
+        "profile-tab-satchel",
+        "profile-tab-relics",
+        "profile-tab-album",
+        "profile-tab-achievements",
+      ];
 
-          orderedIds.forEach((id) => {
-            let btn = document.getElementById(id);
-            if (btn) {
-              tabBar.appendChild(btn);
-            }
-          });
-        };
+      orderedIds.forEach((id) => {
+        let btn = document.getElementById(id);
+        if (btn) {
+          tabBar.appendChild(btn);
+        }
+      });
+    };
 
-        window.reorderProfileTabs();
+    window.reorderProfileTabs();
 
     // Dynamically inject the RELIQUARY content panel if not present in index.html
     let profileCard = document.querySelector(".profile-card");
@@ -6537,44 +6649,54 @@
           },
         ];
 
-        // Clear any lingering Field Medic elixirs from previous runs to enforce exactly 1 active elixir limit
         const basicElixirKeys = [
           "atkPotionRuns",
           "hpPotionRuns",
           "defPotionRuns",
           "hastePotionRuns",
         ];
-        basicElixirKeys.forEach((k) => {
-          window.playerStats[k] = 0;
-        });
 
-        let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
-        let pot = shuffled[0]; // Select exactly 1 random elixir effect
+        // Only trigger Field Medic if the player does NOT already have any active premium/consumed elixirs
+        let hasActiveElixir = basicElixirKeys.some(
+          (k) =>
+            (window.playerStats[k] || 0) > 0 ||
+            (window.playerStats[k.replace("Runs", "Timer")] || 0) > 0,
+        );
 
-        // Set the runs duration to exactly 1 run
-        window.playerStats[pot.key] = 1;
+        if (!hasActiveElixir) {
+          // Clear any lingering Field Medic elixirs from previous runs to enforce exactly 1 active elixir limit
+          basicElixirKeys.forEach((k) => {
+            window.playerStats[k] = 0;
+          });
 
-        // Scale the potion's potency linearly based on the purchased rank (Rank 1: +10%, Rank 2: +15%, Rank 3: +20%)
-        let strength =
-          pot.key === "hastePotionRuns"
-            ? 1 + (medicRank - 1) * 0.5
-            : 0.1 + (medicRank - 1) * 0.05;
+          let shuffled = [...basicElixirs].sort(() => Math.random() - 0.5);
+          let pot = shuffled[0]; // Select exactly 1 random elixir effect
 
-        window.playerStats[pot.strKey] = strength;
+          // Set the runs duration to exactly 1 run
+          window.playerStats[pot.key] = 1;
 
-        let pctText =
-          pot.key === "hastePotionRuns"
-            ? `+${Math.round(strength * 10)}% Speed`
-            : `+${Math.round(strength * 100)}% ${pot.key === "atkPotionRuns" ? "Atk" : pot.key === "hpPotionRuns" ? "Max HP" : "Def"}`;
-        let potName = `${pot.key === "atkPotionRuns" ? "Attack" : pot.key === "hpPotionRuns" ? "Vitality" : pot.key === "defPotionRuns" ? "Armored" : "Haste"} Elixir (${pctText})`;
+          // Scale the potion's potency linearly based on the purchased rank (Rank 1: +10%, Rank 2: +15%, Rank 3: +20%)
+          let strength =
+            pot.key === "hastePotionRuns"
+              ? 1 + (medicRank - 1) * 0.5
+              : 0.1 + (medicRank - 1) * 0.05;
 
-        let appliedNames = [potName];
+          window.playerStats[pot.strKey] = strength;
 
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast(
-            `✦ Field Medic Active: ${appliedNames.join(", ")}!`,
-            "#34d399",
-          );
+          let pctText =
+            pot.key === "hastePotionRuns"
+              ? `+${Math.round(strength * 10)}% Speed`
+              : `+${Math.round(strength * 100)}% ${pot.key === "atkPotionRuns" ? "Atk" : pot.key === "hpPotionRuns" ? "Max HP" : "Def"}`;
+          let potName = `${pot.key === "atkPotionRuns" ? "Attack" : pot.key === "hpPotionRuns" ? "Vitality" : pot.key === "defPotionRuns" ? "Armored" : "Haste"} Elixir (${pctText})`;
+
+          let appliedNames = [potName];
+
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              `✦ Field Medic Active: ${appliedNames.join(", ")}!`,
+              "#34d399",
+            );
+          }
         }
       }
     }
@@ -7594,28 +7716,39 @@
     window.player.targetY = window.player.y;
 
     // Fairy Sanctuary Spawn Check
-        let fairyLevel = window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary") : 0;
-        let fairyChance = fairyLevel * 0.05;
-        if (fairyChance > 0 && Math.random() < fairyChance && !isMiniBoss && !isMajorBoss && !window.playerStats.isCrucibleMode && !isRift) {
-          let fPos = window.getOnslaughtSpawnPosition ? window.getOnslaughtSpawnPosition(map) : { x: Math.floor(map.width / 2), y: Math.floor(map.height / 2) };
-          let fTileSize = map.tileSize || 32;
-          window.cavernInteractives = window.cavernInteractives || [];
-          window.cavernInteractives.push({
-            id: window.idCounter++,
-            type: "glimmering_fairy",
-            x: fPos.x * fTileSize + fTileSize / 2,
-            y: fPos.y * fTileSize + fTileSize / 2,
-            w: 18,
-            h: 18,
-            isTriggeredByTouch: true,
-            life: 1800,
-            maxLife: 1800,
-            angleSeed: Math.random() * 100,
-          });
-        }
+    let fairyLevel = window.SkillTreeManager
+      ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary")
+      : 0;
+    let fairyChance = fairyLevel * 0.05;
+    if (
+      fairyChance > 0 &&
+      Math.random() < fairyChance &&
+      !isMiniBoss &&
+      !isMajorBoss &&
+      !window.playerStats.isCrucibleMode &&
+      !isRift
+    ) {
+      let fPos = window.getOnslaughtSpawnPosition
+        ? window.getOnslaughtSpawnPosition(map)
+        : { x: Math.floor(map.width / 2), y: Math.floor(map.height / 2) };
+      let fTileSize = map.tileSize || 32;
+      window.cavernInteractives = window.cavernInteractives || [];
+      window.cavernInteractives.push({
+        id: window.idCounter++,
+        type: "glimmering_fairy",
+        x: fPos.x * fTileSize + fTileSize / 2,
+        y: fPos.y * fTileSize + fTileSize / 2,
+        w: 18,
+        h: 18,
+        isTriggeredByTouch: true,
+        life: 1800,
+        maxLife: 1800,
+        angleSeed: Math.random() * 100,
+      });
+    }
 
-        // Spawning Bosses (Warden, Major, Mini, or Rift Guardian)
-        if (isRift) {
+    // Spawning Bosses (Warden, Major, Mini, or Rift Guardian)
+    if (isRift) {
       let cx = Math.floor(map.width / 2);
       let cy = Math.floor(map.height / 2);
       window.spawnRiftGuardianEncounter(cx, cy);
@@ -8639,7 +8772,7 @@
 
     let preservedList = [];
     potTypes.forEach((pot) => {
-      let currentRuns = p[pot.runKey] || (p[pot.timerKey] > 0 ? 1 : 0);
+      let currentRuns = (p[pot.runKey] || 0) + (p[pot.timerKey] > 0 ? 1 : 0);
       p[pot.timerKey] = 0;
 
       if (currentRuns > 0) {
@@ -9045,56 +9178,56 @@
       if (typeof window.saveGame === "function") window.saveGame();
     } else {
       let salvageRank = window.SkillTreeManager
-              ? window.SkillTreeManager.getSkillLevel("utility_emergency_salvage")
-              : 0;
-            let salvageRatio = salvageRank * 0.05; // 5% to 25%
+        ? window.SkillTreeManager.getSkillLevel("utility_emergency_salvage")
+        : 0;
+      let salvageRatio = salvageRank * 0.05; // 5% to 25%
 
-            let retainedGold = BigNum.from(0);
-            let retainedScraps = [];
+      let retainedGold = BigNum.from(0);
+      let retainedScraps = [];
 
-            if (salvageRatio > 0) {
-              // 1. Gold Salvage
-              if (activeRunGold.gt(0)) {
-                retainedGold = BigNum.from(
-                  Math.floor(activeRunGold.mul(salvageRatio).valueOf())
-                );
-                if (retainedGold.gt(0)) {
-                  window.playerStats.coins = BigNum.from(
-                    window.playerStats.coins || 0
-                  ).add(retainedGold);
-                  activeRunGold = activeRunGold.sub(retainedGold);
-                }
-              }
+      if (salvageRatio > 0) {
+        // 1. Gold Salvage
+        if (activeRunGold.gt(0)) {
+          retainedGold = BigNum.from(
+            Math.floor(activeRunGold.mul(salvageRatio).valueOf()),
+          );
+          if (retainedGold.gt(0)) {
+            window.playerStats.coins = BigNum.from(
+              window.playerStats.coins || 0,
+            ).add(retainedGold);
+            activeRunGold = activeRunGold.sub(retainedGold);
+          }
+        }
 
-              // 2. Scraps & Souls Salvage
-              if (window.player && window.player.pendingScraps) {
-                for (let sName in window.player.pendingScraps) {
-                  let qty = window.player.pendingScraps[sName] || 0;
-                  if (qty > 0) {
-                    let retQty = Math.floor(qty * salvageRatio);
-                    if (retQty > 0) {
-                      window.addEtcDrop(sName, retQty, true);
-                      window.player.pendingScraps[sName] -= retQty;
-                      retainedScraps.push(`${retQty}x ${sName}`);
-                    }
-                  }
-                }
-              }
-
-              if (retainedGold.gt(0) || retainedScraps.length > 0) {
-                let toastMsg = `✦ Emergency Evac (${salvageRank * 5}%): Saved ${retainedGold.gt(0) ? window.formatNumber(retainedGold) + " Gold" : ""}${retainedGold.gt(0) && retainedScraps.length > 0 ? " & " : ""}${retainedScraps.join(", ")} to Vault!`;
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast(toastMsg, "#34d399");
-                }
+        // 2. Scraps & Souls Salvage
+        if (window.player && window.player.pendingScraps) {
+          for (let sName in window.player.pendingScraps) {
+            let qty = window.player.pendingScraps[sName] || 0;
+            if (qty > 0) {
+              let retQty = Math.floor(qty * salvageRatio);
+              if (retQty > 0) {
+                window.addEtcDrop(sName, retQty, true);
+                window.player.pendingScraps[sName] -= retQty;
+                retainedScraps.push(`${retQty}x ${sName}`);
               }
             }
+          }
+        }
 
-            window.player.pendingScraps = {};
-            titleEl.innerText = isAbandon ? "RUN ABANDONED" : "CRITICAL DEFEAT";
-            titleEl.style.color = isAbandon ? "#e67e22" : "#e74c3c";
+        if (retainedGold.gt(0) || retainedScraps.length > 0) {
+          let toastMsg = `✦ Emergency Evac (${salvageRank * 5}%): Saved ${retainedGold.gt(0) ? window.formatNumber(retainedGold) + " Gold" : ""}${retainedGold.gt(0) && retainedScraps.length > 0 ? " & " : ""}${retainedScraps.join(", ")} to Vault!`;
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(toastMsg, "#34d399");
+          }
+        }
+      }
 
-            // Reset active run pocket gold
-            window.playerStats.runGold = BigNum.from(0);
+      window.player.pendingScraps = {};
+      titleEl.innerText = isAbandon ? "RUN ABANDONED" : "CRITICAL DEFEAT";
+      titleEl.style.color = isAbandon ? "#e67e22" : "#e74c3c";
+
+      // Reset active run pocket gold
+      window.playerStats.runGold = BigNum.from(0);
 
       // Process Carried Bag Items (Locked items survive in Stash)
       extractedLoot.forEach((item) => {
@@ -9613,6 +9746,98 @@
       if (window.playerStats.nexusTomeShieldTimer > 0) {
         window.playerStats.nexusTomeShieldTimer--;
       }
+
+      // --- POTION AND ELIXIR TIMER DECAY & REFRESH ENGINE ---
+      const potTypes = [
+        {
+          runKey: "atkPotionRuns",
+          timerKey: "atkPotionTimer",
+          name: "Attack Elixir",
+        },
+        {
+          runKey: "hpPotionRuns",
+          timerKey: "hpPotionTimer",
+          name: "Vitality Elixir",
+        },
+        {
+          runKey: "defPotionRuns",
+          timerKey: "defPotionTimer",
+          name: "Armored Elixir",
+        },
+        {
+          runKey: "hastePotionRuns",
+          timerKey: "hastePotionTimer",
+          name: "Haste Elixir",
+        },
+        {
+          runKey: "xpPotionRuns",
+          timerKey: "xpPotionTimer",
+          name: "Double XP Elixir",
+        },
+        {
+          runKey: "dropPotionRuns",
+          timerKey: "dropPotionTimer",
+          name: "Double Drop Elixir",
+        },
+        {
+          runKey: "qlyPotionRuns",
+          timerKey: "qlyPotionTimer",
+          name: "Drop Quality Elixir",
+        },
+      ];
+
+      let isDungeon = window.currentGameState === window.GAME_STATES.DUNGEON;
+
+      potTypes.forEach((pot) => {
+        // If we are in a dungeon run, and the timer is expired or uninitialized,
+        // but we have reserve run charges, consume 1 charge and start the timer.
+        if (
+          isDungeon &&
+          (!window.playerStats[pot.timerKey] ||
+            window.playerStats[pot.timerKey] <= 0) &&
+          (window.playerStats[pot.runKey] || 0) > 0
+        ) {
+          window.playerStats[pot.runKey]--;
+          window.playerStats[pot.timerKey] = 18000; // Reset to 300 seconds (5 minutes) active duration
+
+          if (typeof window.invalidatePlayerStats === "function") {
+            window.invalidatePlayerStats();
+          }
+          if (typeof window.updateUI === "function") {
+            window.updateUI();
+          }
+          if (typeof window.saveGame === "function") {
+            window.saveGame();
+          }
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              `✦ Activated next charge of ${pot.name}!`,
+              "#34d399",
+            );
+          }
+        }
+
+        // Tick down the active timer only while in the dungeon
+        if (isDungeon && window.playerStats[pot.timerKey] > 0) {
+          window.playerStats[pot.timerKey]--;
+
+          // If the timer reaches exactly 0, notify and invalidate stats
+          if (window.playerStats[pot.timerKey] === 0) {
+            if (typeof window.invalidatePlayerStats === "function") {
+              window.invalidatePlayerStats();
+            }
+            if (typeof window.updateUI === "function") {
+              window.updateUI();
+            }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                `[!] ${pot.name} duration has expired!`,
+                "#f87171",
+              );
+            }
+          }
+        }
+      });
     }
     if (p.snareTimer && p.snareTimer > 0) {
       p.snareTimer--;
@@ -10410,61 +10635,64 @@
   };
 
   // --- MYSTICAL EXCHANGE TRADE REGISTRY & HANDLER ---
-    if (!window.MYSTICAL_TRADES) window.MYSTICAL_TRADES = [];
-    if (!window.MYSTICAL_TRADES.some((t) => t.id === "card_sack_trade")) {
-      window.MYSTICAL_TRADES.push({
-        id: "card_sack_trade",
-        name: "Monster Card Sack",
-        costName: "Luminous Soul",
-        costQty: 5,
-        yieldName: "Monster Card Sack",
-        yieldQty: 1,
-        desc: "Exchange 5 Luminous Souls for 1 Monster Card Sack.",
-      });
-    }
+  if (!window.MYSTICAL_TRADES) window.MYSTICAL_TRADES = [];
+  if (!window.MYSTICAL_TRADES.some((t) => t.id === "card_sack_trade")) {
+    window.MYSTICAL_TRADES.push({
+      id: "card_sack_trade",
+      name: "Monster Card Sack",
+      costName: "Luminous Soul",
+      costQty: 5,
+      yieldName: "Monster Card Sack",
+      yieldQty: 1,
+      desc: "Exchange 5 Luminous Souls for 1 Monster Card Sack.",
+    });
+  }
 
-    window.executeMysticalTrade = function (tradeId) {
-      if (tradeId === "card_sack_trade" || tradeId === "card_sack") {
-        let souls =
-          (window.inventory &&
-            window.inventory.ETC &&
-            window.inventory.ETC["Luminous Soul"]) ||
-          0;
-        if (souls < 5) {
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast("[X] Requires 5x Luminous Souls!", "#e74c3c");
-          }
-          return false;
-        }
-        window.inventory.ETC["Luminous Soul"] -= 5;
-        if (window.inventory.ETC["Luminous Soul"] <= 0) {
-          delete window.inventory.ETC["Luminous Soul"];
-        }
-        window.addUseDrop("Monster Card Sack", 1, false);
+  window.executeMysticalTrade = function (tradeId) {
+    if (tradeId === "card_sack_trade" || tradeId === "card_sack") {
+      let souls =
+        (window.inventory &&
+          window.inventory.ETC &&
+          window.inventory.ETC["Luminous Soul"]) ||
+        0;
+      if (souls < 5) {
         if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("✦ Acquired 1x Monster Card Sack!", "#34d399");
+          window.pushHeaderToast("[X] Requires 5x Luminous Souls!", "#e74c3c");
         }
-        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-          window.SoundManager.play("revive");
-        }
-        if (typeof window.updateUI === "function") window.updateUI();
-        if (typeof window.saveGame === "function") window.saveGame();
-        return true;
+        return false;
       }
-      return false;
-    };
+      window.inventory.ETC["Luminous Soul"] -= 5;
+      if (window.inventory.ETC["Luminous Soul"] <= 0) {
+        delete window.inventory.ETC["Luminous Soul"];
+      }
+      window.addUseDrop("Monster Card Sack", 1, false);
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast("✦ Acquired 1x Monster Card Sack!", "#34d399");
+      }
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("revive");
+      }
+      if (typeof window.updateUI === "function") window.updateUI();
+      if (typeof window.saveGame === "function") window.saveGame();
+      return true;
+    }
+    return false;
+  };
 
-    window.addEtcDrop = function (name, qty, silent = false) {
-      if (!window.inventory)
-        window.inventory = {
-          EQUIP: [],
-          ARTIFACT: [],
-          SIGIL: [],
-          ETC: {},
-          USE: {},
-        };
-      if (!window.inventory.ETC) window.inventory.ETC = {};
-      window.inventory.ETC[name] = (window.inventory.ETC[name] || 0) + qty;
+  window.addEtcDrop = function (name, qty, silent = false) {
+    if (!window.inventory)
+      window.inventory = {
+        EQUIP: [],
+        ARTIFACT: [],
+        SIGIL: [],
+        ETC: {},
+        USE: {},
+      };
+    if (!window.inventory.ETC) window.inventory.ETC = {};
+    window.inventory.ETC[name] = (window.inventory.ETC[name] || 0) + qty;
 
     if (
       name === "Luminous Soul" &&
@@ -10768,10 +10996,12 @@
             "Basic Haste Elixir",
           ];
           let numElixirs = window.randInt(1, 2);
+          let chosenElixirs = [];
           for (let eIdx = 0; eIdx < numElixirs; eIdx++) {
             let chosenElixir =
               basicElixirs[Math.floor(Math.random() * basicElixirs.length)];
             window.addUseDrop(chosenElixir, 1, false);
+            chosenElixirs.push(chosenElixir);
           }
 
           if (window.currentGameState === window.GAME_STATES.HUB) {
@@ -10781,11 +11011,17 @@
             if (!window.player.bag) window.player.bag = [];
             window.player.bag.push(newItem);
           }
-          window.pushHeaderToast(
-            `Opened ${name}! Found: ${newItem.name} (+${numElixirs} Elixir)`,
-            "#f1c40f",
-          );
-          if (typeof window.pushToast === "function") window.pushToast(newItem);
+
+          if (typeof window.openTactileSackCrateAnimation === "function") {
+            window.openTactileSackCrateAnimation(name, newItem, chosenElixirs);
+          } else {
+            // Fallback
+            window.pushHeaderToast(
+              `Opened ${name}! Found: ${newItem.name} (+${numElixirs} Elixir)`,
+              "#f1c40f",
+            );
+            if (typeof window.pushToast === "function") window.pushToast(newItem);
+          }
         }
 
     if (typeof window.invalidatePlayerStats === "function")
@@ -11312,53 +11548,60 @@
         continue;
       }
 
-      if (item.type === "glimmering_pixie" || item.type === "glimmering_fairy") {
-              item.angleSeed += 0.05;
-              let dx = Math.sin(item.angleSeed) * 1.5;
-              let dy = Math.cos(item.angleSeed * 0.7) * 1.0;
-              let nextX = item.x + dx;
-              let nextY = item.y + dy;
-              let map = window.activeDungeonMap;
+      if (
+        item.type === "glimmering_pixie" ||
+        item.type === "glimmering_fairy"
+      ) {
+        item.angleSeed += 0.05;
+        let dx = Math.sin(item.angleSeed) * 1.5;
+        let dy = Math.cos(item.angleSeed * 0.7) * 1.0;
+        let nextX = item.x + dx;
+        let nextY = item.y + dy;
+        let map = window.activeDungeonMap;
 
-              if (map && map.grid) {
-                // Verify both X and Y movement axes against walls using a safe 8px physical radius
-                let collideX = window.checkCollisionAt(map, nextX, item.y, 8);
-                let collideY = window.checkCollisionAt(map, item.x, nextY, 8);
+        if (map && map.grid) {
+          // Verify both X and Y movement axes against walls using a safe 8px physical radius
+          let collideX = window.checkCollisionAt(map, nextX, item.y, 8);
+          let collideY = window.checkCollisionAt(map, item.x, nextY, 8);
 
-                if (!collideX) {
-                  item.x = nextX;
-                } else {
-                  // Invert the trajectory seed to bounce away from the obstacle
-                  item.angleSeed += Math.PI;
-                }
+          if (!collideX) {
+            item.x = nextX;
+          } else {
+            // Invert the trajectory seed to bounce away from the obstacle
+            item.angleSeed += Math.PI;
+          }
 
-                if (!collideY) {
-                  item.y = nextY;
-                } else {
-                  item.angleSeed += Math.PI;
-                }
-              } else {
-                item.x = nextX;
-                item.y = nextY;
-              }
+          if (!collideY) {
+            item.y = nextY;
+          } else {
+            item.angleSeed += Math.PI;
+          }
+        } else {
+          item.x = nextX;
+          item.y = nextY;
+        }
 
-              if (item.type === "glimmering_fairy" && window.logicClock % 6 === 0 && window.ParticlePool) {
-                let pt = window.ParticlePool.get(
-                  item.x + window.randFloat(-4, 4),
-                  item.y + window.randFloat(-4, 4),
-                  window.randFloat(-0.3, 0.3),
-                  -window.randFloat(0.3, 1.0),
-                  window.randFloat(1.5, 3.0),
-                  "#ffd700",
-                  0.85,
-                  window.randInt(15, 30),
-                  0,
-                  true,
-                );
-                pt.style = "sparkle_star";
-                window.particles.push(pt);
-              }
-            }
+        if (
+          item.type === "glimmering_fairy" &&
+          window.logicClock % 6 === 0 &&
+          window.ParticlePool
+        ) {
+          let pt = window.ParticlePool.get(
+            item.x + window.randFloat(-4, 4),
+            item.y + window.randFloat(-4, 4),
+            window.randFloat(-0.3, 0.3),
+            -window.randFloat(0.3, 1.0),
+            window.randFloat(1.5, 3.0),
+            "#ffd700",
+            0.85,
+            window.randInt(15, 30),
+            0,
+            true,
+          );
+          pt.style = "sparkle_star";
+          window.particles.push(pt);
+        }
+      }
 
       if (item.isTriggeredByTouch) {
         let dist = Math.hypot(p.x - item.x, p.y - item.y);
@@ -11554,99 +11797,117 @@
     }
 
     if (item.type === "glimmering_pixie") {
-          const options = [
-            "Supernal Attack Elixir",
-            "Supernal Vitality Elixir",
-            "Supernal Armored Elixir",
-            "Supernal Haste Elixir",
-          ];
-          let chosen = options[Math.floor(Math.random() * options.length)];
-          let pStats = window.playerStats;
-          if (pStats) {
-            if (chosen.includes("Attack")) {
-              pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
-              pStats.atkPotionStrength = 0.35;
-            } else if (chosen.includes("Vitality")) {
-              pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
-              pStats.hpPotionStrength = 0.35;
-            } else if (chosen.includes("Armored")) {
-              pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
-              pStats.defPotionStrength = 0.35;
-            } else if (chosen.includes("Haste")) {
-              pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
-              pStats.hastePotionStrength = 3;
-            }
-          }
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast(
-              `✦ Caught the Pixie! Activated: ${chosen} (Current Run Only)!`,
-              "#2ecc71",
-            );
-          }
-        } else if (item.type === "glimmering_fairy") {
-          let fairyGold = Math.floor(120 * (1 + (window.player ? window.player.depth || 1 : 1) * 0.8));
-          window.spawnHomingGold(item.x, item.y, fairyGold);
-          window.addDungeonRunScrap("Monster Soul", window.randInt(2, 4), item.x, item.y);
+      const options = [
+        "Supernal Attack Elixir",
+        "Supernal Vitality Elixir",
+        "Supernal Armored Elixir",
+        "Supernal Haste Elixir",
+      ];
+      let chosen = options[Math.floor(Math.random() * options.length)];
+      let pStats = window.playerStats;
+      if (pStats) {
+        if (chosen.includes("Attack")) {
+          pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
+          pStats.atkPotionStrength = 0.35;
+        } else if (chosen.includes("Vitality")) {
+          pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
+          pStats.hpPotionStrength = 0.35;
+        } else if (chosen.includes("Armored")) {
+          pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
+          pStats.defPotionStrength = 0.35;
+        } else if (chosen.includes("Haste")) {
+          pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
+          pStats.hastePotionStrength = 3;
+        }
+      }
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          `✦ Caught the Pixie! Activated: ${chosen} (Current Run Only)!`,
+          "#2ecc71",
+        );
+      }
+    } else if (item.type === "glimmering_fairy") {
+      let fairyGold = Math.floor(
+        120 * (1 + (window.player ? window.player.depth || 1 : 1) * 0.8),
+      );
+      window.spawnHomingGold(item.x, item.y, fairyGold);
+      window.addDungeonRunScrap(
+        "Monster Soul",
+        window.randInt(2, 4),
+        item.x,
+        item.y,
+      );
 
-          let depth = window.player ? window.player.depth || 1 : 1;
-          let fairyEquip = window.createItemObject(
-            "weapon",
-            Math.max(1, window.rollItemRarity(depth * 8, 1.2, false)),
-            depth,
-            0
+      let depth = window.player ? window.player.depth || 1 : 1;
+      let fairyEquip = window.createItemObject(
+        "weapon",
+        Math.max(1, window.rollItemRarity(depth * 8, 1.2, false)),
+        depth,
+        0,
+      );
+      window.spawnGroundLoot(fairyEquip, item.x, item.y);
+
+      let fairyRank = window.SkillTreeManager
+        ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary")
+        : 0;
+      let elixirChance = fairyRank === 4 ? 0.35 : fairyRank === 5 ? 0.5 : 0.0;
+
+      if (Math.random() < elixirChance) {
+        const options = [
+          "Supernal Attack Elixir",
+          "Supernal Vitality Elixir",
+          "Supernal Armored Elixir",
+          "Supernal Haste Elixir",
+        ];
+        let chosen = options[Math.floor(Math.random() * options.length)];
+        let pStats = window.playerStats;
+        if (pStats) {
+          if (chosen.includes("Attack")) {
+            pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
+            pStats.atkPotionStrength = 0.35;
+          } else if (chosen.includes("Vitality")) {
+            pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
+            pStats.hpPotionStrength = 0.35;
+          } else if (chosen.includes("Armored")) {
+            pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
+            pStats.defPotionStrength = 0.35;
+          } else if (chosen.includes("Haste")) {
+            pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
+            pStats.hastePotionStrength = 3;
+          }
+        }
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            `✦ Fairy Sanctuary Blessing! Activated: ${chosen}!`,
+            "#ffd700",
           );
-          window.spawnGroundLoot(fairyEquip, item.x, item.y);
+        }
+      } else {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            "✦ Glimmering Fairy Blessing Claimed!",
+            "#34d399",
+          );
+        }
+      }
 
-          let fairyRank = window.SkillTreeManager ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary") : 0;
-          let elixirChance = fairyRank === 4 ? 0.35 : fairyRank === 5 ? 0.50 : 0.0;
-
-          if (Math.random() < elixirChance) {
-            const options = [
-              "Supernal Attack Elixir",
-              "Supernal Vitality Elixir",
-              "Supernal Armored Elixir",
-              "Supernal Haste Elixir",
-            ];
-            let chosen = options[Math.floor(Math.random() * options.length)];
-            let pStats = window.playerStats;
-            if (pStats) {
-              if (chosen.includes("Attack")) {
-                pStats.atkPotionRuns = Math.max(pStats.atkPotionRuns || 0, 1);
-                pStats.atkPotionStrength = 0.35;
-              } else if (chosen.includes("Vitality")) {
-                pStats.hpPotionRuns = Math.max(pStats.hpPotionRuns || 0, 1);
-                pStats.hpPotionStrength = 0.35;
-              } else if (chosen.includes("Armored")) {
-                pStats.defPotionRuns = Math.max(pStats.defPotionRuns || 0, 1);
-                pStats.defPotionStrength = 0.35;
-              } else if (chosen.includes("Haste")) {
-                pStats.hastePotionRuns = Math.max(pStats.hastePotionRuns || 0, 1);
-                pStats.hastePotionStrength = 3;
-              }
-            }
-            if (typeof window.pushHeaderToast === "function") {
-              window.pushHeaderToast(
-                `✦ Fairy Sanctuary Blessing! Activated: ${chosen}!`,
-                "#ffd700",
-              );
-            }
-          } else {
-            if (typeof window.pushHeaderToast === "function") {
-              window.pushHeaderToast(
-                "✦ Glimmering Fairy Blessing Claimed!",
-                "#34d399",
-              );
-            }
-          }
-
-          if (window.combatVisuals) {
-            window.combatVisuals.spawnBeam(item.x, "#ffd700", 60, true);
-            window.combatVisuals.spawnParticles(item.x, item.y, 25, "gold_dungeon", 4);
-          }
-          if (window.SoundManager && typeof window.SoundManager.play === "function") {
-            window.SoundManager.play("fairy");
-          }
-        } else if (item.type === "aetheric_spark") {
+      if (window.combatVisuals) {
+        window.combatVisuals.spawnBeam(item.x, "#ffd700", 60, true);
+        window.combatVisuals.spawnParticles(
+          item.x,
+          item.y,
+          25,
+          "gold_dungeon",
+          4,
+        );
+      }
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("fairy");
+      }
+    } else if (item.type === "aetheric_spark") {
       let step = item.step;
       if (step >= 5) {
         window.playerStats.astralAwakeningTimer = 900; // 15s
@@ -11747,64 +12008,64 @@
     }
 
     if (item.type === "glimmering_fairy") {
-          let time = Date.now();
-          let pulse = Math.sin(time / 120) * 2;
-          ctx.save();
+      let time = Date.now();
+      let pulse = Math.sin(time / 120) * 2;
+      ctx.save();
 
-          // Outer Aura
-          let fairyGrad = ctx.createRadialGradient(
-            item.x,
-            item.y,
-            1,
-            item.x,
-            item.y,
-            Math.max(0.1, 14 + pulse),
-          );
-          fairyGrad.addColorStop(0, "#ffffff");
-          fairyGrad.addColorStop(0.4, "#00ffff");
-          fairyGrad.addColorStop(1, "rgba(0, 210, 255, 0)");
-          ctx.fillStyle = fairyGrad;
-          ctx.beginPath();
-          ctx.arc(item.x, item.y, Math.max(0.1, 14 + pulse), 0, Math.PI * 2);
-          ctx.fill();
+      // Outer Aura
+      let fairyGrad = ctx.createRadialGradient(
+        item.x,
+        item.y,
+        1,
+        item.x,
+        item.y,
+        Math.max(0.1, 14 + pulse),
+      );
+      fairyGrad.addColorStop(0, "#ffffff");
+      fairyGrad.addColorStop(0.4, "#00ffff");
+      fairyGrad.addColorStop(1, "rgba(0, 210, 255, 0)");
+      ctx.fillStyle = fairyGrad;
+      ctx.beginPath();
+      ctx.arc(item.x, item.y, Math.max(0.1, 14 + pulse), 0, Math.PI * 2);
+      ctx.fill();
 
-          // Translucent Fluttering Wings
-          let wingAngle = Math.sin(time / 40) * 0.4;
-          ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-          ctx.strokeStyle = "#00ffff";
-          ctx.lineWidth = 1.0;
+      // Translucent Fluttering Wings
+      let wingAngle = Math.sin(time / 40) * 0.4;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+      ctx.strokeStyle = "#00ffff";
+      ctx.lineWidth = 1.0;
 
-          // Left Wing
-          ctx.save();
-          ctx.translate(item.x - 2, item.y - 2);
-          ctx.rotate(-0.3 + wingAngle);
-          ctx.beginPath();
-          ctx.ellipse(-6, -2, 7, 3, Math.PI / 4, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
+      // Left Wing
+      ctx.save();
+      ctx.translate(item.x - 2, item.y - 2);
+      ctx.rotate(-0.3 + wingAngle);
+      ctx.beginPath();
+      ctx.ellipse(-6, -2, 7, 3, Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
 
-          // Right Wing
-          ctx.save();
-          ctx.translate(item.x + 2, item.y - 2);
-          ctx.rotate(0.3 - wingAngle);
-          ctx.beginPath();
-          ctx.ellipse(6, -2, 7, 3, -Math.PI / 4, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
+      // Right Wing
+      ctx.save();
+      ctx.translate(item.x + 2, item.y - 2);
+      ctx.rotate(0.3 - wingAngle);
+      ctx.beginPath();
+      ctx.ellipse(6, -2, 7, 3, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
 
-          // Glowing Core
-          ctx.fillStyle = "#ffd700";
-          ctx.beginPath();
-          ctx.arc(item.x, item.y, 4, 0, Math.PI * 2);
-          ctx.fill();
+      // Glowing Core
+      ctx.fillStyle = "#ffd700";
+      ctx.beginPath();
+      ctx.arc(item.x, item.y, 4, 0, Math.PI * 2);
+      ctx.fill();
 
-          ctx.restore();
-          return;
-        }
+      ctx.restore();
+      return;
+    }
 
-        if (item.type === "anomalous_shard") {
+    if (item.type === "anomalous_shard") {
       if (typeof window.pushHeaderToast === "function") {
         window.pushHeaderToast("[✦] Anomalous Shard shattered!", "#2ecc71");
       }
@@ -14980,20 +15241,21 @@
           window.playerStats.totalLifetimeKills =
             (window.playerStats.totalLifetimeKills || 0) + 1;
           if (m.isRare) {
-                      window.playerStats.rareSpawnsSlain =
-                        (window.playerStats.rareSpawnsSlain || 0) + 1;
-                    }
+            window.playerStats.rareSpawnsSlain =
+              (window.playerStats.rareSpawnsSlain || 0) + 1;
+          }
 
-                    if ((m.isRare || m.eliteAffix) && Math.random() < 0.40) {
-                      const elixirs = [
-                        "Basic Attack Elixir",
-                        "Basic Vitality Elixir",
-                        "Basic Armored Elixir",
-                        "Basic Haste Elixir",
-                      ];
-                      let rolledElixir = elixirs[Math.floor(Math.random() * elixirs.length)];
-                      window.addUseDrop(rolledElixir, 1, false);
-                    }
+          if ((m.isRare || m.eliteAffix) && Math.random() < 0.4) {
+            const elixirs = [
+              "Basic Attack Elixir",
+              "Basic Vitality Elixir",
+              "Basic Armored Elixir",
+              "Basic Haste Elixir",
+            ];
+            let rolledElixir =
+              elixirs[Math.floor(Math.random() * elixirs.length)];
+            window.addUseDrop(rolledElixir, 1, false);
+          }
 
           if (typeof window.progressMission === "function") {
             window.progressMission("kills", 1);
@@ -15235,9 +15497,9 @@
           }
 
           // Procedural Card Drop Roll (Regular: 0.5% base, Rare: 20% base, multiplied by Drop Rate)
-                    dropMult = pStats.drop || 1.0;
-                    let cardBaseChance = m.isRare ? 0.20 : 0.005;
-                    if (Math.random() < cardBaseChance * dropMult) {
+          dropMult = pStats.drop || 1.0;
+          let cardBaseChance = m.isRare ? 0.2 : 0.005;
+          if (Math.random() < cardBaseChance * dropMult) {
             let cardKey = m.visualType || m.type;
             if (window.MONSTER_CARDS_DATA[cardKey]) {
               let cardItem = {
@@ -16314,8 +16576,8 @@
             }
 
             // Boss Card Drop Roll (25% base chance, multiplied by Drop Rate)
-                      let dropMult = pStats.drop || 1.0;
-                      if (Math.random() < 0.25 * dropMult) {
+            let dropMult = pStats.drop || 1.0;
+            if (Math.random() < 0.25 * dropMult) {
               let cardKey = bm.visualType || bm.type;
               if (window.MONSTER_CARDS_DATA[cardKey]) {
                 let cardItem = {
@@ -18820,68 +19082,96 @@
     let getHasteCol = (s) =>
       s >= 3 ? "#ffaa00" : s >= 2 ? "#fbbf24" : "#f1c40f";
 
-    if ((stats.atkPotionRuns || 0) > 0) {
+    if ((stats.atkPotionRuns || 0) > 0 || (stats.atkPotionTimer || 0) > 0) {
       let col = getAtkCol(stats.atkPotionStrength || 0.1);
+      let valStr =
+        stats.atkPotionTimer > 0
+          ? `${Math.ceil(stats.atkPotionTimer / 60)}s`
+          : `${stats.atkPotionRuns}R`;
       badges.push({
         label: "ATK",
-        val: `${stats.atkPotionRuns}R`,
+        val: valStr,
         col: col,
         title: `Attack Elixir (+${Math.round((stats.atkPotionStrength || 0.1) * 100)}% Atk, ${stats.atkPotionRuns} run(s) left)`,
       });
     }
 
-    if ((stats.hpPotionRuns || 0) > 0) {
+    if ((stats.hpPotionRuns || 0) > 0 || (stats.hpPotionTimer || 0) > 0) {
       let col = getHpCol(stats.hpPotionStrength || 0.1);
+      let valStr =
+        stats.hpPotionTimer > 0
+          ? `${Math.ceil(stats.hpPotionTimer / 60)}s`
+          : `${stats.hpPotionRuns}R`;
       badges.push({
         label: "HP",
-        val: `${stats.hpPotionRuns}R`,
+        val: valStr,
         col: col,
         title: `Vitality Elixir (+${Math.round((stats.hpPotionStrength || 0.1) * 100)}% Max HP, ${stats.hpPotionRuns} run(s) left)`,
       });
     }
 
-    if ((stats.defPotionRuns || 0) > 0) {
+    if ((stats.defPotionRuns || 0) > 0 || (stats.defPotionTimer || 0) > 0) {
       let col = getDefCol(stats.defPotionStrength || 0.1);
+      let valStr =
+        stats.defPotionTimer > 0
+          ? `${Math.ceil(stats.defPotionTimer / 60)}s`
+          : `${stats.defPotionRuns}R`;
       badges.push({
         label: "DEF",
-        val: `${stats.defPotionRuns}R`,
+        val: valStr,
         col: col,
         title: `Armored Elixir (+${Math.round((stats.defPotionStrength || 0.1) * 100)}% Def, ${stats.defPotionRuns} run(s) left)`,
       });
     }
 
-    if ((stats.hastePotionRuns || 0) > 0) {
+    if ((stats.hastePotionRuns || 0) > 0 || (stats.hastePotionTimer || 0) > 0) {
       let col = getHasteCol(stats.hastePotionStrength || 1);
+      let valStr =
+        stats.hastePotionTimer > 0
+          ? `${Math.ceil(stats.hastePotionTimer / 60)}s`
+          : `${stats.hastePotionRuns}R`;
       badges.push({
         label: "SPD",
-        val: `${stats.hastePotionRuns}R`,
+        val: valStr,
         col: col,
         title: `Haste Elixir (+Speed, ${stats.hastePotionRuns} run(s) left)`,
       });
     }
 
-    if ((stats.xpPotionRuns || 0) > 0) {
+    if ((stats.xpPotionRuns || 0) > 0 || (stats.xpPotionTimer || 0) > 0) {
+      let valStr =
+        stats.xpPotionTimer > 0
+          ? `${Math.ceil(stats.xpPotionTimer / 60)}s`
+          : `${stats.xpPotionRuns}R`;
       badges.push({
         label: "2x XP",
-        val: `${stats.xpPotionRuns}R`,
+        val: valStr,
         col: "#c084fc",
         title: `Double XP Elixir (+100% XP, ${stats.xpPotionRuns} run(s) left)`,
       });
     }
 
-    if ((stats.dropPotionRuns || 0) > 0) {
+    if ((stats.dropPotionRuns || 0) > 0 || (stats.dropPotionTimer || 0) > 0) {
+      let valStr =
+        stats.dropPotionTimer > 0
+          ? `${Math.ceil(stats.dropPotionTimer / 60)}s`
+          : `${stats.dropPotionRuns}R`;
       badges.push({
         label: "2x DROP",
-        val: `${stats.dropPotionRuns}R`,
+        val: valStr,
         col: "#34d399",
         title: `Double Drop Elixir (+100% Drop Rate, ${stats.dropPotionRuns} run(s) left)`,
       });
     }
 
-    if ((stats.qlyPotionRuns || 0) > 0) {
+    if ((stats.qlyPotionRuns || 0) > 0 || (stats.qlyPotionTimer || 0) > 0) {
+      let valStr =
+        stats.qlyPotionTimer > 0
+          ? `${Math.ceil(stats.qlyPotionTimer / 60)}s`
+          : `${stats.qlyPotionRuns}R`;
       badges.push({
         label: "QLY",
-        val: `${stats.qlyPotionRuns}R`,
+        val: valStr,
         col: "#f472b6",
         title: `Drop Quality Elixir (+50% Drop Quality, ${stats.qlyPotionRuns} run(s) left)`,
       });
@@ -19321,7 +19611,11 @@
 
       if (item.type === "card") {
         let cardKey = item.cardKey;
-        let cardData = (window.MONSTER_CARDS_DATA && window.MONSTER_CARDS_DATA[cardKey]) || { name: item.name || "Monster Card", set: "Whispering Woods" };
+        let cardData = (window.MONSTER_CARDS_DATA &&
+          window.MONSTER_CARDS_DATA[cardKey]) || {
+          name: item.name || "Monster Card",
+          set: "Whispering Woods",
+        };
         let setColors = {
           "Whispering Woods": "#2ecc71",
           "Mountain Peaks": "#3498db",
@@ -19331,27 +19625,33 @@
           "Cosmic Wardens": "#f1c40f",
         };
         let setCol = setColors[cardData.set] || "#ffd700";
-        let iconHtml = window.getItemIconSvg ? window.getItemIconSvg(item, 44) : "";
-        let ownedQty = (window.playerStats && window.playerStats.monsterCards && window.playerStats.monsterCards[cardKey]) || 1;
+        let iconHtml = window.getItemIconSvg
+          ? window.getItemIconSvg(item, 44)
+          : "";
+        let ownedQty =
+          (window.playerStats &&
+            window.playerStats.monsterCards &&
+            window.playerStats.monsterCards[cardKey]) ||
+          1;
 
         tt.innerHTML = `
-          <div class="tooltip-card" style="border: 2px solid ${setCol}; border-radius: 6px; background: rgba(10, 8, 20, 0.96); padding: 12px; width: 250px; box-sizing: border-box;">
-            <div style="font-size: 8px; font-weight: bold; color: ${setCol}; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
-              [ BESTIARY CARD • ${cardData.set.toUpperCase()} ]
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
-              ${iconHtml}
-              <div style="display: flex; flex-direction: column; min-width: 0; text-align: left;">
-                <span class="tt-title" style="color: ${setCol}; font-weight: bold; font-size: 13px; margin: 0;">${cardData.name || item.name}</span>
-                <span style="color: #94a3b8; font-size: 9px; font-family: monospace;">Collected: <strong style="color: #ffffff;">x${ownedQty}</strong></span>
+            <div class="tooltip-card" style="border: 2px solid ${setCol}; border-radius: 6px; background: rgba(10, 8, 20, 0.96); padding: 12px; width: 250px; box-sizing: border-box;">
+              <div style="font-size: 8px; font-weight: bold; color: ${setCol}; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
+                [ BESTIARY CARD • ${cardData.set.toUpperCase()} ]
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                ${iconHtml}
+                <div style="display: flex; flex-direction: column; min-width: 0; text-align: left;">
+                  <span class="tt-title" style="color: ${setCol}; font-weight: bold; font-size: 13px; margin: 0;">${cardData.name || item.name}</span>
+                  <span style="color: #94a3b8; font-size: 9px; font-family: monospace;">Collected: <strong style="color: #ffffff;">x${ownedQty}</strong></span>
+                </div>
+              </div>
+              <div style="font-size: 9.5px; color: #cbd5e1; font-family: monospace; line-height: 1.4; text-align: left;">
+                <strong style="color: #ffd700; display: block; margin-bottom: 2px;">[ALBUM AFFILIATION]</strong>
+                Belongs to the <strong>${cardData.set}</strong> set. Collect all set cards to unlock passive set bonuses in the Bestiary Album!
               </div>
             </div>
-            <div style="font-size: 9.5px; color: #cbd5e1; font-family: monospace; line-height: 1.4; text-align: left;">
-              <strong style="color: #ffd700; display: block; margin-bottom: 2px;">[ALBUM AFFILIATION]</strong>
-              Belongs to the <strong>${cardData.set}</strong> set. Collect all set cards to unlock passive set bonuses in the Bestiary Album!
-            </div>
-          </div>
-        `;
+          `;
         tt.style.borderColor = setCol;
         tt.style.display = "block";
         window.positionTooltip(e, tt);
@@ -19362,6 +19662,85 @@
       tt.style.borderColor = window.getTierColor
         ? window.getTierColor(item.statsRolled)
         : "#3498db";
+      tt.style.display = "block";
+      window.positionTooltip(e, tt);
+    };
+
+    window.showConsumableTooltip = function (e, name) {
+      if (e && e.stopPropagation) e.stopPropagation();
+      let tt = document.getElementById("game-tooltip");
+      if (!tt) return;
+
+      let data = (window.useDex && window.useDex[name]) || {
+        desc: "Consumable Item",
+        color: "#2ecc71"
+      };
+
+      let col = data.color || "#2ecc71";
+      let iconHtml = window.getUseIconHtml ? window.getUseIconHtml(name, 36) : "";
+
+      let effectText = "";
+      if (name.includes("Attack Elixir")) {
+        let pct = name.includes("Supernal") ? "35%" : name.includes("Greater") ? "20%" : "10%";
+        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
+        effectText = `Increases Attack Power by <strong style="color: #2ecc71;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      } else if (name.includes("Vitality Elixir")) {
+        let pct = name.includes("Supernal") ? "35%" : name.includes("Greater") ? "20%" : "10%";
+        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
+        effectText = `Increases Maximum HP by <strong style="color: #e74c3c;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      } else if (name.includes("Armored Elixir")) {
+        let pct = name.includes("Supernal") ? "35%" : name.includes("Greater") ? "20%" : "10%";
+        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
+        effectText = `Increases Defense by <strong style="color: #3498db;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      } else if (name.includes("Haste Elixir")) {
+        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
+        effectText = `Increases Movement Speed for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      } else if (name.includes("Double XP Elixir")) {
+        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
+        effectText = `Doubles all gained Experience (XP) by <strong style="color: #a855f7;">+100%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      } else if (name.includes("Double Drop Elixir")) {
+        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
+        effectText = `Doubles item drop rate by <strong style="color: #22c55e;">+100%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      } else if (name.includes("Drop Quality Elixir")) {
+        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
+        effectText = `Increases item drop quality floor by <strong style="color: #3b82f6;">+50%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      } else if (name.includes("SP Reset Scroll")) {
+        effectText = `Instantly resets and <strong style="color: #9b59b6;">refunds all uncommitted and committed Attribute SP allocations</strong> back to your character pool.`;
+      } else if (name.includes("Cavern Sigil Sack")) {
+        effectText = `Guarantees <strong style="color: #c084fc;">1x random Cavern Sigil</strong> scaled up to your peak stage level, with affix rolls affected by base drop quality.`;
+      } else if (name === "Monster Card Sack") {
+        effectText = `Guarantees <strong style="color: #ffd700;">5x random Monster Cards</strong> added to your Bestiary Album. Complete sets to earn massive passive milestone bonuses.`;
+      } else if (name === "Astral Singularity Cache") {
+        effectText = `Unseals a <strong style="color: #a855f7;">highly valuable Unique Equipment Item</strong> scaled to peak stage level, along with potential material caches.`;
+      } else if (name === "Astral Artifact Cache") {
+        effectText = `Guarantees <strong style="color: #1abc9c;">1x Rare Artifact</strong> and unseals <strong style="color: #2ecc71;">2 to 4 Catalyst Cores</strong> directly into your stash.`;
+      } else if (name === "Daily Reward Sack") {
+        effectText = `Standardized Daily Reward. Consume to initiate unboxing. Guarantees <strong style="color: #ffd700;">1 QP</strong>, <strong style="color: #38bdf8;">1x Equipment</strong> scaled to Lifetime Peak Stage, and rolls extra loot with consecutive item chances!`;
+      } else if (name.includes("Sack") || name.includes("Crate")) {
+        effectText = `Guarantees <strong style="color: #f1c40f;">1x Equipment item</strong> scaled to peak stage level plus <strong style="color: #34d399;">1 to 2 basic elixirs</strong>.`;
+      } else {
+        effectText = data.desc || "Consumable Item";
+      }
+
+      tt.innerHTML = `
+        <div class="tooltip-card" style="border: 2px solid ${col}; border-radius: 6px; background: rgba(10, 8, 20, 0.96); padding: 12px; width: 250px; box-sizing: border-box;">
+          <div style="font-size: 8px; font-weight: bold; color: ${col}; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
+            [ CONSUMABLE ITEM ]
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+            ${iconHtml}
+            <div style="display: flex; flex-direction: column; min-width: 0; text-align: left;">
+              <span class="tt-title" style="color: ${col}; font-weight: bold; font-size: 13px; margin: 0; border: none; padding: 0;">${name}</span>
+              <span style="color: #94a3b8; font-size: 9px; font-family: monospace;">Consumable</span>
+            </div>
+          </div>
+          <div style="font-size: 9.5px; color: #cbd5e1; font-family: monospace; line-height: 1.4; text-align: left;">
+            <strong style="color: #ffd700; display: block; margin-bottom: 2px;">EFFECT:</strong>
+            ${effectText}
+          </div>
+        </div>
+      `;
+      tt.style.borderColor = col;
       tt.style.display = "block";
       window.positionTooltip(e, tt);
     };
@@ -19580,88 +19959,60 @@
   window.activeProfileMobileTab = "stats";
 
   // --- CONSTELLATION VIEWPORT AUTO-FIT & BOUNDS CENTERER ---
-    window.fitConstellationTreeToViewport = function () {
-      let viewport = document.querySelector(".constellation-viewport");
-      let nodesLayer = document.querySelector(".constellation-nodes-layer");
-      let canvas = document.getElementById("skill-constellation-canvas");
-      if (!viewport || !nodesLayer) return;
+  window.fitConstellationTreeToViewport = function () {
+    if (window.SkillTreeManager) {
+      window.SkillTreeManager.centerOnStarter();
+    }
+  };
 
-      let nodes = nodesLayer.querySelectorAll(".constellation-node");
-      if (nodes.length === 0) return;
+  window.openSkillTree = function () {
+    if (typeof window.hideTooltip === "function") window.hideTooltip();
+    let modal = document.getElementById("mastery-modal");
+    if (!modal) return;
+    modal.style.display = "flex";
+    if (window.SkillTreeManager) {
+      window.SkillTreeManager.renderSkillTreeUI();
+    }
+  };
 
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
-
-      nodes.forEach((node) => {
-        let x = parseFloat(node.style.left) || 0;
-        let y = parseFloat(node.style.top) || 0;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      });
-
-      let viewW = viewport.clientWidth || 600;
-      let viewH = viewport.clientHeight || 380;
-
-      let treeW = maxX - minX + 90; // 90px node size buffer
-      let treeH = maxY - minY + 110; // 110px label buffer
-
-      let scale = Math.min(0.95, Math.min(viewW / treeW, viewH / treeH));
-      let offsetX = (viewW - (minX + maxX) * scale) / 2;
-      let offsetY = (viewH - (minY + maxY) * scale) / 2;
-
-      nodesLayer.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-      nodesLayer.style.transformOrigin = "0 0";
-      if (canvas) {
-        canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-        canvas.style.transformOrigin = "0 0";
-      }
-    };
-
-    window.openSkillTree = function () {
-      if (typeof window.hideTooltip === "function") window.hideTooltip();
-      let modal = document.getElementById("mastery-modal");
-      if (!modal) return;
+  window.toggleMasteryModal = function () {
+    if (typeof window.hideTooltip === "function") window.hideTooltip();
+    let modal = document.getElementById("mastery-modal");
+    if (!modal) return;
+    if (modal.style.display === "none" || modal.style.display === "") {
       modal.style.display = "flex";
       if (window.SkillTreeManager) {
         window.SkillTreeManager.renderSkillTreeUI();
-        setTimeout(window.fitConstellationTreeToViewport, 50);
       }
-    };
-
-  window.toggleMasteryModal = function () {
-      if (typeof window.hideTooltip === "function") window.hideTooltip();
-      let modal = document.getElementById("mastery-modal");
-      if (!modal) return;
-      if (modal.style.display === "none" || modal.style.display === "") {
-        modal.style.display = "flex";
-        if (window.SkillTreeManager) {
-          window.SkillTreeManager.renderSkillTreeUI();
-          setTimeout(window.fitConstellationTreeToViewport, 50);
-        }
-      } else {
+    } else {
       modal.style.display = "none";
       window.lastModalCloseTime = Date.now();
+      let profileCard = document.querySelector(".profile-card");
+      if (profileCard) {
+        profileCard.classList.remove("skills-fullscreen-mode");
+      }
       if (
         window.SkillTreeManager &&
         typeof window.SkillTreeManager.stopAnimationLoop === "function"
       ) {
         window.SkillTreeManager.stopAnimationLoop();
       }
+      if (typeof window.stopBestiaryAnimLoop === "function") {
+        window.stopBestiaryAnimLoop();
+      }
     }
   };
 
   window.switchProfileTab = function (tabKey) {
-      window.activeProfileMobileTab = tabKey;
-      const tabs = [
-        "stats",
-        "gear",
-        "satchel",
-        "relics",
-        "album",
-        "achievements",
-      ];
+    window.activeProfileMobileTab = tabKey;
+    const tabs = [
+      "stats",
+      "gear",
+      "satchel",
+      "relics",
+      "album",
+      "achievements",
+    ];
     tabs.forEach((t) => {
       let btn = document.getElementById(`profile-tab-${t}`);
       let sec = document.getElementById(`profile-sec-${t}`);
@@ -19690,228 +20041,174 @@
   };
 
   // --- BESTIARY ANIMATED VIEWPORT LOOP & SET REWARD HANDLERS ---
-    window.bestiaryAnimFrameId = null;
+  window.bestiaryAnimFrameId = null;
 
-    window.stopBestiaryAnimLoop = function () {
-      if (window.bestiaryAnimFrameId) {
-        cancelAnimationFrame(window.bestiaryAnimFrameId);
+  window.stopBestiaryAnimLoop = function () {
+    if (window.bestiaryAnimFrameId) {
+      cancelAnimationFrame(window.bestiaryAnimFrameId);
+      window.bestiaryAnimFrameId = null;
+    }
+  };
+
+  window.startBestiaryAnimLoop = function () {
+    window.stopBestiaryAnimLoop();
+
+    function step() {
+      let albumSec = document.getElementById("profile-sec-album");
+      if (!albumSec || !albumSec.classList.contains("active-mobile-section")) {
         window.bestiaryAnimFrameId = null;
+        return;
       }
-    };
 
-    window.startBestiaryAnimLoop = function () {
-      window.stopBestiaryAnimLoop();
+      let canvases = document.querySelectorAll(".bestiary-card-canvas");
+      let time = Date.now();
 
-      function step() {
-        let albumSec = document.getElementById("profile-sec-album");
-        if (!albumSec || !albumSec.classList.contains("active-mobile-section")) {
-          window.bestiaryAnimFrameId = null;
-          return;
-        }
+      canvases.forEach((canvas) => {
+        let type = canvas.dataset.visualType;
+        let isUnlocked = canvas.dataset.unlocked === "true";
+        let ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-        let canvases = document.querySelectorAll(".bestiary-card-canvas");
-        let time = Date.now();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        canvases.forEach((canvas) => {
-          let type = canvas.dataset.visualType;
-          let isUnlocked = canvas.dataset.unlocked === "true";
-          let ctx = canvas.getContext("2d");
-          if (!ctx) return;
+        let mobTypeVal = "mob";
+                let visualTierVal = 0;
+                if (type === "aegis_goliath") {
+                  mobTypeVal = "aegis_goliath";
+                  visualTierVal = 1;
+                } else if (type === "chronos_arbitrator") {
+                  mobTypeVal = "chronos_arbitrator";
+                  visualTierVal = 5;
+                } else if (type === "nexus_overseer") {
+                  mobTypeVal = "nexus_overseer";
+                  visualTierVal = 6;
+                } else if (type === "hooktail") {
+                  mobTypeVal = "prestige_boss";
+                  visualTierVal = 7;
+                } else if (type === "arachnid_treant") {
+                  mobTypeVal = "dungeon_boss";
+                  visualTierVal = 0;
+                } else if (type === "overlord_iron_vault") {
+                  mobTypeVal = "dungeon_boss";
+                  visualTierVal = 2;
+                } else if (type === "corrosive_abomination") {
+                  mobTypeVal = "dungeon_boss";
+                  visualTierVal = 3;
+                } else if (type === "void_overseer") {
+                  mobTypeVal = "dungeon_boss";
+                  visualTierVal = 4;
+                } else if (type === "gilded_vault_keeper") {
+                  mobTypeVal = "dungeon_boss";
+                  visualTierVal = 1;
+                }
 
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let mockMob = {
+                  visualType: type,
+                  type: mobTypeVal,
+                  visualTier: visualTierVal,
+                  x: canvas.width / 2 - 16,
+                  y: canvas.height / 2 - 12,
+                  w: 32,
+                  h: 32,
+                  facing: 1,
+                  walkTimer: time / 150,
+                  hopTimer: Math.floor(time / 50) % 30,
+                  flashTimer: 0,
+                  buffStacks: { haste: 0, def: 0, atk: 0 },
+                  buffTimers: { haste: 0, def: 0, atk: 0 },
+                };
 
-          let mockMob = {
-            visualType: type,
-            type: "mob",
-            x: canvas.width / 2 - 16,
-            y: canvas.height / 2 - 12,
-            w: 32,
-            h: 32,
-            facing: 1,
-            walkTimer: time / 150,
-            hopTimer: Math.floor(time / 50) % 30,
-            flashTimer: 0,
-            buffStacks: { haste: 0, def: 0, atk: 0 },
-            buffTimers: { haste: 0, def: 0, atk: 0 }
-          };
-
-          if (isUnlocked) {
-            if (typeof window.drawSingleMob === "function") {
-              window.drawSingleMob(ctx, mockMob);
-            }
-          } else {
-            // Render Undiscovered Dark Silhouette
-            ctx.save();
-            if (typeof window.drawSingleMob === "function") {
-              window.drawSingleMob(ctx, mockMob);
-            }
-            ctx.globalCompositeOperation = "source-atop";
-            ctx.fillStyle = "rgba(5, 3, 12, 0.94)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Glowing ? Overlay
-            ctx.globalCompositeOperation = "source-over";
-            ctx.font = "bold 18px monospace";
-            ctx.fillStyle = "rgba(255, 215, 0, 0.75)";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("?", canvas.width / 2, canvas.height / 2 + 2);
-            ctx.restore();
+        if (isUnlocked) {
+          if (typeof window.drawSingleMob === "function") {
+            window.drawSingleMob(ctx, mockMob);
           }
-        });
+        } else {
+          // Render Undiscovered Dark Silhouette
+          ctx.save();
+          if (typeof window.drawSingleMob === "function") {
+            window.drawSingleMob(ctx, mockMob);
+          }
+          ctx.globalCompositeOperation = "source-atop";
+          ctx.fillStyle = "rgba(5, 3, 12, 0.94)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        window.bestiaryAnimFrameId = requestAnimationFrame(step);
-      }
+          // Glowing ? Overlay
+          ctx.globalCompositeOperation = "source-over";
+          ctx.font = "bold 18px monospace";
+          ctx.fillStyle = "rgba(255, 215, 0, 0.75)";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("?", canvas.width / 2, canvas.height / 2 + 2);
+          ctx.restore();
+        }
+      });
 
       window.bestiaryAnimFrameId = requestAnimationFrame(step);
-    };
+    }
 
-    window.claimBestiarySetReward = function (setKey) {
-      if (!window.playerStats) return;
-      if (!window.playerStats.claimedBestiarySets) {
-        window.playerStats.claimedBestiarySets = {};
-      }
+    window.bestiaryAnimFrameId = requestAnimationFrame(step);
+  };
 
-      if (window.playerStats.claimedBestiarySets[setKey]) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("[!] Set rewards already claimed!", "#e74c3c");
-        }
-        return;
-      }
+  window.claimBestiarySetReward = function (setKey) {
+    if (!window.playerStats) return;
+    if (!window.playerStats.claimedBestiarySets) {
+      window.playerStats.claimedBestiarySets = {};
+    }
 
-      let setCards = Object.keys(window.MONSTER_CARDS_DATA).filter(
-        (k) => window.MONSTER_CARDS_DATA[k].set === setKey,
-      );
-
-      let ownedMap = window.playerStats.monsterCards || {};
-      let isComplete = setCards.every((k) => (ownedMap[k] || 0) >= 1);
-
-      if (!isComplete) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast("[!] Complete the full card set to claim rewards!", "#e74c3c");
-        }
-        return;
-      }
-
-      window.playerStats.claimedBestiarySets[setKey] = true;
-
-      // Award +2x Monster Card Sacks
-      window.addUseDrop("Monster Card Sack", 2, false);
-
-      // Award +50 Astral Dust
-      window.playerStats.astralDust = (window.playerStats.astralDust || 0) + 50;
-
+    if (window.playerStats.claimedBestiarySets[setKey]) {
       if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast(`✦ Claimed ${setKey} Set Bonus (+2 Sacks, +50 Astral Dust)!`, "#ffd700");
+        window.pushHeaderToast("[!] Set rewards already claimed!", "#e74c3c");
       }
+      return;
+    }
 
-      if (window.SoundManager && typeof window.SoundManager.play === "function") {
-        window.SoundManager.play("revive");
+    let setCards = Object.keys(window.MONSTER_CARDS_DATA).filter(
+      (k) => window.MONSTER_CARDS_DATA[k].set === setKey,
+    );
+
+    let ownedMap = window.playerStats.monsterCards || {};
+    let isComplete = setCards.every((k) => (ownedMap[k] || 0) >= 1);
+
+    if (!isComplete) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[!] Complete the full card set to claim rewards!",
+          "#e74c3c",
+        );
       }
+      return;
+    }
 
-      if (typeof window.invalidatePlayerStats === "function") window.invalidatePlayerStats();
-      if (typeof window.updateUI === "function") window.updateUI();
-      if (typeof window.renderBestiaryAlbum === "function") window.renderBestiaryAlbum();
-      if (typeof window.saveGame === "function") window.saveGame();
-    };
+    window.playerStats.claimedBestiarySets[setKey] = true;
 
-    window.renderBestiaryAlbum = function () {
-      let sec = document.getElementById("profile-sec-album");
-      if (!sec) return;
+    // Award +2x Monster Card Sacks
+    window.addUseDrop("Monster Card Sack", 2, false);
 
-      if (!window.playerStats.claimedBestiarySets) {
-        window.playerStats.claimedBestiarySets = {};
-      }
+    // Award +50 Astral Dust
+    window.playerStats.astralDust = (window.playerStats.astralDust || 0) + 50;
 
-      let ownedMap = window.playerStats.monsterCards || {};
-      let claimedMap = window.playerStats.claimedBestiarySets || {};
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        `✦ Claimed ${setKey} Set Bonus (+2 Sacks, +50 Astral Dust)!`,
+        "#ffd700",
+      );
+    }
 
-      let setsList = [
-        "Whispering Woods",
-        "Mountain Peaks",
-        "Inferno Depths",
-        "Fungal Swamp",
-        "Void Singularity",
-        "Cosmic Wardens",
-      ];
+    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+      window.SoundManager.play("revive");
+    }
 
-      let setColors = {
-        "Whispering Woods": "#2ecc71",
-        "Mountain Peaks": "#3498db",
-        "Inferno Depths": "#e74c3c",
-        "Fungal Swamp": "#1abc9c",
-        "Void Singularity": "#9b59b6",
-        "Cosmic Wardens": "#f1c40f",
-      };
+    if (typeof window.invalidatePlayerStats === "function")
+      window.invalidatePlayerStats();
+    if (typeof window.updateUI === "function") window.updateUI();
+    if (typeof window.renderBestiaryAlbum === "function")
+      window.renderBestiaryAlbum();
+    if (typeof window.saveGame === "function") window.saveGame();
+  };
 
-      let setBlocksHtml = setsList
-        .map((setName) => {
-          let setCol = setColors[setName] || "#ffd700";
-          let cardsInSet = Object.keys(window.MONSTER_CARDS_DATA).filter(
-            (k) => window.MONSTER_CARDS_DATA[k].set === setName,
-          );
-
-          let unlockedInSet = cardsInSet.filter(
-            (k) => (ownedMap[k] || 0) >= 1,
-          ).length;
-          let isSetComplete = unlockedInSet === cardsInSet.length;
-          let isClaimed = !!claimedMap[setName];
-
-          let claimBtnHtml = "";
-          if (isClaimed) {
-            claimBtnHtml = `<span style="font-size:8.5px; font-weight:bold; color:#34d399; font-family:monospace; background:rgba(52,211,153,0.12); padding:3px 8px; border-radius:4px; border:1px solid #10b981;">[SET BONUS CLAIMED]</span>`;
-          } else if (isSetComplete) {
-            claimBtnHtml = `<button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 10px;" onclick="event.stopPropagation(); window.claimBestiarySetReward('${setName}')">CLAIM SET BONUS (+2 SACKS, +50 DUST)</button>`;
-          } else {
-            claimBtnHtml = `<span style="font-size:8.5px; color:#64748b; font-family:monospace;">Collect all ${cardsInSet.length} cards to unlock</span>`;
-          }
-
-          let cardCardsHtml = cardsInSet
-            .map((cardKey) => {
-              let cData = window.MONSTER_CARDS_DATA[cardKey];
-              let ownedQty = ownedMap[cardKey] || 0;
-              let isUnlocked = ownedQty > 0;
-
-              return `
-                <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"}" style="border-color:${isUnlocked ? setCol : "#334155"}; background:${isUnlocked ? "rgba(10,14,23,0.7)" : "rgba(5,3,12,0.85)"};">
-                  <div style="font-size:7.5px; color:${isUnlocked ? setCol : "#64748b"}; font-weight:bold; font-family:monospace;">${isUnlocked ? "COLLECTED" : "UNDISCOVERED"}</div>
-                  <canvas class="bestiary-card-canvas" data-visual-type="${cardKey}" data-unlocked="${isUnlocked}" width="64" height="64" style="width:52px; height:52px; display:block; margin:4px auto;"></canvas>
-                  <div class="bestiary-card-title" style="color:${isUnlocked ? "#ffffff" : "#64748b"}; font-size:9.5px; margin-bottom:2px;">${isUnlocked ? cData.name : "???"}</div>
-                  <div style="font-size:8px; color:${isUnlocked ? "#ffd700" : "#94a3b8"}; font-family:monospace;">${isUnlocked ? `Owned: x${ownedQty}` : cData.hint || "Unknown Area"}</div>
-                </div>
-              `;
-            })
-            .join("");
-
-          return `
-            <div style="background:rgba(15,23,42,0.4); border:1.5px solid ${setCol}; border-radius:8px; padding:10px; margin-bottom:12px; text-align:left;">
-              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:8px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-size:12px; font-weight:900; color:${setCol}; text-transform:uppercase; letter-spacing:0.8px;">${setName} SET</span>
-                  <span style="font-size:9px; font-family:monospace; color:#cbd5e1;">(${unlockedInSet}/${cardsInSet.length} Collected)</span>
-                </div>
-                ${claimBtnHtml}
-              </div>
-              <div class="bestiary-grid">
-                ${cardCardsHtml}
-              </div>
-            </div>
-          `;
-        })
-        .join("");
-
-      sec.innerHTML = `
-        <div id="bestiary-content-panel" style="width:100%; height:100%; box-sizing:border-box; overflow-y:auto; padding-right:4px;">
-          ${setBlocksHtml}
-        </div>
-      `;
-
-      window.startBestiaryAnimLoop();
-    };
-
-    window.renderReliquaryTab = function () {
-      let container = document.getElementById("reliquary-content-panel");
-      if (!container) return;
+  window.renderReliquaryTab = function () {
+    let container = document.getElementById("reliquary-content-panel");
+    if (!container) return;
 
     let stats = window.playerStats;
     let activeRelics = stats.activeRelics || [];
@@ -20010,41 +20307,41 @@
     }
 
     let libraryHtml = "";
-        let totalUnlocked = 0;
-        let selectedTrait = window.state ? window.state.selectedAspectTrait : null;
+    let totalUnlocked = 0;
+    let selectedTrait = window.state ? window.state.selectedAspectTrait : null;
 
-        let pool = window.ARTIFACT_POOL || [];
-        pool.forEach((art) => {
-          let power = codex[art.trait] || 0.0;
-          let isUnlocked = power > 0;
-          if (isUnlocked) totalUnlocked++;
+    let pool = window.ARTIFACT_POOL || [];
+    pool.forEach((art) => {
+      let power = codex[art.trait] || 0.0;
+      let isUnlocked = power > 0;
+      if (isUnlocked) totalUnlocked++;
 
-          let isSelected = art.trait === selectedTrait;
-          let col = isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#334155";
-          let op = isUnlocked ? "1.0" : "0.35";
-          let iconHtml = window.getArtifactIconHtml
-            ? window.getArtifactIconHtml(art.trait, 36)
-            : "";
+      let isSelected = art.trait === selectedTrait;
+      let col = isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#334155";
+      let op = isUnlocked ? "1.0" : "0.35";
+      let iconHtml = window.getArtifactIconHtml
+        ? window.getArtifactIconHtml(art.trait, 36)
+        : "";
 
-          let assignButtons = "";
-          if (isUnlocked) {
-            let isSlotted = activeRelics.includes(art.trait);
-            if (isSlotted) {
-              assignButtons = `<span style="color:#2ecc71; font-size:8px; font-weight:bold; font-family:monospace; margin-top:6px;">[SLOTTED]</span>`;
-            } else {
-              assignButtons = `
+      let assignButtons = "";
+      if (isUnlocked) {
+        let isSlotted = activeRelics.includes(art.trait);
+        if (isSlotted) {
+          assignButtons = `<span style="color:#2ecc71; font-size:8px; font-weight:bold; font-family:monospace; margin-top:6px;">[SLOTTED]</span>`;
+        } else {
+          assignButtons = `
                   <div style="display:flex; gap:3px; width:100%; margin-top:6px;">
                     <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 0)">SLOT 1</button>
                     <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 1)">SLOT 2</button>
                     <button class="action-btn-sm" style="font-size:7px; padding:2px 4px; margin:0; line-height:1.2; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}', 2)">SLOT 3</button>
                   </div>
                 `;
-            }
-          } else {
-            assignButtons = `<span style="color:#475569; font-size:7.5px; font-family:monospace; margin-top:6px; font-style:italic;">[LOCKED]</span>`;
-          }
+        }
+      } else {
+        assignButtons = `<span style="color:#475569; font-size:7.5px; font-family:monospace; margin-top:6px; font-style:italic;">[LOCKED]</span>`;
+      }
 
-          libraryHtml += `
+      libraryHtml += `
               <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"} ${isSelected ? "selected-aspect-card" : ""}" style="border-color:${col}; background:${isSelected ? "rgba(212,175,55,0.15)" : "rgba(10,14,23,0.45)"}; opacity:${op}; display:flex; flex-direction:column; justify-content:space-between; padding:8px; min-height:130px; box-shadow: ${isSelected ? "0 0 15px rgba(255,215,0,0.4)" : "inset 0 0 10px " + col + "0d"}; cursor:pointer;" onclick="event.stopPropagation(); window.showRelicDetails('${art.trait}')">
                 <div style="font-size:7px; color:${isUnlocked ? (isSelected ? "#ffd700" : "#1abc9c") : "#475569"}; font-weight:bold; font-family:monospace;">${isUnlocked ? "CODEX ASPECT" : "LOCKED"}</div>
                 <div style="margin:4px 0;">${iconHtml || '<span style="color:#334155;">?</span>'}</div>
@@ -20053,43 +20350,47 @@
                 ${assignButtons}
               </div>
             `;
-        });
+    });
 
-        let progressPct = Math.round((totalUnlocked / pool.length) * 100) || 0;
+    let progressPct = Math.round((totalUnlocked / pool.length) * 100) || 0;
 
-        // Render In-Tab Aspect Inspector Drawer
-        let inspectorHtml = "";
-        if (selectedTrait) {
-          let poolMatch = window.ARTIFACT_POOL.find((a) => a.trait === selectedTrait);
-          if (poolMatch) {
-            let power = codex[selectedTrait] || 0.0;
-            let isUnlocked = power > 0;
-            let iconHtml = window.getArtifactIconHtml ? window.getArtifactIconHtml(selectedTrait, 32) : "";
-            let isSlotted = activeRelics.includes(selectedTrait);
+    // Render In-Tab Aspect Inspector Drawer
+    let inspectorHtml = "";
+    if (selectedTrait) {
+      let poolMatch = window.ARTIFACT_POOL.find(
+        (a) => a.trait === selectedTrait,
+      );
+      if (poolMatch) {
+        let power = codex[selectedTrait] || 0.0;
+        let isUnlocked = power > 0;
+        let iconHtml = window.getArtifactIconHtml
+          ? window.getArtifactIconHtml(selectedTrait, 32)
+          : "";
+        let isSlotted = activeRelics.includes(selectedTrait);
 
-            let powerBadge = isUnlocked
-              ? `<span style="color:#ffd700; font-weight:bold; font-family:monospace; font-size:9.5px;">UNLOCKED (${Math.round(power * 100)}% Roll Strength)</span>`
-              : `<span style="color:#ef4444; font-weight:bold; font-family:monospace; font-size:9.5px;">LOCKED</span>`;
+        let powerBadge = isUnlocked
+          ? `<span style="color:#ffd700; font-weight:bold; font-family:monospace; font-size:9.5px;">UNLOCKED (${Math.round(power * 100)}% Roll Strength)</span>`
+          : `<span style="color:#ef4444; font-weight:bold; font-family:monospace; font-size:9.5px;">LOCKED</span>`;
 
-            let actionBtns = "";
-            if (isUnlocked) {
-              if (isSlotted) {
-                let slotIdx = activeRelics.indexOf(selectedTrait);
-                actionBtns = `<button class="action-btn-sm" style="background:rgba(231,76,60,0.2); border-color:#e74c3c; color:#ff7675; padding:4px 10px; font-size:8.5px;" onclick="event.stopPropagation(); window.unassignRelic(${slotIdx})">UNSLOT FROM ALTAR</button>`;
-              } else {
-                actionBtns = `
+        let actionBtns = "";
+        if (isUnlocked) {
+          if (isSlotted) {
+            let slotIdx = activeRelics.indexOf(selectedTrait);
+            actionBtns = `<button class="action-btn-sm" style="background:rgba(231,76,60,0.2); border-color:#e74c3c; color:#ff7675; padding:4px 10px; font-size:8.5px;" onclick="event.stopPropagation(); window.unassignRelic(${slotIdx})">UNSLOT FROM ALTAR</button>`;
+          } else {
+            actionBtns = `
                   <div style="display:flex; gap:6px;">
                     <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 0)">SLOT 1</button>
                     <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 1)">SLOT 2</button>
                     <button class="action-btn-sm action-btn-equip" style="font-size:8.5px; padding:4px 8px;" onclick="event.stopPropagation(); window.assignRelic('${selectedTrait}', 2)">SLOT 3</button>
                   </div>
                 `;
-              }
-            } else {
-              actionBtns = `<span style="color:#64748b; font-size:8.5px; font-family:monospace; font-style:italic;">Extract this artifact from dungeon runs to unlock its Codex Aspect.</span>`;
-            }
+          }
+        } else {
+          actionBtns = `<span style="color:#64748b; font-size:8.5px; font-family:monospace; font-style:italic;">Extract this artifact from dungeon runs to unlock its Codex Aspect.</span>`;
+        }
 
-            inspectorHtml = `
+        inspectorHtml = `
                       <div class="relic-inspector-drawer">
                         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; margin-bottom:6px;">
                           <div style="display:flex; align-items:center; gap:8px; min-width:0;">
@@ -20110,10 +20411,10 @@
                         </div>
                       </div>
                     `;
-          }
-        }
+      }
+    }
 
-        container.innerHTML = `
+    container.innerHTML = `
             <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; box-sizing:border-box;">
               <!-- Codex Summary Banner -->
               <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #091a18 0%, #050a09 100%); border: 1.5px solid #1abc9c; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
@@ -20158,19 +20459,19 @@
               </div>
             </div>
           `;
-      };
+  };
 
-      window.showRelicDetails = function (trait) {
-        window.state = window.state || {};
-        if (window.state.selectedAspectTrait === trait) {
-          window.state.selectedAspectTrait = null;
-        } else {
-          window.state.selectedAspectTrait = trait;
-        }
-        window.renderReliquaryTab();
-      };
+  window.showRelicDetails = function (trait) {
+    window.state = window.state || {};
+    if (window.state.selectedAspectTrait === trait) {
+      window.state.selectedAspectTrait = null;
+    } else {
+      window.state.selectedAspectTrait = trait;
+    }
+    window.renderReliquaryTab();
+  };
 
-      window.assignRelic = function (trait, slotIndex) {
+  window.assignRelic = function (trait, slotIndex) {
     let stats = window.playerStats;
     stats.activeRelics = stats.activeRelics || [];
 
@@ -20191,36 +20492,36 @@
   };
 
   window.unassignRelic = function (slotIndex) {
-      let stats = window.playerStats;
-      stats.activeRelics = stats.activeRelics || [];
-      stats.activeRelics[slotIndex] = null;
+    let stats = window.playerStats;
+    stats.activeRelics = stats.activeRelics || [];
+    stats.activeRelics[slotIndex] = null;
 
-      if (window.SoundManager) window.SoundManager.play("death");
-      window.invalidatePlayerStats();
-      window.updateUI();
-      window.renderReliquaryTab();
-      window.saveGame();
-    };
+    if (window.SoundManager) window.SoundManager.play("death");
+    window.invalidatePlayerStats();
+    window.updateUI();
+    window.renderReliquaryTab();
+    window.saveGame();
+  };
 
-    // Protected accessor enforcing the in-tab Aspect Inspector Drawer
-    Object.defineProperty(window, "showRelicDetails", {
-      configurable: true,
-      enumerable: true,
-      get() {
-        return function (trait) {
-          window.state = window.state || {};
-          if (window.state.selectedAspectTrait === trait) {
-            window.state.selectedAspectTrait = null;
-          } else {
-            window.state.selectedAspectTrait = trait;
-          }
-          window.renderReliquaryTab();
-        };
-      },
-      set() {
-        // Guarded no-op: Blocks duplicate assignments from restoring full-screen modals
-      },
-    });
+  // Protected accessor enforcing the in-tab Aspect Inspector Drawer
+  Object.defineProperty(window, "showRelicDetails", {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return function (trait) {
+        window.state = window.state || {};
+        if (window.state.selectedAspectTrait === trait) {
+          window.state.selectedAspectTrait = null;
+        } else {
+          window.state.selectedAspectTrait = trait;
+        }
+        window.renderReliquaryTab();
+      };
+    },
+    set() {
+      // Guarded no-op: Blocks duplicate assignments from restoring full-screen modals
+    },
+  });
 
   window.state.achievementFilter = "all";
 
@@ -20511,32 +20812,32 @@
   };
 
   window.toggleProfileModal = function () {
-      window.hideTooltip();
-      let modal = document.getElementById("profile-modal");
-      if (!modal) return;
+    window.hideTooltip();
+    let modal = document.getElementById("profile-modal");
+    if (!modal) return;
 
-      if (modal.style.display === "none" || modal.style.display === "") {
-        modal.style.display = "flex";
-        window.switchProfileTab(window.activeProfileMobileTab || "stats");
-        window.renderProfileModal();
-      } else {
-        modal.style.display = "none";
-        window.lastModalCloseTime = Date.now();
-        let profileCard = document.querySelector(".profile-card");
-        if (profileCard) {
-          profileCard.classList.remove("skills-fullscreen-mode");
-        }
-        if (
-          window.SkillTreeManager &&
-          typeof window.SkillTreeManager.stopAnimationLoop === "function"
-        ) {
-          window.SkillTreeManager.stopAnimationLoop();
-        }
-        if (typeof window.stopBestiaryAnimLoop === "function") {
-          window.stopBestiaryAnimLoop();
-        }
+    if (modal.style.display === "none" || modal.style.display === "") {
+      modal.style.display = "flex";
+      window.switchProfileTab(window.activeProfileMobileTab || "stats");
+      window.renderProfileModal();
+    } else {
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
+      let profileCard = document.querySelector(".profile-card");
+      if (profileCard) {
+        profileCard.classList.remove("skills-fullscreen-mode");
       }
-    };
+      if (
+        window.SkillTreeManager &&
+        typeof window.SkillTreeManager.stopAnimationLoop === "function"
+      ) {
+        window.SkillTreeManager.stopAnimationLoop();
+      }
+      if (typeof window.stopBestiaryAnimLoop === "function") {
+        window.stopBestiaryAnimLoop();
+      }
+    }
+  };
 
   window.renderProfileModal = function () {
     let statsListEl = document.getElementById("profile-stats-list");
@@ -21042,44 +21343,47 @@
           .join("");
       }
     } else if (stashTab === "USE") {
-      let useObj = window.inventory.USE || {};
-      let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
+          let useObj = window.inventory.USE || {};
+          let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
 
-      if (sectionHeaderEl) {
-        sectionHeaderEl.innerHTML = `CONSUMABLES (<span id="profile-stash-count">${keys.length}</span>)`;
-      }
+          if (sectionHeaderEl) {
+            sectionHeaderEl.innerHTML = `CONSUMABLES (<span id="profile-stash-count">${keys.length}</span>)`;
+          }
 
-      if (keys.length === 0) {
-        stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
-      } else {
-        stashListEl.innerHTML = keys
-          .map((k) => {
-            let count = useObj[k];
-            let data = window.useDex[k] || {
-              desc: "Consumable Item",
-              color: "#2ecc71",
-            };
-            let col = data.color || "#2ecc71";
-            let iconHtml = window.getUseIconHtml
-              ? window.getUseIconHtml(k, 28)
-              : "";
+          if (keys.length === 0) {
+            stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
+          } else {
+            stashListEl.innerHTML = keys
+              .map((k) => {
+                let count = useObj[k];
+                let data = window.useDex[k] || {
+                  desc: "Consumable Item",
+                  color: "#2ecc71",
+                };
+                let col = data.color || "#2ecc71";
+                let iconHtml = window.getUseIconHtml
+                  ? window.getUseIconHtml(k, 28)
+                  : "";
 
-            return `
-                              <div class="consumable-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px;">
-                                ${iconHtml}
-                                <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
-                                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
-                                    <span style="color:#ffffff; font-family:monospace; font-weight:bold; font-size:10.5px; margin-left:4px;">x${count}</span>
+                return `
+                                  <div class="consumable-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px; cursor: pointer;"
+                                       onmouseenter="window.showConsumableTooltip(event, '${k}')"
+                                       onmouseleave="window.hideTooltip()"
+                                       onclick="window.showConsumableTooltip(event, '${k}')">
+                                    ${iconHtml}
+                                    <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="color:${col}; font-weight:bold; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
+                                        <span style="color:#ffffff; font-family:monospace; font-weight:bold; font-size:10.5px; margin-left:4px;">x${count}</span>
+                                      </div>
+                                      <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${data.desc}</div>
+                                    </div>
+                                    <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
                                   </div>
-                                  <div style="font-size:8px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.2;">${data.desc}</div>
-                                </div>
-                                <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
-                              </div>
-                            `;
-          })
-          .join("");
-      }
+                                `;
+              })
+              .join("");
+          }
     } else if (stashTab === "ETC") {
       let etcObj = window.inventory.ETC || {};
       let pendingScraps = window.player.pendingScraps || {};
@@ -21609,6 +21913,16 @@
     if (!window.playerStats) return;
     window.playerStats.editHudMode = !window.playerStats.editHudMode;
     window.updateEditHudModeStyle();
+    if (typeof window.pushHeaderToast === "function") {
+      if (window.playerStats.editHudMode) {
+        window.pushHeaderToast(
+          "[HUD] Drag Mode Unlocked! Drag the potion button to position it.",
+          "#ffd700",
+        );
+      } else {
+        window.pushHeaderToast("[HUD] Layout Locked.", "#34d399");
+      }
+    }
     if (typeof window.saveGame === "function") window.saveGame();
   };
 
@@ -21626,6 +21940,25 @@
     }
 
     if (flaskBtn) {
+      let overlay = flaskBtn.querySelector(".flask-drag-overlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.className = "flask-drag-overlay";
+        overlay.innerHTML = `
+            <div class="drag-corner drag-corner-tl"></div>
+            <div class="drag-corner drag-corner-tr"></div>
+            <div class="drag-corner drag-corner-bl"></div>
+            <div class="drag-corner drag-corner-br"></div>
+            <svg class="drag-arrows-svg" viewBox="0 0 80 80">
+              <path d="M40 6 L46 16 L34 16 Z" fill="#ffd700" />
+              <path d="M40 74 L46 64 L34 64 Z" fill="#ffd700" />
+              <path d="M6 40 L16 34 L16 46 Z" fill="#ffd700" />
+              <path d="M74 40 L64 34 L64 46 Z" fill="#ffd700" />
+            </svg>
+          `;
+        flaskBtn.appendChild(overlay);
+      }
+
       if (isEditing) {
         flaskBtn.classList.add("edit-hud-active");
       } else {
@@ -21659,11 +21992,6 @@
         window.updateEditHudModeStyle();
       window.updateHUD();
     } else {
-      if (window.playerStats && window.playerStats.editHudMode) {
-        window.playerStats.editHudMode = false;
-        if (typeof window.updateEditHudModeStyle === "function")
-          window.updateEditHudModeStyle();
-      }
       modal.style.display = "none";
       window.lastModalCloseTime = Date.now();
       if (typeof window.saveGame === "function") window.saveGame();
@@ -21727,13 +22055,13 @@
     }
 
     // Add the "Reward Sack" item (Daily or Weekly)
-        window.addUseDrop(quest.treat, quest.treatQty || 1, false);
+    window.addUseDrop(quest.treat, quest.treatQty || 1, false);
 
-        // Add Monster Card Sack rewards (+1x for Daily, +2x for Weekly Guild Quests)
-        let cardSackQty = isWeekly ? 2 : 1;
-        window.addUseDrop("Monster Card Sack", cardSackQty, false);
+    // Add Monster Card Sack rewards (+1x for Daily, +2x for Weekly Guild Quests)
+    let cardSackQty = isWeekly ? 2 : 1;
+    window.addUseDrop("Monster Card Sack", cardSackQty, false);
 
-        if (typeof window.pushHeaderToast === "function") {
+    if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast(`Claimed Reward: ${quest.desc}!`, "#2ecc71");
     }
     if (window.SoundManager && typeof window.SoundManager.play === "function") {
@@ -22297,42 +22625,45 @@
         })
         .join("");
     } else if (tab === "USE") {
-      let useObj = window.inventory.USE || {};
-      let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
+          let useObj = window.inventory.USE || {};
+          let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
 
-      if (keys.length === 0) {
-        listEl.innerHTML = `<div style="font-size:10.5px; color:#64748b; font-style:italic; padding:24px; text-align:center; background:rgba(0,0,0,0.3); border:1px dashed #1e293b; border-radius:6px;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
-        return;
-      }
+          if (keys.length === 0) {
+            listEl.innerHTML = `<div style="font-size:10.5px; color:#64748b; font-style:italic; padding:24px; text-align:center; background:rgba(0,0,0,0.3); border:1px dashed #1e293b; border-radius:6px;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
+            return;
+          }
 
-      listEl.innerHTML = keys
-        .map((k) => {
-          let count = useObj[k];
-          let data = window.useDex[k] || {
-            desc: "Consumable Item",
-            color: "#2ecc71",
-          };
-          let col = data.color || "#2ecc71";
-          let iconHtml = window.getUseIconHtml
-            ? window.getUseIconHtml(k, 28)
-            : "";
+          listEl.innerHTML = keys
+            .map((k) => {
+              let count = useObj[k];
+              let data = window.useDex[k] || {
+                desc: "Consumable Item",
+                color: "#2ecc71",
+              };
+              let col = data.color || "#2ecc71";
+              let iconHtml = window.getUseIconHtml
+                ? window.getUseIconHtml(k, 28)
+                : "";
 
-          return `
-                    <div class="consumable-card" style="border-left: 3.5px solid ${col}; display: flex; align-items: center; gap: 8px;">
-                      ${iconHtml}
-                      <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                          <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
-                          <span style="color:#ffffff; font-family:monospace; font-weight:bold; font-size:11px; margin-left:4px;">x${count}</span>
+              return `
+                        <div class="consumable-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px; cursor: pointer;"
+                             onmouseenter="window.showConsumableTooltip(event, '${k}')"
+                             onmouseleave="window.hideTooltip()"
+                             onclick="window.showConsumableTooltip(event, '${k}')">
+                          ${iconHtml}
+                          <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                              <span style="color:${col}; font-weight:bold; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${k}</span>
+                              <span style="color:#ffffff; font-family:monospace; font-weight:bold; font-size:11px; margin-left:4px;">x${count}</span>
+                            </div>
+                            <div style="font-size:8.5px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.3;">${data.desc}</div>
+                          </div>
+                          <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
                         </div>
-                        <div style="font-size:8.5px; color:#94a3b8; font-family:monospace; margin-top:2px; line-height:1.3;">${data.desc}</div>
-                      </div>
-                      <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
-                    </div>
-                  `;
-        })
-        .join("");
-    } else if (tab === "ETC") {
+                      `;
+            })
+            .join("");
+        } else if (tab === "ETC") {
       let etcObj = window.inventory.ETC || {};
       let pendingScraps = window.player.pendingScraps || {};
 
@@ -24358,77 +24689,1035 @@
   };
 
   window.spawnRiftGuardianEncounter = function (tileX, tileY) {
-    let map = window.activeDungeonMap;
-    let tileSize = map ? map.tileSize : 32;
-    let L = window.playerStats.activeRiftLevel || 1;
-    let type = window.playerStats.selectedRiftGuardian || "aegis_goliath";
+      let map = window.activeDungeonMap;
+      let tileSize = map ? map.tileSize : 32;
+      let L = window.playerStats.activeRiftLevel || 1;
+      let type = window.playerStats.selectedRiftGuardian || "aegis_goliath";
 
-    let baseHp = BigNum.from(
-      type === "aegis_goliath"
-        ? 400
-        : type === "chronos_arbitrator"
-          ? 300
-          : 350,
-    );
-    let baseAtk = BigNum.from(
-      type === "aegis_goliath" ? 18 : type === "chronos_arbitrator" ? 22 : 20,
-    );
-
-    let repScale = BigNum.from(1.05).pow(35);
-    let hpDiffGrowth = BigNum.from(1.08).pow(L);
-    let hpLinearScale = BigNum.from(1 + 0.15 * L);
-
-    let atkDiffGrowth = BigNum.from(1.05).pow(L);
-    let atkLinearScale = BigNum.from(1 + 0.08 * L);
-
-    let finalHp = baseHp.mul(repScale).mul(hpDiffGrowth).mul(hpLinearScale);
-    let finalAtk = baseAtk.mul(repScale).mul(atkDiffGrowth).mul(atkLinearScale);
-
-    let bossName =
-      type === "aegis_goliath"
-        ? "Aegis Goliath"
-        : type === "chronos_arbitrator"
-          ? "Chronos Arbitrator"
-          : "Nexus Overseer";
-
-    window.mob = {
-      id: window.idCounter++,
-      type: "dungeon_boss",
-      name: bossName + ` (Rift Lvl ${L})`,
-      visualType: type,
-      hp: finalHp,
-      maxHp: finalHp,
-      atk: finalAtk.valueOf(),
-      x: tileX * tileSize - 16,
-      y: tileY * tileSize - 16,
-      w: 64,
-      h: 64,
-      flashTimer: 0,
-      isStopped: false,
-      bossTileX: tileX,
-      bossTileY: tileY,
-      state: "idle",
-      telegraphTimer: 0,
-      maxTelegraphTimer: 65,
-      activeAbility: null,
-      targetX: 0,
-      targetY: 0,
-      attackCooldown: 60,
-      moveset:
+      let baseHp = BigNum.from(
         type === "aegis_goliath"
-          ? ["magnetic_pull", "boomerang_shield", "shield_bash"]
+          ? 400
           : type === "chronos_arbitrator"
-            ? ["slam", "dilation_field"]
-            : ["slam", "control_glitch"],
-      facing: -1,
-      isRiftGuardian: true,
+            ? 300
+            : 350,
+      );
+      let baseAtk = BigNum.from(
+        type === "aegis_goliath" ? 18 : type === "chronos_arbitrator" ? 22 : 20,
+      );
+
+      let repScale = BigNum.from(1.05).pow(35);
+      let hpDiffGrowth = BigNum.from(1.08).pow(L);
+      let hpLinearScale = BigNum.from(1 + 0.15 * L);
+
+      let atkDiffGrowth = BigNum.from(1.05).pow(L);
+      let atkLinearScale = BigNum.from(1 + 0.08 * L);
+
+      let finalHp = baseHp.mul(repScale).mul(hpDiffGrowth).mul(hpLinearScale);
+      let finalAtk = baseAtk.mul(repScale).mul(atkDiffGrowth).mul(atkLinearScale);
+
+      let bossName =
+        type === "aegis_goliath"
+          ? "Aegis Goliath"
+          : type === "chronos_arbitrator"
+            ? "Chronos Arbitrator"
+            : "Nexus Overseer";
+
+      window.mob = {
+        id: window.idCounter++,
+        type: "dungeon_boss",
+        name: bossName + ` (Rift Lvl ${L})`,
+        visualType: type,
+        hp: finalHp,
+        maxHp: finalHp,
+        atk: finalAtk.valueOf(),
+        x: tileX * tileSize - 16,
+        y: tileY * tileSize - 16,
+        w: 64,
+        h: 64,
+        flashTimer: 0,
+        isStopped: false,
+        bossTileX: tileX,
+        bossTileY: tileY,
+        state: "idle",
+        telegraphTimer: 0,
+        maxTelegraphTimer: 65,
+        activeAbility: null,
+        targetX: 0,
+        targetY: 0,
+        attackCooldown: 60,
+        moveset:
+          type === "aegis_goliath"
+            ? ["magnetic_pull", "boomerang_shield", "shield_bash"]
+            : type === "chronos_arbitrator"
+              ? ["slam", "dilation_field"]
+              : ["slam", "control_glitch"],
+        facing: -1,
+        isRiftGuardian: true,
+      };
+
+      window.spawnFloatingText(
+        window.player.x,
+        window.player.y - 25,
+        `${bossName.toUpperCase()} AWAKENED`,
+        "#ff007f",
+      );
     };
 
-    window.spawnFloatingText(
-      window.player.x,
-      window.player.y - 25,
-      `${bossName.toUpperCase()} AWAKENED`,
-      "#ff007f",
-    );
-  };
-})();
+    window.openTactileSackCrateAnimation = function (name, newItem, elixirs) {
+      window.isGamePaused = true;
+      let overlay = document.createElement("div");
+      overlay.id = "tactile-opening-overlay";
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.backgroundColor = "rgba(4, 3, 9, 0.94)";
+      overlay.style.display = "flex";
+      overlay.style.flexDirection = "column";
+      overlay.style.justifyContent = "center";
+      overlay.style.alignItems = "center";
+      overlay.style.zIndex = "45000";
+      overlay.style.backdropFilter = "blur(10px)";
+      overlay.style.fontFamily = "monospace";
+      overlay.style.color = "#f1f5f9";
+      overlay.style.boxSizing = "border-box";
+      overlay.style.padding = "20px";
+      document.body.appendChild(overlay);
+
+      let isCrate = name.toLowerCase().includes("crate") || name.toLowerCase().includes("chest");
+      let color = window.getTierColor(newItem.statsRolled);
+      let stars = newItem.statsRolled;
+
+      let style = document.createElement("style");
+      style.innerHTML = `
+        .tactile-anim-wrapper {
+          position: relative;
+          width: 300px;
+          height: 300px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .tactile-runic-circle {
+          position: absolute;
+          width: 260px;
+          height: 260px;
+          border: 2px dashed rgba(212, 175, 55, 0.25);
+          border-radius: 50%;
+          animation: runicSpin 15s linear infinite;
+        }
+        .unboxing-vessel-container {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 180px;
+          cursor: pointer;
+        }
+        .vessel-shake {
+          animation: crateViolentShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        .crate-lid-fly {
+          animation: lidFly 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+        .sack-string-untie {
+          animation: stringUntie 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+        .sack-neck-open {
+          animation: neckOpen 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.25) forwards;
+        }
+        .portal-blast-active {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          background: radial-gradient(circle, #fff 0%, ${color} 60%, transparent 100%);
+          border-radius: 50%;
+          opacity: 0;
+          transform: scale(0);
+          animation: portalErupt 0.6s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
+        }
+        .unboxed-card-showcase {
+          opacity: 0;
+          transform: scale(0.85);
+          animation: itemShow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+          animation-delay: 0.6s;
+        }
+        @keyframes runicSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes crateViolentShake {
+          0% { transform: scale(1) rotate(0deg); }
+          15% { transform: scale(1.1) rotate(-15deg); }
+          30% { transform: scale(1.1) rotate(15deg); }
+          45% { transform: scale(1.1) rotate(-15deg); }
+          60% { transform: scale(1.1) rotate(12deg); }
+          75% { transform: scale(1.05) rotate(-6deg); }
+          90% { transform: scale(1.02) rotate(3deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes lidFly {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(-140px) rotate(180deg) scale(0.5); opacity: 0; }
+        }
+        @keyframes stringUntie {
+          0% { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(18px) scale(0.3); opacity: 0; }
+        }
+        @keyframes neckOpen {
+          0% { transform: scaleX(1) scaleY(1); }
+          100% { transform: scaleX(1.4) scaleY(0.6) translateY(3px); }
+        }
+        @keyframes portalErupt {
+          0% { opacity: 0; transform: scale(0); }
+          50% { opacity: 1; }
+          100% { opacity: 0; transform: scale(25); }
+        }
+        @keyframes itemShow {
+          0% { opacity: 0; transform: scale(0.85); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+      `;
+      document.head.appendChild(style);
+
+      let vesselSvg = "";
+      if (isCrate) {
+        vesselSvg = `
+          <svg class="crate-svg vessel-shake" width="140" height="140" viewBox="0 0 64 64" style="overflow: visible !important;">
+            <ellipse cx="32" cy="58" rx="24" ry="4" fill="rgba(0,0,0,0.55)" />
+            <rect x="10" y="24" width="44" height="32" rx="4" fill="#a0522d" stroke="#000" stroke-width="2.5" />
+            <line x1="21" y1="24" x2="21" y2="56" stroke="#3d1d0b" stroke-width="1.5" />
+            <line x1="32" y1="24" x2="32" y2="56" stroke="#3d1d0b" stroke-width="1.5" />
+            <line x1="43" y1="24" x2="43" y2="56" stroke="#3d1d0b" stroke-width="1.5" />
+            <line x1="12" y1="26" x2="52" y2="54" stroke="#3d1d0b" stroke-width="3" />
+            <rect x="10" y="24" width="8" height="8" fill="#ffd700" stroke="#000" stroke-width="1.2" />
+            <rect x="46" y="24" width="8" height="8" fill="#ffd700" stroke="#000" stroke-width="1.2" />
+            <rect x="10" y="48" width="8" height="8" fill="#ffd700" stroke="#000" stroke-width="1.2" />
+            <rect x="46" y="48" width="8" height="8" fill="#ffd700" stroke="#000" stroke-width="1.2" />
+            <rect x="28" y="28" width="8" height="11" rx="1.5" fill="#ffd700" stroke="#000" stroke-width="1.5" />
+            <circle cx="32" cy="33" r="1.5" fill="#111" />
+            <rect id="crate-lid" x="8" y="16" width="48" height="8" rx="1.5" fill="#a0522d" stroke="#000" stroke-width="2.5" style="transform-origin: 32px 20px;" />
+          </svg>
+        `;
+      } else {
+        vesselSvg = `
+          <svg class="sack-svg vessel-shake" width="130" height="130" viewBox="0 0 64 64" style="overflow: visible !important;">
+            <ellipse cx="32" cy="58" rx="20" ry="3.5" fill="rgba(0,0,0,0.55)" />
+            <path id="sack-neck" d="M24 28 L18 14 C22 10, 32 10, 32 16 L32 28 Z" fill="#a05a2c" stroke="#000" stroke-width="1.8" style="transform-origin: 32px 28px;" />
+            <path id="sack-neck-r" d="M40 28 L46 14 C42 10, 32 10, 32 16 L32 28 Z" fill="#a05a2c" stroke="#000" stroke-width="1.8" style="transform-origin: 32px 28px;" />
+            <path d="M32 18 C20 18, 11 21, 11 38 C11 51, 18 58, 32 58 C46 58, 53 51, 53 38 C53 21, 44 18, 32 18 Z" fill="#a05a2c" stroke="#000" stroke-width="2.2" stroke-linejoin="round" />
+            <g id="sack-string" style="transform-origin: 32px 28px;">
+              <path d="M22 28 Q32 31.5, 42 28" fill="none" stroke="#ffd700" stroke-width="3.5" stroke-linecap="round" />
+              <circle cx="32" cy="29.2" r="3.2" fill="#ffd700" stroke="#000" stroke-width="1.5" />
+            </g>
+          </svg>
+        `;
+      }
+
+      overlay.innerHTML = `
+        <div style="text-align:center; color:white; animation: toastFadeIn 0.3s ease-out;">
+          <div class="tactile-anim-wrapper">
+            <div class="tactile-runic-circle"></div>
+            <div id="portal-blast" class="portal-blast-active" style="display: none;"></div>
+            <div class="unboxing-vessel-container" id="unboxing-vessel-container">
+              ${vesselSvg}
+            </div>
+          </div>
+          <div style="font-size: 14px; font-weight: 900; color:#ffd700; letter-spacing: 3px; text-shadow: 0 0 8px rgba(241,196,15,0.4); text-transform: uppercase;">✦ UNBOXING ${name.toUpperCase()}... ✦</div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        let lid = document.getElementById("crate-lid");
+        let str = document.getElementById("sack-string");
+        let neckL = document.getElementById("sack-neck");
+        let neckR = document.getElementById("sack-neck-r");
+        let blast = document.getElementById("portal-blast");
+
+        if (lid) lid.classList.add("crate-lid-fly");
+        if (str) str.classList.add("sack-string-untie");
+        if (neckL) neckL.classList.add("sack-neck-open");
+        if (neckR) neckR.classList.add("sack-neck-open");
+
+        if (blast) blast.style.display = "block";
+
+        if (window.SoundManager && typeof window.SoundManager.play === "function") {
+          window.SoundManager.play("spell");
+        }
+
+        if (window.particles && window.ParticlePool) {
+          let colors = isCrate ? ["#a0522d", "#8b4513", "#ffd700"] : ["#a05a2c", "#7d471b", "#00f0ff"];
+          for (let i = 0; i < 24; i++) {
+            let angle = Math.random() * Math.PI * 2;
+            let speed = window.randFloat(2, 6);
+            let pt = window.ParticlePool.get(
+              overlay.offsetWidth / 2,
+              overlay.offsetHeight / 2 - 40,
+              Math.cos(angle) * speed,
+              Math.sin(angle) * speed - window.randFloat(1, 3),
+              window.randFloat(1.5, 4),
+              colors[Math.floor(Math.random() * colors.length)],
+              1,
+              window.randInt(20, 40),
+            );
+            window.particles.push(pt);
+          }
+        }
+
+        setTimeout(() => {
+          let vesselContainer = document.getElementById("unboxing-vessel-container");
+          if (vesselContainer) vesselContainer.style.display = "none";
+
+          let elixirsHtml = elixirs.map(e => {
+            let eData = window.useDex[e] || { color: "#2ecc71", desc: "Elixir" };
+            return `
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid ${eData.color}; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 9.5px; text-align: left; width: 100%; box-sizing: border-box; margin-top: 4px;">
+                <div style="flex-shrink: 0;">${window.getUseIconHtml ? window.getUseIconHtml(e, 24) : ""}</div>
+                <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                  <span style="color:${eData.color}; font-weight:bold;">✦ Gained: ${e}</span>
+                  <span style="color:#94a3b8; font-size:8px;">${eData.desc}</span>
+                </div>
+              </div>
+            `;
+          }).join("");
+
+          overlay.innerHTML = `
+            <div class="unboxed-card-showcase" style="background:#15121b; border:3px solid ${color}; border-radius:12px; width:95%; max-width:400px; box-shadow:0 15px 45px rgba(0,0,0,0.95); text-align:center; padding:20px; box-sizing:border-box;">
+              <h2 style="margin:0 0 10px 0; color:${color}; letter-spacing:2px; text-transform:uppercase; font-size:18px;">✦ LOOT SECURED! ✦</h2>
+              <div style="height:2px; background:linear-gradient(90deg, transparent, ${color}, transparent); margin-bottom:15px;"></div>
+              <div style="text-align:center; margin-bottom:12px;">${window.getEquipIconHtml(newItem, 48)}</div>
+              <h3 style="color:${color}; font-size:14px; margin:0 0 4px 0;">${newItem.name}</h3>
+              <span style="font-size:10px; color:#aaa; font-family:monospace; display:block; margin-bottom:12px;">Quality: ${stars}★ ${window.getTierName(stars)}</span>
+
+              <div style="background:#090610; border:1px solid #333; border-radius:6px; padding:12px; text-align:left; margin-bottom:15px; box-sizing:border-box;">
+                <strong style="color:#f1c40f; font-family:monospace; display:block; margin-bottom:6px; text-transform:uppercase; font-size:10px; letter-spacing:0.5px;">[ EARNED PAYLOAD ]</strong>
+                <span style="color:#ffffff; display:block; font-size:10.5px; font-weight:bold; margin-bottom:6px;">• ${newItem.name} (Lv. ${newItem.stageLevel || 1})</span>
+                ${elixirsHtml}
+              </div>
+
+              <button onclick="document.getElementById('tactile-opening-overlay').remove(); window.isGamePaused=false; window.updateUI();" style="background:${color}; color:${stars === 4 || stars === 1 ? "#fff" : "#111"}; border:none; padding:10px; font-weight:bold; font-size:12px; border-radius:4px; cursor:pointer; width:100%; box-shadow:0 0 10px ${color}55;">Store in Satchel</button>
+            </div>
+          `;
+        }, 600);
+
+      }, 800);
+        };
+
+        // --- STAGE 1: BOOSTER PACK VIEW ---
+            window.openMonsterCardSackAnimation = function (rolledCards) {
+              window.isGamePaused = true;
+
+              // Create the modal overlay
+              let overlay = document.createElement("div");
+              overlay.id = "card-opening-overlay";
+              overlay.style.position = "fixed";
+              overlay.style.top = "0";
+              overlay.style.left = "0";
+              overlay.style.width = "100%";
+              overlay.style.height = "100%";
+              overlay.style.backgroundColor = "rgba(4, 3, 9, 0.96)";
+              overlay.style.display = "flex";
+              overlay.style.flexDirection = "column";
+              overlay.style.justifyContent = "center";
+              overlay.style.alignItems = "center";
+              overlay.style.zIndex = "45000";
+              overlay.style.backdropFilter = "blur(12px)";
+              overlay.style.fontFamily = "monospace";
+              overlay.style.color = "#f1f5f9";
+              overlay.style.boxSizing = "border-box";
+              overlay.style.padding = "20px";
+              overlay.style.userSelect = "none";
+              overlay.style.webkitUserSelect = "none";
+              document.body.appendChild(overlay);
+
+              // Card Level Projections Formula
+              window.calculateCardLevelInfo = function (totalOwned) {
+                let level = 1;
+                let nextReq = 2;
+                let prevReq = 0;
+
+                if (totalOwned >= 20) {
+                  level = 5;
+                  nextReq = 20;
+                  prevReq = 20;
+                } else if (totalOwned >= 10) {
+                  level = 4;
+                  nextReq = 20;
+                  prevReq = 10;
+                } else if (totalOwned >= 5) {
+                  level = 3;
+                  nextReq = 10;
+                  prevReq = 5;
+                } else if (totalOwned >= 2) {
+                  level = 2;
+                  nextReq = 5;
+                  prevReq = 2;
+                } else {
+                  level = 1;
+                  nextReq = 2;
+                  prevReq = 0;
+                }
+
+                let currentProgress = totalOwned - prevReq;
+                let neededForNext = nextReq - prevReq;
+                let percent = totalOwned >= 20 ? 100 : (currentProgress / neededForNext) * 100;
+
+                return {
+                  level: level,
+                  nextLevelReq: nextReq,
+                  prevLevelReq: prevReq,
+                  currentProgress: currentProgress,
+                  neededForNext: neededForNext,
+                  percent: percent
+                };
+              };
+
+              // Aggregating duplicates pulled in this pack
+              let uniquePulls = [];
+              rolledCards.forEach((key) => {
+                let match = uniquePulls.find((p) => p.key === key);
+                if (match) {
+                  match.qty++;
+                } else {
+                  uniquePulls.push({ key: key, qty: 1 });
+                }
+              });
+
+              // Expand Dynamic CSS styles block to support fanning display, flips, progress transitions, and badges
+              let style = document.createElement("style");
+              style.id = "booster-stage1-styles";
+              style.innerHTML = `
+                .booster-pack-container {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  gap: 15px;
+                  animation: packFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .booster-pack-view {
+                  position: relative;
+                  width: 240px;
+                  height: 350px;
+                  perspective: 1000px;
+                  transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+                }
+                .booster-pack-view.ripped {
+                  animation: packRippedShatter 0.6s ease-out forwards;
+                }
+                @keyframes packRippedShatter {
+                  0% { transform: scale(1) rotate(0deg); opacity: 1; }
+                  20% { transform: scale(1.05) rotate(-5deg); }
+                  40% { transform: scale(1.1) rotate(5deg); }
+                  100% { transform: scale(1.2) rotate(0deg); opacity: 0; }
+                }
+                .booster-pack-body {
+                  position: absolute;
+                  bottom: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 312px;
+                  background: linear-gradient(135deg, #181128 0%, #0d0918 100%);
+                  border: 3px solid #d4af37;
+                  border-radius: 0 0 10px 10px;
+                  box-shadow: 0 15px 45px rgba(0,0,0,0.9), inset 0 0 20px rgba(212,175,55,0.12);
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: space-between;
+                  padding: 24px 16px;
+                  box-sizing: border-box;
+                  transition: transform 0.2s ease-out;
+                }
+                .booster-pack-view.ripped .booster-pack-body {
+                  animation: bodySlideDown 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+                }
+                @keyframes bodySlideDown {
+                  0% { transform: translateY(0); opacity: 1; }
+                  100% { transform: translateY(120px); opacity: 0; }
+                }
+                .booster-pack-top {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 44px;
+                  background: linear-gradient(180deg, #d4af37 0%, #311042 100%);
+                  border: 3px solid #d4af37;
+                  border-bottom: 2.5px solid #000000;
+                  border-radius: 10px 10px 0 0;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+                  z-index: 15;
+                }
+                .booster-pack-view.ripped .booster-pack-top {
+                  animation: topFlyOff 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+                }
+                @keyframes topFlyOff {
+                  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                  100% { transform: translateY(-180px) rotate(120deg) scale(0.4); opacity: 0; }
+                }
+                .booster-pack-top:hover {
+                  filter: brightness(1.18);
+                  transform: translateY(-2px);
+                  box-shadow: 0 6px 14px rgba(212,175,55,0.4);
+                }
+                .booster-pack-top:active {
+                  transform: translateY(0);
+                }
+                .booster-pack-top-label {
+                  color: #ffffff;
+                  font-size: 9px;
+                  font-weight: 900;
+                  letter-spacing: 2px;
+                  text-transform: uppercase;
+                  text-shadow: 0 1px 3px #000;
+                  animation: pulseText 1.5s infinite ease-in-out;
+                }
+                @keyframes packFadeIn {
+                  0% { opacity: 0; transform: scale(0.9) translateY(12px); }
+                  100% { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                @keyframes pulseText {
+                  0%, 100% { opacity: 0.6; }
+                  50% { opacity: 1; }
+                }
+
+                /* --- STAGE 3 CARDS FANNING OUT AND FLIPPING --- */
+                .fanned-deck-container {
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 12px;
+                  justify-content: center;
+                  align-items: center;
+                  width: 100%;
+                  max-width: 900px;
+                  margin-top: 10px;
+                  animation: cardsRevealDelay 0.4s ease-out forwards;
+                }
+                @keyframes cardsRevealDelay {
+                  0% { opacity: 0; transform: scale(0.9); }
+                  100% { opacity: 1; transform: scale(1); }
+                }
+                .unboxing-card-container {
+                  width: 140px;
+                  height: 220px;
+                  perspective: 1000px;
+                  position: relative;
+                }
+                .unboxing-card-inner {
+                  position: relative;
+                  width: 100%;
+                  height: 100%;
+                  text-align: center;
+                  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                  transform-style: preserve-3d;
+                }
+                .unboxing-card-container.flipped .unboxing-card-inner {
+                  transform: rotateY(180deg);
+                }
+                .unboxing-card-front, .unboxing-card-back {
+                  position: absolute;
+                  width: 100%;
+                  height: 100%;
+                  -webkit-backface-visibility: hidden;
+                  backface-visibility: hidden;
+                  border-radius: 8px;
+                  box-shadow: 0 6px 20px rgba(0,0,0,0.85);
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  box-sizing: border-box;
+                  padding: 8px;
+                }
+                .unboxing-card-back {
+                  background: linear-gradient(135deg, #181128 0%, #07050d 100%);
+                  border: 2px solid #8c6d3b;
+                  color: #ffd700;
+                  justify-content: center;
+                }
+                .card-back-pattern {
+                  width: 100%;
+                  height: 100%;
+                  border: 1.5px dashed rgba(212, 175, 55, 0.3);
+                  border-radius: 6px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 80%);
+                }
+                .card-back-sigil {
+                  font-size: 36px;
+                  text-shadow: 0 0 10px rgba(212,175,55,0.4);
+                  animation: pulseText 2s infinite ease-in-out;
+                }
+                .unboxing-card-front {
+                  background: linear-gradient(180deg, #1b162b 0%, #0c0816 100%);
+                  border: 2.5px solid #475569;
+                  transform: rotateY(180deg);
+                  justify-content: space-between;
+                }
+                .card-set-banner {
+                  width: 100%;
+                  font-family: monospace;
+                  font-size: 7.5px;
+                  font-weight: 900;
+                  color: #ffffff;
+                  padding: 2px 4px;
+                  border-radius: 3px;
+                  text-align: center;
+                  text-transform: uppercase;
+                  text-shadow: 0 1px 2px #000;
+                }
+                .card-image-box {
+                  width: 64px;
+                  height: 64px;
+                  background: rgba(0, 0, 0, 0.4);
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                  border-radius: 6px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin: 4px 0;
+                  box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+                }
+                .card-name {
+                  font-size: 10.5px;
+                  font-weight: 900;
+                  color: #ffffff;
+                  text-shadow: 0 1px 2px #000;
+                  margin-bottom: 2px;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  width: 100%;
+                }
+                .card-level-display {
+                  font-size: 8px;
+                  font-family: monospace;
+                  color: #94a3b8;
+                }
+                .card-level-num {
+                  color: #df9ffb;
+                  font-weight: bold;
+                }
+                .card-progress-bar-container {
+                  width: 100%;
+                  height: 12px;
+                  background: #090c10;
+                  border: 1px solid #1e293b;
+                  border-radius: 4px;
+                  overflow: hidden;
+                  position: relative;
+                  margin-top: 4px;
+                }
+                .card-progress-bar-fill {
+                  height: 100%;
+                  background: linear-gradient(90deg, #a855f7 0%, #00ffff 100%);
+                  width: 0%;
+                }
+                .card-progress-text {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-family: monospace;
+                  font-size: 7.5px;
+                  font-weight: bold;
+                  color: #ffffff;
+                  text-shadow: 0 1px 1px #000;
+                }
+                .card-qty-badge {
+                  position: absolute;
+                  top: -6px;
+                  right: -6px;
+                  background: linear-gradient(135deg, #ffd700 0%, #b45309 100%);
+                  color: #000;
+                  border: 1.5px solid #ffffff;
+                  border-radius: 10px;
+                  font-family: monospace;
+                  font-size: 8.5px;
+                  font-weight: 900;
+                  padding: 1.5px 5px;
+                  box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+                  animation: toastBump 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+                  animation-delay: 0.2s;
+                  z-index: 10;
+                }
+                .card-levelup-flash {
+                  position: absolute;
+                  bottom: 24px;
+                  background: rgba(46, 204, 113, 0.95);
+                  color: #ffffff;
+                  font-family: monospace;
+                  font-weight: 900;
+                  font-size: 8px;
+                  padding: 2px 8px;
+                  border-radius: 3px;
+                  border: 1px solid #ffffff;
+                  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                  z-index: 10;
+                  letter-spacing: 0.5px;
+                }
+                @keyframes lvlUpPulse {
+                  0%, 100% { transform: scale(1) translateY(0); filter: brightness(1); }
+                  50% { transform: scale(1.08) translateY(-2px); filter: brightness(1.2); }
+                }
+              `;
+              document.head.appendChild(style);
+
+              // Build the booster pack DOM layout
+              overlay.innerHTML = `
+                <div class="booster-pack-container" id="booster-pack-container">
+                  <div class="booster-pack-view" id="booster-pack-view">
+                    <div class="booster-pack-top" id="booster-pack-top" onclick="window.initiateTearSequence(this)">
+                      <span class="booster-pack-top-label">✦ TEAR OPEN ✦</span>
+                    </div>
+                    <div class="booster-pack-body">
+                      <div style="font-size:10px; color:#d4af37; font-weight:900; letter-spacing:1px; text-transform:uppercase; font-family:monospace;">Guild Altar</div>
+                      <div style="width:52px; height:52px; border:2px dashed #d4af37; border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 20px 0;">
+                        <span style="color:#d4af37; font-size:22px;">✦</span>
+                      </div>
+                      <div style="font-size:13px; font-weight:900; color:#df9ffb; letter-spacing:2px; text-transform:uppercase; text-shadow:0 0 8px rgba(168,85,247,0.4);">Monster Pack</div>
+                      <div style="font-size:8px; color:#64748b; font-family:monospace; margin-top:10px;">Contains 5 Sealed Bestiary Cards</div>
+                    </div>
+                  </div>
+                  <div style="font-size:10px; color:#64748b; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-top:5px;">[ BOOSTER ALIGNED ]</div>
+                </div>
+              `;
+
+              // Handler to execute Stage 2 (Tear Open and automatic Stage 3 transition)
+              window.initiateTearSequence = function (topElement) {
+                let view = document.getElementById("booster-pack-view");
+                if (!view || view.classList.contains("ripped")) return;
+                view.classList.add("ripped");
+
+                // Play rip sound
+                if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                  window.SoundManager.play("swing");
+                }
+
+                // Spawn custom starburst particles at the tear seam
+                if (window.particles && window.ParticlePool) {
+                  let rect = view.getBoundingClientRect();
+                  let overlayRect = overlay.getBoundingClientRect();
+
+                  let ripX = (rect.left - overlayRect.left) + rect.width / 2;
+                  let ripY = (rect.top - overlayRect.top) + 44;
+
+                  let colors = ["#ffd700", "#ff007f", "#a855f7", "#00ffff"];
+                  for (let i = 0; i < 40; i++) {
+                    let angle = Math.random() * Math.PI * 2;
+                    let speed = window.randFloat(3.0, 7.5);
+                    let pt = window.ParticlePool.get(
+                      ripX,
+                      ripY,
+                      Math.cos(angle) * speed,
+                      Math.sin(angle) * speed - window.randFloat(1.5, 4.0),
+                      window.randFloat(2.0, 4.5),
+                      colors[Math.floor(Math.random() * colors.length)],
+                      1.0,
+                      window.randInt(25, 50)
+                    );
+                    pt.style = "polygon";
+                    pt.angle = Math.random() * Math.PI * 2;
+                    pt.spinSpeed = window.randFloat(-0.25, 0.25);
+                    pt.scaleDecay = 0.015;
+                    window.particles.push(pt);
+                  }
+                }
+
+                // Once rip completes, immediately launch Stage 3
+                setTimeout(() => {
+                  let packContainer = document.getElementById("booster-pack-container");
+                  if (packContainer) packContainer.remove();
+
+                  window.beginDeckFanningReveal();
+                }, 550);
+              };
+
+              // Progress bar transitions and level up logic builder
+              window.animateCardProgress = function (cardEl, prevOwned, totalOwned) {
+                let barFill = cardEl.querySelector(".card-progress-bar-fill");
+                let progressText = cardEl.querySelector(".card-progress-text");
+                let lvlNum = cardEl.querySelector(".card-level-num");
+                let lvlUpFlash = cardEl.querySelector(".card-levelup-flash");
+
+                let prevInfo = window.calculateCardLevelInfo(prevOwned);
+                let newInfo = window.calculateCardLevelInfo(totalOwned);
+
+                // Intitialize at previous count
+                barFill.style.width = prevInfo.percent + "%";
+
+                setTimeout(() => {
+                  barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
+
+                  if (newInfo.level > prevInfo.level) {
+                    // Animate to full first
+                    barFill.style.width = "100%";
+
+                    setTimeout(() => {
+                      // Level up triggers
+                      if (lvlNum) lvlNum.innerText = newInfo.level;
+                      if (lvlUpFlash) {
+                        lvlUpFlash.style.display = "block";
+                        lvlUpFlash.style.animation = "lvlUpPulse 1.2s ease-out infinite";
+                      }
+
+                      // Instant reset back to 0 width
+                      barFill.style.transition = "none";
+                      barFill.style.width = "0%";
+
+                      if (progressText) {
+                        progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
+                      }
+
+                      // Force layout reflow
+                      void barFill.offsetWidth;
+
+                      // Animate from 0 to new percentage progress
+                      barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
+                      barFill.style.width = newInfo.percent + "%";
+
+                      // Level up sound
+                      if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                        window.SoundManager.play("spell");
+                      }
+                    }, 850);
+                  } else {
+                    // Standard progress update
+                    barFill.style.width = newInfo.percent + "%";
+                    if (progressText) {
+                      progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
+                    }
+                  }
+                }, 250);
+              };
+
+              // Fanning Out Reveal Deck Generator
+              window.beginDeckFanningReveal = function () {
+                let deckMarkup = uniquePulls.map((pull) => {
+                  let key = pull.key;
+                  let qty = pull.qty;
+
+                  let cardData = window.MONSTER_CARDS_DATA[key] || {
+                    name: key.charAt(0).toUpperCase() + key.slice(1).replace("_", " "),
+                    set: "Whispering Woods",
+                  };
+
+                  const setColors = {
+                    "Whispering Woods": "#2ecc71",
+                    "Mountain Peaks": "#3498db",
+                    "Inferno Depths": "#e74c3c",
+                    "Fungal Swamp": "#1abc9c",
+                    "Void Singularity": "#9b59b6",
+                    "Cosmic Wardens": "#f1c40f"
+                  };
+                  let setCol = setColors[cardData.set] || "#ffd700";
+
+                  let totalOwned = window.playerStats.monsterCards[key] || 0;
+                  let prevCount = Math.max(0, totalOwned - qty);
+                  let prevInfo = window.calculateCardLevelInfo(prevCount);
+
+                  return `
+                    <div class="unboxing-card-container" data-card-key="${key}" data-prev-owned="${prevCount}" data-total-owned="${totalOwned}" data-set="${cardData.set}">
+                      <div class="unboxing-card-inner">
+                        <!-- CARD BACK -->
+                        <div class="unboxing-card-back">
+                          <div class="card-back-pattern">
+                            <div class="card-back-sigil">✦</div>
+                          </div>
+                        </div>
+                        <!-- CARD FRONT -->
+                        <div class="unboxing-card-front" style="border-color: ${setCol};">
+                          <div class="card-set-banner" style="background-color: ${setCol};">${cardData.set.toUpperCase()}</div>
+                          <div class="card-image-box">
+                            <canvas class="unboxing-card-canvas" width="64" height="64" data-visual-type="${key}"></canvas>
+                          </div>
+                          <div class="card-name">${cardData.name}</div>
+                          <div class="card-level-display">Level <span class="card-level-num">${prevInfo.level}</span></div>
+                          <div class="card-progress-bar-container">
+                            <div class="card-progress-bar-fill"></div>
+                            <div class="card-progress-text"></div>
+                          </div>
+                          ${qty > 1 ? `<div class="card-qty-badge">x${qty}</div>` : ""}
+                          <div class="card-levelup-flash" style="display: none;">LEVEL UP!</div>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join("");
+
+                overlay.innerHTML = `
+                  <div style="text-align: center; color: white;">
+                    <div class="fanned-deck-container" id="fanned-deck-container">
+                      ${deckMarkup}
+                    </div>
+                    <button id="collect-haul-btn" class="action-btn" style="display: none; width: 220px; margin: 15px auto 0 auto; background: linear-gradient(180deg, #10b981 0%, #047857 100%); border-color: #34d399;" onclick="window.collectUnboxedHaul()">COLLECT HAUL</button>
+                  </div>
+                `;
+
+                // Start local unboxing cards graphics rendering loops
+                window.startUnboxingCardAnimLoop();
+
+                // Staggered sequential automatic reveal
+                let cardContainers = document.querySelectorAll(".unboxing-card-container");
+                cardContainers.forEach((cardEl, index) => {
+                  setTimeout(() => {
+                    cardEl.classList.add("flipped");
+
+                    let prev = parseInt(cardEl.dataset.prevOwned, 10);
+                    let total = parseInt(cardEl.dataset.totalOwned, 10);
+
+                    // Play card flip sound
+                    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                      window.SoundManager.play("swing");
+                    }
+
+                    // Spawn colored splash particles around card
+                    let rect = cardEl.getBoundingClientRect();
+                    let overlayRect = overlay.getBoundingClientRect();
+                    let cardX = (rect.left - overlayRect.left) + rect.width / 2;
+                    let cardY = (rect.top - overlayRect.top) + rect.height / 2;
+
+                    let setColors = {
+                      "Whispering Woods": "#2ecc71",
+                      "Mountain Peaks": "#3498db",
+                      "Inferno Depths": "#e74c3c",
+                      "Fungal Swamp": "#1abc9c",
+                      "Void Singularity": "#9b59b6",
+                      "Cosmic Wardens": "#f1c40f"
+                    };
+                    let setCol = setColors[cardEl.dataset.set] || "#ffd700";
+
+                    if (window.particles && window.ParticlePool) {
+                      for (let pIdx = 0; pIdx < 14; pIdx++) {
+                        let angle = Math.random() * Math.PI * 2;
+                        let speed = window.randFloat(1.5, 3.8);
+                        let pt = window.ParticlePool.get(
+                          cardX,
+                          cardY,
+                          Math.cos(angle) * speed,
+                          Math.sin(angle) * speed,
+                          window.randFloat(1.5, 3.0),
+                          setCol,
+                          0.85,
+                          window.randInt(15, 30)
+                        );
+                        window.particles.push(pt);
+                      }
+                    }
+
+                    // Trigger progress bar animations
+                    window.animateCardProgress(cardEl, prev, total);
+
+                    // Once the final card finishes revealing, render the "Collect Haul" button
+                    if (index === cardContainers.length - 1) {
+                      setTimeout(() => {
+                        let collectBtn = document.getElementById("collect-haul-btn");
+                        if (collectBtn) {
+                          collectBtn.style.display = "block";
+                          collectBtn.style.animation = "toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards";
+                        }
+                      }, 900);
+                    }
+                  }, index * 600); // 600ms stagger
+                });
+              };
+
+              // Unboxing Graphics Loops
+              window.unboxingCardAnimFrameId = null;
+              window.startUnboxingCardAnimLoop = function () {
+                if (window.unboxingCardAnimFrameId) cancelAnimationFrame(window.unboxingCardAnimFrameId);
+
+                function renderStep() {
+                  let overlay = document.getElementById("card-opening-overlay");
+                  if (!overlay) {
+                    window.unboxingCardAnimFrameId = null;
+                    return;
+                  }
+
+                  let canvases = document.querySelectorAll(".unboxing-card-canvas");
+                  let time = Date.now();
+
+                  canvases.forEach((canvas) => {
+                    let container = canvas.closest(".unboxing-card-container");
+                    if (!container || !container.classList.contains("flipped")) return;
+
+                    let ctx = canvas.getContext("2d");
+                    if (!ctx) return;
+
+                    let type = canvas.dataset.visualType;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    let mobTypeVal = "mob";
+                    let visualTierVal = 0;
+
+                    if (type === "aegis_goliath") { mobTypeVal = "aegis_goliath"; visualTierVal = 1; }
+                    else if (type === "chronos_arbitrator") { mobTypeVal = "chronos_arbitrator"; visualTierVal = 5; }
+                    else if (type === "nexus_overseer") { mobTypeVal = "nexus_overseer"; visualTierVal = 6; }
+                    else if (type === "hooktail") { mobTypeVal = "prestige_boss"; visualTierVal = 7; }
+                    else if (type === "arachnid_treant") { mobTypeVal = "dungeon_boss"; visualTierVal = 0; }
+                    else if (type === "overlord_iron_vault") { mobTypeVal = "dungeon_boss"; visualTierVal = 2; }
+                    else if (type === "corrosive_abomination") { mobTypeVal = "dungeon_boss"; visualTierVal = 3; }
+                    else if (type === "void_overseer") { mobTypeVal = "dungeon_boss"; visualTierVal = 4; }
+                    else if (type === "gilded_vault_keeper") { mobTypeVal = "dungeon_boss"; visualTierVal = 1; }
+
+                    let mockMob = {
+                      visualType: type,
+                      type: mobTypeVal,
+                      visualTier: visualTierVal,
+                      x: canvas.width / 2 - 16,
+                      y: canvas.height / 2 - 12,
+                      w: 32,
+                      h: 32,
+                      facing: 1,
+                      walkTimer: time / 150,
+                      hopTimer: Math.floor(time / 50) % 30,
+                      flashTimer: 0,
+                      buffStacks: { haste: 0, def: 0, atk: 0 },
+                      buffTimers: { haste: 0, def: 0, atk: 0 },
+                    };
+
+                    if (typeof window.drawSingleMob === "function") {
+                      window.drawSingleMob(ctx, mockMob);
+                    }
+                  });
+
+                  window.unboxingCardAnimFrameId = requestAnimationFrame(renderStep);
+                }
+                window.unboxingCardAnimFrameId = requestAnimationFrame(renderStep);
+              };
+
+              window.stopUnboxingCardAnimLoop = function () {
+                if (window.unboxingCardAnimFrameId) {
+                  cancelAnimationFrame(window.unboxingCardAnimFrameId);
+                  window.unboxingCardAnimFrameId = null;
+                }
+              };
+
+              // Collection Exit Handler
+              window.collectUnboxedHaul = function () {
+                window.stopUnboxingCardAnimLoop();
+
+                let styleEl = document.getElementById("booster-stage1-styles");
+                if (styleEl) styleEl.remove();
+
+                let overlay = document.getElementById("card-opening-overlay");
+                if (overlay) overlay.remove();
+
+                window.isGamePaused = false;
+                if (typeof window.updateUI === "function") window.updateUI();
+                if (typeof window.saveGame === "function") window.saveGame();
+              };
+            };
+          })();

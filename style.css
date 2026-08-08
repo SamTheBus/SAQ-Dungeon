@@ -1045,6 +1045,101 @@ body {
   }
 }
 
+/* --- EDIT HUD DRAG OVERLAY INDICATORS --- */
+.flask-drag-overlay {
+  display: none;
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  right: -12px;
+  bottom: -12px;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.hud-flask-container.edit-hud-active .flask-drag-overlay {
+  display: block;
+}
+
+.drag-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: #ffd700;
+  border-style: solid;
+  border-width: 0;
+  animation: dragCornerBlink 1s infinite ease-in-out;
+}
+
+.drag-corner-tl {
+  top: 0;
+  left: 0;
+  border-top-width: 2.5px;
+  border-left-width: 2.5px;
+  border-top-left-radius: 4px;
+}
+
+.drag-corner-tr {
+  top: 0;
+  right: 0;
+  border-top-width: 2.5px;
+  border-right-width: 2.5px;
+  border-top-right-radius: 4px;
+}
+
+.drag-corner-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 2.5px;
+  border-left-width: 2.5px;
+  border-bottom-left-radius: 4px;
+}
+
+.drag-corner-br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 2.5px;
+  border-right-width: 2.5px;
+  border-bottom-right-radius: 4px;
+}
+
+.drag-arrows-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: center center;
+  animation: dragArrowsPulse 1s infinite ease-in-out;
+}
+
+@keyframes dragCornerBlink {
+  0%,
+  100% {
+    opacity: 0.4;
+    border-color: #ffd700;
+    filter: drop-shadow(0 0 2px #ffd700);
+  }
+  50% {
+    opacity: 1;
+    border-color: #ffffff;
+    filter: drop-shadow(0 0 8px #ffd700);
+  }
+}
+
+@keyframes dragArrowsPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
 .clickable-badge {
   cursor: pointer;
   transition:
@@ -4147,7 +4242,9 @@ summary {
 
 /* --- MONSTER CARD ART & SET BIOME STYLES --- */
 .monster-card-cutout {
-  transition: transform 0.2s ease, filter 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
 }
 
 .monster-card-cutout:hover {
@@ -4155,12 +4252,24 @@ summary {
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.45));
 }
 
-.card-set-whispering { border-color: #2ecc71 !important; }
-.card-set-peaks { border-color: #3498db !important; }
-.card-set-inferno { border-color: #e74c3c !important; }
-.card-set-swamp { border-color: #1abc9c !important; }
-.card-set-void { border-color: #9b59b6 !important; }
-.card-set-cosmic { border-color: #f1c40f !important; }
+.card-set-whispering {
+  border-color: #2ecc71 !important;
+}
+.card-set-peaks {
+  border-color: #3498db !important;
+}
+.card-set-inferno {
+  border-color: #e74c3c !important;
+}
+.card-set-swamp {
+  border-color: #1abc9c !important;
+}
+.card-set-void {
+  border-color: #9b59b6 !important;
+}
+.card-set-cosmic {
+  border-color: #f1c40f !important;
+}
 
 /* ==========================================================================
    CONSTELLATION SKILL TREE UI
@@ -5870,14 +5979,20 @@ summary {
   position: sticky;
   top: 0;
   z-index: 25;
-  background: linear-gradient(180deg, rgba(20, 14, 34, 0.98) 0%, rgba(10, 6, 20, 0.99) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(20, 14, 34, 0.98) 0%,
+    rgba(10, 6, 20, 0.99) 100%
+  );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1.5px solid #1abc9c;
   border-radius: 8px;
   padding: 10px 12px;
   margin-bottom: 8px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.95), inset 0 0 15px rgba(26, 188, 156, 0.15);
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.95),
+    inset 0 0 15px rgba(26, 188, 156, 0.15);
   animation: drawerSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   box-sizing: border-box;
   flex-shrink: 0;

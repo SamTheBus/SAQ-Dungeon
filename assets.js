@@ -2751,40 +2751,123 @@ window.AssetCatalog = {
           let key = (cardKey || "").toLowerCase();
 
           if (key.includes("slime")) {
-            cutoutSvg = `<path d="M12 18 C12 13, 14 11, 16 11 C18 11, 20 13, 20 18 C20 20, 12 20, 12 18 Z" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="14.5" cy="15" r="0.6" fill="#fff"/><circle cx="17.5" cy="15" r="0.6" fill="#fff"/>`;
+            cutoutSvg = `
+              <ellipse cx="16" cy="20.5" rx="5.5" ry="1.5" fill="${color}" opacity="0.5" />
+              <path d="M10 20 C9 14, 11 10, 16 10 C21 10, 23 14, 22 20 C22 22, 10 22, 10 20 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
+              <ellipse cx="13" cy="13.5" rx="1.8" ry="1.2" fill="#fff" opacity="0.75" transform="rotate(-15 13 13.5)" />
+              <circle cx="13.8" cy="16.5" r="0.8" fill="#111" />
+              <circle cx="18.2" cy="16.5" r="0.8" fill="#111" />
+              <path d="M15.2 18.5 Q16 19.5, 16.8 18.5" stroke="#111" stroke-width="0.6" fill="none" />
+            `;
           } else if (key.includes("sprout") || key.includes("treant")) {
-            cutoutSvg = `<path d="M16 20 V14 M16 14 C13 12, 11 14, 12 11 C14 11, 16 13, 16 14 M16 14 C19 12, 21 14, 20 11 C18 11, 16 13, 16 14" stroke="${color}" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="16" cy="11" r="1" fill="#fff"/>`;
+            cutoutSvg = `
+              <path d="M12 21 L10 24 M20 21 L22 24 M16 22 L16 25" stroke="#4a2d18" stroke-width="1.5" stroke-linecap="round" />
+              <path d="M14 21 L13 15 L14 11 H18 L19 15 L18 21 Z" fill="#5c3a21" stroke="#000" stroke-width="1.2" />
+              <path d="M14 11 Q10 8, 11 6 C13 5, 15 9, 15 11" fill="none" stroke="#2ecc71" stroke-width="1.2" />
+              <path d="M18 11 Q22 8, 21 6 C19 5, 17 9, 17 11" fill="none" stroke="#2ecc71" stroke-width="1.2" />
+              <circle cx="14.5" cy="14" r="0.6" fill="#e74c3c" />
+              <circle cx="17.5" cy="14" r="0.6" fill="#e74c3c" />
+            `;
           } else if (key.includes("wyrm") || key.includes("serpent")) {
-            cutoutSvg = `<path d="M12 20 Q16 16, 13 13 T19 10" stroke="${color}" stroke-width="1.5" fill="none" stroke-linecap="round"/><polygon points="19,10 21,8 20,11" fill="${color}"/>`;
-          } else if (key.includes("golem") || key.includes("vault") || key.includes("goliath")) {
-            cutoutSvg = `<rect x="12" y="11" width="8" height="8" rx="1.5" fill="${color}" stroke="#000" stroke-width="0.8"/><line x1="13" y1="14" x2="19" y2="14" stroke="#fff" stroke-width="1"/><rect x="13.5" y="19" width="5" height="2" fill="${color}"/>`;
-          } else if (key.includes("gargoyle") || key.includes("bat") || key.includes("fly")) {
-            cutoutSvg = `<path d="M16 16 L10 11 Q13 16, 16 16 Q19 16, 22 11 Z" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="16" cy="14" r="1.5" fill="#fff"/>`;
-          } else if (key.includes("orb") || key.includes("singularity") || key.includes("spore")) {
-            cutoutSvg = `<circle cx="16" cy="15" r="4" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="16" cy="15" r="2" fill="#fff" opacity="0.8"/><circle cx="16" cy="15" r="5.5" stroke="${color}" stroke-width="0.6" stroke-dasharray="1.5 1.5" fill="none"/>`;
-          } else if (key.includes("spectre") || key.includes("ghost") || key.includes("specter")) {
-            cutoutSvg = `<path d="M12 19 C12 13, 16 10, 16 10 C16 10, 20 13, 20 19 L18 18 L16 20 L14 18 Z" fill="${color}" opacity="0.85" stroke="#000" stroke-width="0.8"/><circle cx="14.5" cy="13" r="0.6" fill="#fff"/><circle cx="17.5" cy="13" r="0.6" fill="#fff"/>`;
-          } else if (key.includes("spider") || key.includes("scarab") || key.includes("nibbler")) {
-            cutoutSvg = `<ellipse cx="16" cy="15" rx="3" ry="2.5" fill="${color}" stroke="#000" stroke-width="0.8"/><path d="M13 13 L10 11 M13 15 L9 15 M13 17 L10 19 M19 13 L22 11 M19 15 L23 15 M19 17 L22 19" stroke="${color}" stroke-width="0.8" fill="none"/>`;
-          } else if (key.includes("blade") || key.includes("armor") || key.includes("keeper") || key.includes("marcus")) {
-            cutoutSvg = `<polygon points="16,9 18,14 16,19 14,14" fill="${color}" stroke="#000" stroke-width="0.8"/><line x1="12" y1="16" x2="20" y2="16" stroke="${color}" stroke-width="1.2"/>`;
+            cutoutSvg = `
+              <path d="M10 21 Q14 21, 16 17 T18 12 Q21 10, 20 8" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" />
+              <path d="M18 12 Q24 7, 24 10 L18 14 Z" fill="${color}" stroke="#000" stroke-width="0.8" />
+              <circle cx="20" cy="8" r="3" fill="${color}" stroke="#000" stroke-width="1" />
+              <line x1="21" y1="6" x2="23" y2="4" stroke="#ffffff" stroke-width="1.0" />
+            `;
+          } else if (
+            key.includes("golem") ||
+            key.includes("vault") ||
+            key.includes("goliath")
+          ) {
+            cutoutSvg = `
+              <rect x="10" y="11" width="12" height="4" rx="1" fill="#7f8c8d" stroke="#000" stroke-width="1" />
+              <rect x="12" y="14" width="8" height="7" fill="#64748b" stroke="#000" stroke-width="1" />
+              <circle cx="16" cy="17" r="1.5" fill="#00d2ff" style="filter: drop-shadow(0 0 2px #00d2ff);" />
+              <circle cx="8" cy="16" r="2.2" fill="#7f8c8d" stroke="#000" stroke-width="0.8" />
+              <circle cx="24" cy="16" r="2.2" fill="#7f8c8d" stroke="#000" stroke-width="0.8" />
+            `;
+          } else if (
+            key.includes("gargoyle") ||
+            key.includes("bat") ||
+            key.includes("fly")
+          ) {
+            cutoutSvg = `
+              <path d="M16 15 L8 9 L11 16 L6 20 L16 16 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
+              <path d="M16 15 L24 9 L21 16 L26 20 L16 16 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
+              <ellipse cx="16" cy="16" rx="4" ry="6" fill="#34495e" stroke="#000" stroke-width="1" />
+              <circle cx="16" cy="9.5" r="3.2" fill="#34495e" stroke="#000" stroke-width="1" />
+              <path d="M14 7.5 L12 4 M18 7.5 L20 4" stroke="#2c3e50" stroke-width="1.2" />
+              <circle cx="14.8" cy="9" r="0.6" fill="#ff4d4d" />
+              <circle cx="17.2" cy="9" r="0.6" fill="#ff4d4d" />
+            `;
+          } else if (
+            key.includes("orb") ||
+            key.includes("singularity") ||
+            key.includes("spore")
+          ) {
+            cutoutSvg = `
+              <path d="M10 16 Q16 11, 22 16" fill="none" stroke="#a855f7" stroke-width="1" stroke-linecap="round" />
+              <circle cx="16" cy="15" r="5" fill="#0c011a" stroke="#e84393" stroke-width="1.5" />
+              <circle cx="16" cy="15" r="1.5" fill="#ffffff" />
+              <circle cx="16" cy="15" r="0.6" fill="#ff007f" />
+              <path d="M10 16 Q16 21, 22 16" fill="none" stroke="#00ffff" stroke-width="1" stroke-linecap="round" />
+            `;
+          } else if (
+            key.includes("spectre") ||
+            key.includes("ghost") ||
+            key.includes("specter")
+          ) {
+            cutoutSvg = `
+              <path d="M12 15 Q10 21, 14 24 L16 21 L18 24 Q22 21, 20 15 Z" fill="#0d011a" opacity="0.8" stroke="#000" stroke-width="0.8" />
+              <path d="M12 15 C12 10, 16 7, 16 7 C16 7, 20 10, 20 15 Z" fill="#0d011a" stroke="#ff0055" stroke-width="1" />
+              <ellipse cx="14.5" cy="12" rx="0.6" ry="1.8" fill="#e84393" transform="rotate(15 14.5 12)" />
+              <ellipse cx="17.5" cy="12" rx="0.6" ry="1.8" fill="#e84393" transform="rotate(-15 17.5 12)" />
+            `;
+          } else if (
+            key.includes("spider") ||
+            key.includes("scarab") ||
+            key.includes("nibbler")
+          ) {
+            cutoutSvg = `
+              <path d="M13 15 Q9 11, 7 12 M13 16 H6.5 M13 17 Q9 20, 7 19 M19 15 Q23 11, 25 12 M19 16 H25.5 M19 17 Q23 20, 25 19" stroke="#7a5c1f" stroke-width="1.2" fill="none" stroke-linecap="round" />
+              <ellipse cx="16" cy="16" rx="4" ry="5.5" fill="#dca04c" stroke="#000" stroke-width="1.2" />
+              <circle cx="16" cy="14" r="2.2" fill="#ffd700" stroke="#000" stroke-width="0.8" />
+              <path d="M14 8 L13 5 M18 8 L19 5" stroke="#dca04c" stroke-width="1.5" stroke-linecap="round" />
+            `;
+          } else if (
+            key.includes("blade") ||
+            key.includes("armor") ||
+            key.includes("keeper") ||
+            key.includes("marcus")
+          ) {
+            cutoutSvg = `
+              <path d="M10 13 H22 L20 15 H12 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
+              <path d="M12 14 H20 L19 23 L16 25 L13 23 Z" fill="#34495e" stroke="#000" stroke-width="1.2" />
+              <circle cx="16" cy="18" r="1.8" fill="#00d2ff" style="filter: drop-shadow(0 0 2px #00d2ff);" />
+              <path d="M13 5 H19 V12 H13 Z" fill="#2c3e50" stroke="#000" stroke-width="1.2" />
+              <rect x="14" y="8" width="4" height="2" fill="#00d2ff" />
+            `;
           } else {
-            cutoutSvg = `<polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8"/><circle cx="16" cy="15" r="1" fill="#fff"/>`;
+            cutoutSvg = `
+              <polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8" />
+              <circle cx="16" cy="15" r="1" fill="#fff" />
+            `;
           }
 
           return `
-                        <defs>
-                          <linearGradient id="g_card_b_${id}" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stop-color="#ffffff"/>
-                            <stop offset="50%" stop-color="${color}"/>
-                            <stop offset="100%" stop-color="#0c051a"/>
-                          </linearGradient>
-                        </defs>
-                        <rect x="7" y="4" width="18" height="24" rx="2.5" fill="url(#g_card_b_${id})" stroke="#000" stroke-width="1.8" />
-                        <rect x="9.5" y="6.5" width="13" height="19" fill="#090514" stroke="${color}" stroke-width="1" opacity="0.9" />
-                        <circle cx="16" cy="15" r="5.5" fill="none" stroke="${color}" stroke-dasharray="2 1.5" stroke-width="0.8" opacity="0.6" />
-                        ${cutoutSvg}
-                      `;
+            <defs>
+              <linearGradient id="g_card_b_${id}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="${color}"/>
+                <stop offset="100%" stop-color="#0c051a"/>
+              </linearGradient>
+            </defs>
+            <rect x="7" y="4" width="18" height="24" rx="2.5" fill="url(#g_card_b_${id})" stroke="#000" stroke-width="1.8" />
+            <rect x="9.5" y="6.5" width="13" height="19" fill="#090514" stroke="${color}" stroke-width="1" opacity="0.9" />
+            <circle cx="16" cy="15" r="5.5" fill="none" stroke="${color}" stroke-dasharray="2 1.5" stroke-width="0.8" opacity="0.6" />
+            ${cutoutSvg}
+          `;
         },
     signet_ring(id, color) {
       return `
@@ -5200,18 +5283,23 @@ window.getIconSvgData = function (itemOrName) {
       : "#00d2ff";
 
     if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
-          let cardData = (window.MONSTER_CARDS_DATA && window.MONSTER_CARDS_DATA[item.cardKey]) || { set: "Whispering Woods" };
-          let setColors = {
-            "Whispering Woods": "#2ecc71",
-            "Mountain Peaks": "#3498db",
-            "Inferno Depths": "#e74c3c",
-            "Fungal Swamp": "#1abc9c",
-            "Void Singularity": "#9b59b6",
-            "Cosmic Wardens": "#f1c40f",
-          };
-          color = setColors[cardData.set] || "#ffd700";
-          innerSvg = window.AssetCatalog.genericEquipment.card(uid, color, item.cardKey);
-        } else if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
+      let cardData = (window.MONSTER_CARDS_DATA &&
+        window.MONSTER_CARDS_DATA[item.cardKey]) || { set: "Whispering Woods" };
+      let setColors = {
+        "Whispering Woods": "#2ecc71",
+        "Mountain Peaks": "#3498db",
+        "Inferno Depths": "#e74c3c",
+        "Fungal Swamp": "#1abc9c",
+        "Void Singularity": "#9b59b6",
+        "Cosmic Wardens": "#f1c40f",
+      };
+      color = setColors[cardData.set] || "#ffd700";
+      innerSvg = window.AssetCatalog.genericEquipment.card(
+        uid,
+        color,
+        item.cardKey,
+      );
+    } else if (item.isUniqueStaff && window.AssetCatalog.uniques.staff)
       innerSvg = window.AssetCatalog.uniques.staff(uid);
     else if (item.isUniqueSword && window.AssetCatalog.uniques.sword)
       innerSvg = window.AssetCatalog.uniques.sword(uid);
