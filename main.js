@@ -7396,21 +7396,30 @@
     let isMarcus = bossTier === "marcus";
 
     let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+        let activeChallenge = window.playerStats.activeSpecialChallenge;
+        let scaleStage = depth;
 
-    // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-    // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
-    let repStage;
-    if (isMarcus) {
-      let peak =
-        window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-      let effectiveDepth = Math.max(depth, peak) * 1.25;
-      repStage = window.getEffectiveStage(effectiveDepth * 5);
-    } else {
-      repStage = window.getEffectiveStage(depth * 5);
-    }
+        if (activeChallenge) {
+          let baseScale = activeChallenge.baseScaleStage || window.playerStats.lifetimePeakStage || 1;
+          scaleStage = baseScale + (depth - 1) * 2;
+        }
 
-    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-    let repScale = Math.pow(repGrowth, repStage * 0.95);
+        // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+        // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
+        let repStage;
+        if (isMarcus) {
+          let peak =
+            window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+          let effectiveDepth = Math.max(scaleStage, peak) * 1.25;
+          let peakSIdx = Math.floor((effectiveDepth - 1) / 12);
+          repStage = window.getEffectiveStage(effectiveDepth * 1.25 + peakSIdx * 12.0);
+        } else {
+          let sIdx = Math.floor((scaleStage - 1) / 12);
+          repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
+        }
+
+        let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+        let repScale = Math.pow(repGrowth, repStage * 0.95);
 
     let bossHp = isMarcus
       ? 800 * repScale
@@ -7424,14 +7433,13 @@
         : 22 * repScale;
 
     bossHp = Math.round(bossHp * enemyScale);
-    bossAtk = Math.round(bossAtk * enemyScale);
+        bossAtk = Math.round(bossAtk * enemyScale);
 
-    let activeChallenge = window.playerStats.activeSpecialChallenge;
-    if (activeChallenge) {
-      let challengeScale = 1.0 + activeChallenge.riskRating / 30;
-      bossHp = Math.round(bossHp * challengeScale);
-      bossAtk = Math.round(bossAtk * challengeScale);
-    }
+        if (activeChallenge) {
+          let challengeScale = 1.0 + activeChallenge.riskRating / 30;
+          bossHp = Math.round(bossHp * challengeScale);
+          bossAtk = Math.round(bossAtk * challengeScale);
+        }
 
     let tier =
       typeof window.getStageTier === "function" ? window.getStageTier() : 0;
@@ -7787,22 +7795,29 @@
       (depth < 4 || !isChallenge);
 
     if (shouldSpawnStandardMobs && map.mobSpawns) {
-      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+          let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+          let activeChallenge = window.playerStats.activeSpecialChallenge;
+          let scaleStage = depth;
 
-      // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-      let repStage = window.getEffectiveStage(depth * 5);
-      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-      let repScale = Math.pow(repGrowth, repStage * 0.95);
+          if (activeChallenge) {
+            let baseScale = activeChallenge.baseScaleStage || window.playerStats.lifetimePeakStage || 1;
+            scaleStage = baseScale + (depth - 1) * 2;
+          }
 
-      let mobHpVal = Math.floor(40 * repScale * enemyScale);
-      let mobAtkVal = Math.floor(8 * repScale * enemyScale);
+          // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+          let sIdx = Math.floor((scaleStage - 1) / 12);
+          let repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
+          let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+          let repScale = Math.pow(repGrowth, repStage * 0.95);
 
-      let activeChallenge = window.playerStats.activeSpecialChallenge;
-      if (activeChallenge) {
-        let challengeScale = 1.0 + activeChallenge.riskRating / 35;
-        mobHpVal = Math.floor(mobHpVal * challengeScale);
-        mobAtkVal = Math.floor(mobAtkVal * challengeScale);
-      }
+          let mobHpVal = Math.floor(40 * repScale * enemyScale);
+                    let mobAtkVal = Math.floor(8 * repScale * enemyScale);
+
+                if (activeChallenge) {
+                  let challengeScale = 1.0 + activeChallenge.riskRating / 35;
+                  mobHpVal = Math.floor(mobHpVal * challengeScale);
+                  mobAtkVal = Math.floor(mobAtkVal * challengeScale);
+                }
 
       let pStats =
         typeof window.resolvePlayerStats === "function"
@@ -7814,19 +7829,30 @@
         let mobInfo = window.getMobPoolForDepth(depth);
         let isRare = Math.random() < rareRate;
 
-        // Roll Elite Support Affixes on higher floors
-        let eliteAffix = null;
-        let isEliteInfested =
-          typeof window.isCavernEffectActive === "function" &&
-          window.isCavernEffectActive("elite_infestation");
-        let affixChance = isEliteInfested
-          ? 1.0
-          : depth >= 85
-            ? 0.35
-            : depth >= 49
-              ? 0.15
-              : 0;
-        if (Math.random() < affixChance) {
+        // Roll Elite Support Affixes on higher floors (Sector-Bridged Step Model)
+                let eliteAffix = null;
+                let isEliteInfested =
+                  typeof window.isCavernEffectActive === "function" &&
+                  window.isCavernEffectActive("elite_infestation");
+
+                let affixChance = 0.0;
+                if (isEliteInfested) {
+                  affixChance = 1.0;
+                } else if (depth >= 85) {
+                  affixChance = 0.35; // Sector 6+ (Floors 85+): 35%
+                } else if (depth >= 49) {
+                  affixChance = 0.20; // Sector 5 (Floors 49-84): 20%
+                } else if (depth >= 37) {
+                  affixChance = 0.12; // Sector 4 (Floors 37-48): 12%
+                } else if (depth >= 25) {
+                  affixChance = 0.07; // Sector 3 (Floors 25-36): 7%
+                } else if (depth >= 13) {
+                  affixChance = 0.03; // Sector 2 (Floors 13-24): 3%
+                } else {
+                  affixChance = 0.00; // Sector 1 (Floors 1-12): 0%
+                }
+
+                if (Math.random() < affixChance) {
           const affixes = [
             "vitality_weaver",
             "iron_citadel",
@@ -8495,10 +8521,10 @@
         window.toggleShopModal();
       }
     } else if (stationType === window.TILE_TYPES.STATION_BOUNTY) {
-      if (typeof window.toggleBountyModal === "function") {
-        window.toggleBountyModal();
-      }
-    } else if (stationType === window.TILE_TYPES.STATION_INN) {
+              if (typeof window.toggleBountyModal === "function") {
+                window.toggleBountyModal();
+              }
+            } else if (stationType === window.TILE_TYPES.STATION_INN) {
       if (typeof window.openTrialsAltarModal === "function") {
         window.openTrialsAltarModal();
       }
@@ -10892,28 +10918,66 @@
         window.openCavernSigilSackAnimation(sigilItem);
       }
     } else if (name === "Monster Card Sack") {
-      let keys = Object.keys(window.MONSTER_CARDS_DATA);
-      let rolledCards = [];
-      for (let i = 0; i < 5; i++) {
-        let rolledKey = keys[Math.floor(Math.random() * keys.length)];
-        rolledCards.push(rolledKey);
+          // Reusable weighted random card roller helper
+          window.rollRandomMonsterCard = function () {
+            const SET_WEIGHTS = {
+              "Whispering Woods": 45,
+              "Mountain Peaks": 25,
+              "Inferno Depths": 15,
+              "Fungal Swamp": 10,
+              "Void Singularity": 4,
+              "Cosmic Wardens": 1
+            };
 
-        // Add directly to persistent Bestiary collection
-        window.playerStats.monsterCards[rolledKey] =
-          (window.playerStats.monsterCards[rolledKey] || 0) + 1;
-      }
+            let cardsBySet = {};
+            for (let key in window.MONSTER_CARDS_DATA) {
+              let set = window.MONSTER_CARDS_DATA[key].set;
+              if (!cardsBySet[set]) cardsBySet[set] = [];
+              cardsBySet[set].push(key);
+            }
 
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.playCardPackOpen === "function"
-      ) {
-        window.SoundManager.playCardPackOpen();
-      }
+            let totalWeight = 0;
+            let activeSets = [];
+            for (let setName in cardsBySet) {
+              let weight = SET_WEIGHTS[setName] || 10;
+              totalWeight += weight;
+              activeSets.push({ name: setName, weight: weight });
+            }
 
-      if (typeof window.openMonsterCardSackAnimation === "function") {
-        window.openMonsterCardSackAnimation(rolledCards);
-      }
-    } else if (name === "Astral Singularity Cache") {
+            let roll = Math.random() * totalWeight;
+            let cumulative = 0;
+            let chosenSetName = "Whispering Woods";
+            for (let s = 0; s < activeSets.length; s++) {
+              cumulative += activeSets[s].weight;
+              if (roll <= cumulative) {
+                chosenSetName = activeSets[s].name;
+                break;
+              }
+            }
+            let pool = cardsBySet[chosenSetName];
+            return pool[Math.floor(Math.random() * pool.length)];
+          };
+
+          let rolledCards = [];
+          for (let i = 0; i < 5; i++) {
+            let rolledKey = window.rollRandomMonsterCard();
+            rolledCards.push(rolledKey);
+
+            // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
+            window.addMonsterCard(rolledKey, 1);
+          }
+
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.playCardPackOpen === "function"
+          ) {
+            window.SoundManager.playCardPackOpen();
+          }
+
+          if (typeof window.openMonsterCardSackAnimation === "function") {
+            window.openMonsterCardSackAnimation(rolledCards);
+          }
+        } else if (name === "Astral Singularity Cache") {
       let peakRunStage = Math.max(
         p.lifetimePeakStage || 1,
         p.stage || 1,
@@ -11112,16 +11176,16 @@
 
           if (dist <= 12) {
             if (gl.item.type === "card") {
-              let cKey = gl.item.cardKey;
-              window.playerStats.monsterCards[cKey] =
-                (window.playerStats.monsterCards[cKey] || 0) + 1;
+                          let cKey = gl.item.cardKey;
+                          // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
+                          window.addMonsterCard(cKey, 1);
 
-              if (
-                window.SoundManager &&
-                typeof window.SoundManager.playCardPickup === "function"
-              ) {
-                window.SoundManager.playCardPickup();
-              }
+                          if (
+                            window.SoundManager &&
+                            typeof window.SoundManager.playCardPickup === "function"
+                          ) {
+                            window.SoundManager.playCardPickup();
+                          }
 
               let cardData = window.MONSTER_CARDS_DATA[cKey];
               let setColors = {
@@ -13538,12 +13602,19 @@
               );
               // Add a slight dynamic drift based on logic clock and mob ID to break identical conga-lines
               let drift =
-                Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
-              baseAngle += drift;
+                              Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
+                            baseAngle += drift;
 
-              let vx = Math.cos(baseAngle) * speed;
-              let vy = Math.sin(baseAngle) * speed;
-              let moved = false;
+                            // Check if we are currently committed to a persistent wall detour/avoidance path
+                            let moveAngle = baseAngle;
+                            if (m.avoidanceTimer && m.avoidanceTimer > 0) {
+                              m.avoidanceTimer--;
+                              moveAngle = m.avoidanceAngle;
+                            }
+
+                            let vx = Math.cos(moveAngle) * speed;
+                            let vy = Math.sin(moveAngle) * speed;
+                            let moved = false;
 
               // 1. Check direct movement step first (fast path)
               if (
@@ -13594,61 +13665,68 @@
               }
 
               // 3. Tangential Corner Deflection (If direct path and slide paths are both blocked)
-              if (!moved) {
-                let preferCW = m.id % 2 === 0;
-                let offset1 = preferCW ? Math.PI / 2 : -Math.PI / 2;
-                let offset2 = preferCW ? -Math.PI / 2 : Math.PI / 2;
-                let offset3 = Math.PI;
+                            if (!moved) {
+                              let preferCW = m.id % 2 === 0;
+                              let offset1 = preferCW ? Math.PI / 2 : -Math.PI / 2;
+                              let offset2 = preferCW ? -Math.PI / 2 : Math.PI / 2;
+                              let offset3 = Math.PI;
 
-                for (let j = 0; j < 3; j++) {
-                  let offset = j === 0 ? offset1 : j === 1 ? offset2 : offset3;
-                  let testAng = baseAngle + offset;
-                  let tx = Math.cos(testAng) * speed;
-                  let ty = Math.sin(testAng) * speed;
+                              for (let j = 0; j < 3; j++) {
+                                let offset = j === 0 ? offset1 : j === 1 ? offset2 : offset3;
+                                let testAng = baseAngle + offset;
+                                let tx = Math.cos(testAng) * speed;
+                                let ty = Math.sin(testAng) * speed;
 
-                  if (
-                    !checkCollisionAt(
-                      mapInst,
-                      mCenterX + tx,
-                      mCenterY + ty,
-                      mRadius,
-                    )
-                  ) {
-                    m.x += tx;
-                    m.y += ty;
-                    vx = tx;
-                    vy = ty;
-                    moved = true;
-                    break;
-                  } else {
-                    let canSlideX = !checkCollisionAt(
-                      mapInst,
-                      mCenterX + tx,
-                      mCenterY,
-                      mRadius,
-                    );
-                    let canSlideY = !checkCollisionAt(
-                      mapInst,
-                      mCenterX,
-                      mCenterY + ty,
-                      mRadius,
-                    );
-                    if (canSlideX && !canSlideY && Math.abs(tx) > 0.1) {
-                      m.x += tx;
-                      vx = tx;
-                      vy = 0;
-                      moved = true;
-                      break;
-                    } else if (canSlideY && !canSlideX && Math.abs(ty) > 0.1) {
-                      m.y += ty;
-                      vx = 0;
-                      vy = ty;
-                      moved = true;
-                      break;
-                    }
-                  }
-                }
-              }
+                                if (
+                                  !checkCollisionAt(
+                                    mapInst,
+                                    mCenterX + tx,
+                                    mCenterY + ty,
+                                    mRadius,
+                                  )
+                                ) {
+                                  m.x += tx;
+                                  m.y += ty;
+                                  vx = tx;
+                                  vy = ty;
+                                  moved = true;
+                                  // Persist this detour path for 15-30 frames so the mob clears the corner
+                                  m.avoidanceAngle = testAng;
+                                  m.avoidanceTimer = window.randInt(15, 30);
+                                  break;
+                                } else {
+                                  let canSlideX = !checkCollisionAt(
+                                    mapInst,
+                                    mCenterX + tx,
+                                    mCenterY,
+                                    mRadius,
+                                  );
+                                  let canSlideY = !checkCollisionAt(
+                                    mapInst,
+                                    mCenterX,
+                                    mCenterY + ty,
+                                    mRadius,
+                                  );
+                                  if (canSlideX && !canSlideY && Math.abs(tx) > 0.1) {
+                                    m.x += tx;
+                                    vx = tx;
+                                    vy = 0;
+                                    moved = true;
+                                    m.avoidanceAngle = testAng;
+                                    m.avoidanceTimer = window.randInt(15, 30);
+                                    break;
+                                  } else if (canSlideY && !canSlideX && Math.abs(ty) > 0.1) {
+                                    m.y += ty;
+                                    vx = 0;
+                                    vy = ty;
+                                    moved = true;
+                                    m.avoidanceAngle = testAng;
+                                    m.avoidanceTimer = window.randInt(15, 30);
+                                    break;
+                                  }
+                                }
+                              }
+                            }
 
               if (moved) {
                 if (vx < -0.1) m.facing = -1;
@@ -18897,9 +18975,9 @@
     }
 
     let bountyBtn = document.getElementById("btn-bounty-toggle");
-    if (bountyBtn) {
-      bountyBtn.style.display = isHub ? "inline-block" : "none";
-    }
+            if (bountyBtn) {
+              bountyBtn.style.display = isHub ? "inline-block" : "none";
+            }
 
     if (abandonBtn) {
       abandonBtn.style.display = isHub ? "none" : "inline-block";
@@ -21995,19 +22073,19 @@
   };
 
   // Subphase 14: Bounty Board UI Toggle & Dynamic Ledger Binding
-  window.toggleBountyModal = function () {
-    if (typeof window.hideTooltip === "function") window.hideTooltip();
-    let modal = document.getElementById("bounty-modal");
-    if (!modal) return;
+    window.toggleBountyModal = function () {
+          if (typeof window.hideTooltip === "function") window.hideTooltip();
+          let modal = document.getElementById("bounty-modal");
+          if (!modal) return;
 
-    if (modal.style.display === "none" || modal.style.display === "") {
-      modal.style.display = "flex";
-      window.renderBountyBoard();
-    } else {
-      modal.style.display = "none";
-      window.lastModalCloseTime = Date.now();
-    }
-  };
+          if (modal.style.display === "none" || modal.style.display === "") {
+            modal.style.display = "flex";
+            window.renderBountyBoard();
+          } else {
+            modal.style.display = "none";
+            window.lastModalCloseTime = Date.now();
+          }
+        };
 
   window.switchBountyTab = function (tabKey) {
     window.state.bountyActiveTab = tabKey;
@@ -22071,22 +22149,47 @@
   };
 
   window.renderBountyBoard = function () {
-    let leftPane = document.getElementById("bounty-list-pane");
-    let rightPane = document.getElementById("bounty-details-pane");
-    if (!leftPane || !rightPane) return;
+      let leftPane = document.getElementById("bounty-list-pane");
+      let rightPane = document.getElementById("bounty-details-pane");
+      if (!leftPane || !rightPane) return;
 
-    let tab = window.state.bountyActiveTab || "challenges";
+      let tab = window.state.bountyActiveTab || "challenges";
 
-    if (tab === "challenges") {
-      let database = window.SPECIAL_CHALLENGES_DATABASE || {};
-      let keys = Object.keys(database);
+      if (tab === "challenges") {
+        let isChallengesUnlocked = (window.playerStats.maxFloorCleared || 0) >= 12 || (window.playerStats.lifetimePeakStage || 0) >= 12 || (window.playerStats.stage || 1) >= 12;
+        if (!isChallengesUnlocked) {
+          leftPane.innerHTML = `
+            <div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:10px; font-family:monospace; line-height:1.45;">
+              [ CONTRACTS LOCKED ]<br><br>
+              Clear Floor 12 (Sector 1 Boss) to unlock Special Cavern Contracts.
+            </div>
+          `;
+          rightPane.innerHTML = `
+            <div style="display:flex; flex-direction:column; text-align:left; gap:10px; height:100%; font-family:monospace;">
+              <div style="font-weight:900; font-size:13.5px; color:#e74c3c; border-bottom:1.5px solid rgba(231,76,60,0.3); padding-bottom:6px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.8px;">
+                Special Contracts Locked
+              </div>
+              <p style="font-size:11px; color:#cbd5e1; line-height:1.45; margin:0 0 10px 0; white-space:normal;">
+                Special Cavern Contracts introduce dangerous high-risk, high-reward modifiers to the dungeon. To unlock these mercenary bounties, you must first prove your strength:
+              </p>
+              <div style="background:rgba(231,76,60,0.05); border:1px dashed #e74c3c; border-radius:6px; padding:10px; font-size:10.5px; line-height:1.4; color:#ff7675;">
+                • Clear Floor 12 (Defeat the Sector 1 Guardian Boss)
+              </div>
+              <button class="action-btn" style="width:100%; margin-top:auto; background:#1e293b; border-color:#334155; color:#64748b;" disabled>EXPEDITION UNDERWAY</button>
+            </div>
+          `;
+          return;
+        }
 
-      if (
-        !window.state.selectedBountyId ||
-        !database[window.state.selectedBountyId]
-      ) {
-        window.state.selectedBountyId = keys[0];
-      }
+        let database = window.SPECIAL_CHALLENGES_DATABASE || {};
+        let keys = Object.keys(database);
+
+        if (
+          !window.state.selectedBountyId ||
+          !database[window.state.selectedBountyId]
+        ) {
+          window.state.selectedBountyId = keys[0];
+        }
 
       let activeBountyId = window.state.selectedBountyId;
 
@@ -22212,19 +22315,40 @@
                   </div>
 
                   <!-- Risk Rating & Focus Modifiers -->
-                  <div style="background:rgba(0,0,0,0.45); border:1px solid #334155; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:4px; font-family:monospace; font-size:9.5px;">
-                    <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Risk Rating:</span> <strong style="color:#ff7675;">${activeChallenge.riskRating} (HIGH DANGER)</strong></div>
-                    <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Focus Rewards:</span> <strong style="color:#00ffff;">+${Math.round((activeChallenge.rewardMultiplier - 1) * 100)}% Multiplier</strong></div>
-                    <div style="display:flex; justify-content:space-between;"><span style="color:#e879f9;">Quality Boost:</span> <strong style="color:#ff007f;">+${Math.round(activeChallenge.qualityBoost * 100)}% Quality</strong></div>
-                  </div>
+                                    <div style="background:rgba(0,0,0,0.45); border:1px solid #334155; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:4.5px; font-family:monospace; font-size:9.5px;">
+                                      <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Contract Tier:</span> <strong style="color:${activeChallenge.tierColor || '#ffd700'}; text-transform:uppercase;">${activeChallenge.tierName || 'Veteran'} (x${activeChallenge.tierId === 'squire' ? '0.8' : activeChallenge.tierId === 'calamity' ? '1.25' : '1.0'} Scale)</strong></div>
+                                      <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Contract Level:</span> <strong style="color:#ffffff;">Floor ${activeChallenge.baseScaleStage || 1}</strong></div>
+                                      <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Risk Rating:</span> <strong style="color:#ff7675;">${activeChallenge.riskRating} (HIGH DANGER)</strong></div>
+                                      <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Focus Rewards:</span> <strong style="color:#00ffff;">+${Math.round((activeChallenge.rewardMultiplier - 1) * 100)}% Multiplier</strong></div>
+                                      <div style="display:flex; justify-content:space-between;"><span style="color:#e879f9;">Quality Boost:</span> <strong style="color:#ff007f;">+${Math.round(activeChallenge.qualityBoost * 100)}% Quality</strong></div>
+                                    </div>
 
-                  <!-- Mutator Seals -->
-                  <div style="display:flex; flex-direction:column; gap:6px;">
-                    <strong style="color:#38bdf8; font-family:monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.5px;">Active Cavern Mutators:</strong>
-                    <div style="display:flex; flex-wrap:wrap; gap:4px;">
-                      ${buffPills} ${debuffPills}
-                    </div>
-                  </div>
+                                    <!-- Dynamic Warning Matrix -->
+                                    ${(function() {
+                                      let peak = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+                                      let cLvl = activeChallenge.baseScaleStage || 1;
+                                      if (cLvl > peak) {
+                                        return `<div style="background: rgba(231, 76, 60, 0.1); border: 1px dashed #ef4444; border-radius: 4px; padding: 6px 8px; font-size: 8.5px; line-height: 1.35; color: #f87171;">
+                                          ✦ WARNING: This contract is highly over-leveled (Floor ${cLvl} vs Peak ${peak}). Upgrade and attune gear slots at the forge before attempting.
+                                        </div>`;
+                                      } else if (cLvl < peak) {
+                                        return `<div style="background: rgba(16, 185, 129, 0.1); border: 1px dashed #10b981; border-radius: 4px; padding: 6px 8px; font-size: 8.5px; line-height: 1.35; color: #34d399;">
+                                          ✦ SECURE: Safe tactical run (Floor ${cLvl} vs Peak ${peak}). Excellent for reliable material extraction.
+                                        </div>`;
+                                      } else {
+                                        return `<div style="background: rgba(245, 158, 11, 0.08); border: 1px dashed #fb923c; border-radius: 4px; padding: 6px 8px; font-size: 8.5px; line-height: 1.35; color: #fb923c;">
+                                          ✦ BALANCED: Standard challenge rating. Perfectly aligned with your current progression peak.
+                                        </div>`;
+                                      }
+                                    })()}
+
+                                    <!-- Mutator Seals -->
+                                    <div style="display:flex; flex-direction:column; gap:6px;">
+                                      <strong style="color:#38bdf8; font-family:monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.5px;">Active Cavern Mutators:</strong>
+                                      <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                                        ${buffPills} ${debuffPills}
+                                      </div>
+                                    </div>
 
                   <!-- Guaranteed Completion Rewards -->
                   <div style="background:rgba(0,0,0,0.3); border:1px dashed rgba(255,255,255,0.1); border-radius:6px; padding:8px 10px; text-align:left; font-family:monospace; font-size:10px; margin-top:auto;">
@@ -23986,9 +24110,10 @@
     let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
     // Polynomial-exponential stage scaling matches campaign item power
-    let repStage = waveNumber * 5;
-    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-    let repScale = Math.pow(repGrowth, repStage * 0.95);
+        let sIdx = Math.floor((waveNumber - 1) / 5);
+        let repStage = waveNumber * 1.25 + sIdx * 12.0;
+        let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+        let repScale = Math.pow(repGrowth, repStage * 0.95);
 
     if (isBossWave) {
       // --- MILESTONE BOSS SPONDING ---
@@ -25028,47 +25153,56 @@
               overlay.style.webkitUserSelect = "none";
               document.body.appendChild(overlay);
 
-              // Card Level Projections Formula
-              window.calculateCardLevelInfo = function (totalOwned) {
-                let level = 1;
-                let nextReq = 2;
-                let prevReq = 0;
+              // Card Level Projections Formula aligned perfectly with Bestiary Ranks
+                            window.calculateCardLevelInfo = function (totalOwned) {
+                              let thresholds = window.CARD_UPGRADE_THRESHOLDS || [1, 25, 50, 150, 300, 750];
+                              let rankNames = ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond"];
 
-                if (totalOwned >= 20) {
-                  level = 5;
-                  nextReq = 20;
-                  prevReq = 20;
-                } else if (totalOwned >= 10) {
-                  level = 4;
-                  nextReq = 20;
-                  prevReq = 10;
-                } else if (totalOwned >= 5) {
-                  level = 3;
-                  nextReq = 10;
-                  prevReq = 5;
-                } else if (totalOwned >= 2) {
-                  level = 2;
-                  nextReq = 5;
-                  prevReq = 2;
-                } else {
-                  level = 1;
-                  nextReq = 2;
-                  prevReq = 0;
-                }
+                              let tier = window.getCardTier(totalOwned);
+                              if (tier < 0) {
+                                return {
+                                  tier: -1,
+                                  level: "Locked",
+                                  nextLevelReq: thresholds[0],
+                                  prevLevelReq: 0,
+                                  currentProgress: totalOwned,
+                                  neededForNext: thresholds[0],
+                                  percent: 0,
+                                  rankName: "Locked"
+                                };
+                              }
 
-                let currentProgress = totalOwned - prevReq;
-                let neededForNext = nextReq - prevReq;
-                let percent = totalOwned >= 20 ? 100 : (currentProgress / neededForNext) * 100;
+                              let nextReq = thresholds[tier + 1];
+                              let prevReq = thresholds[tier];
 
-                return {
-                  level: level,
-                  nextLevelReq: nextReq,
-                  prevLevelReq: prevReq,
-                  currentProgress: currentProgress,
-                  neededForNext: neededForNext,
-                  percent: percent
-                };
-              };
+                              if (nextReq === undefined) {
+                                return {
+                                  tier: tier,
+                                  level: rankNames[tier],
+                                  nextLevelReq: prevReq,
+                                  prevLevelReq: prevReq,
+                                  currentProgress: totalOwned,
+                                  neededForNext: prevReq,
+                                  percent: 100,
+                                  rankName: rankNames[tier]
+                                };
+                              }
+
+                              let currentProgress = totalOwned;
+                              let neededForNext = nextReq;
+                              let percent = Math.min(100, (currentProgress / neededForNext) * 100);
+
+                              return {
+                                tier: tier,
+                                level: rankNames[tier],
+                                nextLevelReq: nextReq,
+                                prevLevelReq: prevReq,
+                                currentProgress: currentProgress,
+                                neededForNext: neededForNext,
+                                percent: percent,
+                                rankName: rankNames[tier]
+                              };
+                            };
 
               // Aggregating duplicates pulled in this pack
               let uniquePulls = [];
@@ -25443,61 +25577,61 @@
 
               // Progress bar transitions and level up logic builder
               window.animateCardProgress = function (cardEl, prevOwned, totalOwned) {
-                let barFill = cardEl.querySelector(".card-progress-bar-fill");
-                let progressText = cardEl.querySelector(".card-progress-text");
-                let lvlNum = cardEl.querySelector(".card-level-num");
-                let lvlUpFlash = cardEl.querySelector(".card-levelup-flash");
+                              let barFill = cardEl.querySelector(".card-progress-bar-fill");
+                              let progressText = cardEl.querySelector(".card-progress-text");
+                              let lvlNum = cardEl.querySelector(".card-level-num");
+                              let lvlUpFlash = cardEl.querySelector(".card-levelup-flash");
 
-                let prevInfo = window.calculateCardLevelInfo(prevOwned);
-                let newInfo = window.calculateCardLevelInfo(totalOwned);
+                              let prevInfo = window.calculateCardLevelInfo(prevOwned);
+                              let newInfo = window.calculateCardLevelInfo(totalOwned);
 
-                // Intitialize at previous count
-                barFill.style.width = prevInfo.percent + "%";
+                              // Intitialize at previous count
+                              barFill.style.width = prevInfo.percent + "%";
 
-                setTimeout(() => {
-                  barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
+                              setTimeout(() => {
+                                barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
 
-                  if (newInfo.level > prevInfo.level) {
-                    // Animate to full first
-                    barFill.style.width = "100%";
+                                if (newInfo.tier > prevInfo.tier) {
+                                  // Animate to full first
+                                  barFill.style.width = "100%";
 
-                    setTimeout(() => {
-                      // Level up triggers
-                      if (lvlNum) lvlNum.innerText = newInfo.level;
-                      if (lvlUpFlash) {
-                        lvlUpFlash.style.display = "block";
-                        lvlUpFlash.style.animation = "lvlUpPulse 1.2s ease-out infinite";
-                      }
+                                  setTimeout(() => {
+                                    // Level up triggers
+                                    if (lvlNum) lvlNum.innerText = newInfo.level + " Rank";
+                                    if (lvlUpFlash) {
+                                      lvlUpFlash.style.display = "block";
+                                      lvlUpFlash.style.animation = "lvlUpPulse 1.2s ease-out infinite";
+                                    }
 
-                      // Instant reset back to 0 width
-                      barFill.style.transition = "none";
-                      barFill.style.width = "0%";
+                                    // Instant reset back to 0 width
+                                    barFill.style.transition = "none";
+                                    barFill.style.width = "0%";
 
-                      if (progressText) {
-                        progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
-                      }
+                                    if (progressText) {
+                                      progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
+                                    }
 
-                      // Force layout reflow
-                      void barFill.offsetWidth;
+                                    // Force layout reflow
+                                    void barFill.offsetWidth;
 
-                      // Animate from 0 to new percentage progress
-                      barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
-                      barFill.style.width = newInfo.percent + "%";
+                                    // Animate from 0 to new percentage progress
+                                    barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
+                                    barFill.style.width = newInfo.percent + "%";
 
-                      // Level up sound
-                      if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                        window.SoundManager.play("spell");
-                      }
-                    }, 850);
-                  } else {
-                    // Standard progress update
-                    barFill.style.width = newInfo.percent + "%";
-                    if (progressText) {
-                      progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
-                    }
-                  }
-                }, 250);
-              };
+                                    // Level up sound
+                                    if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                                      window.SoundManager.play("spell");
+                                    }
+                                  }, 850);
+                                } else {
+                                  // Standard progress update
+                                  barFill.style.width = newInfo.percent + "%";
+                                  if (progressText) {
+                                    progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
+                                  }
+                                }
+                              }, 250);
+                            };
 
               // Fanning Out Reveal Deck Generator
               window.beginDeckFanningReveal = function () {
@@ -25540,8 +25674,8 @@
                             <canvas class="unboxing-card-canvas" width="64" height="64" data-visual-type="${key}"></canvas>
                           </div>
                           <div class="card-name">${cardData.name}</div>
-                          <div class="card-level-display">Level <span class="card-level-num">${prevInfo.level}</span></div>
-                          <div class="card-progress-bar-container">
+                                                    <div class="card-level-display"><span class="card-level-num">${prevInfo.level} Rank</span></div>
+                                                    <div class="card-progress-bar-container">
                             <div class="card-progress-bar-fill"></div>
                             <div class="card-progress-text"></div>
                           </div>
@@ -25701,8 +25835,119 @@
                 }
               };
 
-              // Collection Exit Handler
-              window.collectUnboxedHaul = function () {
+              // Emergency Retreat Strategic Extraction
+                                          window.requestAbandonRun = function () {
+                                            if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
+
+                                            let p = window.player;
+                                            let stats = window.playerStats;
+                                            if (!p || !stats) return;
+
+                                            let activeChallenge = stats.activeSpecialChallenge;
+                                            let runGold = stats.runGold || 0;
+                                            let bag = p.bag || [];
+                                            let bagKeepCount = activeChallenge ? 0 : Math.floor(bag.length * 0.5);
+
+                                            let msg = "";
+                                            if (activeChallenge) {
+                                              msg = "This active Special Challenge is highly unstable! If you retreat now, you will keep all equipped gear, but forfeit ALL carried bag loot and run gold. Confirm retreat?";
+                                            } else {
+                                              msg = "Are you sure you want to retreat to the Hub?<br><br>• You keep <strong>100%</strong> of equipped items (uninsured or not).<br>• You keep <strong style=\"color:#ffd700;\">50%</strong> of your carried bag (randomly selected; the rest is lost).<br>• You lose <strong style=\"color:#ef4444;\">50%</strong> of your run gold/souls from this floor.";
+                                            }
+
+                                            if (typeof window.showCustomConfirm === "function") {
+                                              window.showCustomConfirm(
+                                                "INITIATE EXTRACTION RETREAT",
+                                                msg,
+                                                "RETREAT TO HUB",
+                                                "STAY AND FIGHT",
+                                                "#e74c3c",
+                                                function () {
+                                                  window.executeRetreatToHub(bagKeepCount);
+                                                }
+                                              );
+                                            } else {
+                                              if (confirm(msg.replace(/<br>/g, "\\n").replace(/<[^>]*>/g, ""))) {
+                                                window.executeRetreatToHub(bagKeepCount);
+                                              }
+                                            }
+                                          };
+
+                                          window.executeRetreatToHub = function (bagKeepCount) {
+                                            let p = window.player;
+                                            let stats = window.playerStats;
+                                            if (!p || !stats) return;
+
+                                            // 1. Process Gold/Souls Retention (Keep 50%)
+                                            let runGold = stats.runGold || 0;
+                                            let retainedGold = Math.floor(runGold * 0.5);
+                                            stats.coins = BigNum.from(stats.coins || 0).add(retainedGold);
+
+                                            // 2. Process Bag Loot Retention
+                                            let bag = p.bag || [];
+                                            let retainedBag = [];
+                                            if (bagKeepCount > 0 && bag.length > 0) {
+                                              let shuffled = [...bag].sort(() => Math.random() - 0.5);
+                                              retainedBag = shuffled.slice(0, bagKeepCount);
+                                            }
+
+                                            if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
+                                            retainedBag.forEach((item) => {
+                                              window.inventory.EQUIP.push(item);
+                                            });
+
+                                            // 3. Clear run temporary states
+                                            stats.runGold = 0;
+                                            p.bag = [];
+                                            p.depth = 1;
+                                            window.calamitySpecterActive = false;
+                                            window.floorTimeElapsed = 0;
+
+                                            // Cleanly load the Hub
+                                            window.currentGameState = window.GAME_STATES.HUB;
+                                            if (window.activeDungeonMap) {
+                                              window.activeDungeonMap.generateHub();
+                                            }
+
+                                            if (typeof window.refillFlaskCharges === "function") {
+                                              window.refillFlaskCharges(true);
+                                            }
+
+                                            if (typeof window.invalidatePlayerStats === "function") {
+                                              window.invalidatePlayerStats();
+                                            }
+
+                                            if (typeof window.updateUI === "function") window.updateUI();
+                                            if (typeof window.saveGame === "function") window.saveGame();
+
+                                            if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                                              window.SoundManager.play("death");
+                                            }
+
+                                            // Redirect to Summary Screen showing salvage list
+                                            let summaryModal = document.getElementById("summary-modal");
+                                            let summaryTitle = document.getElementById("summary-title");
+                                            let summarySub = document.getElementById("summary-subtitle");
+                                            let lootList = document.getElementById("summary-loot-list");
+
+                                            if (summaryModal && summaryTitle && summarySub && lootList) {
+                                              summaryTitle.innerText = "RETREAT SUCCESSFUL";
+                                              summaryTitle.style.color = "#f1c40f";
+                                              summarySub.innerText = `You retreated with equipped gear. Salvaged ${retainedBag.length} items & ${retainedGold} Gold.`;
+
+                                              lootList.innerHTML = retainedBag.map(item => {
+                                                let col = window.getTierColor ? window.getTierColor(item.statsRolled) : "#ffd700";
+                                                return `<div class="loot-item" style="color:${col}; font-family:monospace; margin-bottom:4px;">[SALVAGED] ${item.name}</div>`;
+                                              }).join("");
+
+                                              summaryModal.style.display = "flex";
+                                            } else {
+                                              window.loadHub();
+                                            }
+                                          };
+
+                                          // Collection Exit Handler
+                            window.collectUnboxedHaul = function () {
                 window.stopUnboxingCardAnimLoop();
 
                 let styleEl = document.getElementById("booster-stage1-styles");

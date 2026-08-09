@@ -3230,41 +3230,45 @@ window.AssetCatalog = {
   // Centralized configurations of consumables, scrolls, crates, and sacks
   consumables: {
     potion(uid, color, name = "") {
-      let nameLower = (name || "").toLowerCase();
-      let isSupernal = nameLower.includes("supernal");
-      let isGreater = nameLower.includes("greater");
+          let nameLower = (name || "").toLowerCase();
+          let isSupernal = nameLower.includes("supernal");
+          let isGreater = nameLower.includes("greater");
 
-      if (isSupernal) {
-        // TIER 3: Ornate Royal Celestial Flask with Gold Filigree Casing & Core Rune
-        return `
-              ${window.AssetCatalog.gradients.liquid(uid, color)}
-              <!-- Outer Gold Filigree Casing -->
-              <path d="M11 5 H21 V9 L27 17 C29 23, 26 29, 21 29 H11 C6 29, 3 23, 5 17 L11 9 Z" fill="#0d0a1a" stroke="#ffd700" stroke-width="2.2" stroke-linejoin="round"/>
-              <!-- Inner Glowing Liquid Pool -->
-              <path d="M7 19 H25 L26 23 C27 26, 25 28, 21 28 H11 C7 28, 5 26, 6 23 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1"/>
-              <!-- Gold Filigree Neck Ring -->
-              <rect x="10" y="8" width="12" height="3" rx="1" fill="#ffd700" stroke="#000" stroke-width="1"/>
-              <rect x="13.5" y="1" width="5" height="4" fill="#8c4118" stroke="#000" stroke-width="1.2"/>
-              <!-- Central Celestial Core Diamond -->
-              <polygon points="16,13 18.5,17 16,21 13.5,17" fill="#ffffff" stroke="#ffd700" stroke-width="1" />
-              <!-- Glass Specular Arc -->
-              <path d="M8 20 C7 23, 8 26, 10 27" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
-            `;
-      } else if (isGreater) {
-        // TIER 2: Facet-Cut Crystal Flask with Silver Collar
-        return `
-              ${window.AssetCatalog.gradients.liquid(uid, color)}
-              <!-- Faceted Crystal Body -->
-              <path d="M12 5 H20 V10 L27 17 L22 28 H10 L5 17 L12 10 Z" fill="#0f172a" stroke="#e2e8f0" stroke-width="2" stroke-linejoin="round"/>
-              <!-- Liquid Fill -->
-              <path d="M7 19 L12 19 L20 19 L25 19 L21.5 27 H10.5 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1"/>
-              <!-- Silver Neck Band -->
-              <rect x="11" y="8" width="10" height="2.5" fill="#94a3b8" stroke="#000" stroke-width="1"/>
-              <rect x="13.5" y="1.5" width="5" height="3.5" fill="#78350f" stroke="#000" stroke-width="1"/>
-              <!-- Specular Crystal Facet Line -->
-              <line x1="8" y1="18" x2="11" y2="26" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
-            `;
-      }
+          if (isSupernal) {
+            // TIER 3: Ornate Royal Celestial Flask with Gold Filigree Casing & Core Rune
+            return `
+                  ${window.AssetCatalog.gradients.liquid(uid, color)}
+                  <!-- Outer Gold Filigree Casing -->
+                  <path d="M11 5 H21 V9 L27 17 C29 23, 26 29, 21 29 H11 C6 29, 3 23, 5 17 L11 9 Z" fill="#0d0a1a" stroke="#ffd700" stroke-width="2.2" stroke-linejoin="round"/>
+                  <!-- Inner Glowing Liquid Volume (Cohesion Fill) -->
+                  <path d="M11.5 9 L25 17 C26.5 22, 24.5 27.5, 20.5 27.5 H11.5 C7.5 27.5, 5.5 22, 7 17 Z" fill="url(#grad_liq_${uid})" opacity="0.55" />
+                  <!-- Inner Glowing Liquid Pool -->
+                  <path d="M7 19 H25 L26 23 C27 26, 25 28, 21 28 H11 C7 28, 5 26, 6 23 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1"/>
+                  <!-- Gold Filigree Neck Ring -->
+                  <rect x="10" y="8" width="12" height="3" rx="1" fill="#ffd700" stroke="#000" stroke-width="1"/>
+                  <rect x="13.5" y="1" width="5" height="4" fill="#8c4118" stroke="#000" stroke-width="1.2"/>
+                  <!-- Central Celestial Core Diamond -->
+                  <polygon points="16,13 18.5,17 16,21 13.5,17" fill="#ffffff" stroke="#ffd700" stroke-width="1" />
+                  <!-- Glass Specular Arc -->
+                  <path d="M8 20 C7 23, 8 26, 10 27" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+                `;
+          } else if (isGreater) {
+            // TIER 2: Facet-Cut Crystal Flask with Silver Collar
+            return `
+                  ${window.AssetCatalog.gradients.liquid(uid, color)}
+                  <!-- Faceted Crystal Body -->
+                  <path d="M12 5 H20 V10 L27 17 L22 28 H10 L5 17 L12 10 Z" fill="#0f172a" stroke="#e2e8f0" stroke-width="2" stroke-linejoin="round"/>
+                  <!-- Inner Glowing Liquid Volume (Cohesion Fill) -->
+                  <path d="M12.5 10 H19.5 L24.5 16.5 L20.5 26.5 H11.5 L7.5 16.5 Z" fill="url(#grad_liq_${uid})" opacity="0.55" />
+                  <!-- Liquid Fill -->
+                  <path d="M7 19 L12 19 L20 19 L25 19 L21.5 27 H10.5 Z" fill="url(#grad_liq_${uid})" stroke="#000" stroke-width="1"/>
+                  <!-- Silver Neck Band -->
+                  <rect x="11" y="8" width="10" height="2.5" fill="#94a3b8" stroke="#000" stroke-width="1"/>
+                  <rect x="13.5" y="1.5" width="5" height="3.5" fill="#78350f" stroke="#000" stroke-width="1"/>
+                  <!-- Specular Crystal Facet Line -->
+                  <line x1="8" y1="18" x2="11" y2="26" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+                `;
+          }
 
       // TIER 1: Standard Alchemy Glass Sphere Flask
       return `
@@ -5203,12 +5207,26 @@ window.getIconSvgData = function (itemOrName) {
     };
 
     if (matColors[name]) {
-      color = matColors[name];
-    } else if (window.useDex && window.useDex[name]) {
-      color = window.useDex[name].color || "#2ecc71";
-    }
+              color = matColors[name];
+            } else if (window.useDex && window.useDex[name]) {
+              color = window.useDex[name].color || "#2ecc71";
+            } else if (name.includes("Attack Elixir") || name.includes("Attack Potion")) {
+              color = name.includes("Supernal") ? "#00ffcc" : name.includes("Greater") ? "#10b981" : "#2ecc71";
+            } else if (name.includes("Vitality Elixir") || name.includes("Vitality Potion")) {
+              color = name.includes("Supernal") ? "#ff0055" : name.includes("Greater") ? "#f43f5e" : "#e74c3c";
+            } else if (name.includes("Armored Elixir") || name.includes("Armored Potion")) {
+              color = name.includes("Supernal") ? "#38bdf8" : name.includes("Greater") ? "#00d2ff" : "#3498db";
+            } else if (name.includes("Haste Elixir") || name.includes("Haste Potion")) {
+              color = name.includes("Supernal") ? "#ffaa00" : name.includes("Greater") ? "#fbbf24" : "#f1c40f";
+            } else if (name.includes("Double XP") || name.includes("XP Potion") || name.includes("xpPotion")) {
+              color = "#c084fc";
+            } else if (name.includes("Double Drop") || name.includes("Drop Potion") || name.includes("dropPotion")) {
+              color = "#34d399";
+            } else if (name.includes("Drop Quality") || name.includes("Quality Potion") || name.includes("qlyPotion")) {
+              color = "#f472b6";
+            }
 
-    if (window.AssetCatalog.materials && window.AssetCatalog.materials[name]) {
+            if (window.AssetCatalog.materials && window.AssetCatalog.materials[name]) {
       innerSvg = window.AssetCatalog.materials[name](uid);
     } else if (
       name &&
@@ -5276,13 +5294,32 @@ window.getIconSvgData = function (itemOrName) {
       }
     }
   } else {
-    let item = itemOrName;
-    uid = item.id || 999;
-    color = window.getTierColor
-      ? window.getTierColor(item.statsRolled)
-      : "#00d2ff";
+      let item = itemOrName;
+      uid = item.id || 999;
+      color = window.getTierColor
+        ? window.getTierColor(item.statsRolled)
+        : "#00d2ff";
 
-    if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
+      if (item && (item.type === "USE" || (item.name && (item.name.includes("Elixir") || item.name.includes("Potion"))))) {
+        let name = item.name || "";
+        if (name.includes("Attack Elixir") || name.includes("Attack Potion")) {
+          color = name.includes("Supernal") ? "#00ffcc" : name.includes("Greater") ? "#10b981" : "#2ecc71";
+        } else if (name.includes("Vitality Elixir") || name.includes("Vitality Potion")) {
+          color = name.includes("Supernal") ? "#ff0055" : name.includes("Greater") ? "#f43f5e" : "#e74c3c";
+        } else if (name.includes("Armored Elixir") || name.includes("Armored Potion")) {
+          color = name.includes("Supernal") ? "#38bdf8" : name.includes("Greater") ? "#00d2ff" : "#3498db";
+        } else if (name.includes("Haste Elixir") || name.includes("Haste Potion")) {
+          color = name.includes("Supernal") ? "#ffaa00" : name.includes("Greater") ? "#fbbf24" : "#f1c40f";
+        } else if (name.includes("Double XP") || name.includes("XP Potion") || name.includes("xpPotion")) {
+          color = "#c084fc";
+        } else if (name.includes("Double Drop") || name.includes("Drop Potion") || name.includes("dropPotion")) {
+          color = "#34d399";
+        } else if (name.includes("Drop Quality") || name.includes("Quality Potion") || name.includes("qlyPotion")) {
+          color = "#f472b6";
+        }
+      }
+
+      if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
       let cardData = (window.MONSTER_CARDS_DATA &&
         window.MONSTER_CARDS_DATA[item.cardKey]) || { set: "Whispering Woods" };
       let setColors = {

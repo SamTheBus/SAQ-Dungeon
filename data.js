@@ -1198,11 +1198,11 @@ Object.assign(window.GameState, {
         }
       }
 
-      // Calculate next xpReq safely using polynomial scaling
-      let lvl = window.playerStats.level || 1;
-      let rawXpReq = Math.round(350 * Math.pow(lvl, 1.8));
-      xpReq = BigNum.from(rawXpReq);
-      leveledUp = true;
+      // Calculate next xpReq safely using quadratic scaling
+            let lvl = window.playerStats.level || 1;
+            let rawXpReq = Math.round(300 + 100 * lvl + 50 * lvl * lvl);
+            xpReq = BigNum.from(rawXpReq);
+            leveledUp = true;
     }
 
     if (leveledUp) {
@@ -2121,109 +2121,112 @@ window.resolvePlayerStats = function (useDraft = false) {
   p.fairySpawn += aT.fairySpawn;
   p.rareSpawn += aT.rareSpawn;
 
-  // Calculate Card Stats
-  let cards = window.playerStats.monsterCards || {};
-  let cardAtkPct = 0;
-  let cardHpPct = 0;
-  let cardDefPct = 0;
-  let cardFlatSpeed = 0;
-  let cardCritChance = 0;
-  let cardCritDamage = 0;
-  let cardParry = 0;
-  let cardXpRate = 0;
-  let cardDrop = 0;
-  let cardGold = 0;
-  let cardRareSpawn = 0;
+  // Calculate Card Stats (scaled by Rarity Multipliers)
+        let cards = window.playerStats.monsterCards || {};
+        let cardAtkPct = 0;
+        let cardHpPct = 0;
+        let cardDefPct = 0;
+        let cardFlatSpeed = 0;
+        let cardCritChance = 0;
+        let cardCritDamage = 0;
+        let cardParry = 0;
+        let cardXpRate = 0;
+        let cardDrop = 0;
+        let cardGold = 0;
+        let cardRareSpawn = 0;
 
-  for (let cardKey in window.MONSTER_CARDS_DATA) {
-    let count = cards[cardKey] || 0;
-    let tier = window.getCardTier(count);
-    if (tier >= 0) {
-      let cardData = window.MONSTER_CARDS_DATA[cardKey];
-      let val = window.getCardValue(cardData.baseVal, tier);
+        let tempCardMultipliers = window.SET_CARD_MULTIPLIERS || { "Whispering Woods": 1.0 };
 
-      switch (cardData.baseStat) {
-        case "atk":
-          cardAtkPct += val;
-          break;
-        case "maxHp":
-          cardHpPct += val;
-          break;
-        case "def":
-          cardDefPct += val;
-          break;
-        case "moveSpeed":
-          cardFlatSpeed += val;
-          break;
-        case "critChance":
-          cardCritChance += val;
-          break;
-        case "critDamage":
-          cardCritDamage += val;
-          break;
-        case "parry":
-          cardParry += val;
-          break;
-        case "xpRate":
-          cardXpRate += val;
-          break;
-        case "dropRate":
-          cardDrop += val;
-          break;
-        case "gold":
-          cardGold += val;
-          break;
-        case "rareSpawn":
-          cardRareSpawn += val;
-          break;
-      }
-    }
-  }
+        for (let cardKey in window.MONSTER_CARDS_DATA) {
+          let count = cards[cardKey] || 0;
+          let tier = window.getCardTier(count);
+          if (tier >= 0) {
+            let cardData = window.MONSTER_CARDS_DATA[cardKey];
+            let mult = tempCardMultipliers[cardData.set] || 1.0;
+            let val = window.getCardValue(cardData.baseVal, tier) * mult;
 
-  // Calculate Set Bonuses (The "Weakest Link" Rule)
-  let activeSetBonuses = {};
-  for (let setName in window.CARD_SETS_DATA) {
-    let setData = window.CARD_SETS_DATA[setName];
-    let minTier = Infinity;
-    let allOwned = true;
+            switch (cardData.baseStat) {
+              case "atk":
+                cardAtkPct += val;
+                break;
+              case "maxHp":
+                cardHpPct += val;
+                break;
+              case "def":
+                cardDefPct += val;
+                break;
+              case "moveSpeed":
+                cardFlatSpeed += val;
+                break;
+              case "critChance":
+                cardCritChance += val;
+                break;
+              case "critDamage":
+                cardCritDamage += val;
+                break;
+              case "parry":
+                cardParry += val;
+                break;
+              case "xpRate":
+                cardXpRate += val;
+                break;
+              case "dropRate":
+                cardDrop += val;
+                break;
+              case "gold":
+                cardGold += val;
+                break;
+              case "rareSpawn":
+                cardRareSpawn += val;
+                break;
+            }
+          }
+        }
 
-    for (let cKey of setData.cards) {
-      let count = cards[cKey] || 0;
-      let t = window.getCardTier(count);
-      if (t < 0) {
-        allOwned = false;
-        break;
-      }
-      if (t < minTier) {
-        minTier = t;
-      }
-    }
+        // Calculate Set Bonuses (The "Weakest Link" Rule) with custom Set Rarity Resonance
+        let activeSetBonuses = {};
+        let tempResonanceBases = window.SET_RESONANCE_BASE_VALUES || { "Whispering Woods": 0.05 };
+        let attributeSetMult = 1.0;
 
-    if (allOwned) {
-      let multiplier = 1.0 + 0.5 * minTier;
-      activeSetBonuses[setData.statKey] = multiplier;
-    }
-  }
+        for (let setName in window.CARD_SETS_DATA) {
+          let setData = window.CARD_SETS_DATA[setName];
+          let minTier = Infinity;
+          let allOwned = true;
 
-  if (activeSetBonuses["xpRate"]) {
-    cardXpRate += 0.05 * activeSetBonuses["xpRate"];
-  }
-  if (activeSetBonuses["defPctBonus"]) {
-    cardDefPct += 0.05 * activeSetBonuses["defPctBonus"];
-  }
-  if (activeSetBonuses["atkPctBonus"]) {
-    cardAtkPct += 0.05 * activeSetBonuses["atkPctBonus"];
-  }
-  if (activeSetBonuses["maxHpPctBonus"]) {
-    cardHpPct += 0.05 * activeSetBonuses["maxHpPctBonus"];
-  }
-  if (activeSetBonuses["qly"]) {
-    p.qly += 0.05 * activeSetBonuses["qly"];
-  }
-  let attributeSetMult = 1.0;
-  if (activeSetBonuses["attributesMult"]) {
-    attributeSetMult += 0.05 * activeSetBonuses["attributesMult"];
-  }
+          for (let cKey of setData.cards) {
+            let count = cards[cKey] || 0;
+            let t = window.getCardTier(count);
+            if (t < 0) {
+              allOwned = false;
+              break;
+            }
+            if (t < minTier) {
+              minTier = t;
+            }
+          }
+
+          if (allOwned) {
+            let multiplier = 1.0 + 0.5 * minTier;
+            let baseVal = tempResonanceBases[setName] || 0.05;
+            let bonusValue = baseVal * multiplier;
+            activeSetBonuses[setName] = multiplier;
+
+            // Route the resonance bonus directly to the correct stat using structural metadata
+            if (setData.statKey === "xpRate") {
+              cardXpRate += bonusValue;
+            } else if (setData.statKey === "defPctBonus") {
+              cardDefPct += bonusValue;
+            } else if (setData.statKey === "atkPctBonus") {
+              cardAtkPct += bonusValue;
+            } else if (setData.statKey === "maxHpPctBonus") {
+              cardHpPct += bonusValue;
+            } else if (setData.statKey === "qly") {
+              p.qly += bonusValue;
+            } else if (setData.statKey === "attributesMult") {
+              attributeSetMult += bonusValue;
+            }
+          }
+        }
 
   // Apply Card Utility and Combat Stats
   flatSpeedBonus += cardFlatSpeed;
@@ -5621,7 +5624,7 @@ window.sessionStartTime = Date.now();
 window.respawnIntervalId = null;
 window.recalculateXpRequirement = function () {
   let lvl = window.playerStats.level || 1;
-  let rawXpReq = Math.round(350 * Math.pow(lvl, 1.8));
+  let rawXpReq = Math.round(300 + 100 * lvl + 50 * lvl * lvl);
   window.playerStats.xpReq = BigNum.from(rawXpReq);
 };
 // Expose the manual boss rechallenge actuator to the DOM window
@@ -5827,6 +5830,76 @@ window.hydrateCavernSigils = function () {
   }
 };
 
+// --- BESTIARY RARITY SCALING CONFIGURATIONS ---
+window.SET_RESONANCE_BASE_VALUES = {
+  "Whispering Woods": 0.02, // 2% Base
+  "Mountain Peaks": 0.04,   // 4% Base
+  "Inferno Depths": 0.06,   // 6% Base
+  "Fungal Swamp": 0.08,     // 8% Base
+  "Void Singularity": 0.12, // 12% Base
+  "Cosmic Wardens": 0.20    // 20% Base
+};
+
+window.SET_CARD_MULTIPLIERS = {
+  "Whispering Woods": 1.0,
+  "Mountain Peaks": 1.25,
+  "Inferno Depths": 1.5,
+  "Fungal Swamp": 1.75,
+  "Void Singularity": 2.25,
+  "Cosmic Wardens": 3.0
+};
+
+window.getCardDustRates = function (setName) {
+  const rates = {
+    "Whispering Woods": { craft: 10, salvage: 1 },
+    "Mountain Peaks": { craft: 25, salvage: 2 },
+    "Inferno Depths": { craft: 50, salvage: 4 },
+    "Fungal Swamp": { craft: 100, salvage: 8 },
+    "Void Singularity": { craft: 250, salvage: 20 },
+    "Cosmic Wardens": { craft: 500, salvage: 50 }
+  };
+  return rates[setName] || { craft: 50, salvage: 1 };
+};
+
+// --- CENTRALIZED MONSTER CARD ACQUISITION HELPER ---
+window.addMonsterCard = function (cKey, qty = 1) {
+  if (!window.playerStats) return;
+  window.playerStats.monsterCards = window.playerStats.monsterCards || {};
+  let cardData = window.MONSTER_CARDS_DATA[cKey];
+  if (!cardData) return;
+
+  let thresholds = window.CARD_UPGRADE_THRESHOLDS || [1, 25, 50, 150, 300, 750];
+  let maxCap = thresholds[thresholds.length - 1];
+
+  let current = window.playerStats.monsterCards[cKey] || 0;
+  let addedToCount = 0;
+  let salvagedCount = 0;
+
+  for (let i = 0; i < qty; i++) {
+    if (current < maxCap) {
+      current++;
+      addedToCount++;
+    } else {
+      salvagedCount++;
+    }
+  }
+
+  window.playerStats.monsterCards[cKey] = current;
+
+  if (salvagedCount > 0) {
+      let rates = window.getCardDustRates(cardData.set);
+      let dustYield = salvagedCount * rates.salvage;
+      window.playerStats.astralDust = (window.playerStats.astralDust || 0) + dustYield;
+
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          `Maxed Card duplicate auto-salvaged: +${dustYield} Astral Dust!`,
+          "#df9ffb"
+        );
+      }
+    }
+};
+
 window.renderBestiaryAlbum = function () {
   let container = document.getElementById("album-content-panel");
   if (!container) return;
@@ -5860,40 +5933,46 @@ window.renderBestiaryAlbum = function () {
     rareSpawn: "Rare Spawn Rate",
   };
 
-  // Re-accumulate card stat values
-  let accumulatedStats = {};
-  for (let cKey in window.MONSTER_CARDS_DATA) {
-    let count = cards[cKey] || 0;
-    let tier = window.getCardTier(count);
-    if (tier >= 0) {
-      let cardData = window.MONSTER_CARDS_DATA[cKey];
-      let val = window.getCardValue(cardData.baseVal, tier);
-      accumulatedStats[cardData.baseStat] =
-        (accumulatedStats[cardData.baseStat] || 0) + val;
-    }
-  }
+  // Re-accumulate card stat values (scaled by Rarity Multipliers)
+    let accumulatedStats = {};
+    let tempCardMultipliers = window.SET_CARD_MULTIPLIERS || { "Whispering Woods": 1.0 };
 
-  // Append active Set Resonance bonuses
-  for (let setName in window.CARD_SETS_DATA) {
-    let setData = window.CARD_SETS_DATA[setName];
-    let minTier = Infinity;
-    let allOwned = true;
-    for (let cKey of setData.cards) {
+    for (let cKey in window.MONSTER_CARDS_DATA) {
       let count = cards[cKey] || 0;
-      let t = window.getCardTier(count);
-      if (t < 0) {
-        allOwned = false;
-        break;
+      let tier = window.getCardTier(count);
+      if (tier >= 0) {
+        let cardData = window.MONSTER_CARDS_DATA[cKey];
+        let mult = tempCardMultipliers[cardData.set] || 1.0;
+        let val = window.getCardValue(cardData.baseVal, tier) * mult;
+        accumulatedStats[cardData.baseStat] =
+          (accumulatedStats[cardData.baseStat] || 0) + val;
       }
-      if (t < minTier) minTier = t;
     }
-    if (allOwned) {
-      let multiplier = 1.0 + 0.5 * minTier;
-      let val = 0.05 * multiplier;
-      accumulatedStats[setData.statKey] =
-        (accumulatedStats[setData.statKey] || 0) + val;
+
+    // Append active Set Resonance bonuses (scaled by Set Rarity)
+    let tempResonanceBases = window.SET_RESONANCE_BASE_VALUES || { "Whispering Woods": 0.05 };
+
+    for (let setName in window.CARD_SETS_DATA) {
+      let setData = window.CARD_SETS_DATA[setName];
+      let minTier = Infinity;
+      let allOwned = true;
+      for (let cKey of setData.cards) {
+        let count = cards[cKey] || 0;
+        let t = window.getCardTier(count);
+        if (t < 0) {
+          allOwned = false;
+          break;
+        }
+        if (t < minTier) minTier = t;
+      }
+      if (allOwned) {
+        let multiplier = 1.0 + 0.5 * minTier;
+        let baseVal = tempResonanceBases[setName] || 0.05;
+        let val = baseVal * multiplier;
+        accumulatedStats[setData.statKey] =
+          (accumulatedStats[setData.statKey] || 0) + val;
+      }
     }
-  }
 
   for (let sKey in accumulatedStats) {
     let val = accumulatedStats[sKey];
@@ -5968,63 +6047,68 @@ window.renderBestiaryAlbum = function () {
     let setHeaderColor = isSetComplete ? "#ffd700" : "#64748b";
 
     if (isSetComplete) {
-      let mult = 1.0 + 0.5 * minTier;
-      setResonanceText = `<span style="color:#2ecc71; font-weight:bold; font-size:9.5px; font-family:monospace;">RESONANCE: ${rankNames[minTier]} (x${mult.toFixed(1)} Bonus)</span>`;
-    } else {
-      setResonanceText = `<span style="color:#64748b; font-size:9.5px; font-family:monospace;">RESONANCE: INACTIVE (${ownedSetCount}/${setData.cards.length})</span>`;
-    }
+          let mult = 1.0 + 0.5 * minTier;
+          let baseVal = (window.SET_RESONANCE_BASE_VALUES && window.SET_RESONANCE_BASE_VALUES[setName]) || 0.05;
+          let totalBonus = baseVal * mult;
+          let statLabel = statLabels[setData.statKey] || setData.statKey.toUpperCase();
+          setResonanceText = `<span style="color:#2ecc71; font-weight:bold; font-size:9.5px; font-family:monospace;">RESONANCE: ${rankNames[minTier]} (+${(totalBonus * 100).toFixed(1)}% ${statLabel})</span>`;
+        } else {
+          setResonanceText = `<span style="color:#64748b; font-size:9.5px; font-family:monospace;">RESONANCE: INACTIVE (${ownedSetCount}/${setData.cards.length})</span>`;
+        }
 
     let cardsGridHtml = setData.cards
-      .map((cKey) => {
-        let count = cards[cKey] || 0;
-        let tier = window.getCardTier(count);
-        let cardData = window.MONSTER_CARDS_DATA[cKey];
-        let cost = cardData.set === "Cosmic Wardens" ? 250 : 50;
-        let dustOwned = window.playerStats.astralDust || 0;
-        let canCraft = dustOwned >= cost;
-        let isUnlocked = count > 0;
+          .map((cKey) => {
+            let count = cards[cKey] || 0;
+            let tier = window.getCardTier(count);
+            let cardData = window.MONSTER_CARDS_DATA[cKey];
+            let rates = window.getCardDustRates(cardData.set);
+            let cost = rates.craft;
+            let dustOwned = window.playerStats.astralDust || 0;
+            let canCraft = dustOwned >= cost;
+            let isUnlocked = count > 0;
 
-        let iconHtml = `<canvas class="bestiary-card-canvas" data-visual-type="${cKey}" data-unlocked="${isUnlocked}" width="64" height="64" style="width:52px; height:52px; display:block; margin:4px auto;"></canvas>`;
+            let iconHtml = `<canvas class="bestiary-card-canvas" data-visual-type="${cKey}" data-unlocked="${isUnlocked}" width="64" height="64" style="width:52px; height:52px; display:block; margin:4px auto;"></canvas>`;
 
-        if (tier >= 0) {
-          let cardColor = rankColors[tier] || "#ffd700";
-          let val = window.getCardValue(cardData.baseVal, tier);
-          let isPct = cardData.isPct;
-          let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
+            if (tier >= 0) {
+              let cardColor = rankColors[tier] || "#ffd700";
+              let mult = (window.SET_CARD_MULTIPLIERS && window.SET_CARD_MULTIPLIERS[cardData.set]) || 1.0;
+              let val = window.getCardValue(cardData.baseVal, tier) * mult;
+              let isPct = cardData.isPct;
+              let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
 
-          let thresholds = window.CARD_UPGRADE_THRESHOLDS;
-          let nextThreshold = thresholds[tier + 1];
-          let progressText = "";
-          let progressPct = 0;
+              let thresholds = window.CARD_UPGRADE_THRESHOLDS;
+              let nextThreshold = thresholds[tier + 1];
+              let progressText = "";
+              let progressPct = 0;
 
-          if (nextThreshold !== undefined) {
-            progressText = `${count} / ${nextThreshold}`;
-            progressPct = Math.min(100, (count / nextThreshold) * 100);
-          } else {
-            progressText = "MAX RANK";
-            progressPct = 100;
-          }
+              if (nextThreshold !== undefined) {
+                progressText = `${count} / ${nextThreshold}`;
+                progressPct = Math.min(100, (count / nextThreshold) * 100);
+              } else {
+                progressText = "MAX RANK";
+                progressPct = 100;
+              }
 
-          return `
-              <div class="bestiary-card-item unlocked-card" style="border-color:${cardColor}; background:rgba(0,0,0,0.5); box-shadow: inset 0 0 10px ${cardColor}15;">
-                <div style="font-size:7px; color:${cardColor}; font-weight:bold; font-family:monospace; text-transform:uppercase;">${rankNames[tier]} RANK</div>
-                <div style="margin:4px 0;">${iconHtml}</div>
-                <div class="bestiary-card-title" style="color:#ffffff;">${cardData.name.split(" Card")[0]}</div>
-                <div style="font-size:8.5px; color:#2ecc71; font-family:monospace; font-weight:bold;">${statLabels[cardData.baseStat] || cardData.baseStat}: ${valStr}</div>
+              return `
+                  <div class="bestiary-card-item unlocked-card" style="border-color:${cardColor}; background:rgba(0,0,0,0.5); box-shadow: inset 0 0 10px ${cardColor}15;">
+                    <div style="font-size:7px; color:${cardColor}; font-weight:bold; font-family:monospace; text-transform:uppercase;">${rankNames[tier]} RANK</div>
+                    <div style="margin:4px 0;">${iconHtml}</div>
+                    <div class="bestiary-card-title" style="color:#ffffff;">${cardData.name.split(" Card")[0]}</div>
+                    <div style="font-size:8.5px; color:#2ecc71; font-family:monospace; font-weight:bold;">${statLabels[cardData.baseStat] || cardData.baseStat}: ${valStr}</div>
 
-                <div style="width:100%; margin-top:6px;">
-                  <div class="gacha-pity-bg" style="width:100%; height:4px; background:#06040a;">
-                    <div class="gacha-pity-fill" style="width:${progressPct}%; height:100%; background:${cardColor};"></div>
+                    <div style="width:100%; margin-top:6px;">
+                      <div class="gacha-pity-bg" style="width:100%; height:4px; background:#06040a;">
+                        <div class="gacha-pity-fill" style="width:${progressPct}%; height:100%; background:${cardColor};"></div>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; font-family:monospace; font-size:7px; width:100%;">
+                        <button class="action-btn-sm" style="font-size:6px; padding:1.5px 4px; margin:0; line-height:1.2; background:${canCraft ? "#3b0764" : "#1e293b"}; border-color:${canCraft ? "#a855f7" : "#334155"}; color:${canCraft ? "#df9ffb" : "#64748b"};" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} D)</button>
+                        <span style="color:#94a3b8; font-size:7.5px;">${progressText}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; font-family:monospace; font-size:7px; width:100%;">
-                    <button class="action-btn-sm" style="font-size:6px; padding:1.5px 4px; margin:0; line-height:1.2; background:${canCraft ? "#3b0764" : "#1e293b"}; border-color:${canCraft ? "#a855f7" : "#334155"}; color:${canCraft ? "#df9ffb" : "#64748b"};" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} D)</button>
-                    <span style="color:#94a3b8; font-size:7.5px;">${progressText}</span>
-                  </div>
-                </div>
-              </div>
-            `;
-        } else {
-          let craftBtnHtml = `<button class="action-btn-sm" style="font-size:7px; padding:2.5px 6px; margin:0; line-height:1.2; background:${canCraft ? "linear-gradient(180deg, #10b981, #047857)" : "#1e293b"}; border-color:${canCraft ? "#34d399" : "#334155"}; color:${canCraft ? "#ffffff" : "#64748b"}; width:100%; margin-top:4px;" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} Dust)</button>`;
+                `;
+            } else {
+              let craftBtnHtml = `<button class="action-btn-sm" style="font-size:7px; padding:2.5px 6px; margin:0; line-height:1.2; background:${canCraft ? "linear-gradient(180deg, #10b981, #047857)" : "#1e293b"}; border-color:${canCraft ? "#34d399" : "#334155"}; color:${canCraft ? "#ffffff" : "#64748b"}; width:100%; margin-top:4px;" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} Dust)</button>`;
 
           return `
               <div class="bestiary-card-item locked-card" style="border-color:#1e293b; background:rgba(10,14,23,0.3); min-height:145px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -6060,16 +6144,15 @@ window.renderBestiaryAlbum = function () {
   container.innerHTML = `
         <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%;">
           <!-- Unlocked Count & Summary Banner -->
-          <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #1e172e 0%, #0d0918 100%); border: 1.5px solid #d4af37; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-              <span style="font-size:11px; font-weight:900; color:#ffd700; letter-spacing:1px; text-transform:uppercase;">MONSTER CARD COLLECTION</span>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#00ffff; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(0,210,255,0.3);">${unlockedCount} / ${totalCards} Unlocked (${progressPct}%)</span>
-                <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#df9ffb; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(168,85,247,0.3);">Dust: ${(window.playerStats.astralDust || 0).toLocaleString()}</span>
-                <button class="action-btn-sm action-btn-salvage" style="font-size:8px; padding:3px 6px; margin:0; line-height:1.2;" onclick="event.stopPropagation(); window.salvageAllDuplicateCards();">SALVAGE EXTRA COPIES</button>
-              </div>
-            </div>
-            <div class="gacha-pity-bg" style="width:100%; height:6px; background:#06040a;">
+                    <div class="bestiary-summary-banner" style="background: linear-gradient(180deg, #1e172e 0%, #0d0918 100%); border: 1.5px solid #d4af37; border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <span style="font-size:11px; font-weight:900; color:#ffd700; letter-spacing:1px; text-transform:uppercase;">MONSTER CARD COLLECTION</span>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                          <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#00ffff; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(0,210,255,0.3);">${unlockedCount} / ${totalCards} Unlocked (${progressPct}%)</span>
+                          <span style="font-family:monospace; font-size:10px; font-weight:bold; color:#df9ffb; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; border:1px solid rgba(168,85,247,0.3);">Dust: ${(window.playerStats.astralDust || 0).toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div class="gacha-pity-bg" style="width:100%; height:6px; background:#06040a;">
               <div class="gacha-pity-fill" style="width:${progressPct}%; height:100%; background:linear-gradient(90deg, #f59e0b, #10b981);"></div>
             </div>
             <div style="font-size:8.5px; font-family:monospace; color:#34d399; line-height:1.35; border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px; word-break:break-word; text-align:left;">
@@ -6092,7 +6175,8 @@ window.craftCard = function (cKey) {
   let cardData = window.MONSTER_CARDS_DATA[cKey];
   if (!cardData) return;
 
-  let cost = cardData.set === "Cosmic Wardens" ? 250 : 50;
+  let rates = window.getCardDustRates(cardData.set);
+  let cost = rates.craft;
   let dustOwned = window.playerStats.astralDust || 0;
 
   if (dustOwned < cost) {
@@ -6113,18 +6197,18 @@ window.craftCard = function (cKey) {
     "#a855f7",
     function () {
       window.playerStats.astralDust = Math.max(
-        0,
-        (window.playerStats.astralDust || 0) - cost,
-      );
-      window.playerStats.monsterCards[cKey] =
-        (window.playerStats.monsterCards[cKey] || 0) + 1;
+              0,
+              (window.playerStats.astralDust || 0) - cost,
+            );
+            // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
+            window.addMonsterCard(cKey, 1);
 
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.play === "function"
-      ) {
-        window.SoundManager.play("revive");
-      }
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("revive");
+            }
       if (typeof window.spawnTemperParticles === "function") {
         window.spawnTemperParticles(true);
       }
@@ -6146,17 +6230,16 @@ window.salvageAllDuplicateCards = function () {
   let totalCardsSalvaged = 0;
 
   for (let cKey in window.MONSTER_CARDS_DATA) {
-    let count = cards[cKey] || 0;
-    if (count > 1) {
-      let extra = count - 1;
-      let cardData = window.MONSTER_CARDS_DATA[cKey];
-      let isBoss = cardData.set === "Cosmic Wardens";
-      let valuePerCard = isBoss ? 5 : 1;
+      let count = cards[cKey] || 0;
+      if (count > 1) {
+        let extra = count - 1;
+        let cardData = window.MONSTER_CARDS_DATA[cKey];
+        let rates = window.getCardDustRates(cardData.set);
 
-      totalDustYield += extra * valuePerCard;
-      totalCardsSalvaged += extra;
+        totalDustYield += extra * rates.salvage;
+        totalCardsSalvaged += extra;
+      }
     }
-  }
 
   if (totalCardsSalvaged === 0) {
     if (typeof window.pushHeaderToast === "function") {
