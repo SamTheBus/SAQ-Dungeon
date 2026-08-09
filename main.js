@@ -9731,18 +9731,44 @@
       p.lastDamageTimer--;
     }
     if (window.playerStats) {
-      if (window.playerStats.flaskCooldownTimer > 0) {
-        window.playerStats.flaskCooldownTimer--;
-        if (
-          window.logicClock % 3 === 0 ||
-          window.playerStats.flaskCooldownTimer === 0
-        ) {
-          if (typeof window.updateFlaskCooldownHUDOnly === "function") {
-            window.updateFlaskCooldownHUDOnly();
+          let maxCharges = window.playerStats.maxFlaskCharges || 1;
+
+          // If we are below max charges and the recharge timer isn't running, start it
+          if ((window.playerStats.flaskCharges || 0) < maxCharges && (window.playerStats.flaskCooldownTimer || 0) <= 0) {
+            window.playerStats.flaskCooldownTimer = 2700;
           }
-        }
-      }
-      if (window.playerStats.deflectionFatigueTimer > 0) {
+
+          if (window.playerStats.flaskCooldownTimer > 0) {
+            window.playerStats.flaskCooldownTimer--;
+            if (window.playerStats.flaskCooldownTimer === 0) {
+              // Grant 1 charge back when the 45-second timer completes
+              if ((window.playerStats.flaskCharges || 0) < maxCharges) {
+                window.playerStats.flaskCharges = (window.playerStats.flaskCharges || 0) + 1;
+                if (typeof window.updateHUD === "function") {
+                  window.updateHUD();
+                }
+                if (typeof window.pushHeaderToast === "function") {
+                  window.pushHeaderToast("[✦] Field Flask Gained 1 Charge!", "#34d399");
+                }
+              }
+              // If still below maximum charges, restart the recharge cycle
+              if ((window.playerStats.flaskCharges || 0) < maxCharges) {
+                window.playerStats.flaskCooldownTimer = 2700;
+              }
+            }
+            if (
+              window.logicClock % 3 === 0 ||
+              window.playerStats.flaskCooldownTimer === 0
+            ) {
+              if (typeof window.updateFlaskCooldownHUDOnly === "function") {
+                window.updateFlaskCooldownHUDOnly();
+              }
+            }
+          }
+          if (window.playerStats.flaskUseCooldownTimer > 0) {
+            window.playerStats.flaskUseCooldownTimer--;
+          }
+          if (window.playerStats.deflectionFatigueTimer > 0) {
         window.playerStats.deflectionFatigueTimer--;
       }
       if (window.playerStats.counterCooldownTimer > 0) {
@@ -23764,32 +23790,36 @@
   };
 
   window.useDungeonFlask = function () {
-    let p = window.player;
-    let stats = window.playerStats;
-    if (!p || !stats || p.hp <= 0) return;
-    if (stats.editHudMode) return;
+      let p = window.player;
+      let stats = window.playerStats;
+      if (!p || !stats || p.hp <= 0) return;
+      if (stats.editHudMode) return;
 
-    if (stats.flaskCooldownTimer > 0) {
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast("[!] Flask is on internal cooldown!", "#f1c40f");
+      // Prevent accidental double-activation (1-second safety use lockout)
+      if ((stats.flaskUseCooldownTimer || 0) > 0) {
+        return;
       }
-      return;
-    }
 
-    if ((stats.flaskCharges || 0) <= 0) {
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast(
-          "[!] Flask empty! Defeat a Boss to refill charges.",
-          "#e74c3c",
-        );
+      if ((stats.flaskCharges || 0) <= 0) {
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            "[!] Flask empty! Wait for it to recharge.",
+            "#e74c3c",
+          );
+        }
+        return;
       }
-      return;
-    }
 
-    stats.flaskCharges--;
-    stats.flaskCooldownTimer = 2700; // 45 seconds internal cooldown (60 FPS)
+      stats.flaskCharges--;
+      stats.flaskUseCooldownTimer = 60; // 1-second safety lockout (60 FPS)
 
-    if (typeof window.progressMission === "function") {
+      // Ensure the 45-second recharge timer is active if below maximum charges
+      let maxCharges = stats.maxFlaskCharges || 1;
+      if (stats.flaskCharges < maxCharges && (stats.flaskCooldownTimer || 0) <= 0) {
+        stats.flaskCooldownTimer = 2700;
+      }
+
+      if (typeof window.progressMission === "function") {
       window.progressMission("flask", 1);
     }
 
