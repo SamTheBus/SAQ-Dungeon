@@ -7361,7 +7361,14 @@
           }
 
           // Main Segment Body
-          let segGrad = c.createRadialGradient(segX - 2, segY - 2, 1, segX, segY, radius);
+          let segGrad = c.createRadialGradient(
+            segX - 2,
+            segY - 2,
+            1,
+            segX,
+            segY,
+            radius,
+          );
           if (m.flashTimer > 0) {
             segGrad.addColorStop(0, "#ffffff");
             segGrad.addColorStop(1, "#ffffff");
@@ -7409,7 +7416,11 @@
         }
 
         // 5. Frost Breath Vapor
-        if (m.flashTimer === 0 && !window.isGamePaused && Math.random() < 0.22) {
+        if (
+          m.flashTimer === 0 &&
+          !window.isGamePaused &&
+          Math.random() < 0.22
+        ) {
           if (window.particles && window.ParticlePool) {
             let pt = window.ParticlePool.get(
               cx + window.randFloat(-4, 4),
@@ -7421,7 +7432,7 @@
               0.7,
               window.randInt(15, 25),
               0,
-              true
+              true,
             );
             pt.style = "glowing_orb";
             pt.scaleDecay = 0.04;
@@ -7798,7 +7809,9 @@
 
         let cycle = (m.hopTimer || 0) % 45;
         let isLunging = cycle < 15;
-        let wings = isLunging ? Math.sin(time / 60) * 18 : Math.sin(time / 150) * 6;
+        let wings = isLunging
+          ? Math.sin(time / 60) * 18
+          : Math.sin(time / 150) * 6;
         let hover = isLunging ? 0 : Math.sin(time / 150) * 3;
         cy += hover;
 
@@ -8818,7 +8831,7 @@
             cx + 18,
             cy - 12 + antTwitch * i,
             cx + 24 + antTwitch,
-            cy - 8 + antTwitch * i
+            cy - 8 + antTwitch * i,
           );
           c.stroke();
         }
@@ -9037,8 +9050,16 @@
           let oy = Math.sin(orbitTime) * 15;
           let oz = Math.sin(orbitTime); // depth sorting factor
 
-          if (oz < 0) { // Render behind boss
-            drawHexShield(c, ox, oy, 14 * pulseScale, energyColor, m.flashTimer > 0);
+          if (oz < 0) {
+            // Render behind boss
+            drawHexShield(
+              c,
+              ox,
+              oy,
+              14 * pulseScale,
+              energyColor,
+              m.flashTimer > 0,
+            );
           }
         }
       }
@@ -9093,8 +9114,10 @@
         c.strokeStyle = "#ffffff";
         c.lineWidth = 2.5;
         c.beginPath();
-        c.moveTo(0, -14); c.lineTo(0, 6);
-        c.moveTo(-8, -4); c.lineTo(8, -4);
+        c.moveTo(0, -14);
+        c.lineTo(0, 6);
+        c.moveTo(-8, -4);
+        c.lineTo(8, -4);
         c.stroke();
       }
 
@@ -9107,7 +9130,14 @@
           let oy = Math.sin(orbitTime) * 15;
           let oz = Math.sin(orbitTime);
           if (oz >= 0) {
-            drawHexShield(c, ox, oy, 14 * pulseScale, energyColor, m.flashTimer > 0);
+            drawHexShield(
+              c,
+              ox,
+              oy,
+              14 * pulseScale,
+              energyColor,
+              m.flashTimer > 0,
+            );
           }
         }
       }

@@ -145,35 +145,45 @@ window.AssetCatalog = {
   gradients: {
     equip(id, color) {
       return `
-        <defs>
-          <linearGradient id="grad_eq_${id}" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#f8fafc"/>
-            <stop offset="60%" stop-color="${color}"/>
-            <stop offset="100%" stop-color="#475569"/>
-          </linearGradient>
-        </defs>
-      `;
+              <defs>
+                <linearGradient id="grad_eq_${id}" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="35%" stop-color="#ffffff"/>
+                  <stop offset="35%" stop-color="${color}"/>
+                  <stop offset="70%" stop-color="${color}"/>
+                  <stop offset="70%" stop-color="#221830"/>
+                  <stop offset="100%" stop-color="#120c1e"/>
+                </linearGradient>
+              </defs>
+            `;
     },
     weapon(id, color) {
       return `
-        <defs>
-          <linearGradient id="grad_weap_${id}" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="50%" stop-color="${color}"/>
-            <stop offset="100%" stop-color="#555555"/>
-          </linearGradient>
-        </defs>
-      `;
+              <defs>
+                <linearGradient id="grad_weap_${id}" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="35%" stop-color="#ffffff"/>
+                  <stop offset="35%" stop-color="${color}"/>
+                  <stop offset="65%" stop-color="${color}"/>
+                  <stop offset="65%" stop-color="#2a3240"/>
+                  <stop offset="100%" stop-color="#121820"/>
+                </linearGradient>
+              </defs>
+            `;
     },
     shield(id, color) {
       return `
-        <defs>
-          <linearGradient id="grad_sh_${id}" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="${color}"/>
-            <stop offset="100%" stop-color="#2c3e50"/>
-          </linearGradient>
-        </defs>
-      `;
+              <defs>
+                <linearGradient id="grad_sh_${id}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="25%" stop-color="#ffffff"/>
+                  <stop offset="25%" stop-color="${color}"/>
+                  <stop offset="65%" stop-color="${color}"/>
+                  <stop offset="65%" stop-color="#182030"/>
+                  <stop offset="100%" stop-color="#0a0d18"/>
+                </linearGradient>
+              </defs>
+            `;
     },
     liquid(id, color) {
       return `
@@ -213,15 +223,23 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#334155"/>
               </linearGradient>
               <!-- Ricasso dark steel leather wrap -->
-              <linearGradient id="gs_ricasso_${id}" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#555555"/>
-                <stop offset="100%" stop-color="#2c3e50"/>
-              </linearGradient>
-              <!-- Long grip leather wrap -->
-              <linearGradient id="gs_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="gs_ricasso_${id}" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#718096"/>
+                              <stop offset="35%" stop-color="#718096"/>
+                              <stop offset="35%" stop-color="#475569"/>
+                              <stop offset="70%" stop-color="#475569"/>
+                              <stop offset="70%" stop-color="#2c3e50"/>
+                              <stop offset="100%" stop-color="#1a202c"/>
+                            </linearGradient>
+                            <!-- Long grip leather wrap -->
+                            <linearGradient id="gs_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
             </defs>
 
             <!-- Left Heavy Blade (Shadow + Parierhaken parrying hook) -->
@@ -259,22 +277,51 @@ window.AssetCatalog = {
     },
     warhammer(id, color) {
       return `
-          <line x1="16" y1="12" x2="16" y2="30" stroke="#5c3a21" stroke-width="2.5" stroke-linecap="round" />
-          <rect x="9" y="4" width="14" height="8" rx="2" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-          <path d="M7 6 L9 6 L9 10 L7 10 Z" fill="${color}" stroke="#000" stroke-width="1" />
-          <path d="M23 6 L25 6 L25 10 L23 10 Z" fill="${color}" stroke="#000" stroke-width="1" />
-          <polygon points="16,1 18,4 14,4" fill="${color}" stroke="#000" stroke-width="1" />
-          <line x1="16" y1="12" x2="16" y2="20" stroke="${color}" stroke-width="1" />
-        `;
+                <defs>
+                  <linearGradient id="wh_handle_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="45%" stop-color="#5c3a21"/>
+                    <stop offset="45%" stop-color="#2d1d0b"/>
+                    <stop offset="100%" stop-color="#1c0f07"/>
+                  </linearGradient>
+                  <linearGradient id="wh_head_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#cbd5e1"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="45%" stop-color="#475569"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                </defs>
+                <rect x="14.8" y="12" width="2.4" height="18" fill="url(#wh_handle_${id})" stroke="#05070a" stroke-width="1" rx="0.5" />
+                <rect x="9" y="4" width="14" height="8" rx="2" fill="url(#wh_head_${id})" stroke="#000" stroke-width="1.8" />
+                <line x1="16" y1="4.2" x2="16" y2="11.8" stroke="#05070a" stroke-width="1" opacity="0.3" />
+                <path d="M7 6 L9 6 L9 10 L7 10 Z" fill="${color}" stroke="#000" stroke-width="1" />
+                <path d="M23 6 L25 6 L25 10 L23 10 Z" fill="${color}" stroke="#000" stroke-width="1" />
+                <polygon points="16,1 18,4 14,4" fill="${color}" stroke="#000" stroke-width="1" />
+                <rect x="15.2" y="12" width="1.6" height="8" fill="${color}" stroke="#05070a" stroke-width="0.5" />
+              `;
     },
     battleaxe(id, color) {
       return `
-          <line x1="16" y1="6" x2="16" y2="30" stroke="#4d2f12" stroke-width="2.5" stroke-linecap="round" />
-          <path d="M16 8 Q7 4, 10 14 Q14 18, 16 16" fill="${color}" stroke="#000" stroke-width="1.8" />
-          <path d="M16 8 Q25 4, 22 14 Q18 18, 16 16" fill="${color}" stroke="#000" stroke-width="1.8" />
-          <circle cx="16" cy="12" r="2.5" fill="#f1c40f" stroke="#000" stroke-width="1.2" />
-          <polygon points="16,3 18,6 14,3" fill="#bdc3c7" stroke="#000" stroke-width="1" />
-        `;
+                <defs>
+                  <linearGradient id="ax_handle_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="45%" stop-color="#4d2f12"/>
+                    <stop offset="45%" stop-color="#2d1d0b"/>
+                    <stop offset="100%" stop-color="#1c0f07"/>
+                  </linearGradient>
+                  <linearGradient id="ax_spike_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#cbd5e1"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                </defs>
+                <rect x="14.8" y="6" width="2.4" height="24" fill="url(#ax_handle_${id})" stroke="#05070a" stroke-width="1" rx="0.5" />
+                <path d="M16 8 Q7 4, 10 14 Q14 18, 16 16" fill="${color}" stroke="#000" stroke-width="1.8" />
+                <path d="M16 8 Q25 4, 22 14 Q18 18, 16 16" fill="${color}" stroke="#000" stroke-width="1.8" />
+                <circle cx="16" cy="12" r="2.5" fill="#f1c40f" stroke="#000" stroke-width="1.2" />
+                <polygon points="16,2 18,6 14,6" fill="url(#ax_spike_${id})" stroke="#000" stroke-width="1.2" />
+              `;
     },
     broadsword(id, color) {
       return `
@@ -290,10 +337,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#7f8c8d"/>
               </linearGradient>
               <!-- Hilt leather wrap gradient -->
-              <linearGradient id="bs_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#4e3629"/>
-                <stop offset="100%" stop-color="#2b1a11"/>
-              </linearGradient>
+                            <linearGradient id="bs_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#785c4d"/>
+                              <stop offset="35%" stop-color="#785c4d"/>
+                              <stop offset="35%" stop-color="#4e3629"/>
+                              <stop offset="70%" stop-color="#4e3629"/>
+                              <stop offset="70%" stop-color="#2b1a11"/>
+                              <stop offset="100%" stop-color="#180e0a"/>
+                            </linearGradient>
             </defs>
 
             <!-- Basket crossguard backplate -->
@@ -338,10 +389,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#475569"/>
               </linearGradient>
               <!-- Slender handle leather wrap -->
-              <linearGradient id="ls_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#2d3748"/>
-                <stop offset="100%" stop-color="#1a202c"/>
-              </linearGradient>
+                            <linearGradient id="ls_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#4a5568"/>
+                              <stop offset="35%" stop-color="#4a5568"/>
+                              <stop offset="35%" stop-color="#2d3748"/>
+                              <stop offset="70%" stop-color="#2d3748"/>
+                              <stop offset="70%" stop-color="#1a202c"/>
+                              <stop offset="100%" stop-color="#0f141d"/>
+                            </linearGradient>
             </defs>
 
             <!-- Left Slender Blade Side (Shadow Side) -->
@@ -370,20 +425,48 @@ window.AssetCatalog = {
     },
     halberd(id, color) {
       return `
-              <line x1="16" y1="12" x2="16" y2="30" stroke="#5c3a21" stroke-width="2" />
-              <path d="M16 2 L18 8 H14 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.2" />
-              <path d="M16 8 Q23 6, 22 13 Q18 15, 16 14 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-              <path d="M16 9 L11 11 L16 13 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.2" />
-            `;
+                <defs>
+                  <linearGradient id="hb_handle_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="45%" stop-color="#5c3a21"/>
+                    <stop offset="45%" stop-color="#2d1d0b"/>
+                    <stop offset="100%" stop-color="#1c0f07"/>
+                  </linearGradient>
+                  <linearGradient id="hb_steel_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#cbd5e1"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                </defs>
+                <rect x="15" y="12" width="2" height="18" fill="url(#hb_handle_${id})" stroke="#05070a" stroke-width="1" rx="0.3" />
+                <path d="M16 2 L18 8 H14 Z" fill="url(#hb_steel_${id})" stroke="#000" stroke-width="1.2" />
+                <path d="M16 8 Q23 6, 22 13 Q18 15, 16 14 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
+                <path d="M16 9 L11 11 L16 13 Z" fill="url(#hb_steel_${id})" stroke="#000" stroke-width="1.2" />
+              `;
     },
     flanged_mace(id, color) {
       return `
-              <line x1="16" y1="12" x2="16" y2="30" stroke="#2c3e50" stroke-width="2.5" />
-              <rect x="13" y="4" width="6" height="10" rx="1" fill="#7f8c8d" stroke="#000" stroke-width="1.5" />
-              <path d="M10 5 L13 7 V11 L10 13 Z" fill="${color}" stroke="#000" stroke-width="1" />
-              <path d="M22 5 L19 7 V11 L22 13 Z" fill="${color}" stroke="#000" stroke-width="1" />
-              <polygon points="16,1 18,4 14,4" fill="#95a5a6" stroke="#000" stroke-width="1" />
-            `;
+                <defs>
+                  <linearGradient id="fm_handle_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#94a3b8"/>
+                    <stop offset="45%" stop-color="#475569"/>
+                    <stop offset="45%" stop-color="#1e293b"/>
+                    <stop offset="100%" stop-color="#0f172a"/>
+                  </linearGradient>
+                  <linearGradient id="fm_steel_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#cbd5e1"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                </defs>
+                <rect x="14.8" y="12" width="2.4" height="18" fill="url(#fm_handle_${id})" stroke="#05070a" stroke-width="1" rx="0.5" />
+                <rect x="13" y="4" width="6" height="10" rx="1" fill="url(#fm_steel_${id})" stroke="#000" stroke-width="1.5" />
+                <path d="M10 5 L13 7 V11 L10 13 Z" fill="${color}" stroke="#000" stroke-width="1" />
+                <path d="M22 5 L19 7 V11 L22 13 Z" fill="${color}" stroke="#000" stroke-width="1" />
+                <polygon points="16,1 18,4 14,4" fill="url(#fm_steel_${id})" stroke="#000" stroke-width="1" />
+              `;
     },
     claymore(id, color) {
       return `
@@ -400,10 +483,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#475569"/>
               </linearGradient>
               <!-- Heavy leather-wrapped grip -->
-              <linearGradient id="cm_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#3d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="cm_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#3d1d0b"/>
+                              <stop offset="100%" stop-color="#221004"/>
+                            </linearGradient>
             </defs>
 
             <!-- Left Heavy Blade Side (Shadow Side) -->
@@ -659,51 +746,112 @@ window.AssetCatalog = {
     },
     kris(id, color) {
       return `
-              <!-- Wavy kris blade -->
-              <path d="M16 4 Q19 7, 16 10 Q13 13, 16 16 L17 19 L15 19 L14 16 Q17 13, 14 10 Q11 7, 14 4 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
-              <rect x="11" y="19" width="10" height="2.2" rx="0.5" fill="${color}" stroke="#000" stroke-width="1" />
-              <path d="M14.5 21 L13 26 Q16 29, 19 26 L17.5 21 Z" fill="#4a2711" stroke="#000" stroke-width="1" />
-            `;
+                <defs>
+                  <linearGradient id="kr_blade_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#cbd5e1"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                  <linearGradient id="kr_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="45%" stop-color="#4a2711"/>
+                    <stop offset="45%" stop-color="#241309"/>
+                    <stop offset="100%" stop-color="#140a04"/>
+                  </linearGradient>
+                </defs>
+                <path d="M16 4 Q19 7, 16 10 Q13 13, 16 16 L17 19 L15 19 L14 16 Q17 13, 14 10 Q11 7, 14 4 Z" fill="url(#kr_blade_${id})" stroke="#000" stroke-width="1.5" stroke-linejoin="round" />
+                <rect x="11" y="19" width="10" height="2.2" rx="0.5" fill="${color}" stroke="#000" stroke-width="1" />
+                <path d="M14.5 21 L13 26 Q16 29, 19 26 L17.5 21 Z" fill="url(#kr_hilt_${id})" stroke="#000" stroke-width="1" />
+              `;
     },
     stiletto(id, color) {
       return `
-              <!-- Ultra thin piercing needle stiletto blade -->
-              <path d="M15.5 3 H16.5 L17 19 H15 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.5" />
-              <rect x="11" y="19" width="10" height="2" rx="0.5" fill="${color}" stroke="#000" stroke-width="1" />
-              <rect x="14.5" y="21" width="3" height="7" rx="0.5" fill="#111" stroke="#000" stroke-width="1" />
-              <circle cx="16" cy="28.5" r="1.5" fill="${color}" stroke="#000" stroke-width="0.8" />
-            `;
+                <defs>
+                  <linearGradient id="st_blade_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#cbd5e1"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                  <linearGradient id="st_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="45%" stop-color="#1e293b"/>
+                    <stop offset="45%" stop-color="#0f172a"/>
+                    <stop offset="100%" stop-color="#020617"/>
+                  </linearGradient>
+                </defs>
+                <path d="M15.5 3 H16.5 L17 19 H15 Z" fill="url(#st_blade_${id})" stroke="#000" stroke-width="1.5" />
+                <rect x="11" y="19" width="10" height="2" rx="0.5" fill="${color}" stroke="#000" stroke-width="1" />
+                <rect x="14.5" y="21" width="3" height="7" rx="0.5" fill="url(#st_hilt_${id})" stroke="#000" stroke-width="1" />
+                <circle cx="16" cy="28.5" r="1.5" fill="${color}" stroke="#000" stroke-width="0.8" />
+              `;
     },
     baselard(id, color) {
       return `
-              <!-- Straight broad diamond blade -->
-              <path d="M16 4 L18 8 L17 19 H15 L14 8 Z" fill="#95a5a6" stroke="#000" stroke-width="1.8" />
-              <!-- H-shaped hilt guard -->
-              <rect x="10" y="19" width="12" height="2.5" fill="${color}" stroke="#000" stroke-width="1" />
-              <rect x="14.5" y="21.5" width="3" height="5" fill="#4a2306" stroke="#000" stroke-width="1" />
-              <!-- H-shaped pommel -->
-              <rect x="11" y="26.5" width="10" height="2.5" fill="${color}" stroke="#000" stroke-width="1" />
-            `;
+                <defs>
+                  <linearGradient id="bl_blade_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#95a5a6"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                  <linearGradient id="bl_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="45%" stop-color="#4a2306"/>
+                    <stop offset="45%" stop-color="#241002"/>
+                    <stop offset="100%" stop-color="#140801"/>
+                  </linearGradient>
+                </defs>
+                <path d="M16 4 L18 8 L17 19 H15 L14 8 Z" fill="url(#bl_blade_${id})" stroke="#000" stroke-width="1.8" />
+                <rect x="10" y="19" width="12" height="2.5" fill="${color}" stroke="#000" stroke-width="1" />
+                <rect x="14.5" y="21.5" width="3" height="5" fill="url(#bl_hilt_${id})" stroke="#000" stroke-width="1" />
+                <rect x="11" y="26.5" width="10" height="2.5" fill="${color}" stroke="#000" stroke-width="1" />
+              `;
     },
     dirk(id, color) {
       return `
-              <!-- Single edged heavy dirk blade -->
-              <path d="M15 4 L17.5 7 L17.5 19 H14.5 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.8" />
-              <rect x="12" y="19" width="8" height="2" fill="${color}" stroke="#000" stroke-width="1" />
-              <rect x="14" y="21" width="4" height="6.5" fill="#5c3a21" stroke="#000" stroke-width="1" />
-              <circle cx="16" cy="28" r="1.8" fill="${color}" stroke="#000" stroke-width="0.8" />
-            `;
+                <defs>
+                  <linearGradient id="dk_blade_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#bdc3c7"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                  <linearGradient id="dk_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#8d5b38"/>
+                    <stop offset="45%" stop-color="#5c3a21"/>
+                    <stop offset="45%" stop-color="#2d1d0b"/>
+                    <stop offset="100%" stop-color="#1c0f07"/>
+                  </linearGradient>
+                </defs>
+                <path d="M15 4 L17.5 7 L17.5 19 H14.5 Z" fill="url(#dk_blade_${id})" stroke="#000" stroke-width="1.8" />
+                <rect x="12" y="19" width="8" height="2" fill="${color}" stroke="#000" stroke-width="1" />
+                <rect x="14" y="21" width="4" height="6.5" fill="url(#dk_hilt_${id})" stroke="#000" stroke-width="1" />
+                <circle cx="16" cy="28" r="1.8" fill="${color}" stroke="#000" stroke-width="0.8" />
+              `;
     },
     main_gauche(id, color) {
       return `
-              <!-- Main Gauche curved guard dagger -->
-              <path d="M16 4 L17.8 8 L17 19 H15 L14.2 8 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.8" />
-              <!-- Ornate curved crossguard -->
-              <path d="M9 19 Q16 16, 23 19" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" />
-              <!-- Finger protection basket ring -->
-              <path d="M13 19 C13 23, 19 23, 19 19" fill="none" stroke="${color}" stroke-width="1.5" />
-              <rect x="14.5" y="21" width="3" height="6" fill="#111" stroke="#000" stroke-width="1" />
-            `;
+                <defs>
+                  <linearGradient id="mg_blade_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="45%" stop-color="#bdc3c7"/>
+                    <stop offset="45%" stop-color="#7f8c8d"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                  <linearGradient id="mg_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#475569"/>
+                    <stop offset="45%" stop-color="#1e293b"/>
+                    <stop offset="45%" stop-color="#0f172a"/>
+                    <stop offset="100%" stop-color="#020617"/>
+                  </linearGradient>
+                </defs>
+                <path d="M16 4 L17.8 8 L17 19 H15 L14.2 8 Z" fill="url(#mg_blade_${id})" stroke="#000" stroke-width="1.8" />
+                <path d="M9 19 Q16 16, 23 19" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" />
+                <path d="M13 19 C13 23, 19 23, 19 19" fill="none" stroke="${color}" stroke-width="1.5" />
+                <rect x="14.5" y="21" width="3" height="6" fill="url(#mg_hilt_${id})" stroke="#000" stroke-width="1" />
+              `;
     },
     grimoire(id, color) {
       return `
@@ -786,10 +934,14 @@ window.AssetCatalog = {
       return `
                 <defs>
                   <!-- Cel-shaded Wood cover grain -->
-                  <linearGradient id="cx_wood_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#4d290c" />
-                    <stop offset="100%" stop-color="#2e1805" />
-                  </linearGradient>
+                                    <linearGradient id="cx_wood_${id}" x1="0" y1="0" x2="1" y2="1">
+                                      <stop offset="0%" stop-color="#7d4e21" />
+                                      <stop offset="35%" stop-color="#7d4e21" />
+                                      <stop offset="35%" stop-color="#4d290c" />
+                                      <stop offset="70%" stop-color="#4d290c" />
+                                      <stop offset="70%" stop-color="#2e1805" />
+                                      <stop offset="100%" stop-color="#180a01" />
+                                    </linearGradient>
                   <!-- Heavy brass frame and fixtures -->
                   <linearGradient id="cx_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#ffe875" />
@@ -929,10 +1081,14 @@ window.AssetCatalog = {
       return `
                 <defs>
                   <!-- Aged mahogany relic leather gradient -->
-                  <linearGradient id="ch_relic_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#4a1a02" />
-                    <stop offset="100%" stop-color="#140600" />
-                  </linearGradient>
+                                    <linearGradient id="ch_relic_${id}" x1="0" y1="0" x2="1" y2="1">
+                                      <stop offset="0%" stop-color="#7c2e0b" />
+                                      <stop offset="35%" stop-color="#7c2e0b" />
+                                      <stop offset="35%" stop-color="#4a1a02" />
+                                      <stop offset="70%" stop-color="#4a1a02" />
+                                      <stop offset="70%" stop-color="#140600" />
+                                      <stop offset="100%" stop-color="#0a0300" />
+                                    </linearGradient>
                   <!-- Antique gold/brass for hourglass frames -->
                   <linearGradient id="ch_gold_${id}" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#ffd54f" />
@@ -1331,10 +1487,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#1e293b"/>
               </linearGradient>
               <!-- Quilted leather lining gradient -->
-              <linearGradient id="cf_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="cf_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
               <!-- Brass/Gold strap fixtures -->
               <linearGradient id="cf_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ffeaa7"/>
@@ -1521,10 +1681,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#1e293b"/>
               </linearGradient>
               <!-- Leather trim & harness gradient -->
-              <linearGradient id="hb_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="hb_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
               <!-- Gilded brass fixtures -->
               <linearGradient id="hb_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ffeaa7"/>
@@ -1585,10 +1749,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#8a6d1c"/>
               </linearGradient>
               <!-- Leather trim gradient -->
-              <linearGradient id="bg_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="bg_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
             </defs>
 
             <!-- Left Shoulder Guard (Shadow) -->
@@ -1655,10 +1823,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#1e293b"/>
               </linearGradient>
               <!-- Leather bracing strap gradient -->
-              <linearGradient id="pm_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="pm_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
               <!-- Gold/Brass fittings -->
               <linearGradient id="pm_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ffeaa7"/>
@@ -1850,10 +2022,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#8a6d1c"/>
               </linearGradient>
               <!-- Leather belt gradient -->
-              <linearGradient id="fp_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="fp_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
             </defs>
 
             <!-- Left Heavy Pauldron Stack (Shadow) -->
@@ -1946,22 +2122,32 @@ window.AssetCatalog = {
       return `
             <defs>
               <!-- Trenchcoat leather light gradient -->
-              <linearGradient id="tc_leather_l_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#475569"/>
-                <stop offset="60%" stop-color="#334155"/>
-                <stop offset="100%" stop-color="#1e293b"/>
-              </linearGradient>
-              <!-- Trenchcoat leather shadow gradient -->
-              <linearGradient id="tc_leather_d_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#1e293b"/>
-                <stop offset="100%" stop-color="#0f172a"/>
-              </linearGradient>
-              <!-- Lapel inner lining gradient (tier color accent) -->
-              <linearGradient id="tc_lining_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#ffffff"/>
-                <stop offset="50%" stop-color="${color}"/>
-                <stop offset="100%" stop-color="#0f172a"/>
-              </linearGradient>
+                            <linearGradient id="tc_leather_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#94a3b8"/>
+                              <stop offset="35%" stop-color="#94a3b8"/>
+                              <stop offset="35%" stop-color="#475569"/>
+                              <stop offset="70%" stop-color="#475569"/>
+                              <stop offset="70%" stop-color="#1e293b"/>
+                              <stop offset="100%" stop-color="#0f172a"/>
+                            </linearGradient>
+                            <!-- Trenchcoat leather shadow gradient -->
+                            <linearGradient id="tc_leather_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#334155"/>
+                              <stop offset="35%" stop-color="#334155"/>
+                              <stop offset="35%" stop-color="#1e293b"/>
+                              <stop offset="70%" stop-color="#1e293b"/>
+                              <stop offset="70%" stop-color="#0f172a"/>
+                              <stop offset="100%" stop-color="#020617"/>
+                            </linearGradient>
+                            <!-- Lapel inner lining gradient (tier color accent) -->
+                            <linearGradient id="tc_lining_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#ffffff"/>
+                              <stop offset="35%" stop-color="#ffffff"/>
+                              <stop offset="35%" stop-color="${color}"/>
+                              <stop offset="70%" stop-color="${color}"/>
+                              <stop offset="70%" stop-color="#1e293b"/>
+                              <stop offset="100%" stop-color="#0f172a"/>
+                            </linearGradient>
               <!-- Gold/Brass fittings -->
               <linearGradient id="tc_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ffeaa7"/>
@@ -2008,12 +2194,20 @@ window.AssetCatalog = {
     // --- GENERIC SLOT Blueprints ---
     weapon(id, color) {
       return `
-          ${window.AssetCatalog.gradients.weapon(id, color)}
-          <path d="M16 3 L19 8 L18 21 L14 21 L13 8 Z" fill="url(#grad_weap_${id})" stroke="#000" stroke-width="1.8" />
-          <rect x="11" y="21" width="10" height="2.5" rx="0.5" fill="#f1c40f" stroke="#000" stroke-width="1.2" />
-          <rect x="14.5" y="23.5" width="3" height="5" fill="#5c3a21" stroke="#000" stroke-width="1" />
-          <circle cx="16" cy="29.5" r="1.5" fill="#f1c40f" stroke="#000" stroke-width="1" />
-        `;
+              <defs>
+                <linearGradient id="wp_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#8d5b38"/>
+                  <stop offset="45%" stop-color="#5c3a21"/>
+                  <stop offset="45%" stop-color="#2d1d0b"/>
+                  <stop offset="100%" stop-color="#1c0f07"/>
+                </linearGradient>
+              </defs>
+              ${window.AssetCatalog.gradients.weapon(id, color)}
+              <path d="M16 3 L19 8 L18 21 L14 21 L13 8 Z" fill="url(#grad_weap_${id})" stroke="#000" stroke-width="1.8" />
+              <rect x="11" y="21" width="10" height="2.5" rx="0.5" fill="#f1c40f" stroke="#000" stroke-width="1.2" />
+              <rect x="14.5" y="23.5" width="3" height="5" fill="url(#wp_hilt_${id})" stroke="#000" stroke-width="1" />
+              <circle cx="16" cy="29.5" r="1.5" fill="#f1c40f" stroke="#000" stroke-width="1" />
+            `;
     },
     shield(id, color) {
       return `
@@ -2024,10 +2218,24 @@ window.AssetCatalog = {
     },
     dagger(id, color) {
       return `
-        <path d="M16 4 L18 9 L17 19 L15 19 L14 9 Z" fill="#bdc3c7" stroke="#000" stroke-width="1.8" />
-        <rect x="12" y="19" width="8" height="2" fill="${color}" stroke="#000" stroke-width="1.2" />
-        <rect x="14.5" y="21" width="3" height="4" fill="#3b2f2f" stroke="#000" stroke-width="1" />
-      `;
+            <defs>
+              <linearGradient id="dg_blade_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#bdc3c7"/>
+                <stop offset="45%" stop-color="#7f8c8d"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <linearGradient id="dg_hilt_${id}" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#475569"/>
+                <stop offset="45%" stop-color="#3b2f2f"/>
+                <stop offset="45%" stop-color="#1e1a1a"/>
+                <stop offset="100%" stop-color="#0d0a0a"/>
+              </linearGradient>
+            </defs>
+            <path d="M16 4 L18 9 L17 19 L15 19 L14 9 Z" fill="url(#dg_blade_${id})" stroke="#000" stroke-width="1.8" />
+            <rect x="12" y="19" width="8" height="2" fill="${color}" stroke="#000" stroke-width="1.2" />
+            <rect x="14.5" y="21" width="3" height="4" fill="url(#dg_hilt_${id})" stroke="#000" stroke-width="1" />
+          `;
     },
     tome(id, color) {
       return `
@@ -2062,15 +2270,16 @@ window.AssetCatalog = {
     },
     chest(id, color) {
       return `
-            <!-- Left & Right Shoulder Pauldrons -->
-            <path d="M4 11 C4 6, 11 8, 11 13 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-            <path d="M28 11 C28 6, 21 8, 21 13 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
-            <!-- Main Chestplate Body with high-contrast steel shading -->
-            <path d="M8 8 L24 8 L22 22 L16 26 L10 22 Z" fill="#7f8c8d" stroke="#000" stroke-width="1.8" />
-            <!-- Dynamic Trim Accents matching quality tiers -->
-            <path d="M11 14 H21" stroke="${color}" stroke-width="2.2" stroke-linecap="round" />
-            <path d="M11 18 H21" stroke="${color}" stroke-width="2.2" stroke-linecap="round" />
-          `;
+                    ${window.AssetCatalog.gradients.equip(id, color)}
+                    <!-- Left & Right Shoulder Pauldrons -->
+                    <path d="M4 11 C4 6, 11 8, 11 13 Z" fill="url(#grad_eq_${id})" stroke="#05070a" stroke-width="1.2" />
+                    <path d="M28 11 C28 6, 21 8, 21 13 Z" fill="url(#grad_eq_${id})" stroke="#05070a" stroke-width="1.2" />
+                    <!-- Main Chestplate Body with high-contrast steel shading -->
+                    <path d="M8 8 L24 8 L22 22 L16 26 L10 22 Z" fill="url(#grad_eq_${id})" stroke="#05070a" stroke-width="1.8" />
+                    <!-- Dynamic Trim Accents matching quality tiers -->
+                    <path d="M11 14 H21" stroke="${color}" stroke-width="2.2" stroke-linecap="round" />
+                    <path d="M11 18 H21" stroke="${color}" stroke-width="2.2" stroke-linecap="round" />
+                  `;
     },
     leggings(id, color) {
       return `
@@ -2087,10 +2296,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#1e293b"/>
               </linearGradient>
               <!-- Leather strap gradient -->
-              <linearGradient id="lg_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="lg_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
               <!-- Gold/Brass fittings -->
               <linearGradient id="lg_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ffeaa7"/>
@@ -2143,10 +2356,14 @@ window.AssetCatalog = {
                 <stop offset="100%" stop-color="#1e293b"/>
               </linearGradient>
               <!-- Leather strap gradient -->
-              <linearGradient id="gr_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#5c3a21"/>
-                <stop offset="100%" stop-color="#2d1d0b"/>
-              </linearGradient>
+                            <linearGradient id="gr_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#8d5b38"/>
+                              <stop offset="35%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#5c3a21"/>
+                              <stop offset="70%" stop-color="#2d1d0b"/>
+                              <stop offset="100%" stop-color="#1c0f07"/>
+                            </linearGradient>
               <!-- Gold/Brass fittings -->
               <linearGradient id="gr_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ffeaa7"/>
@@ -2199,10 +2416,14 @@ window.AssetCatalog = {
                     <stop offset="100%" stop-color="#1e293b"/>
                   </linearGradient>
                   <!-- Leather strap gradient -->
-                  <linearGradient id="lp_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#5c3a21"/>
-                    <stop offset="100%" stop-color="#2d1d0b"/>
-                  </linearGradient>
+                                    <linearGradient id="lp_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                                      <stop offset="0%" stop-color="#8d5b38"/>
+                                      <stop offset="35%" stop-color="#8d5b38"/>
+                                      <stop offset="35%" stop-color="#5c3a21"/>
+                                      <stop offset="70%" stop-color="#5c3a21"/>
+                                      <stop offset="70%" stop-color="#2d1d0b"/>
+                                      <stop offset="100%" stop-color="#1c0f07"/>
+                                    </linearGradient>
                   <!-- Gold/Brass fittings -->
                   <linearGradient id="lp_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#ffeaa7"/>
@@ -2259,10 +2480,14 @@ window.AssetCatalog = {
                     <stop offset="100%" stop-color="#1e293b"/>
                   </linearGradient>
                   <!-- Padded leather garter strap gradient -->
-                  <linearGradient id="ch_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#5c3a21"/>
-                    <stop offset="100%" stop-color="#2d1d0b"/>
-                  </linearGradient>
+                                  <linearGradient id="ch_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#8d5b38"/>
+                                    <stop offset="35%" stop-color="#8d5b38"/>
+                                    <stop offset="35%" stop-color="#5c3a21"/>
+                                    <stop offset="70%" stop-color="#5c3a21"/>
+                                    <stop offset="70%" stop-color="#2d1d0b"/>
+                                    <stop offset="100%" stop-color="#1c0f07"/>
+                                  </linearGradient>
                   <!-- Brass fittings & buckles -->
                   <linearGradient id="ch_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#ffeaa7"/>
@@ -2314,16 +2539,23 @@ window.AssetCatalog = {
       return `
                 <defs>
                   <!-- Quilted leather light gradient -->
-                  <linearGradient id="cs_quilt_l_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#8d5b38"/>
-                    <stop offset="60%" stop-color="#5c3a21"/>
-                    <stop offset="100%" stop-color="#3d2312"/>
-                  </linearGradient>
-                  <!-- Quilted leather shadow gradient -->
-                  <linearGradient id="cs_quilt_d_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#3d2312"/>
-                    <stop offset="100%" stop-color="#241309"/>
-                  </linearGradient>
+                                <linearGradient id="cs_quilt_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stop-color="#b88a64"/>
+                                  <stop offset="35%" stop-color="#b88a64"/>
+                                  <stop offset="35%" stop-color="#8d5b38"/>
+                                  <stop offset="70%" stop-color="#8d5b38"/>
+                                  <stop offset="70%" stop-color="#5c3a21"/>
+                                  <stop offset="100%" stop-color="#3d2312"/>
+                                </linearGradient>
+                                <!-- Quilted leather shadow gradient -->
+                                <linearGradient id="cs_quilt_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stop-color="#5c3a21"/>
+                                  <stop offset="35%" stop-color="#5c3a21"/>
+                                  <stop offset="35%" stop-color="#3d2312"/>
+                                  <stop offset="70%" stop-color="#3d2312"/>
+                                  <stop offset="70%" stop-color="#241309"/>
+                                  <stop offset="100%" stop-color="#140a04"/>
+                                </linearGradient>
                   <!-- Steel knee plate gradient -->
                   <linearGradient id="cs_steel_${id}" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#ffffff"/>
@@ -2455,21 +2687,30 @@ window.AssetCatalog = {
       return `
                 <defs>
                   <!-- Leather boot light gradient -->
-                  <linearGradient id="bt_leather_l_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#8d5b38"/>
-                    <stop offset="50%" stop-color="#5c3a21"/>
-                    <stop offset="100%" stop-color="#3d2312"/>
-                  </linearGradient>
-                  <!-- Leather boot shadow gradient -->
-                  <linearGradient id="bt_leather_d_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#3d2312"/>
-                    <stop offset="100%" stop-color="#241309"/>
-                  </linearGradient>
-                  <!-- Outsole gradient -->
-                  <linearGradient id="bt_sole_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#334155"/>
-                    <stop offset="100%" stop-color="#0f172a"/>
-                  </linearGradient>
+                                <linearGradient id="bt_leather_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stop-color="#b88a64"/>
+                                  <stop offset="35%" stop-color="#b88a64"/>
+                                  <stop offset="35%" stop-color="#8d5b38"/>
+                                  <stop offset="70%" stop-color="#8d5b38"/>
+                                  <stop offset="70%" stop-color="#5c3a21"/>
+                                  <stop offset="100%" stop-color="#3d2312"/>
+                                </linearGradient>
+                                <!-- Leather boot shadow gradient -->
+                                <linearGradient id="bt_leather_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stop-color="#5c3a21"/>
+                                  <stop offset="35%" stop-color="#5c3a21"/>
+                                  <stop offset="35%" stop-color="#3d2312"/>
+                                  <stop offset="70%" stop-color="#3d2312"/>
+                                  <stop offset="70%" stop-color="#241309"/>
+                                  <stop offset="100%" stop-color="#140a04"/>
+                                </linearGradient>
+                                <!-- Outsole gradient -->
+                                <linearGradient id="bt_sole_${id}" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stop-color="#475569"/>
+                                  <stop offset="45%" stop-color="#334155"/>
+                                  <stop offset="45%" stop-color="#0f172a"/>
+                                  <stop offset="100%" stop-color="#020617"/>
+                                </linearGradient>
                   <!-- Brass buckle fittings -->
                   <linearGradient id="bt_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#ffeaa7"/>
@@ -2582,10 +2823,14 @@ window.AssetCatalog = {
                     <stop offset="100%" stop-color="#8a6d1c"/>
                   </linearGradient>
                   <!-- Leather strap gradient -->
-                  <linearGradient id="sl_leather_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#5c3a21"/>
-                    <stop offset="100%" stop-color="#2d1d0b"/>
-                  </linearGradient>
+                                    <linearGradient id="sl_leather_${id}" x1="0" y1="0" x2="1" y2="1">
+                                      <stop offset="0%" stop-color="#8d5b38"/>
+                                      <stop offset="35%" stop-color="#8d5b38"/>
+                                      <stop offset="35%" stop-color="#5c3a21"/>
+                                      <stop offset="70%" stop-color="#5c3a21"/>
+                                      <stop offset="70%" stop-color="#2d1d0b"/>
+                                      <stop offset="100%" stop-color="#1c0f07"/>
+                                    </linearGradient>
                 </defs>
 
                 <!-- Left Solleret Scale Assembly (Shadow Side) -->
@@ -2639,10 +2884,12 @@ window.AssetCatalog = {
                     <stop offset="100%" stop-color="#8a6d1c"/>
                   </linearGradient>
                   <!-- Outsole gradient -->
-                  <linearGradient id="st_sole_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#334155"/>
-                    <stop offset="100%" stop-color="#0f172a"/>
-                  </linearGradient>
+                                    <linearGradient id="st_sole_${id}" x1="0" y1="0" x2="1" y2="1">
+                                      <stop offset="0%" stop-color="#475569"/>
+                                      <stop offset="45%" stop-color="#334155"/>
+                                      <stop offset="45%" stop-color="#0f172a"/>
+                                      <stop offset="100%" stop-color="#020617"/>
+                                    </linearGradient>
                 </defs>
 
                 <!-- Left Steel Boot (Shadow Side) -->
@@ -2676,21 +2923,30 @@ window.AssetCatalog = {
       return `
                 <defs>
                   <!-- Tactical boot light gradient -->
-                  <linearGradient id="tr_boot_l_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#475569"/>
-                    <stop offset="60%" stop-color="#334155"/>
-                    <stop offset="100%" stop-color="#1e293b"/>
-                  </linearGradient>
-                  <!-- Tactical boot shadow gradient -->
-                  <linearGradient id="tr_boot_d_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#1e293b"/>
-                    <stop offset="100%" stop-color="#0f172a"/>
-                  </linearGradient>
-                  <!-- Heavy rubber tread outsole gradient -->
-                  <linearGradient id="tr_sole_${id}" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#1e293b"/>
-                    <stop offset="100%" stop-color="#020617"/>
-                  </linearGradient>
+                                <linearGradient id="tr_boot_l_${id}" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stop-color="#94a3b8"/>
+                                  <stop offset="35%" stop-color="#94a3b8"/>
+                                  <stop offset="35%" stop-color="#475569"/>
+                                  <stop offset="70%" stop-color="#475569"/>
+                                  <stop offset="70%" stop-color="#1e293b"/>
+                                  <stop offset="100%" stop-color="#0f172a"/>
+                                </linearGradient>
+                                <!-- Tactical boot shadow gradient -->
+                                <linearGradient id="tr_boot_d_${id}" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stop-color="#334155"/>
+                                  <stop offset="35%" stop-color="#334155"/>
+                                  <stop offset="35%" stop-color="#1e293b"/>
+                                  <stop offset="70%" stop-color="#1e293b"/>
+                                  <stop offset="70%" stop-color="#0f172a"/>
+                                  <stop offset="100%" stop-color="#020617"/>
+                                </linearGradient>
+                                <!-- Heavy rubber tread outsole gradient -->
+                                <linearGradient id="tr_sole_${id}" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stop-color="#475569"/>
+                                  <stop offset="45%" stop-color="#1e293b"/>
+                                  <stop offset="45%" stop-color="#0f172a"/>
+                                  <stop offset="100%" stop-color="#020617"/>
+                                </linearGradient>
                   <!-- Eyelets & brass fittings -->
                   <linearGradient id="tr_brass_${id}" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#ffeaa7"/>
@@ -2746,12 +3002,12 @@ window.AssetCatalog = {
                   `;
     },
     card(id, color, cardKey = "") {
-          // Procedural Monster Cutout Silhouette Renderer for Monster Cards
-          let cutoutSvg = "";
-          let key = (cardKey || "").toLowerCase();
+      // Procedural Monster Cutout Silhouette Renderer for Monster Cards
+      let cutoutSvg = "";
+      let key = (cardKey || "").toLowerCase();
 
-          if (key.includes("slime")) {
-            cutoutSvg = `
+      if (key.includes("slime")) {
+        cutoutSvg = `
               <ellipse cx="16" cy="20.5" rx="5.5" ry="1.5" fill="${color}" opacity="0.5" />
               <path d="M10 20 C9 14, 11 10, 16 10 C21 10, 23 14, 22 20 C22 22, 10 22, 10 20 Z" fill="${color}" stroke="#000" stroke-width="1.2" />
               <ellipse cx="13" cy="13.5" rx="1.8" ry="1.2" fill="#fff" opacity="0.75" transform="rotate(-15 13 13.5)" />
@@ -2759,8 +3015,8 @@ window.AssetCatalog = {
               <circle cx="18.2" cy="16.5" r="0.8" fill="#111" />
               <path d="M15.2 18.5 Q16 19.5, 16.8 18.5" stroke="#111" stroke-width="0.6" fill="none" />
             `;
-          } else if (key.includes("sprout") || key.includes("treant")) {
-            cutoutSvg = `
+      } else if (key.includes("sprout") || key.includes("treant")) {
+        cutoutSvg = `
               <path d="M12 21 L10 24 M20 21 L22 24 M16 22 L16 25" stroke="#4a2d18" stroke-width="1.5" stroke-linecap="round" />
               <path d="M14 21 L13 15 L14 11 H18 L19 15 L18 21 Z" fill="#5c3a21" stroke="#000" stroke-width="1.2" />
               <path d="M14 11 Q10 8, 11 6 C13 5, 15 9, 15 11" fill="none" stroke="#2ecc71" stroke-width="1.2" />
@@ -2768,31 +3024,31 @@ window.AssetCatalog = {
               <circle cx="14.5" cy="14" r="0.6" fill="#e74c3c" />
               <circle cx="17.5" cy="14" r="0.6" fill="#e74c3c" />
             `;
-          } else if (key.includes("wyrm") || key.includes("serpent")) {
-            cutoutSvg = `
+      } else if (key.includes("wyrm") || key.includes("serpent")) {
+        cutoutSvg = `
               <path d="M10 21 Q14 21, 16 17 T18 12 Q21 10, 20 8" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" />
               <path d="M18 12 Q24 7, 24 10 L18 14 Z" fill="${color}" stroke="#000" stroke-width="0.8" />
               <circle cx="20" cy="8" r="3" fill="${color}" stroke="#000" stroke-width="1" />
               <line x1="21" y1="6" x2="23" y2="4" stroke="#ffffff" stroke-width="1.0" />
             `;
-          } else if (
-            key.includes("golem") ||
-            key.includes("vault") ||
-            key.includes("goliath")
-          ) {
-            cutoutSvg = `
+      } else if (
+        key.includes("golem") ||
+        key.includes("vault") ||
+        key.includes("goliath")
+      ) {
+        cutoutSvg = `
               <rect x="10" y="11" width="12" height="4" rx="1" fill="#7f8c8d" stroke="#000" stroke-width="1" />
               <rect x="12" y="14" width="8" height="7" fill="#64748b" stroke="#000" stroke-width="1" />
               <circle cx="16" cy="17" r="1.5" fill="#00d2ff" style="filter: drop-shadow(0 0 2px #00d2ff);" />
               <circle cx="8" cy="16" r="2.2" fill="#7f8c8d" stroke="#000" stroke-width="0.8" />
               <circle cx="24" cy="16" r="2.2" fill="#7f8c8d" stroke="#000" stroke-width="0.8" />
             `;
-          } else if (
-            key.includes("gargoyle") ||
-            key.includes("bat") ||
-            key.includes("fly")
-          ) {
-            cutoutSvg = `
+      } else if (
+        key.includes("gargoyle") ||
+        key.includes("bat") ||
+        key.includes("fly")
+      ) {
+        cutoutSvg = `
               <path d="M16 15 L8 9 L11 16 L6 20 L16 16 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
               <path d="M16 15 L24 9 L21 16 L26 20 L16 16 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
               <ellipse cx="16" cy="16" rx="4" ry="6" fill="#34495e" stroke="#000" stroke-width="1" />
@@ -2801,61 +3057,61 @@ window.AssetCatalog = {
               <circle cx="14.8" cy="9" r="0.6" fill="#ff4d4d" />
               <circle cx="17.2" cy="9" r="0.6" fill="#ff4d4d" />
             `;
-          } else if (
-            key.includes("orb") ||
-            key.includes("singularity") ||
-            key.includes("spore")
-          ) {
-            cutoutSvg = `
+      } else if (
+        key.includes("orb") ||
+        key.includes("singularity") ||
+        key.includes("spore")
+      ) {
+        cutoutSvg = `
               <path d="M10 16 Q16 11, 22 16" fill="none" stroke="#a855f7" stroke-width="1" stroke-linecap="round" />
               <circle cx="16" cy="15" r="5" fill="#0c011a" stroke="#e84393" stroke-width="1.5" />
               <circle cx="16" cy="15" r="1.5" fill="#ffffff" />
               <circle cx="16" cy="15" r="0.6" fill="#ff007f" />
               <path d="M10 16 Q16 21, 22 16" fill="none" stroke="#00ffff" stroke-width="1" stroke-linecap="round" />
             `;
-          } else if (
-            key.includes("spectre") ||
-            key.includes("ghost") ||
-            key.includes("specter")
-          ) {
-            cutoutSvg = `
+      } else if (
+        key.includes("spectre") ||
+        key.includes("ghost") ||
+        key.includes("specter")
+      ) {
+        cutoutSvg = `
               <path d="M12 15 Q10 21, 14 24 L16 21 L18 24 Q22 21, 20 15 Z" fill="#0d011a" opacity="0.8" stroke="#000" stroke-width="0.8" />
               <path d="M12 15 C12 10, 16 7, 16 7 C16 7, 20 10, 20 15 Z" fill="#0d011a" stroke="#ff0055" stroke-width="1" />
               <ellipse cx="14.5" cy="12" rx="0.6" ry="1.8" fill="#e84393" transform="rotate(15 14.5 12)" />
               <ellipse cx="17.5" cy="12" rx="0.6" ry="1.8" fill="#e84393" transform="rotate(-15 17.5 12)" />
             `;
-          } else if (
-            key.includes("spider") ||
-            key.includes("scarab") ||
-            key.includes("nibbler")
-          ) {
-            cutoutSvg = `
+      } else if (
+        key.includes("spider") ||
+        key.includes("scarab") ||
+        key.includes("nibbler")
+      ) {
+        cutoutSvg = `
               <path d="M13 15 Q9 11, 7 12 M13 16 H6.5 M13 17 Q9 20, 7 19 M19 15 Q23 11, 25 12 M19 16 H25.5 M19 17 Q23 20, 25 19" stroke="#7a5c1f" stroke-width="1.2" fill="none" stroke-linecap="round" />
               <ellipse cx="16" cy="16" rx="4" ry="5.5" fill="#dca04c" stroke="#000" stroke-width="1.2" />
               <circle cx="16" cy="14" r="2.2" fill="#ffd700" stroke="#000" stroke-width="0.8" />
               <path d="M14 8 L13 5 M18 8 L19 5" stroke="#dca04c" stroke-width="1.5" stroke-linecap="round" />
             `;
-          } else if (
-            key.includes("blade") ||
-            key.includes("armor") ||
-            key.includes("keeper") ||
-            key.includes("marcus")
-          ) {
-            cutoutSvg = `
+      } else if (
+        key.includes("blade") ||
+        key.includes("armor") ||
+        key.includes("keeper") ||
+        key.includes("marcus")
+      ) {
+        cutoutSvg = `
               <path d="M10 13 H22 L20 15 H12 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
               <path d="M12 14 H20 L19 23 L16 25 L13 23 Z" fill="#34495e" stroke="#000" stroke-width="1.2" />
               <circle cx="16" cy="18" r="1.8" fill="#00d2ff" style="filter: drop-shadow(0 0 2px #00d2ff);" />
               <path d="M13 5 H19 V12 H13 Z" fill="#2c3e50" stroke="#000" stroke-width="1.2" />
               <rect x="14" y="8" width="4" height="2" fill="#00d2ff" />
             `;
-          } else {
-            cutoutSvg = `
+      } else {
+        cutoutSvg = `
               <polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8" />
               <circle cx="16" cy="15" r="1" fill="#fff" />
             `;
-          }
+      }
 
-          return `
+      return `
             <defs>
               <linearGradient id="g_card_b_${id}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#ffffff"/>
@@ -2868,7 +3124,7 @@ window.AssetCatalog = {
             <circle cx="16" cy="15" r="5.5" fill="none" stroke="${color}" stroke-dasharray="2 1.5" stroke-width="0.8" opacity="0.6" />
             ${cutoutSvg}
           `;
-        },
+    },
     signet_ring(id, color) {
       return `
                 <defs>
@@ -3066,26 +3322,31 @@ window.AssetCatalog = {
     },
     ring(id, color) {
       return `
-                <defs>
-                  <!-- Gold Band multi-stop gradient -->
-                  <linearGradient id="rn_gold_${id}" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#fff275"/>
-                    <stop offset="40%" stop-color="#d4af37"/>
-                    <stop offset="80%" stop-color="#8a6d1c"/>
-                    <stop offset="100%" stop-color="#5a4504"/>
-                  </linearGradient>
-                  <!-- Gemstone radial gradient -->
-                  <radialGradient id="rn_gem_${id}" cx="35%" cy="30%" r="65%">
-                    <stop offset="0%" stop-color="#ffffff"/>
-                    <stop offset="50%" stop-color="${color}"/>
-                    <stop offset="100%" stop-color="#05070a"/>
-                  </radialGradient>
-                  <!-- Gemstone soft backglow -->
-                  <radialGradient id="rn_glow_${id}" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="${color}" stop-opacity="0.6"/>
-                    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-                  </radialGradient>
-                </defs>
+                        <defs>
+                          <!-- Gold Band stepped gradient -->
+                          <linearGradient id="rn_gold_${id}" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#fff275"/>
+                            <stop offset="40%" stop-color="#fff275"/>
+                            <stop offset="40%" stop-color="#d4af37"/>
+                            <stop offset="80%" stop-color="#d4af37"/>
+                            <stop offset="80%" stop-color="#8a6d1c"/>
+                            <stop offset="100%" stop-color="#5a4504"/>
+                          </linearGradient>
+                          <!-- Gemstone stepped radial gradient -->
+                          <radialGradient id="rn_gem_${id}" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="35%" stop-color="#ffffff"/>
+                            <stop offset="35%" stop-color="${color}"/>
+                            <stop offset="75%" stop-color="${color}"/>
+                            <stop offset="75%" stop-color="#05070a"/>
+                            <stop offset="100%" stop-color="#05070a"/>
+                          </radialGradient>
+                          <!-- Gemstone soft backglow -->
+                          <radialGradient id="rn_glow_${id}" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="${color}" stop-opacity="0.6"/>
+                            <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+                          </radialGradient>
+                        </defs>
 
                 <!-- Gem Soft Backglow -->
                 <circle cx="16" cy="8" r="6.5" fill="url(#rn_glow_${id})" />
@@ -3230,13 +3491,13 @@ window.AssetCatalog = {
   // Centralized configurations of consumables, scrolls, crates, and sacks
   consumables: {
     potion(uid, color, name = "") {
-          let nameLower = (name || "").toLowerCase();
-          let isSupernal = nameLower.includes("supernal");
-          let isGreater = nameLower.includes("greater");
+      let nameLower = (name || "").toLowerCase();
+      let isSupernal = nameLower.includes("supernal");
+      let isGreater = nameLower.includes("greater");
 
-          if (isSupernal) {
-            // TIER 3: Ornate Royal Celestial Flask with Gold Filigree Casing & Core Rune
-            return `
+      if (isSupernal) {
+        // TIER 3: Ornate Royal Celestial Flask with Gold Filigree Casing & Core Rune
+        return `
                   ${window.AssetCatalog.gradients.liquid(uid, color)}
                   <!-- Outer Gold Filigree Casing -->
                   <path d="M11 5 H21 V9 L27 17 C29 23, 26 29, 21 29 H11 C6 29, 3 23, 5 17 L11 9 Z" fill="#0d0a1a" stroke="#ffd700" stroke-width="2.2" stroke-linejoin="round"/>
@@ -3252,9 +3513,9 @@ window.AssetCatalog = {
                   <!-- Glass Specular Arc -->
                   <path d="M8 20 C7 23, 8 26, 10 27" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
                 `;
-          } else if (isGreater) {
-            // TIER 2: Facet-Cut Crystal Flask with Silver Collar
-            return `
+      } else if (isGreater) {
+        // TIER 2: Facet-Cut Crystal Flask with Silver Collar
+        return `
                   ${window.AssetCatalog.gradients.liquid(uid, color)}
                   <!-- Faceted Crystal Body -->
                   <path d="M12 5 H20 V10 L27 17 L22 28 H10 L5 17 L12 10 Z" fill="#0f172a" stroke="#e2e8f0" stroke-width="2" stroke-linejoin="round"/>
@@ -3268,7 +3529,7 @@ window.AssetCatalog = {
                   <!-- Specular Crystal Facet Line -->
                   <line x1="8" y1="18" x2="11" y2="26" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
                 `;
-          }
+      }
 
       // TIER 1: Standard Alchemy Glass Sphere Flask
       return `
@@ -5207,26 +5468,63 @@ window.getIconSvgData = function (itemOrName) {
     };
 
     if (matColors[name]) {
-              color = matColors[name];
-            } else if (window.useDex && window.useDex[name]) {
-              color = window.useDex[name].color || "#2ecc71";
-            } else if (name.includes("Attack Elixir") || name.includes("Attack Potion")) {
-              color = name.includes("Supernal") ? "#00ffcc" : name.includes("Greater") ? "#10b981" : "#2ecc71";
-            } else if (name.includes("Vitality Elixir") || name.includes("Vitality Potion")) {
-              color = name.includes("Supernal") ? "#ff0055" : name.includes("Greater") ? "#f43f5e" : "#e74c3c";
-            } else if (name.includes("Armored Elixir") || name.includes("Armored Potion")) {
-              color = name.includes("Supernal") ? "#38bdf8" : name.includes("Greater") ? "#00d2ff" : "#3498db";
-            } else if (name.includes("Haste Elixir") || name.includes("Haste Potion")) {
-              color = name.includes("Supernal") ? "#ffaa00" : name.includes("Greater") ? "#fbbf24" : "#f1c40f";
-            } else if (name.includes("Double XP") || name.includes("XP Potion") || name.includes("xpPotion")) {
-              color = "#c084fc";
-            } else if (name.includes("Double Drop") || name.includes("Drop Potion") || name.includes("dropPotion")) {
-              color = "#34d399";
-            } else if (name.includes("Drop Quality") || name.includes("Quality Potion") || name.includes("qlyPotion")) {
-              color = "#f472b6";
-            }
+      color = matColors[name];
+    } else if (window.useDex && window.useDex[name]) {
+      color = window.useDex[name].color || "#2ecc71";
+    } else if (
+      name.includes("Attack Elixir") ||
+      name.includes("Attack Potion")
+    ) {
+      color = name.includes("Supernal")
+        ? "#00ffcc"
+        : name.includes("Greater")
+          ? "#10b981"
+          : "#2ecc71";
+    } else if (
+      name.includes("Vitality Elixir") ||
+      name.includes("Vitality Potion")
+    ) {
+      color = name.includes("Supernal")
+        ? "#ff0055"
+        : name.includes("Greater")
+          ? "#f43f5e"
+          : "#e74c3c";
+    } else if (
+      name.includes("Armored Elixir") ||
+      name.includes("Armored Potion")
+    ) {
+      color = name.includes("Supernal")
+        ? "#38bdf8"
+        : name.includes("Greater")
+          ? "#00d2ff"
+          : "#3498db";
+    } else if (name.includes("Haste Elixir") || name.includes("Haste Potion")) {
+      color = name.includes("Supernal")
+        ? "#ffaa00"
+        : name.includes("Greater")
+          ? "#fbbf24"
+          : "#f1c40f";
+    } else if (
+      name.includes("Double XP") ||
+      name.includes("XP Potion") ||
+      name.includes("xpPotion")
+    ) {
+      color = "#c084fc";
+    } else if (
+      name.includes("Double Drop") ||
+      name.includes("Drop Potion") ||
+      name.includes("dropPotion")
+    ) {
+      color = "#34d399";
+    } else if (
+      name.includes("Drop Quality") ||
+      name.includes("Quality Potion") ||
+      name.includes("qlyPotion")
+    ) {
+      color = "#f472b6";
+    }
 
-            if (window.AssetCatalog.materials && window.AssetCatalog.materials[name]) {
+    if (window.AssetCatalog.materials && window.AssetCatalog.materials[name]) {
       innerSvg = window.AssetCatalog.materials[name](uid);
     } else if (
       name &&
@@ -5294,32 +5592,74 @@ window.getIconSvgData = function (itemOrName) {
       }
     }
   } else {
-      let item = itemOrName;
-      uid = item.id || 999;
-      color = window.getTierColor
-        ? window.getTierColor(item.statsRolled)
-        : "#00d2ff";
+    let item = itemOrName;
+    uid = item.id || 999;
+    color = window.getTierColor
+      ? window.getTierColor(item.statsRolled)
+      : "#00d2ff";
 
-      if (item && (item.type === "USE" || (item.name && (item.name.includes("Elixir") || item.name.includes("Potion"))))) {
-        let name = item.name || "";
-        if (name.includes("Attack Elixir") || name.includes("Attack Potion")) {
-          color = name.includes("Supernal") ? "#00ffcc" : name.includes("Greater") ? "#10b981" : "#2ecc71";
-        } else if (name.includes("Vitality Elixir") || name.includes("Vitality Potion")) {
-          color = name.includes("Supernal") ? "#ff0055" : name.includes("Greater") ? "#f43f5e" : "#e74c3c";
-        } else if (name.includes("Armored Elixir") || name.includes("Armored Potion")) {
-          color = name.includes("Supernal") ? "#38bdf8" : name.includes("Greater") ? "#00d2ff" : "#3498db";
-        } else if (name.includes("Haste Elixir") || name.includes("Haste Potion")) {
-          color = name.includes("Supernal") ? "#ffaa00" : name.includes("Greater") ? "#fbbf24" : "#f1c40f";
-        } else if (name.includes("Double XP") || name.includes("XP Potion") || name.includes("xpPotion")) {
-          color = "#c084fc";
-        } else if (name.includes("Double Drop") || name.includes("Drop Potion") || name.includes("dropPotion")) {
-          color = "#34d399";
-        } else if (name.includes("Drop Quality") || name.includes("Quality Potion") || name.includes("qlyPotion")) {
-          color = "#f472b6";
-        }
+    if (
+      item &&
+      (item.type === "USE" ||
+        (item.name &&
+          (item.name.includes("Elixir") || item.name.includes("Potion"))))
+    ) {
+      let name = item.name || "";
+      if (name.includes("Attack Elixir") || name.includes("Attack Potion")) {
+        color = name.includes("Supernal")
+          ? "#00ffcc"
+          : name.includes("Greater")
+            ? "#10b981"
+            : "#2ecc71";
+      } else if (
+        name.includes("Vitality Elixir") ||
+        name.includes("Vitality Potion")
+      ) {
+        color = name.includes("Supernal")
+          ? "#ff0055"
+          : name.includes("Greater")
+            ? "#f43f5e"
+            : "#e74c3c";
+      } else if (
+        name.includes("Armored Elixir") ||
+        name.includes("Armored Potion")
+      ) {
+        color = name.includes("Supernal")
+          ? "#38bdf8"
+          : name.includes("Greater")
+            ? "#00d2ff"
+            : "#3498db";
+      } else if (
+        name.includes("Haste Elixir") ||
+        name.includes("Haste Potion")
+      ) {
+        color = name.includes("Supernal")
+          ? "#ffaa00"
+          : name.includes("Greater")
+            ? "#fbbf24"
+            : "#f1c40f";
+      } else if (
+        name.includes("Double XP") ||
+        name.includes("XP Potion") ||
+        name.includes("xpPotion")
+      ) {
+        color = "#c084fc";
+      } else if (
+        name.includes("Double Drop") ||
+        name.includes("Drop Potion") ||
+        name.includes("dropPotion")
+      ) {
+        color = "#34d399";
+      } else if (
+        name.includes("Drop Quality") ||
+        name.includes("Quality Potion") ||
+        name.includes("qlyPotion")
+      ) {
+        color = "#f472b6";
       }
+    }
 
-      if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
+    if (item.type === "card" && window.AssetCatalog.genericEquipment.card) {
       let cardData = (window.MONSTER_CARDS_DATA &&
         window.MONSTER_CARDS_DATA[item.cardKey]) || { set: "Whispering Woods" };
       let setColors = {

@@ -1709,303 +1709,346 @@
   };
 
   window.drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
-        let time = Date.now();
-        let isChallengeActive =
-          window.playerStats && window.playerStats.activeSpecialChallenge !== null;
-        let ecoMode = window.playerStats && window.playerStats.ecoMode;
+    let time = Date.now();
+    let isChallengeActive =
+      window.playerStats && window.playerStats.activeSpecialChallenge !== null;
+    let ecoMode = window.playerStats && window.playerStats.ecoMode;
 
-        let primaryColor, secondaryColor, coreColor, bgGradColor, particleColor;
-        if (isChallengeActive) {
-          primaryColor = "#ef4444";
-          secondaryColor = "#7f1d1d";
-          coreColor = "#000000";
-          bgGradColor = "rgba(239, 68, 68, 0.45)";
-          particleColor = "#fca5a5";
-        } else if (tileType === window.TILE_TYPES.EXTRACTION_ZONE) {
-          primaryColor = "#00d2ff";
-          secondaryColor = "#0284c7";
-          coreColor = "#082f49";
-          bgGradColor = "rgba(0, 210, 255, 0.35)";
-          particleColor = "#e0f2fe";
-        } else if (tileType === window.TILE_TYPES.DESCENT_PORTAL) {
-          primaryColor = "#c084fc";
-          secondaryColor = "#6b21a8";
-          coreColor = "#1e1b4b";
-          bgGradColor = "rgba(168, 85, 247, 0.35)";
-          particleColor = "#f3e8ff";
-        } else if (tileType === window.TILE_TYPES.BOSS_GATE) {
-          primaryColor = "#f87171";
-          secondaryColor = "#991b1b";
-          coreColor = "#450a0a";
-          bgGradColor = "rgba(231, 76, 60, 0.4)";
-          particleColor = "#fecaca";
-        } else {
-          return;
-        }
+    let primaryColor, secondaryColor, coreColor, bgGradColor, particleColor;
+    if (isChallengeActive) {
+      primaryColor = "#ef4444";
+      secondaryColor = "#7f1d1d";
+      coreColor = "#000000";
+      bgGradColor = "rgba(239, 68, 68, 0.45)";
+      particleColor = "#fca5a5";
+    } else if (tileType === window.TILE_TYPES.EXTRACTION_ZONE) {
+      primaryColor = "#00d2ff";
+      secondaryColor = "#0284c7";
+      coreColor = "#082f49";
+      bgGradColor = "rgba(0, 210, 255, 0.35)";
+      particleColor = "#e0f2fe";
+    } else if (tileType === window.TILE_TYPES.DESCENT_PORTAL) {
+      primaryColor = "#c084fc";
+      secondaryColor = "#6b21a8";
+      coreColor = "#1e1b4b";
+      bgGradColor = "rgba(168, 85, 247, 0.35)";
+      particleColor = "#f3e8ff";
+    } else if (tileType === window.TILE_TYPES.BOSS_GATE) {
+      primaryColor = "#f87171";
+      secondaryColor = "#991b1b";
+      coreColor = "#450a0a";
+      bgGradColor = "rgba(231, 76, 60, 0.4)";
+      particleColor = "#fecaca";
+    } else {
+      return;
+    }
 
-        ctx.save();
+    ctx.save();
 
-        let hoverOffset = Math.sin(time / 400) * 4.5;
-                let pCenterY = cy - 14 + hoverOffset;
-                let pRadiusX = 11;
-                let pRadiusY = 17;
+    let hoverOffset = Math.sin(time / 400) * 4.5;
+    let pCenterY = cy - 14 + hoverOffset;
+    let pRadiusX = 11;
+    let pRadiusY = 17;
 
-                // 1. VERTICAL DYNAMIC LIGHTING GLOW
-                if (window.activeSpellLights && !ecoMode) {
-                  let lId = `portal_${Math.floor(cx)}_${Math.floor(cy)}_${tileType}`;
-                  let lIdx = window.activeSpellLights.findIndex(l => l.id === lId);
-                  if (lIdx === -1) {
-                    window.activeSpellLights.push({
-                      id: lId,
-                      isPortalLight: true,
-                      x: cx,
-                      y: pCenterY,
-                      radius: tileSize * 1.75,
-                      innerColor: bgGradColor.replace("0.35", "0.55").replace("0.45", "0.55").replace("0.4", "0.55"),
-                      outerColor: "rgba(0,0,0,0)",
-                      life: 2,
-                    });
-                  } else {
-                    window.activeSpellLights[lIdx].x = cx;
-                    window.activeSpellLights[lIdx].y = pCenterY;
-                    window.activeSpellLights[lIdx].life = 2;
-                  }
-                }
+    // 1. VERTICAL DYNAMIC LIGHTING GLOW
+    if (window.activeSpellLights && !ecoMode) {
+      let lId = `portal_${Math.floor(cx)}_${Math.floor(cy)}_${tileType}`;
+      let lIdx = window.activeSpellLights.findIndex((l) => l.id === lId);
+      if (lIdx === -1) {
+        window.activeSpellLights.push({
+          id: lId,
+          isPortalLight: true,
+          x: cx,
+          y: pCenterY,
+          radius: tileSize * 1.75,
+          innerColor: bgGradColor
+            .replace("0.35", "0.55")
+            .replace("0.45", "0.55")
+            .replace("0.4", "0.55"),
+          outerColor: "rgba(0,0,0,0)",
+          life: 2,
+        });
+      } else {
+        window.activeSpellLights[lIdx].x = cx;
+        window.activeSpellLights[lIdx].y = pCenterY;
+        window.activeSpellLights[lIdx].life = 2;
+      }
+    }
 
-                // 2. THE CHRONO-VOID FLOOR EMBED (2.5D floor distortion ripple, dynamic 3D depth scaling)
-                let pulse = Math.sin(time / 250) * 1.5;
-                let shadowScale = Math.max(0.65, 1.0 - (hoverOffset / 12));
-                let floorWidth = (tileSize * 0.85 + pulse) * shadowScale;
-                let floorHeight = floorWidth * 0.45;
+    // 2. THE CHRONO-VOID FLOOR EMBED (2.5D floor distortion ripple, dynamic 3D depth scaling)
+    let pulse = Math.sin(time / 250) * 1.5;
+    let shadowScale = Math.max(0.65, 1.0 - hoverOffset / 12);
+    let floorWidth = (tileSize * 0.85 + pulse) * shadowScale;
+    let floorHeight = floorWidth * 0.45;
 
-                let floorGrad = ctx.createRadialGradient(cx, cy + 4, 2, cx, cy + 4, floorWidth);
-                floorGrad.addColorStop(0, primaryColor + "55");
-                floorGrad.addColorStop(0.4, secondaryColor + "22");
-                floorGrad.addColorStop(1, "rgba(0,0,0,0)");
+    let floorGrad = ctx.createRadialGradient(
+      cx,
+      cy + 4,
+      2,
+      cx,
+      cy + 4,
+      floorWidth,
+    );
+    floorGrad.addColorStop(0, primaryColor + "55");
+    floorGrad.addColorStop(0.4, secondaryColor + "22");
+    floorGrad.addColorStop(1, "rgba(0,0,0,0)");
 
-                ctx.fillStyle = floorGrad;
-                ctx.beginPath();
-                ctx.ellipse(cx, cy + 4, floorWidth, floorHeight, 0, 0, Math.PI * 2);
-                ctx.fill();
+    ctx.fillStyle = floorGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 4, floorWidth, floorHeight, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-                // 3. FLOATING PORTAL SHARDS (Hovering energy fragments, completely unanchored from ground)
-                [-16, 16].forEach((ox) => {
-                  let shardX = cx + ox;
-                  let shardHover = Math.sin(time / 300 + (ox > 0 ? Math.PI : 0)) * 3.0;
-                  let shardY = pCenterY + shardHover;
+    // 3. FLOATING PORTAL SHARDS (Hovering energy fragments, completely unanchored from ground)
+    [-16, 16].forEach((ox) => {
+      let shardX = cx + ox;
+      let shardHover = Math.sin(time / 300 + (ox > 0 ? Math.PI : 0)) * 3.0;
+      let shardY = pCenterY + shardHover;
 
-                  ctx.save();
-                  ctx.translate(shardX, shardY);
-                  ctx.rotate(time / 500 + ox);
+      ctx.save();
+      ctx.translate(shardX, shardY);
+      ctx.rotate(time / 500 + ox);
 
-                  let shardW = 4;
-                  let shardH = 8;
+      let shardW = 4;
+      let shardH = 8;
 
-                  ctx.fillStyle = primaryColor;
-                  ctx.strokeStyle = "#ffffff";
-                  ctx.lineWidth = 1.0;
-                  ctx.shadowColor = primaryColor;
-                  ctx.shadowBlur = ecoMode ? 0 : 5;
+      ctx.fillStyle = primaryColor;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.0;
+      ctx.shadowColor = primaryColor;
+      ctx.shadowBlur = ecoMode ? 0 : 5;
 
-                  ctx.beginPath();
-                  ctx.moveTo(0, -shardH / 2);
-                  ctx.lineTo(shardW / 2, 0);
-                  ctx.lineTo(0, shardH / 2);
-                  ctx.lineTo(-shardW / 2, 0);
-                  ctx.closePath();
-                  ctx.fill();
-                  ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -shardH / 2);
+      ctx.lineTo(shardW / 2, 0);
+      ctx.lineTo(0, shardH / 2);
+      ctx.lineTo(-shardW / 2, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
 
-                  ctx.shadowBlur = 0;
-                  ctx.restore();
+      ctx.shadowBlur = 0;
+      ctx.restore();
 
-                  // Sparking energy links directly into portal center void
-                  if (!ecoMode && Math.random() < 0.12) {
-                    ctx.strokeStyle = primaryColor + "88";
-                    ctx.lineWidth = 0.8;
-                    ctx.beginPath();
-                    ctx.moveTo(shardX, shardY);
-                    let midX = (shardX + cx) / 2 + (Math.random() - 0.5) * 3;
-                    let midY = (shardY + pCenterY) / 2 + (Math.random() - 0.5) * 3;
-                    ctx.lineTo(midX, midY);
-                    ctx.lineTo(cx, pCenterY);
-                    ctx.stroke();
-                  }
-                });
-
-        // 4. DEEP DIMENSIONAL VOID (Endless clipped parallax tunnel)
-        ctx.save();
+      // Sparking energy links directly into portal center void
+      if (!ecoMode && Math.random() < 0.12) {
+        ctx.strokeStyle = primaryColor + "88";
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.ellipse(cx, pCenterY, pRadiusX, pRadiusY, 0, 0, Math.PI * 2);
-        ctx.clip();
-
-        // Deep dark base
-        ctx.fillStyle = coreColor;
-        ctx.fillRect(cx - pRadiusX * 1.5, pCenterY - pRadiusY * 1.5, pRadiusX * 3, pRadiusY * 3);
-
-        if (!ecoMode) {
-          // Nested spinning starfields & gravity lanes
-          let starRot = time / 800;
-          ctx.translate(cx, pCenterY);
-          ctx.rotate(starRot);
-
-          // Sub-layers scaling down (infinite wormhole tunnel perspective effect)
-          for (let j = 0; j < 3; j++) {
-            let scaleVal = ((time / (1000 + j * 400)) + j * 0.3) % 1.0;
-            let opacity = 1.0 - scaleVal;
-            let sRadX = pRadiusX * 1.3 * scaleVal;
-            let sRadY = pRadiusY * 1.3 * scaleVal;
-
-            ctx.strokeStyle = primaryColor;
-            ctx.globalAlpha = opacity * 0.45;
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.ellipse(0, 0, sRadX, sRadY, (j * Math.PI) / 3, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Particle clusters orbiting within tunnel gravity well
-            ctx.fillStyle = particleColor;
-            ctx.globalAlpha = opacity * 0.7;
-            for (let k = 0; k < 4; k++) {
-              let pAngle = (k * Math.PI) / 2 + scaleVal * Math.PI * 1.5;
-              let px = Math.cos(pAngle) * sRadX;
-              let py = Math.sin(pAngle) * sRadY;
-              ctx.beginPath();
-              ctx.arc(px, py, 1, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-        } else {
-          // Fast fallback for Eco Mode (static elegant nebula gradient)
-          let fallbackGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, pRadiusY);
-          fallbackGrad.addColorStop(0, primaryColor);
-          fallbackGrad.addColorStop(0.6, secondaryColor);
-          fallbackGrad.addColorStop(1, coreColor);
-          ctx.fillStyle = fallbackGrad;
-          ctx.fillRect(-pRadiusX, -pRadiusY, pRadiusX * 2, pRadiusY * 2);
-        }
-        ctx.restore();
-
-        // 5. 2.5D PERSPECTIVE ORBITAL RUNIC RINGS
-        ctx.save();
-        ctx.translate(cx, pCenterY);
-
-        // Ring 1: Outer tilted runic ring (tilted 2.5D rotation)
-        let tiltAngle = Math.PI / 10;
-        ctx.rotate(tiltAngle);
-
-        let orbitalRotation = time / 1800;
-        ctx.strokeStyle = primaryColor + "77";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 8, 12, 6]);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, pRadiusX + 5, pRadiusY + 5, orbitalRotation, 0, Math.PI * 2);
+        ctx.moveTo(shardX, shardY);
+        let midX = (shardX + cx) / 2 + (Math.random() - 0.5) * 3;
+        let midY = (shardY + pCenterY) / 2 + (Math.random() - 0.5) * 3;
+        ctx.lineTo(midX, midY);
+        ctx.lineTo(cx, pCenterY);
         ctx.stroke();
-        ctx.setLineDash([]);
+      }
+    });
 
-        // Draw procedural glyph markings on Orbit ring
-        if (!ecoMode) {
-          ctx.fillStyle = primaryColor;
-          ctx.strokeStyle = primaryColor;
-          ctx.globalAlpha = 0.6;
-          for (let i = 0; i < 4; i++) {
-            let gAngle = orbitalRotation + (i * Math.PI) / 2;
-            let gx = Math.cos(gAngle) * (pRadiusX + 5);
-            let gy = Math.sin(gAngle) * (pRadiusY + 5);
+    // 4. DEEP DIMENSIONAL VOID (Endless clipped parallax tunnel)
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, pCenterY, pRadiusX, pRadiusY, 0, 0, Math.PI * 2);
+    ctx.clip();
 
-            // Draw geometric glyph (a small cross / diamond)
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(gx - 2, gy);
-            ctx.lineTo(gx + 2, gy);
-            ctx.moveTo(gx, gy - 2);
-            ctx.lineTo(gx, gy + 2);
-            ctx.stroke();
-          }
-        }
-        ctx.restore();
+    // Deep dark base
+    ctx.fillStyle = coreColor;
+    ctx.fillRect(
+      cx - pRadiusX * 1.5,
+      pCenterY - pRadiusY * 1.5,
+      pRadiusX * 3,
+      pRadiusY * 3,
+    );
 
-        // 6. SWIRLING HOLOGRAPHIC RIM WISP LAYERS
-        let rotation = time / 400;
-        ctx.globalCompositeOperation = "lighter";
-        for (let i = 0; i < 3; i++) {
-          let ang = rotation * (1 + i * 0.2) + (i * Math.PI * 2) / 3;
-          ctx.save();
-          ctx.translate(cx, pCenterY);
-          ctx.rotate(ang);
+    if (!ecoMode) {
+      // Nested spinning starfields & gravity lanes
+      let starRot = time / 800;
+      ctx.translate(cx, pCenterY);
+      ctx.rotate(starRot);
 
-          let wispGrad = ctx.createLinearGradient(0, -pRadiusY - 2, 0, pRadiusY + 2);
-          wispGrad.addColorStop(0, "transparent");
-          wispGrad.addColorStop(0.5, primaryColor);
-          wispGrad.addColorStop(1, "transparent");
+      // Sub-layers scaling down (infinite wormhole tunnel perspective effect)
+      for (let j = 0; j < 3; j++) {
+        let scaleVal = (time / (1000 + j * 400) + j * 0.3) % 1.0;
+        let opacity = 1.0 - scaleVal;
+        let sRadX = pRadiusX * 1.3 * scaleVal;
+        let sRadY = pRadiusY * 1.3 * scaleVal;
 
-          ctx.strokeStyle = wispGrad;
-          ctx.lineWidth = 1.8;
-          ctx.globalAlpha = 0.75;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, pRadiusX + 1.5, (pRadiusY + 1.5) * 0.85, 0, 0, Math.PI * 1.6);
-          ctx.stroke();
-          ctx.restore();
-        }
-        ctx.globalCompositeOperation = "source-over";
-
-        // 7. PORTAL SINGULARITY CORE (Super-dense energy focal point)
-        let coreW = 3.5 + Math.sin(time / 120) * 0.6;
-        let coreH = 7.0 + Math.sin(time / 120) * 1.2;
-        let coreGrad = ctx.createRadialGradient(cx, pCenterY, 0, cx, pCenterY, coreW * 2.5);
-        coreGrad.addColorStop(0, "#ffffff");
-        coreGrad.addColorStop(0.35, primaryColor);
-        coreGrad.addColorStop(0.7, secondaryColor + "aa");
-        coreGrad.addColorStop(1, "transparent");
-
-        ctx.fillStyle = coreGrad;
+        ctx.strokeStyle = primaryColor;
+        ctx.globalAlpha = opacity * 0.45;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.ellipse(cx, pCenterY, coreW, coreH, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.ellipse(0, 0, sRadX, sRadY, (j * Math.PI) / 3, 0, Math.PI * 2);
+        ctx.stroke();
 
-        // 8. HEAVY GRAVITATIONAL VORTEX SUCTION PARTICLES (Black Hole Gravitational Pull)
-                if (Math.random() < 0.42 && window.particles && window.ParticlePool) {
-                   let angle = Math.random() * Math.PI * 2;
+        // Particle clusters orbiting within tunnel gravity well
+        ctx.fillStyle = particleColor;
+        ctx.globalAlpha = opacity * 0.7;
+        for (let k = 0; k < 4; k++) {
+          let pAngle = (k * Math.PI) / 2 + scaleVal * Math.PI * 1.5;
+          let px = Math.cos(pAngle) * sRadX;
+          let py = Math.sin(pAngle) * sRadY;
+          ctx.beginPath();
+          ctx.arc(px, py, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else {
+      // Fast fallback for Eco Mode (static elegant nebula gradient)
+      let fallbackGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, pRadiusY);
+      fallbackGrad.addColorStop(0, primaryColor);
+      fallbackGrad.addColorStop(0.6, secondaryColor);
+      fallbackGrad.addColorStop(1, coreColor);
+      ctx.fillStyle = fallbackGrad;
+      ctx.fillRect(-pRadiusX, -pRadiusY, pRadiusX * 2, pRadiusY * 2);
+    }
+    ctx.restore();
 
-                   // Spawn further out in a wider, dramatic gravitational field boundary
-                   let dist = tileSize * (1.1 + Math.random() * 1.3);
+    // 5. 2.5D PERSPECTIVE ORBITAL RUNIC RINGS
+    ctx.save();
+    ctx.translate(cx, pCenterY);
 
-                   // Spawn in an elliptical ring mapped to 2.5D perspective around the hovering portal center
-                   let startX = cx + Math.cos(angle) * dist;
-                   let startY = pCenterY + Math.sin(angle) * dist * 0.55;
+    // Ring 1: Outer tilted runic ring (tilted 2.5D rotation)
+    let tiltAngle = Math.PI / 10;
+    ctx.rotate(tiltAngle);
 
-                   // Pull speed is direct and swift so particles visually rush inward
-                   let speed = 1.8 + Math.random() * 1.5;
-                   let swirl = 0.4 + Math.random() * 0.7;
+    let orbitalRotation = time / 1800;
+    ctx.strokeStyle = primaryColor + "77";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 8, 12, 6]);
+    ctx.beginPath();
+    ctx.ellipse(
+      0,
+      0,
+      pRadiusX + 5,
+      pRadiusY + 5,
+      orbitalRotation,
+      0,
+      Math.PI * 2,
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-                   // Inward velocity vectors with a slight orbital spiral twist
-                   let vx = -Math.cos(angle) * speed - Math.sin(angle) * swirl;
-                   let vy = (-Math.sin(angle) * speed + Math.cos(angle) * swirl) * 0.55;
+    // Draw procedural glyph markings on Orbit ring
+    if (!ecoMode) {
+      ctx.fillStyle = primaryColor;
+      ctx.strokeStyle = primaryColor;
+      ctx.globalAlpha = 0.6;
+      for (let i = 0; i < 4; i++) {
+        let gAngle = orbitalRotation + (i * Math.PI) / 2;
+        let gx = Math.cos(gAngle) * (pRadiusX + 5);
+        let gy = Math.sin(gAngle) * (pRadiusY + 5);
 
-                   // Calculate precise lifespan so particles die EXACTLY when they hit the core center.
-                   // This prevents them from overshooting, avoiding the "particles dropping below" bug.
-                   let life = Math.max(6, Math.floor(dist / speed) - 1);
+        // Draw geometric glyph (a small cross / diamond)
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(gx - 2, gy);
+        ctx.lineTo(gx + 2, gy);
+        ctx.moveTo(gx, gy - 2);
+        ctx.lineTo(gx, gy + 2);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
 
-                   let pt = window.ParticlePool.get(
-                     startX,
-                     startY,
-                     vx,
-                     vy,
-                     1.0 + Math.random() * 1.4,
-                     particleColor,
-                     1.0,
-                     life,
-                     0,    // Force 0 gravity to prevent any downward drifting of rifts
-                     true,
-                     1.0   // Friction set to 1.0 (no linear decay) so speed remains constant into the core
-                   );
-                   pt.style = "streak";
-                   pt.scaleDecay = 0.025;
-                   window.particles.push(pt);
-                }
+    // 6. SWIRLING HOLOGRAPHIC RIM WISP LAYERS
+    let rotation = time / 400;
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 3; i++) {
+      let ang = rotation * (1 + i * 0.2) + (i * Math.PI * 2) / 3;
+      ctx.save();
+      ctx.translate(cx, pCenterY);
+      ctx.rotate(ang);
 
-        ctx.restore();
-      };
+      let wispGrad = ctx.createLinearGradient(
+        0,
+        -pRadiusY - 2,
+        0,
+        pRadiusY + 2,
+      );
+      wispGrad.addColorStop(0, "transparent");
+      wispGrad.addColorStop(0.5, primaryColor);
+      wispGrad.addColorStop(1, "transparent");
+
+      ctx.strokeStyle = wispGrad;
+      ctx.lineWidth = 1.8;
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.ellipse(
+        0,
+        0,
+        pRadiusX + 1.5,
+        (pRadiusY + 1.5) * 0.85,
+        0,
+        0,
+        Math.PI * 1.6,
+      );
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = "source-over";
+
+    // 7. PORTAL SINGULARITY CORE (Super-dense energy focal point)
+    let coreW = 3.5 + Math.sin(time / 120) * 0.6;
+    let coreH = 7.0 + Math.sin(time / 120) * 1.2;
+    let coreGrad = ctx.createRadialGradient(
+      cx,
+      pCenterY,
+      0,
+      cx,
+      pCenterY,
+      coreW * 2.5,
+    );
+    coreGrad.addColorStop(0, "#ffffff");
+    coreGrad.addColorStop(0.35, primaryColor);
+    coreGrad.addColorStop(0.7, secondaryColor + "aa");
+    coreGrad.addColorStop(1, "transparent");
+
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, pCenterY, coreW, coreH, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 8. HEAVY GRAVITATIONAL VORTEX SUCTION PARTICLES (Black Hole Gravitational Pull)
+    if (Math.random() < 0.42 && window.particles && window.ParticlePool) {
+      let angle = Math.random() * Math.PI * 2;
+
+      // Spawn further out in a wider, dramatic gravitational field boundary
+      let dist = tileSize * (1.1 + Math.random() * 1.3);
+
+      // Spawn in an elliptical ring mapped to 2.5D perspective around the hovering portal center
+      let startX = cx + Math.cos(angle) * dist;
+      let startY = pCenterY + Math.sin(angle) * dist * 0.55;
+
+      // Pull speed is direct and swift so particles visually rush inward
+      let speed = 1.8 + Math.random() * 1.5;
+      let swirl = 0.4 + Math.random() * 0.7;
+
+      // Inward velocity vectors with a slight orbital spiral twist
+      let vx = -Math.cos(angle) * speed - Math.sin(angle) * swirl;
+      let vy = (-Math.sin(angle) * speed + Math.cos(angle) * swirl) * 0.55;
+
+      // Calculate precise lifespan so particles die EXACTLY when they hit the core center.
+      // This prevents them from overshooting, avoiding the "particles dropping below" bug.
+      let life = Math.max(6, Math.floor(dist / speed) - 1);
+
+      let pt = window.ParticlePool.get(
+        startX,
+        startY,
+        vx,
+        vy,
+        1.0 + Math.random() * 1.4,
+        particleColor,
+        1.0,
+        life,
+        0, // Force 0 gravity to prevent any downward drifting of rifts
+        true,
+        1.0, // Friction set to 1.0 (no linear decay) so speed remains constant into the core
+      );
+      pt.style = "streak";
+      pt.scaleDecay = 0.025;
+      window.particles.push(pt);
+    }
+
+    ctx.restore();
+  };
 
   window.renderTopDownMap = function (ctx, canvas) {
     let map = window.activeDungeonMap;

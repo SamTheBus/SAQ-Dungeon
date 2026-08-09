@@ -6515,6 +6515,7 @@
           starterStageScale,
           0,
         );
+        item.noun = "Broadsword"; // Aligns graphic asset with "Blade" nomenclature
         item.name = `Provisioned ${window.getTierName(stars)} Blade`;
         item.isStarterItem = true;
         window.equippedSlots.weapon = item;
@@ -7396,30 +7397,35 @@
     let isMarcus = bossTier === "marcus";
 
     let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-        let activeChallenge = window.playerStats.activeSpecialChallenge;
-        let scaleStage = depth;
+    let activeChallenge = window.playerStats.activeSpecialChallenge;
+    let scaleStage = depth;
 
-        if (activeChallenge) {
-          let baseScale = activeChallenge.baseScaleStage || window.playerStats.lifetimePeakStage || 1;
-          scaleStage = baseScale + (depth - 1) * 2;
-        }
+    if (activeChallenge) {
+      let baseScale =
+        activeChallenge.baseScaleStage ||
+        window.playerStats.lifetimePeakStage ||
+        1;
+      scaleStage = baseScale + (depth - 1) * 2;
+    }
 
-        // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-        // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
-        let repStage;
-        if (isMarcus) {
-          let peak =
-            window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-          let effectiveDepth = Math.max(scaleStage, peak) * 1.25;
-          let peakSIdx = Math.floor((effectiveDepth - 1) / 12);
-          repStage = window.getEffectiveStage(effectiveDepth * 1.25 + peakSIdx * 12.0);
-        } else {
-          let sIdx = Math.floor((scaleStage - 1) / 12);
-          repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
-        }
+    // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+    // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
+    let repStage;
+    if (isMarcus) {
+      let peak =
+        window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+      let effectiveDepth = Math.max(scaleStage, peak) * 1.25;
+      let peakSIdx = Math.floor((effectiveDepth - 1) / 12);
+      repStage = window.getEffectiveStage(
+        effectiveDepth * 1.25 + peakSIdx * 12.0,
+      );
+    } else {
+      let sIdx = Math.floor((scaleStage - 1) / 12);
+      repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
+    }
 
-        let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-        let repScale = Math.pow(repGrowth, repStage * 0.95);
+    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+    let repScale = Math.pow(repGrowth, repStage * 0.95);
 
     let bossHp = isMarcus
       ? 800 * repScale
@@ -7433,13 +7439,13 @@
         : 22 * repScale;
 
     bossHp = Math.round(bossHp * enemyScale);
-        bossAtk = Math.round(bossAtk * enemyScale);
+    bossAtk = Math.round(bossAtk * enemyScale);
 
-        if (activeChallenge) {
-          let challengeScale = 1.0 + activeChallenge.riskRating / 30;
-          bossHp = Math.round(bossHp * challengeScale);
-          bossAtk = Math.round(bossAtk * challengeScale);
-        }
+    if (activeChallenge) {
+      let challengeScale = 1.0 + activeChallenge.riskRating / 30;
+      bossHp = Math.round(bossHp * challengeScale);
+      bossAtk = Math.round(bossAtk * challengeScale);
+    }
 
     let tier =
       typeof window.getStageTier === "function" ? window.getStageTier() : 0;
@@ -7795,29 +7801,32 @@
       (depth < 4 || !isChallenge);
 
     if (shouldSpawnStandardMobs && map.mobSpawns) {
-          let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-          let activeChallenge = window.playerStats.activeSpecialChallenge;
-          let scaleStage = depth;
+      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+      let activeChallenge = window.playerStats.activeSpecialChallenge;
+      let scaleStage = depth;
 
-          if (activeChallenge) {
-            let baseScale = activeChallenge.baseScaleStage || window.playerStats.lifetimePeakStage || 1;
-            scaleStage = baseScale + (depth - 1) * 2;
-          }
+      if (activeChallenge) {
+        let baseScale =
+          activeChallenge.baseScaleStage ||
+          window.playerStats.lifetimePeakStage ||
+          1;
+        scaleStage = baseScale + (depth - 1) * 2;
+      }
 
-          // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-          let sIdx = Math.floor((scaleStage - 1) / 12);
-          let repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
-          let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-          let repScale = Math.pow(repGrowth, repStage * 0.95);
+      // Aligned with exponential item scaling to maintain a tight, balanced progression curve
+      let sIdx = Math.floor((scaleStage - 1) / 12);
+      let repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
+      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+      let repScale = Math.pow(repGrowth, repStage * 0.95);
 
-          let mobHpVal = Math.floor(40 * repScale * enemyScale);
-                    let mobAtkVal = Math.floor(8 * repScale * enemyScale);
+      let mobHpVal = Math.floor(40 * repScale * enemyScale);
+      let mobAtkVal = Math.floor(8 * repScale * enemyScale);
 
-                if (activeChallenge) {
-                  let challengeScale = 1.0 + activeChallenge.riskRating / 35;
-                  mobHpVal = Math.floor(mobHpVal * challengeScale);
-                  mobAtkVal = Math.floor(mobAtkVal * challengeScale);
-                }
+      if (activeChallenge) {
+        let challengeScale = 1.0 + activeChallenge.riskRating / 35;
+        mobHpVal = Math.floor(mobHpVal * challengeScale);
+        mobAtkVal = Math.floor(mobAtkVal * challengeScale);
+      }
 
       let pStats =
         typeof window.resolvePlayerStats === "function"
@@ -7830,29 +7839,29 @@
         let isRare = Math.random() < rareRate;
 
         // Roll Elite Support Affixes on higher floors (Sector-Bridged Step Model)
-                let eliteAffix = null;
-                let isEliteInfested =
-                  typeof window.isCavernEffectActive === "function" &&
-                  window.isCavernEffectActive("elite_infestation");
+        let eliteAffix = null;
+        let isEliteInfested =
+          typeof window.isCavernEffectActive === "function" &&
+          window.isCavernEffectActive("elite_infestation");
 
-                let affixChance = 0.0;
-                if (isEliteInfested) {
-                  affixChance = 1.0;
-                } else if (depth >= 85) {
-                  affixChance = 0.35; // Sector 6+ (Floors 85+): 35%
-                } else if (depth >= 49) {
-                  affixChance = 0.20; // Sector 5 (Floors 49-84): 20%
-                } else if (depth >= 37) {
-                  affixChance = 0.12; // Sector 4 (Floors 37-48): 12%
-                } else if (depth >= 25) {
-                  affixChance = 0.07; // Sector 3 (Floors 25-36): 7%
-                } else if (depth >= 13) {
-                  affixChance = 0.03; // Sector 2 (Floors 13-24): 3%
-                } else {
-                  affixChance = 0.00; // Sector 1 (Floors 1-12): 0%
-                }
+        let affixChance = 0.0;
+        if (isEliteInfested) {
+          affixChance = 1.0;
+        } else if (depth >= 85) {
+          affixChance = 0.35; // Sector 6+ (Floors 85+): 35%
+        } else if (depth >= 49) {
+          affixChance = 0.2; // Sector 5 (Floors 49-84): 20%
+        } else if (depth >= 37) {
+          affixChance = 0.12; // Sector 4 (Floors 37-48): 12%
+        } else if (depth >= 25) {
+          affixChance = 0.07; // Sector 3 (Floors 25-36): 7%
+        } else if (depth >= 13) {
+          affixChance = 0.03; // Sector 2 (Floors 13-24): 3%
+        } else {
+          affixChance = 0.0; // Sector 1 (Floors 1-12): 0%
+        }
 
-                if (Math.random() < affixChance) {
+        if (Math.random() < affixChance) {
           const affixes = [
             "vitality_weaver",
             "iron_citadel",
@@ -7906,7 +7915,11 @@
           attackCooldown: 0,
           rangedCooldown: window.randInt(30, 90),
           isRanged: isRanged,
-          projectileType: projType, moveProfile: (mobInfo.type === 'golem' || mobInfo.type === 'corroded_golem' ? 'relentless' : 'standard'),
+          projectileType: projType,
+          moveProfile:
+            mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
+              ? "relentless"
+              : "standard",
           facing: -1,
           isRare: isRare,
           eliteAffix: eliteAffix,
@@ -8521,10 +8534,10 @@
         window.toggleShopModal();
       }
     } else if (stationType === window.TILE_TYPES.STATION_BOUNTY) {
-              if (typeof window.toggleBountyModal === "function") {
-                window.toggleBountyModal();
-              }
-            } else if (stationType === window.TILE_TYPES.STATION_INN) {
+      if (typeof window.toggleBountyModal === "function") {
+        window.toggleBountyModal();
+      }
+    } else if (stationType === window.TILE_TYPES.STATION_INN) {
       if (typeof window.openTrialsAltarModal === "function") {
         window.openTrialsAltarModal();
       }
@@ -9301,6 +9314,7 @@
         window.player.stash.some((i) => i.type === "weapon");
       if (!hasWeapon) {
         let starterSword = window.createItemObject("weapon", 0, 1, 0);
+        starterSword.noun = "Broadsword"; // Aligns graphic asset with "Blade" nomenclature
         starterSword.name = "Novice Blade (Starter)";
         window.player.stash.push(starterSword);
         savedInsuredItems.push(starterSword);
@@ -10918,66 +10932,66 @@
         window.openCavernSigilSackAnimation(sigilItem);
       }
     } else if (name === "Monster Card Sack") {
-          // Reusable weighted random card roller helper
-          window.rollRandomMonsterCard = function () {
-            const SET_WEIGHTS = {
-              "Whispering Woods": 45,
-              "Mountain Peaks": 25,
-              "Inferno Depths": 15,
-              "Fungal Swamp": 10,
-              "Void Singularity": 4,
-              "Cosmic Wardens": 1
-            };
+      // Reusable weighted random card roller helper
+      window.rollRandomMonsterCard = function () {
+        const SET_WEIGHTS = {
+          "Whispering Woods": 45,
+          "Mountain Peaks": 25,
+          "Inferno Depths": 15,
+          "Fungal Swamp": 10,
+          "Void Singularity": 4,
+          "Cosmic Wardens": 1,
+        };
 
-            let cardsBySet = {};
-            for (let key in window.MONSTER_CARDS_DATA) {
-              let set = window.MONSTER_CARDS_DATA[key].set;
-              if (!cardsBySet[set]) cardsBySet[set] = [];
-              cardsBySet[set].push(key);
-            }
+        let cardsBySet = {};
+        for (let key in window.MONSTER_CARDS_DATA) {
+          let set = window.MONSTER_CARDS_DATA[key].set;
+          if (!cardsBySet[set]) cardsBySet[set] = [];
+          cardsBySet[set].push(key);
+        }
 
-            let totalWeight = 0;
-            let activeSets = [];
-            for (let setName in cardsBySet) {
-              let weight = SET_WEIGHTS[setName] || 10;
-              totalWeight += weight;
-              activeSets.push({ name: setName, weight: weight });
-            }
+        let totalWeight = 0;
+        let activeSets = [];
+        for (let setName in cardsBySet) {
+          let weight = SET_WEIGHTS[setName] || 10;
+          totalWeight += weight;
+          activeSets.push({ name: setName, weight: weight });
+        }
 
-            let roll = Math.random() * totalWeight;
-            let cumulative = 0;
-            let chosenSetName = "Whispering Woods";
-            for (let s = 0; s < activeSets.length; s++) {
-              cumulative += activeSets[s].weight;
-              if (roll <= cumulative) {
-                chosenSetName = activeSets[s].name;
-                break;
-              }
-            }
-            let pool = cardsBySet[chosenSetName];
-            return pool[Math.floor(Math.random() * pool.length)];
-          };
-
-          let rolledCards = [];
-          for (let i = 0; i < 5; i++) {
-            let rolledKey = window.rollRandomMonsterCard();
-            rolledCards.push(rolledKey);
-
-            // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
-            window.addMonsterCard(rolledKey, 1);
+        let roll = Math.random() * totalWeight;
+        let cumulative = 0;
+        let chosenSetName = "Whispering Woods";
+        for (let s = 0; s < activeSets.length; s++) {
+          cumulative += activeSets[s].weight;
+          if (roll <= cumulative) {
+            chosenSetName = activeSets[s].name;
+            break;
           }
+        }
+        let pool = cardsBySet[chosenSetName];
+        return pool[Math.floor(Math.random() * pool.length)];
+      };
 
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.playCardPackOpen === "function"
-          ) {
-            window.SoundManager.playCardPackOpen();
-          }
+      let rolledCards = [];
+      for (let i = 0; i < 5; i++) {
+        let rolledKey = window.rollRandomMonsterCard();
+        rolledCards.push(rolledKey);
 
-          if (typeof window.openMonsterCardSackAnimation === "function") {
-            window.openMonsterCardSackAnimation(rolledCards);
-          }
-        } else if (name === "Astral Singularity Cache") {
+        // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
+        window.addMonsterCard(rolledKey, 1);
+      }
+
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.playCardPackOpen === "function"
+      ) {
+        window.SoundManager.playCardPackOpen();
+      }
+
+      if (typeof window.openMonsterCardSackAnimation === "function") {
+        window.openMonsterCardSackAnimation(rolledCards);
+      }
+    } else if (name === "Astral Singularity Cache") {
       let peakRunStage = Math.max(
         p.lifetimePeakStage || 1,
         p.stage || 1,
@@ -11045,61 +11059,61 @@
       );
       if (typeof window.pushToast === "function") window.pushToast(newItem);
     } else if (name.includes("Sack") || name.includes("Crate")) {
-          let peakRunStage = Math.max(
-            p.lifetimePeakStage || 1,
-            p.stage || 1,
-            p.maxFloorCleared || 1,
-          );
-          let stageScale = peakRunStage;
-          let rolledRarity = window.rollItemRarity(
-            peakRunStage,
-            p.baseQuality || 1.0,
-            false,
-          );
-          let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-          let chosenType = types[Math.floor(Math.random() * types.length)];
-          let newItem = window.createItemObject(
-            chosenType,
-            rolledRarity,
-            stageScale,
-            0,
-          );
+      let peakRunStage = Math.max(
+        p.lifetimePeakStage || 1,
+        p.stage || 1,
+        p.maxFloorCleared || 1,
+      );
+      let stageScale = peakRunStage;
+      let rolledRarity = window.rollItemRarity(
+        peakRunStage,
+        p.baseQuality || 1.0,
+        false,
+      );
+      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+      let chosenType = types[Math.floor(Math.random() * types.length)];
+      let newItem = window.createItemObject(
+        chosenType,
+        rolledRarity,
+        stageScale,
+        0,
+      );
 
-          // Grant 1-2 random Basic Elixirs on opening sacks
-          const basicElixirs = [
-            "Basic Attack Elixir",
-            "Basic Vitality Elixir",
-            "Basic Armored Elixir",
-            "Basic Haste Elixir",
-          ];
-          let numElixirs = window.randInt(1, 2);
-          let chosenElixirs = [];
-          for (let eIdx = 0; eIdx < numElixirs; eIdx++) {
-            let chosenElixir =
-              basicElixirs[Math.floor(Math.random() * basicElixirs.length)];
-            window.addUseDrop(chosenElixir, 1, false);
-            chosenElixirs.push(chosenElixir);
-          }
+      // Grant 1-2 random Basic Elixirs on opening sacks
+      const basicElixirs = [
+        "Basic Attack Elixir",
+        "Basic Vitality Elixir",
+        "Basic Armored Elixir",
+        "Basic Haste Elixir",
+      ];
+      let numElixirs = window.randInt(1, 2);
+      let chosenElixirs = [];
+      for (let eIdx = 0; eIdx < numElixirs; eIdx++) {
+        let chosenElixir =
+          basicElixirs[Math.floor(Math.random() * basicElixirs.length)];
+        window.addUseDrop(chosenElixir, 1, false);
+        chosenElixirs.push(chosenElixir);
+      }
 
-          if (window.currentGameState === window.GAME_STATES.HUB) {
-            if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
-            window.inventory.EQUIP.push(newItem);
-          } else {
-            if (!window.player.bag) window.player.bag = [];
-            window.player.bag.push(newItem);
-          }
+      if (window.currentGameState === window.GAME_STATES.HUB) {
+        if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
+        window.inventory.EQUIP.push(newItem);
+      } else {
+        if (!window.player.bag) window.player.bag = [];
+        window.player.bag.push(newItem);
+      }
 
-          if (typeof window.openTactileSackCrateAnimation === "function") {
-            window.openTactileSackCrateAnimation(name, newItem, chosenElixirs);
-          } else {
-            // Fallback
-            window.pushHeaderToast(
-              `Opened ${name}! Found: ${newItem.name} (+${numElixirs} Elixir)`,
-              "#f1c40f",
-            );
-            if (typeof window.pushToast === "function") window.pushToast(newItem);
-          }
-        }
+      if (typeof window.openTactileSackCrateAnimation === "function") {
+        window.openTactileSackCrateAnimation(name, newItem, chosenElixirs);
+      } else {
+        // Fallback
+        window.pushHeaderToast(
+          `Opened ${name}! Found: ${newItem.name} (+${numElixirs} Elixir)`,
+          "#f1c40f",
+        );
+        if (typeof window.pushToast === "function") window.pushToast(newItem);
+      }
+    }
 
     if (typeof window.invalidatePlayerStats === "function")
       window.invalidatePlayerStats();
@@ -11176,16 +11190,16 @@
 
           if (dist <= 12) {
             if (gl.item.type === "card") {
-                          let cKey = gl.item.cardKey;
-                          // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
-                          window.addMonsterCard(cKey, 1);
+              let cKey = gl.item.cardKey;
+              // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
+              window.addMonsterCard(cKey, 1);
 
-                          if (
-                            window.SoundManager &&
-                            typeof window.SoundManager.playCardPickup === "function"
-                          ) {
-                            window.SoundManager.playCardPickup();
-                          }
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.playCardPickup === "function"
+              ) {
+                window.SoundManager.playCardPickup();
+              }
 
               let cardData = window.MONSTER_CARDS_DATA[cKey];
               let setColors = {
@@ -13570,7 +13584,8 @@
 
         if (m.isAggroed && dist < 800 && dist > 14) {
           m.hopTimer = (m.hopTimer || 0) + 1;
-          let isRelentless = m.moveProfile === 'relentless'; let cycle = isRelentless ? 0 : (m.hopTimer % 30); // 15 frames jumping, 15 frames resting
+          let isRelentless = m.moveProfile === "relentless";
+          let cycle = isRelentless ? 0 : m.hopTimer % 30; // 15 frames jumping, 15 frames resting
           if (cycle < 15) {
             let speed = (m.isRare ? 2.2 : 1.8) * (isRelentless ? 0.65 : 1.0);
             let mRadius = 6;
@@ -13602,19 +13617,19 @@
               );
               // Add a slight dynamic drift based on logic clock and mob ID to break identical conga-lines
               let drift =
-                              Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
-                            baseAngle += drift;
+                Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
+              baseAngle += drift;
 
-                            // Check if we are currently committed to a persistent wall detour/avoidance path
-                            let moveAngle = baseAngle;
-                            if (m.avoidanceTimer && m.avoidanceTimer > 0) {
-                              m.avoidanceTimer--;
-                              moveAngle = m.avoidanceAngle;
-                            }
+              // Check if we are currently committed to a persistent wall detour/avoidance path
+              let moveAngle = baseAngle;
+              if (m.avoidanceTimer && m.avoidanceTimer > 0) {
+                m.avoidanceTimer--;
+                moveAngle = m.avoidanceAngle;
+              }
 
-                            let vx = Math.cos(moveAngle) * speed;
-                            let vy = Math.sin(moveAngle) * speed;
-                            let moved = false;
+              let vx = Math.cos(moveAngle) * speed;
+              let vy = Math.sin(moveAngle) * speed;
+              let moved = false;
 
               // 1. Check direct movement step first (fast path)
               if (
@@ -13665,68 +13680,68 @@
               }
 
               // 3. Tangential Corner Deflection (If direct path and slide paths are both blocked)
-                            if (!moved) {
-                              let preferCW = m.id % 2 === 0;
-                              let offset1 = preferCW ? Math.PI / 2 : -Math.PI / 2;
-                              let offset2 = preferCW ? -Math.PI / 2 : Math.PI / 2;
-                              let offset3 = Math.PI;
+              if (!moved) {
+                let preferCW = m.id % 2 === 0;
+                let offset1 = preferCW ? Math.PI / 2 : -Math.PI / 2;
+                let offset2 = preferCW ? -Math.PI / 2 : Math.PI / 2;
+                let offset3 = Math.PI;
 
-                              for (let j = 0; j < 3; j++) {
-                                let offset = j === 0 ? offset1 : j === 1 ? offset2 : offset3;
-                                let testAng = baseAngle + offset;
-                                let tx = Math.cos(testAng) * speed;
-                                let ty = Math.sin(testAng) * speed;
+                for (let j = 0; j < 3; j++) {
+                  let offset = j === 0 ? offset1 : j === 1 ? offset2 : offset3;
+                  let testAng = baseAngle + offset;
+                  let tx = Math.cos(testAng) * speed;
+                  let ty = Math.sin(testAng) * speed;
 
-                                if (
-                                  !checkCollisionAt(
-                                    mapInst,
-                                    mCenterX + tx,
-                                    mCenterY + ty,
-                                    mRadius,
-                                  )
-                                ) {
-                                  m.x += tx;
-                                  m.y += ty;
-                                  vx = tx;
-                                  vy = ty;
-                                  moved = true;
-                                  // Persist this detour path for 15-30 frames so the mob clears the corner
-                                  m.avoidanceAngle = testAng;
-                                  m.avoidanceTimer = window.randInt(15, 30);
-                                  break;
-                                } else {
-                                  let canSlideX = !checkCollisionAt(
-                                    mapInst,
-                                    mCenterX + tx,
-                                    mCenterY,
-                                    mRadius,
-                                  );
-                                  let canSlideY = !checkCollisionAt(
-                                    mapInst,
-                                    mCenterX,
-                                    mCenterY + ty,
-                                    mRadius,
-                                  );
-                                  if (canSlideX && !canSlideY && Math.abs(tx) > 0.1) {
-                                    m.x += tx;
-                                    vx = tx;
-                                    vy = 0;
-                                    moved = true;
-                                    m.avoidanceAngle = testAng;
-                                    m.avoidanceTimer = window.randInt(15, 30);
-                                    break;
-                                  } else if (canSlideY && !canSlideX && Math.abs(ty) > 0.1) {
-                                    m.y += ty;
-                                    vx = 0;
-                                    vy = ty;
-                                    moved = true;
-                                    m.avoidanceAngle = testAng;
-                                    m.avoidanceTimer = window.randInt(15, 30);
-                                    break;
-                                  }
-                                }
-                              }
-                            }
+                  if (
+                    !checkCollisionAt(
+                      mapInst,
+                      mCenterX + tx,
+                      mCenterY + ty,
+                      mRadius,
+                    )
+                  ) {
+                    m.x += tx;
+                    m.y += ty;
+                    vx = tx;
+                    vy = ty;
+                    moved = true;
+                    // Persist this detour path for 15-30 frames so the mob clears the corner
+                    m.avoidanceAngle = testAng;
+                    m.avoidanceTimer = window.randInt(15, 30);
+                    break;
+                  } else {
+                    let canSlideX = !checkCollisionAt(
+                      mapInst,
+                      mCenterX + tx,
+                      mCenterY,
+                      mRadius,
+                    );
+                    let canSlideY = !checkCollisionAt(
+                      mapInst,
+                      mCenterX,
+                      mCenterY + ty,
+                      mRadius,
+                    );
+                    if (canSlideX && !canSlideY && Math.abs(tx) > 0.1) {
+                      m.x += tx;
+                      vx = tx;
+                      vy = 0;
+                      moved = true;
+                      m.avoidanceAngle = testAng;
+                      m.avoidanceTimer = window.randInt(15, 30);
+                      break;
+                    } else if (canSlideY && !canSlideX && Math.abs(ty) > 0.1) {
+                      m.y += ty;
+                      vx = 0;
+                      vy = ty;
+                      moved = true;
+                      m.avoidanceAngle = testAng;
+                      m.avoidanceTimer = window.randInt(15, 30);
+                      break;
+                    }
+                  }
+                }
+              }
 
               if (moved) {
                 if (vx < -0.1) m.facing = -1;
@@ -18975,9 +18990,9 @@
     }
 
     let bountyBtn = document.getElementById("btn-bounty-toggle");
-            if (bountyBtn) {
-              bountyBtn.style.display = isHub ? "inline-block" : "none";
-            }
+    if (bountyBtn) {
+      bountyBtn.style.display = isHub ? "inline-block" : "none";
+    }
 
     if (abandonBtn) {
       abandonBtn.style.display = isHub ? "none" : "inline-block";
@@ -19694,38 +19709,38 @@
 
   // --- SHOW TOOLTIP HANDLERS ---
   window.showItemTooltip = function (e, item) {
-      if (!item) return;
-      if (e && e.stopPropagation) e.stopPropagation();
+    if (!item) return;
+    if (e && e.stopPropagation) e.stopPropagation();
 
-      let tt = document.getElementById("game-tooltip");
-      if (!tt) return;
+    let tt = document.getElementById("game-tooltip");
+    if (!tt) return;
 
-      if (item.type === "card") {
-        let cardKey = item.cardKey;
-        let cardData = (window.MONSTER_CARDS_DATA &&
-          window.MONSTER_CARDS_DATA[cardKey]) || {
-          name: item.name || "Monster Card",
-          set: "Whispering Woods",
-        };
-        let setColors = {
-          "Whispering Woods": "#2ecc71",
-          "Mountain Peaks": "#3498db",
-          "Inferno Depths": "#e74c3c",
-          "Fungal Swamp": "#1abc9c",
-          "Void Singularity": "#9b59b6",
-          "Cosmic Wardens": "#f1c40f",
-        };
-        let setCol = setColors[cardData.set] || "#ffd700";
-        let iconHtml = window.getItemIconSvg
-          ? window.getItemIconSvg(item, 44)
-          : "";
-        let ownedQty =
-          (window.playerStats &&
-            window.playerStats.monsterCards &&
-            window.playerStats.monsterCards[cardKey]) ||
-          1;
+    if (item.type === "card") {
+      let cardKey = item.cardKey;
+      let cardData = (window.MONSTER_CARDS_DATA &&
+        window.MONSTER_CARDS_DATA[cardKey]) || {
+        name: item.name || "Monster Card",
+        set: "Whispering Woods",
+      };
+      let setColors = {
+        "Whispering Woods": "#2ecc71",
+        "Mountain Peaks": "#3498db",
+        "Inferno Depths": "#e74c3c",
+        "Fungal Swamp": "#1abc9c",
+        "Void Singularity": "#9b59b6",
+        "Cosmic Wardens": "#f1c40f",
+      };
+      let setCol = setColors[cardData.set] || "#ffd700";
+      let iconHtml = window.getItemIconSvg
+        ? window.getItemIconSvg(item, 44)
+        : "";
+      let ownedQty =
+        (window.playerStats &&
+          window.playerStats.monsterCards &&
+          window.playerStats.monsterCards[cardKey]) ||
+        1;
 
-        tt.innerHTML = `
+      tt.innerHTML = `
             <div class="tooltip-card" style="border: 2px solid ${setCol}; border-radius: 6px; background: rgba(10, 8, 20, 0.96); padding: 12px; width: 250px; box-sizing: border-box;">
               <div style="font-size: 8px; font-weight: bold; color: ${setCol}; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
                 [ BESTIARY CARD • ${cardData.set.toUpperCase()} ]
@@ -19743,77 +19758,117 @@
               </div>
             </div>
           `;
-        tt.style.borderColor = setCol;
-        tt.style.display = "block";
-        window.positionTooltip(e, tt);
-        return;
-      }
-
-      tt.innerHTML = window.buildGeneralTooltipHtml(item, true);
-      tt.style.borderColor = window.getTierColor
-        ? window.getTierColor(item.statsRolled)
-        : "#3498db";
+      tt.style.borderColor = setCol;
       tt.style.display = "block";
       window.positionTooltip(e, tt);
+      return;
+    }
+
+    tt.innerHTML = window.buildGeneralTooltipHtml(item, true);
+    tt.style.borderColor = window.getTierColor
+      ? window.getTierColor(item.statsRolled)
+      : "#3498db";
+    tt.style.display = "block";
+    window.positionTooltip(e, tt);
+  };
+
+  window.showConsumableTooltip = function (e, name) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    let tt = document.getElementById("game-tooltip");
+    if (!tt) return;
+
+    let data = (window.useDex && window.useDex[name]) || {
+      desc: "Consumable Item",
+      color: "#2ecc71",
     };
 
-    window.showConsumableTooltip = function (e, name) {
-      if (e && e.stopPropagation) e.stopPropagation();
-      let tt = document.getElementById("game-tooltip");
-      if (!tt) return;
+    let col = data.color || "#2ecc71";
+    let iconHtml = window.getUseIconHtml ? window.getUseIconHtml(name, 36) : "";
 
-      let data = (window.useDex && window.useDex[name]) || {
-        desc: "Consumable Item",
-        color: "#2ecc71"
-      };
+    let effectText = "";
+    if (name.includes("Attack Elixir")) {
+      let pct = name.includes("Supernal")
+        ? "35%"
+        : name.includes("Greater")
+          ? "20%"
+          : "10%";
+      let runs = name.includes("Supernal")
+        ? "3"
+        : name.includes("Greater")
+          ? "2"
+          : "1";
+      effectText = `Increases Attack Power by <strong style="color: #2ecc71;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+    } else if (name.includes("Vitality Elixir")) {
+      let pct = name.includes("Supernal")
+        ? "35%"
+        : name.includes("Greater")
+          ? "20%"
+          : "10%";
+      let runs = name.includes("Supernal")
+        ? "3"
+        : name.includes("Greater")
+          ? "2"
+          : "1";
+      effectText = `Increases Maximum HP by <strong style="color: #e74c3c;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+    } else if (name.includes("Armored Elixir")) {
+      let pct = name.includes("Supernal")
+        ? "35%"
+        : name.includes("Greater")
+          ? "20%"
+          : "10%";
+      let runs = name.includes("Supernal")
+        ? "3"
+        : name.includes("Greater")
+          ? "2"
+          : "1";
+      effectText = `Increases Defense by <strong style="color: #3498db;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+    } else if (name.includes("Haste Elixir")) {
+      let runs = name.includes("Supernal")
+        ? "3"
+        : name.includes("Greater")
+          ? "2"
+          : "1";
+      effectText = `Increases Movement Speed for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+    } else if (name.includes("Double XP Elixir")) {
+      let runs = name.includes("Supernal")
+        ? "3"
+        : name.includes("Greater")
+          ? "2"
+          : "1";
+      effectText = `Doubles all gained Experience (XP) by <strong style="color: #a855f7;">+100%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+    } else if (name.includes("Double Drop Elixir")) {
+      let runs = name.includes("Supernal")
+        ? "3"
+        : name.includes("Greater")
+          ? "2"
+          : "1";
+      effectText = `Doubles item drop rate by <strong style="color: #22c55e;">+100%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+    } else if (name.includes("Drop Quality Elixir")) {
+      let runs = name.includes("Supernal")
+        ? "3"
+        : name.includes("Greater")
+          ? "2"
+          : "1";
+      effectText = `Increases item drop quality floor by <strong style="color: #3b82f6;">+50%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+    } else if (name.includes("SP Reset Scroll")) {
+      effectText = `Instantly resets and <strong style="color: #9b59b6;">refunds all uncommitted and committed Attribute SP allocations</strong> back to your character pool.`;
+    } else if (name.includes("Cavern Sigil Sack")) {
+      effectText = `Guarantees <strong style="color: #c084fc;">1x random Cavern Sigil</strong> scaled up to your peak stage level, with affix rolls affected by base drop quality.`;
+    } else if (name === "Monster Card Sack") {
+      effectText = `Guarantees <strong style="color: #ffd700;">5x random Monster Cards</strong> added to your Bestiary Album. Complete sets to earn massive passive milestone bonuses.`;
+    } else if (name === "Astral Singularity Cache") {
+      effectText = `Unseals a <strong style="color: #a855f7;">highly valuable Unique Equipment Item</strong> scaled to peak stage level, along with potential material caches.`;
+    } else if (name === "Astral Artifact Cache") {
+      effectText = `Guarantees <strong style="color: #1abc9c;">1x Rare Artifact</strong> and unseals <strong style="color: #2ecc71;">2 to 4 Catalyst Cores</strong> directly into your stash.`;
+    } else if (name === "Daily Reward Sack") {
+      effectText = `Standardized Daily Reward. Consume to initiate unboxing. Guarantees <strong style="color: #ffd700;">1 QP</strong>, <strong style="color: #38bdf8;">1x Equipment</strong> scaled to Lifetime Peak Stage, and rolls extra loot with consecutive item chances!`;
+    } else if (name.includes("Sack") || name.includes("Crate")) {
+      effectText = `Guarantees <strong style="color: #f1c40f;">1x Equipment item</strong> scaled to peak stage level plus <strong style="color: #34d399;">1 to 2 basic elixirs</strong>.`;
+    } else {
+      effectText = data.desc || "Consumable Item";
+    }
 
-      let col = data.color || "#2ecc71";
-      let iconHtml = window.getUseIconHtml ? window.getUseIconHtml(name, 36) : "";
-
-      let effectText = "";
-      if (name.includes("Attack Elixir")) {
-        let pct = name.includes("Supernal") ? "35%" : name.includes("Greater") ? "20%" : "10%";
-        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
-        effectText = `Increases Attack Power by <strong style="color: #2ecc71;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
-      } else if (name.includes("Vitality Elixir")) {
-        let pct = name.includes("Supernal") ? "35%" : name.includes("Greater") ? "20%" : "10%";
-        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
-        effectText = `Increases Maximum HP by <strong style="color: #e74c3c;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
-      } else if (name.includes("Armored Elixir")) {
-        let pct = name.includes("Supernal") ? "35%" : name.includes("Greater") ? "20%" : "10%";
-        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
-        effectText = `Increases Defense by <strong style="color: #3498db;">+${pct}</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
-      } else if (name.includes("Haste Elixir")) {
-        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
-        effectText = `Increases Movement Speed for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
-      } else if (name.includes("Double XP Elixir")) {
-        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
-        effectText = `Doubles all gained Experience (XP) by <strong style="color: #a855f7;">+100%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
-      } else if (name.includes("Double Drop Elixir")) {
-        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
-        effectText = `Doubles item drop rate by <strong style="color: #22c55e;">+100%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
-      } else if (name.includes("Drop Quality Elixir")) {
-        let runs = name.includes("Supernal") ? "3" : name.includes("Greater") ? "2" : "1";
-        effectText = `Increases item drop quality floor by <strong style="color: #3b82f6;">+50%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
-      } else if (name.includes("SP Reset Scroll")) {
-        effectText = `Instantly resets and <strong style="color: #9b59b6;">refunds all uncommitted and committed Attribute SP allocations</strong> back to your character pool.`;
-      } else if (name.includes("Cavern Sigil Sack")) {
-        effectText = `Guarantees <strong style="color: #c084fc;">1x random Cavern Sigil</strong> scaled up to your peak stage level, with affix rolls affected by base drop quality.`;
-      } else if (name === "Monster Card Sack") {
-        effectText = `Guarantees <strong style="color: #ffd700;">5x random Monster Cards</strong> added to your Bestiary Album. Complete sets to earn massive passive milestone bonuses.`;
-      } else if (name === "Astral Singularity Cache") {
-        effectText = `Unseals a <strong style="color: #a855f7;">highly valuable Unique Equipment Item</strong> scaled to peak stage level, along with potential material caches.`;
-      } else if (name === "Astral Artifact Cache") {
-        effectText = `Guarantees <strong style="color: #1abc9c;">1x Rare Artifact</strong> and unseals <strong style="color: #2ecc71;">2 to 4 Catalyst Cores</strong> directly into your stash.`;
-      } else if (name === "Daily Reward Sack") {
-        effectText = `Standardized Daily Reward. Consume to initiate unboxing. Guarantees <strong style="color: #ffd700;">1 QP</strong>, <strong style="color: #38bdf8;">1x Equipment</strong> scaled to Lifetime Peak Stage, and rolls extra loot with consecutive item chances!`;
-      } else if (name.includes("Sack") || name.includes("Crate")) {
-        effectText = `Guarantees <strong style="color: #f1c40f;">1x Equipment item</strong> scaled to peak stage level plus <strong style="color: #34d399;">1 to 2 basic elixirs</strong>.`;
-      } else {
-        effectText = data.desc || "Consumable Item";
-      }
-
-      tt.innerHTML = `
+    tt.innerHTML = `
         <div class="tooltip-card" style="border: 2px solid ${col}; border-radius: 6px; background: rgba(10, 8, 20, 0.96); padding: 12px; width: 250px; box-sizing: border-box;">
           <div style="font-size: 8px; font-weight: bold; color: ${col}; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">
             [ CONSUMABLE ITEM ]
@@ -19831,10 +19886,10 @@
           </div>
         </div>
       `;
-      tt.style.borderColor = col;
-      tt.style.display = "block";
-      window.positionTooltip(e, tt);
-    };
+    tt.style.borderColor = col;
+    tt.style.display = "block";
+    window.positionTooltip(e, tt);
+  };
 
   window.showModifierTooltip = function (e, id, isBuff, customDesc = null) {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -20163,51 +20218,51 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         let mobTypeVal = "mob";
-                let visualTierVal = 0;
-                if (type === "aegis_goliath") {
-                  mobTypeVal = "aegis_goliath";
-                  visualTierVal = 1;
-                } else if (type === "chronos_arbitrator") {
-                  mobTypeVal = "chronos_arbitrator";
-                  visualTierVal = 5;
-                } else if (type === "nexus_overseer") {
-                  mobTypeVal = "nexus_overseer";
-                  visualTierVal = 6;
-                } else if (type === "hooktail") {
-                  mobTypeVal = "prestige_boss";
-                  visualTierVal = 7;
-                } else if (type === "arachnid_treant") {
-                  mobTypeVal = "dungeon_boss";
-                  visualTierVal = 0;
-                } else if (type === "overlord_iron_vault") {
-                  mobTypeVal = "dungeon_boss";
-                  visualTierVal = 2;
-                } else if (type === "corrosive_abomination") {
-                  mobTypeVal = "dungeon_boss";
-                  visualTierVal = 3;
-                } else if (type === "void_overseer") {
-                  mobTypeVal = "dungeon_boss";
-                  visualTierVal = 4;
-                } else if (type === "gilded_vault_keeper") {
-                  mobTypeVal = "dungeon_boss";
-                  visualTierVal = 1;
-                }
+        let visualTierVal = 0;
+        if (type === "aegis_goliath") {
+          mobTypeVal = "aegis_goliath";
+          visualTierVal = 1;
+        } else if (type === "chronos_arbitrator") {
+          mobTypeVal = "chronos_arbitrator";
+          visualTierVal = 5;
+        } else if (type === "nexus_overseer") {
+          mobTypeVal = "nexus_overseer";
+          visualTierVal = 6;
+        } else if (type === "hooktail") {
+          mobTypeVal = "prestige_boss";
+          visualTierVal = 7;
+        } else if (type === "arachnid_treant") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 0;
+        } else if (type === "overlord_iron_vault") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 2;
+        } else if (type === "corrosive_abomination") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 3;
+        } else if (type === "void_overseer") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 4;
+        } else if (type === "gilded_vault_keeper") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 1;
+        }
 
-                let mockMob = {
-                  visualType: type,
-                  type: mobTypeVal,
-                  visualTier: visualTierVal,
-                  x: canvas.width / 2 - 16,
-                  y: canvas.height / 2 - 12,
-                  w: 32,
-                  h: 32,
-                  facing: 1,
-                  walkTimer: time / 150,
-                  hopTimer: Math.floor(time / 50) % 30,
-                  flashTimer: 0,
-                  buffStacks: { haste: 0, def: 0, atk: 0 },
-                  buffTimers: { haste: 0, def: 0, atk: 0 },
-                };
+        let mockMob = {
+          visualType: type,
+          type: mobTypeVal,
+          visualTier: visualTierVal,
+          x: canvas.width / 2 - 16,
+          y: canvas.height / 2 - 12,
+          w: 32,
+          h: 32,
+          facing: 1,
+          walkTimer: time / 150,
+          hopTimer: Math.floor(time / 50) % 30,
+          flashTimer: 0,
+          buffStacks: { haste: 0, def: 0, atk: 0 },
+          buffTimers: { haste: 0, def: 0, atk: 0 },
+        };
 
         if (isUnlocked) {
           if (typeof window.drawSingleMob === "function") {
@@ -20246,7 +20301,7 @@
   };
 
   window.equipRelicItem = function (itemId, slotIdx) {
-    let item = window.inventory.ARTIFACT.find(i => i.id === itemId);
+    let item = window.inventory.ARTIFACT.find((i) => i.id === itemId);
     if (!item) return;
 
     let slotKey = ["art1", "art2", "art3"][slotIdx];
@@ -20262,7 +20317,10 @@
     }
 
     // Manual equip to bypass standard bag logic
-    window.inventory.ARTIFACT.splice(window.inventory.ARTIFACT.indexOf(item), 1);
+    window.inventory.ARTIFACT.splice(
+      window.inventory.ARTIFACT.indexOf(item),
+      1,
+    );
     window.equippedSlots[slotKey] = item;
     item.isEquippedSlot = slotKey;
 
@@ -20353,9 +20411,12 @@
 
       if (item) {
         // Physical Item Power
-        if (item.atk) activeStatsTexts.push(`ATK +${window.formatNumber(item.atk)}`);
-        if (item.def) activeStatsTexts.push(`DEF +${window.formatNumber(item.def)}`);
-        if (item.maxHp) activeStatsTexts.push(`HP +${window.formatNumber(item.maxHp)}`);
+        if (item.atk)
+          activeStatsTexts.push(`ATK +${window.formatNumber(item.atk)}`);
+        if (item.def)
+          activeStatsTexts.push(`DEF +${window.formatNumber(item.def)}`);
+        if (item.maxHp)
+          activeStatsTexts.push(`HP +${window.formatNumber(item.maxHp)}`);
       } else if (trait) {
         // Codex Aspect Power
         let power = codex[trait] || 0.0;
@@ -20364,19 +20425,41 @@
           for (let sKey in baseStats) {
             let val = baseStats[sKey];
             let scaledVal = val * power * slotMult;
-            let isPct = ["dropRate","quality","critChance","critDamage","block","parry","goldMulti","idleAttackSpeed","activeAttackSpeed","maxHpPct"].includes(sKey);
-            let valStr = isPct ? `+${(scaledVal * 100).toFixed(1)}%` : `+${Math.ceil(scaledVal)}`;
-            let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey.toUpperCase();
+            let isPct = [
+              "dropRate",
+              "quality",
+              "critChance",
+              "critDamage",
+              "block",
+              "parry",
+              "goldMulti",
+              "idleAttackSpeed",
+              "activeAttackSpeed",
+              "maxHpPct",
+            ].includes(sKey);
+            let valStr = isPct
+              ? `+${(scaledVal * 100).toFixed(1)}%`
+              : `+${Math.ceil(scaledVal)}`;
+            let label = window.getStatLabel
+              ? window.getStatLabel(sKey)
+              : sKey.toUpperCase();
             activeStatsTexts.push(`${label} ${valStr}`);
           }
         }
       }
     }
-    let activeStatsSummaryStr = activeStatsTexts.length > 0 ? activeStatsTexts.join(" • ") : "No active relic multipliers.";
+    let activeStatsSummaryStr =
+      activeStatsTexts.length > 0
+        ? activeStatsTexts.join(" • ")
+        : "No active relic multipliers.";
 
     // 2. Render Left Pane (Active Slots)
     let activeSlotsHtml = "";
-    const slotLabels = ["SACRED ALTAR SLOT 1", "SACRED ALTAR SLOT 2", "SACRED ALTAR SLOT 3"];
+    const slotLabels = [
+      "SACRED ALTAR SLOT 1",
+      "SACRED ALTAR SLOT 2",
+      "SACRED ALTAR SLOT 3",
+    ];
 
     for (let i = 0; i < 3; i++) {
       let slotKey = slotNames[i];
@@ -20455,21 +20538,23 @@
         let isSlotted = activeRelics.includes(art.trait);
         let assignBtns = "";
         if (isUnlocked) {
-          if (isSlotted) assignBtns = `<span style="color:#2ecc71; font-size:7.5px; font-weight:bold; margin-top:4px;">[SLOTTED]</span>`;
-          else assignBtns = `<div style="display:flex; gap:2px; margin-top:4px; width:100%;"><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',0)">S1</button><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',1)">S2</button><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',2)">S3</button></div>`;
+          if (isSlotted)
+            assignBtns = `<span style="color:#2ecc71; font-size:7.5px; font-weight:bold; margin-top:4px;">[SLOTTED]</span>`;
+          else
+            assignBtns = `<div style="display:flex; gap:2px; margin-top:4px; width:100%;"><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',0)">S1</button><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',1)">S2</button><button class="action-btn-sm" style="font-size:7px; padding:2px; flex:1;" onclick="event.stopPropagation(); window.assignRelic('${art.trait}',2)">S3</button></div>`;
         }
-        libraryHtml += `<div class="bestiary-card-item" style="border-color:${col}; opacity:${isUnlocked?1:0.4}; min-height:120px; padding:6px; background:${isSelected?'rgba(212,175,55,0.12)':'rgba(0,0,0,0.3)'}; cursor:pointer;" onclick="window.showRelicDetails('${art.trait}')">
-          <div style="font-size:7px; font-weight:bold; color:${col};">${isUnlocked?'ASPECT':'LOCKED'}</div>
+        libraryHtml += `<div class="bestiary-card-item" style="border-color:${col}; opacity:${isUnlocked ? 1 : 0.4}; min-height:120px; padding:6px; background:${isSelected ? "rgba(212,175,55,0.12)" : "rgba(0,0,0,0.3)"}; cursor:pointer;" onclick="window.showRelicDetails('${art.trait}')">
+          <div style="font-size:7px; font-weight:bold; color:${col};">${isUnlocked ? "ASPECT" : "LOCKED"}</div>
           ${window.getArtifactIconHtml(art.trait, 28)}
           <div style="font-size:9.5px; font-weight:bold; color:#fff; margin-top:4px;">${art.name}</div>
-          <div style="font-size:8px; color:#aaa; font-family:monospace;">Roll: ${Math.round(power*100)}%</div>
+          <div style="font-size:8px; color:#aaa; font-family:monospace;">Roll: ${Math.round(power * 100)}%</div>
           ${assignBtns}
         </div>`;
       });
 
       let inspectorHtml = "";
       if (selectedTrait) {
-        let art = pool.find(a => a.trait === selectedTrait);
+        let art = pool.find((a) => a.trait === selectedTrait);
         if (art) {
           inspectorHtml = `<div class="relic-inspector-drawer" style="padding:10px; margin-bottom:10px; background:rgba(0,0,0,0.5); border:1px solid #1abc9c; border-radius:6px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -21417,29 +21502,29 @@
           .join("");
       }
     } else if (stashTab === "USE") {
-          let useObj = window.inventory.USE || {};
-          let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
+      let useObj = window.inventory.USE || {};
+      let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
 
-          if (sectionHeaderEl) {
-            sectionHeaderEl.innerHTML = `CONSUMABLES (<span id="profile-stash-count">${keys.length}</span>)`;
-          }
+      if (sectionHeaderEl) {
+        sectionHeaderEl.innerHTML = `CONSUMABLES (<span id="profile-stash-count">${keys.length}</span>)`;
+      }
 
-          if (keys.length === 0) {
-            stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
-          } else {
-            stashListEl.innerHTML = keys
-              .map((k) => {
-                let count = useObj[k];
-                let data = window.useDex[k] || {
-                  desc: "Consumable Item",
-                  color: "#2ecc71",
-                };
-                let col = data.color || "#2ecc71";
-                let iconHtml = window.getUseIconHtml
-                  ? window.getUseIconHtml(k, 28)
-                  : "";
+      if (keys.length === 0) {
+        stashListEl.innerHTML = `<div style="font-size:10px; color:#94a3b8; font-style:italic; text-align:center; padding:20px 10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; margin: 6px 0;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
+      } else {
+        stashListEl.innerHTML = keys
+          .map((k) => {
+            let count = useObj[k];
+            let data = window.useDex[k] || {
+              desc: "Consumable Item",
+              color: "#2ecc71",
+            };
+            let col = data.color || "#2ecc71";
+            let iconHtml = window.getUseIconHtml
+              ? window.getUseIconHtml(k, 28)
+              : "";
 
-                return `
+            return `
                                   <div class="consumable-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px; cursor: pointer;"
                                        onmouseenter="window.showConsumableTooltip(event, '${k}')"
                                        onmouseleave="window.hideTooltip()"
@@ -21455,9 +21540,9 @@
                                     <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
                                   </div>
                                 `;
-              })
-              .join("");
-          }
+          })
+          .join("");
+      }
     } else if (stashTab === "ETC") {
       let etcObj = window.inventory.ETC || {};
       let pendingScraps = window.player.pendingScraps || {};
@@ -22073,19 +22158,19 @@
   };
 
   // Subphase 14: Bounty Board UI Toggle & Dynamic Ledger Binding
-    window.toggleBountyModal = function () {
-          if (typeof window.hideTooltip === "function") window.hideTooltip();
-          let modal = document.getElementById("bounty-modal");
-          if (!modal) return;
+  window.toggleBountyModal = function () {
+    if (typeof window.hideTooltip === "function") window.hideTooltip();
+    let modal = document.getElementById("bounty-modal");
+    if (!modal) return;
 
-          if (modal.style.display === "none" || modal.style.display === "") {
-            modal.style.display = "flex";
-            window.renderBountyBoard();
-          } else {
-            modal.style.display = "none";
-            window.lastModalCloseTime = Date.now();
-          }
-        };
+    if (modal.style.display === "none" || modal.style.display === "") {
+      modal.style.display = "flex";
+      window.renderBountyBoard();
+    } else {
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
+    }
+  };
 
   window.switchBountyTab = function (tabKey) {
     window.state.bountyActiveTab = tabKey;
@@ -22149,22 +22234,25 @@
   };
 
   window.renderBountyBoard = function () {
-      let leftPane = document.getElementById("bounty-list-pane");
-      let rightPane = document.getElementById("bounty-details-pane");
-      if (!leftPane || !rightPane) return;
+    let leftPane = document.getElementById("bounty-list-pane");
+    let rightPane = document.getElementById("bounty-details-pane");
+    if (!leftPane || !rightPane) return;
 
-      let tab = window.state.bountyActiveTab || "challenges";
+    let tab = window.state.bountyActiveTab || "challenges";
 
-      if (tab === "challenges") {
-        let isChallengesUnlocked = (window.playerStats.maxFloorCleared || 0) >= 12 || (window.playerStats.lifetimePeakStage || 0) >= 12 || (window.playerStats.stage || 1) >= 12;
-        if (!isChallengesUnlocked) {
-          leftPane.innerHTML = `
+    if (tab === "challenges") {
+      let isChallengesUnlocked =
+        (window.playerStats.maxFloorCleared || 0) >= 12 ||
+        (window.playerStats.lifetimePeakStage || 0) >= 12 ||
+        (window.playerStats.stage || 1) >= 12;
+      if (!isChallengesUnlocked) {
+        leftPane.innerHTML = `
             <div style="color:#64748b; font-style:italic; text-align:center; padding:30px 10px; font-size:10px; font-family:monospace; line-height:1.45;">
               [ CONTRACTS LOCKED ]<br><br>
               Clear Floor 12 (Sector 1 Boss) to unlock Special Cavern Contracts.
             </div>
           `;
-          rightPane.innerHTML = `
+        rightPane.innerHTML = `
             <div style="display:flex; flex-direction:column; text-align:left; gap:10px; height:100%; font-family:monospace;">
               <div style="font-weight:900; font-size:13.5px; color:#e74c3c; border-bottom:1.5px solid rgba(231,76,60,0.3); padding-bottom:6px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.8px;">
                 Special Contracts Locked
@@ -22178,18 +22266,18 @@
               <button class="action-btn" style="width:100%; margin-top:auto; background:#1e293b; border-color:#334155; color:#64748b;" disabled>EXPEDITION UNDERWAY</button>
             </div>
           `;
-          return;
-        }
+        return;
+      }
 
-        let database = window.SPECIAL_CHALLENGES_DATABASE || {};
-        let keys = Object.keys(database);
+      let database = window.SPECIAL_CHALLENGES_DATABASE || {};
+      let keys = Object.keys(database);
 
-        if (
-          !window.state.selectedBountyId ||
-          !database[window.state.selectedBountyId]
-        ) {
-          window.state.selectedBountyId = keys[0];
-        }
+      if (
+        !window.state.selectedBountyId ||
+        !database[window.state.selectedBountyId]
+      ) {
+        window.state.selectedBountyId = keys[0];
+      }
 
       let activeBountyId = window.state.selectedBountyId;
 
@@ -22316,7 +22404,7 @@
 
                   <!-- Risk Rating & Focus Modifiers -->
                                     <div style="background:rgba(0,0,0,0.45); border:1px solid #334155; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:4.5px; font-family:monospace; font-size:9.5px;">
-                                      <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Contract Tier:</span> <strong style="color:${activeChallenge.tierColor || '#ffd700'}; text-transform:uppercase;">${activeChallenge.tierName || 'Veteran'} (x${activeChallenge.tierId === 'squire' ? '0.8' : activeChallenge.tierId === 'calamity' ? '1.25' : '1.0'} Scale)</strong></div>
+                                      <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Contract Tier:</span> <strong style="color:${activeChallenge.tierColor || "#ffd700"}; text-transform:uppercase;">${activeChallenge.tierName || "Veteran"} (x${activeChallenge.tierId === "squire" ? "0.8" : activeChallenge.tierId === "calamity" ? "1.25" : "1.0"} Scale)</strong></div>
                                       <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Contract Level:</span> <strong style="color:#ffffff;">Floor ${activeChallenge.baseScaleStage || 1}</strong></div>
                                       <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Risk Rating:</span> <strong style="color:#ff7675;">${activeChallenge.riskRating} (HIGH DANGER)</strong></div>
                                       <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Focus Rewards:</span> <strong style="color:#00ffff;">+${Math.round((activeChallenge.rewardMultiplier - 1) * 100)}% Multiplier</strong></div>
@@ -22324,9 +22412,13 @@
                                     </div>
 
                                     <!-- Dynamic Warning Matrix -->
-                                    ${(function() {
-                                      let peak = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-                                      let cLvl = activeChallenge.baseScaleStage || 1;
+                                    ${(function () {
+                                      let peak =
+                                        window.playerStats.lifetimePeakStage ||
+                                        window.playerStats.stage ||
+                                        1;
+                                      let cLvl =
+                                        activeChallenge.baseScaleStage || 1;
                                       if (cLvl > peak) {
                                         return `<div style="background: rgba(231, 76, 60, 0.1); border: 1px dashed #ef4444; border-radius: 4px; padding: 6px 8px; font-size: 8.5px; line-height: 1.35; color: #f87171;">
                                           ✦ WARNING: This contract is highly over-leveled (Floor ${cLvl} vs Peak ${peak}). Upgrade and attune gear slots at the forge before attempting.
@@ -22745,27 +22837,27 @@
         })
         .join("");
     } else if (tab === "USE") {
-          let useObj = window.inventory.USE || {};
-          let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
+      let useObj = window.inventory.USE || {};
+      let keys = Object.keys(useObj).filter((k) => useObj[k] > 0);
 
-          if (keys.length === 0) {
-            listEl.innerHTML = `<div style="font-size:10.5px; color:#64748b; font-style:italic; padding:24px; text-align:center; background:rgba(0,0,0,0.3); border:1px dashed #1e293b; border-radius:6px;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
-            return;
-          }
+      if (keys.length === 0) {
+        listEl.innerHTML = `<div style="font-size:10.5px; color:#64748b; font-style:italic; padding:24px; text-align:center; background:rgba(0,0,0,0.3); border:1px dashed #1e293b; border-radius:6px;">No consumable elixirs, scrolls, or sacks owned.<br>Craft elixirs at the Alchemy Shop or earn sacks from Daily Quests!</div>`;
+        return;
+      }
 
-          listEl.innerHTML = keys
-            .map((k) => {
-              let count = useObj[k];
-              let data = window.useDex[k] || {
-                desc: "Consumable Item",
-                color: "#2ecc71",
-              };
-              let col = data.color || "#2ecc71";
-              let iconHtml = window.getUseIconHtml
-                ? window.getUseIconHtml(k, 28)
-                : "";
+      listEl.innerHTML = keys
+        .map((k) => {
+          let count = useObj[k];
+          let data = window.useDex[k] || {
+            desc: "Consumable Item",
+            color: "#2ecc71",
+          };
+          let col = data.color || "#2ecc71";
+          let iconHtml = window.getUseIconHtml
+            ? window.getUseIconHtml(k, 28)
+            : "";
 
-              return `
+          return `
                         <div class="consumable-card" style="border-left: 3px solid ${col}; display: flex; align-items: center; gap: 8px; cursor: pointer;"
                              onmouseenter="window.showConsumableTooltip(event, '${k}')"
                              onmouseleave="window.hideTooltip()"
@@ -22781,9 +22873,9 @@
                           <button class="action-btn-sm action-btn-equip" onclick="event.stopPropagation(); window.useConsumableItem('${k}');">USE</button>
                         </div>
                       `;
-            })
-            .join("");
-        } else if (tab === "ETC") {
+        })
+        .join("");
+    } else if (tab === "ETC") {
       let etcObj = window.inventory.ETC || {};
       let pendingScraps = window.player.pendingScraps || {};
 
@@ -24110,10 +24202,10 @@
     let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
     // Polynomial-exponential stage scaling matches campaign item power
-        let sIdx = Math.floor((waveNumber - 1) / 5);
-        let repStage = waveNumber * 1.25 + sIdx * 12.0;
-        let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-        let repScale = Math.pow(repGrowth, repStage * 0.95);
+    let sIdx = Math.floor((waveNumber - 1) / 5);
+    let repStage = waveNumber * 1.25 + sIdx * 12.0;
+    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+    let repScale = Math.pow(repGrowth, repStage * 0.95);
 
     if (isBossWave) {
       // --- MILESTONE BOSS SPONDING ---
@@ -24255,7 +24347,11 @@
           attackCooldown: 0,
           rangedCooldown: window.randInt(30, 90),
           isRanged: isRanged,
-          projectileType: projType, moveProfile: (mobInfo.type === 'golem' || mobInfo.type === 'corroded_golem' ? 'relentless' : 'standard'),
+          projectileType: projType,
+          moveProfile:
+            mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
+              ? "relentless"
+              : "standard",
           facing: -1,
           isRare: isRare,
           eliteAffix: eliteAffix,
@@ -24810,108 +24906,110 @@
   };
 
   window.spawnRiftGuardianEncounter = function (tileX, tileY) {
-      let map = window.activeDungeonMap;
-      let tileSize = map ? map.tileSize : 32;
-      let L = window.playerStats.activeRiftLevel || 1;
-      let type = window.playerStats.selectedRiftGuardian || "aegis_goliath";
+    let map = window.activeDungeonMap;
+    let tileSize = map ? map.tileSize : 32;
+    let L = window.playerStats.activeRiftLevel || 1;
+    let type = window.playerStats.selectedRiftGuardian || "aegis_goliath";
 
-      let baseHp = BigNum.from(
+    let baseHp = BigNum.from(
+      type === "aegis_goliath"
+        ? 400
+        : type === "chronos_arbitrator"
+          ? 300
+          : 350,
+    );
+    let baseAtk = BigNum.from(
+      type === "aegis_goliath" ? 18 : type === "chronos_arbitrator" ? 22 : 20,
+    );
+
+    let repScale = BigNum.from(1.05).pow(35);
+    let hpDiffGrowth = BigNum.from(1.08).pow(L);
+    let hpLinearScale = BigNum.from(1 + 0.15 * L);
+
+    let atkDiffGrowth = BigNum.from(1.05).pow(L);
+    let atkLinearScale = BigNum.from(1 + 0.08 * L);
+
+    let finalHp = baseHp.mul(repScale).mul(hpDiffGrowth).mul(hpLinearScale);
+    let finalAtk = baseAtk.mul(repScale).mul(atkDiffGrowth).mul(atkLinearScale);
+
+    let bossName =
+      type === "aegis_goliath"
+        ? "Aegis Goliath"
+        : type === "chronos_arbitrator"
+          ? "Chronos Arbitrator"
+          : "Nexus Overseer";
+
+    window.mob = {
+      id: window.idCounter++,
+      type: "dungeon_boss",
+      name: bossName + ` (Rift Lvl ${L})`,
+      visualType: type,
+      hp: finalHp,
+      maxHp: finalHp,
+      atk: finalAtk.valueOf(),
+      x: tileX * tileSize - 16,
+      y: tileY * tileSize - 16,
+      w: 64,
+      h: 64,
+      flashTimer: 0,
+      isStopped: false,
+      bossTileX: tileX,
+      bossTileY: tileY,
+      state: "idle",
+      telegraphTimer: 0,
+      maxTelegraphTimer: 65,
+      activeAbility: null,
+      targetX: 0,
+      targetY: 0,
+      attackCooldown: 60,
+      moveset:
         type === "aegis_goliath"
-          ? 400
+          ? ["magnetic_pull", "boomerang_shield", "shield_bash"]
           : type === "chronos_arbitrator"
-            ? 300
-            : 350,
-      );
-      let baseAtk = BigNum.from(
-        type === "aegis_goliath" ? 18 : type === "chronos_arbitrator" ? 22 : 20,
-      );
-
-      let repScale = BigNum.from(1.05).pow(35);
-      let hpDiffGrowth = BigNum.from(1.08).pow(L);
-      let hpLinearScale = BigNum.from(1 + 0.15 * L);
-
-      let atkDiffGrowth = BigNum.from(1.05).pow(L);
-      let atkLinearScale = BigNum.from(1 + 0.08 * L);
-
-      let finalHp = baseHp.mul(repScale).mul(hpDiffGrowth).mul(hpLinearScale);
-      let finalAtk = baseAtk.mul(repScale).mul(atkDiffGrowth).mul(atkLinearScale);
-
-      let bossName =
-        type === "aegis_goliath"
-          ? "Aegis Goliath"
-          : type === "chronos_arbitrator"
-            ? "Chronos Arbitrator"
-            : "Nexus Overseer";
-
-      window.mob = {
-        id: window.idCounter++,
-        type: "dungeon_boss",
-        name: bossName + ` (Rift Lvl ${L})`,
-        visualType: type,
-        hp: finalHp,
-        maxHp: finalHp,
-        atk: finalAtk.valueOf(),
-        x: tileX * tileSize - 16,
-        y: tileY * tileSize - 16,
-        w: 64,
-        h: 64,
-        flashTimer: 0,
-        isStopped: false,
-        bossTileX: tileX,
-        bossTileY: tileY,
-        state: "idle",
-        telegraphTimer: 0,
-        maxTelegraphTimer: 65,
-        activeAbility: null,
-        targetX: 0,
-        targetY: 0,
-        attackCooldown: 60,
-        moveset:
-          type === "aegis_goliath"
-            ? ["magnetic_pull", "boomerang_shield", "shield_bash"]
-            : type === "chronos_arbitrator"
-              ? ["slam", "dilation_field"]
-              : ["slam", "control_glitch"],
-        facing: -1,
-        isRiftGuardian: true,
-      };
-
-      window.spawnFloatingText(
-        window.player.x,
-        window.player.y - 25,
-        `${bossName.toUpperCase()} AWAKENED`,
-        "#ff007f",
-      );
+            ? ["slam", "dilation_field"]
+            : ["slam", "control_glitch"],
+      facing: -1,
+      isRiftGuardian: true,
     };
 
-    window.openTactileSackCrateAnimation = function (name, newItem, elixirs) {
-      window.isGamePaused = true;
-      let overlay = document.createElement("div");
-      overlay.id = "tactile-opening-overlay";
-      overlay.style.position = "fixed";
-      overlay.style.top = "0";
-      overlay.style.left = "0";
-      overlay.style.width = "100%";
-      overlay.style.height = "100%";
-      overlay.style.backgroundColor = "rgba(4, 3, 9, 0.94)";
-      overlay.style.display = "flex";
-      overlay.style.flexDirection = "column";
-      overlay.style.justifyContent = "center";
-      overlay.style.alignItems = "center";
-      overlay.style.zIndex = "45000";
-      overlay.style.backdropFilter = "blur(10px)";
-      overlay.style.fontFamily = "monospace";
-      overlay.style.color = "#f1f5f9";
-      overlay.style.boxSizing = "border-box";
-      overlay.style.padding = "20px";
-      document.body.appendChild(overlay);
+    window.spawnFloatingText(
+      window.player.x,
+      window.player.y - 25,
+      `${bossName.toUpperCase()} AWAKENED`,
+      "#ff007f",
+    );
+  };
 
-      let isCrate = name.toLowerCase().includes("crate") || name.toLowerCase().includes("chest");
-      let color = window.getTierColor(newItem.statsRolled);
-      let stars = newItem.statsRolled;
+  window.openTactileSackCrateAnimation = function (name, newItem, elixirs) {
+    window.isGamePaused = true;
+    let overlay = document.createElement("div");
+    overlay.id = "tactile-opening-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(4, 3, 9, 0.94)";
+    overlay.style.display = "flex";
+    overlay.style.flexDirection = "column";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.zIndex = "45000";
+    overlay.style.backdropFilter = "blur(10px)";
+    overlay.style.fontFamily = "monospace";
+    overlay.style.color = "#f1f5f9";
+    overlay.style.boxSizing = "border-box";
+    overlay.style.padding = "20px";
+    document.body.appendChild(overlay);
 
-      let style = document.createElement("style");
-      style.innerHTML = `
+    let isCrate =
+      name.toLowerCase().includes("crate") ||
+      name.toLowerCase().includes("chest");
+    let color = window.getTierColor(newItem.statsRolled);
+    let stars = newItem.statsRolled;
+
+    let style = document.createElement("style");
+    style.innerHTML = `
         .tactile-anim-wrapper {
           position: relative;
           width: 300px;
@@ -25001,11 +25099,11 @@
           100% { opacity: 1; transform: scale(1); }
         }
       `;
-      document.head.appendChild(style);
+    document.head.appendChild(style);
 
-      let vesselSvg = "";
-      if (isCrate) {
-        vesselSvg = `
+    let vesselSvg = "";
+    if (isCrate) {
+      vesselSvg = `
           <svg class="crate-svg vessel-shake" width="140" height="140" viewBox="0 0 64 64" style="overflow: visible !important;">
             <ellipse cx="32" cy="58" rx="24" ry="4" fill="rgba(0,0,0,0.55)" />
             <rect x="10" y="24" width="44" height="32" rx="4" fill="#a0522d" stroke="#000" stroke-width="2.5" />
@@ -25022,8 +25120,8 @@
             <rect id="crate-lid" x="8" y="16" width="48" height="8" rx="1.5" fill="#a0522d" stroke="#000" stroke-width="2.5" style="transform-origin: 32px 20px;" />
           </svg>
         `;
-      } else {
-        vesselSvg = `
+    } else {
+      vesselSvg = `
           <svg class="sack-svg vessel-shake" width="130" height="130" viewBox="0 0 64 64" style="overflow: visible !important;">
             <ellipse cx="32" cy="58" rx="20" ry="3.5" fill="rgba(0,0,0,0.55)" />
             <path id="sack-neck" d="M24 28 L18 14 C22 10, 32 10, 32 16 L32 28 Z" fill="#a05a2c" stroke="#000" stroke-width="1.8" style="transform-origin: 32px 28px;" />
@@ -25035,9 +25133,9 @@
             </g>
           </svg>
         `;
-      }
+    }
 
-      overlay.innerHTML = `
+    overlay.innerHTML = `
         <div style="text-align:center; color:white; animation: toastFadeIn 0.3s ease-out;">
           <div class="tactile-anim-wrapper">
             <div class="tactile-runic-circle"></div>
@@ -25050,49 +25148,60 @@
         </div>
       `;
 
+    setTimeout(() => {
+      let lid = document.getElementById("crate-lid");
+      let str = document.getElementById("sack-string");
+      let neckL = document.getElementById("sack-neck");
+      let neckR = document.getElementById("sack-neck-r");
+      let blast = document.getElementById("portal-blast");
+
+      if (lid) lid.classList.add("crate-lid-fly");
+      if (str) str.classList.add("sack-string-untie");
+      if (neckL) neckL.classList.add("sack-neck-open");
+      if (neckR) neckR.classList.add("sack-neck-open");
+
+      if (blast) blast.style.display = "block";
+
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("spell");
+      }
+
+      if (window.particles && window.ParticlePool) {
+        let colors = isCrate
+          ? ["#a0522d", "#8b4513", "#ffd700"]
+          : ["#a05a2c", "#7d471b", "#00f0ff"];
+        for (let i = 0; i < 24; i++) {
+          let angle = Math.random() * Math.PI * 2;
+          let speed = window.randFloat(2, 6);
+          let pt = window.ParticlePool.get(
+            overlay.offsetWidth / 2,
+            overlay.offsetHeight / 2 - 40,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed - window.randFloat(1, 3),
+            window.randFloat(1.5, 4),
+            colors[Math.floor(Math.random() * colors.length)],
+            1,
+            window.randInt(20, 40),
+          );
+          window.particles.push(pt);
+        }
+      }
+
       setTimeout(() => {
-        let lid = document.getElementById("crate-lid");
-        let str = document.getElementById("sack-string");
-        let neckL = document.getElementById("sack-neck");
-        let neckR = document.getElementById("sack-neck-r");
-        let blast = document.getElementById("portal-blast");
+        let vesselContainer = document.getElementById(
+          "unboxing-vessel-container",
+        );
+        if (vesselContainer) vesselContainer.style.display = "none";
 
-        if (lid) lid.classList.add("crate-lid-fly");
-        if (str) str.classList.add("sack-string-untie");
-        if (neckL) neckL.classList.add("sack-neck-open");
-        if (neckR) neckR.classList.add("sack-neck-open");
-
-        if (blast) blast.style.display = "block";
-
-        if (window.SoundManager && typeof window.SoundManager.play === "function") {
-          window.SoundManager.play("spell");
-        }
-
-        if (window.particles && window.ParticlePool) {
-          let colors = isCrate ? ["#a0522d", "#8b4513", "#ffd700"] : ["#a05a2c", "#7d471b", "#00f0ff"];
-          for (let i = 0; i < 24; i++) {
-            let angle = Math.random() * Math.PI * 2;
-            let speed = window.randFloat(2, 6);
-            let pt = window.ParticlePool.get(
-              overlay.offsetWidth / 2,
-              overlay.offsetHeight / 2 - 40,
-              Math.cos(angle) * speed,
-              Math.sin(angle) * speed - window.randFloat(1, 3),
-              window.randFloat(1.5, 4),
-              colors[Math.floor(Math.random() * colors.length)],
-              1,
-              window.randInt(20, 40),
-            );
-            window.particles.push(pt);
-          }
-        }
-
-        setTimeout(() => {
-          let vesselContainer = document.getElementById("unboxing-vessel-container");
-          if (vesselContainer) vesselContainer.style.display = "none";
-
-          let elixirsHtml = elixirs.map(e => {
-            let eData = window.useDex[e] || { color: "#2ecc71", desc: "Elixir" };
+        let elixirsHtml = elixirs
+          .map((e) => {
+            let eData = window.useDex[e] || {
+              color: "#2ecc71",
+              desc: "Elixir",
+            };
             return `
               <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid ${eData.color}; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 9.5px; text-align: left; width: 100%; box-sizing: border-box; margin-top: 4px;">
                 <div style="flex-shrink: 0;">${window.getUseIconHtml ? window.getUseIconHtml(e, 24) : ""}</div>
@@ -25102,9 +25211,10 @@
                 </div>
               </div>
             `;
-          }).join("");
+          })
+          .join("");
 
-          overlay.innerHTML = `
+        overlay.innerHTML = `
             <div class="unboxed-card-showcase" style="background:#15121b; border:3px solid ${color}; border-radius:12px; width:95%; max-width:400px; box-shadow:0 15px 45px rgba(0,0,0,0.95); text-align:center; padding:20px; box-sizing:border-box;">
               <h2 style="margin:0 0 10px 0; color:${color}; letter-spacing:2px; text-transform:uppercase; font-size:18px;">✦ LOOT SECURED! ✦</h2>
               <div style="height:2px; background:linear-gradient(90deg, transparent, ${color}, transparent); margin-bottom:15px;"></div>
@@ -25121,104 +25231,112 @@
               <button onclick="document.getElementById('tactile-opening-overlay').remove(); window.isGamePaused=false; window.updateUI();" style="background:${color}; color:${stars === 4 || stars === 1 ? "#fff" : "#111"}; border:none; padding:10px; font-weight:bold; font-size:12px; border-radius:4px; cursor:pointer; width:100%; box-shadow:0 0 10px ${color}55;">Store in Satchel</button>
             </div>
           `;
-        }, 600);
+      }, 600);
+    }, 800);
+  };
 
-      }, 800);
+  // --- STAGE 1: BOOSTER PACK VIEW ---
+  window.openMonsterCardSackAnimation = function (rolledCards) {
+    window.isGamePaused = true;
+
+    // Create the modal overlay
+    let overlay = document.createElement("div");
+    overlay.id = "card-opening-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(4, 3, 9, 0.96)";
+    overlay.style.display = "flex";
+    overlay.style.flexDirection = "column";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.zIndex = "45000";
+    overlay.style.backdropFilter = "blur(12px)";
+    overlay.style.fontFamily = "monospace";
+    overlay.style.color = "#f1f5f9";
+    overlay.style.boxSizing = "border-box";
+    overlay.style.padding = "20px";
+    overlay.style.userSelect = "none";
+    overlay.style.webkitUserSelect = "none";
+    document.body.appendChild(overlay);
+
+    // Card Level Projections Formula aligned perfectly with Bestiary Ranks
+    window.calculateCardLevelInfo = function (totalOwned) {
+      let thresholds = window.CARD_UPGRADE_THRESHOLDS || [
+        1, 25, 50, 150, 300, 750,
+      ];
+      let rankNames = [
+        "Iron",
+        "Bronze",
+        "Silver",
+        "Gold",
+        "Platinum",
+        "Diamond",
+      ];
+
+      let tier = window.getCardTier(totalOwned);
+      if (tier < 0) {
+        return {
+          tier: -1,
+          level: "Locked",
+          nextLevelReq: thresholds[0],
+          prevLevelReq: 0,
+          currentProgress: totalOwned,
+          neededForNext: thresholds[0],
+          percent: 0,
+          rankName: "Locked",
         };
+      }
 
-        // --- STAGE 1: BOOSTER PACK VIEW ---
-            window.openMonsterCardSackAnimation = function (rolledCards) {
-              window.isGamePaused = true;
+      let nextReq = thresholds[tier + 1];
+      let prevReq = thresholds[tier];
 
-              // Create the modal overlay
-              let overlay = document.createElement("div");
-              overlay.id = "card-opening-overlay";
-              overlay.style.position = "fixed";
-              overlay.style.top = "0";
-              overlay.style.left = "0";
-              overlay.style.width = "100%";
-              overlay.style.height = "100%";
-              overlay.style.backgroundColor = "rgba(4, 3, 9, 0.96)";
-              overlay.style.display = "flex";
-              overlay.style.flexDirection = "column";
-              overlay.style.justifyContent = "center";
-              overlay.style.alignItems = "center";
-              overlay.style.zIndex = "45000";
-              overlay.style.backdropFilter = "blur(12px)";
-              overlay.style.fontFamily = "monospace";
-              overlay.style.color = "#f1f5f9";
-              overlay.style.boxSizing = "border-box";
-              overlay.style.padding = "20px";
-              overlay.style.userSelect = "none";
-              overlay.style.webkitUserSelect = "none";
-              document.body.appendChild(overlay);
+      if (nextReq === undefined) {
+        return {
+          tier: tier,
+          level: rankNames[tier],
+          nextLevelReq: prevReq,
+          prevLevelReq: prevReq,
+          currentProgress: totalOwned,
+          neededForNext: prevReq,
+          percent: 100,
+          rankName: rankNames[tier],
+        };
+      }
 
-              // Card Level Projections Formula aligned perfectly with Bestiary Ranks
-                            window.calculateCardLevelInfo = function (totalOwned) {
-                              let thresholds = window.CARD_UPGRADE_THRESHOLDS || [1, 25, 50, 150, 300, 750];
-                              let rankNames = ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond"];
+      let currentProgress = totalOwned;
+      let neededForNext = nextReq;
+      let percent = Math.min(100, (currentProgress / neededForNext) * 100);
 
-                              let tier = window.getCardTier(totalOwned);
-                              if (tier < 0) {
-                                return {
-                                  tier: -1,
-                                  level: "Locked",
-                                  nextLevelReq: thresholds[0],
-                                  prevLevelReq: 0,
-                                  currentProgress: totalOwned,
-                                  neededForNext: thresholds[0],
-                                  percent: 0,
-                                  rankName: "Locked"
-                                };
-                              }
+      return {
+        tier: tier,
+        level: rankNames[tier],
+        nextLevelReq: nextReq,
+        prevLevelReq: prevReq,
+        currentProgress: currentProgress,
+        neededForNext: neededForNext,
+        percent: percent,
+        rankName: rankNames[tier],
+      };
+    };
 
-                              let nextReq = thresholds[tier + 1];
-                              let prevReq = thresholds[tier];
+    // Aggregating duplicates pulled in this pack
+    let uniquePulls = [];
+    rolledCards.forEach((key) => {
+      let match = uniquePulls.find((p) => p.key === key);
+      if (match) {
+        match.qty++;
+      } else {
+        uniquePulls.push({ key: key, qty: 1 });
+      }
+    });
 
-                              if (nextReq === undefined) {
-                                return {
-                                  tier: tier,
-                                  level: rankNames[tier],
-                                  nextLevelReq: prevReq,
-                                  prevLevelReq: prevReq,
-                                  currentProgress: totalOwned,
-                                  neededForNext: prevReq,
-                                  percent: 100,
-                                  rankName: rankNames[tier]
-                                };
-                              }
-
-                              let currentProgress = totalOwned;
-                              let neededForNext = nextReq;
-                              let percent = Math.min(100, (currentProgress / neededForNext) * 100);
-
-                              return {
-                                tier: tier,
-                                level: rankNames[tier],
-                                nextLevelReq: nextReq,
-                                prevLevelReq: prevReq,
-                                currentProgress: currentProgress,
-                                neededForNext: neededForNext,
-                                percent: percent,
-                                rankName: rankNames[tier]
-                              };
-                            };
-
-              // Aggregating duplicates pulled in this pack
-              let uniquePulls = [];
-              rolledCards.forEach((key) => {
-                let match = uniquePulls.find((p) => p.key === key);
-                if (match) {
-                  match.qty++;
-                } else {
-                  uniquePulls.push({ key: key, qty: 1 });
-                }
-              });
-
-              // Expand Dynamic CSS styles block to support fanning display, flips, progress transitions, and badges
-              let style = document.createElement("style");
-              style.id = "booster-stage1-styles";
-              style.innerHTML = `
+    // Expand Dynamic CSS styles block to support fanning display, flips, progress transitions, and badges
+    let style = document.createElement("style");
+    style.id = "booster-stage1-styles";
+    style.innerHTML = `
                 .booster-pack-container {
                   display: flex;
                   flex-direction: column;
@@ -25503,10 +25621,10 @@
                   50% { transform: scale(1.08) translateY(-2px); filter: brightness(1.2); }
                 }
               `;
-              document.head.appendChild(style);
+    document.head.appendChild(style);
 
-              // Build the booster pack DOM layout
-              overlay.innerHTML = `
+    // Build the booster pack DOM layout
+    overlay.innerHTML = `
                 <div class="booster-pack-container" id="booster-pack-container">
                   <div class="booster-pack-view" id="booster-pack-view">
                     <div class="booster-pack-top" id="booster-pack-top" onclick="window.initiateTearSequence(this)">
@@ -25525,140 +25643,154 @@
                 </div>
               `;
 
-              // Handler to execute Stage 2 (Tear Open and automatic Stage 3 transition)
-              window.initiateTearSequence = function (topElement) {
-                let view = document.getElementById("booster-pack-view");
-                if (!view || view.classList.contains("ripped")) return;
-                view.classList.add("ripped");
+    // Handler to execute Stage 2 (Tear Open and automatic Stage 3 transition)
+    window.initiateTearSequence = function (topElement) {
+      let view = document.getElementById("booster-pack-view");
+      if (!view || view.classList.contains("ripped")) return;
+      view.classList.add("ripped");
 
-                // Play rip sound
-                if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                  window.SoundManager.play("swing");
-                }
+      // Play rip sound
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("swing");
+      }
 
-                // Spawn custom starburst particles at the tear seam
-                if (window.particles && window.ParticlePool) {
-                  let rect = view.getBoundingClientRect();
-                  let overlayRect = overlay.getBoundingClientRect();
+      // Spawn custom starburst particles at the tear seam
+      if (window.particles && window.ParticlePool) {
+        let rect = view.getBoundingClientRect();
+        let overlayRect = overlay.getBoundingClientRect();
 
-                  let ripX = (rect.left - overlayRect.left) + rect.width / 2;
-                  let ripY = (rect.top - overlayRect.top) + 44;
+        let ripX = rect.left - overlayRect.left + rect.width / 2;
+        let ripY = rect.top - overlayRect.top + 44;
 
-                  let colors = ["#ffd700", "#ff007f", "#a855f7", "#00ffff"];
-                  for (let i = 0; i < 40; i++) {
-                    let angle = Math.random() * Math.PI * 2;
-                    let speed = window.randFloat(3.0, 7.5);
-                    let pt = window.ParticlePool.get(
-                      ripX,
-                      ripY,
-                      Math.cos(angle) * speed,
-                      Math.sin(angle) * speed - window.randFloat(1.5, 4.0),
-                      window.randFloat(2.0, 4.5),
-                      colors[Math.floor(Math.random() * colors.length)],
-                      1.0,
-                      window.randInt(25, 50)
-                    );
-                    pt.style = "polygon";
-                    pt.angle = Math.random() * Math.PI * 2;
-                    pt.spinSpeed = window.randFloat(-0.25, 0.25);
-                    pt.scaleDecay = 0.015;
-                    window.particles.push(pt);
-                  }
-                }
+        let colors = ["#ffd700", "#ff007f", "#a855f7", "#00ffff"];
+        for (let i = 0; i < 40; i++) {
+          let angle = Math.random() * Math.PI * 2;
+          let speed = window.randFloat(3.0, 7.5);
+          let pt = window.ParticlePool.get(
+            ripX,
+            ripY,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed - window.randFloat(1.5, 4.0),
+            window.randFloat(2.0, 4.5),
+            colors[Math.floor(Math.random() * colors.length)],
+            1.0,
+            window.randInt(25, 50),
+          );
+          pt.style = "polygon";
+          pt.angle = Math.random() * Math.PI * 2;
+          pt.spinSpeed = window.randFloat(-0.25, 0.25);
+          pt.scaleDecay = 0.015;
+          window.particles.push(pt);
+        }
+      }
 
-                // Once rip completes, immediately launch Stage 3
-                setTimeout(() => {
-                  let packContainer = document.getElementById("booster-pack-container");
-                  if (packContainer) packContainer.remove();
+      // Once rip completes, immediately launch Stage 3
+      setTimeout(() => {
+        let packContainer = document.getElementById("booster-pack-container");
+        if (packContainer) packContainer.remove();
 
-                  window.beginDeckFanningReveal();
-                }, 550);
-              };
+        window.beginDeckFanningReveal();
+      }, 550);
+    };
 
-              // Progress bar transitions and level up logic builder
-              window.animateCardProgress = function (cardEl, prevOwned, totalOwned) {
-                              let barFill = cardEl.querySelector(".card-progress-bar-fill");
-                              let progressText = cardEl.querySelector(".card-progress-text");
-                              let lvlNum = cardEl.querySelector(".card-level-num");
-                              let lvlUpFlash = cardEl.querySelector(".card-levelup-flash");
+    // Progress bar transitions and level up logic builder
+    window.animateCardProgress = function (cardEl, prevOwned, totalOwned) {
+      let barFill = cardEl.querySelector(".card-progress-bar-fill");
+      let progressText = cardEl.querySelector(".card-progress-text");
+      let lvlNum = cardEl.querySelector(".card-level-num");
+      let lvlUpFlash = cardEl.querySelector(".card-levelup-flash");
 
-                              let prevInfo = window.calculateCardLevelInfo(prevOwned);
-                              let newInfo = window.calculateCardLevelInfo(totalOwned);
+      let prevInfo = window.calculateCardLevelInfo(prevOwned);
+      let newInfo = window.calculateCardLevelInfo(totalOwned);
 
-                              // Intitialize at previous count
-                              barFill.style.width = prevInfo.percent + "%";
+      // Intitialize at previous count
+      barFill.style.width = prevInfo.percent + "%";
 
-                              setTimeout(() => {
-                                barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
+      setTimeout(() => {
+        barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
 
-                                if (newInfo.tier > prevInfo.tier) {
-                                  // Animate to full first
-                                  barFill.style.width = "100%";
+        if (newInfo.tier > prevInfo.tier) {
+          // Animate to full first
+          barFill.style.width = "100%";
 
-                                  setTimeout(() => {
-                                    // Level up triggers
-                                    if (lvlNum) lvlNum.innerText = newInfo.level + " Rank";
-                                    if (lvlUpFlash) {
-                                      lvlUpFlash.style.display = "block";
-                                      lvlUpFlash.style.animation = "lvlUpPulse 1.2s ease-out infinite";
-                                    }
+          setTimeout(() => {
+            // Level up triggers
+            if (lvlNum) lvlNum.innerText = newInfo.level + " Rank";
+            if (lvlUpFlash) {
+              lvlUpFlash.style.display = "block";
+              lvlUpFlash.style.animation = "lvlUpPulse 1.2s ease-out infinite";
+            }
 
-                                    // Instant reset back to 0 width
-                                    barFill.style.transition = "none";
-                                    barFill.style.width = "0%";
+            // Instant reset back to 0 width
+            barFill.style.transition = "none";
+            barFill.style.width = "0%";
 
-                                    if (progressText) {
-                                      progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
-                                    }
+            if (progressText) {
+              progressText.innerText =
+                newInfo.percent === 100
+                  ? "MAX"
+                  : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
+            }
 
-                                    // Force layout reflow
-                                    void barFill.offsetWidth;
+            // Force layout reflow
+            void barFill.offsetWidth;
 
-                                    // Animate from 0 to new percentage progress
-                                    barFill.style.transition = "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
-                                    barFill.style.width = newInfo.percent + "%";
+            // Animate from 0 to new percentage progress
+            barFill.style.transition =
+              "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
+            barFill.style.width = newInfo.percent + "%";
 
-                                    // Level up sound
-                                    if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                                      window.SoundManager.play("spell");
-                                    }
-                                  }, 850);
-                                } else {
-                                  // Standard progress update
-                                  barFill.style.width = newInfo.percent + "%";
-                                  if (progressText) {
-                                    progressText.innerText = newInfo.percent === 100 ? "MAX" : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
-                                  }
-                                }
-                              }, 250);
-                            };
+            // Level up sound
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell");
+            }
+          }, 850);
+        } else {
+          // Standard progress update
+          barFill.style.width = newInfo.percent + "%";
+          if (progressText) {
+            progressText.innerText =
+              newInfo.percent === 100
+                ? "MAX"
+                : `${newInfo.currentProgress} / ${newInfo.neededForNext}`;
+          }
+        }
+      }, 250);
+    };
 
-              // Fanning Out Reveal Deck Generator
-              window.beginDeckFanningReveal = function () {
-                let deckMarkup = uniquePulls.map((pull) => {
-                  let key = pull.key;
-                  let qty = pull.qty;
+    // Fanning Out Reveal Deck Generator
+    window.beginDeckFanningReveal = function () {
+      let deckMarkup = uniquePulls
+        .map((pull) => {
+          let key = pull.key;
+          let qty = pull.qty;
 
-                  let cardData = window.MONSTER_CARDS_DATA[key] || {
-                    name: key.charAt(0).toUpperCase() + key.slice(1).replace("_", " "),
-                    set: "Whispering Woods",
-                  };
+          let cardData = window.MONSTER_CARDS_DATA[key] || {
+            name: key.charAt(0).toUpperCase() + key.slice(1).replace("_", " "),
+            set: "Whispering Woods",
+          };
 
-                  const setColors = {
-                    "Whispering Woods": "#2ecc71",
-                    "Mountain Peaks": "#3498db",
-                    "Inferno Depths": "#e74c3c",
-                    "Fungal Swamp": "#1abc9c",
-                    "Void Singularity": "#9b59b6",
-                    "Cosmic Wardens": "#f1c40f"
-                  };
-                  let setCol = setColors[cardData.set] || "#ffd700";
+          const setColors = {
+            "Whispering Woods": "#2ecc71",
+            "Mountain Peaks": "#3498db",
+            "Inferno Depths": "#e74c3c",
+            "Fungal Swamp": "#1abc9c",
+            "Void Singularity": "#9b59b6",
+            "Cosmic Wardens": "#f1c40f",
+          };
+          let setCol = setColors[cardData.set] || "#ffd700";
 
-                  let totalOwned = window.playerStats.monsterCards[key] || 0;
-                  let prevCount = Math.max(0, totalOwned - qty);
-                  let prevInfo = window.calculateCardLevelInfo(prevCount);
+          let totalOwned = window.playerStats.monsterCards[key] || 0;
+          let prevCount = Math.max(0, totalOwned - qty);
+          let prevInfo = window.calculateCardLevelInfo(prevCount);
 
-                  return `
+          return `
                     <div class="unboxing-card-container" data-card-key="${key}" data-prev-owned="${prevCount}" data-total-owned="${totalOwned}" data-set="${cardData.set}">
                       <div class="unboxing-card-inner">
                         <!-- CARD BACK -->
@@ -25685,9 +25817,10 @@
                       </div>
                     </div>
                   `;
-                }).join("");
+        })
+        .join("");
 
-                overlay.innerHTML = `
+      overlay.innerHTML = `
                   <div style="text-align: center; color: white;">
                     <div class="fanned-deck-container" id="fanned-deck-container">
                       ${deckMarkup}
@@ -25696,269 +25829,304 @@
                   </div>
                 `;
 
-                // Start local unboxing cards graphics rendering loops
-                window.startUnboxingCardAnimLoop();
+      // Start local unboxing cards graphics rendering loops
+      window.startUnboxingCardAnimLoop();
 
-                // Staggered sequential automatic reveal
-                let cardContainers = document.querySelectorAll(".unboxing-card-container");
-                cardContainers.forEach((cardEl, index) => {
-                  setTimeout(() => {
-                    cardEl.classList.add("flipped");
+      // Staggered sequential automatic reveal
+      let cardContainers = document.querySelectorAll(
+        ".unboxing-card-container",
+      );
+      cardContainers.forEach((cardEl, index) => {
+        setTimeout(() => {
+          cardEl.classList.add("flipped");
 
-                    let prev = parseInt(cardEl.dataset.prevOwned, 10);
-                    let total = parseInt(cardEl.dataset.totalOwned, 10);
+          let prev = parseInt(cardEl.dataset.prevOwned, 10);
+          let total = parseInt(cardEl.dataset.totalOwned, 10);
 
-                    // Play card flip sound
-                    if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                      window.SoundManager.play("swing");
-                    }
+          // Play card flip sound
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("swing");
+          }
 
-                    // Spawn colored splash particles around card
-                    let rect = cardEl.getBoundingClientRect();
-                    let overlayRect = overlay.getBoundingClientRect();
-                    let cardX = (rect.left - overlayRect.left) + rect.width / 2;
-                    let cardY = (rect.top - overlayRect.top) + rect.height / 2;
+          // Spawn colored splash particles around card
+          let rect = cardEl.getBoundingClientRect();
+          let overlayRect = overlay.getBoundingClientRect();
+          let cardX = rect.left - overlayRect.left + rect.width / 2;
+          let cardY = rect.top - overlayRect.top + rect.height / 2;
 
-                    let setColors = {
-                      "Whispering Woods": "#2ecc71",
-                      "Mountain Peaks": "#3498db",
-                      "Inferno Depths": "#e74c3c",
-                      "Fungal Swamp": "#1abc9c",
-                      "Void Singularity": "#9b59b6",
-                      "Cosmic Wardens": "#f1c40f"
-                    };
-                    let setCol = setColors[cardEl.dataset.set] || "#ffd700";
+          let setColors = {
+            "Whispering Woods": "#2ecc71",
+            "Mountain Peaks": "#3498db",
+            "Inferno Depths": "#e74c3c",
+            "Fungal Swamp": "#1abc9c",
+            "Void Singularity": "#9b59b6",
+            "Cosmic Wardens": "#f1c40f",
+          };
+          let setCol = setColors[cardEl.dataset.set] || "#ffd700";
 
-                    if (window.particles && window.ParticlePool) {
-                      for (let pIdx = 0; pIdx < 14; pIdx++) {
-                        let angle = Math.random() * Math.PI * 2;
-                        let speed = window.randFloat(1.5, 3.8);
-                        let pt = window.ParticlePool.get(
-                          cardX,
-                          cardY,
-                          Math.cos(angle) * speed,
-                          Math.sin(angle) * speed,
-                          window.randFloat(1.5, 3.0),
-                          setCol,
-                          0.85,
-                          window.randInt(15, 30)
-                        );
-                        window.particles.push(pt);
-                      }
-                    }
+          if (window.particles && window.ParticlePool) {
+            for (let pIdx = 0; pIdx < 14; pIdx++) {
+              let angle = Math.random() * Math.PI * 2;
+              let speed = window.randFloat(1.5, 3.8);
+              let pt = window.ParticlePool.get(
+                cardX,
+                cardY,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                window.randFloat(1.5, 3.0),
+                setCol,
+                0.85,
+                window.randInt(15, 30),
+              );
+              window.particles.push(pt);
+            }
+          }
 
-                    // Trigger progress bar animations
-                    window.animateCardProgress(cardEl, prev, total);
+          // Trigger progress bar animations
+          window.animateCardProgress(cardEl, prev, total);
 
-                    // Once the final card finishes revealing, render the "Collect Haul" button
-                    if (index === cardContainers.length - 1) {
-                      setTimeout(() => {
-                        let collectBtn = document.getElementById("collect-haul-btn");
-                        if (collectBtn) {
-                          collectBtn.style.display = "block";
-                          collectBtn.style.animation = "toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards";
-                        }
-                      }, 900);
-                    }
-                  }, index * 600); // 600ms stagger
-                });
-              };
+          // Once the final card finishes revealing, render the "Collect Haul" button
+          if (index === cardContainers.length - 1) {
+            setTimeout(() => {
+              let collectBtn = document.getElementById("collect-haul-btn");
+              if (collectBtn) {
+                collectBtn.style.display = "block";
+                collectBtn.style.animation =
+                  "toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards";
+              }
+            }, 900);
+          }
+        }, index * 600); // 600ms stagger
+      });
+    };
 
-              // Unboxing Graphics Loops
-              window.unboxingCardAnimFrameId = null;
-              window.startUnboxingCardAnimLoop = function () {
-                if (window.unboxingCardAnimFrameId) cancelAnimationFrame(window.unboxingCardAnimFrameId);
+    // Unboxing Graphics Loops
+    window.unboxingCardAnimFrameId = null;
+    window.startUnboxingCardAnimLoop = function () {
+      if (window.unboxingCardAnimFrameId)
+        cancelAnimationFrame(window.unboxingCardAnimFrameId);
 
-                function renderStep() {
-                  let overlay = document.getElementById("card-opening-overlay");
-                  if (!overlay) {
-                    window.unboxingCardAnimFrameId = null;
-                    return;
-                  }
+      function renderStep() {
+        let overlay = document.getElementById("card-opening-overlay");
+        if (!overlay) {
+          window.unboxingCardAnimFrameId = null;
+          return;
+        }
 
-                  let canvases = document.querySelectorAll(".unboxing-card-canvas");
-                  let time = Date.now();
+        let canvases = document.querySelectorAll(".unboxing-card-canvas");
+        let time = Date.now();
 
-                  canvases.forEach((canvas) => {
-                    let container = canvas.closest(".unboxing-card-container");
-                    if (!container || !container.classList.contains("flipped")) return;
+        canvases.forEach((canvas) => {
+          let container = canvas.closest(".unboxing-card-container");
+          if (!container || !container.classList.contains("flipped")) return;
 
-                    let ctx = canvas.getContext("2d");
-                    if (!ctx) return;
+          let ctx = canvas.getContext("2d");
+          if (!ctx) return;
 
-                    let type = canvas.dataset.visualType;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+          let type = canvas.dataset.visualType;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                    let mobTypeVal = "mob";
-                    let visualTierVal = 0;
+          let mobTypeVal = "mob";
+          let visualTierVal = 0;
 
-                    if (type === "aegis_goliath") { mobTypeVal = "aegis_goliath"; visualTierVal = 1; }
-                    else if (type === "chronos_arbitrator") { mobTypeVal = "chronos_arbitrator"; visualTierVal = 5; }
-                    else if (type === "nexus_overseer") { mobTypeVal = "nexus_overseer"; visualTierVal = 6; }
-                    else if (type === "hooktail") { mobTypeVal = "prestige_boss"; visualTierVal = 7; }
-                    else if (type === "arachnid_treant") { mobTypeVal = "dungeon_boss"; visualTierVal = 0; }
-                    else if (type === "overlord_iron_vault") { mobTypeVal = "dungeon_boss"; visualTierVal = 2; }
-                    else if (type === "corrosive_abomination") { mobTypeVal = "dungeon_boss"; visualTierVal = 3; }
-                    else if (type === "void_overseer") { mobTypeVal = "dungeon_boss"; visualTierVal = 4; }
-                    else if (type === "gilded_vault_keeper") { mobTypeVal = "dungeon_boss"; visualTierVal = 1; }
+          if (type === "aegis_goliath") {
+            mobTypeVal = "aegis_goliath";
+            visualTierVal = 1;
+          } else if (type === "chronos_arbitrator") {
+            mobTypeVal = "chronos_arbitrator";
+            visualTierVal = 5;
+          } else if (type === "nexus_overseer") {
+            mobTypeVal = "nexus_overseer";
+            visualTierVal = 6;
+          } else if (type === "hooktail") {
+            mobTypeVal = "prestige_boss";
+            visualTierVal = 7;
+          } else if (type === "arachnid_treant") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 0;
+          } else if (type === "overlord_iron_vault") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 2;
+          } else if (type === "corrosive_abomination") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 3;
+          } else if (type === "void_overseer") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 4;
+          } else if (type === "gilded_vault_keeper") {
+            mobTypeVal = "dungeon_boss";
+            visualTierVal = 1;
+          }
 
-                    let mockMob = {
-                      visualType: type,
-                      type: mobTypeVal,
-                      visualTier: visualTierVal,
-                      x: canvas.width / 2 - 16,
-                      y: canvas.height / 2 - 12,
-                      w: 32,
-                      h: 32,
-                      facing: 1,
-                      walkTimer: time / 150,
-                      hopTimer: Math.floor(time / 50) % 30,
-                      flashTimer: 0,
-                      buffStacks: { haste: 0, def: 0, atk: 0 },
-                      buffTimers: { haste: 0, def: 0, atk: 0 },
-                    };
+          let mockMob = {
+            visualType: type,
+            type: mobTypeVal,
+            visualTier: visualTierVal,
+            x: canvas.width / 2 - 16,
+            y: canvas.height / 2 - 12,
+            w: 32,
+            h: 32,
+            facing: 1,
+            walkTimer: time / 150,
+            hopTimer: Math.floor(time / 50) % 30,
+            flashTimer: 0,
+            buffStacks: { haste: 0, def: 0, atk: 0 },
+            buffTimers: { haste: 0, def: 0, atk: 0 },
+          };
 
-                    if (typeof window.drawSingleMob === "function") {
-                      window.drawSingleMob(ctx, mockMob);
-                    }
-                  });
+          if (typeof window.drawSingleMob === "function") {
+            window.drawSingleMob(ctx, mockMob);
+          }
+        });
 
-                  window.unboxingCardAnimFrameId = requestAnimationFrame(renderStep);
-                }
-                window.unboxingCardAnimFrameId = requestAnimationFrame(renderStep);
-              };
+        window.unboxingCardAnimFrameId = requestAnimationFrame(renderStep);
+      }
+      window.unboxingCardAnimFrameId = requestAnimationFrame(renderStep);
+    };
 
-              window.stopUnboxingCardAnimLoop = function () {
-                if (window.unboxingCardAnimFrameId) {
-                  cancelAnimationFrame(window.unboxingCardAnimFrameId);
-                  window.unboxingCardAnimFrameId = null;
-                }
-              };
+    window.stopUnboxingCardAnimLoop = function () {
+      if (window.unboxingCardAnimFrameId) {
+        cancelAnimationFrame(window.unboxingCardAnimFrameId);
+        window.unboxingCardAnimFrameId = null;
+      }
+    };
 
-              // Emergency Retreat Strategic Extraction
-                                          window.requestAbandonRun = function () {
-                                            if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
+    // Emergency Retreat Strategic Extraction
+    window.requestAbandonRun = function () {
+      if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
 
-                                            let p = window.player;
-                                            let stats = window.playerStats;
-                                            if (!p || !stats) return;
+      let p = window.player;
+      let stats = window.playerStats;
+      if (!p || !stats) return;
 
-                                            let activeChallenge = stats.activeSpecialChallenge;
-                                            let runGold = stats.runGold || 0;
-                                            let bag = p.bag || [];
-                                            let bagKeepCount = activeChallenge ? 0 : Math.floor(bag.length * 0.5);
+      let activeChallenge = stats.activeSpecialChallenge;
+      let runGold = stats.runGold || 0;
+      let bag = p.bag || [];
+      let bagKeepCount = activeChallenge ? 0 : Math.floor(bag.length * 0.5);
 
-                                            let msg = "";
-                                            if (activeChallenge) {
-                                              msg = "This active Special Challenge is highly unstable! If you retreat now, you will keep all equipped gear, but forfeit ALL carried bag loot and run gold. Confirm retreat?";
-                                            } else {
-                                              msg = "Are you sure you want to retreat to the Hub?<br><br>• You keep <strong>100%</strong> of equipped items (uninsured or not).<br>• You keep <strong style=\"color:#ffd700;\">50%</strong> of your carried bag (randomly selected; the rest is lost).<br>• You lose <strong style=\"color:#ef4444;\">50%</strong> of your run gold/souls from this floor.";
-                                            }
+      let msg = "";
+      if (activeChallenge) {
+        msg =
+          "This active Special Challenge is highly unstable! If you retreat now, you will keep all equipped gear, but forfeit ALL carried bag loot and run gold. Confirm retreat?";
+      } else {
+        msg =
+          'Are you sure you want to retreat to the Hub?<br><br>• You keep <strong>100%</strong> of equipped items (uninsured or not).<br>• You keep <strong style="color:#ffd700;">50%</strong> of your carried bag (randomly selected; the rest is lost).<br>• You lose <strong style="color:#ef4444;">50%</strong> of your run gold/souls from this floor.';
+      }
 
-                                            if (typeof window.showCustomConfirm === "function") {
-                                              window.showCustomConfirm(
-                                                "INITIATE EXTRACTION RETREAT",
-                                                msg,
-                                                "RETREAT TO HUB",
-                                                "STAY AND FIGHT",
-                                                "#e74c3c",
-                                                function () {
-                                                  window.executeRetreatToHub(bagKeepCount);
-                                                }
-                                              );
-                                            } else {
-                                              if (confirm(msg.replace(/<br>/g, "\\n").replace(/<[^>]*>/g, ""))) {
-                                                window.executeRetreatToHub(bagKeepCount);
-                                              }
-                                            }
-                                          };
+      if (typeof window.showCustomConfirm === "function") {
+        window.showCustomConfirm(
+          "INITIATE EXTRACTION RETREAT",
+          msg,
+          "RETREAT TO HUB",
+          "STAY AND FIGHT",
+          "#e74c3c",
+          function () {
+            window.executeRetreatToHub(bagKeepCount);
+          },
+        );
+      } else {
+        if (confirm(msg.replace(/<br>/g, "\\n").replace(/<[^>]*>/g, ""))) {
+          window.executeRetreatToHub(bagKeepCount);
+        }
+      }
+    };
 
-                                          window.executeRetreatToHub = function (bagKeepCount) {
-                                            let p = window.player;
-                                            let stats = window.playerStats;
-                                            if (!p || !stats) return;
+    window.executeRetreatToHub = function (bagKeepCount) {
+      let p = window.player;
+      let stats = window.playerStats;
+      if (!p || !stats) return;
 
-                                            // 1. Process Gold/Souls Retention (Keep 50%)
-                                            let runGold = stats.runGold || 0;
-                                            let retainedGold = Math.floor(runGold * 0.5);
-                                            stats.coins = BigNum.from(stats.coins || 0).add(retainedGold);
+      // 1. Process Gold/Souls Retention (Keep 50%)
+      let runGold = stats.runGold || 0;
+      let retainedGold = Math.floor(runGold * 0.5);
+      stats.coins = BigNum.from(stats.coins || 0).add(retainedGold);
 
-                                            // 2. Process Bag Loot Retention
-                                            let bag = p.bag || [];
-                                            let retainedBag = [];
-                                            if (bagKeepCount > 0 && bag.length > 0) {
-                                              let shuffled = [...bag].sort(() => Math.random() - 0.5);
-                                              retainedBag = shuffled.slice(0, bagKeepCount);
-                                            }
+      // 2. Process Bag Loot Retention
+      let bag = p.bag || [];
+      let retainedBag = [];
+      if (bagKeepCount > 0 && bag.length > 0) {
+        let shuffled = [...bag].sort(() => Math.random() - 0.5);
+        retainedBag = shuffled.slice(0, bagKeepCount);
+      }
 
-                                            if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
-                                            retainedBag.forEach((item) => {
-                                              window.inventory.EQUIP.push(item);
-                                            });
+      if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
+      retainedBag.forEach((item) => {
+        window.inventory.EQUIP.push(item);
+      });
 
-                                            // 3. Clear run temporary states
-                                            stats.runGold = 0;
-                                            p.bag = [];
-                                            p.depth = 1;
-                                            window.calamitySpecterActive = false;
-                                            window.floorTimeElapsed = 0;
+      // 3. Clear run temporary states
+      stats.runGold = 0;
+      p.bag = [];
+      p.depth = 1;
+      window.calamitySpecterActive = false;
+      window.floorTimeElapsed = 0;
 
-                                            // Cleanly load the Hub
-                                            window.currentGameState = window.GAME_STATES.HUB;
-                                            if (window.activeDungeonMap) {
-                                              window.activeDungeonMap.generateHub();
-                                            }
+      // Cleanly load the Hub
+      window.currentGameState = window.GAME_STATES.HUB;
+      if (window.activeDungeonMap) {
+        window.activeDungeonMap.generateHub();
+      }
 
-                                            if (typeof window.refillFlaskCharges === "function") {
-                                              window.refillFlaskCharges(true);
-                                            }
+      if (typeof window.refillFlaskCharges === "function") {
+        window.refillFlaskCharges(true);
+      }
 
-                                            if (typeof window.invalidatePlayerStats === "function") {
-                                              window.invalidatePlayerStats();
-                                            }
+      if (typeof window.invalidatePlayerStats === "function") {
+        window.invalidatePlayerStats();
+      }
 
-                                            if (typeof window.updateUI === "function") window.updateUI();
-                                            if (typeof window.saveGame === "function") window.saveGame();
+      if (typeof window.updateUI === "function") window.updateUI();
+      if (typeof window.saveGame === "function") window.saveGame();
 
-                                            if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                                              window.SoundManager.play("death");
-                                            }
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("death");
+      }
 
-                                            // Redirect to Summary Screen showing salvage list
-                                            let summaryModal = document.getElementById("summary-modal");
-                                            let summaryTitle = document.getElementById("summary-title");
-                                            let summarySub = document.getElementById("summary-subtitle");
-                                            let lootList = document.getElementById("summary-loot-list");
+      // Redirect to Summary Screen showing salvage list
+      let summaryModal = document.getElementById("summary-modal");
+      let summaryTitle = document.getElementById("summary-title");
+      let summarySub = document.getElementById("summary-subtitle");
+      let lootList = document.getElementById("summary-loot-list");
 
-                                            if (summaryModal && summaryTitle && summarySub && lootList) {
-                                              summaryTitle.innerText = "RETREAT SUCCESSFUL";
-                                              summaryTitle.style.color = "#f1c40f";
-                                              summarySub.innerText = `You retreated with equipped gear. Salvaged ${retainedBag.length} items & ${retainedGold} Gold.`;
+      if (summaryModal && summaryTitle && summarySub && lootList) {
+        summaryTitle.innerText = "RETREAT SUCCESSFUL";
+        summaryTitle.style.color = "#f1c40f";
+        summarySub.innerText = `You retreated with equipped gear. Salvaged ${retainedBag.length} items & ${retainedGold} Gold.`;
 
-                                              lootList.innerHTML = retainedBag.map(item => {
-                                                let col = window.getTierColor ? window.getTierColor(item.statsRolled) : "#ffd700";
-                                                return `<div class="loot-item" style="color:${col}; font-family:monospace; margin-bottom:4px;">[SALVAGED] ${item.name}</div>`;
-                                              }).join("");
+        lootList.innerHTML = retainedBag
+          .map((item) => {
+            let col = window.getTierColor
+              ? window.getTierColor(item.statsRolled)
+              : "#ffd700";
+            return `<div class="loot-item" style="color:${col}; font-family:monospace; margin-bottom:4px;">[SALVAGED] ${item.name}</div>`;
+          })
+          .join("");
 
-                                              summaryModal.style.display = "flex";
-                                            } else {
-                                              window.loadHub();
-                                            }
-                                          };
+        summaryModal.style.display = "flex";
+      } else {
+        window.loadHub();
+      }
+    };
 
-                                          // Collection Exit Handler
-                            window.collectUnboxedHaul = function () {
-                window.stopUnboxingCardAnimLoop();
+    // Collection Exit Handler
+    window.collectUnboxedHaul = function () {
+      window.stopUnboxingCardAnimLoop();
 
-                let styleEl = document.getElementById("booster-stage1-styles");
-                if (styleEl) styleEl.remove();
+      let styleEl = document.getElementById("booster-stage1-styles");
+      if (styleEl) styleEl.remove();
 
-                let overlay = document.getElementById("card-opening-overlay");
-                if (overlay) overlay.remove();
+      let overlay = document.getElementById("card-opening-overlay");
+      if (overlay) overlay.remove();
 
-                window.isGamePaused = false;
-                if (typeof window.updateUI === "function") window.updateUI();
-                if (typeof window.saveGame === "function") window.saveGame();
-              };
-            };
-          })();
+      window.isGamePaused = false;
+      if (typeof window.updateUI === "function") window.updateUI();
+      if (typeof window.saveGame === "function") window.saveGame();
+    };
+  };
+})();

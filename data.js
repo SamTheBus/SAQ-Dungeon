@@ -1199,10 +1199,10 @@ Object.assign(window.GameState, {
       }
 
       // Calculate next xpReq safely using quadratic scaling
-            let lvl = window.playerStats.level || 1;
-            let rawXpReq = Math.round(300 + 100 * lvl + 50 * lvl * lvl);
-            xpReq = BigNum.from(rawXpReq);
-            leveledUp = true;
+      let lvl = window.playerStats.level || 1;
+      let rawXpReq = Math.round(300 + 100 * lvl + 50 * lvl * lvl);
+      xpReq = BigNum.from(rawXpReq);
+      leveledUp = true;
     }
 
     if (leveledUp) {
@@ -2122,111 +2122,115 @@ window.resolvePlayerStats = function (useDraft = false) {
   p.rareSpawn += aT.rareSpawn;
 
   // Calculate Card Stats (scaled by Rarity Multipliers)
-        let cards = window.playerStats.monsterCards || {};
-        let cardAtkPct = 0;
-        let cardHpPct = 0;
-        let cardDefPct = 0;
-        let cardFlatSpeed = 0;
-        let cardCritChance = 0;
-        let cardCritDamage = 0;
-        let cardParry = 0;
-        let cardXpRate = 0;
-        let cardDrop = 0;
-        let cardGold = 0;
-        let cardRareSpawn = 0;
+  let cards = window.playerStats.monsterCards || {};
+  let cardAtkPct = 0;
+  let cardHpPct = 0;
+  let cardDefPct = 0;
+  let cardFlatSpeed = 0;
+  let cardCritChance = 0;
+  let cardCritDamage = 0;
+  let cardParry = 0;
+  let cardXpRate = 0;
+  let cardDrop = 0;
+  let cardGold = 0;
+  let cardRareSpawn = 0;
 
-        let tempCardMultipliers = window.SET_CARD_MULTIPLIERS || { "Whispering Woods": 1.0 };
+  let tempCardMultipliers = window.SET_CARD_MULTIPLIERS || {
+    "Whispering Woods": 1.0,
+  };
 
-        for (let cardKey in window.MONSTER_CARDS_DATA) {
-          let count = cards[cardKey] || 0;
-          let tier = window.getCardTier(count);
-          if (tier >= 0) {
-            let cardData = window.MONSTER_CARDS_DATA[cardKey];
-            let mult = tempCardMultipliers[cardData.set] || 1.0;
-            let val = window.getCardValue(cardData.baseVal, tier) * mult;
+  for (let cardKey in window.MONSTER_CARDS_DATA) {
+    let count = cards[cardKey] || 0;
+    let tier = window.getCardTier(count);
+    if (tier >= 0) {
+      let cardData = window.MONSTER_CARDS_DATA[cardKey];
+      let mult = tempCardMultipliers[cardData.set] || 1.0;
+      let val = window.getCardValue(cardData.baseVal, tier) * mult;
 
-            switch (cardData.baseStat) {
-              case "atk":
-                cardAtkPct += val;
-                break;
-              case "maxHp":
-                cardHpPct += val;
-                break;
-              case "def":
-                cardDefPct += val;
-                break;
-              case "moveSpeed":
-                cardFlatSpeed += val;
-                break;
-              case "critChance":
-                cardCritChance += val;
-                break;
-              case "critDamage":
-                cardCritDamage += val;
-                break;
-              case "parry":
-                cardParry += val;
-                break;
-              case "xpRate":
-                cardXpRate += val;
-                break;
-              case "dropRate":
-                cardDrop += val;
-                break;
-              case "gold":
-                cardGold += val;
-                break;
-              case "rareSpawn":
-                cardRareSpawn += val;
-                break;
-            }
-          }
-        }
+      switch (cardData.baseStat) {
+        case "atk":
+          cardAtkPct += val;
+          break;
+        case "maxHp":
+          cardHpPct += val;
+          break;
+        case "def":
+          cardDefPct += val;
+          break;
+        case "moveSpeed":
+          cardFlatSpeed += val;
+          break;
+        case "critChance":
+          cardCritChance += val;
+          break;
+        case "critDamage":
+          cardCritDamage += val;
+          break;
+        case "parry":
+          cardParry += val;
+          break;
+        case "xpRate":
+          cardXpRate += val;
+          break;
+        case "dropRate":
+          cardDrop += val;
+          break;
+        case "gold":
+          cardGold += val;
+          break;
+        case "rareSpawn":
+          cardRareSpawn += val;
+          break;
+      }
+    }
+  }
 
-        // Calculate Set Bonuses (The "Weakest Link" Rule) with custom Set Rarity Resonance
-        let activeSetBonuses = {};
-        let tempResonanceBases = window.SET_RESONANCE_BASE_VALUES || { "Whispering Woods": 0.05 };
-        let attributeSetMult = 1.0;
+  // Calculate Set Bonuses (The "Weakest Link" Rule) with custom Set Rarity Resonance
+  let activeSetBonuses = {};
+  let tempResonanceBases = window.SET_RESONANCE_BASE_VALUES || {
+    "Whispering Woods": 0.05,
+  };
+  let attributeSetMult = 1.0;
 
-        for (let setName in window.CARD_SETS_DATA) {
-          let setData = window.CARD_SETS_DATA[setName];
-          let minTier = Infinity;
-          let allOwned = true;
+  for (let setName in window.CARD_SETS_DATA) {
+    let setData = window.CARD_SETS_DATA[setName];
+    let minTier = Infinity;
+    let allOwned = true;
 
-          for (let cKey of setData.cards) {
-            let count = cards[cKey] || 0;
-            let t = window.getCardTier(count);
-            if (t < 0) {
-              allOwned = false;
-              break;
-            }
-            if (t < minTier) {
-              minTier = t;
-            }
-          }
+    for (let cKey of setData.cards) {
+      let count = cards[cKey] || 0;
+      let t = window.getCardTier(count);
+      if (t < 0) {
+        allOwned = false;
+        break;
+      }
+      if (t < minTier) {
+        minTier = t;
+      }
+    }
 
-          if (allOwned) {
-            let multiplier = 1.0 + 0.5 * minTier;
-            let baseVal = tempResonanceBases[setName] || 0.05;
-            let bonusValue = baseVal * multiplier;
-            activeSetBonuses[setName] = multiplier;
+    if (allOwned) {
+      let multiplier = 1.0 + 0.5 * minTier;
+      let baseVal = tempResonanceBases[setName] || 0.05;
+      let bonusValue = baseVal * multiplier;
+      activeSetBonuses[setName] = multiplier;
 
-            // Route the resonance bonus directly to the correct stat using structural metadata
-            if (setData.statKey === "xpRate") {
-              cardXpRate += bonusValue;
-            } else if (setData.statKey === "defPctBonus") {
-              cardDefPct += bonusValue;
-            } else if (setData.statKey === "atkPctBonus") {
-              cardAtkPct += bonusValue;
-            } else if (setData.statKey === "maxHpPctBonus") {
-              cardHpPct += bonusValue;
-            } else if (setData.statKey === "qly") {
-              p.qly += bonusValue;
-            } else if (setData.statKey === "attributesMult") {
-              attributeSetMult += bonusValue;
-            }
-          }
-        }
+      // Route the resonance bonus directly to the correct stat using structural metadata
+      if (setData.statKey === "xpRate") {
+        cardXpRate += bonusValue;
+      } else if (setData.statKey === "defPctBonus") {
+        cardDefPct += bonusValue;
+      } else if (setData.statKey === "atkPctBonus") {
+        cardAtkPct += bonusValue;
+      } else if (setData.statKey === "maxHpPctBonus") {
+        cardHpPct += bonusValue;
+      } else if (setData.statKey === "qly") {
+        p.qly += bonusValue;
+      } else if (setData.statKey === "attributesMult") {
+        attributeSetMult += bonusValue;
+      }
+    }
+  }
 
   // Apply Card Utility and Combat Stats
   flatSpeedBonus += cardFlatSpeed;
@@ -5833,11 +5837,11 @@ window.hydrateCavernSigils = function () {
 // --- BESTIARY RARITY SCALING CONFIGURATIONS ---
 window.SET_RESONANCE_BASE_VALUES = {
   "Whispering Woods": 0.02, // 2% Base
-  "Mountain Peaks": 0.04,   // 4% Base
-  "Inferno Depths": 0.06,   // 6% Base
-  "Fungal Swamp": 0.08,     // 8% Base
+  "Mountain Peaks": 0.04, // 4% Base
+  "Inferno Depths": 0.06, // 6% Base
+  "Fungal Swamp": 0.08, // 8% Base
   "Void Singularity": 0.12, // 12% Base
-  "Cosmic Wardens": 0.20    // 20% Base
+  "Cosmic Wardens": 0.2, // 20% Base
 };
 
 window.SET_CARD_MULTIPLIERS = {
@@ -5846,7 +5850,7 @@ window.SET_CARD_MULTIPLIERS = {
   "Inferno Depths": 1.5,
   "Fungal Swamp": 1.75,
   "Void Singularity": 2.25,
-  "Cosmic Wardens": 3.0
+  "Cosmic Wardens": 3.0,
 };
 
 window.getCardDustRates = function (setName) {
@@ -5856,7 +5860,7 @@ window.getCardDustRates = function (setName) {
     "Inferno Depths": { craft: 50, salvage: 4 },
     "Fungal Swamp": { craft: 100, salvage: 8 },
     "Void Singularity": { craft: 250, salvage: 20 },
-    "Cosmic Wardens": { craft: 500, salvage: 50 }
+    "Cosmic Wardens": { craft: 500, salvage: 50 },
   };
   return rates[setName] || { craft: 50, salvage: 1 };
 };
@@ -5887,17 +5891,18 @@ window.addMonsterCard = function (cKey, qty = 1) {
   window.playerStats.monsterCards[cKey] = current;
 
   if (salvagedCount > 0) {
-      let rates = window.getCardDustRates(cardData.set);
-      let dustYield = salvagedCount * rates.salvage;
-      window.playerStats.astralDust = (window.playerStats.astralDust || 0) + dustYield;
+    let rates = window.getCardDustRates(cardData.set);
+    let dustYield = salvagedCount * rates.salvage;
+    window.playerStats.astralDust =
+      (window.playerStats.astralDust || 0) + dustYield;
 
-      if (typeof window.pushHeaderToast === "function") {
-        window.pushHeaderToast(
-          `Maxed Card duplicate auto-salvaged: +${dustYield} Astral Dust!`,
-          "#df9ffb"
-        );
-      }
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        `Maxed Card duplicate auto-salvaged: +${dustYield} Astral Dust!`,
+        "#df9ffb",
+      );
     }
+  }
 };
 
 window.renderBestiaryAlbum = function () {
@@ -5934,45 +5939,49 @@ window.renderBestiaryAlbum = function () {
   };
 
   // Re-accumulate card stat values (scaled by Rarity Multipliers)
-    let accumulatedStats = {};
-    let tempCardMultipliers = window.SET_CARD_MULTIPLIERS || { "Whispering Woods": 1.0 };
+  let accumulatedStats = {};
+  let tempCardMultipliers = window.SET_CARD_MULTIPLIERS || {
+    "Whispering Woods": 1.0,
+  };
 
-    for (let cKey in window.MONSTER_CARDS_DATA) {
+  for (let cKey in window.MONSTER_CARDS_DATA) {
+    let count = cards[cKey] || 0;
+    let tier = window.getCardTier(count);
+    if (tier >= 0) {
+      let cardData = window.MONSTER_CARDS_DATA[cKey];
+      let mult = tempCardMultipliers[cardData.set] || 1.0;
+      let val = window.getCardValue(cardData.baseVal, tier) * mult;
+      accumulatedStats[cardData.baseStat] =
+        (accumulatedStats[cardData.baseStat] || 0) + val;
+    }
+  }
+
+  // Append active Set Resonance bonuses (scaled by Set Rarity)
+  let tempResonanceBases = window.SET_RESONANCE_BASE_VALUES || {
+    "Whispering Woods": 0.05,
+  };
+
+  for (let setName in window.CARD_SETS_DATA) {
+    let setData = window.CARD_SETS_DATA[setName];
+    let minTier = Infinity;
+    let allOwned = true;
+    for (let cKey of setData.cards) {
       let count = cards[cKey] || 0;
-      let tier = window.getCardTier(count);
-      if (tier >= 0) {
-        let cardData = window.MONSTER_CARDS_DATA[cKey];
-        let mult = tempCardMultipliers[cardData.set] || 1.0;
-        let val = window.getCardValue(cardData.baseVal, tier) * mult;
-        accumulatedStats[cardData.baseStat] =
-          (accumulatedStats[cardData.baseStat] || 0) + val;
+      let t = window.getCardTier(count);
+      if (t < 0) {
+        allOwned = false;
+        break;
       }
+      if (t < minTier) minTier = t;
     }
-
-    // Append active Set Resonance bonuses (scaled by Set Rarity)
-    let tempResonanceBases = window.SET_RESONANCE_BASE_VALUES || { "Whispering Woods": 0.05 };
-
-    for (let setName in window.CARD_SETS_DATA) {
-      let setData = window.CARD_SETS_DATA[setName];
-      let minTier = Infinity;
-      let allOwned = true;
-      for (let cKey of setData.cards) {
-        let count = cards[cKey] || 0;
-        let t = window.getCardTier(count);
-        if (t < 0) {
-          allOwned = false;
-          break;
-        }
-        if (t < minTier) minTier = t;
-      }
-      if (allOwned) {
-        let multiplier = 1.0 + 0.5 * minTier;
-        let baseVal = tempResonanceBases[setName] || 0.05;
-        let val = baseVal * multiplier;
-        accumulatedStats[setData.statKey] =
-          (accumulatedStats[setData.statKey] || 0) + val;
-      }
+    if (allOwned) {
+      let multiplier = 1.0 + 0.5 * minTier;
+      let baseVal = tempResonanceBases[setName] || 0.05;
+      let val = baseVal * multiplier;
+      accumulatedStats[setData.statKey] =
+        (accumulatedStats[setData.statKey] || 0) + val;
     }
+  }
 
   for (let sKey in accumulatedStats) {
     let val = accumulatedStats[sKey];
@@ -6047,49 +6056,56 @@ window.renderBestiaryAlbum = function () {
     let setHeaderColor = isSetComplete ? "#ffd700" : "#64748b";
 
     if (isSetComplete) {
-          let mult = 1.0 + 0.5 * minTier;
-          let baseVal = (window.SET_RESONANCE_BASE_VALUES && window.SET_RESONANCE_BASE_VALUES[setName]) || 0.05;
-          let totalBonus = baseVal * mult;
-          let statLabel = statLabels[setData.statKey] || setData.statKey.toUpperCase();
-          setResonanceText = `<span style="color:#2ecc71; font-weight:bold; font-size:9.5px; font-family:monospace;">RESONANCE: ${rankNames[minTier]} (+${(totalBonus * 100).toFixed(1)}% ${statLabel})</span>`;
-        } else {
-          setResonanceText = `<span style="color:#64748b; font-size:9.5px; font-family:monospace;">RESONANCE: INACTIVE (${ownedSetCount}/${setData.cards.length})</span>`;
-        }
+      let mult = 1.0 + 0.5 * minTier;
+      let baseVal =
+        (window.SET_RESONANCE_BASE_VALUES &&
+          window.SET_RESONANCE_BASE_VALUES[setName]) ||
+        0.05;
+      let totalBonus = baseVal * mult;
+      let statLabel =
+        statLabels[setData.statKey] || setData.statKey.toUpperCase();
+      setResonanceText = `<span style="color:#2ecc71; font-weight:bold; font-size:9.5px; font-family:monospace;">RESONANCE: ${rankNames[minTier]} (+${(totalBonus * 100).toFixed(1)}% ${statLabel})</span>`;
+    } else {
+      setResonanceText = `<span style="color:#64748b; font-size:9.5px; font-family:monospace;">RESONANCE: INACTIVE (${ownedSetCount}/${setData.cards.length})</span>`;
+    }
 
     let cardsGridHtml = setData.cards
-          .map((cKey) => {
-            let count = cards[cKey] || 0;
-            let tier = window.getCardTier(count);
-            let cardData = window.MONSTER_CARDS_DATA[cKey];
-            let rates = window.getCardDustRates(cardData.set);
-            let cost = rates.craft;
-            let dustOwned = window.playerStats.astralDust || 0;
-            let canCraft = dustOwned >= cost;
-            let isUnlocked = count > 0;
+      .map((cKey) => {
+        let count = cards[cKey] || 0;
+        let tier = window.getCardTier(count);
+        let cardData = window.MONSTER_CARDS_DATA[cKey];
+        let rates = window.getCardDustRates(cardData.set);
+        let cost = rates.craft;
+        let dustOwned = window.playerStats.astralDust || 0;
+        let canCraft = dustOwned >= cost;
+        let isUnlocked = count > 0;
 
-            let iconHtml = `<canvas class="bestiary-card-canvas" data-visual-type="${cKey}" data-unlocked="${isUnlocked}" width="64" height="64" style="width:52px; height:52px; display:block; margin:4px auto;"></canvas>`;
+        let iconHtml = `<canvas class="bestiary-card-canvas" data-visual-type="${cKey}" data-unlocked="${isUnlocked}" width="64" height="64" style="width:52px; height:52px; display:block; margin:4px auto;"></canvas>`;
 
-            if (tier >= 0) {
-              let cardColor = rankColors[tier] || "#ffd700";
-              let mult = (window.SET_CARD_MULTIPLIERS && window.SET_CARD_MULTIPLIERS[cardData.set]) || 1.0;
-              let val = window.getCardValue(cardData.baseVal, tier) * mult;
-              let isPct = cardData.isPct;
-              let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
+        if (tier >= 0) {
+          let cardColor = rankColors[tier] || "#ffd700";
+          let mult =
+            (window.SET_CARD_MULTIPLIERS &&
+              window.SET_CARD_MULTIPLIERS[cardData.set]) ||
+            1.0;
+          let val = window.getCardValue(cardData.baseVal, tier) * mult;
+          let isPct = cardData.isPct;
+          let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${val}`;
 
-              let thresholds = window.CARD_UPGRADE_THRESHOLDS;
-              let nextThreshold = thresholds[tier + 1];
-              let progressText = "";
-              let progressPct = 0;
+          let thresholds = window.CARD_UPGRADE_THRESHOLDS;
+          let nextThreshold = thresholds[tier + 1];
+          let progressText = "";
+          let progressPct = 0;
 
-              if (nextThreshold !== undefined) {
-                progressText = `${count} / ${nextThreshold}`;
-                progressPct = Math.min(100, (count / nextThreshold) * 100);
-              } else {
-                progressText = "MAX RANK";
-                progressPct = 100;
-              }
+          if (nextThreshold !== undefined) {
+            progressText = `${count} / ${nextThreshold}`;
+            progressPct = Math.min(100, (count / nextThreshold) * 100);
+          } else {
+            progressText = "MAX RANK";
+            progressPct = 100;
+          }
 
-              return `
+          return `
                   <div class="bestiary-card-item unlocked-card" style="border-color:${cardColor}; background:rgba(0,0,0,0.5); box-shadow: inset 0 0 10px ${cardColor}15;">
                     <div style="font-size:7px; color:${cardColor}; font-weight:bold; font-family:monospace; text-transform:uppercase;">${rankNames[tier]} RANK</div>
                     <div style="margin:4px 0;">${iconHtml}</div>
@@ -6107,8 +6123,8 @@ window.renderBestiaryAlbum = function () {
                     </div>
                   </div>
                 `;
-            } else {
-              let craftBtnHtml = `<button class="action-btn-sm" style="font-size:7px; padding:2.5px 6px; margin:0; line-height:1.2; background:${canCraft ? "linear-gradient(180deg, #10b981, #047857)" : "#1e293b"}; border-color:${canCraft ? "#34d399" : "#334155"}; color:${canCraft ? "#ffffff" : "#64748b"}; width:100%; margin-top:4px;" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} Dust)</button>`;
+        } else {
+          let craftBtnHtml = `<button class="action-btn-sm" style="font-size:7px; padding:2.5px 6px; margin:0; line-height:1.2; background:${canCraft ? "linear-gradient(180deg, #10b981, #047857)" : "#1e293b"}; border-color:${canCraft ? "#34d399" : "#334155"}; color:${canCraft ? "#ffffff" : "#64748b"}; width:100%; margin-top:4px;" ${canCraft ? "" : "disabled"} onclick="event.stopPropagation(); window.craftCard('${cKey}')">CRAFT (${cost} Dust)</button>`;
 
           return `
               <div class="bestiary-card-item locked-card" style="border-color:#1e293b; background:rgba(10,14,23,0.3); min-height:145px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -6197,18 +6213,18 @@ window.craftCard = function (cKey) {
     "#a855f7",
     function () {
       window.playerStats.astralDust = Math.max(
-              0,
-              (window.playerStats.astralDust || 0) - cost,
-            );
-            // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
-            window.addMonsterCard(cKey, 1);
+        0,
+        (window.playerStats.astralDust || 0) - cost,
+      );
+      // Add directly to persistent Bestiary collection (handles max limit auto-salvage)
+      window.addMonsterCard(cKey, 1);
 
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("revive");
-            }
+      if (
+        window.SoundManager &&
+        typeof window.SoundManager.play === "function"
+      ) {
+        window.SoundManager.play("revive");
+      }
       if (typeof window.spawnTemperParticles === "function") {
         window.spawnTemperParticles(true);
       }
@@ -6230,16 +6246,16 @@ window.salvageAllDuplicateCards = function () {
   let totalCardsSalvaged = 0;
 
   for (let cKey in window.MONSTER_CARDS_DATA) {
-      let count = cards[cKey] || 0;
-      if (count > 1) {
-        let extra = count - 1;
-        let cardData = window.MONSTER_CARDS_DATA[cKey];
-        let rates = window.getCardDustRates(cardData.set);
+    let count = cards[cKey] || 0;
+    if (count > 1) {
+      let extra = count - 1;
+      let cardData = window.MONSTER_CARDS_DATA[cKey];
+      let rates = window.getCardDustRates(cardData.set);
 
-        totalDustYield += extra * rates.salvage;
-        totalCardsSalvaged += extra;
-      }
+      totalDustYield += extra * rates.salvage;
+      totalCardsSalvaged += extra;
     }
+  }
 
   if (totalCardsSalvaged === 0) {
     if (typeof window.pushHeaderToast === "function") {
@@ -6292,29 +6308,29 @@ window.salvageAllDuplicateCards = function () {
 };
 
 window.openMonsterCardSackAnimation = function (rolledCards) {
-    window.isGamePaused = true;
-    let overlay = document.createElement("div");
-    overlay.id = "card-opening-overlay";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(4, 3, 9, 0.95)";
-    overlay.style.display = "flex";
-    overlay.style.flexDirection = "column";
-    overlay.style.justifyContent = "center";
-    overlay.style.alignItems = "center";
-    overlay.style.zIndex = "45000";
-    overlay.style.backdropFilter = "blur(12px)";
-    overlay.style.fontFamily = "monospace";
-    overlay.style.color = "#f1f5f9";
-    overlay.style.boxSizing = "border-box";
-    overlay.style.padding = "20px";
-    document.body.appendChild(overlay);
+  window.isGamePaused = true;
+  let overlay = document.createElement("div");
+  overlay.id = "card-opening-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.backgroundColor = "rgba(4, 3, 9, 0.95)";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
+  overlay.style.zIndex = "45000";
+  overlay.style.backdropFilter = "blur(12px)";
+  overlay.style.fontFamily = "monospace";
+  overlay.style.color = "#f1f5f9";
+  overlay.style.boxSizing = "border-box";
+  overlay.style.padding = "20px";
+  document.body.appendChild(overlay);
 
-    let style = document.createElement("style");
-    style.innerHTML = `
+  let style = document.createElement("style");
+  style.innerHTML = `
       .unboxing-grid {
         display: flex;
         gap: 12px;
@@ -6374,24 +6390,24 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
         pointer-events: auto;
       }
     `;
-    document.head.appendChild(style);
+  document.head.appendChild(style);
 
-    let cardsHtml = rolledCards
-      .map((cKey, idx) => {
-        let cardData = window.MONSTER_CARDS_DATA[cKey];
-        let setColors = {
-          "Whispering Woods": "#2ecc71",
-          "Mountain Peaks": "#3498db",
-          "Inferno Depths": "#e74c3c",
-          "Fungal Swamp": "#1abc9c",
-          "Void Singularity": "#9b59b6",
-          "Cosmic Wardens": "#f1c40f",
-        };
-        let color = setColors[cardData.set] || "#ffd700";
-        let iconHtml = `<canvas class="unboxing-card-canvas" data-visual-type="${cKey}" width="128" height="128" style="width:72px; height:72px; display:block; margin:4px auto; filter: drop-shadow(0 0 8px ${color});"></canvas>`;
-        let ownedCount = window.playerStats.monsterCards[cKey] || 0;
+  let cardsHtml = rolledCards
+    .map((cKey, idx) => {
+      let cardData = window.MONSTER_CARDS_DATA[cKey];
+      let setColors = {
+        "Whispering Woods": "#2ecc71",
+        "Mountain Peaks": "#3498db",
+        "Inferno Depths": "#e74c3c",
+        "Fungal Swamp": "#1abc9c",
+        "Void Singularity": "#9b59b6",
+        "Cosmic Wardens": "#f1c40f",
+      };
+      let color = setColors[cardData.set] || "#ffd700";
+      let iconHtml = `<canvas class="unboxing-card-canvas" data-visual-type="${cKey}" width="128" height="128" style="width:72px; height:72px; display:block; margin:4px auto; filter: drop-shadow(0 0 8px ${color});"></canvas>`;
+      let ownedCount = window.playerStats.monsterCards[cKey] || 0;
 
-        return `
+      return `
         <div class="card-container" id="card-item-${idx}" onclick="window.flipUnboxedCard(this, ${idx})">
           <div class="card-flipper">
             <!-- Back -->
@@ -6412,10 +6428,10 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
           </div>
         </div>
       `;
-      })
-      .join("");
+    })
+    .join("");
 
-    overlay.innerHTML = `
+  overlay.innerHTML = `
       <div style="text-align:center; max-width:650px; width:95%; animation: toastFadeIn 0.3s ease-out;">
         <h2 style="margin:0 0 4px 0; color:#ffd700; letter-spacing:3px; text-transform:uppercase; font-size:18px; text-shadow:0 0 10px rgba(241,196,15,0.3);">✦ BOOSTER UNBOXED! ✦</h2>
         <div style="font-size:10px; color:#94a3b8; margin-bottom:15px; text-transform:uppercase; letter-spacing:0.8px;">Tap each card to break the runic seal</div>
@@ -6430,115 +6446,116 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
       </div>
     `;
 
-    let flippedCount = 0;
-    window.flipUnboxedCard = function (el, idx) {
-      if (el.classList.contains("flipped")) return;
-      el.classList.add("flipped");
+  let flippedCount = 0;
+  window.flipUnboxedCard = function (el, idx) {
+    if (el.classList.contains("flipped")) return;
+    el.classList.add("flipped");
 
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.playClick === "function"
-      ) {
-        window.SoundManager.playClick();
+    if (
+      window.SoundManager &&
+      typeof window.SoundManager.playClick === "function"
+    ) {
+      window.SoundManager.playClick();
+    }
+
+    flippedCount++;
+    if (flippedCount >= 5) {
+      let collectContainer = document.getElementById("collect-btn-container");
+      if (collectContainer) {
+        collectContainer.classList.add("show");
+      }
+    }
+  };
+
+  window.startUnboxingAnimLoop = function () {
+    let overlayEl = document.getElementById("card-opening-overlay");
+    if (!overlayEl) return;
+
+    let animFrameId = null;
+    function step() {
+      if (!document.getElementById("card-opening-overlay")) {
+        cancelAnimationFrame(animFrameId);
+        return;
       }
 
-      flippedCount++;
-      if (flippedCount >= 5) {
-        let collectContainer = document.getElementById("collect-btn-container");
-        if (collectContainer) {
-          collectContainer.classList.add("show");
-        }
-      }
-    };
+      let canvases = document.querySelectorAll(".unboxing-card-canvas");
+      let time = Date.now();
 
-    window.startUnboxingAnimLoop = function () {
-      let overlayEl = document.getElementById("card-opening-overlay");
-      if (!overlayEl) return;
-
-      let animFrameId = null;
-      function step() {
-        if (!document.getElementById("card-opening-overlay")) {
-          cancelAnimationFrame(animFrameId);
+      canvases.forEach((canvas) => {
+        let cardContainer = canvas.closest(".card-container");
+        if (!cardContainer || !cardContainer.classList.contains("flipped"))
           return;
+
+        let type = canvas.dataset.visualType;
+        let ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let mobTypeVal = "mob";
+        let visualTierVal = 0;
+        if (type === "aegis_goliath") {
+          mobTypeVal = "aegis_goliath";
+          visualTierVal = 1;
+        } else if (type === "chronos_arbitrator") {
+          mobTypeVal = "chronos_arbitrator";
+          visualTierVal = 5;
+        } else if (type === "nexus_overseer") {
+          mobTypeVal = "nexus_overseer";
+          visualTierVal = 6;
+        } else if (type === "hooktail") {
+          mobTypeVal = "prestige_boss";
+          visualTierVal = 7;
+        } else if (type === "arachnid_treant") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 0;
+        } else if (type === "overlord_iron_vault") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 2;
+        } else if (type === "corrosive_abomination") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 3;
+        } else if (type === "void_overseer") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 4;
+        } else if (type === "gilded_vault_keeper") {
+          mobTypeVal = "dungeon_boss";
+          visualTierVal = 1;
         }
 
-        let canvases = document.querySelectorAll(".unboxing-card-canvas");
-        let time = Date.now();
+        let mockMob = {
+          visualType: type,
+          type: mobTypeVal,
+          visualTier: visualTierVal,
+          x: canvas.width / 2 - 16,
+          y: canvas.height / 2 - 12,
+          w: 32,
+          h: 32,
+          facing: 1,
+          walkTimer: time / 150,
+          hopTimer: Math.floor(time / 50) % 30,
+          flashTimer: 0,
+          buffStacks: { haste: 0, def: 0, atk: 0 },
+          buffTimers: { haste: 0, def: 0, atk: 0 },
+        };
 
-        canvases.forEach((canvas) => {
-          let cardContainer = canvas.closest(".card-container");
-          if (!cardContainer || !cardContainer.classList.contains("flipped")) return;
-
-          let type = canvas.dataset.visualType;
-          let ctx = canvas.getContext("2d");
-          if (!ctx) return;
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          let mobTypeVal = "mob";
-          let visualTierVal = 0;
-          if (type === "aegis_goliath") {
-            mobTypeVal = "aegis_goliath";
-            visualTierVal = 1;
-          } else if (type === "chronos_arbitrator") {
-            mobTypeVal = "chronos_arbitrator";
-            visualTierVal = 5;
-          } else if (type === "nexus_overseer") {
-            mobTypeVal = "nexus_overseer";
-            visualTierVal = 6;
-          } else if (type === "hooktail") {
-            mobTypeVal = "prestige_boss";
-            visualTierVal = 7;
-          } else if (type === "arachnid_treant") {
-            mobTypeVal = "dungeon_boss";
-            visualTierVal = 0;
-          } else if (type === "overlord_iron_vault") {
-            mobTypeVal = "dungeon_boss";
-            visualTierVal = 2;
-          } else if (type === "corrosive_abomination") {
-            mobTypeVal = "dungeon_boss";
-            visualTierVal = 3;
-          } else if (type === "void_overseer") {
-            mobTypeVal = "dungeon_boss";
-            visualTierVal = 4;
-          } else if (type === "gilded_vault_keeper") {
-            mobTypeVal = "dungeon_boss";
-            visualTierVal = 1;
-          }
-
-          let mockMob = {
-            visualType: type,
-            type: mobTypeVal,
-            visualTier: visualTierVal,
-            x: canvas.width / 2 - 16,
-            y: canvas.height / 2 - 12,
-            w: 32,
-            h: 32,
-            facing: 1,
-            walkTimer: time / 150,
-            hopTimer: Math.floor(time / 50) % 30,
-            flashTimer: 0,
-            buffStacks: { haste: 0, def: 0, atk: 0 },
-            buffTimers: { haste: 0, def: 0, atk: 0 },
-          };
-
-          if (typeof window.drawSingleMob === "function") {
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.scale(1.5, 1.5);
-            ctx.translate(-canvas.width / 2, -canvas.height / 2);
-            window.drawSingleMob(ctx, mockMob);
-            ctx.restore();
-          }
-        });
-
-        animFrameId = requestAnimationFrame(step);
-      }
+        if (typeof window.drawSingleMob === "function") {
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.scale(1.5, 1.5);
+          ctx.translate(-canvas.width / 2, -canvas.height / 2);
+          window.drawSingleMob(ctx, mockMob);
+          ctx.restore();
+        }
+      });
 
       animFrameId = requestAnimationFrame(step);
-    };
-    window.startUnboxingAnimLoop();
+    }
+
+    animFrameId = requestAnimationFrame(step);
   };
+  window.startUnboxingAnimLoop();
+};
 
 window.sanitizeBasePlayerStats = function () {
   if (!window.playerStats) return;

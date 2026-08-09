@@ -13,15 +13,15 @@
   // --- SUBPHASE 12: CALAMITY SIGIL PROJECTION GENERATOR ---
   window.ItemFactory = window.ItemFactory || {};
   window.ItemFactory.createCalamitySigil = function (challengeId) {
-      let challenge = window.SPECIAL_CHALLENGES_DATABASE[challengeId];
-      if (!challenge) return null;
+    let challenge = window.SPECIAL_CHALLENGES_DATABASE[challengeId];
+    if (!challenge) return null;
 
-      let sigil = {
-        id: window.idCounter++,
-        name: challenge.name + " Sigil",
-        type: "sigil",
-        statsRolled: 5, // Mythic Tier
-        stageLevel: challenge.baseScaleStage || 80,
+    let sigil = {
+      id: window.idCounter++,
+      name: challenge.name + " Sigil",
+      type: "sigil",
+      statsRolled: 5, // Mythic Tier
+      stageLevel: challenge.baseScaleStage || 80,
       rewardMultiplier: challenge.rewardMultiplier,
       qualityBoost: challenge.qualityBoost,
       buffs: (challenge.buffs || []).map((bId) => {
@@ -118,210 +118,317 @@
     }
 
     generateRandomChallenges() {
-          const BOSS_POOL = [
-            { name: "Arachnid Treant", visualType: "arachnid_treant", tier: 0, biome: "Whispering Woods" },
-            { name: "Aegis Goliath", visualType: "aegis_goliath", tier: 1, biome: "Mountain Peaks" },
-            { name: "Brimstone Colossus", visualType: "overlord_iron_vault", tier: 2, biome: "Inferno Depths" },
-            { name: "Corrosive Abomination", visualType: "corrosive_abomination", tier: 3, biome: "Fungal Swamp" },
-            { name: "Void Overseer", visualType: "void_overseer", tier: 4, biome: "Void Singularity" },
-            { name: "Chronos Arbitrator", visualType: "chronos_arbitrator", tier: 5, biome: "Temporal Sanctorum" },
-            { name: "Nexus Overseer", visualType: "nexus_overseer", tier: 6, biome: "Cyberspace Nexus" },
-            { name: "Gilded Vault Keeper", visualType: "gilded_vault_keeper", tier: 2, biome: "Midas Treasury" }
-          ];
+      const BOSS_POOL = [
+        {
+          name: "Arachnid Treant",
+          visualType: "arachnid_treant",
+          tier: 0,
+          biome: "Whispering Woods",
+        },
+        {
+          name: "Aegis Goliath",
+          visualType: "aegis_goliath",
+          tier: 1,
+          biome: "Mountain Peaks",
+        },
+        {
+          name: "Brimstone Colossus",
+          visualType: "overlord_iron_vault",
+          tier: 2,
+          biome: "Inferno Depths",
+        },
+        {
+          name: "Corrosive Abomination",
+          visualType: "corrosive_abomination",
+          tier: 3,
+          biome: "Fungal Swamp",
+        },
+        {
+          name: "Void Overseer",
+          visualType: "void_overseer",
+          tier: 4,
+          biome: "Void Singularity",
+        },
+        {
+          name: "Chronos Arbitrator",
+          visualType: "chronos_arbitrator",
+          tier: 5,
+          biome: "Temporal Sanctorum",
+        },
+        {
+          name: "Nexus Overseer",
+          visualType: "nexus_overseer",
+          tier: 6,
+          biome: "Cyberspace Nexus",
+        },
+        {
+          name: "Gilded Vault Keeper",
+          visualType: "gilded_vault_keeper",
+          tier: 2,
+          biome: "Midas Treasury",
+        },
+      ];
 
-          const MISSION_TYPES = [
-            {
-              id: "solo_hunt",
-              name: "Warden Execution Contract",
-              isDual: false,
-              desc: "A high-priority target has been spotted. Venture into the [BIOME] and execute [BOSS1] before the anomaly destabilizes.",
-              baseRisk: 25
-            },
-            {
-              id: "twin_hunt",
-              name: "Dual Overlord Purge",
-              isDual: true,
-              desc: "Slay both [BOSS1] and [BOSS2] who have converged in the [BIOME]. Exercise absolute caution, the risk of total loss is severe.",
-              baseRisk: 50
-            },
-            {
-              id: "miasma_rush",
-              name: "Miasma Escape Rush",
-              isDual: false,
-              desc: "The [BIOME] is rapidly collapsing into toxic gas. Eliminate [BOSS1] and extract immediately.",
-              baseRisk: 40,
-              forceMiasma: true
-            },
-            {
-              id: "rift_sabotage",
-              name: "Rift Collapse Sabotage",
-              isDual: false,
-              desc: "Spacial tears have destabilized the [BIOME]. Slay [BOSS1] and destroy active Void Ruptures to secure extraction.",
-              baseRisk: 45,
-              forceRupture: true
-            }
-          ];
+      const MISSION_TYPES = [
+        {
+          id: "solo_hunt",
+          name: "Warden Execution Contract",
+          isDual: false,
+          desc: "A high-priority target has been spotted. Venture into the [BIOME] and execute [BOSS1] before the anomaly destabilizes.",
+          baseRisk: 25,
+        },
+        {
+          id: "twin_hunt",
+          name: "Dual Overlord Purge",
+          isDual: true,
+          desc: "Slay both [BOSS1] and [BOSS2] who have converged in the [BIOME]. Exercise absolute caution, the risk of total loss is severe.",
+          baseRisk: 50,
+        },
+        {
+          id: "miasma_rush",
+          name: "Miasma Escape Rush",
+          isDual: false,
+          desc: "The [BIOME] is rapidly collapsing into toxic gas. Eliminate [BOSS1] and extract immediately.",
+          baseRisk: 40,
+          forceMiasma: true,
+        },
+        {
+          id: "rift_sabotage",
+          name: "Rift Collapse Sabotage",
+          isDual: false,
+          desc: "Spacial tears have destabilized the [BIOME]. Slay [BOSS1] and destroy active Void Ruptures to secure extraction.",
+          baseRisk: 45,
+          forceRupture: true,
+        },
+      ];
 
-          const TIERS = [
-            { id: "squire", name: "Squire", scale: 0.8, buffs: 1, debuffs: 1, rewardMult: 0.8, color: "#10b981" },
-            { id: "veteran", name: "Veteran", scale: 1.0, buffs: 2, debuffs: 2, rewardMult: 1.0, color: "#f59e0b" },
-            { id: "calamity", name: "Calamity", scale: 1.25, buffs: 2, debuffs: 3, rewardMult: 1.5, color: "#ef4444" }
-          ];
+      const TIERS = [
+        {
+          id: "squire",
+          name: "Squire",
+          scale: 0.8,
+          buffs: 1,
+          debuffs: 1,
+          rewardMult: 0.8,
+          color: "#10b981",
+        },
+        {
+          id: "veteran",
+          name: "Veteran",
+          scale: 1.0,
+          buffs: 2,
+          debuffs: 2,
+          rewardMult: 1.0,
+          color: "#f59e0b",
+        },
+        {
+          id: "calamity",
+          name: "Calamity",
+          scale: 1.25,
+          buffs: 2,
+          debuffs: 3,
+          rewardMult: 1.5,
+          color: "#ef4444",
+        },
+      ];
 
-          let generated = {};
-          let peakStage = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+      let generated = {};
+      let peakStage =
+        window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
 
-          TIERS.forEach((tier) => {
-            // Roll random mission type
-            let mission = MISSION_TYPES[Math.floor(Math.random() * MISSION_TYPES.length)];
+      TIERS.forEach((tier) => {
+        // Roll random mission type
+        let mission =
+          MISSION_TYPES[Math.floor(Math.random() * MISSION_TYPES.length)];
 
-            // Pick primary and secondary bosses
-            let primaryBoss = BOSS_POOL[Math.floor(Math.random() * BOSS_POOL.length)];
-            let secondaryBoss = null;
-            if (mission.isDual) {
-              let eligible = BOSS_POOL.filter(b => b.name !== primaryBoss.name);
-              secondaryBoss = eligible[Math.floor(Math.random() * eligible.length)];
-            }
+        // Pick primary and secondary bosses
+        let primaryBoss =
+          BOSS_POOL[Math.floor(Math.random() * BOSS_POOL.length)];
+        let secondaryBoss = null;
+        if (mission.isDual) {
+          let eligible = BOSS_POOL.filter((b) => b.name !== primaryBoss.name);
+          secondaryBoss = eligible[Math.floor(Math.random() * eligible.length)];
+        }
 
-            // Calculate baseScaleStage
-            let baseScaleStage = Math.max(1, Math.floor(peakStage * tier.scale));
+        // Calculate baseScaleStage
+        let baseScaleStage = Math.max(1, Math.floor(peakStage * tier.scale));
 
-            // Gather mutators
-            let activeBuffs = [];
-            let activeDebuffs = [];
-            let eligibleBuffs = [...(window.CAVERN_BUFFS || [])];
-            let eligibleDebuffs = [...(window.CAVERN_DEBUFFS || [])];
+        // Gather mutators
+        let activeBuffs = [];
+        let activeDebuffs = [];
+        let eligibleBuffs = [...(window.CAVERN_BUFFS || [])];
+        let eligibleDebuffs = [...(window.CAVERN_DEBUFFS || [])];
 
-            // Ensure forced mutators are added
-            if (mission.forceMiasma && !activeDebuffs.includes("creeping_miasma")) {
-              activeDebuffs.push("creeping_miasma");
-              eligibleDebuffs = eligibleDebuffs.filter(d => d.id !== "creeping_miasma");
-            }
-            if (mission.forceRupture && !activeDebuffs.includes("void_rupture")) {
-              activeDebuffs.push("void_rupture");
-              eligibleDebuffs = eligibleDebuffs.filter(d => d.id !== "void_rupture");
-            }
+        // Ensure forced mutators are added
+        if (mission.forceMiasma && !activeDebuffs.includes("creeping_miasma")) {
+          activeDebuffs.push("creeping_miasma");
+          eligibleDebuffs = eligibleDebuffs.filter(
+            (d) => d.id !== "creeping_miasma",
+          );
+        }
+        if (mission.forceRupture && !activeDebuffs.includes("void_rupture")) {
+          activeDebuffs.push("void_rupture");
+          eligibleDebuffs = eligibleDebuffs.filter(
+            (d) => d.id !== "void_rupture",
+          );
+        }
 
-            // Standard Mutator Generation
-            for (let i = activeBuffs.length; i < tier.buffs && eligibleBuffs.length > 0; i++) {
-              let randIdx = Math.floor(Math.random() * eligibleBuffs.length);
-              activeBuffs.push(eligibleBuffs.splice(randIdx, 1)[0].id);
-            }
+        // Standard Mutator Generation
+        for (
+          let i = activeBuffs.length;
+          i < tier.buffs && eligibleBuffs.length > 0;
+          i++
+        ) {
+          let randIdx = Math.floor(Math.random() * eligibleBuffs.length);
+          activeBuffs.push(eligibleBuffs.splice(randIdx, 1)[0].id);
+        }
 
-            let excludedDebuffs = [];
-            activeDebuffs.forEach(dId => {
-              let excl = DEBUFF_EXCLUSIONS[dId];
-              if (excl) excludedDebuffs.push(...excl);
-            });
+        let excludedDebuffs = [];
+        activeDebuffs.forEach((dId) => {
+          let excl = DEBUFF_EXCLUSIONS[dId];
+          if (excl) excludedDebuffs.push(...excl);
+        });
 
-            for (let i = activeDebuffs.length; i < tier.debuffs && eligibleDebuffs.length > 0; i++) {
-              let filtered = eligibleDebuffs.filter(d => !excludedDebuffs.includes(d.id) && !activeDebuffs.includes(d.id));
-              if (filtered.length === 0) break;
-              let randIdx = Math.floor(Math.random() * filtered.length);
-              let chosen = filtered[randIdx];
-              activeDebuffs.push(chosen.id);
+        for (
+          let i = activeDebuffs.length;
+          i < tier.debuffs && eligibleDebuffs.length > 0;
+          i++
+        ) {
+          let filtered = eligibleDebuffs.filter(
+            (d) =>
+              !excludedDebuffs.includes(d.id) && !activeDebuffs.includes(d.id),
+          );
+          if (filtered.length === 0) break;
+          let randIdx = Math.floor(Math.random() * filtered.length);
+          let chosen = filtered[randIdx];
+          activeDebuffs.push(chosen.id);
 
-              let excl = DEBUFF_EXCLUSIONS[chosen.id];
-              if (excl) excludedDebuffs.push(...excl);
-              eligibleDebuffs = eligibleDebuffs.filter(d => d.id !== chosen.id);
-            }
+          let excl = DEBUFF_EXCLUSIONS[chosen.id];
+          if (excl) excludedDebuffs.push(...excl);
+          eligibleDebuffs = eligibleDebuffs.filter((d) => d.id !== chosen.id);
+        }
 
-            let dangerSum = activeDebuffs.reduce((sum, dId) => {
-              let d = (window.CAVERN_DEBUFFS || []).find(x => x.id === dId);
-              return sum + (d ? d.dangerRating || 0 : 0);
-            }, 0);
+        let dangerSum = activeDebuffs.reduce((sum, dId) => {
+          let d = (window.CAVERN_DEBUFFS || []).find((x) => x.id === dId);
+          return sum + (d ? d.dangerRating || 0 : 0);
+        }, 0);
 
-            let riskRating = mission.baseRisk + dangerSum;
-            let rewardMultiplier = parseFloat(((1.0 + riskRating * 0.02) * tier.rewardMult).toFixed(2));
-            let qualityBoost = parseFloat(((riskRating * 0.008) + (tier.scale - 1.0) * 0.1).toFixed(3));
-            if (qualityBoost < 0) qualityBoost = 0;
+        let riskRating = mission.baseRisk + dangerSum;
+        let rewardMultiplier = parseFloat(
+          ((1.0 + riskRating * 0.02) * tier.rewardMult).toFixed(2),
+        );
+        let qualityBoost = parseFloat(
+          (riskRating * 0.008 + (tier.scale - 1.0) * 0.1).toFixed(3),
+        );
+        if (qualityBoost < 0) qualityBoost = 0;
 
-            let desc = mission.desc
-              .replace("[BIOME]", primaryBoss.biome)
-              .replace("[BOSS1]", primaryBoss.name);
-            if (mission.isDual && secondaryBoss) {
-              desc = desc.replace("[BOSS2]", secondaryBoss.name);
-            }
+        let desc = mission.desc
+          .replace("[BIOME]", primaryBoss.biome)
+          .replace("[BOSS1]", primaryBoss.name);
+        if (mission.isDual && secondaryBoss) {
+          desc = desc.replace("[BOSS2]", secondaryBoss.name);
+        }
 
-            // Scale Rewards based on calculated baseScaleStage (balanced bases aligned with progression)
-                        let goldBase = BigNum.from(450).mul(BigNum.from(1.08).pow(baseScaleStage)).mul(riskRating / 30).mul(tier.rewardMult);
-                        let xpBase = BigNum.from(40).mul(BigNum.from(1.05).pow(baseScaleStage)).mul(riskRating / 30).mul(tier.rewardMult);
-                        // End-game materials scale proportionally with baseScaleStage to prevent early-game exploits
-                        let shards = Math.max(0, Math.floor((riskRating / 8) * tier.rewardMult * (baseScaleStage / 12)));
-                        let cores = Math.max(0, Math.floor((riskRating / 30) * tier.rewardMult * (baseScaleStage / 24)));
+        // Scale Rewards based on calculated baseScaleStage (balanced bases aligned with progression)
+        let goldBase = BigNum.from(450)
+          .mul(BigNum.from(1.08).pow(baseScaleStage))
+          .mul(riskRating / 30)
+          .mul(tier.rewardMult);
+        let xpBase = BigNum.from(40)
+          .mul(BigNum.from(1.05).pow(baseScaleStage))
+          .mul(riskRating / 30)
+          .mul(tier.rewardMult);
+        // End-game materials scale proportionally with baseScaleStage to prevent early-game exploits
+        let shards = Math.max(
+          0,
+          Math.floor(
+            (riskRating / 8) * tier.rewardMult * (baseScaleStage / 12),
+          ),
+        );
+        let cores = Math.max(
+          0,
+          Math.floor(
+            (riskRating / 30) * tier.rewardMult * (baseScaleStage / 24),
+          ),
+        );
 
-            let challengeId = `procedural_${tier.id}`;
+        let challengeId = `procedural_${tier.id}`;
 
-            generated[challengeId] = {
-              id: challengeId,
-              name: `${tier.name} Contract: ${mission.name}`,
-              desc: desc,
-              tierId: tier.id,
-              tierName: tier.name,
-              tierColor: tier.color,
-              baseScaleStage: baseScaleStage,
-              riskRating: riskRating,
-              rewardMultiplier: rewardMultiplier,
-              qualityBoost: qualityBoost,
-              buffs: activeBuffs,
-              debuffs: activeDebuffs,
-              rewards: {
-                gold: { m: goldBase.m, e: goldBase.e },
-                xp: { m: xpBase.m, e: xpBase.e },
-                shards: shards,
-                cores: cores
-              },
-              primaryTarget: {
-                name: primaryBoss.name,
-                visualType: primaryBoss.visualType,
-                tier: primaryBoss.tier
-              },
-              secondaryTarget: secondaryBoss ? {
+        generated[challengeId] = {
+          id: challengeId,
+          name: `${tier.name} Contract: ${mission.name}`,
+          desc: desc,
+          tierId: tier.id,
+          tierName: tier.name,
+          tierColor: tier.color,
+          baseScaleStage: baseScaleStage,
+          riskRating: riskRating,
+          rewardMultiplier: rewardMultiplier,
+          qualityBoost: qualityBoost,
+          buffs: activeBuffs,
+          debuffs: activeDebuffs,
+          rewards: {
+            gold: { m: goldBase.m, e: goldBase.e },
+            xp: { m: xpBase.m, e: xpBase.e },
+            shards: shards,
+            cores: cores,
+          },
+          primaryTarget: {
+            name: primaryBoss.name,
+            visualType: primaryBoss.visualType,
+            tier: primaryBoss.tier,
+          },
+          secondaryTarget: secondaryBoss
+            ? {
                 name: secondaryBoss.name,
                 visualType: secondaryBoss.visualType,
-                tier: secondaryBoss.tier
-              } : null
-            };
-          });
+                tier: secondaryBoss.tier,
+              }
+            : null,
+        };
+      });
 
-          window.playerStats.proceduralChallenges = generated;
-          window.SPECIAL_CHALLENGES_DATABASE = generated;
-        }
+      window.playerStats.proceduralChallenges = generated;
+      window.SPECIAL_CHALLENGES_DATABASE = generated;
+    }
 
     init() {
-          this.reset();
-          if (!window.playerStats) {
-            window.playerStats = window.playerStats || {};
-          }
-          // Safe data migration check: regenerate outdated high-multiplier early game contracts
-          let needsRerollMigration = false;
-          if (window.playerStats.proceduralChallenges) {
-            for (let key in window.playerStats.proceduralChallenges) {
-              let ch = window.playerStats.proceduralChallenges[key];
-              if (ch && ch.rewards && ch.rewards.gold) {
-                let goldBig = BigNum.from(ch.rewards.gold);
-                let peak = window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-                if (goldBig.gt(50000) && peak < 40) {
-                  needsRerollMigration = true;
-                  break;
-                }
-              }
+      this.reset();
+      if (!window.playerStats) {
+        window.playerStats = window.playerStats || {};
+      }
+      // Safe data migration check: regenerate outdated high-multiplier early game contracts
+      let needsRerollMigration = false;
+      if (window.playerStats.proceduralChallenges) {
+        for (let key in window.playerStats.proceduralChallenges) {
+          let ch = window.playerStats.proceduralChallenges[key];
+          if (ch && ch.rewards && ch.rewards.gold) {
+            let goldBig = BigNum.from(ch.rewards.gold);
+            let peak =
+              window.playerStats.lifetimePeakStage ||
+              window.playerStats.stage ||
+              1;
+            if (goldBig.gt(50000) && peak < 40) {
+              needsRerollMigration = true;
+              break;
             }
           }
-          if (
-            !window.playerStats.proceduralChallenges ||
-            Object.keys(window.playerStats.proceduralChallenges).length === 0 ||
-            needsRerollMigration
-          ) {
-            this.generateRandomChallenges();
-          } else {
-            window.SPECIAL_CHALLENGES_DATABASE =
-              window.playerStats.proceduralChallenges;
-          }
-          if (window.playerStats && window.playerStats.activeSpecialChallenge) {
-            this.activeChallenge = window.playerStats.activeSpecialChallenge;
-          }
         }
+      }
+      if (
+        !window.playerStats.proceduralChallenges ||
+        Object.keys(window.playerStats.proceduralChallenges).length === 0 ||
+        needsRerollMigration
+      ) {
+        this.generateRandomChallenges();
+      } else {
+        window.SPECIAL_CHALLENGES_DATABASE =
+          window.playerStats.proceduralChallenges;
+      }
+      if (window.playerStats && window.playerStats.activeSpecialChallenge) {
+        this.activeChallenge = window.playerStats.activeSpecialChallenge;
+      }
+    }
 
     update(map, p) {
       if (window.currentGameState !== window.GAME_STATES.DUNGEON) {
