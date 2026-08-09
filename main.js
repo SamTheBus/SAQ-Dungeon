@@ -20172,7 +20172,7 @@
     if (!item) return;
 
     let slotKey = ["art1", "art2", "art3"][slotIdx];
-    
+
     // Clear Codex Aspect in this slot
     let stats = window.playerStats;
     stats.activeRelics = stats.activeRelics || [null, null, null];
@@ -20182,7 +20182,7 @@
     if (window.equippedSlots[slotKey]) {
       window.unequipItem(slotKey);
     }
-    
+
     // Manual equip to bypass standard bag logic
     window.inventory.ARTIFACT.splice(window.inventory.ARTIFACT.indexOf(item), 1);
     window.equippedSlots[slotKey] = item;

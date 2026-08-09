@@ -7791,100 +7791,137 @@
           c.fill();
         }
       } else if (vType === "gargoyle") {
+        // --- MOUNTAIN PEAK OVERHAUL: SENTINEL GARGOYLE ---
+        let time = Date.now();
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2;
-        let wings = Math.sin(Date.now() / 90) * 11;
-        let skinColor = m.flashTimer > 0 ? "#ffffff" : "#4a5568"; // Moss-gray ruins stone
-        let wingColor = m.flashTimer > 0 ? "#ffffff" : "#2f3640"; // Weathered slate
-        let eyeColor = m.isRare ? "#00ffff" : "#f39c12"; // Glowing amber
 
-        // Weathered chiseled ruin wings
-        c.fillStyle = wingColor;
-        c.beginPath();
-        c.moveTo(cx - 3, cy);
-        c.lineTo(cx - 24, cy - 14 + wings);
-        c.lineTo(cx - 18, cy + 4);
-        c.lineTo(cx - 22, cy + 12);
-        c.lineTo(cx - 8, cy + 5);
-        c.closePath();
-        c.moveTo(cx + 3, cy);
-        c.lineTo(cx + 24, cy - 14 + wings);
-        c.lineTo(cx + 18, cy + 4);
-        c.lineTo(cx + 22, cy + 12);
-        c.lineTo(cx + 8, cy + 5);
-        c.closePath();
-        c.fill();
-        c.stroke();
+        let cycle = (m.hopTimer || 0) % 45;
+        let isLunging = cycle < 15;
+        let wings = isLunging ? Math.sin(time / 60) * 18 : Math.sin(time / 150) * 6;
+        let hover = isLunging ? 0 : Math.sin(time / 150) * 3;
+        cy += hover;
 
-        // Main moss-grown stone torso
-        c.fillStyle = skinColor;
-        c.beginPath();
-        c.ellipse(cx, cy + 6, 8.5, 11.5, 0, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
+        let stoneColor = m.flashTimer > 0 ? "#ffffff" : "#4a5568"; // Weathered basalt
+        let mossColor = m.flashTimer > 0 ? "#ffffff" : "#2d5a27"; // Ancient moss
+        let coreColor = m.isRare ? "#a855f7" : "#f39c12"; // Amber/Purple heart
 
-        // Mossy patches
-        if (m.flashTimer === 0) {
-          c.fillStyle = "#164d1f";
+        // 1. Heavy Stone Bat-Wings
+        c.fillStyle = "#2d3748";
+        for (let i = -1; i <= 1; i += 2) {
+          c.save();
+          c.translate(cx + i * 4, cy - 2);
+          c.rotate(i * 0.4 + (i * wings * Math.PI) / 180);
           c.beginPath();
-          c.ellipse(cx - 3, cy + 3, 3, 4, Math.PI / 4, 0, Math.PI * 2);
-          c.ellipse(cx + 4, cy + 8, 2.5, 3, -Math.PI / 4, 0, Math.PI * 2);
+          c.moveTo(0, 0);
+          c.lineTo(i * 22, -14);
+          c.lineTo(i * 18, 6);
+          c.lineTo(i * 22, 16);
+          c.lineTo(i * 8, 8);
+          c.closePath();
+          c.fill();
+          c.stroke();
+          // Wing membrane details
+          if (m.flashTimer === 0) {
+            c.strokeStyle = "rgba(0,0,0,0.3)";
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(i * 5, -2);
+            c.lineTo(i * 15, -8);
+            c.stroke();
+          }
+          c.restore();
+        }
+
+        // 2. Chiseled Torso
+        c.fillStyle = stoneColor;
+        c.beginPath();
+        c.ellipse(cx, cy + 4, 9, 12, 0, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // 3. Ancient Moss Growth
+        if (m.flashTimer === 0) {
+          c.fillStyle = mossColor;
+          c.beginPath();
+          c.ellipse(cx - 4, cy + 1, 4, 3, Math.PI / 4, 0, Math.PI * 2);
+          c.ellipse(cx + 5, cy + 7, 3, 2.5, -Math.PI / 4, 0, Math.PI * 2);
           c.fill();
         }
 
-        // Masonry Head
-        c.fillStyle = skinColor;
-        c.beginPath();
-        c.arc(cx, cy - 10, 7.8, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-
-        // Chiseled horns
-        c.fillStyle = wingColor;
-        c.beginPath();
-        c.moveTo(cx - 6, cy - 14);
-        c.quadraticCurveTo(cx - 12, cy - 22, cx - 14, cy - 20);
-        c.lineTo(cx - 2, cy - 12);
-        c.closePath();
-        c.moveTo(cx + 6, cy - 14);
-        c.quadraticCurveTo(cx + 12, cy - 22, cx + 14, cy - 20);
-        c.lineTo(cx + 2, cy - 12);
-        c.closePath();
-        c.fill();
-        c.stroke();
-
-        // Glowing Amber Eyes
+        // 4. Runic Heart Core
         if (m.flashTimer === 0) {
-          c.fillStyle = eyeColor;
-          c.shadowBlur = 6;
-          c.shadowColor = eyeColor;
+          let heartPulse = 0.8 + Math.sin(time / 200) * 0.2;
+          c.save();
+          c.shadowBlur = 10 * heartPulse;
+          c.shadowColor = coreColor;
+          c.fillStyle = coreColor;
           c.beginPath();
-          c.arc(cx - 2.5, cy - 11, 1.6, 0, Math.PI * 2);
-          c.arc(cx + 2.5, cy - 11, 1.6, 0, Math.PI * 2);
+          c.moveTo(cx, cy + 2);
+          c.lineTo(cx - 3, cy - 1);
+          c.lineTo(cx, cy - 4);
+          c.lineTo(cx + 3, cy - 1);
+          c.closePath();
+          c.fill();
+          c.restore();
+        }
+
+        // 5. Masonry Head with Horns
+        let headY = cy - 12;
+        c.fillStyle = stoneColor;
+        c.beginPath();
+        c.arc(cx, headY, 7.5, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // Chiseled Stone Horns
+        for (let i = -1; i <= 1; i += 2) {
+          c.fillStyle = "#2d3748";
+          c.beginPath();
+          c.moveTo(cx + i * 5, headY - 5);
+          c.quadraticCurveTo(cx + i * 12, headY - 14, cx + i * 14, headY - 12);
+          c.lineTo(cx + i * 2, headY - 3);
+          c.closePath();
+          c.fill();
+          c.stroke();
+        }
+
+        // 6. Glowing Amber Eyes
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#ffffff";
+          c.shadowBlur = 6;
+          c.shadowColor = coreColor;
+          c.beginPath();
+          c.arc(cx - 2.5, headY - 1, 1.5, 0, Math.PI * 2);
+          c.arc(cx + 2.5, headY - 1, 1.5, 0, Math.PI * 2);
           c.fill();
           c.shadowBlur = 0;
         }
 
-        // Wields a tiny weathered stone relic greatsword
-        c.fillStyle = "#95a5a6";
+        // 7. Ancient Weathered Greatsword
+        c.save();
+        c.translate(cx - 12, cy + 8);
+        c.rotate(-Math.PI / 4 + (isLunging ? -0.2 : 0));
+        c.fillStyle = "#718096";
         c.beginPath();
-        c.moveTo(cx - 10, cy + 2);
-        c.lineTo(cx - 22, cy + 12);
-        c.lineTo(cx - 19, cy + 15);
-        c.lineTo(cx - 7, cy + 5);
-        c.closePath();
+        c.roundRect(-2, -18, 4, 22, [1]);
         c.fill();
         c.stroke();
-
-        // Weathered hilt inscription
+        // Crossguard
+        c.fillStyle = "#4a5568";
+        c.fillRect(-5, 0, 10, 2.5);
+        c.strokeRect(-5, 0, 10, 2.5);
+        // Runic blade glint
         if (m.flashTimer === 0) {
-          c.strokeStyle = "#ffd700";
-          c.lineWidth = 1;
+          c.strokeStyle = coreColor;
+          c.lineWidth = 0.8;
+          c.globalAlpha = 0.5;
           c.beginPath();
-          c.moveTo(cx - 13, cy + 5);
-          c.lineTo(cx - 18, cy + 10);
+          c.moveTo(0, -14);
+          c.lineTo(0, -4);
           c.stroke();
         }
+        c.restore();
       } else if (vType === "magma_elemental") {
         let flicker = Math.sin(Date.now() / 60) * 3;
         let cx = m.x + m.w / 2;
@@ -8711,66 +8748,102 @@
           c.fillRect(cx + 4, cy + hScale * 0.2, 2, 4);
         }
       } else if (vType === "rust_nibbler") {
+        // --- MOUNTAIN PEAK OVERHAUL: SCARRED RUST NIBBLER ---
+        let time = Date.now();
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h - 15;
-        let time = Date.now();
-        let legSway = Math.sin(time / 80) * 4;
 
-        c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#5c3a21";
-        c.lineWidth = 2.2;
+        let cycle = (m.hopTimer || 0) % 20;
+        let isMoving = cycle < 12;
+        let legSway = isMoving ? Math.sin(time / 60) * 5 : 0;
+        let antTwitch = Math.sin(time / 80) * 4;
+
+        let rustColor = m.flashTimer > 0 ? "#ffffff" : "#d35400"; // Corroded iron
+        let darkMetal = m.flashTimer > 0 ? "#ffffff" : "#5c3a21"; // Aged bronze
+        let eyeColor = m.isRare ? "#a855f7" : "#f1c40f"; // Glowing sulfur
+
+        // 1. Articulated Insectoid Legs
+        c.strokeStyle = darkMetal;
+        c.lineWidth = 2.0;
         for (let i = -1; i <= 1; i += 2) {
-          let legX = cx + i * 10;
+          for (let j = 0; j < 3; j++) {
+            let legX = cx + i * (6 + j * 3);
+            let legY = cy + 2;
+            let offset = j * 0.5;
+            let sway = isMoving ? Math.sin(time / 70 + offset) * 6 : 0;
+
+            c.beginPath();
+            c.moveTo(legX, legY);
+            c.lineTo(legX + i * 8 + sway * i, legY + 10);
+            c.stroke();
+          }
+        }
+
+        // 2. Armored Metallic Carapace
+        let bodyGrad = c.createRadialGradient(cx - 4, cy - 4, 2, cx, cy, 14);
+        if (m.flashTimer > 0) {
+          bodyGrad.addColorStop(0, "#ffffff");
+          bodyGrad.addColorStop(1, "#ffffff");
+        } else {
+          bodyGrad.addColorStop(0, "#e67e22");
+          bodyGrad.addColorStop(1, rustColor);
+        }
+        c.fillStyle = bodyGrad;
+        c.beginPath();
+        c.ellipse(cx, cy, 14, 9, 0, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // 3. Segmented Plate Detail
+        if (m.flashTimer === 0) {
+          c.strokeStyle = "rgba(0,0,0,0.25)";
+          c.lineWidth = 1.2;
           c.beginPath();
-          c.moveTo(legX, cy + 2);
-          c.lineTo(legX + i * 8 + legSway * i, cy + 12);
-          c.stroke();
-          c.beginPath();
-          c.moveTo(legX, cy + 2);
-          c.lineTo(legX - i * 8 - legSway * i, cy + 12);
+          c.moveTo(cx - 7, cy - 6);
+          c.lineTo(cx - 7, cy + 6);
+          c.moveTo(cx, cy - 8);
+          c.lineTo(cx, cy + 8);
+          c.moveTo(cx + 7, cy - 6);
+          c.lineTo(cx + 7, cy + 6);
           c.stroke();
         }
 
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#d35400";
-        c.beginPath();
-        c.ellipse(cx, cy, 14, 8, 0, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-
-        c.strokeStyle = "#000";
-        c.lineWidth = 1.2;
-        c.beginPath();
-        c.moveTo(cx - 6, cy - 7);
-        c.lineTo(cx - 6, cy + 7);
-        c.moveTo(cx, cy - 8);
-        c.lineTo(cx, cy + 8);
-        c.moveTo(cx + 6, cy - 7);
-        c.lineTo(cx + 6, cy + 7);
-        c.stroke();
-
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#5c3a21";
-        c.beginPath();
-        c.arc(cx + 12, cy - 1, 5, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-
-        c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#e67e22";
+        // 4. Twitchy Antennae
+        c.strokeStyle = rustColor;
         c.lineWidth = 1.5;
-        let antSway = Math.sin(time / 100) * 3;
+        for (let i = -1; i <= 1; i += 2) {
+          c.beginPath();
+          c.moveTo(cx + 10, cy - 2);
+          c.quadraticCurveTo(
+            cx + 18,
+            cy - 12 + antTwitch * i,
+            cx + 24 + antTwitch,
+            cy - 8 + antTwitch * i
+          );
+          c.stroke();
+        }
+
+        // 5. Scavenger's Maw & Multiple Eyes
+        c.fillStyle = darkMetal;
         c.beginPath();
-        c.moveTo(cx + 15, cy - 3);
-        c.quadraticCurveTo(
-          cx + 20,
-          cy - 10 + antSway,
-          cx + 24,
-          cy - 8 + antSway,
-        );
+        c.arc(cx + 12, cy, 5.5, 0, Math.PI * 2);
+        c.fill();
         c.stroke();
 
         if (m.flashTimer === 0) {
-          c.fillStyle = "#f1c40f";
+          c.fillStyle = eyeColor;
+          c.shadowBlur = 4;
+          c.shadowColor = eyeColor;
+          // Main eye
           c.beginPath();
-          c.arc(cx + 14, cy - 2, 1.2, 0, Math.PI * 2);
+          c.arc(cx + 14, cy - 1, 1.8, 0, Math.PI * 2);
           c.fill();
+          // Secondary sensory pits
+          c.beginPath();
+          c.arc(cx + 11, cy - 2, 0.8, 0, Math.PI * 2);
+          c.arc(cx + 13, cy + 2, 0.8, 0, Math.PI * 2);
+          c.fill();
+          c.shadowBlur = 0;
         }
       } else if (vType === "corroded_golem") {
         let hover = Math.sin(Date.now() / 130) * 2;
@@ -8937,93 +9010,177 @@
         }
         c.restore();
       }
-    } else if (m.type === "rift_guardian" || m.type === "aegis_goliath") {
-      let hover = Math.sin(Date.now() / 150) * 8;
+    } else if (
+      m.type === "rift_guardian" ||
+      m.type === "aegis_goliath" ||
+      m.visualType === "aegis_goliath"
+    ) {
+      // --- MOUNTAIN PEAK OVERHAUL: CELESTIAL VANGUARD (AEGIS GOLIATH) ---
+      let time = Date.now();
+      let hover = Math.sin(time / 220) * 10;
       let cx = m.x + m.w / 2;
       let cy = m.y + m.h / 2 + hover;
+
+      let stoneColor = m.flashTimer > 0 ? "#ffffff" : "#2c3e50"; // Dark basalt
+      let energyColor = "#38bdf8"; // Azure celestial energy
+      let phase2 = m.phase === 2;
+
       c.save();
       c.translate(cx, cy);
-      for (let i = 0; i < 3; i++) {
-        let pulseScale = 1.0 + Math.sin(Date.now() / 250 + i * 2) * 0.12;
-        let rot = Date.now() / 1200 + (i * Math.PI) / 3;
-        let size = 45 * pulseScale;
-        c.save();
-        c.rotate(rot);
-        c.strokeStyle =
-          m.flashTimer > 0 ? "#ffffff" : "rgba(52, 152, 219, 0.45)";
-        c.lineWidth = 1.5;
-        c.beginPath();
-        for (let side = 0; side < 6; side++) {
-          let angle = (side * Math.PI) / 3;
-          c.lineTo(Math.cos(angle) * size, Math.sin(angle) * size);
+
+      // 1. Orbital Hex-Shields (Phase 1: Floating, Phase 2: Consolidated)
+      if (!phase2) {
+        for (let i = 0; i < 3; i++) {
+          let orbitTime = time / 1000 + (i * Math.PI * 2) / 3;
+          let pulseScale = 1.0 + Math.sin(time / 250 + i * 2) * 0.12;
+          let ox = Math.cos(orbitTime) * 55;
+          let oy = Math.sin(orbitTime) * 15;
+          let oz = Math.sin(orbitTime); // depth sorting factor
+
+          if (oz < 0) { // Render behind boss
+            drawHexShield(c, ox, oy, 14 * pulseScale, energyColor, m.flashTimer > 0);
+          }
         }
-        c.closePath();
-        c.stroke();
-        c.restore();
       }
-      c.save();
-      c.strokeStyle = "#2c3e50";
-      c.lineWidth = 2.5;
+
+      // 2. Runic Chains (Swaying with magic inertia)
+      c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#4a5568";
+      c.lineWidth = 3.0;
       for (let i = -1; i <= 1; i += 2) {
-        let chainSway = Math.sin(Date.now() / 300 + i * 1.5) * 4;
+        let chainSway = Math.sin(time / 350 + i * 1.5) * 6;
         c.beginPath();
-        c.moveTo(i * 20, -50);
-        c.quadraticCurveTo(i * 25, 0, i * 15 + chainSway, 30);
+        c.moveTo(i * 22, -60);
+        c.quadraticCurveTo(i * 30, -10, i * 18 + chainSway, 35);
         c.stroke();
+        // Runic Chain Glow
+        if (m.flashTimer === 0) {
+          c.strokeStyle = energyColor;
+          c.lineWidth = 1.0;
+          c.globalAlpha = 0.4 + Math.sin(time / 200) * 0.3;
+          c.stroke();
+          c.globalAlpha = 1.0;
+        }
       }
-      c.restore();
-      c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#1a1c23";
+
+      // 3. Heavy Armored Torso (Chiseled Basalt)
+      c.fillStyle = stoneColor;
       c.strokeStyle = "#000000";
-      c.lineWidth = 2.4;
+      c.lineWidth = 2.5;
       c.beginPath();
-      c.moveTo(0, -18);
-      c.lineTo(16, -18);
-      c.lineTo(22, -4);
-      c.lineTo(0, 24);
-      c.lineTo(-22, -4);
-      c.lineTo(-16, -18);
+      c.moveTo(0, -24);
+      c.lineTo(20, -22);
+      c.lineTo(26, -2);
+      c.lineTo(0, 28);
+      c.lineTo(-26, -2);
+      c.lineTo(-20, -22);
       c.closePath();
       c.fill();
       c.stroke();
+
+      // 4. Glowing Celestial Core
       if (m.flashTimer === 0) {
-        let pulseRad = 6 + Math.sin(Date.now() / 100) * 1.5;
-        let runicGlow = c.createRadialGradient(0, -2, 1, 0, -2, pulseRad + 8);
-        runicGlow.addColorStop(0, "#ffffff");
-        runicGlow.addColorStop(0.3, "#2ecc71");
-        runicGlow.addColorStop(0.8, "#3498db");
-        runicGlow.addColorStop(1, "rgba(0,0,0,0)");
-        c.fillStyle = runicGlow;
+        let corePulse = 1.0 + Math.sin(time / 150) * 0.2;
+        let coreGrad = c.createRadialGradient(0, -4, 2, 0, -4, 12 * corePulse);
+        coreGrad.addColorStop(0, "#ffffff");
+        coreGrad.addColorStop(0.4, energyColor);
+        coreGrad.addColorStop(1, "rgba(0,0,0,0)");
+        c.fillStyle = coreGrad;
         c.beginPath();
-        c.arc(0, -2, pulseRad + 8, 0, Math.PI * 2);
+        c.arc(0, -4, 14 * corePulse, 0, Math.PI * 2);
         c.fill();
+
+        // Core Runic Cross
         c.strokeStyle = "#ffffff";
-        c.lineWidth = 2;
+        c.lineWidth = 2.5;
         c.beginPath();
-        c.moveTo(0, -10);
-        c.lineTo(0, 6);
-        c.moveTo(-7, -2);
-        c.lineTo(7, -2);
+        c.moveTo(0, -14); c.lineTo(0, 6);
+        c.moveTo(-8, -4); c.lineTo(8, -4);
         c.stroke();
       }
-      for (let i = 0; i < 3; i++) {
-        let angle = Date.now() / 300 + (i * Math.PI * 2) / 3;
-        let px = Math.cos(angle) * 35;
-        let py = Math.sin(angle) * 12;
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#34495e";
-        c.strokeStyle = "#000000";
-        c.lineWidth = 1.5;
-        c.beginPath();
-        c.roundRect(px - 5, py - 7, 10, 14, [2]);
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.fillStyle = "#2ecc71";
-          c.beginPath();
-          c.arc(px, py, 1.8, 0, Math.PI * 2);
-          c.fill();
+
+      // 5. Front-Side Orbital Shields (oz >= 0)
+      if (!phase2) {
+        for (let i = 0; i < 3; i++) {
+          let orbitTime = time / 1000 + (i * Math.PI * 2) / 3;
+          let pulseScale = 1.0 + Math.sin(time / 250 + i * 2) * 0.12;
+          let ox = Math.cos(orbitTime) * 55;
+          let oy = Math.sin(orbitTime) * 15;
+          let oz = Math.sin(orbitTime);
+          if (oz >= 0) {
+            drawHexShield(c, ox, oy, 14 * pulseScale, energyColor, m.flashTimer > 0);
+          }
         }
       }
+
+      // 6. Phase 2: Massive Tower Shield (Main Boss only)
+      let isMiniboss = m.type === "dungeon_miniboss";
+      if (phase2 && m.shieldAngle !== undefined && !isMiniboss) {
+        c.restore(); // Exit boss-space to use absolute rotations
+        c.save();
+        c.translate(cx, cy);
+        c.rotate(m.shieldAngle + Math.PI / 2); // Positioned toward player
+
+        let shieldX = 0;
+        let shieldY = 45; // Offset from boss core
+
+        // Massive Stone Shield Body
+        c.fillStyle = stoneColor;
+        c.strokeStyle = "#000000";
+        c.lineWidth = 3;
+        c.beginPath();
+        c.roundRect(shieldX - 25, shieldY - 40, 50, 80, [4]);
+        c.fill();
+        c.stroke();
+
+        // Reinforced Iron Bands
+        c.fillStyle = "#1a1c23";
+        c.fillRect(shieldX - 25, shieldY - 10, 50, 6);
+        c.fillRect(shieldX - 25, shieldY + 20, 50, 6);
+
+        // Runic Inscriptions on Shield
+        if (m.flashTimer === 0) {
+          c.strokeStyle = energyColor;
+          c.lineWidth = 1.5;
+          c.shadowBlur = 8;
+          c.shadowColor = energyColor;
+          c.beginPath();
+          c.moveTo(shieldX - 15, shieldY - 25);
+          c.lineTo(shieldX + 15, shieldY - 25);
+          c.moveTo(shieldX, shieldY - 35);
+          c.lineTo(shieldX, shieldY - 15);
+          c.stroke();
+          c.shadowBlur = 0;
+        }
+      }
+
       c.restore();
+
+      // Helper for Hex Shields
+      function drawHexShield(ctx, x, y, size, color, isFlash) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(time / 800);
+        ctx.strokeStyle = isFlash ? "#ffffff" : color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = isFlash ? 1.0 : 0.6;
+        ctx.beginPath();
+        for (let s = 0; s < 6; s++) {
+          let a = (s * Math.PI) / 3;
+          ctx.lineTo(Math.cos(a) * size, Math.sin(a) * size);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        // Inner Holographic Scanline
+        if (!isFlash) {
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.2;
+          ctx.beginPath();
+          ctx.moveTo(-size, Math.sin(time / 200) * size);
+          ctx.lineTo(size, Math.sin(time / 200) * size);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
     } else if (m.type === "chronos_arbitrator") {
       let hover = Math.sin(Date.now() / 200) * 8;
       let cx = m.x + m.w / 2;

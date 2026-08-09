@@ -1713,160 +1713,190 @@
     let isChallengeActive =
       window.playerStats && window.playerStats.activeSpecialChallenge !== null;
 
-    let primaryColor, secondaryColor, coreColor, bgGradColor;
+    let primaryColor, secondaryColor, coreColor, bgGradColor, particleColor;
     if (isChallengeActive) {
-      // Subphase 18: Unstable Crimson & Black Cosmic Vortex
       primaryColor = "#ef4444";
-      secondaryColor = "#050106";
+      secondaryColor = "#7f1d1d";
       coreColor = "#000000";
       bgGradColor = "rgba(239, 68, 68, 0.45)";
+      particleColor = "#fca5a5";
     } else if (tileType === window.TILE_TYPES.EXTRACTION_ZONE) {
       primaryColor = "#00d2ff";
       secondaryColor = "#38bdf8";
-      coreColor = "#e0f2fe";
+      coreColor = "#0c1a2b";
       bgGradColor = "rgba(0, 210, 255, 0.35)";
+      particleColor = "#e0f2fe";
     } else if (tileType === window.TILE_TYPES.DESCENT_PORTAL) {
       primaryColor = "#a855f7";
-      secondaryColor = "#c084fc";
-      coreColor = "#f3e8ff";
+      secondaryColor = "#7e22ce";
+      coreColor = "#1a0c2b";
       bgGradColor = "rgba(168, 85, 247, 0.35)";
+      particleColor = "#f3e8ff";
     } else if (tileType === window.TILE_TYPES.BOSS_GATE) {
       primaryColor = "#e74c3c";
-      secondaryColor = "#fb923c";
-      coreColor = "#fef2f2";
+      secondaryColor = "#991b1b";
+      coreColor = "#2b0c0c";
       bgGradColor = "rgba(231, 76, 60, 0.4)";
+      particleColor = "#fecaca";
     } else {
       return;
     }
 
     ctx.save();
 
-    // 1. Dark Runic Base Dais
-    ctx.fillStyle = "#0c0d14";
-    ctx.strokeStyle = "#1e293b";
-    ctx.lineWidth = 2.0;
-    ctx.beginPath();
-    ctx.arc(cx, cy, tileSize * 0.48, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Metallic Corner Clamps
-    ctx.fillStyle = primaryColor;
-    for (let i = 0; i < 4; i++) {
-      let clampAngle = (i * Math.PI) / 2;
-      let clampX = cx + Math.cos(clampAngle) * (tileSize * 0.46);
-      let clampY = cy + Math.sin(clampAngle) * (tileSize * 0.46);
-      ctx.beginPath();
-      ctx.arc(clampX, clampY, 2.5, 0, Math.PI * 2);
-      ctx.fill();
+    // 1. ADD VERTICAL DYNAMIC LIGHTING GLOW
+    if (window.activeSpellLights && !window.playerStats.ecoMode) {
+      let lId = `portal_${Math.floor(cx)}_${Math.floor(cy)}_${tileType}`;
+      let lIdx = window.activeSpellLights.findIndex(l => l.id === lId);
+      if (lIdx === -1) {
+        window.activeSpellLights.push({
+          id: lId,
+          isPortalLight: true,
+          x: cx,
+          y: cy - 8,
+          radius: tileSize * 1.5,
+          innerColor: bgGradColor.replace("0.35", "0.6").replace("0.45", "0.6").replace("0.4", "0.6"),
+          outerColor: "rgba(0,0,0,0)",
+          life: 2,
+        });
+      } else {
+        window.activeSpellLights[lIdx].life = 2;
+      }
     }
 
-    // 2. Radial Ambient Glow Aura
+    // --- 1. THE ABYSS FLOOR GLOW ---
     let pulse = Math.sin(time / 200) * 2;
-    let auraRadius = tileSize * 0.55 + pulse;
-    let auraGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, auraRadius);
-    auraGrad.addColorStop(0, bgGradColor);
-    auraGrad.addColorStop(0.7, bgGradColor.replace(/0\.\d+\)/, "0.1)"));
+    let auraRadius = tileSize * 0.8 + pulse;
+    let auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius);
+    auraGrad.addColorStop(0, bgGradColor.replace("0.35", "0.6").replace("0.45", "0.6").replace("0.4", "0.6"));
     auraGrad.addColorStop(1, "rgba(0,0,0,0)");
-
     ctx.fillStyle = auraGrad;
     ctx.beginPath();
     ctx.arc(cx, cy, auraRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3. Counter-Rotating Runic Elliptical Rings
-    let spin1 = time / 350;
-    let spin2 = -time / 220;
-
+    // --- 2. ACCRETION DISK (3D Perspective Swirl) ---
     ctx.save();
     ctx.translate(cx, cy);
+    let rotation = time / 600;
 
-    ctx.save();
-    ctx.rotate(spin1);
-    ctx.strokeStyle = primaryColor;
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, tileSize * 0.4, tileSize * 0.18, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.save();
-    ctx.rotate(spin2);
-    ctx.strokeStyle = secondaryColor;
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.ellipse(
-      0,
-      0,
-      tileSize * 0.35,
-      tileSize * 0.22,
-      Math.PI / 4,
-      0,
-      Math.PI * 2,
-    );
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.restore();
-
-    // 4. Swirling Vortex Arms
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(spin1 * 1.5);
-    ctx.strokeStyle = primaryColor;
-    ctx.lineWidth = 1.8;
-    ctx.setLineDash([]);
-    for (let arm = 0; arm < 3; arm++) {
-      let armAngle = (arm * Math.PI * 2) / 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, tileSize * 0.28, armAngle, armAngle + Math.PI * 0.6);
-      ctx.stroke();
+    for (let i = 0; i < 3; i++) {
+       let ang = rotation * (1 + i * 0.4) + (i * Math.PI * 2) / 3;
+       ctx.save();
+       ctx.rotate(ang);
+       let wispGrad = ctx.createLinearGradient(0, -tileSize * 0.4, 0, tileSize * 0.4);
+       wispGrad.addColorStop(0, "rgba(0,0,0,0)");
+       wispGrad.addColorStop(0.5, primaryColor);
+       wispGrad.addColorStop(1, "rgba(0,0,0,0)");
+       
+       ctx.strokeStyle = wispGrad;
+       ctx.lineWidth = 3;
+       ctx.globalAlpha = 0.6;
+       ctx.beginPath();
+       ctx.ellipse(0, 0, tileSize * 0.45, tileSize * 0.2, 0, 0, Math.PI * 0.7);
+       ctx.stroke();
+       ctx.restore();
     }
-    ctx.restore();
 
-    // 5. White-Hot Central Singularity Core (Flashes on high frequency during active challenges)
-    let oscIntensity = isChallengeActive
-      ? Math.sin(time / 40) * 3.2
-      : Math.sin(time / 120) * 1.5;
-    ctx.fillStyle = coreColor;
+    // --- 3. THE EVENT HORIZON (Deep Sinkhole) ---
+    ctx.fillStyle = "#020617";
     ctx.beginPath();
-    ctx.arc(cx, cy, tileSize * 0.12 + oscIntensity, 0, Math.PI * 2);
+    ctx.arc(0, 0, tileSize * 0.38, 0, Math.PI * 2);
     ctx.fill();
-    if (isChallengeActive) {
-      ctx.strokeStyle = "#ff003c";
-      ctx.lineWidth = 1.8 + Math.abs(oscIntensity) * 0.3;
-      ctx.stroke();
-    }
 
-    // 6. Upward Drifting Deterministic Sparks
-    for (let i = 0; i < 4; i++) {
-      let seed = i * 37.1;
-      let progress = (time / 600 + seed) % 1.0;
-      let sparkAngle = (time / 400 + i * 1.57) % (Math.PI * 2);
-      let sparkDist = progress * (tileSize * 0.42);
-      let sx = cx + Math.cos(sparkAngle) * sparkDist;
-      let sy = cy + Math.sin(sparkAngle) * (sparkDist * 0.6) - progress * 8;
-      let alpha = (1.0 - progress) * 0.9;
-      let sz = 1.5 * (1.0 - progress * 0.4);
-
-      let sparkColor;
-      if (isChallengeActive) {
-        sparkColor =
-          i % 2 === 0
-            ? `rgba(255, 255, 255, ${alpha})`
-            : `rgba(239, 68, 68, ${alpha})`;
-      } else {
-        sparkColor =
-          i % 2 === 0
-            ? `rgba(255, 255, 255, ${alpha})`
-            : `rgba(${tileType === window.TILE_TYPES.EXTRACTION_ZONE ? "0, 210, 255" : tileType === window.TILE_TYPES.DESCENT_PORTAL ? "168, 85, 247" : "231, 76, 60"}, ${alpha})`;
-      }
-      ctx.fillStyle = sparkColor;
+    for (let i = 0; i < 2; i++) {
+      let layerRot = -rotation * (2 + i * 1.5);
+      ctx.save();
+      ctx.rotate(layerRot);
+      let ringGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, tileSize * 0.35);
+      ringGrad.addColorStop(0, "transparent");
+      ringGrad.addColorStop(0.8, secondaryColor);
+      ringGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = ringGrad;
+      ctx.globalAlpha = 0.3;
       ctx.beginPath();
-      ctx.arc(sx, sy, sz, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, tileSize * 0.35, tileSize * 0.15, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // --- 4. VERTICAL ENERGY PILLAR (Holographic height) ---
+    ctx.save();
+    ctx.translate(cx, cy);
+    let beamW = tileSize * 0.25 + Math.sin(time / 100) * 2;
+    let beamH = tileSize * 1.2;
+    let beamGrad = ctx.createLinearGradient(0, 0, 0, -beamH);
+    beamGrad.addColorStop(0, primaryColor);
+    beamGrad.addColorStop(1, "rgba(0,0,0,0)");
+    
+    ctx.fillStyle = beamGrad;
+    ctx.globalAlpha = 0.15 + Math.sin(time / 150) * 0.05;
+    ctx.beginPath();
+    ctx.moveTo(-beamW / 2, 0);
+    ctx.lineTo(beamW / 2, 0);
+    ctx.lineTo(beamW / 4, -beamH);
+    ctx.lineTo(-beamW / 4, -beamH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // --- 5. RUNIC FLOATING RINGS (Tilted) ---
+    ctx.save();
+    ctx.translate(cx, cy);
+    let ringSpin = time / 2000;
+    ctx.rotate(ringSpin);
+    
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.0;
+    ctx.globalAlpha = 0.4;
+    ctx.setLineDash([tileSize * 0.05, tileSize * 0.15]); 
+    ctx.beginPath();
+    ctx.ellipse(0, 0, tileSize * 0.42, tileSize * 0.18, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.rotate(-ringSpin * 3);
+    ctx.strokeStyle = primaryColor;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, tileSize * 0.38, tileSize * 0.15, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // --- 6. SINGULARITY CORE ---
+    let coreSize = 3 + Math.sin(time / 80) * 2;
+    let coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreSize * 3);
+    coreGrad.addColorStop(0, "#ffffff");
+    coreGrad.addColorStop(0.4, primaryColor);
+    coreGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreSize * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // --- 7. HEAVY VORTEX SUCTION ---
+    if (Math.random() < 0.25 && window.particles && window.ParticlePool) {
+       let angle = Math.random() * Math.PI * 2;
+       let dist = tileSize * (0.8 + Math.random() * 0.5);
+       let startX = cx + Math.cos(angle) * dist;
+       let startY = cy + Math.sin(angle) * dist;
+       
+       let pt = window.ParticlePool.get(
+         startX,
+         startY,
+         -Math.cos(angle) * (1.5 + Math.random() * 1.5),
+         -Math.sin(angle) * (1.5 + Math.random() * 1.5),
+         1.5 + Math.random() * 2.0,
+         particleColor,
+         1.0,
+         35,
+         0,
+         true,
+         0.94
+       );
+       pt.style = "streak";
+       pt.scaleDecay = 0.02;
+       window.particles.push(pt);
     }
 
     ctx.restore();
@@ -1940,63 +1970,6 @@
             py + tileSize / 2,
             tileSize,
           );
-        }
-
-        if (tile === window.TILE_TYPES.EXTRACTION_ZONE) {
-          let cx = px + tileSize / 2;
-          let cy = py + tileSize / 2;
-          let time = Date.now() / 300;
-
-          ctx.save();
-          ctx.strokeStyle = "#00d2ff";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(cx, cy, tileSize * 0.38 + Math.sin(time) * 2, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.fillStyle = "rgba(0, 210, 255, 0.25)";
-          ctx.beginPath();
-          ctx.arc(cx, cy, tileSize * 0.3, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-
-        if (tile === window.TILE_TYPES.DESCENT_PORTAL) {
-          let cx = px + tileSize / 2;
-          let cy = py + tileSize / 2;
-          let time = Date.now() / 250;
-
-          ctx.save();
-          ctx.strokeStyle = "#a855f7";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(cx, cy, tileSize * 0.38 + Math.sin(time) * 2, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.fillStyle = "rgba(168, 85, 247, 0.25)";
-          ctx.beginPath();
-          ctx.arc(cx, cy, tileSize * 0.3, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-
-        if (tile === window.TILE_TYPES.BOSS_GATE) {
-          let cx = px + tileSize / 2;
-          let cy = py + tileSize / 2;
-          let time = Date.now() / 200;
-
-          ctx.save();
-          ctx.strokeStyle = "#e74c3c";
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.arc(cx, cy, tileSize * 0.4 + Math.sin(time) * 3, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.fillStyle = "rgba(231, 76, 60, 0.35)";
-          ctx.beginPath();
-          ctx.arc(cx, cy, tileSize * 0.3, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
         }
       }
     }
