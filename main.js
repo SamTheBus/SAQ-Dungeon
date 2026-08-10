@@ -16035,32 +16035,32 @@
 
           // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
           if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
-            m.isDetonating = true;
-            m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
-            m.detonationMax = 70;
-            m.isStopped = true;
-            if (typeof window.pushHeaderToast === "function") {
-              window.pushHeaderToast(
-                "[!] BLOOD BERSERKER DETONATING!",
-                "#e74c3c",
-              );
-            }
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_fire");
-            }
-            continue;
-          }
+                            m.isDetonating = true;
+                            m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
+                            m.detonationMax = 70;
+                            m.isStopped = true;
+                            if (typeof window.pushHeaderToast === "function") {
+                              window.pushHeaderToast(
+                                "[!] BLOOD BERSERKER DETONATING!",
+                                "#e74c3c",
+                              );
+                            }
+                            if (
+                              window.SoundManager &&
+                              typeof window.SoundManager.play === "function"
+                            ) {
+                              window.SoundManager.play("spell_fire");
+                            }
+                            continue;
+                          }
 
-          let mobCenterX = m.x + m.w / 2;
-          let mobCenterY = m.y + m.h / 2;
+                          mobCenterX = m.x + m.w / 2;
+                          mobCenterY = m.y + m.h / 2;
 
-          // Trigger Noxious Bloom on qualified death
-          if (window.checkAndSpawnNoxiousBloom) {
-            window.checkAndSpawnNoxiousBloom(m, mobCenterX, mobCenterY);
-          }
+                          // Trigger Noxious Bloom on qualified death
+                          if (window.checkAndSpawnNoxiousBloom) {
+                            window.checkAndSpawnNoxiousBloom(m, mobCenterX, mobCenterY);
+                          }
 
           if (
             window.isCavernEffectActive &&
