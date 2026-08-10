@@ -1064,12 +1064,12 @@ window.calculateRarityProbabilities = function (
   let Q = Math.max(0.5, quality || 1.0);
 
   // Dynamic Continuous Weight Functions
-  let w0 = Math.max(0, 100 - 0.4 * S);
-  let w1 = Math.max(0, 30 + 0.5 * Math.min(S, 80) - 0.2 * Math.max(0, S - 80));
-  let w2 = S >= 15 ? Math.max(0, 0.8 * (S - 15)) : 0;
-  let w3 = S >= 50 ? Math.max(0, 0.5 + 0.5 * (S - 50)) : 0;
-  let w4 = S >= 150 ? Math.max(0, 0.5 + 0.4 * (S - 150)) : 0;
-  let w5 = S >= 350 ? Math.max(0, 0.5 + 0.3 * (S - 350)) : 0;
+    let w0 = Math.max(5, 100 - 0.3 * S);
+    let w1 = Math.max(10, 30 + 0.4 * Math.min(S, 100) - 0.1 * Math.max(0, S - 100));
+    let w2 = S >= 25 ? Math.max(0, 0.6 * (S - 25)) : 0;
+    let w3 = S >= 100 ? Math.max(0, 0.5 * (S - 100)) : 0;
+    let w4 = S >= 250 ? Math.max(0, 0.4 * (S - 250)) : 0;
+    let w5 = S >= 500 ? Math.max(0, 0.3 * (S - 500)) : 0;
 
   // Apply Quality Boost
   if (Q > 1.0) {

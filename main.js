@@ -1295,12 +1295,12 @@
             return;
           }
 
-          let effectiveStage = stageScale * 8;
-          let rolledRarity = window.rollItemRarity(
-            effectiveStage,
-            qualityMult,
-            false,
-          );
+          let effectiveStage = stageScale;
+                    let rolledRarity = window.rollItemRarity(
+                      effectiveStage,
+                      qualityMult,
+                      false,
+                    );
           if (rolledRarity < minRarity) {
             rolledRarity = minRarity;
           }
@@ -2910,18 +2910,9 @@
                 m.lassoVisualX = p.x;
                 m.lassoVisualY = p.y;
 
-                // Pull player coordinate
-                if (
-                  !window.checkCollisionAt(
-                    window.activeDungeonMap,
-                    pullX,
-                    pullY,
-                    p.radius || 9,
-                  )
-                ) {
-                  p.x = pullX;
-                  p.y = pullY;
-                }
+                // Pull player coordinate smoothly
+                                p.knockbackVx = (pullX - p.x) * 0.35;
+                                p.knockbackVy = (pullY - p.y) * 0.35;
 
                 // Inflict heavy damage & snare slow
                 window.damagePlayer(Math.round(m.atk * 1.55), m);
@@ -3565,21 +3556,8 @@
                 // Player hit!
                 window.damagePlayer(Math.round(m.atk * 1.7), m);
                 // Apply knockback
-                let kx = p.x + Math.cos(m.shieldAngle) * 24;
-                let ky = p.y + Math.sin(m.shieldAngle) * 24;
-                if (
-                  window.activeDungeonMap &&
-                  typeof window.checkCollisionAt === "function" &&
-                  !window.checkCollisionAt(
-                    window.activeDungeonMap,
-                    kx,
-                    ky,
-                    p.radius || 9,
-                  )
-                ) {
-                  p.x = kx;
-                  p.y = ky;
-                }
+                                p.knockbackVx = Math.cos(m.shieldAngle) * 10;
+                                p.knockbackVy = Math.sin(m.shieldAngle) * 10;
                 if (window.combatVisuals) {
                   window.combatVisuals.triggerScreenShake(6, 10);
                   window.combatVisuals.spawnParticles(
@@ -10768,37 +10746,65 @@
     }
     // -----------------------------------------------------------
 
-    if (vx !== 0 || vy !== 0) {
-      if (vx < -0.1) p.facing = -1;
-      else if (vx > 0.1) p.facing = 1;
+    // --- KNOCKBACK IMPULSE DECAY ---
+        p.knockbackVx = p.knockbackVx || 0;
+        p.knockbackVy = p.knockbackVy || 0;
 
-      let pRadius = p.radius || 9;
+        if (p.knockbackVx !== 0 || p.knockbackVy !== 0) {
+          let pRadius = p.radius || 9;
+          let nextX = p.x + p.knockbackVx;
+          let nextY = p.y + p.knockbackVy;
 
-      let moved = false;
-      if (vx !== 0) {
-        let nextX = p.x + vx;
-        if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
-          p.x = nextX;
-          moved = true;
+          if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
+            p.x = nextX;
+          } else {
+            p.knockbackVx = 0;
+          }
+
+          if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
+            p.y = nextY;
+          } else {
+            p.knockbackVy = 0;
+          }
+
+          p.knockbackVx *= 0.72;
+          p.knockbackVy *= 0.72;
+
+          if (Math.abs(p.knockbackVx) < 0.1) p.knockbackVx = 0;
+          if (Math.abs(p.knockbackVy) < 0.1) p.knockbackVy = 0;
         }
-      }
 
-      if (vy !== 0) {
-        let nextY = p.y + vy;
-        if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
-          p.y = nextY;
-          moved = true;
+        if (vx !== 0 || vy !== 0) {
+          if (vx < -0.1) p.facing = -1;
+          else if (vx > 0.1) p.facing = 1;
+
+          let pRadius = p.radius || 9;
+
+          let moved = false;
+          if (vx !== 0) {
+            let nextX = p.x + vx;
+            if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
+              p.x = nextX;
+              moved = true;
+            }
+          }
+
+          if (vy !== 0) {
+            let nextY = p.y + vy;
+            if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
+              p.y = nextY;
+              moved = true;
+            }
+          }
+
+          p.isMoving = moved;
+          if (!moved) {
+            p.targetX = p.x;
+            p.targetY = p.y;
+          }
+        } else {
+          p.isMoving = false;
         }
-      }
-
-      p.isMoving = moved;
-      if (!moved) {
-        p.targetX = p.x;
-        p.targetY = p.y;
-      }
-    } else {
-      p.isMoving = false;
-    }
 
     // --- REAL-TIME SPATIAL DISPLACEMENT AND COMBAT STAT TRACKERS ---
     if (
@@ -10985,12 +10991,38 @@
     window.updateSpellAnimations();
 
     // Real-Time Camera & Line-Of-Sight Viewport Tracker
-    let cam = window.DungeonCamera;
-    if (cam && canvas && map && map.grid) {
-      cam.viewportW = canvas.width;
-      cam.viewportH = canvas.height;
-      cam.update(p.x, p.y, map.width * tileSize, map.height * tileSize);
-    }
+        let cam = window.DungeonCamera;
+        if (cam && canvas && map && map.grid) {
+          cam.viewportW = canvas.width;
+          cam.viewportH = canvas.height;
+          if (!cam.__smoothed) {
+            let origUpdate = cam.update;
+            cam.update = function (px, py, mapW, mapH) {
+              let zoom = this.zoom || 1.0;
+              let targetX = px - (this.viewportW / zoom) / 2;
+              let targetY = py - (this.viewportH / zoom) / 2;
+
+              let maxX = mapW - this.viewportW / zoom;
+              let maxY = mapH - this.viewportH / zoom;
+
+              if (maxX > 0) targetX = Math.max(0, Math.min(maxX, targetX));
+              else targetX = (mapW - this.viewportW / zoom) / 2;
+
+              if (maxY > 0) targetY = Math.max(0, Math.min(maxY, targetY));
+              else targetY = (mapH - this.viewportH / zoom) / 2;
+
+              if (this.x === undefined || Math.abs(this.x - targetX) > 600 || Math.abs(this.y - targetY) > 600) {
+                              this.x = targetX;
+                              this.y = targetY;
+                            } else {
+                              this.x += (targetX - this.x) * 0.18;
+                              this.y += (targetY - this.y) * 0.18;
+                            }
+            };
+            cam.__smoothed = true;
+          }
+          cam.update(p.x, p.y, map.width * tileSize, map.height * tileSize);
+        }
 
     let zoom = cam ? cam.zoom : 1.0;
     let viewW = (canvas ? canvas.width : 750) / zoom;
@@ -12737,12 +12769,12 @@
       );
 
       let depth = window.player ? window.player.depth || 1 : 1;
-      let fairyEquip = window.createItemObject(
-        "weapon",
-        Math.max(1, window.rollItemRarity(depth * 8, 1.2, false)),
-        depth,
-        0,
-      );
+            let fairyEquip = window.createItemObject(
+              "weapon",
+              Math.max(1, window.rollItemRarity(depth, 1.2, false)),
+              depth,
+              0,
+            );
       window.spawnGroundLoot(fairyEquip, item.x, item.y);
 
       let fairyRank = window.SkillTreeManager
@@ -13535,11 +13567,12 @@
   };
 
   window.updateDungeonCombat = function () {
-    let p = window.player;
-    if (!p || p.hp <= 0) return;
-    if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
+      let p = window.player;
+      if (!p || p.hp <= 0) return;
+      if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
+      let map = window.activeDungeonMap;
 
-    p.nullifierDisrupted = false; // Reset on each combat frame
+      p.nullifierDisrupted = false; // Reset on each combat frame
 
     let pStats =
       typeof window.resolvePlayerStats === "function"
@@ -14058,13 +14091,63 @@
             }
           });
         } else if (m.eliteAffix === "nullifier") {
-          let dx = p.x - mCx;
-          let dy = p.y - mCy;
-          if (dx * dx + dy * dy <= 8100) {
-            // 90px hero disruptor radius
-            p.nullifierDisrupted = true;
-          }
-        }
+                  let dx = p.x - mCx;
+                  let dy = p.y - mCy;
+                  if (dx * dx + dy * dy <= 8100) {
+                    // 90px hero disruptor radius
+                    p.nullifierDisrupted = true;
+                  }
+                } else if (m.eliteAffix === "glacial_warden") {
+                  if (logicClock % 120 === 0) {
+                    let dx = p.x - mCx;
+                    let dy = p.y - mCy;
+                    if (dx * dx + dy * dy <= 12100) {
+                      p.snareTimer = 60;
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(p.x, p.y - 12, "FROST PULSE -40%", "#38bdf8", true);
+                      }
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnParticles(mCx, mCy, 12, "void_orb", 2.0);
+                      }
+                    }
+                  }
+                } else if (m.eliteAffix === "slag_shaper") {
+                  if (logicClock % 180 === 0) {
+                    window.cavernInteractives = window.cavernInteractives || [];
+                    window.cavernInteractives.push({
+                      id: window.idCounter++,
+                      type: "acid_pool",
+                      color: "#f97316",
+                      isSlag: true,
+                      x: mCx,
+                      y: mCy,
+                      w: 24,
+                      h: 12,
+                      life: 300,
+                      maxLife: 300
+                    });
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnParticles(mCx, mCy, 10, "magma_elemental", 2.0);
+                    }
+                  }
+                } else if (m.eliteAffix === "web_weaver") {
+                  if (logicClock % 210 === 0) {
+                    window.cavernInteractives = window.cavernInteractives || [];
+                    window.cavernInteractives.push({
+                      id: window.idCounter++,
+                      type: "spider_web_zone",
+                      x: p.x,
+                      y: p.y,
+                      w: 56,
+                      h: 24,
+                      life: 240,
+                      maxLife: 240
+                    });
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnParticles(p.x, p.y, 8, "slag_slime", 1.8);
+                    }
+                  }
+                }
       });
 
       // 2. Process Lingering Window Countdown & Gradual 2.5s Stack Falloff
@@ -14092,650 +14175,51 @@
     }
 
     // Build unified target list (including breakable debuff/hazard entities and room props)
-    let targetables = [];
-    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-      window.activeDungeonMobs.forEach((m) => {
-        if (m.isSpecter) return; // Exclude Specter from target locks entirely
+        let targetables = [];
+        if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+          window.activeDungeonMobs.forEach((m) => {
+            if (m.isSpecter) return; // Exclude Specter from target locks entirely
 
-        targetables.push({
-          obj: m,
-          type: "mob",
-          x: m.x + m.w / 2,
-          y: m.y + m.h / 2,
-          radius: (m.w || 24) * 0.45,
-        });
-      });
-    }
-    if (window.cavernInteractives && window.cavernInteractives.length > 0) {
-      window.cavernInteractives.forEach((item) => {
-        if (item.hp !== undefined && item.hp > 0) {
-          targetables.push({
-            obj: item,
-            type: "cavern",
-            x: item.x,
-            y: item.y,
-            radius: item.w / 2,
+            targetables.push({
+              obj: m,
+              type: "mob",
+              x: m.x + m.w / 2,
+              y: m.y + m.h / 2,
+              radius: (m.w || 24) * 0.45,
+            });
           });
         }
-      });
-    }
-    let mapInst = window.activeDungeonMap;
-    if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
-      let tSize = mapInst.tileSize || 32;
-      mapInst.breakables.forEach((b) => {
-        if (b.flashTimer > 0) b.flashTimer--;
-        if (b.hp > 0) {
-          targetables.push({
-            obj: b,
-            type: "breakable",
-            x: b.x * tSize + tSize / 2,
-            y: b.y * tSize + tSize / 2,
-            radius: 12,
+        if (window.cavernInteractives && window.cavernInteractives.length > 0) {
+          window.cavernInteractives.forEach((item) => {
+            if (item.hp !== undefined && item.hp > 0) {
+              targetables.push({
+                obj: item,
+                type: "cavern",
+                x: item.x,
+                y: item.y,
+                radius: item.w / 2,
+              });
+            }
           });
         }
-      });
-    }
-
-    // Process targets in view
-        targetables.forEach((t) => {
-          if (t.type === "mob") {
-            let m = t.obj;
-            if (m.flashTimer > 0) m.flashTimer--;
-            if (m.attackCooldown > 0) m.attackCooldown--;
-            if (m.rangedCooldown > 0) m.rangedCooldown--;
-
-            let mCx = m.x + (m.w || 24) / 2;
-            let mCy = m.y + (m.h || 24) / 2;
-            let dx = p.x - mCx;
-            let dy = p.y - mCy;
-            let dist = Math.hypot(dx, dy);
-
-            // Active Elite Affix AI
-            if (m.hp.gt(0)) {
-              if (m.eliteAffix === "web_weaver") {
-                m.webWeaveTimer = (m.webWeaveTimer || 120) - 1;
-                if (m.webWeaveTimer <= 0 && dist < 180) {
-                  m.webWeaveWave = (m.webWeaveWave || 0) + 1;
-                  m.webWeaveTimer = 180; // 3 seconds cooldown
-                  window.cavernInteractives = window.cavernInteractives || [];
-                  window.cavernInteractives.push({
-                    id: window.idCounter++,
-                    type: "spider_web_zone",
-                    x: p.x,
-                    y: p.y,
-                    w: 56,
-                    h: 24,
-                    life: 240, // 4 seconds of persistence
-                    maxLife: 240
-                  });
-                  if (window.combatVisuals) {
-                    window.combatVisuals.spawnParticles(p.x, p.y, 8, "void_orb", 2);
-                  }
-                  if (window.spawnFloatingText) {
-                    window.spawnFloatingText(mCx, m.y - 12, "WEB WEAVE!", "#2ecc71");
-                  }
-                }
-              } else if (m.eliteAffix === "glacial_warden") {
-                m.glacialWardenTimer = (m.glacialWardenTimer || 150) - 1;
-                if (m.glacialWardenTimer <= 0 && dist < 90) {
-                  m.glacialWardenTimer = 150; // 2.5s cooldown
-                  let pushAngle = Math.atan2(p.y - mCy, p.x - mCx);
-                  let pushDist = 45;
-                  let kx = p.x + Math.cos(pushAngle) * pushDist;
-                  let ky = p.y + Math.sin(pushAngle) * pushDist;
-                  if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, kx, ky, p.radius || 9)) {
-                    p.x = kx;
-                    p.y = ky;
-                  }
-                  p.snareTimer = 90; // 1.5s slow
-                  if (window.spawnFloatingText) {
-                    window.spawnFloatingText(p.x, p.y - 12, "FROST KNOCKBACK!", "#38bdf8", true);
-                  }
-                  if (window.combatVisuals) {
-                    window.combatVisuals.triggerScreenShake(4, 8);
-                    window.combatVisuals.spawnParticles(p.x, p.y, 12, "wyrmling", 3);
-                  }
-                  if (window.SoundManager) window.SoundManager.play("block");
-                }
-              } else if (m.eliteAffix === "slag_shaper") {
-                              if (m.isWandering || m.isMoving || (m.hopTimer !== undefined && m.hopTimer % 30 < 15)) {
-                                if (window.logicClock % 45 === 0) {
-                                  window.cavernInteractives = window.cavernInteractives || [];
-                                  window.cavernInteractives.push({
-                                    id: window.idCounter++,
-                                    type: "acid_pool",
-                                    isSlag: true,
-                                    color: "#f97316",
-                                    x: mCx,
-                                    y: mCy,
-                                    w: 24,
-                                    h: 12,
-                                    life: 240, // 4 seconds
-                                    maxLife: 240,
-                                  });
-                                  if (window.combatVisuals) {
-                                    window.combatVisuals.spawnParticles(mCx, mCy, 4, "magma_elemental", 1.2);
-                                  }
-                                }
-                              }
-                            }
-                          }
-
-                          // Elite Passive Particle Radiance
-                          if (m.eliteAffix && window.logicClock % 15 === 0 && window.ParticlePool && window.particles) {
-                            let pColor = "#38bdf8";
-                            let pStyle = "glowing_orb";
-                            let gravity = 0;
-
-                            if (m.eliteAffix === "vitality_weaver") {
-                              pColor = "#2ecc71";
-                              pStyle = "glowing_orb";
-                              gravity = -0.02;
-                            } else if (m.eliteAffix === "iron_citadel") {
-                              pColor = "#3498db";
-                              pStyle = "polygon";
-                              gravity = 0.05;
-                            } else if (m.eliteAffix === "swift_commander") {
-                              pColor = "#00d2ff";
-                              pStyle = "streak";
-                              gravity = 0;
-                            } else if (m.eliteAffix === "blood_berserker") {
-                              pColor = "#ef4444";
-                              pStyle = "sparkle_star";
-                              gravity = -0.04;
-                            } else if (m.eliteAffix === "nullifier") {
-                              pColor = "#a855f7";
-                              pStyle = "elliptical_3d";
-                              gravity = 0;
-                            } else if (m.eliteAffix === "web_weaver") {
-                              pColor = "#a7f3d0";
-                              pStyle = "glowing_orb";
-                            } else if (m.eliteAffix === "glacial_warden") {
-                              pColor = "#38bdf8";
-                              pStyle = "polygon";
-                            } else if (m.eliteAffix === "slag_shaper") {
-                              pColor = "#f97316";
-                              pStyle = "elliptical_3d";
-                            } else if (m.eliteAffix === "toxic_decay") {
-                              pColor = "#34d399";
-                              pStyle = "glowing_orb";
-                            }
-
-                            let lifeVal = window.randInt(20, 35);
-                                                        let pt = window.ParticlePool.get(
-                                                          mCx + window.randFloat(-6, 6),
-                                                          mCy + window.randFloat(-6, 6),
-                                                          window.randFloat(-0.3, 0.3),
-                                                          window.randFloat(-0.3, 0.3) - (gravity < 0 ? 0.4 : 0),
-                                                          window.randFloat(1.2, 2.2),
-                                                          pColor,
-                                                          0.8,
-                                                          lifeVal,
-                                                          lifeVal,
-                                                          gravity,
-                                                          true
-                                                        );
-                                                        pt.style = pStyle;
-                                                        pt.scaleDecay = 0.025;
-                                                        window.particles.push(pt);
-                          }
-
-        // --- CELESTIAL STATUS DOT TICK ENGINE ---
-        if (m.hp && m.hp.gt && m.hp.gt(0)) {
-          // Decrement and clear expired DoTs progressive duration
-          if (m.poisonStacks > 0) {
-            if (m.poisonTimer === undefined || m.poisonTimer === null)
-              m.poisonTimer = 300;
-            m.poisonTimer--;
-            if (m.poisonTimer <= 0) m.poisonStacks = 0;
-          }
-          if (m.bleedStacks > 0) {
-            if (m.bleedTimer === undefined || m.bleedTimer === null)
-              m.bleedTimer = 300;
-            m.bleedTimer--;
-            if (m.bleedTimer <= 0) m.bleedStacks = 0;
-          }
-
-          if (
-            (m.poisonStacks && m.poisonStacks > 0) ||
-            (m.bleedStacks && m.bleedStacks > 0)
-          ) {
-            m.dotTickTimer = (m.dotTickTimer || 0) + 1;
-            if (m.dotTickTimer >= 60) {
-              // Ticks exactly every 1s
-              m.dotTickTimer = 0;
-              let baseAtk = pStats.atk || p.atk || 15;
-
-              if (m.poisonStacks && m.poisonStacks > 0) {
-                let poisonPower = 0.1 * (m.poisonLevel || 1);
-                if (pStats.poisonDamageMultiplier)
-                  poisonPower *= pStats.poisonDamageMultiplier;
-                let pDmg = BigNum.from(baseAtk)
-                  .mul(poisonPower)
-                  .mul(m.poisonStacks);
-                m.hp = m.hp.sub(pDmg);
-                m.flashTimer = 4;
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnDamageEffect(
-                    m.x + m.w / 2,
-                    m.y + m.h / 2,
-                    pDmg,
-                    "poison",
-                    false,
-                    m,
-                  );
-                }
-              }
-
-              if (m.bleedStacks && m.bleedStacks > 0) {
-                let bleedPower = 0.05;
-                if (pStats.bleedDamageMultiplier)
-                  bleedPower *= pStats.bleedDamageMultiplier;
-                let bDmg = BigNum.from(baseAtk)
-                  .mul(bleedPower)
-                  .mul(m.bleedStacks);
-                m.hp = m.hp.sub(bDmg);
-                m.flashTimer = 4;
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnDamageEffect(
-                    m.x + m.w / 2,
-                    m.y + m.h / 2,
-                    bDmg,
-                    "bleed",
-                    false,
-                    m,
-                  );
-                }
-              }
+        let mapInst = window.activeDungeonMap;
+        if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
+          let tSize = mapInst.tileSize || 32;
+          mapInst.breakables.forEach((b) => {
+            if (b.flashTimer > 0) b.flashTimer--;
+            if (b.hp > 0) {
+              targetables.push({
+                obj: b,
+                type: "breakable",
+                x: b.x * tSize + tSize / 2,
+                y: b.y * tSize + tSize / 2,
+                radius: 12,
+              });
             }
-          }
-          if (m.shredTimer && m.shredTimer > 0) {
-            m.shredTimer--;
-            if (m.shredTimer === 0) m.shredPercent = 0;
-          }
+          });
         }
 
-        if (m.recoilX) {
-                  m.recoilX *= 0.65;
-                  if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
-                }
-                if (m.recoilY) {
-                  m.recoilY *= 0.65;
-                  if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
-                }
-
-                dx = p.x - t.x;
-                dy = p.y - t.y;
-                dist = Math.hypot(dx, dy);
-
-                if (dx < -1) {
-          m.facing = -1;
-        } else if (dx > 1) {
-          m.facing = 1;
-        }
-
-        // Soft Entity Body-Blocking (Allows passing through with speed resistance and gentle push)
-        let pRadius = p.radius || 9;
-        let minDist = pRadius + t.radius;
-
-        if (dist < minDist) {
-          let overlap = minDist - dist;
-          let nx = dist > 0 ? dx / dist : 1;
-          let ny = dist > 0 ? dy / dist : 0;
-
-          // Apply speed resistance to player
-          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.45);
-
-          // Push the mob away gently instead of blocking the player
-          let mobPushX = -nx * overlap * 0.25;
-          let mobPushY = -ny * overlap * 0.25;
-
-          let map = window.activeDungeonMap;
-          if (map && map.grid) {
-            let mCenterX = m.x + m.w / 2;
-            let mCenterY = m.y + m.h / 2;
-            if (
-              !checkCollisionAt(map, mCenterX + mobPushX, mCenterY, t.radius)
-            ) {
-              m.x += mobPushX;
-            }
-            if (
-              !checkCollisionAt(map, mCenterX, mCenterY + mobPushY, t.radius)
-            ) {
-              m.y += mobPushY;
-            }
-          } else {
-            m.x += mobPushX;
-            m.y += mobPushY;
-          }
-        }
-
-        // Persistent Aggro & Pursuit Movement
-        if (dist < 220 || m.hasTakenDamage) {
-          m.isAggroed = true;
-        }
-
-        // Mob Ranged Attack Execution with Windup & Recoil
-        if (m.isRanged && m.isAggroed && dist < 260) {
-          if (m.castTimer > 0) {
-            m.castTimer--;
-
-            // Windup Charge Particles
-                        if (window.combatVisuals && Math.random() < 0.6) {
-                          let mCx = m.x + m.w / 2;
-                          let mCy = m.y + m.h / 2;
-                          let pColor =
-                            m.projectileType === "thorn"
-                              ? "#2ecc71"
-                              : m.projectileType === "frost"
-                                ? "#38bdf8"
-                                : m.projectileType === "fireball"
-                                  ? "#e67e22"
-                                  : m.projectileType === "maelstrom"
-                                    ? "#a3fd83"
-                                    : "#e84393";
-                          window.combatVisuals.particlePool.get(
-                            mCx + (Math.random() - 0.5) * 20,
-                            mCy + (Math.random() - 0.5) * 20,
-                            (Math.random() - 0.5) * 0.5,
-                            (Math.random() - 0.5) * 0.5,
-                            window.randFloat(1.0, 2.2),
-                            pColor,
-                            0.8,
-                            12,
-                            12,
-                            0,
-                            true
-                          );
-                        }
-
-            if (m.castTimer === 0) {
-              m.rangedCooldown = m.isRare ? 65 : 95;
-              let pCx = p.x;
-              let pCy = p.y - 8;
-              let mCx = m.x + m.w / 2;
-              let mCy = m.y + m.h / 2;
-              let pDx = pCx - mCx;
-              let pDy = pCy - mCy;
-              let pDist = Math.hypot(pDx, pDy);
-
-              if (pDist > 0) {
-                let normX = pDx / pDist;
-                let normY = pDy / pDist;
-                let pSpeed = 3.6;
-
-                window.projectiles.push({
-                  x: mCx + normX * 10,
-                  y: mCy + normY * 10,
-                  vx: normX * pSpeed,
-                  vy: normY * pSpeed,
-                  r: 5,
-                  type: m.projectileType || "standard",
-                  damage: Math.round(m.atk * 0.85),
-                  life: 140,
-                  pulseOffset: Math.random() * 10,
-                });
-
-                // Apply Recoil Impulse
-                m.recoilX = -normX * 6;
-                m.recoilY = -normY * 6;
-
-                if (
-                  window.SoundManager &&
-                  typeof window.SoundManager.play === "function"
-                ) {
-                  let sfx =
-                    m.projectileType === "frost"
-                      ? "spell_frost"
-                      : m.projectileType === "fireball"
-                        ? "spell_fire"
-                        : m.projectileType === "void"
-                          ? "spell"
-                          : "swing";
-                  window.SoundManager.play(sfx);
-                }
-              }
-            }
-          } else if (m.rangedCooldown <= 0 && dist > 20) {
-            m.castTimer = 14; // 14 frames anticipation wind-up
-          }
-        }
-
-        if (!m.isAggroed) {
-          m.wanderTimer = (m.wanderTimer || 0) - 1;
-          if (m.wanderTimer <= 0) {
-            m.wanderTimer = window.randInt(90, 200);
-            m.isWandering = Math.random() < 0.45;
-
-            if (m.isWandering) {
-              let angle = Math.random() * Math.PI * 2;
-              let wanderSpeed = 0.8;
-              m.wanderVx = Math.cos(angle) * wanderSpeed;
-              m.wanderVy = Math.sin(angle) * wanderSpeed;
-            } else {
-              m.wanderVx = 0;
-              m.wanderVy = 0;
-            }
-          }
-
-          if (m.isWandering && (m.wanderVx !== 0 || m.wanderVy !== 0)) {
-            let mRadius = 6;
-            let mCenterX = m.x + m.w / 2;
-            let mCenterY = m.y + m.h / 2;
-            let nextX = mCenterX + m.wanderVx;
-            let nextY = mCenterY + m.wanderVy;
-            let hX = (m.homeX !== undefined ? m.homeX : m.x) + m.w / 2;
-            let hY = (m.homeY !== undefined ? m.homeY : m.y) + m.h / 2;
-            let distFromHome = Math.hypot(nextX - hX, nextY - hY);
-
-            let mapInst = window.activeDungeonMap;
-            if (distFromHome < 128 && mapInst && mapInst.grid) {
-              let canMoveX = !checkCollisionAt(
-                mapInst,
-                nextX,
-                mCenterY,
-                mRadius,
-              );
-              let canMoveY = !checkCollisionAt(
-                mapInst,
-                mCenterX,
-                nextY,
-                mRadius,
-              );
-
-              if (canMoveX) m.x += m.wanderVx;
-              if (canMoveY) m.y += m.wanderVy;
-
-              if (!canMoveX && !canMoveY) {
-                m.isWandering = false;
-                m.wanderVx = 0;
-                m.wanderVy = 0;
-              }
-
-              if (m.wanderVx < -0.1) m.facing = -1;
-              else if (m.wanderVx > 0.1) m.facing = 1;
-
-              m.hopTimer = (m.hopTimer || 0) + 0.5;
-            } else {
-              m.isWandering = false;
-              m.wanderVx = 0;
-              m.wanderVy = 0;
-            }
-          }
-        }
-
-        if (m.isAggroed && dist < 800 && dist > 14) {
-          m.hopTimer = (m.hopTimer || 0) + 1;
-          let isRelentless = m.moveProfile === "relentless";
-          let cycle = isRelentless ? 0 : m.hopTimer % 30; // 15 frames jumping, 15 frames resting
-          if (cycle < 15) {
-            let speed = (m.isRare ? 2.2 : 1.8) * (isRelentless ? 0.65 : 1.0);
-            let mRadius = 6;
-            let mCenterX = m.x + m.w / 2;
-            let mCenterY = m.y + m.h / 2;
-            let mapInst = window.activeDungeonMap;
-
-            if (mapInst && mapInst.grid) {
-              // Intercept and redirect aggro toward friendly decoy wisps if nearby
-              let targetEntity = p;
-              let nearbyWisp = window.activeDungeonMobs
-                ? window.activeDungeonMobs.find(
-                    (w) =>
-                      w.isFriendlyWisp &&
-                      w.hp.gt(0) &&
-                      Math.hypot(
-                        mCenterX - (w.x + 12),
-                        mCenterY - (w.y + 12),
-                      ) <= 160,
-                  )
-                : null;
-              if (nearbyWisp) {
-                targetEntity = { x: nearbyWisp.x + 12, y: nearbyWisp.y + 12 };
-              }
-
-              let baseAngle = Math.atan2(
-                targetEntity.y - mCenterY,
-                targetEntity.x - mCenterX,
-              );
-              // Add a slight dynamic drift based on logic clock and mob ID to break identical conga-lines
-              let drift =
-                Math.sin((window.logicClock || 0) * 0.04 + (m.id || 0)) * 0.22;
-              baseAngle += drift;
-
-              // Check if we are currently committed to a persistent wall detour/avoidance path
-              let moveAngle = baseAngle;
-              if (m.avoidanceTimer && m.avoidanceTimer > 0) {
-                m.avoidanceTimer--;
-                moveAngle = m.avoidanceAngle;
-              }
-
-              let vx = Math.cos(moveAngle) * speed;
-              let vy = Math.sin(moveAngle) * speed;
-              let moved = false;
-
-              // 1. Check direct movement step first (fast path)
-              if (
-                !checkCollisionAt(
-                  mapInst,
-                  mCenterX + vx,
-                  mCenterY + vy,
-                  mRadius,
-                )
-              ) {
-                m.x += vx;
-                m.y += vy;
-                moved = true;
-              } else {
-                // 2. Axis-aligned sliding fallback (smoothly glide along walls in the direction of the target)
-                let canSlideX = !checkCollisionAt(
-                  mapInst,
-                  mCenterX + vx,
-                  mCenterY,
-                  mRadius,
-                );
-                let canSlideY = !checkCollisionAt(
-                  mapInst,
-                  mCenterX,
-                  mCenterY + vy,
-                  mRadius,
-                );
-
-                if (canSlideX && !canSlideY && Math.abs(vx) > 0.1) {
-                  m.x += vx;
-                  vy = 0; // Nullify blocked vertical velocity
-                  moved = true;
-                } else if (canSlideY && !canSlideX && Math.abs(vy) > 0.1) {
-                  m.y += vy;
-                  vx = 0; // Nullify blocked horizontal velocity
-                  moved = true;
-                } else if (canSlideX && canSlideY) {
-                  // Both axes are free but the diagonal is blocked (outer corner clip)
-                  if (Math.abs(vx) >= Math.abs(vy)) {
-                    m.x += vx;
-                    vy = 0;
-                  } else {
-                    m.y += vy;
-                    vx = 0;
-                  }
-                  moved = true;
-                }
-              }
-
-              // 3. Tangential Corner Deflection (If direct path and slide paths are both blocked)
-              if (!moved) {
-                let preferCW = m.id % 2 === 0;
-                let offset1 = preferCW ? Math.PI / 2 : -Math.PI / 2;
-                let offset2 = preferCW ? -Math.PI / 2 : Math.PI / 2;
-                let offset3 = Math.PI;
-
-                for (let j = 0; j < 3; j++) {
-                  let offset = j === 0 ? offset1 : j === 1 ? offset2 : offset3;
-                  let testAng = baseAngle + offset;
-                  let tx = Math.cos(testAng) * speed;
-                  let ty = Math.sin(testAng) * speed;
-
-                  if (
-                    !checkCollisionAt(
-                      mapInst,
-                      mCenterX + tx,
-                      mCenterY + ty,
-                      mRadius,
-                    )
-                  ) {
-                    m.x += tx;
-                    m.y += ty;
-                    vx = tx;
-                    vy = ty;
-                    moved = true;
-                    // Persist this detour path for 15-30 frames so the mob clears the corner
-                    m.avoidanceAngle = testAng;
-                    m.avoidanceTimer = window.randInt(15, 30);
-                    break;
-                  } else {
-                    let canSlideX = !checkCollisionAt(
-                      mapInst,
-                      mCenterX + tx,
-                      mCenterY,
-                      mRadius,
-                    );
-                    let canSlideY = !checkCollisionAt(
-                      mapInst,
-                      mCenterX,
-                      mCenterY + ty,
-                      mRadius,
-                    );
-                    if (canSlideX && !canSlideY && Math.abs(tx) > 0.1) {
-                      m.x += tx;
-                      vx = tx;
-                      vy = 0;
-                      moved = true;
-                      m.avoidanceAngle = testAng;
-                      m.avoidanceTimer = window.randInt(15, 30);
-                      break;
-                    } else if (canSlideY && !canSlideX && Math.abs(ty) > 0.1) {
-                      m.y += ty;
-                      vx = 0;
-                      vy = ty;
-                      moved = true;
-                      m.avoidanceAngle = testAng;
-                      m.avoidanceTimer = window.randInt(15, 30);
-                      break;
-                    }
-                  }
-                }
-              }
-
-              if (moved) {
-                if (vx < -0.1) m.facing = -1;
-                else if (vx > 0.1) m.facing = 1;
-              }
-            }
-          }
-        }
-      }
-    });
-
-    // Find the closest overall target (mob or breakable cavern entity)
+        // Find the closest overall target (mob or breakable cavern entity)
     let closestTarget = null;
     let closestDist = Infinity;
     targetables.forEach((t) => {
@@ -16712,16 +16196,16 @@
           let isChallengeActive =
             window.playerStats.activeSpecialChallenge !== null;
           if (
-            !window.playerStats.isCrucibleMode &&
-            !isChallengeActive &&
-            Math.random() < 0.05
-          ) {
-            let stageScale = window.player.depth || 1;
-            let rolledRarity = window.rollItemRarity(
-              stageScale * 8,
-              pStats.qly || 1.0,
-              false,
-            );
+                      !window.playerStats.isCrucibleMode &&
+                      !isChallengeActive &&
+                      Math.random() < 0.05
+                    ) {
+                      let stageScale = window.player.depth || 1;
+                      let rolledRarity = window.rollItemRarity(
+                        stageScale,
+                        pStats.qly || 1.0,
+                        false,
+                      );
             let types = [
               "weapon",
               "subweapon",
@@ -16763,7 +16247,18 @@
           continue;
         }
 
-        // Mob Contact Melee Attack on Player
+        // 1. Decrement Active Mob Timers
+                if (m.flashTimer > 0) m.flashTimer--;
+                if (m.attackCooldown > 0) m.attackCooldown--;
+                if (m.rangedCooldown > 0) m.rangedCooldown--;
+                if (m.stunTimer > 0) {
+                  m.stunTimer--;
+                  continue;
+                }
+
+                if (m.isStopped) continue;
+
+                // 2. Mob Contact Melee Attack on Player
                 if (dist < 20 && m.attackCooldown <= 0) {
                   m.attackCooldown = 60; // 1s attack cooldown
                   window.damagePlayer(m.atk, m);
@@ -16778,6 +16273,127 @@
 
                   if (p.hp <= 0) {
                     window.startDeathSequence();
+                  }
+                }
+
+                // 3. Mob Movement & Ranged Attack AI
+                let mCx = m.x + (m.w || 24) / 2;
+                let mCy = m.y + (m.h || 24) / 2;
+
+                if (dist < 260 || m.isAggroed || m.hasTakenDamage || m.isRare || m.isElite) {
+                  m.isAggroed = true;
+
+                  if (dx < -1) m.facing = -1;
+                  else if (dx > 1) m.facing = 1;
+
+                  let baseSpeed = m.moveProfile === "relentless" ? 1.8 : 1.35;
+                  let hasteMult = (m.buffStacks && m.buffStacks.haste > 0) ? (1 + m.buffStacks.haste * 0.15) : 1.0;
+                  let speed = baseSpeed * (m.speedMultiplier || 1.0) * hasteMult;
+
+                  if (m.isRanged) {
+                    // Ranged Projectile Attack Execution
+                    if (m.rangedCooldown <= 0 && dist <= 220) {
+                      m.rangedCooldown = window.randInt(90, 150);
+                      let projAngle = Math.atan2(p.y - mCy, p.x - mCx);
+                      let projSpeed = 4.2;
+
+                      window.projectiles.push({
+                        x: mCx,
+                        y: mCy,
+                        vx: Math.cos(projAngle) * projSpeed,
+                        vy: Math.sin(projAngle) * projSpeed,
+                        r: 6,
+                        type: m.projectileType || "thorn",
+                        damage: m.atk,
+                        life: 180,
+                        pulseOffset: Math.random() * 10
+                      });
+
+                      if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                        window.SoundManager.play("swing");
+                      }
+                    }
+
+                    // Ranged Distance Keeping
+                    if (dist > 140) {
+                      let nx = dx / dist;
+                      let ny = dy / dist;
+                      let testX = m.x + nx * speed;
+                      let testY = m.y + ny * speed;
+                      if (map && !checkCollisionAt(map, testX + 12, testY + 12, 10)) {
+                        m.x = testX;
+                        m.y = testY;
+                        m.isMoving = true;
+                      }
+                    } else if (dist < 60) {
+                      let nx = -dx / dist;
+                      let ny = -dy / dist;
+                      let testX = m.x + nx * (speed * 0.7);
+                      let testY = m.y + ny * (speed * 0.7);
+                      if (map && !checkCollisionAt(map, testX + 12, testY + 12, 10)) {
+                        m.x = testX;
+                        m.y = testY;
+                        m.isMoving = true;
+                      }
+                    }
+                  } else {
+                    // Melee Mob Pursuit
+                    if (dist > 14) {
+                      m.hopTimer = ((m.hopTimer || 0) + 1) % 30;
+                      let nx = dx / dist;
+                      let ny = dy / dist;
+                      let testX = m.x + nx * speed;
+                      let testY = m.y + ny * speed;
+
+                      let moved = false;
+                      if (map) {
+                        if (!checkCollisionAt(map, testX + 12, m.y + 12, 10)) {
+                          m.x = testX;
+                          moved = true;
+                        }
+                        if (!checkCollisionAt(map, m.x + 12, testY + 12, 10)) {
+                          m.y = testY;
+                          moved = true;
+                        }
+                      } else {
+                        m.x = testX;
+                        m.y = testY;
+                        moved = true;
+                      }
+                      m.isMoving = moved;
+                    }
+                  }
+                } else {
+                  // Wandering Idle AI when unaggroed
+                  m.wanderTimer = (m.wanderTimer || 0) - 1;
+                  if (m.wanderTimer <= 0) {
+                    m.wanderTimer = window.randInt(60, 150);
+                    if (Math.random() < 0.5) {
+                      let wanderAngle = Math.random() * Math.PI * 2;
+                      m.wanderVx = Math.cos(wanderAngle) * 0.6;
+                      m.wanderVy = Math.sin(wanderAngle) * 0.6;
+                      m.isWandering = true;
+                    } else {
+                      m.wanderVx = 0;
+                      m.wanderVy = 0;
+                      m.isWandering = false;
+                    }
+                  }
+
+                  if (m.isWandering && (m.wanderVx !== 0 || m.wanderVy !== 0)) {
+                    let testX = m.x + m.wanderVx;
+                    let testY = m.y + m.wanderVy;
+                    if (map && !checkCollisionAt(map, testX + 12, testY + 12, 10)) {
+                      m.x = testX;
+                      m.y = testY;
+                      m.isMoving = true;
+                    } else {
+                      m.isWandering = false;
+                      m.wanderVx = 0;
+                      m.wanderVy = 0;
+                    }
+                  } else {
+                    m.isMoving = false;
                   }
                 }
       }
@@ -17829,18 +17445,18 @@
                   0,
                 );
               } else {
-                let rolledRarity = window.rollItemRarity(
-                  stageScale * 8,
-                  pStats.qly || 1.0,
-                  false,
-                );
-                bossEquip = window.createItemObject(
-                  chosenType,
-                  rolledRarity,
-                  stageScale,
-                  0,
-                );
-              }
+                              let rolledRarity = window.rollItemRarity(
+                                stageScale,
+                                pStats.qly || 1.0,
+                                false,
+                              );
+                              bossEquip = window.createItemObject(
+                                chosenType,
+                                rolledRarity,
+                                stageScale,
+                                0,
+                              );
+                            }
 
               window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
             }
