@@ -14,203 +14,615 @@
   // --- BESTIARY MONSTER CARDS DATABASE ---
       window.MONSTER_CARDS_DATA = Object.assign(window.MONSTER_CARDS_DATA || {}, {
         slime: {
-        name: "Green Slime",
-        set: "Whispering Woods",
-        hint: "Floors 1-12",
-      },
-      sprout: {
-        name: "Eldritch Sprout",
-        set: "Whispering Woods",
-        hint: "Floors 1-12",
-      },
-      thorn_wyrm: {
-        name: "Thorn Wyrm",
-        set: "Whispering Woods",
-        hint: "Floors 1-12",
-      },
-      arachnid_treant: {
-        name: "Arachnid Treant",
-        set: "Whispering Woods",
-        hint: "Floor 12 Boss",
-      },
-      golem: { name: "Stone Golem", set: "Mountain Peaks", hint: "Floors 13-24" },
-      wyrmling: {
-        name: "Frost Wyrmling",
-        set: "Mountain Peaks",
-        hint: "Floors 13-24",
-      },
-      gargoyle: {
-        name: "Gargoyle Warden",
-        set: "Mountain Peaks",
-        hint: "Floors 13-24",
-      },
-      rust_nibbler: {
-        name: "Rust Nibbler",
-        set: "Mountain Peaks",
-        hint: "Floors 13-24",
-      },
-      gilded_scuttler: {
-        name: "Gilded Scuttler",
-        set: "Mountain Peaks",
-        hint: "Sector 1 rare",
-      },
-      aegis_goliath: {
-        name: "Aegis Goliath",
-        set: "Mountain Peaks",
-        hint: "Floor 24 Boss",
-      },
-      magma_elemental: {
-        name: "Magma Elemental",
-        set: "Inferno Depths",
-        hint: "Floors 25-36",
-      },
-      lava_serpent: {
-        name: "Lava Serpent",
-        set: "Inferno Depths",
-        hint: "Floors 25-36",
-      },
-      hell_bat: { name: "Hell Bat", set: "Inferno Depths", hint: "Floors 25-36" },
-      slag_slime: {
-        name: "Slag Slime",
-        set: "Inferno Depths",
-        hint: "Floors 25-36",
-      },
-      overlord_iron_vault: {
-        name: "Overlord Iron Vault",
-        set: "Inferno Depths",
-        hint: "Floor 36 Boss",
-      },
-      swamp_basilisk: {
-        name: "Swamp Basilisk",
-        set: "Fungal Swamp",
-        hint: "Floors 37-48",
-      },
-      toxic_fly: { name: "Toxic Fly", set: "Fungal Swamp", hint: "Floors 37-48" },
-      marsh_ghost: {
-        name: "Marsh Ghost",
-        set: "Fungal Swamp",
-        hint: "Floors 37-48",
-      },
-      corroded_golem: {
-        name: "Corroded Golem",
-        set: "Fungal Swamp",
-        hint: "Floors 37-48",
-      },
-      corrosive_abomination: {
-        name: "Corrosive Abomination",
-        set: "Fungal Swamp",
-        hint: "Floor 48 Boss",
-      },
-      void_orb: {
-        name: "Void Orb",
-        set: "Void Singularity",
-        hint: "Floors 49-60",
-      },
-      void_crawler: {
-        name: "Void Crawler",
-        set: "Void Singularity",
-        hint: "Floors 49-60",
-      },
-      void_spectre: {
-        name: "Void Spectre",
-        set: "Void Singularity",
-        hint: "Floors 49-60",
-      },
-      void_wraith: {
-        name: "Void Wraith",
-        set: "Void Singularity",
-        hint: "Sector 4 rare",
-      },
-      rift_drifter: {
-        name: "Rift Drifter",
-        set: "Void Singularity",
-        hint: "Sector 4 rare",
-      },
-      void_overseer: {
-        name: "Void Overseer",
-        set: "Void Singularity",
-        hint: "Floor 60 Boss",
-      },
-      clockwork_scarab: {
-              name: "Clockwork Scarab",
-              set: "Cosmic Wardens",
-              hint: "Floors 61+",
-            },
-            temporal_watcher: {
-              name: "Temporal Watcher",
-              set: "Cosmic Wardens",
-              hint: "Sector 5 rare",
-            },
-            clockwork_drone: {
-              name: "Clockwork Drone",
-              set: "Cosmic Wardens",
-              hint: "Floors 61+",
-            },
-            star_weaver: {
-              name: "Star Weaver",
-              set: "Cosmic Wardens",
-              hint: "Floors 61+",
-            },
-            cyber_wraith: {
-              name: "Cyber Wraith",
-              set: "Cosmic Wardens",
-              hint: "Floors 73+",
-            },
-      neon_spider: {
-        name: "Neon Spider",
-        set: "Cosmic Wardens",
-        hint: "Floors 61+",
-      },
-      wireframe_orb: {
-        name: "Wireframe Orb",
-        set: "Cosmic Wardens",
-        hint: "Floors 61+",
-      },
-      cursed_blade: {
-        name: "Cursed Blade",
-        set: "Cosmic Wardens",
-        hint: "Floors 61+",
-      },
-      animated_armor: {
-        name: "Animated Armor",
-        set: "Cosmic Wardens",
-        hint: "Floors 61+",
-      },
-      mimic_shield: {
-        name: "Mimic Shield",
-        set: "Cosmic Wardens",
-        hint: "Sectors 1 & 6",
-      },
-      coin_elemental: {
-        name: "Coin Elemental",
-        set: "Cosmic Wardens",
-        hint: "Sector 5 rare",
-      },
-      hoard_mimic: {
-        name: "Hoard Mimic",
-        set: "Cosmic Wardens",
-        hint: "Triggered from Chests",
-      },
-      chronos_arbitrator: {
-              name: "Chronos Arbitrator",
-              set: "Cosmic Wardens",
-              hint: "Floor 72 Boss",
-            },
-            nexus_overseer: {
-              name: "Nexus Overseer",
-              set: "Cosmic Wardens",
-              hint: "Floor 84 Boss",
-            },
-          });
+          name: "Green Slime",
+          set: "Whispering Woods",
+          hint: "Floors 1-12",
+          stat: "maxHpPctBonus",
+          statName: "Max HP %",
+          statLabel: "Max HP %",
+          statKey: "maxHpPctBonus",
+          bonusStat: "maxHpPctBonus",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        sprout: {
+          name: "Eldritch Sprout",
+          set: "Whispering Woods",
+          hint: "Floors 1-12",
+          stat: "defPctBonus",
+          statName: "Defense %",
+          statLabel: "Defense %",
+          statKey: "defPctBonus",
+          bonusStat: "defPctBonus",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        thorn_wyrm: {
+          name: "Thorn Wyrm",
+          set: "Whispering Woods",
+          hint: "Floors 1-12",
+          stat: "atkPctBonus",
+          statName: "Attack %",
+          statLabel: "Attack %",
+          statKey: "atkPctBonus",
+          bonusStat: "atkPctBonus",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        arachnid_treant: {
+          name: "Arachnid Treant",
+          set: "Guardian Wardens",
+          hint: "Floor 12 Boss",
+          stat: "critChance",
+          statName: "Crit Chance",
+          statLabel: "Crit Chance",
+          statKey: "critChance",
+          bonusStat: "critChance",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        golem: {
+          name: "Stone Golem",
+          set: "Mountain Peaks",
+          hint: "Floors 13-24",
+          stat: "defPctBonus",
+          statName: "Defense %",
+          statLabel: "Defense %",
+          statKey: "defPctBonus",
+          bonusStat: "defPctBonus",
+          val: 0.008,
+          baseVal: 0.008,
+          perRank: 0.008,
+          bonusVal: 0.008,
+          isPct: true,
+        },
+        wyrmling: {
+          name: "Frost Wyrmling",
+          set: "Mountain Peaks",
+          hint: "Floors 13-24",
+          stat: "maxHpPctBonus",
+          statName: "Max HP %",
+          statLabel: "Max HP %",
+          statKey: "maxHpPctBonus",
+          bonusStat: "maxHpPctBonus",
+          val: 0.012,
+          baseVal: 0.012,
+          perRank: 0.012,
+          bonusVal: 0.012,
+          isPct: true,
+        },
+        gargoyle: {
+          name: "Gargoyle Warden",
+          set: "Mountain Peaks",
+          hint: "Floors 13-24",
+          stat: "block",
+          statName: "Block Rate",
+          statLabel: "Block Rate",
+          statKey: "block",
+          bonusStat: "block",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        rust_nibbler: {
+          name: "Rust Nibbler",
+          set: "Mountain Peaks",
+          hint: "Floors 13-24",
+          stat: "qly",
+          statName: "Drop Quality",
+          statLabel: "Drop Quality",
+          statKey: "qly",
+          bonusStat: "qly",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        gilded_scuttler: {
+          name: "Gilded Scuttler",
+          set: "Mountain Peaks",
+          hint: "Sector 1 rare",
+          stat: "gold",
+          statName: "Gold Multi",
+          statLabel: "Gold Multi",
+          statKey: "gold",
+          bonusStat: "gold",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        mimic_shield: {
+          name: "Mimic Shield",
+          set: "Mountain Peaks",
+          hint: "Sectors 1 & 6",
+          stat: "parry",
+          statName: "Parry Rate",
+          statLabel: "Parry Rate",
+          statKey: "parry",
+          bonusStat: "parry",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        aegis_goliath: {
+          name: "Aegis Goliath",
+          set: "Guardian Wardens",
+          hint: "Floor 24 Boss",
+          stat: "block",
+          statName: "Block Rate",
+          statLabel: "Block Rate",
+          statKey: "block",
+          bonusStat: "block",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        magma_elemental: {
+          name: "Magma Elemental",
+          set: "Inferno Depths",
+          hint: "Floors 25-36",
+          stat: "atkPctBonus",
+          statName: "Attack %",
+          statLabel: "Attack %",
+          statKey: "atkPctBonus",
+          bonusStat: "atkPctBonus",
+          val: 0.008,
+          baseVal: 0.008,
+          perRank: 0.008,
+          bonusVal: 0.008,
+          isPct: true,
+        },
+        lava_serpent: {
+          name: "Lava Serpent",
+          set: "Inferno Depths",
+          hint: "Floors 25-36",
+          stat: "critDamage",
+          statName: "Crit Multi",
+          statLabel: "Crit Multi",
+          statKey: "critDamage",
+          bonusStat: "critDamage",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        hell_bat: {
+          name: "Hell Bat",
+          set: "Inferno Depths",
+          hint: "Floors 25-36",
+          stat: "moveSpeed",
+          statName: "Move Speed",
+          statLabel: "Move Speed",
+          statKey: "moveSpeed",
+          bonusStat: "moveSpeed",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        slag_slime: {
+          name: "Slag Slime",
+          set: "Inferno Depths",
+          hint: "Floors 25-36",
+          stat: "defPctBonus",
+          statName: "Defense %",
+          statLabel: "Defense %",
+          statKey: "defPctBonus",
+          bonusStat: "defPctBonus",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        overlord_iron_vault: {
+          name: "Overlord Iron Vault",
+          set: "Guardian Wardens",
+          hint: "Floor 36 Boss",
+          stat: "defPctBonus",
+          statName: "Defense %",
+          statLabel: "Defense %",
+          statKey: "defPctBonus",
+          bonusStat: "defPctBonus",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        swamp_basilisk: {
+          name: "Swamp Basilisk",
+          set: "Fungal Swamp",
+          hint: "Floors 37-48",
+          stat: "maxHpPctBonus",
+          statName: "Max HP %",
+          statLabel: "Max HP %",
+          statKey: "maxHpPctBonus",
+          bonusStat: "maxHpPctBonus",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        toxic_fly: {
+          name: "Toxic Fly",
+          set: "Fungal Swamp",
+          hint: "Floors 37-48",
+          stat: "moveSpeed",
+          statName: "Move Speed",
+          statLabel: "Move Speed",
+          statKey: "moveSpeed",
+          bonusStat: "moveSpeed",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        marsh_ghost: {
+          name: "Marsh Ghost",
+          set: "Fungal Swamp",
+          hint: "Floors 37-48",
+          stat: "parry",
+          statName: "Parry Rate",
+          statLabel: "Parry Rate",
+          statKey: "parry",
+          bonusStat: "parry",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        corroded_golem: {
+          name: "Corroded Golem",
+          set: "Fungal Swamp",
+          hint: "Floors 37-48",
+          stat: "defPctBonus",
+          statName: "Defense %",
+          statLabel: "Defense %",
+          statKey: "defPctBonus",
+          bonusStat: "defPctBonus",
+          val: 0.012,
+          baseVal: 0.012,
+          perRank: 0.012,
+          bonusVal: 0.012,
+          isPct: true,
+        },
+        corrosive_abomination: {
+          name: "Corrosive Abomination",
+          set: "Guardian Wardens",
+          hint: "Floor 48 Boss",
+          stat: "atkPctBonus",
+          statName: "Attack %",
+          statLabel: "Attack %",
+          statKey: "atkPctBonus",
+          bonusStat: "atkPctBonus",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        void_orb: {
+          name: "Void Orb",
+          set: "Void Singularity",
+          hint: "Floors 49-60",
+          stat: "atkPctBonus",
+          statName: "Attack %",
+          statLabel: "Attack %",
+          statKey: "atkPctBonus",
+          bonusStat: "atkPctBonus",
+          val: 0.012,
+          baseVal: 0.012,
+          perRank: 0.012,
+          bonusVal: 0.012,
+          isPct: true,
+        },
+        void_crawler: {
+          name: "Void Crawler",
+          set: "Void Singularity",
+          hint: "Floors 49-60",
+          stat: "critChance",
+          statName: "Crit Chance",
+          statLabel: "Crit Chance",
+          statKey: "critChance",
+          bonusStat: "critChance",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        void_spectre: {
+          name: "Void Spectre",
+          set: "Void Singularity",
+          hint: "Floors 49-60",
+          stat: "parry",
+          statName: "Parry Rate",
+          statLabel: "Parry Rate",
+          statKey: "parry",
+          bonusStat: "parry",
+          val: 0.005,
+          baseVal: 0.005,
+          perRank: 0.005,
+          bonusVal: 0.005,
+          isPct: true,
+        },
+        void_wraith: {
+          name: "Void Wraith",
+          set: "Void Singularity",
+          hint: "Sector 4 rare",
+          stat: "critDamage",
+          statName: "Crit Multi",
+          statLabel: "Crit Multi",
+          statKey: "critDamage",
+          bonusStat: "critDamage",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        rift_drifter: {
+          name: "Rift Drifter",
+          set: "Void Singularity",
+          hint: "Sector 4 rare",
+          stat: "drop",
+          statName: "Drop Rate",
+          statLabel: "Drop Rate",
+          statKey: "drop",
+          bonusStat: "drop",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        void_overseer: {
+          name: "Void Overseer",
+          set: "Cosmic Overlords",
+          hint: "Floor 60 Boss",
+          stat: "maxHpPctBonus",
+          statName: "Max HP %",
+          statLabel: "Max HP %",
+          statKey: "maxHpPctBonus",
+          bonusStat: "maxHpPctBonus",
+          val: 0.02,
+          baseVal: 0.02,
+          perRank: 0.02,
+          bonusVal: 0.02,
+          isPct: true,
+        },
+        clockwork_scarab: {
+          name: "Clockwork Scarab",
+          set: "Temporal Sanctorum",
+          hint: "Floors 61+",
+          stat: "defPctBonus",
+          statName: "Defense %",
+          statLabel: "Defense %",
+          statKey: "defPctBonus",
+          bonusStat: "defPctBonus",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        temporal_watcher: {
+          name: "Temporal Watcher",
+          set: "Temporal Sanctorum",
+          hint: "Sector 5 rare",
+          stat: "gold",
+          statName: "Gold Multi",
+          statLabel: "Gold Multi",
+          statKey: "gold",
+          bonusStat: "gold",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        clockwork_drone: {
+          name: "Clockwork Drone",
+          set: "Temporal Sanctorum",
+          hint: "Floors 61+",
+          stat: "atkPctBonus",
+          statName: "Attack %",
+          statLabel: "Attack %",
+          statKey: "atkPctBonus",
+          bonusStat: "atkPctBonus",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        star_weaver: {
+          name: "Star Weaver",
+          set: "Temporal Sanctorum",
+          hint: "Floors 61+",
+          stat: "critChance",
+          statName: "Crit Chance",
+          statLabel: "Crit Chance",
+          statKey: "critChance",
+          bonusStat: "critChance",
+          val: 0.008,
+          baseVal: 0.008,
+          perRank: 0.008,
+          bonusVal: 0.008,
+          isPct: true,
+        },
+        coin_elemental: {
+          name: "Coin Elemental",
+          set: "Temporal Sanctorum",
+          hint: "Sector 5 rare",
+          stat: "gold",
+          statName: "Gold Multi",
+          statLabel: "Gold Multi",
+          statKey: "gold",
+          bonusStat: "gold",
+          val: 0.02,
+          baseVal: 0.02,
+          perRank: 0.02,
+          bonusVal: 0.02,
+          isPct: true,
+        },
+        cyber_wraith: {
+          name: "Cyber Wraith",
+          set: "Cyberspace Nexus",
+          hint: "Floors 73+",
+          stat: "drop",
+          statName: "Drop Rate",
+          statLabel: "Drop Rate",
+          statKey: "drop",
+          bonusStat: "drop",
+          val: 0.015,
+          baseVal: 0.015,
+          perRank: 0.015,
+          bonusVal: 0.015,
+          isPct: true,
+        },
+        neon_spider: {
+          name: "Neon Spider",
+          set: "Cyberspace Nexus",
+          hint: "Floors 61+",
+          stat: "moveSpeed",
+          statName: "Move Speed",
+          statLabel: "Move Speed",
+          statKey: "moveSpeed",
+          bonusStat: "moveSpeed",
+          val: 0.02,
+          baseVal: 0.02,
+          perRank: 0.02,
+          bonusVal: 0.02,
+          isPct: true,
+        },
+        wireframe_orb: {
+          name: "Wireframe Orb",
+          set: "Cyberspace Nexus",
+          hint: "Floors 61+",
+          stat: "qly",
+          statName: "Drop Quality",
+          statLabel: "Drop Quality",
+          statKey: "qly",
+          bonusStat: "qly",
+          val: 0.01,
+          baseVal: 0.01,
+          perRank: 0.01,
+          bonusVal: 0.01,
+          isPct: true,
+        },
+        cursed_blade: {
+          name: "Cursed Blade",
+          set: "Cyberspace Nexus",
+          hint: "Floors 61+",
+          stat: "atkPctBonus",
+          statName: "Attack %",
+          statLabel: "Attack %",
+          statKey: "atkPctBonus",
+          bonusStat: "atkPctBonus",
+          val: 0.02,
+          baseVal: 0.02,
+          perRank: 0.02,
+          bonusVal: 0.02,
+          isPct: true,
+        },
+        animated_armor: {
+          name: "Animated Armor",
+          set: "Cyberspace Nexus",
+          hint: "Floors 61+",
+          stat: "defPctBonus",
+          statName: "Defense %",
+          statLabel: "Defense %",
+          statKey: "defPctBonus",
+          bonusStat: "defPctBonus",
+          val: 0.018,
+          baseVal: 0.018,
+          perRank: 0.018,
+          bonusVal: 0.018,
+          isPct: true,
+        },
+        hoard_mimic: {
+          name: "Hoard Mimic",
+          set: "Cosmic Overlords",
+          hint: "Triggered from Chests",
+          stat: "drop",
+          statName: "Drop Rate",
+          statLabel: "Drop Rate",
+          statKey: "drop",
+          bonusStat: "drop",
+          val: 0.02,
+          baseVal: 0.02,
+          perRank: 0.02,
+          bonusVal: 0.02,
+          isPct: true,
+        },
+        chronos_arbitrator: {
+          name: "Chronos Arbitrator",
+          set: "Cosmic Overlords",
+          hint: "Floor 72 Boss",
+          stat: "critDamage",
+          statName: "Crit Multi",
+          statLabel: "Crit Multi",
+          statKey: "critDamage",
+          bonusStat: "critDamage",
+          val: 0.02,
+          baseVal: 0.02,
+          perRank: 0.02,
+          bonusVal: 0.02,
+          isPct: true,
+        },
+        nexus_overseer: {
+          name: "Nexus Overseer",
+          set: "Cosmic Overlords",
+          hint: "Floor 84 Boss",
+          stat: "atkPctBonus",
+          statName: "Attack %",
+          statLabel: "Attack %",
+          statKey: "atkPctBonus",
+          bonusStat: "atkPctBonus",
+          val: 0.025,
+          baseVal: 0.025,
+          perRank: 0.025,
+          bonusVal: 0.025,
+          isPct: true,
+        },
+      });
 
-  // Safe global state fallback initializer
-  if (
-    window.playerStats &&
-    window.playerStats.robbingMarcusActive === undefined
-  ) {
-    window.playerStats.robbingMarcusActive = false;
-  }
-  if (window.playerStats) {
+    // Safe global state fallback initializer
+    if (
+      window.playerStats &&
+      window.playerStats.robbingMarcusActive === undefined
+    ) {
+      window.playerStats.robbingMarcusActive = false;
+    }
+    if (window.playerStats) {
       if (window.playerStats.deflectionFatigueTimer === undefined) {
         window.playerStats.deflectionFatigueTimer = 0;
       }
@@ -220,8 +632,7 @@
       if (!window.playerStats.monsterCards) {
         window.playerStats.monsterCards = {};
       }
-      const specialCards = ["hoard_mimic", "mimic_shield", "coin_elemental", "gilded_scuttler", "rift_drifter", "void_wraith"];
-      specialCards.forEach(cKey => {
+      Object.keys(window.MONSTER_CARDS_DATA).forEach((cKey) => {
         if (window.playerStats.monsterCards[cKey] === undefined) {
           window.playerStats.monsterCards[cKey] = 0;
         }
@@ -11316,14 +11727,16 @@
     } else if (name === "Monster Card Sack") {
       // Reusable weighted random card roller helper
       window.rollRandomMonsterCard = function () {
-        const SET_WEIGHTS = {
-          "Whispering Woods": 45,
-          "Mountain Peaks": 25,
-          "Inferno Depths": 15,
-          "Fungal Swamp": 10,
-          "Void Singularity": 4,
-          "Cosmic Wardens": 1,
-        };
+              const SET_WEIGHTS = {
+                "Whispering Woods": 35,
+                "Mountain Peaks": 25,
+                "Inferno Depths": 18,
+                "Fungal Swamp": 12,
+                "Void Singularity": 6,
+                "Temporal Sanctorum": 3,
+                "Cyberspace Nexus": 1,
+                "Cosmic Wardens": 0.5,
+              };
 
         let cardsBySet = {};
         for (let key in window.MONSTER_CARDS_DATA) {
@@ -11583,13 +11996,15 @@
 
               let cardData = window.MONSTER_CARDS_DATA[cKey];
               let setColors = {
-                "Whispering Woods": "#2ecc71",
-                "Mountain Peaks": "#3498db",
-                "Inferno Depths": "#e74c3c",
-                "Fungal Swamp": "#1abc9c",
-                "Void Singularity": "#9b59b6",
-                "Cosmic Wardens": "#f1c40f",
-              };
+                              "Whispering Woods": "#2ecc71",
+                              "Mountain Peaks": "#3498db",
+                              "Inferno Depths": "#e74c3c",
+                              "Fungal Swamp": "#1abc9c",
+                              "Void Singularity": "#9b59b6",
+                              "Temporal Sanctorum": "#e879f9",
+                              "Cyberspace Nexus": "#00ffff",
+                              "Cosmic Wardens": "#f1c40f",
+                            };
               let setCol = setColors[cardData.set] || "#ffd700";
               if (typeof window.pushHeaderToast === "function") {
                 window.pushHeaderToast(
@@ -17358,9 +17773,9 @@
               );
             }
 
-            // Boss Card Drop Roll (25% base chance, multiplied by Drop Rate)
-            let dropMult = pStats.drop || 1.0;
-            if (Math.random() < 0.25 * dropMult) {
+            // Boss Card Drop Roll (10% base chance, multiplied by Drop Rate)
+                        let dropMult = pStats.drop || 1.0;
+                        if (Math.random() < 0.10 * dropMult) {
               let cardKey = bm.visualType || bm.type;
               if (window.MONSTER_CARDS_DATA[cardKey]) {
                 let cardItem = {
@@ -20780,8 +21195,228 @@
     window.renderProfileModal();
   };
 
-  // --- BESTIARY ANIMATED VIEWPORT LOOP & SET REWARD HANDLERS ---
-  window.bestiaryAnimFrameId = null;
+  // --- BESTIARY ALBUM RENDERER & ANIMATION LOOP ---
+    window.renderBestiaryAlbum = function () {
+      let container = document.getElementById("bestiary-album-content");
+      if (!container) {
+        let sec = document.getElementById("profile-sec-album");
+        if (sec) {
+          sec.innerHTML = `<div id="bestiary-album-content" style="width:100%; height:100%; display:flex; flex-direction:column; box-sizing:border-box;"></div>`;
+          container = document.getElementById("bestiary-album-content");
+        }
+      }
+      if (!container) return;
+
+      let db = window.MONSTER_CARDS_DATA || {};
+      let owned = (window.playerStats && window.playerStats.monsterCards) || {};
+      let dust = (window.playerStats && window.playerStats.astralDust) || 0;
+      let claimedSets = (window.playerStats && window.playerStats.claimedBestiarySets) || {};
+
+      let totalCards = Object.keys(db).length;
+      let unlockedCardsCount = 0;
+
+      // Calculate total combined bestiary passives
+      let combinedPassives = {};
+
+      Object.keys(db).forEach((key) => {
+        let card = db[key];
+        let count = owned[key] || 0;
+        if (count > 0) {
+          unlockedCardsCount++;
+          let tier = typeof window.getCardTier === "function" ? window.getCardTier(count) : 0;
+          let rank = Math.max(1, tier + 1);
+          let statKey = card.statKey || card.bonusStat || card.stat || "maxHp";
+          let baseVal = card.perRank || card.baseVal || card.val || card.bonusVal || 1;
+          let totalStatVal = baseVal * rank;
+
+          combinedPassives[statKey] = (combinedPassives[statKey] || 0) + totalStatVal;
+        }
+      });
+
+      let passivesList = [];
+      for (let sKey in combinedPassives) {
+        let val = combinedPassives[sKey];
+        let isPct = [
+          "drop",
+          "qly",
+          "critChance",
+          "critDamage",
+          "block",
+          "parry",
+          "gold",
+          "expPct",
+        ].includes(sKey) || (db[sKey] && db[sKey].isPct);
+
+        let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey.toUpperCase();
+        let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${Math.round(val)}`;
+        passivesList.push(`${label}: ${valStr}`);
+      }
+
+      let passivesSummaryStr =
+        passivesList.length > 0
+          ? passivesList.join(" • ")
+          : "No active card bonuses yet.";
+
+      let pctUnlocked = totalCards > 0 ? Math.round((unlockedCardsCount / totalCards) * 100) : 0;
+
+      // Group cards by Set
+      const SET_ORDER = [
+                  "Whispering Woods",
+                  "Mountain Peaks",
+                  "Inferno Depths",
+                  "Fungal Swamp",
+                  "Void Singularity",
+                  "Temporal Sanctorum",
+                  "Cyberspace Nexus",
+                  "Guardian Wardens",
+                  "Cosmic Overlords",
+                ];
+
+                const SET_COLORS = {
+                  "Whispering Woods": "#2ecc71",
+                  "Mountain Peaks": "#3498db",
+                  "Inferno Depths": "#e74c3c",
+                  "Fungal Swamp": "#1abc9c",
+                  "Void Singularity": "#9b59b6",
+                  "Temporal Sanctorum": "#e879f9",
+                  "Cyberspace Nexus": "#00ffff",
+                  "Guardian Wardens": "#f59e0b",
+                  "Cosmic Overlords": "#f1c40f",
+                };
+
+      let setGroups = {};
+      SET_ORDER.forEach((setName) => {
+        setGroups[setName] = [];
+      });
+
+      Object.keys(db).forEach((key) => {
+        let card = db[key];
+        let setName = card.set || "Whispering Woods";
+        if (!setGroups[setName]) setGroups[setName] = [];
+        setGroups[setName].push({ key: key, ...card });
+      });
+
+      let setsHtml = "";
+
+      SET_ORDER.forEach((setName) => {
+        let cards = setGroups[setName] || [];
+        if (cards.length === 0) return;
+
+        let setCol = SET_COLORS[setName] || "#ffd700";
+        let setOwnedCount = cards.filter((c) => (owned[c.key] || 0) > 0).length;
+        let isSetComplete = setOwnedCount === cards.length;
+        let isClaimed = !!claimedSets[setName];
+
+        let resonanceStatus = "";
+        if (isClaimed) {
+          resonanceStatus = `<span style="color:#2ecc71; font-weight:bold;">RESONANCE: CLAIMED (+2 Sacks, +50 Dust)</span>`;
+        } else if (isSetComplete) {
+          resonanceStatus = `<button class="action-btn-sm" style="background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#ffd700; color:#fff; font-weight:900;" onclick="event.stopPropagation(); window.claimBestiarySetReward('${setName}')">CLAIM SET BONUS</button>`;
+        } else {
+          resonanceStatus = `<span style="color:#64748b;">RESONANCE: INACTIVE (${setOwnedCount}/${cards.length})</span>`;
+        }
+
+        let cardsGridHtml = cards
+          .map((card) => {
+            let count = owned[card.key] || 0;
+            let isUnlocked = count > 0;
+            let tier = isUnlocked ? (typeof window.getCardTier === "function" ? window.getCardTier(count) : 0) : -1;
+            let rank = isUnlocked ? Math.max(1, tier + 1) : 0;
+
+            let rankNames = ["BRONZE RANK", "IRON RANK", "SILVER RANK", "GOLD RANK", "PLATINUM RANK", "DIAMOND RANK", "MYTHIC RANK"];
+                        let rankLabel = isUnlocked ? (rankNames[tier] || "MYTHIC RANK") : "LOCKED";
+
+                        let statKey = card.statKey || card.bonusStat || card.stat || "maxHp";
+                        let statName = card.statName || card.statLabel || (window.getStatLabel ? window.getStatLabel(statKey) : "Bonus");
+                        let baseVal = card.perRank || card.baseVal || card.val || card.bonusVal || 1;
+                        let isPct = card.isPct || ["drop", "qly", "critChance", "critDamage", "block", "parry", "gold", "expPct"].includes(statKey);
+
+                        let bonusValText = "";
+                        if (isUnlocked) {
+                          let mult = (window.SET_CARD_MULTIPLIERS && window.SET_CARD_MULTIPLIERS[card.set]) || 1.0;
+                          let totalVal = (typeof window.getCardValue === "function" ? window.getCardValue(baseVal, tier) : baseVal) * mult;
+                          let formattedVal = isPct ? `+${(totalVal * 100).toFixed(1)}%` : `+${Math.round(totalVal)}`;
+                          bonusValText = `<span style="color:#2ecc71; font-weight:bold;">${statName}: ${formattedVal}</span>`;
+                        } else {
+                          bonusValText = `<span style="color:#64748b;">${statName}: LOCKED</span>`;
+                        }
+
+                        let thresholds = window.CARD_UPGRADE_THRESHOLDS || [1, 25, 100, 300, 750, 1500, 2500];
+                        let nextReq = isUnlocked ? (thresholds[tier + 1] || thresholds[thresholds.length - 1]) : 1;
+            let progressPct = isUnlocked ? Math.min(100, Math.round((count / nextReq) * 100)) : 0;
+
+            return `
+              <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"}" style="border-color: ${isUnlocked ? setCol : "#334155"}; background: ${isUnlocked ? "rgba(18, 14, 28, 0.85)" : "rgba(8, 6, 14, 0.6)"};">
+                <div style="font-size: 7.5px; font-weight: 900; color: ${isUnlocked ? setCol : "#64748b"}; font-family: monospace; text-transform: uppercase;">
+                  ${rankLabel}
+                </div>
+
+                <div style="width: 64px; height: 64px; margin: 4px 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                  <canvas class="bestiary-card-canvas" width="64" height="64" data-visual-type="${card.key}" data-unlocked="${isUnlocked}"></canvas>
+                </div>
+
+                <div class="bestiary-card-title" style="color: ${isUnlocked ? "#ffffff" : "#94a3b8"};">${card.name}</div>
+                <div style="font-size: 8.5px; font-family: monospace; margin: 2px 0;">${bonusValText}</div>
+
+                <div style="width: 100%; height: 4px; background: #06040a; border-radius: 2px; overflow: hidden; margin: 4px 0;">
+                  <div style="width: ${progressPct}%; height: 100%; background: ${setCol}; transition: width 0.3s ease;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: monospace; font-size: 8px; color: #94a3b8;">
+                  <span>${count} / ${nextReq}</span>
+                  <span style="color:#64748b;">${card.hint || ""}</span>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        setsHtml += `
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid ${setCol}; padding-bottom: 4px; margin-bottom: 8px; font-family: monospace; font-size: 10.5px;">
+              <strong style="color: ${setCol}; text-transform: uppercase; letter-spacing: 1px;">${setName.toUpperCase()} SET</strong>
+              <div style="font-size: 9px;">${resonanceStatus}</div>
+            </div>
+            <div class="bestiary-grid">
+              ${cardsGridHtml}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; box-sizing:border-box;">
+          <!-- Top Summary Banner -->
+          <div style="background: linear-gradient(180deg, #181226 0%, #0a0712 100%); border: 1.5px solid #d4af37; border-radius: 8px; padding: 10px 14px; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.8);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 900; color: #ffd700; letter-spacing: 1px; text-transform: uppercase;">MONSTER CARD COLLECTION</span>
+              <div style="display: flex; gap: 8px; align-items: center; font-family: monospace; font-size: 9.5px;">
+                <span style="background: rgba(0,0,0,0.4); border: 1px solid #38bdf8; color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-weight: bold;">${unlockedCardsCount} / ${totalCards} Unlocked (${pctUnlocked}%)</span>
+                <span style="background: rgba(0,0,0,0.4); border: 1px solid #a855f7; color: #df9ffb; padding: 2px 8px; border-radius: 4px; font-weight: bold;">Dust: ${dust.toLocaleString()}</span>
+              </div>
+            </div>
+            <div style="width: 100%; height: 6px; background: #080610; border-radius: 3px; overflow: hidden; border: 1px solid #334155; margin-bottom: 6px;">
+              <div style="width: ${pctUnlocked}%; height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #a855f7 50%, #ffd700 100%); transition: width 0.3s ease;"></div>
+            </div>
+            <div style="font-size: 8.5px; font-family: monospace; color: #34d399; line-height: 1.35; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; text-align: left;">
+              <strong>COMBINED BESTIARY PASSIVES:</strong> ${passivesSummaryStr}
+            </div>
+          </div>
+
+          <!-- Scrollable Cards Sets List -->
+          <div style="flex: 1; overflow-y: auto; padding-right: 4px; touch-action: pan-y;">
+            ${setsHtml}
+          </div>
+        </div>
+      `;
+
+      if (typeof window.startBestiaryAnimLoop === "function") {
+        window.startBestiaryAnimLoop();
+      }
+    };
+
+    // --- BESTIARY ANIMATED VIEWPORT LOOP & SET REWARD HANDLERS ---
+    window.bestiaryAnimFrameId = null;
 
   window.stopBestiaryAnimLoop = function () {
     if (window.bestiaryAnimFrameId) {
@@ -25870,17 +26505,18 @@
 
     // Card Level Projections Formula aligned perfectly with Bestiary Ranks
     window.calculateCardLevelInfo = function (totalOwned) {
-      let thresholds = window.CARD_UPGRADE_THRESHOLDS || [
-        1, 25, 50, 150, 300, 750,
-      ];
-      let rankNames = [
-        "Iron",
-        "Bronze",
-        "Silver",
-        "Gold",
-        "Platinum",
-        "Diamond",
-      ];
+          let thresholds = window.CARD_UPGRADE_THRESHOLDS || [
+            1, 25, 100, 300, 750, 1500, 2500,
+          ];
+          let rankNames = [
+            "Bronze",
+            "Iron",
+            "Silver",
+            "Gold",
+            "Platinum",
+            "Diamond",
+            "Mythic",
+          ];
 
       let tier = window.getCardTier(totalOwned);
       if (tier < 0) {
