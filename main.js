@@ -12,151 +12,181 @@
   window.xpOrbs = [];
 
   // --- BESTIARY MONSTER CARDS DATABASE ---
-  window.MONSTER_CARDS_DATA = window.MONSTER_CARDS_DATA || {
-    slime: {
-      name: "Green Slime",
-      set: "Whispering Woods",
-      hint: "Floors 1-12",
-    },
-    sprout: {
-      name: "Eldritch Sprout",
-      set: "Whispering Woods",
-      hint: "Floors 1-12",
-    },
-    thorn_wyrm: {
-      name: "Thorn Wyrm",
-      set: "Whispering Woods",
-      hint: "Floors 1-12",
-    },
-    arachnid_treant: {
-      name: "Arachnid Treant",
-      set: "Whispering Woods",
-      hint: "Floor 12 Boss",
-    },
-    golem: { name: "Stone Golem", set: "Mountain Peaks", hint: "Floors 13-24" },
-    wyrmling: {
-      name: "Frost Wyrmling",
-      set: "Mountain Peaks",
-      hint: "Floors 13-24",
-    },
-    gargoyle: {
-      name: "Gargoyle Warden",
-      set: "Mountain Peaks",
-      hint: "Floors 13-24",
-    },
-    rust_nibbler: {
-      name: "Rust Nibbler",
-      set: "Mountain Peaks",
-      hint: "Floors 13-24",
-    },
-    aegis_goliath: {
-      name: "Aegis Goliath",
-      set: "Mountain Peaks",
-      hint: "Floor 24 Boss",
-    },
-    magma_elemental: {
-      name: "Magma Elemental",
-      set: "Inferno Depths",
-      hint: "Floors 25-36",
-    },
-    lava_serpent: {
-      name: "Lava Serpent",
-      set: "Inferno Depths",
-      hint: "Floors 25-36",
-    },
-    hell_bat: { name: "Hell Bat", set: "Inferno Depths", hint: "Floors 25-36" },
-    slag_slime: {
-      name: "Slag Slime",
-      set: "Inferno Depths",
-      hint: "Floors 25-36",
-    },
-    overlord_iron_vault: {
-      name: "Overlord Iron Vault",
-      set: "Inferno Depths",
-      hint: "Floor 36 Boss",
-    },
-    swamp_basilisk: {
-      name: "Swamp Basilisk",
-      set: "Fungal Swamp",
-      hint: "Floors 37-48",
-    },
-    toxic_fly: { name: "Toxic Fly", set: "Fungal Swamp", hint: "Floors 37-48" },
-    marsh_ghost: {
-      name: "Marsh Ghost",
-      set: "Fungal Swamp",
-      hint: "Floors 37-48",
-    },
-    corroded_golem: {
-      name: "Corroded Golem",
-      set: "Fungal Swamp",
-      hint: "Floors 37-48",
-    },
-    corrosive_abomination: {
-      name: "Corrosive Abomination",
-      set: "Fungal Swamp",
-      hint: "Floor 48 Boss",
-    },
-    void_orb: {
-      name: "Void Orb",
-      set: "Void Singularity",
-      hint: "Floors 49-60",
-    },
-    void_crawler: {
-      name: "Void Crawler",
-      set: "Void Singularity",
-      hint: "Floors 49-60",
-    },
-    void_spectre: {
-      name: "Void Spectre",
-      set: "Void Singularity",
-      hint: "Floors 49-60",
-    },
-    void_overseer: {
-      name: "Void Overseer",
-      set: "Void Singularity",
-      hint: "Floor 60 Boss",
-    },
-    clockwork_scarab: {
-      name: "Clockwork Scarab",
-      set: "Cosmic Wardens",
-      hint: "Floors 61+",
-    },
-    star_weaver: {
-      name: "Star Weaver",
-      set: "Cosmic Wardens",
-      hint: "Floors 61+",
-    },
-    neon_spider: {
-      name: "Neon Spider",
-      set: "Cosmic Wardens",
-      hint: "Floors 61+",
-    },
-    wireframe_orb: {
-      name: "Wireframe Orb",
-      set: "Cosmic Wardens",
-      hint: "Floors 61+",
-    },
-    cursed_blade: {
-      name: "Cursed Blade",
-      set: "Cosmic Wardens",
-      hint: "Floors 61+",
-    },
-    animated_armor: {
-      name: "Animated Armor",
-      set: "Cosmic Wardens",
-      hint: "Floors 61+",
-    },
-    chronos_arbitrator: {
-      name: "Chronos Arbitrator",
-      set: "Cosmic Wardens",
-      hint: "Floor 72 Boss",
-    },
-    nexus_overseer: {
-      name: "Nexus Overseer",
-      set: "Cosmic Wardens",
-      hint: "Floor 84 Boss",
-    },
-  };
+    window.MONSTER_CARDS_DATA = window.MONSTER_CARDS_DATA || {
+      slime: {
+        name: "Green Slime",
+        set: "Whispering Woods",
+        hint: "Floors 1-12",
+      },
+      sprout: {
+        name: "Eldritch Sprout",
+        set: "Whispering Woods",
+        hint: "Floors 1-12",
+      },
+      thorn_wyrm: {
+        name: "Thorn Wyrm",
+        set: "Whispering Woods",
+        hint: "Floors 1-12",
+      },
+      arachnid_treant: {
+        name: "Arachnid Treant",
+        set: "Whispering Woods",
+        hint: "Floor 12 Boss",
+      },
+      golem: { name: "Stone Golem", set: "Mountain Peaks", hint: "Floors 13-24" },
+      wyrmling: {
+        name: "Frost Wyrmling",
+        set: "Mountain Peaks",
+        hint: "Floors 13-24",
+      },
+      gargoyle: {
+        name: "Gargoyle Warden",
+        set: "Mountain Peaks",
+        hint: "Floors 13-24",
+      },
+      rust_nibbler: {
+        name: "Rust Nibbler",
+        set: "Mountain Peaks",
+        hint: "Floors 13-24",
+      },
+      gilded_scuttler: {
+        name: "Gilded Scuttler",
+        set: "Mountain Peaks",
+        hint: "Sector 1 rare",
+      },
+      aegis_goliath: {
+        name: "Aegis Goliath",
+        set: "Mountain Peaks",
+        hint: "Floor 24 Boss",
+      },
+      magma_elemental: {
+        name: "Magma Elemental",
+        set: "Inferno Depths",
+        hint: "Floors 25-36",
+      },
+      lava_serpent: {
+        name: "Lava Serpent",
+        set: "Inferno Depths",
+        hint: "Floors 25-36",
+      },
+      hell_bat: { name: "Hell Bat", set: "Inferno Depths", hint: "Floors 25-36" },
+      slag_slime: {
+        name: "Slag Slime",
+        set: "Inferno Depths",
+        hint: "Floors 25-36",
+      },
+      overlord_iron_vault: {
+        name: "Overlord Iron Vault",
+        set: "Inferno Depths",
+        hint: "Floor 36 Boss",
+      },
+      swamp_basilisk: {
+        name: "Swamp Basilisk",
+        set: "Fungal Swamp",
+        hint: "Floors 37-48",
+      },
+      toxic_fly: { name: "Toxic Fly", set: "Fungal Swamp", hint: "Floors 37-48" },
+      marsh_ghost: {
+        name: "Marsh Ghost",
+        set: "Fungal Swamp",
+        hint: "Floors 37-48",
+      },
+      corroded_golem: {
+        name: "Corroded Golem",
+        set: "Fungal Swamp",
+        hint: "Floors 37-48",
+      },
+      corrosive_abomination: {
+        name: "Corrosive Abomination",
+        set: "Fungal Swamp",
+        hint: "Floor 48 Boss",
+      },
+      void_orb: {
+        name: "Void Orb",
+        set: "Void Singularity",
+        hint: "Floors 49-60",
+      },
+      void_crawler: {
+        name: "Void Crawler",
+        set: "Void Singularity",
+        hint: "Floors 49-60",
+      },
+      void_spectre: {
+        name: "Void Spectre",
+        set: "Void Singularity",
+        hint: "Floors 49-60",
+      },
+      void_wraith: {
+        name: "Void Wraith",
+        set: "Void Singularity",
+        hint: "Sector 4 rare",
+      },
+      rift_drifter: {
+        name: "Rift Drifter",
+        set: "Void Singularity",
+        hint: "Sector 4 rare",
+      },
+      void_overseer: {
+        name: "Void Overseer",
+        set: "Void Singularity",
+        hint: "Floor 60 Boss",
+      },
+      clockwork_scarab: {
+        name: "Clockwork Scarab",
+        set: "Cosmic Wardens",
+        hint: "Floors 61+",
+      },
+      star_weaver: {
+        name: "Star Weaver",
+        set: "Cosmic Wardens",
+        hint: "Floors 61+",
+      },
+      neon_spider: {
+        name: "Neon Spider",
+        set: "Cosmic Wardens",
+        hint: "Floors 61+",
+      },
+      wireframe_orb: {
+        name: "Wireframe Orb",
+        set: "Cosmic Wardens",
+        hint: "Floors 61+",
+      },
+      cursed_blade: {
+        name: "Cursed Blade",
+        set: "Cosmic Wardens",
+        hint: "Floors 61+",
+      },
+      animated_armor: {
+        name: "Animated Armor",
+        set: "Cosmic Wardens",
+        hint: "Floors 61+",
+      },
+      mimic_shield: {
+        name: "Mimic Shield",
+        set: "Cosmic Wardens",
+        hint: "Sectors 1 & 6",
+      },
+      coin_elemental: {
+        name: "Coin Elemental",
+        set: "Cosmic Wardens",
+        hint: "Sector 5 rare",
+      },
+      hoard_mimic: {
+        name: "Hoard Mimic",
+        set: "Cosmic Wardens",
+        hint: "Triggered from Chests",
+      },
+      chronos_arbitrator: {
+        name: "Chronos Arbitrator",
+        set: "Cosmic Wardens",
+        hint: "Floor 72 Boss",
+      },
+      nexus_overseer: {
+        name: "Nexus Overseer",
+        set: "Cosmic Wardens",
+        hint: "Floor 84 Boss",
+      },
+    };
 
   // Safe global state fallback initializer
   if (
@@ -722,20 +752,83 @@
         }
       }
     } else if (tile === window.TILE_TYPES.CHEST_SPAWN) {
-      if (!window.isChestOpened(tx, ty)) {
-        window.setChestOpened(tx, ty);
-        let stageScale = window.player.depth;
-        let tier =
-          typeof window.getChestTierAt === "function"
-            ? window.getChestTierAt(tx, ty)
-            : "iron_bound";
-        let pStats =
-          typeof window.resolvePlayerStats === "function"
-            ? window.resolvePlayerStats()
-            : {};
-        let playerQuality = pStats.qly || 1.0;
+          if (!window.isChestOpened(tx, ty)) {
+            window.setChestOpened(tx, ty);
+            let stageScale = window.player.depth;
+            let tier =
+              typeof window.getChestTierAt === "function"
+                ? window.getChestTierAt(tx, ty)
+                : "iron_bound";
+            let pStats =
+              typeof window.resolvePlayerStats === "function"
+                ? window.resolvePlayerStats()
+                : {};
+            let playerQuality = pStats.qly || 1.0;
 
-        // Custom Helper to spawn tiered equipment drops
+            // Roll for Surprise Hoard Mimic (7% base chance on standard non-boss floors)
+            let isBossRoom = stageScale % 12 === 4 || stageScale % 12 === 8 || stageScale % 12 === 0;
+            let isChallenge = window.playerStats && window.playerStats.activeSpecialChallenge !== null;
+            let isRift = window.playerStats && window.playerStats.isRiftMode === true;
+            let isCrucible = window.playerStats && window.playerStats.isCrucibleMode === true;
+            let p = window.player;
+
+            if (!isBossRoom && !isChallenge && !isRift && !isCrucible && p && p.hp > p.maxHp * 0.25 && Math.random() < 0.07) {
+              map.grid[ty][tx] = window.TILE_TYPES.FLOOR; // Clear chest tile
+
+              if (map.chestAnimations) {
+                delete map.chestAnimations[`${tx},${ty}`];
+              }
+
+              let sIdx = Math.floor((stageScale - 1) / 12);
+              let repStage = window.getEffectiveStage(stageScale * 1.25 + sIdx * 12.0);
+              let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+              let repScale = Math.pow(repGrowth, repStage * 0.95);
+
+              // Configure robust mini-boss parameters
+              let mimicHp = Math.round(180 * repScale * (window.playerStats.currentRunEnemyStrength || 1.0));
+              let mimicAtk = Math.round(14 * repScale * (window.playerStats.currentRunEnemyStrength || 1.0));
+
+              mimicHp = Math.max(Math.round(450 * (1 + stageScale * 0.08)), mimicHp);
+              mimicAtk = Math.max(Math.round(18 * (1 + stageScale * 0.04)), mimicAtk);
+
+              window.activeDungeonMobs = window.activeDungeonMobs || [];
+              window.activeDungeonMobs.push({
+                id: window.idCounter++,
+                type: "mob",
+                isMimic: true,
+                visualTier: 1,
+                visualType: "hoard_mimic",
+                name: "Hoard Mimic",
+                x: tx * tileSize + 4,
+                y: ty * tileSize + 4,
+                w: 24,
+                h: 24,
+                hp: BigNum.from(mimicHp),
+                maxHp: BigNum.from(mimicHp),
+                atk: mimicAtk,
+                flashTimer: 0,
+                attackCooldown: 30, // Delay before snapping
+                facing: -1,
+                discovered: true,
+                hopTimer: 0,
+                isAggroed: true,
+                speedMultiplier: 1.15
+              });
+
+              if (window.spawnFloatingText) {
+                window.spawnFloatingText(p.x, p.y - 25, "TRAP! IT'S A MIMIC!", "#ef4444");
+              }
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(8, 14);
+                window.combatVisuals.spawnParticles(tx * tileSize + tileSize / 2, ty * tileSize + tileSize / 2, 25, "hoard_mimic", 4);
+              }
+              if (window.SoundManager && typeof window.SoundManager.play === "function") {
+                window.SoundManager.play("death");
+              }
+              return; // Block default chest loot drops
+            }
+
+            // Custom Helper to spawn tiered equipment drops
         let spawnTieredEquipment = (qualityMult, minRarity) => {
           if (isChallengeActive) {
             // Convert to high-value gold and rare crafting material payload
@@ -15699,19 +15792,50 @@
 
         // Check death state after any potential hit
                 if (m.hp.lte(0)) {
-                  // Reset Spreading Fatigue speed penalty on kill
-                  window.fatiguePenalty = 0;
+                                  // Reset Spreading Fatigue speed penalty on kill
+                                  window.fatiguePenalty = 0;
 
-                  if (m.isPortalSentinel) {
-                    window.activeDungeonMap.portalLocked = false;
-                    window.spawnFloatingText(p.x, p.y - 25, "PORTAL SEAL SHATTERED!", "#00ffff");
-                    if (window.spawnBarrierShatterVisual) {
-                      window.spawnBarrierShatterVisual(m.x + m.w/2, m.y + m.h/2);
-                    }
-                    if (typeof window.pushHeaderToast === "function") {
-                      window.pushHeaderToast("✦ Portal Sentinel slain! Descent Portal unlocked!", "#2ecc71");
-                    }
-                  }
+                                  if (m.isPortalSentinel) {
+                                    window.activeDungeonMap.portalLocked = false;
+                                    window.spawnFloatingText(p.x, p.y - 25, "PORTAL SEAL SHATTERED!", "#00ffff");
+                                    if (window.spawnBarrierShatterVisual) {
+                                      window.spawnBarrierShatterVisual(m.x + m.w/2, m.y + m.h/2);
+                                    }
+                                    if (typeof window.pushHeaderToast === "function") {
+                                      window.pushHeaderToast("✦ Portal Sentinel slain! Descent Portal unlocked!", "#2ecc71");
+                                    }
+                                  }
+
+                                  if (m.visualType === "hoard_mimic" && m.isMimic) {
+                                    let stageScale = window.player.depth || 1;
+                                    let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+                                    let playerQuality = pStats.qly || 1.0;
+
+                                    // Secured high-tier gilded coins and gears
+                                    let chestGold = Math.floor(250 * (1 + stageScale * 1.0));
+                                    window.spawnHomingGold(mobCenterX, mobCenterY, chestGold);
+
+                                    let rolledRarity = window.rollItemRarity(stageScale * 8, playerQuality * 1.5, false);
+                                    if (rolledRarity < 2) rolledRarity = 2; // Magic+ limit
+
+                                    let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+                                    let chosenType = types[Math.floor(Math.random() * types.length)];
+                                    let droppedItem = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
+                                    window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
+
+                                    // 40% Chance for Sigil drops
+                                    if (Math.random() < 0.40) {
+                                      let rolledSigilRarity = window.rollSigilRarity(4, playerQuality * 1.25);
+                                      let sigilItem = window.createItemObject("sigil", rolledSigilRarity, stageScale, 0);
+                                      window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
+                                    }
+
+                                    window.addUseDrop("Monster Card Sack", 1, false);
+
+                                    if (typeof window.pushHeaderToast === "function") {
+                                      window.pushHeaderToast("✦ Mimic defeated! Gilded treasury rewards secured!", "#ffd700");
+                                    }
+                                  }
 
           // --- SUBPHASE 7: SPAWNING DIVISION SPLIT ---
           let canDivide =
@@ -24056,41 +24180,42 @@
     }
 
     let pools = [
-      // Sector 0 (Floors 1 - 12): Whispering Woods
-      { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
-      // Sector 1 (Floors 13 - 24): Mountain Peaks & Alpine Mines
-      { tier: 1, types: ["golem", "wyrmling", "gargoyle", "rust_nibbler"] },
-      // Sector 2 (Floors 25 - 36): Inferno Depths & Smeltery
-      {
-        tier: 2,
-        types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"],
-      },
-      // Sector 3 (Floors 37 - 48): Fungal Swamp & Ruins
-      {
-        tier: 3,
-        types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
-      },
-      // Sector 4 (Floors 49 - 60): Void Singularity
-      {
-        tier: 4,
-        types: ["void_orb", "void_crawler", "void_spectre"],
-      },
-      // Sector 5 (Floors 61 - 72): Temporal Sanctorum
-      {
-        tier: 5,
-        types: ["clockwork_scarab", "star_weaver"],
-      },
-      // Sector 6 (Floors 73 - 84): Cyberspace Nexus
-      {
-        tier: 6,
-        types: [
-          "neon_spider",
-          "wireframe_orb",
-          "cursed_blade",
-          "animated_armor",
-        ],
-      },
-    ];
+          // Sector 0 (Floors 1 - 12): Whispering Woods
+          { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
+          // Sector 1 (Floors 13 - 24): Mountain Peaks & Alpine Mines
+          { tier: 1, types: ["golem", "wyrmling", "gargoyle", "rust_nibbler", "gilded_scuttler", "mimic_shield"] },
+          // Sector 2 (Floors 25 - 36): Inferno Depths & Smeltery
+          {
+            tier: 2,
+            types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"],
+          },
+          // Sector 3 (Floors 37 - 48): Fungal Swamp & Ruins
+          {
+            tier: 3,
+            types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
+          },
+          // Sector 4 (Floors 49 - 60): Void Singularity
+          {
+            tier: 4,
+            types: ["void_orb", "void_crawler", "void_spectre", "void_wraith", "rift_drifter"],
+          },
+          // Sector 5 (Floors 61 - 72): Temporal Sanctorum
+          {
+            tier: 5,
+            types: ["clockwork_scarab", "star_weaver", "coin_elemental"],
+          },
+          // Sector 6 (Floors 73 - 84): Cyberspace Nexus
+          {
+            tier: 6,
+            types: [
+              "neon_spider",
+              "wireframe_orb",
+              "cursed_blade",
+              "animated_armor",
+              "mimic_shield",
+            ],
+          },
+        ];
 
     // Infinite Anomaly Cycle for Floors 85+ (Sector 7+)
     let effectiveSector = sector >= 7 ? sector % 7 : sector;

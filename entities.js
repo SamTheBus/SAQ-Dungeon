@@ -8,7 +8,31 @@
   const Date = ScopedDate;
 
   // Feature-detect filter support once and cache it (Zero-allocation)
-  const isFilterSupported = typeof CanvasRenderingContext2D !== "undefined" && "filter" in CanvasRenderingContext2D.prototype;
+    const isFilterSupported = typeof CanvasRenderingContext2D !== "undefined" && "filter" in CanvasRenderingContext2D.prototype;
+
+    const isSafari = typeof navigator !== "undefined" && (
+      /^((?!chrome|android).)*safari/i.test(navigator.userAgent) ||
+      /iPad|iPhone|iPod/.test(navigator.platform) ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2)
+    );
+    // Force tint fallback on all mobile devices and Safari for performance and iOS visual correctness
+    const isMobileDevice = typeof navigator !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const useTintFallback = !isFilterSupported || isSafari || isMobileDevice;
+
+    let offscreenCanvas = null;
+    let offscreenCtx = null;
+
+    function getOffscreenCanvas(mainCanvas) {
+      if (!offscreenCanvas) {
+        offscreenCanvas = document.createElement("canvas");
+        offscreenCtx = offscreenCanvas.getContext("2d");
+      }
+      if (offscreenCanvas.width !== mainCanvas.width || offscreenCanvas.height !== mainCanvas.height) {
+        offscreenCanvas.width = mainCanvas.width;
+        offscreenCanvas.height = mainCanvas.height;
+      }
+      return { canvas: offscreenCanvas, ctx: offscreenCtx };
+    }
 
   // Static particle themes to avoid runtime array allocations on entity death
   window.PARTICLE_THEMES = {
@@ -7279,20 +7303,39 @@
           c.restore();
 
           // --- Apply Hardware-Accelerated Rendering Filters (Phase 2) ---
-          if (isFilterSupported) {
-            let mobIsElite = !!m.isElite || !!m.eliteAffix;
-            let mobIsRare = !!m.isRare;
+                    let originalCtx = c;
+                    let activeTint = null;
 
-            if (mobIsElite && mobIsRare) {
-              c.filter = "hue-rotate(280deg) saturate(250%) brightness(1.05) contrast(1.4)";
-            } else if (mobIsElite) {
-              c.filter = "hue-rotate(130deg) saturate(160%) brightness(0.8) contrast(1.25)";
-            } else if (mobIsRare) {
-              c.filter = "hue-rotate(25deg) saturate(220%) brightness(1.15) contrast(1.1)";
-            } else {
-              c.filter = "none";
-            }
-          }
+                    if (mobIsElite && mobIsRare) {
+                      activeTint = "rgba(232, 67, 147, 0.38)"; // Rare Elite: Bright magenta/pink tint
+                    } else if (mobIsElite) {
+                      activeTint = "rgba(168, 85, 247, 0.32)"; // Elite: Deep purple/blue tint
+                    } else if (mobIsRare) {
+                      activeTint = "rgba(241, 196, 15, 0.28)"; // Rare: Gold/yellow tint
+                    }
+
+                    const shouldTint = useTintFallback && activeTint !== null;
+
+                    if (shouldTint) {
+                      let offscreen = getOffscreenCanvas(c.canvas);
+                      offscreenCtx = offscreen.ctx;
+                      offscreenCtx.setTransform(c.getTransform());
+                      // Clear only the bounding box of the mob in world coordinates
+                      offscreenCtx.clearRect(m.x - 50, m.y - 100, m.w + 100, m.h + 150);
+                      c = offscreenCtx; // Redirect all subsequent drawing commands to offscreen canvas
+                    } else {
+                      if (isFilterSupported) {
+                        if (mobIsElite && mobIsRare) {
+                          c.filter = "hue-rotate(280deg) saturate(250%) brightness(1.05) contrast(1.4)";
+                        } else if (mobIsElite) {
+                          c.filter = "hue-rotate(130deg) saturate(160%) brightness(0.8) contrast(1.25)";
+                        } else if (mobIsRare) {
+                          c.filter = "hue-rotate(25deg) saturate(220%) brightness(1.15) contrast(1.1)";
+                        } else {
+                          c.filter = "none";
+                        }
+                      }
+                    }
 
           let penWidth =
       m.type === "boss" ||
@@ -7605,99 +7648,455 @@
           if (!cn.isBehind) drawCoinPiece(cn);
         });
       } else if (vType === "hoard_mimic") {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h - 15;
-        let time = Date.now();
-        let snap = Math.abs(Math.sin(time / 200));
-        let lidAngle = -snap * 0.45;
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h - 10;
+              let time = Date.now();
+              let isFlash = m.flashTimer > 0;
 
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#4a2d18";
-        c.beginPath();
-        c.rect(cx - 15, cy - 8, 30, 16);
-        c.fill();
-        c.stroke();
+              // Resolve Localized Mimic Disguise Tier matching player progression / generation settings
+              if (!m.mimicTier) {
+                let tx = Math.floor(m.x / 32);
+                let ty = Math.floor(m.y / 32);
+                let map = window.activeDungeonMap;
+                let foundTier = map && map.chestTiers && map.chestTiers[`${tx},${ty}`];
+                if (!foundTier && map && map.chestTiers) {
+                  for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                      let nt = map.chestTiers[`${tx + dx},${ty + dy}`];
+                      if (nt) { foundTier = nt; break; }
+                    }
+                    if (foundTier) break;
+                  }
+                }
+                if (!foundTier) {
+                  let rLevel = (window.playerStats && window.playerStats.skillTree && window.playerStats.skillTree.utility_treasure_hunter) || 0;
+                  let seedVal = Math.sin(m.x * 12.9898 + m.y * 78.233) * 43758.5453;
+                  let r = Math.abs(seedVal - Math.floor(seedVal));
+                  foundTier = "iron_bound";
+                  if (rLevel === 1) {
+                    if (r < 0.25) foundTier = "gilded";
+                  } else if (rLevel === 2) {
+                    if (r < 0.05) foundTier = "astral";
+                    else if (r < 0.35) foundTier = "gilded";
+                  } else if (rLevel >= 3) {
+                    if (r < 0.12) foundTier = "astral";
+                    else if (r < 0.45) foundTier = "gilded";
+                  }
+                }
+                m.mimicTier = foundTier;
+              }
+              let tier = m.mimicTier;
 
-        c.fillStyle = "#ffd700";
-        c.beginPath();
-        c.ellipse(cx, cy - 8, 12, 3, 0, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
+              // Snapping dynamics: mimics twitch subtly when idle, snap violently on aggressive behaviors
+              let snap = Math.abs(Math.sin(time / 160));
+              let isAttacking = m.isAttacking || (m.state === "CHASE") || m.vx !== 0 || m.vy !== 0;
+              let P = isAttacking ? snap * 0.95 : (Math.sin(time / 1000) > 0.85 ? 0.14 : 0.0);
 
-        c.fillStyle = "#ffd700";
-        c.strokeStyle = "#4d2e1a";
-        c.lineWidth = 1;
-        for (let i = -12; i <= 12; i += 6) {
-          c.beginPath();
-          c.moveTo(cx + i - 2, cy - 8 - lidAngle * 10);
-          c.lineTo(cx + i, cy - 4 - lidAngle * 10);
-          c.lineTo(cx + i + 2, cy - 8 - lidAngle * 10);
-          c.closePath();
-          c.fill();
-          c.stroke();
+              let closedScaleY = Math.max(0, Math.cos((P * Math.PI) / 2));
+              let openScaleY = Math.max(0, Math.sin((P * Math.PI) / 2));
 
-          c.beginPath();
-          c.moveTo(cx + i - 2, cy - 8);
-          c.lineTo(cx + i, cy - 11);
-          c.lineTo(cx + i + 2, cy - 8);
-          c.closePath();
-          c.fill();
-          c.stroke();
-        }
+              // 1. Soft Ambient Occlusion Drop Shadow
+              let baseShadowW = 13 + (tier !== "iron_bound" ? 1 : 0);
+              c.fillStyle = "rgba(0, 0, 0, 0.55)";
+              c.beginPath();
+              c.ellipse(cx, cy + 9, baseShadowW, 5, 0, 0, Math.PI * 2);
+              c.fill();
 
-        if (m.flashTimer === 0) {
-          let tSway = Math.sin(time / 80) * 6;
-          c.strokeStyle = "#8e44ad";
-          c.lineWidth = 3.5;
-          c.lineCap = "round";
-          c.beginPath();
-          c.moveTo(cx, cy - 8);
-          c.quadraticCurveTo(
-            cx - 6 + tSway / 2,
-            cy - 12,
-            cx - 12 + tSway,
-            cy - 16,
-          );
-          c.stroke();
-          c.fillStyle = "#8e44ad";
-          c.beginPath();
-          c.arc(cx - 12 + tSway, cy - 16, 2, 0, Math.PI * 2);
-          c.fill();
-        }
+              // 2. Warm Tiered Floor Glow
+              let pulse = Math.sin(time / 200) * 1.8;
+              let auraRadius = (tier === "iron_bound" ? 16 : tier === "gilded" ? 18 : 20) + pulse;
+              let auraGrad = c.createRadialGradient(cx, cy + 2, 2, cx, cy + 2, auraRadius);
+              if (tier === "iron_bound") {
+                auraGrad.addColorStop(0, "rgba(230, 126, 34, 0.35)");
+                auraGrad.addColorStop(0.6, "rgba(139, 69, 19, 0.12)");
+              } else if (tier === "gilded") {
+                auraGrad.addColorStop(0, "rgba(255, 215, 0, 0.45)");
+                auraGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.18)");
+              } else {
+                auraGrad.addColorStop(0, "rgba(0, 255, 255, 0.55)");
+                auraGrad.addColorStop(0.5, "rgba(168, 85, 247, 0.22)");
+              }
+              auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+              c.fillStyle = auraGrad;
+              c.beginPath();
+              c.arc(cx, cy + 2, auraRadius, 0, Math.PI * 2);
+              c.fill();
 
-        c.save();
-        c.translate(cx + 15, cy - 8);
-        c.rotate(lidAngle);
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#5c3a21";
-        c.beginPath();
-        c.rect(-30, -10, 30, 10);
-        c.fill();
-        c.stroke();
-        c.fillStyle = "#7f8c8d";
-        c.fillRect(-17, -10, 4, 10);
-        c.strokeRect(-17, -10, 4, 10);
-        c.fillStyle = "#ffd700";
-        c.fillRect(-16, -2, 2, 5);
-        c.strokeRect(-16, -2, 2, 5);
-        c.restore();
+              let w = 22;
+              let bodyH = 11;
+              let lidH = 6;
+              let x = cx - w / 2;
+              let y = cy - (bodyH + lidH) / 2 + 3;
+              let y_hinge = y + lidH;
 
-        if (
-          snap > 0.6 &&
-          Math.random() < 0.1 &&
-          window.particles.length < 250 &&
-          !window.isGamePaused
-        ) {
-          window.particles.push({
-            x: cx + window.randFloat(-8, 8),
-            y: cy - 9,
-            vx: window.randFloat(-1, 1),
-            vy: -window.randFloat(1, 2.5),
-            radius: window.randFloat(1, 2),
-            color: "#ffd700",
-            alpha: 0.9,
-            life: window.randInt(15, 30),
-          });
-        }
-      } else if (vType === "gilded_scuttler") {
+              // 3. BACK LAYER: openScaleY Rotating Open Lid (Back Face)
+              if (openScaleY > 0.01) {
+                c.save();
+                c.translate(cx, y_hinge);
+                c.scale(1, -openScaleY);
+
+                if (isFlash) {
+                  c.fillStyle = "#ffffff";
+                  c.strokeStyle = "#ffffff";
+                  c.lineWidth = 1.5;
+                  c.beginPath();
+                  c.moveTo(-w / 2, 0);
+                  c.lineTo(-w / 2, -lidH * 1.5);
+                  c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+                  c.lineTo(w / 2, 0);
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+                } else {
+                  if (tier === "iron_bound") {
+                    c.fillStyle = "#2a1204";
+                    c.strokeStyle = "#100903";
+                    c.lineWidth = 1.5;
+                    c.beginPath();
+                    c.moveTo(-w / 2, 0);
+                    c.lineTo(-w / 2, -lidH * 1.5);
+                    c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+                    c.lineTo(w / 2, 0);
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+
+                    c.fillStyle = "#0c0502";
+                    c.fillRect(-w / 2 + 1.5, -lidH * 1.5 + 1.5, w - 3, lidH * 1.5 - 1.5);
+
+                    c.fillStyle = "#334155";
+                    c.strokeStyle = "#0f172a";
+                    c.lineWidth = 1.0;
+                    c.fillRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+                    c.strokeRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+                    c.fillRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+                    c.strokeRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+                  } else if (tier === "gilded") {
+                    c.fillStyle = "#4a0404";
+                    c.strokeStyle = "#200101";
+                    c.lineWidth = 1.5;
+                    c.beginPath();
+                    c.moveTo(-w / 2, 0);
+                    c.lineTo(-w / 2, -lidH * 1.5);
+                    c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+                    c.lineTo(w / 2, 0);
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+
+                    c.fillStyle = "#220101";
+                    c.fillRect(-w / 2 + 1.5, -lidH * 1.5 + 1.5, w - 3, lidH * 1.5 - 1.5);
+
+                    c.fillStyle = "#ffd700";
+                    c.strokeStyle = "#855800";
+                    c.lineWidth = 1.0;
+                    c.fillRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+                    c.strokeRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+                    c.fillRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+                    c.strokeRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+                  } else {
+                    c.fillStyle = "#0c0a1a";
+                    c.strokeStyle = "#02e8ff";
+                    c.lineWidth = 1.5;
+                    c.beginPath();
+                    c.moveTo(-w / 2, 0);
+                    c.lineTo(-w / 2, -lidH * 1.5);
+                    c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+                    c.lineTo(w / 2, 0);
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+
+                    c.fillStyle = "#02020a";
+                    c.fillRect(-w / 2 + 1.5, -lidH * 1.5 + 1.5, w - 3, lidH * 1.5 - 1.5);
+
+                    c.strokeStyle = "rgba(0, 255, 255, 0.6)";
+                    c.lineWidth = 1.0;
+                    c.beginPath();
+                    c.moveTo(-w / 2 + 4, -lidH * 1.5 + 3);
+                    c.lineTo(-w / 2 + 4, -1);
+                    c.moveTo(w / 2 - 4, -lidH * 1.5 + 3);
+                    c.lineTo(w / 2 - 4, -1);
+                    c.stroke();
+                  }
+                }
+                c.restore();
+              }
+
+              // 4. MIDDLE LAYER: Standard Lower Box Base Container
+              let bodyGrad = c.createLinearGradient(x, y_hinge, x, y_hinge + bodyH);
+              if (isFlash) {
+                c.fillStyle = "#ffffff";
+                c.strokeStyle = "#ffffff";
+              } else {
+                if (tier === "iron_bound") {
+                  bodyGrad.addColorStop(0, "#5c2e0b");
+                  bodyGrad.addColorStop(0.5, "#411f05");
+                  bodyGrad.addColorStop(1, "#1c0b02");
+                  c.fillStyle = bodyGrad;
+                  c.strokeStyle = "#100903";
+                } else if (tier === "gilded") {
+                  bodyGrad.addColorStop(0, "#800020");
+                  bodyGrad.addColorStop(0.5, "#4a0404");
+                  bodyGrad.addColorStop(1, "#200101");
+                  c.fillStyle = bodyGrad;
+                  c.strokeStyle = "#200101";
+                } else {
+                  bodyGrad.addColorStop(0, "#1e1b4b");
+                  bodyGrad.addColorStop(0.5, "#0f0b29");
+                  bodyGrad.addColorStop(1, "#030010");
+                  c.fillStyle = bodyGrad;
+                  c.strokeStyle = "#a855f7";
+                }
+              }
+              c.lineWidth = 1.5;
+              c.fillRect(x, y_hinge, w, bodyH);
+              c.strokeRect(x, y_hinge, w, bodyH);
+
+              // Hardware Straps on Base Container
+              if (!isFlash) {
+                c.fillStyle = tier === "iron_bound" ? "#334155" : tier === "gilded" ? "#ffd700" : "#00ffff";
+                c.strokeStyle = tier === "iron_bound" ? "#0f172a" : tier === "gilded" ? "#855800" : "rgba(255,255,255,0.8)";
+                c.lineWidth = 1.0;
+                if (tier === "astral") {
+                  c.save();
+                  c.shadowBlur = 4;
+                  c.shadowColor = "#00ffff";
+                }
+                c.fillRect(x + 3, y_hinge, 3.5, bodyH);
+                c.strokeRect(x + 3, y_hinge, 3.5, bodyH);
+                c.fillRect(x + w - 6.5, y_hinge, 3.5, bodyH);
+                c.strokeRect(x + w - 6.5, y_hinge, 3.5, bodyH);
+                if (tier === "astral") c.restore();
+              }
+
+              // 5. INTERNAL CAVITY VOID REVEAL (SINISTER MIMIC BITE & TONGUE REVEAL)
+              if (P > 0.01) {
+                c.save();
+                let revealH = Math.round(5 * P);
+
+                c.beginPath();
+                c.rect(x + 1.5, y_hinge, w - 3, revealH + 1);
+                c.clip();
+
+                c.fillStyle = "#0c0202";
+                c.fillRect(x + 1.5, y_hinge, w - 3, revealH + 1);
+
+                // Wiggling Purple/Acidic Tongue
+                let tongueSway = Math.sin(time / 60) * 4;
+                let tongueLength = Math.max(2, 10 * P);
+                let tongueGrad = c.createLinearGradient(cx, y_hinge, cx + tongueSway, y_hinge + tongueLength);
+                tongueGrad.addColorStop(0, "#c026d3");
+                tongueGrad.addColorStop(1, "#8e44ad");
+
+                c.fillStyle = tongueGrad;
+                c.strokeStyle = "#4a044e";
+                c.lineWidth = 1.2;
+                c.beginPath();
+                c.moveTo(cx - 3.5, y_hinge + 1);
+                c.quadraticCurveTo(cx - 4 + tongueSway * 0.5, y_hinge + tongueLength * 0.7, cx + tongueSway, y_hinge + tongueLength);
+                c.arc(cx + tongueSway, y_hinge + tongueLength, 2.5, 0, Math.PI);
+                c.quadraticCurveTo(cx + 4 + tongueSway * 0.5, y_hinge + tongueLength * 0.7, cx + 3.5, y_hinge + 1);
+                c.closePath();
+                c.fill();
+                c.stroke();
+
+                // Razor-sharp Golden Fangs lining the lower edge
+                c.fillStyle = "#ffeaa7";
+                c.strokeStyle = "#4d2e1a";
+                c.lineWidth = 0.8;
+                let toothSpacing = 3.5;
+                for (let tOff = -w/2 + 3.5; tOff <= w/2 - 3.5; tOff += toothSpacing) {
+                  c.beginPath();
+                  c.moveTo(cx + tOff - 1.2, y_hinge + revealH);
+                  c.lineTo(cx + tOff, y_hinge + revealH - Math.max(1, 4 * P));
+                  c.lineTo(cx + tOff + 1.2, y_hinge + revealH);
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+                }
+
+                // Spooky glowing eyes peering from the depths of the void
+                let eyePulse = 0.5 + Math.sin(time / 100) * 0.5;
+                c.fillStyle = `rgba(239, 68, 68, ${0.45 + eyePulse * 0.55})`;
+                c.beginPath();
+                c.arc(cx - 5, y_hinge + 2, 0.85, 0, Math.PI * 2);
+                c.arc(cx + 5, y_hinge + 2, 0.85, 0, Math.PI * 2);
+                c.fill();
+
+                c.restore();
+              }
+
+              // 6. LATCH CLASP HANGING REVEAL
+              if (P > 0.01) {
+                c.save();
+                c.translate(cx, y_hinge);
+                let latchAngle = P * ((55 * Math.PI) / 180);
+                c.rotate(-latchAngle);
+
+                c.fillStyle = tier === "iron_bound" ? "#475569" : tier === "gilded" ? "#ffd700" : "#00ffff";
+                c.strokeStyle = tier === "iron_bound" ? "#0f172a" : tier === "gilded" ? "#855800" : "#ffffff";
+                c.lineWidth = 0.8;
+                c.fillRect(-1.5, 0, 3, 5);
+                c.strokeRect(-1.5, 0, 3, 5);
+                c.restore();
+              }
+
+              // 7. FRONT LAYER: closedScaleY Rotating Closed Lid (Front Face)
+              if (closedScaleY > 0.01) {
+                c.save();
+                c.translate(cx, y_hinge);
+                c.scale(1, closedScaleY);
+
+                if (isFlash) {
+                  c.fillStyle = "#ffffff";
+                  c.strokeStyle = "#ffffff";
+                  c.lineWidth = 1.5;
+                  c.beginPath();
+                  c.moveTo(-w / 2, 0);
+                  c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+                } else {
+                  let lidGrad = c.createLinearGradient(-w / 2, -lidH, -w / 2, 0);
+                  if (tier === "iron_bound") {
+                    lidGrad.addColorStop(0, "#7c3f12");
+                    lidGrad.addColorStop(0.5, "#5c2e0b");
+                    lidGrad.addColorStop(1, "#2a1204");
+                  } else if (tier === "gilded") {
+                    lidGrad.addColorStop(0, "#9e1b32");
+                    lidGrad.addColorStop(0.5, "#800020");
+                    lidGrad.addColorStop(1, "#4a0404");
+                  } else {
+                    lidGrad.addColorStop(0, "#312e81");
+                    lidGrad.addColorStop(0.5, "#1e1b4b");
+                    lidGrad.addColorStop(1, "#09051d");
+                  }
+
+                  c.fillStyle = lidGrad;
+                  c.strokeStyle = tier === "iron_bound" ? "#100903" : tier === "gilded" ? "#200101" : "#a855f7";
+                  c.lineWidth = 1.5;
+
+                  c.beginPath();
+                  c.moveTo(-w / 2, 0);
+                  c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
+                  c.closePath();
+                  c.fill();
+                  c.stroke();
+
+                  // Highlight line on lid
+                  c.strokeStyle = tier === "astral" ? "rgba(0, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.15)";
+                  c.lineWidth = 1.0;
+                  c.beginPath();
+                  c.moveTo(-w / 2 + 3, -2);
+                  c.quadraticCurveTo(0, -lidH + 1, w / 2 - 3, -2);
+                  c.stroke();
+
+                  // Bandings clipped to closed lid
+                  c.save();
+                  c.beginPath();
+                  c.moveTo(-w / 2, 0);
+                  c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
+                  c.closePath();
+                  c.clip();
+
+                  c.fillStyle = tier === "iron_bound" ? "#334155" : tier === "gilded" ? "#ffd700" : "#00ffff";
+                  c.strokeStyle = tier === "iron_bound" ? "#0f172a" : tier === "gilded" ? "#855800" : "#ffffff";
+                  c.lineWidth = 0.8;
+                  c.fillRect(-w / 2 + 3, -lidH - 2, 3.5, lidH + 2);
+                  c.strokeRect(-w / 2 + 3, -lidH - 2, 3.5, lidH + 2);
+                  c.fillRect(w / 2 - 6.5, -lidH - 2, 3.5, lidH + 2);
+                  c.strokeRect(w / 2 - 6.5, -lidH - 2, 3.5, lidH + 2);
+                  c.restore();
+
+                  // Top-lip teeth lining the underside of the lid
+                  if (P > 0.01) {
+                    c.fillStyle = "#ffeaa7";
+                    c.strokeStyle = "#4d2e1a";
+                    c.lineWidth = 0.5;
+                    let topToothSpacing = 4.0;
+                    for (let tOff = -w/2 + 4.5; tOff <= w/2 - 4.5; tOff += topToothSpacing) {
+                      c.beginPath();
+                      c.moveTo(tOff - 1.0, 0);
+                      c.lineTo(tOff, Math.max(0.5, 3.5 * P));
+                      c.lineTo(tOff + 1.0, 0);
+                      c.closePath();
+                      c.fill();
+                      c.stroke();
+                    }
+                  }
+
+                  // Dividing Seam
+                  c.strokeStyle = tier === "iron_bound" ? "#100903" : tier === "gilded" ? "#855800" : "#a855f7";
+                  c.lineWidth = 1.5;
+                  c.beginPath();
+                  c.moveTo(-w / 2, 0);
+                  c.lineTo(w / 2, 0);
+                  c.stroke();
+
+                  // Lock hardware plate
+                  let lockW = 6;
+                  let lockH = 7;
+                  let lockX = -lockW / 2;
+                  let lockY = -3;
+
+                  let lockGrad = c.createLinearGradient(lockX, lockY, lockX, lockY + lockH);
+                  if (tier === "iron_bound") {
+                    lockGrad.addColorStop(0, "#64748b");
+                    lockGrad.addColorStop(1, "#334155");
+                    c.strokeStyle = "#0f172a";
+                  } else if (tier === "gilded") {
+                    lockGrad.addColorStop(0, "#ffe57f");
+                    lockGrad.addColorStop(1, "#ffc107");
+                    c.strokeStyle = "#855800";
+                  } else {
+                    lockGrad.addColorStop(0, "#ffffff");
+                    lockGrad.addColorStop(0.5, "#00ffff");
+                    lockGrad.addColorStop(1, "#008b8b");
+                    c.strokeStyle = "#008b8b";
+                  }
+
+                  c.fillStyle = lockGrad;
+                  c.lineWidth = 1.0;
+                  c.fillRect(lockX, lockY, lockW, lockH);
+                  c.strokeRect(lockX, lockY, lockW, lockH);
+
+                  if (tier === "gilded") {
+                    c.fillStyle = "#e74c3c";
+                    c.beginPath();
+                    c.arc(0, lockY + 2.5, 1.2, 0, Math.PI * 2);
+                    c.fill();
+                  } else {
+                    c.fillStyle = "#100903";
+                    c.beginPath();
+                    c.arc(0, lockY + 2.5, 1.0, 0, Math.PI * 2);
+                    c.fill();
+                    if (tier === "iron_bound") {
+                      c.fillRect(-0.5, lockY + 2.5, 1.0, 2.5);
+                    }
+                  }
+                }
+                c.restore();
+              }
+
+              // 8. Active Spark/Ember Spawning
+              if (P > 0.4 && Math.random() < 0.15 && window.particles.length < 250 && !window.isGamePaused) {
+                let pColor = tier === "iron_bound" ? "#e67e22" : tier === "gilded" ? "#ffd700" : "#00ffff";
+                window.particles.push(window.ParticlePool.get(
+                  cx + window.randFloat(-8, 8),
+                  cy - 4,
+                  window.randFloat(-1, 1),
+                  -window.randFloat(1, 2.5),
+                  window.randFloat(1, 2.2),
+                  pColor,
+                  0.9,
+                  window.randInt(15, 30),
+                  0.15,
+                  true
+                ));
+              }
+            } else if (vType === "gilded_scuttler") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h - 15;
         let time = Date.now();
@@ -12305,9 +12704,27 @@
               }
 
               // --- Reset Hardware-Accelerated Rendering Filters (Phase 2) ---
-                  if (isFilterSupported) {
-                    c.filter = "none";
-                  }
+                            if (shouldTint) {
+                              // Apply the tint only on the drawn mob pixels on the offscreen canvas
+                              offscreenCtx.save();
+                              offscreenCtx.globalCompositeOperation = "source-atop";
+                              offscreenCtx.fillStyle = activeTint;
+                              offscreenCtx.fillRect(m.x - 50, m.y - 100, m.w + 100, m.h + 150);
+                              offscreenCtx.restore();
+
+                              // Restore the original main canvas context
+                              c = originalCtx;
+
+                              // Draw the tinted mob from the offscreen canvas onto the main canvas
+                              c.save();
+                              c.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to screen space
+                              c.drawImage(offscreenCanvas, 0, 0);
+                              c.restore();
+                            } else {
+                              if (isFilterSupported) {
+                                c.filter = "none";
+                              }
+                            }
 
                   // --- Tiered Overhead Overlays (Phase 3) ---
                             c.save();

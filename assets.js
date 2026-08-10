@@ -3092,24 +3092,46 @@ window.AssetCatalog = {
               <path d="M14 8 L13 5 M18 8 L19 5" stroke="#dca04c" stroke-width="1.5" stroke-linecap="round" />
             `;
       } else if (
-        key.includes("blade") ||
-        key.includes("armor") ||
-        key.includes("keeper") ||
-        key.includes("marcus")
-      ) {
-        cutoutSvg = `
-              <path d="M10 13 H22 L20 15 H12 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
-              <path d="M12 14 H20 L19 23 L16 25 L13 23 Z" fill="#34495e" stroke="#000" stroke-width="1.2" />
-              <circle cx="16" cy="18" r="1.8" fill="#00d2ff" style="filter: drop-shadow(0 0 2px #00d2ff);" />
-              <path d="M13 5 H19 V12 H13 Z" fill="#2c3e50" stroke="#000" stroke-width="1.2" />
-              <rect x="14" y="8" width="4" height="2" fill="#00d2ff" />
-            `;
-      } else {
-        cutoutSvg = `
-              <polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8" />
-              <circle cx="16" cy="15" r="1" fill="#fff" />
-            `;
-      }
+              key.includes("blade") ||
+              key.includes("armor") ||
+              key.includes("keeper") ||
+              key.includes("marcus")
+            ) {
+              cutoutSvg = `
+                    <path d="M10 13 H22 L20 15 H12 Z" fill="#2c3e50" stroke="#000" stroke-width="1" />
+                    <path d="M12 14 H20 L19 23 L16 25 L13 23 Z" fill="#34495e" stroke="#000" stroke-width="1.2" />
+                    <circle cx="16" cy="18" r="1.8" fill="#00d2ff" style="filter: drop-shadow(0 0 2px #00d2ff);" />
+                    <path d="M13 5 H19 V12 H13 Z" fill="#2c3e50" stroke="#000" stroke-width="1.2" />
+                    <rect x="14" y="8" width="4" height="2" fill="#00d2ff" />
+                  `;
+            } else if (key.includes("mimic")) {
+              cutoutSvg = `
+                    <rect x="10" y="14" width="12" height="7" fill="#8d5b38" stroke="#000" stroke-width="1" />
+                    <path d="M10 14 Q16 11, 22 14" fill="#a0522d" stroke="#000" stroke-width="1" />
+                    <path d="M12 14 L13 17 L15 14" fill="#f1c40f" stroke="#000" stroke-width="0.5" />
+                    <path d="M20 14 L19 17 L17 14" fill="#f1c40f" stroke="#000" stroke-width="0.5" />
+                    <path d="M15 14 Q17 10, 19 8" stroke="#8e44ad" stroke-width="1.8" fill="none" stroke-linecap="round" />
+                  `;
+            } else if (key.includes("coin") || key.includes("scuttler")) {
+              cutoutSvg = `
+                    <circle cx="16" cy="15" r="4.2" fill="#ffd700" stroke="#000" stroke-width="1" />
+                    <circle cx="11" cy="12" r="2.2" fill="#d4af37" stroke="#000" stroke-width="0.5" />
+                    <circle cx="21" cy="12" r="2.2" fill="#d4af37" stroke="#000" stroke-width="0.5" />
+                    <circle cx="16" cy="20" r="2.5" fill="#d4af37" stroke="#000" stroke-width="0.5" />
+                  `;
+            } else if (key.includes("wraith") || key.includes("drifter")) {
+              cutoutSvg = `
+                    <path d="M11 13 C11 8, 21 8, 21 13 L19 23 L13 23 Z" fill="#1b0a2a" stroke="#8e44ad" stroke-width="1.2" />
+                    <circle cx="14" cy="12" r="0.8" fill="#e84393" />
+                    <circle cx="18" cy="12" r="0.8" fill="#e84393" />
+                    <path d="M8 15 L5 12 M24 15 L27 12" stroke="#8e44ad" stroke-width="1.5" stroke-linecap="round" />
+                  `;
+            } else {
+              cutoutSvg = `
+                    <polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8" />
+                    <circle cx="16" cy="15" r="1" fill="#fff" />
+                  `;
+            }
 
       return `
             <defs>
