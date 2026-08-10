@@ -8602,10 +8602,16 @@
                       let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
 
                       // Sentinels are 2x as tough as regular floor mobs
-                      let sentinelHp = Math.round(80 * repScale * enemyScale);
-                      let sentinelAtk = Math.round(11 * repScale * enemyScale);
+                                      let sentinelHp = Math.round(80 * repScale * enemyScale);
+                                      let sentinelAtk = Math.round(11 * repScale * enemyScale);
 
-                      let sector = Math.floor((depth - 1) / 12);
+                                      // Apply solid baseline floors to prevent early-game trivialization
+                                      let sentinelHpFloor = 360; // 2x mobHpFloor (180 * 2)
+                                      let sentinelAtkFloor = 28; // 2x mobAtkFloor (14 * 2)
+                                      sentinelHp = Math.max(Math.round(sentinelHpFloor * (1 + fLvl * 0.08)), sentinelHp);
+                                      sentinelAtk = Math.max(Math.round(sentinelAtkFloor * (1 + fLvl * 0.04)), sentinelAtk);
+
+                                      let sector = Math.floor((depth - 1) / 12);
                       let mobInfo = window.getMobPoolForDepth(depth);
 
                       const sentinelNames = [
