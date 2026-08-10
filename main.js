@@ -1860,15 +1860,52 @@
     });
 
     // Recalculate all existing inventory & equipped items to migrate stats
-    if (window.playerStats) {
-      if (!window.playerStats.skillTree) window.playerStats.skillTree = {};
-      if (window.playerStats.skillTree.utility_treasure_hunter === undefined) {
-        window.playerStats.skillTree.utility_treasure_hunter = 0;
-      }
-    }
-    window.recalculateAllInventoryItems();
+        if (window.playerStats) {
+          if (!window.playerStats.skillTree) window.playerStats.skillTree = {};
+          if (window.playerStats.skillTree.utility_treasure_hunter === undefined) {
+            window.playerStats.skillTree.utility_treasure_hunter = 0;
+          }
+        }
+        window.recalculateAllInventoryItems();
 
-    window.BossAIEngine = {
+        // Intercept and wrap window.salvageItem dynamically to support any script loading order and update the UI
+        let _salvageItemRef = window.salvageItem;
+        Object.defineProperty(window, "salvageItem", {
+          get() {
+            return _salvageItemRef;
+          },
+          set(newVal) {
+            if (newVal && !newVal.__wrapped) {
+              const original = newVal;
+              _salvageItemRef = function (itemId) {
+                const originalShowCustomConfirm = window.showCustomConfirm;
+                window.showCustomConfirm = function (title, body, yesText, noText, color, yesCallback, noCallback) {
+                  const wrappedYesCallback = function () {
+                    if (typeof yesCallback === "function") yesCallback();
+                    setTimeout(() => {
+                      if (typeof window.renderReliquaryTab === "function") window.renderReliquaryTab();
+                      if (typeof window.renderProfileModal === "function") window.renderProfileModal();
+                    }, 80);
+                  };
+                  if (originalShowCustomConfirm) {
+                    originalShowCustomConfirm(title, body, yesText, noText, color, wrappedYesCallback, noCallback);
+                  }
+                };
+                original(itemId);
+                window.showCustomConfirm = originalShowCustomConfirm;
+              };
+              _salvageItemRef.__wrapped = true;
+            } else {
+              _salvageItemRef = newVal;
+            }
+          },
+          configurable: true,
+        });
+        if (_salvageItemRef) {
+          window.salvageItem = _salvageItemRef;
+        }
+
+        window.BossAIEngine = {
       initBoss(m) {
         if (m.bossInitialized) return;
         m.bossInitialized = true;
@@ -2743,31 +2780,45 @@
               }
               if (window.SoundManager) window.SoundManager.play("block");
             } else if (ability === "root_snare") {
-              if (window.combatVisuals) {
-                window.combatVisuals.triggerScreenShake(5, 8);
-                window.combatVisuals.spawnParticles(
-                  m.targetX,
-                  m.targetY,
-                  20,
-                  "slag_slime",
-                  2.2,
-                );
-              }
-              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 75) {
-                window.damagePlayer(Math.round(m.atk * 1.3), m);
-                p.snareTimer = 132; // 2.2s snare slow
-                if (typeof window.spawnFloatingText === "function") {
-                  window.spawnFloatingText(
-                    p.x,
-                    p.y - 12,
-                    "[SNARED] -60% Speed!",
-                    "#2ecc71",
-                    true,
-                  );
-                }
-              }
-              if (window.SoundManager) window.SoundManager.play("block");
-            }
+                          if (window.combatVisuals) {
+                            window.combatVisuals.triggerScreenShake(5, 8);
+                            window.combatVisuals.spawnParticles(
+                              m.targetX,
+                              m.targetY,
+                              20,
+                              "slag_slime",
+                              2.2,
+                            );
+                          }
+
+                          // Spawn persistent spider web hazard on the ground
+                          window.cavernInteractives = window.cavernInteractives || [];
+                          window.cavernInteractives.push({
+                            id: window.idCounter++,
+                            type: "spider_web_zone",
+                            x: m.targetX,
+                            y: m.targetY,
+                            w: 56,
+                            h: 24,
+                            life: 300, // 5 seconds of persistence
+                            maxLife: 300
+                          });
+
+                          if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 75) {
+                            window.damagePlayer(Math.round(m.atk * 1.3), m);
+                            p.snareTimer = 132; // 2.2s snare slow
+                            if (typeof window.spawnFloatingText === "function") {
+                              window.spawnFloatingText(
+                                p.x,
+                                p.y - 12,
+                                "[SNARED] -60% Speed!",
+                                "#2ecc71",
+                                true,
+                              );
+                            }
+                          }
+                          if (window.SoundManager) window.SoundManager.play("block");
+                        }
             m.activeAbility = null;
           }
         } else {
@@ -5596,16 +5647,24 @@
 
     // Decorate damagePlayer globally with safe double-wrap protection to monitor and trigger defensive counters
     if (window.damagePlayer && !window.damagePlayer.__wrappedByMain) {
-      const originalDamagePlayer = window.damagePlayer;
-      window.damagePlayer = function (amount, attacker) {
-        let p = window.player;
-        let pStats =
-          typeof window.resolvePlayerStats === "function"
-            ? window.resolvePlayerStats()
-            : {};
-        let shieldFortifiedGuardLvl = window.SkillTreeManager
-          ? window.SkillTreeManager.getSkillLevel("shield_fortified_guard")
-          : 0;
+        const originalDamagePlayer = window.damagePlayer;
+        window.damagePlayer = function (amount, attacker) {
+          let p = window.player;
+          let pStats =
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : {};
+
+          // Nullifier Disruption: Instantly nullify all offhand defensive values
+          if (p.nullifierDisrupted) {
+            pStats.block = 0;
+            pStats.parry = 0;
+            pStats.arcaneBarrier = 0;
+          }
+
+          let shieldFortifiedGuardLvl = window.SkillTreeManager
+            ? window.SkillTreeManager.getSkillLevel("shield_fortified_guard")
+            : 0;
 
         // Compute block mitigation modifications
         let blockMit = 0.7;
@@ -7425,21 +7484,31 @@
     }
 
     let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-    let repScale = Math.pow(repGrowth, repStage * 0.95);
 
-    let bossHp = isMarcus
-      ? 800 * repScale
-      : isMini
-        ? 300 * repScale
-        : 500 * repScale;
-    let bossAtk = isMarcus
-      ? 30 * repScale
-      : isMini
-        ? 15 * repScale
-        : 22 * repScale;
+        // Apply Sawtooth Pacing Curve (Marcus maintains a flat difficulty/anti-farm floor)
+        let localStep = (scaleStage - 1) % 12;
+        let sawtoothMod = isMarcus ? 1.0 : (0.80 + 0.045 * localStep);
+        let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
 
-    bossHp = Math.round(bossHp * enemyScale);
-    bossAtk = Math.round(bossAtk * enemyScale);
+        let bossHp = isMarcus
+                    ? 800 * repScale
+                    : isMini
+                      ? 300 * repScale
+                      : 500 * repScale;
+                  let bossAtk = isMarcus
+                    ? 30 * repScale
+                    : isMini
+                      ? 15 * repScale
+                      : 22 * repScale;
+
+                  bossHp = Math.round(bossHp * enemyScale);
+                  bossAtk = Math.round(bossAtk * enemyScale);
+
+                  // Apply progression floors (baseline minimums) to ensure engaging combat scaling
+                  let bossHpFloor = isMarcus ? 2500 : isMini ? 1200 : 1800;
+                  let bossAtkFloor = isMarcus ? 45 : isMini ? 25 : 35;
+                  bossHp = Math.max(Math.round(bossHpFloor * (1 + scaleStage * 0.08)), bossHp);
+                  bossAtk = Math.max(Math.round(bossAtkFloor * (1 + scaleStage * 0.04)), bossAtk);
 
     if (activeChallenge) {
       let challengeScale = 1.0 + activeChallenge.riskRating / 30;
@@ -7814,13 +7883,23 @@
       }
 
       // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-      let sIdx = Math.floor((scaleStage - 1) / 12);
-      let repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
-      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-      let repScale = Math.pow(repGrowth, repStage * 0.95);
+            let sIdx = Math.floor((scaleStage - 1) / 12);
+                        let repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
+                        let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
 
-      let mobHpVal = Math.floor(40 * repScale * enemyScale);
-      let mobAtkVal = Math.floor(8 * repScale * enemyScale);
+                        // Apply Sawtooth Pacing Curve
+                        let localStep = (scaleStage - 1) % 12;
+                        let sawtoothMod = 0.80 + 0.045 * localStep;
+                        let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
+
+                        let mobHpVal = Math.floor(40 * repScale * enemyScale);
+                        let mobAtkVal = Math.floor(8 * repScale * enemyScale);
+
+                        // Apply solid baseline floors to prevent early-game trivialization
+                        let mobHpFloor = 180;
+                        let mobAtkFloor = 14;
+                        mobHpVal = Math.max(Math.round(mobHpFloor * (1 + scaleStage * 0.08)), mobHpVal);
+                        mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + scaleStage * 0.04)), mobAtkVal);
 
       if (activeChallenge) {
         let challengeScale = 1.0 + activeChallenge.riskRating / 35;
@@ -7862,67 +7941,84 @@
         }
 
         if (Math.random() < affixChance) {
-          const affixes = [
-            "vitality_weaver",
-            "iron_citadel",
-            "swift_commander",
-            "blood_berserker",
-            "nullifier",
-          ];
-          eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
-        }
+                  const affixes = [
+                    "vitality_weaver",
+                    "iron_citadel",
+                    "swift_commander",
+                    "blood_berserker",
+                    "nullifier",
+                    "web_weaver",
+                    "glacial_warden",
+                    "slag_shaper",
+                    "toxic_decay"
+                  ];
+                  eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
+                }
 
-        let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
-        let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
+        let finalHp = mobHpVal;
+                    let finalAtk = mobAtkVal;
+                    let isElite = !!eliteAffix;
 
-        let rangedTypes = [
-          "thorn_wyrm",
-          "wyrmling",
-          "magma_elemental",
-          "toxic_fly",
-          "void_orb",
-        ];
-        let isRanged = rangedTypes.includes(mobInfo.type);
-        let projType =
-          mobInfo.type === "thorn_wyrm"
-            ? "thorn"
-            : mobInfo.type === "wyrmling"
-              ? "frost"
-              : mobInfo.type === "magma_elemental"
-                ? "fireball"
-                : mobInfo.type === "toxic_fly"
-                  ? "maelstrom"
-                  : "void";
+                    if (isElite && isRare) {
+                      finalHp = Math.round(finalHp * 2.5);
+                      finalAtk = Math.round(finalAtk * 1.6);
+                    } else if (isElite) {
+                      finalHp = Math.round(finalHp * 1.5);
+                      finalAtk = Math.round(finalAtk * 1.25);
+                    } else if (isRare) {
+                      finalHp = Math.round(finalHp * 1.75);
+                      finalAtk = Math.round(finalAtk * 1.35);
+                    }
 
-        let spawnX = sp.x * tileSize;
-        let spawnY = sp.y * tileSize;
+                let rangedTypes = [
+                  "thorn_wyrm",
+                  "wyrmling",
+                  "magma_elemental",
+                  "toxic_fly",
+                  "void_orb",
+                ];
+                let isRanged = rangedTypes.includes(mobInfo.type);
+                let projType =
+                  mobInfo.type === "thorn_wyrm"
+                    ? "thorn"
+                    : mobInfo.type === "wyrmling"
+                      ? "frost"
+                      : mobInfo.type === "magma_elemental"
+                        ? "fireball"
+                        : mobInfo.type === "toxic_fly"
+                          ? "maelstrom"
+                          : "void";
 
-        window.activeDungeonMobs.push({
-          id: window.idCounter++,
-          type: "mob",
-          visualTier: mobInfo.tier,
-          visualType: mobInfo.type,
-          x: spawnX,
-          y: spawnY,
-          homeX: spawnX,
-          homeY: spawnY,
-          w: 24,
-          h: 24,
-          hp: BigNum.from(finalHp),
-          maxHp: BigNum.from(finalHp),
-          atk: finalAtk,
-          flashTimer: 0,
-          attackCooldown: 0,
-          rangedCooldown: window.randInt(30, 90),
-          isRanged: isRanged,
-          projectileType: projType,
-          moveProfile:
-            mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
-              ? "relentless"
-              : "standard",
-          facing: -1,
-          isRare: isRare,
-          eliteAffix: eliteAffix,
+                let spawnX = sp.x * tileSize;
+                let spawnY = sp.y * tileSize;
+
+                window.activeDungeonMobs.push({
+                  id: window.idCounter++,
+                  type: "mob",
+                  visualTier: mobInfo.tier,
+                  visualType: mobInfo.type,
+                  x: spawnX,
+                  y: spawnY,
+                  homeX: spawnX,
+                  homeY: spawnY,
+                  w: 24,
+                  h: 24,
+                  hp: BigNum.from(finalHp),
+                  maxHp: BigNum.from(finalHp),
+                  atk: finalAtk,
+                  flashTimer: 0,
+                  attackCooldown: 0,
+                  rangedCooldown: window.randInt(30, 90),
+                  isRanged: isRanged,
+                  projectileType: projType,
+                  moveProfile:
+                    mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
+                      ? "relentless"
+                      : "standard",
+                  facing: -1,
+                  isRare: isRare,
+                  isElite: isElite,
+                  eliteAffix: eliteAffix,
           buffStacks: { haste: 0, def: 0, atk: 0 },
           buffTimers: { haste: 0, def: 0, atk: 0 },
           buffDecayTimers: { haste: 0, def: 0, atk: 0 },
@@ -8470,13 +8566,87 @@
     };
 
     if (map && map.revealSightRadius) {
-      let originalReveal = map.revealSightRadius;
-      map.revealSightRadius = function (px, py, intBonus) {
-        originalReveal.call(this, px, py, intBonus);
-      };
-    }
+          let originalReveal = map.revealSightRadius;
+          map.revealSightRadius = function (px, py, intBonus) {
+            originalReveal.call(this, px, py, intBonus);
+          };
+        }
 
-    window.updateHUD();
+        // 6. Spawn Floor Sentinel if Portal is Locked (Standard Floors Only)
+                    if (map.portalLocked && !isMiniBoss && !isMajorBoss && !window.playerStats.isCrucibleMode && !isRift) {
+                      let fLvl = depth;
+                      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+                      let sIdx = Math.floor((fLvl - 1) / 12);
+                      let repStage = window.getEffectiveStage(fLvl * 1.25 + sIdx * 12.0);
+                      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+
+                      // Apply Sawtooth Pacing Curve
+                      let localStep = (fLvl - 1) % 12;
+                      let sawtoothMod = 0.80 + 0.045 * localStep;
+                      let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
+
+                      // Sentinels are 2x as tough as regular floor mobs
+                      let sentinelHp = Math.round(80 * repScale * enemyScale);
+                      let sentinelAtk = Math.round(11 * repScale * enemyScale);
+
+                      let sector = Math.floor((depth - 1) / 12);
+                      let mobInfo = window.getMobPoolForDepth(depth);
+
+                      const sentinelNames = [
+                        "Oakheart Sentinel",
+                        "Glacial Sentinel",
+                        "Smelt-Iron Sentinel",
+                        "Basilisk Sentinel",
+                        "Singularity Sentinel",
+                        "Clockwork Sentinel",
+                        "Nexus Sentinel"
+                      ];
+                      let name = sentinelNames[sector] || "Floor Sentinel";
+
+                      let pStats =
+                        typeof window.resolvePlayerStats === "function"
+                          ? window.resolvePlayerStats()
+                          : {};
+                      let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
+                      let isRare = Math.random() < rareRate;
+                      let isElite = true; // Sentinels are Elites by default
+
+                      let finalHp = sentinelHp;
+                      let finalAtk = sentinelAtk;
+
+                      if (isElite && isRare) {
+                        finalHp = Math.round(finalHp * 2.5);
+                        finalAtk = Math.round(finalAtk * 1.6);
+                      } else if (isElite) {
+                        finalHp = Math.round(finalHp * 1.5);
+                        finalAtk = Math.round(finalAtk * 1.25);
+                      }
+
+                      window.activeDungeonMobs.push({
+                        id: window.idCounter++,
+                        type: "mob",
+                        isPortalSentinel: true,
+                        isElite: isElite,
+                        isRare: isRare,
+                        eliteAffix: sector === 0 ? "web_weaver" : sector === 1 ? "glacial_warden" : sector === 2 ? "slag_shaper" : sector === 3 ? "toxic_decay" : null,
+                        visualTier: mobInfo.tier,
+                        visualType: mobInfo.type,
+                        name: isRare ? `RARE ${name.toUpperCase()}` : name,
+                        x: map.extractionTile.x * tileSize + 4,
+                        y: map.extractionTile.y * tileSize + 4,
+                        w: 24,
+                        h: 24,
+                        hp: BigNum.from(finalHp),
+                        maxHp: BigNum.from(finalHp),
+                        atk: finalAtk,
+                        flashTimer: 0,
+                        attackCooldown: 0,
+                        discovered: true,
+                        hopTimer: 0,
+                      });
+                    }
+
+        window.updateHUD();
     let floorTitle = isMajorBoss
       ? `FLOOR ${depth} - MAJOR DUNGEON BOSS`
       : isMiniBoss
@@ -8669,7 +8839,24 @@
   };
 
   window.executePortalDescend = function (bypassWarning = false) {
-    if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
+      if (window.activeDungeonMap.portalLocked) {
+        let p = window.player;
+        if (window.logicClock % 60 === 0) {
+          window.spawnFloatingText(
+            p.x,
+            p.y - 25,
+            "PORTAL SEALED: DEFEAT THE SENTINEL!",
+            "#ef4444",
+          );
+          if (window.combatVisuals) {
+            window.combatVisuals.triggerScreenShake(3, 6);
+          }
+          if (window.SoundManager) window.SoundManager.play("block");
+        }
+        return;
+      }
+
+      if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
       let modal = document.getElementById("portal-modal");
       if (modal) modal.style.display = "none";
 
@@ -8718,7 +8905,24 @@
   };
 
   window.executePortalExtract = function (bypassWarning = false) {
-    if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
+      if (window.activeDungeonMap.portalLocked) {
+        let p = window.player;
+        if (window.logicClock % 60 === 0) {
+          window.spawnFloatingText(
+            p.x,
+            p.y - 25,
+            "PORTAL SEALED: DEFEAT THE SENTINEL!",
+            "#ef4444",
+          );
+          if (window.combatVisuals) {
+            window.combatVisuals.triggerScreenShake(3, 6);
+          }
+          if (window.SoundManager) window.SoundManager.play("block");
+        }
+        return;
+      }
+
+      if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
       let modal = document.getElementById("portal-modal");
       if (modal) modal.style.display = "none";
 
@@ -11457,14 +11661,6 @@
       window.cavernInteractives = [];
       return;
     }
-    // Enable interactive elements if either a Sigil or a Special Challenge (Contract) is active
-    if (
-      !window.playerStats.activeDungeonSigil &&
-      !window.playerStats.activeSpecialChallenge
-    ) {
-      window.cavernInteractives = [];
-      return;
-    }
 
     window.cavernInteractives = window.cavernInteractives || [];
     let p = window.player;
@@ -11498,80 +11694,84 @@
       p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.65);
     }
 
-    window.cavernSpawnTimer = (window.cavernSpawnTimer || 0) - 1;
-    if (window.cavernSpawnTimer <= 0) {
-      window.cavernSpawnTimer = window.randInt(900, 1500); // 15-25s
+    // Only execute the random spawning timer if there is an active Sigil or Contract
+    let hasSigilOrContract = !!(window.playerStats.activeDungeonSigil || window.playerStats.activeSpecialChallenge);
+    if (hasSigilOrContract) {
+      window.cavernSpawnTimer = (window.cavernSpawnTimer || 0) - 1;
+      if (window.cavernSpawnTimer <= 0) {
+        window.cavernSpawnTimer = window.randInt(900, 1500); // 15-25s
 
-      let activeIds = [];
-      let sig = window.playerStats.activeDungeonSigil;
-      if (sig) {
-        if (sig.buffs) sig.buffs.forEach((b) => activeIds.push(b.id || b));
-        if (sig.debuffs) sig.debuffs.forEach((d) => activeIds.push(d.id || d));
-      }
-      let challenge = window.playerStats.activeSpecialChallenge;
-      if (challenge) {
-        if (challenge.buffs)
-          challenge.buffs.forEach((b) => activeIds.push(b.id || b));
-        if (challenge.debuffs)
-          challenge.debuffs.forEach((d) => activeIds.push(d.id || d));
-      }
-
-      // De-duplicate active mutator IDs
-      let uniqueActiveIds = [];
-      for (let aIdx = 0; aIdx < activeIds.length; aIdx++) {
-        let idVal = activeIds[aIdx];
-        if (uniqueActiveIds.indexOf(idVal) === -1) {
-          uniqueActiveIds.push(idVal);
+        let activeIds = [];
+        let sig = window.playerStats.activeDungeonSigil;
+        if (sig) {
+          if (sig.buffs) sig.buffs.forEach((b) => activeIds.push(b.id || b));
+          if (sig.debuffs) sig.debuffs.forEach((d) => activeIds.push(d.id || d));
         }
-      }
-
-      let targetEffects = uniqueActiveIds.filter((id) =>
-        [
-          "perfect_strike",
-          "aetheric_conduit",
-          "aetheric_spark",
-          "glimmering_pixie",
-          "anomalous_shards",
-          "void_rupture",
-        ].includes(id),
-      );
-
-      // Perform Spawning Limit: Cap active interactive structures on a single floor to a maximum of 3 (Zero-allocation loop)
-      let activeStructuresCount = 0;
-      let structuresList = [];
-      for (let sIdx = 0; sIdx < window.cavernInteractives.length; sIdx++) {
-        let itemType = window.cavernInteractives[sIdx].type;
-        if (
-          itemType === "anomalous_shard" ||
-          itemType === "rupture_core" ||
-          itemType === "rupture_orb" ||
-          itemType === "glimmering_pixie" ||
-          itemType === "aetheric_spark" ||
-          itemType === "aetheric_conduit"
-        ) {
-          activeStructuresCount++;
-          structuresList.push(window.cavernInteractives[sIdx]);
+        let challenge = window.playerStats.activeSpecialChallenge;
+        if (challenge) {
+          if (challenge.buffs)
+            challenge.buffs.forEach((b) => activeIds.push(b.id || b));
+          if (challenge.debuffs)
+            challenge.debuffs.forEach((d) => activeIds.push(d.id || d));
         }
-      }
 
-      // Clean up oldest structures if they exceed safety limits
-      while (structuresList.length > 3) {
-        let oldest = structuresList.shift();
-        let idx = window.cavernInteractives.indexOf(oldest);
-        if (idx !== -1) {
-          window.cavernInteractives.splice(idx, 1);
+        // De-duplicate active mutator IDs
+        let uniqueActiveIds = [];
+        for (let aIdx = 0; aIdx < activeIds.length; aIdx++) {
+          let idVal = activeIds[aIdx];
+          if (uniqueActiveIds.indexOf(idVal) === -1) {
+            uniqueActiveIds.push(idVal);
+          }
         }
-        activeStructuresCount--;
-      }
 
-      if (targetEffects.length > 0 && activeStructuresCount < 3) {
-        let chosenId =
-          targetEffects[Math.floor(Math.random() * targetEffects.length)];
-        window.spawnCavernInteractive(chosenId);
-      }
-    }
+        let targetEffects = uniqueActiveIds.filter((id) =>
+          [
+            "perfect_strike",
+            "aetheric_conduit",
+            "aetheric_spark",
+            "glimmering_pixie",
+            "anomalous_shards",
+            "void_rupture",
+          ].includes(id),
+        );
 
-    for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
+        // Perform Spawning Limit: Cap active interactive structures on a single floor to a maximum of 3 (Zero-allocation loop)
+        let activeStructuresCount = 0;
+        let structuresList = [];
+        for (let sIdx = 0; sIdx < window.cavernInteractives.length; sIdx++) {
+          let itemType = window.cavernInteractives[sIdx].type;
+          if (
+            itemType === "anomalous_shard" ||
+            itemType === "rupture_core" ||
+            itemType === "rupture_orb" ||
+            itemType === "glimmering_pixie" ||
+            itemType === "aetheric_spark" ||
+            itemType === "aetheric_conduit"
+          ) {
+            activeStructuresCount++;
+            structuresList.push(window.cavernInteractives[sIdx]);
+          }
+        }
+
+        // Clean up oldest structures if they exceed safety limits
+        while (structuresList.length > 3) {
+          let oldest = structuresList.shift();
+          let idx = window.cavernInteractives.indexOf(oldest);
+          if (idx !== -1) {
+            window.cavernInteractives.splice(idx, 1);
+          }
+          activeStructuresCount--;
+        }
+
+        if (targetEffects.length > 0 && activeStructuresCount < 3) {
+                  let chosenId =
+                    targetEffects[Math.floor(Math.random() * targetEffects.length)];
+                  window.spawnCavernInteractive(chosenId);
+                }
+              }
+            }
+
+            for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
       let item = window.cavernInteractives[i];
       item.life--;
 
@@ -11637,12 +11837,28 @@
       }
 
       if (item.type === "dilation_field") {
-        let dist = Math.hypot(p.x - item.x, p.y - item.y);
-        if (dist <= pRadius + 35) {
-          p.inDilationField = true;
-          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.6); // 40% slow
-        }
-      }
+              let dist = Math.hypot(p.x - item.x, p.y - item.y);
+              if (dist <= pRadius + 35) {
+                p.inDilationField = true;
+                p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.6); // 40% slow
+              }
+            }
+
+            if (item.type === "spider_web_zone") {
+                          let dist = Math.hypot(p.x - item.x, p.y - item.y);
+                          if (dist <= pRadius + 75) {
+                            p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4); // 60% slow
+                            if (window.logicClock % 40 === 0 && typeof window.spawnFloatingText === "function") {
+                              window.spawnFloatingText(
+                                p.x,
+                                p.y - 12,
+                                "[WEB SLOWED]",
+                                "#2ecc71",
+                                true,
+                              );
+                            }
+                          }
+                        }
 
       if (item.life <= 0) {
         // Expiration of Void Rupture Core (Failed debuff event triggers damage)
@@ -12387,40 +12603,75 @@
     }
 
     if (item.type === "dilation_field") {
-      let time = Date.now();
-      let pulse = Math.sin(time / 150) * 1.5;
-      ctx.save();
-      // Golden clockwork distortion zone
-      ctx.fillStyle = "rgba(241, 196, 15, 0.12)";
-      ctx.strokeStyle = "rgba(212, 175, 55, 0.55)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.ellipse(
-        item.x,
-        item.y,
-        40 + pulse,
-        18 + pulse * 0.4,
-        0,
-        0,
-        Math.PI * 2,
-      );
-      ctx.fill();
-      ctx.stroke();
+          let time = Date.now();
+          let pulse = Math.sin(time / 150) * 1.5;
+          ctx.save();
+          // Golden clockwork distortion zone
+          ctx.fillStyle = "rgba(241, 196, 15, 0.12)";
+          ctx.strokeStyle = "rgba(212, 175, 55, 0.55)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.ellipse(
+            item.x,
+            item.y,
+            40 + pulse,
+            18 + pulse * 0.4,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+          ctx.stroke();
 
-      // Draw ticking clock hands inside the zone
-      ctx.translate(item.x, item.y);
-      ctx.rotate(time / 800);
-      ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
-      ctx.lineWidth = 1.0;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, -12);
-      ctx.moveTo(0, 0);
-      ctx.lineTo(8, 0);
-      ctx.stroke();
-      ctx.restore();
-      return;
-    }
+          // Draw ticking clock hands inside the zone
+          ctx.translate(item.x, item.y);
+          ctx.rotate(time / 800);
+          ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, -12);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(8, 0);
+          ctx.stroke();
+          ctx.restore();
+          return;
+        }
+
+        if (item.type === "spider_web_zone") {
+                  let time = Date.now();
+                  let alpha = item.life / item.maxLife;
+                  ctx.save();
+
+                  // Draw faint backing drop shadow
+                  ctx.fillStyle = `rgba(39, 174, 96, ${alpha * 0.08})`;
+                  ctx.beginPath();
+                  ctx.ellipse(item.x, item.y, 75, 33.75, 0, 0, Math.PI * 2);
+                  ctx.fill();
+
+                  // Concentric web rings
+                  ctx.strokeStyle = `rgba(0, 255, 204, ${alpha * 0.45})`;
+                  ctx.lineWidth = 1.4;
+                  let rings = 4;
+                  for (let r = 1; r <= rings; r++) {
+                    let rScale = r / rings;
+                    ctx.beginPath();
+                    ctx.ellipse(item.x, item.y, 75 * rScale, 33.75 * rScale, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                  }
+
+                  // Radial web support spokes
+                  let spokes = 8;
+                  ctx.beginPath();
+                  for (let s = 0; s < spokes; s++) {
+                    let angle = (s * Math.PI * 2) / spokes;
+                    ctx.moveTo(item.x, item.y);
+                    ctx.lineTo(item.x + Math.cos(angle) * 75, item.y + Math.sin(angle) * 33.75);
+                  }
+                  ctx.stroke();
+                  ctx.restore();
+                  return;
+                }
 
     ctx.save();
     let pulse = Math.sin(Date.now() / 150) * 1.5;
@@ -12720,6 +12971,8 @@
     let p = window.player;
     if (!p || p.hp <= 0) return;
     if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
+
+    p.nullifierDisrupted = false; // Reset on each combat frame
 
     let pStats =
       typeof window.resolvePlayerStats === "function"
@@ -13317,12 +13570,146 @@
     }
 
     // Process targets in view
-    targetables.forEach((t) => {
-      if (t.type === "mob") {
-        let m = t.obj;
-        if (m.flashTimer > 0) m.flashTimer--;
-        if (m.attackCooldown > 0) m.attackCooldown--;
-        if (m.rangedCooldown > 0) m.rangedCooldown--;
+        targetables.forEach((t) => {
+          if (t.type === "mob") {
+            let m = t.obj;
+            if (m.flashTimer > 0) m.flashTimer--;
+            if (m.attackCooldown > 0) m.attackCooldown--;
+            if (m.rangedCooldown > 0) m.rangedCooldown--;
+
+            let mCx = m.x + (m.w || 24) / 2;
+            let mCy = m.y + (m.h || 24) / 2;
+            let dx = p.x - mCx;
+            let dy = p.y - mCy;
+            let dist = Math.hypot(dx, dy);
+
+            // Active Elite Affix AI
+            if (m.hp.gt(0)) {
+              if (m.eliteAffix === "web_weaver") {
+                m.webWeaveTimer = (m.webWeaveTimer || 120) - 1;
+                if (m.webWeaveTimer <= 0 && dist < 180) {
+                  m.webWeaveWave = (m.webWeaveWave || 0) + 1;
+                  m.webWeaveTimer = 180; // 3 seconds cooldown
+                  window.cavernInteractives = window.cavernInteractives || [];
+                  window.cavernInteractives.push({
+                    id: window.idCounter++,
+                    type: "spider_web_zone",
+                    x: p.x,
+                    y: p.y,
+                    w: 56,
+                    h: 24,
+                    life: 240, // 4 seconds of persistence
+                    maxLife: 240
+                  });
+                  if (window.combatVisuals) {
+                    window.combatVisuals.spawnParticles(p.x, p.y, 8, "void_orb", 2);
+                  }
+                  if (window.spawnFloatingText) {
+                    window.spawnFloatingText(mCx, m.y - 12, "WEB WEAVE!", "#2ecc71");
+                  }
+                }
+              } else if (m.eliteAffix === "glacial_warden") {
+                m.glacialWardenTimer = (m.glacialWardenTimer || 150) - 1;
+                if (m.glacialWardenTimer <= 0 && dist < 90) {
+                  m.glacialWardenTimer = 150; // 2.5s cooldown
+                  let pushAngle = Math.atan2(p.y - mCy, p.x - mCx);
+                  let pushDist = 45;
+                  let kx = p.x + Math.cos(pushAngle) * pushDist;
+                  let ky = p.y + Math.sin(pushAngle) * pushDist;
+                  if (window.activeDungeonMap && typeof window.checkCollisionAt === "function" && !window.checkCollisionAt(window.activeDungeonMap, kx, ky, p.radius || 9)) {
+                    p.x = kx;
+                    p.y = ky;
+                  }
+                  p.snareTimer = 90; // 1.5s slow
+                  if (window.spawnFloatingText) {
+                    window.spawnFloatingText(p.x, p.y - 12, "FROST KNOCKBACK!", "#38bdf8", true);
+                  }
+                  if (window.combatVisuals) {
+                    window.combatVisuals.triggerScreenShake(4, 8);
+                    window.combatVisuals.spawnParticles(p.x, p.y, 12, "wyrmling", 3);
+                  }
+                  if (window.SoundManager) window.SoundManager.play("block");
+                }
+              } else if (m.eliteAffix === "slag_shaper") {
+                              if (m.isWandering || m.isMoving || (m.hopTimer !== undefined && m.hopTimer % 30 < 15)) {
+                                if (window.logicClock % 45 === 0) {
+                                  window.cavernInteractives = window.cavernInteractives || [];
+                                  window.cavernInteractives.push({
+                                    id: window.idCounter++,
+                                    type: "acid_pool",
+                                    isSlag: true,
+                                    color: "#f97316",
+                                    x: mCx,
+                                    y: mCy,
+                                    w: 24,
+                                    h: 12,
+                                    life: 240, // 4 seconds
+                                    maxLife: 240,
+                                  });
+                                  if (window.combatVisuals) {
+                                    window.combatVisuals.spawnParticles(mCx, mCy, 4, "magma_elemental", 1.2);
+                                  }
+                                }
+                              }
+                            }
+                          }
+
+                          // Elite Passive Particle Radiance
+                          if (m.eliteAffix && window.logicClock % 15 === 0 && window.ParticlePool && window.particles) {
+                            let pColor = "#38bdf8";
+                            let pStyle = "glowing_orb";
+                            let gravity = 0;
+
+                            if (m.eliteAffix === "vitality_weaver") {
+                              pColor = "#2ecc71";
+                              pStyle = "glowing_orb";
+                              gravity = -0.02;
+                            } else if (m.eliteAffix === "iron_citadel") {
+                              pColor = "#3498db";
+                              pStyle = "polygon";
+                              gravity = 0.05;
+                            } else if (m.eliteAffix === "swift_commander") {
+                              pColor = "#00d2ff";
+                              pStyle = "streak";
+                              gravity = 0;
+                            } else if (m.eliteAffix === "blood_berserker") {
+                              pColor = "#ef4444";
+                              pStyle = "sparkle_star";
+                              gravity = -0.04;
+                            } else if (m.eliteAffix === "nullifier") {
+                              pColor = "#a855f7";
+                              pStyle = "elliptical_3d";
+                              gravity = 0;
+                            } else if (m.eliteAffix === "web_weaver") {
+                              pColor = "#a7f3d0";
+                              pStyle = "glowing_orb";
+                            } else if (m.eliteAffix === "glacial_warden") {
+                              pColor = "#38bdf8";
+                              pStyle = "polygon";
+                            } else if (m.eliteAffix === "slag_shaper") {
+                              pColor = "#f97316";
+                              pStyle = "elliptical_3d";
+                            } else if (m.eliteAffix === "toxic_decay") {
+                              pColor = "#34d399";
+                              pStyle = "glowing_orb";
+                            }
+
+                            let pt = window.ParticlePool.get(
+                              mCx + window.randFloat(-6, 6),
+                              mCy + window.randFloat(-6, 6),
+                              window.randFloat(-0.3, 0.3),
+                              window.randFloat(-0.3, 0.3) - (gravity < 0 ? 0.4 : 0),
+                              window.randFloat(1.2, 2.2),
+                              pColor,
+                              0.8,
+                              window.randInt(20, 35),
+                              gravity,
+                              true
+                            );
+                            pt.style = pStyle;
+                            pt.scaleDecay = 0.025;
+                            window.particles.push(pt);
+                          }
 
         // --- CELESTIAL STATUS DOT TICK ENGINE ---
         if (m.hp && m.hp.gt && m.hp.gt(0)) {
@@ -13400,19 +13787,19 @@
         }
 
         if (m.recoilX) {
-          m.recoilX *= 0.65;
-          if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
-        }
-        if (m.recoilY) {
-          m.recoilY *= 0.65;
-          if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
-        }
+                  m.recoilX *= 0.65;
+                  if (Math.abs(m.recoilX) < 0.2) m.recoilX = 0;
+                }
+                if (m.recoilY) {
+                  m.recoilY *= 0.65;
+                  if (Math.abs(m.recoilY) < 0.2) m.recoilY = 0;
+                }
 
-        let dx = p.x - t.x;
-        let dy = p.y - t.y;
-        let dist = Math.hypot(dx, dy);
+                dx = p.x - t.x;
+                dy = p.y - t.y;
+                dist = Math.hypot(dx, dy);
 
-        if (dx < -1) {
+                if (dx < -1) {
           m.facing = -1;
         } else if (dx > 1) {
           m.facing = 1;
@@ -13808,41 +14195,42 @@
       else if (dxToTarget > 0.1) p.facing = 1;
 
       if (closestTarget.type === "mob") {
-        let m = closestTarget.obj;
-        m.lastHitTime = window.logicClock; // Set hit timestamp for regenerative brood tracking
+                let m = closestTarget.obj;
+                m.lastHitTime = window.logicClock; // Set hit timestamp for regenerative brood tracking
 
-        // Transition into active combat state
-        if (typeof window.triggerCombatState === "function") {
-          window.triggerCombatState();
-        }
-        // Synergy Sanguine DoT damage scaling (+8% damage per Poison, Bleed, Burn)
-        if (window.checkArtifactTrait("synergy_sanguine")) {
-          let slotLvl = window.getArtifactTemperLevel
-            ? window.getArtifactTemperLevel("synergy_sanguine")
-            : 0;
-          let slotMult = 1.0 + slotLvl * 0.01;
-          let uniqueDoTs = 0;
-          if ((m.poisonStacks || 0) > 0) uniqueDoTs++;
-          if ((m.bleedStacks || 0) > 0) uniqueDoTs++;
-          if ((m.burnStacks || 0) > 0 || m.isBurning) uniqueDoTs++;
-          let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
-          pAtk = pAtk.mul(multiplier);
-        }
+                // Transition into active combat state
+                if (typeof window.triggerCombatState === "function") {
+                  window.triggerCombatState();
+                }
 
-        let isCrit = Math.random() < (pStats.critChance || 0.05);
-        if (window.playerStats && window.playerStats.guaranteedCrit) {
-          isCrit = true;
-          window.playerStats.guaranteedCrit = false;
-        }
-        if (
-          window.playerStats &&
-          window.playerStats.viperShadowDanceCharges > 0
-        ) {
-          isCrit = true;
-          window.playerStats.viperShadowDanceCharges--;
-        }
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+                let isCrit = Math.random() < (pStats.critChance || 0.05);
+                if (window.playerStats && window.playerStats.guaranteedCrit) {
+                  isCrit = true;
+                  window.playerStats.guaranteedCrit = false;
+                }
+                if (
+                  window.playerStats &&
+                  window.playerStats.viperShadowDanceCharges > 0
+                ) {
+                  isCrit = true;
+                  window.playerStats.viperShadowDanceCharges--;
+                }
+                let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+                let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+
+                // Synergy Sanguine DoT damage scaling (+8% damage per Poison, Bleed, Burn)
+                                if (window.checkArtifactTrait("synergy_sanguine")) {
+                                  let slotLvl = window.getArtifactTemperLevel
+                                    ? window.getArtifactTemperLevel("synergy_sanguine")
+                                    : 0;
+                                  let slotMult = 1.0 + slotLvl * 0.01;
+                                  let uniqueDoTs = 0;
+                                  if ((m.poisonStacks || 0) > 0) uniqueDoTs++;
+                                  if ((m.bleedStacks || 0) > 0) uniqueDoTs++;
+                                  if ((m.burnStacks || 0) > 0 || m.isBurning) uniqueDoTs++;
+                                  let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
+                                  pAtk = pAtk.mul(multiplier);
+                                }
 
         // --- SUBPHASE 7: KINETIC REFLECTORS CONE CHECK ---
         if (
@@ -14091,29 +14479,29 @@
         }
 
         let curHr = new Date().getHours();
-        if (curHr >= 0 && curHr < 4)
-          window.playerStats.hasTriggeredNightOwl = true;
-        if (curHr >= 5 && curHr < 8)
-          window.playerStats.hasTriggeredEarlyBird = true;
-        let curDay = new Date().getDay();
-        if (curDay === 0 || curDay === 6)
-          window.playerStats.hasTriggeredWeekendWarrior = true;
+                    if (curHr >= 0 && curHr < 4)
+                      window.playerStats.hasTriggeredNightOwl = true;
+                    if (curHr >= 5 && curHr < 8)
+                      window.playerStats.hasTriggeredEarlyBird = true;
+                    let curDay = new Date().getDay();
+                    if (curDay === 0 || curDay === 6)
+                      window.playerStats.hasTriggeredWeekendWarrior = true;
 
-        mobCenterX = closestTarget.x;
-        mobCenterY = closestTarget.y;
-        let dx = closestTarget.x - p.x;
-        let dy = closestTarget.y - p.y;
-        let dist = Math.hypot(dx, dy);
+                    mobCenterX = closestTarget.x;
+                    mobCenterY = closestTarget.y;
+                    dx = closestTarget.x - p.x;
+                    dy = closestTarget.y - p.y;
+                    dist = Math.hypot(dx, dy);
 
-        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-          window.RenderEngine.spawnDamageEffect(
-            mobCenterX,
-            mobCenterY,
-            pAtk,
-            "slash",
-            isCrit,
-          );
-        }
+                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                      window.RenderEngine.spawnDamageEffect(
+                        mobCenterX,
+                        mobCenterY,
+                        pAtk,
+                        "slash",
+                        isCrit,
+                      );
+                    }
 
         // Artifact: Vampirism (Blood-Soaked Chalice)
         if (window.checkArtifactTrait("vampirism")) {
@@ -14161,60 +14549,60 @@
         }
 
         // Unique: Sanguine Reaver (Sword Bleed Rupture)
-        if (window.hasUniquePassive("weapon_sword")) {
-          bm.bleedStacks = (bm.bleedStacks || 0) + 1;
-          bm.bleedTimer = 300; // 5-second duration
-          if (bm.bleedStacks >= 5) {
-            bm.bleedStacks = 0;
-            bm.bleedTimer = 0;
-            let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
-            bm.hp = bm.hp.sub(ruptureDmg);
-            let siphonedHp = Math.round(p.maxHp * 0.1);
-            p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY,
-                ruptureDmg,
-                "crit",
-                true,
-              );
-            }
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 20,
-                `+${siphonedHp} HP (RUPTURE)`,
-                "#2ecc71",
-              );
-            }
-            if (window.combatVisuals) {
-              window.combatVisuals.spawnParticles(
-                bossCenterX,
-                bossCenterY,
-                20,
-                "magma_elemental",
-                4,
-              );
-            }
-          } else {
-            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
-            if (pStats.bleedDamageMultiplier) {
-              bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
-            }
-            bm.hp = bm.hp.sub(bleedTick);
-            bm.bleedTimer = 300; // Refresh 5-second duration
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 10,
-                bleedTick,
-                "bleed",
-                false,
-              );
-            }
-          }
-        }
+                    if (window.hasUniquePassive("weapon_sword")) {
+                      m.bleedStacks = (m.bleedStacks || 0) + 1;
+                      m.bleedTimer = 300; // 5-second duration
+                      if (m.bleedStacks >= 5) {
+                        m.bleedStacks = 0;
+                        m.bleedTimer = 0;
+                        let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
+                        m.hp = m.hp.sub(ruptureDmg);
+                        let siphonedHp = Math.round(p.maxHp * 0.1);
+                        p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
+                        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                          window.RenderEngine.spawnDamageEffect(
+                            mobCenterX,
+                            mobCenterY,
+                            ruptureDmg,
+                            "crit",
+                            true,
+                          );
+                        }
+                        if (typeof window.spawnFloatingText === "function") {
+                          window.spawnFloatingText(
+                            p.x,
+                            p.y - 20,
+                            `+${siphonedHp} HP (RUPTURE)`,
+                            "#2ecc71",
+                          );
+                        }
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnParticles(
+                            mobCenterX,
+                            mobCenterY,
+                            20,
+                            "magma_elemental",
+                            4,
+                          );
+                        }
+                      } else {
+                        let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
+                        if (pStats.bleedDamageMultiplier) {
+                          bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
+                        }
+                        m.hp = m.hp.sub(bleedTick);
+                        m.bleedTimer = 300; // Refresh 5-second duration
+                        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+                          window.RenderEngine.spawnDamageEffect(
+                            mobCenterX,
+                            mobCenterY - 10,
+                            bleedTick,
+                            "bleed",
+                            false,
+                          );
+                        }
+                      }
+                    }
 
         // Unique: Maelstrom Gale-Glaive (Wind Gales & Speed Stacks)
         if (isCrit && window.hasUniquePassive("weapon_maelstrom")) {
@@ -14337,10 +14725,10 @@
           }
         }
 
-        // Dagger Offhand Multi-Strike & DoT Application
-        if (pStats.subType === "dagger") {
-          let finalOffhandChance = pStats.offhandChance || 0.35;
-          if (Math.random() < finalOffhandChance) {
+        // Dagger Offhand Multi-Strike & DoT Application (Blocked if Nullifier Disrupted)
+                if (pStats.subType === "dagger") {
+                  let finalOffhandChance = p.nullifierDisrupted ? 0 : (pStats.offhandChance || 0.35);
+                  if (Math.random() < finalOffhandChance) {
             let offhandDmgMult = pStats.offhandDmgMultiplier || 1.0;
             let offhandHit = BigNum.from(pStats.atk || 15).mul(
               (pStats.offhandDmg || 0.45) * offhandDmgMult,
@@ -14444,18 +14832,17 @@
           }
         }
 
-        // Tome Spell Cast Trigger
-        let isTomeEquipped =
-          pStats.subType === "tome" ||
-          (window.equippedSlots &&
-            window.equippedSlots.subweapon &&
-            (window.equippedSlots.subweapon.subType === "tome" ||
-              window.equippedSlots.subweapon.type === "tome"));
-        let activeSpellChance =
-          pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-        let activeSpellType = pStats.spellType || "tri";
+        // Tome Spell Cast Trigger (Blocked if Nullifier Disrupted)
+                let isTomeEquipped =
+                  pStats.subType === "tome" ||
+                  (window.equippedSlots &&
+                    window.equippedSlots.subweapon &&
+                    (window.equippedSlots.subweapon.subType === "tome" ||
+                      window.equippedSlots.subweapon.type === "tome"));
+                let activeSpellChance = p.nullifierDisrupted ? 0 : (pStats.spellChance || (isTomeEquipped ? 0.35 : 0));
+                let activeSpellType = pStats.spellType || "tri";
 
-        if (isTomeEquipped && Math.random() < activeSpellChance) {
+                if (isTomeEquipped && Math.random() < activeSpellChance) {
           // Gain +1 Tome Mastery XP on Spell Proc
           if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
 
@@ -15263,9 +15650,20 @@
         }
 
         // Check death state after any potential hit
-        if (m.hp.lte(0)) {
-          // Reset Spreading Fatigue speed penalty on kill
-          window.fatiguePenalty = 0;
+                if (m.hp.lte(0)) {
+                  // Reset Spreading Fatigue speed penalty on kill
+                  window.fatiguePenalty = 0;
+
+                  if (m.isPortalSentinel) {
+                    window.activeDungeonMap.portalLocked = false;
+                    window.spawnFloatingText(p.x, p.y - 25, "PORTAL SEAL SHATTERED!", "#00ffff");
+                    if (window.spawnBarrierShatterVisual) {
+                      window.spawnBarrierShatterVisual(m.x + m.w/2, m.y + m.h/2);
+                    }
+                    if (typeof window.pushHeaderToast === "function") {
+                      window.pushHeaderToast("✦ Portal Sentinel slain! Descent Portal unlocked!", "#2ecc71");
+                    }
+                  }
 
           // --- SUBPHASE 7: SPAWNING DIVISION SPLIT ---
           let canDivide =
@@ -15702,13 +16100,22 @@
         }
 
         // Mob Contact Melee Attack on Player
-        if (dist < 20 && m.attackCooldown <= 0) {
-          m.attackCooldown = 60; // 1s attack cooldown
-          window.damagePlayer(m.atk, m);
-          if (p.hp <= 0) {
-            window.startDeathSequence();
-          }
-        }
+                if (dist < 20 && m.attackCooldown <= 0) {
+                  m.attackCooldown = 60; // 1s attack cooldown
+                  window.damagePlayer(m.atk, m);
+
+                  if (m.eliteAffix === "toxic_decay" && p.hp > 0) {
+                    p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 1);
+                    p.poisonTimer = 240; // 4s tick
+                    if (window.spawnFloatingText) {
+                      window.spawnFloatingText(p.x, p.y - 12, "TOXIC ROT!", "#2ecc71", true);
+                    }
+                  }
+
+                  if (p.hp <= 0) {
+                    window.startDeathSequence();
+                  }
+                }
       }
     }
 
@@ -15722,54 +16129,54 @@
       let dist = Math.hypot(dx, dy);
 
       if (dist < 48 && p.attackTimer >= 20) {
-        p.attackTimer = 0;
+              p.attackTimer = 0;
 
-        // Transition into active combat state
-        if (typeof window.triggerCombatState === "function") {
-          window.triggerCombatState();
-        }
+              // Transition into active combat state
+              if (typeof window.triggerCombatState === "function") {
+                window.triggerCombatState();
+              }
 
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("swing");
-        }
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.play === "function"
+              ) {
+                window.SoundManager.play("swing");
+              }
 
-        let bossCenterX = bm.x + bm.w / 2;
-        // Face the boss being attacked!
-        let dxToBoss = bossCenterX - p.x;
-        if (dxToBoss < -0.1) p.facing = -1;
-        else if (dxToBoss > 0.1) p.facing = 1;
+              let bossCenterX = bm.x + bm.w / 2;
+              // Face the boss being attacked!
+              let dxToBoss = bossCenterX - p.x;
+              if (dxToBoss < -0.1) p.facing = -1;
+              else if (dxToBoss > 0.1) p.facing = 1;
 
-        let isCrit = Math.random() < (pStats.critChance || 0.05);
-        if (window.playerStats && window.playerStats.guaranteedCrit) {
-          isCrit = true;
-          window.playerStats.guaranteedCrit = false;
-        }
-        if (
-          window.playerStats &&
-          window.playerStats.viperShadowDanceCharges > 0
-        ) {
-          isCrit = true;
-          window.playerStats.viperShadowDanceCharges--;
-        }
-        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+              let isCrit = Math.random() < (pStats.critChance || 0.05);
+                            if (window.playerStats && window.playerStats.guaranteedCrit) {
+                              isCrit = true;
+                              window.playerStats.guaranteedCrit = false;
+                            }
+                            if (
+                              window.playerStats &&
+                              window.playerStats.viperShadowDanceCharges > 0
+                            ) {
+                              isCrit = true;
+                              window.playerStats.viperShadowDanceCharges--;
+                            }
+                            let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+                            let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
-        // Synergy Sanguine DoT damage scaling (Boss)
-        if (window.checkArtifactTrait("synergy_sanguine")) {
-          let slotLvl = window.getArtifactTemperLevel
-            ? window.getArtifactTemperLevel("synergy_sanguine")
-            : 0;
-          let slotMult = 1.0 + slotLvl * 0.01;
-          let uniqueDoTs = 0;
-          if ((bm.poisonStacks || 0) > 0) uniqueDoTs++;
-          if ((bm.bleedStacks || 0) > 0) uniqueDoTs++;
-          if ((bm.burnStacks || 0) > 0 || bm.isBurning) uniqueDoTs++;
-          let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
-          pAtk = pAtk.mul(multiplier);
-        }
+                            // Synergy Sanguine DoT damage scaling (Boss)
+                            if (window.checkArtifactTrait("synergy_sanguine")) {
+                              let slotLvl = window.getArtifactTemperLevel
+                                ? window.getArtifactTemperLevel("synergy_sanguine")
+                                : 0;
+                              let slotMult = 1.0 + slotLvl * 0.01;
+                              let uniqueDoTs = 0;
+                              if ((bm.poisonStacks || 0) > 0) uniqueDoTs++;
+                              if ((bm.bleedStacks || 0) > 0) uniqueDoTs++;
+                              if ((bm.burnStacks || 0) > 0 || bm.isBurning) uniqueDoTs++;
+                              let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
+                              pAtk = pAtk.mul(multiplier);
+                            }
 
         // Track Critical Streaks for Wind-Razor Flurry (Boss)
         let windFlurryLevel = window.SkillTreeManager
@@ -16116,79 +16523,62 @@
           }
         }
 
-        // --- CELESTIAL STATUS DOT TICK ENGINE ON BOSS ---
-        if (bm.hp && bm.hp.gt && bm.hp.gt(0)) {
-          // Decrement and clear expired DoTs progressive duration
-          if (bm.poisonStacks > 0) {
-            if (bm.poisonTimer === undefined || bm.poisonTimer === null)
-              bm.poisonTimer = 300;
-            bm.poisonTimer--;
-            if (bm.poisonTimer <= 0) bm.poisonStacks = 0;
-          }
-          if (bm.bleedStacks > 0) {
-            if (bm.bleedTimer === undefined || bm.bleedTimer === null)
-              bm.bleedTimer = 300;
-            bm.bleedTimer--;
-            if (bm.bleedTimer <= 0) bm.bleedStacks = 0;
-          }
-
           if (
-            (bm.poisonStacks && bm.poisonStacks > 0) ||
-            (bm.bleedStacks && bm.bleedStacks > 0)
-          ) {
-            bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
-            if (bm.dotTickTimer >= 60) {
-              bm.dotTickTimer = 0;
-              let baseAtk = pStats.atk || p.atk || 15;
+                      (bm.poisonStacks && bm.poisonStacks > 0) ||
+                      (bm.bleedStacks && bm.bleedStacks > 0)
+                    ) {
+                      bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
+                      if (bm.dotTickTimer >= 60) {
+                        bm.dotTickTimer = 0;
+                        let baseAtk = pStats.atk || p.atk || 15;
 
-              if (bm.poisonStacks && bm.poisonStacks > 0) {
-                let poisonPower = 0.1 * (bm.poisonLevel || 1);
-                if (pStats.poisonDamageMultiplier)
-                  poisonPower *= pStats.poisonDamageMultiplier;
-                let pDmg = BigNum.from(baseAtk)
-                  .mul(poisonPower)
-                  .mul(bm.poisonStacks);
-                bm.hp = bm.hp.sub(pDmg);
-                bm.flashTimer = 4;
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnDamageEffect(
-                    bm.x + bm.w / 2,
-                    bm.y + bm.h / 2,
-                    pDmg,
-                    "poison",
-                    false,
-                    bm,
-                  );
-                }
-              }
+                        if (bm.poisonStacks && bm.poisonStacks > 0) {
+                          let poisonPower = 0.1 * (bm.poisonLevel || 1);
+                          if (pStats.poisonDamageMultiplier)
+                            poisonPower *= pStats.poisonDamageMultiplier;
+                          let pDmg = BigNum.from(baseAtk)
+                            .mul(poisonPower)
+                            .mul(bm.poisonStacks);
+                          bm.hp = bm.hp.sub(pDmg);
+                          bm.flashTimer = 4;
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(
+                              bm.x + bm.w / 2,
+                              bm.y + bm.h / 2,
+                              pDmg,
+                              "poison",
+                              false,
+                              bm,
+                            );
+                          }
+                        }
 
-              if (bm.bleedStacks && bm.bleedStacks > 0) {
-                let bleedPower = 0.05;
-                if (pStats.bleedDamageMultiplier)
-                  bleedPower *= pStats.bleedDamageMultiplier;
-                let bDmg = BigNum.from(baseAtk)
-                  .mul(bleedPower)
-                  .mul(bm.bleedStacks);
-                bm.hp = bm.hp.sub(bDmg);
-                bm.flashTimer = 4;
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnDamageEffect(
-                    bm.x + bm.w / 2,
-                    bm.y + bm.h / 2,
-                    bDmg,
-                    "bleed",
-                    false,
-                    bm,
-                  );
-                }
-              }
-            }
-          }
-          if (bm.shredTimer && bm.shredTimer > 0) {
-            bm.shredTimer--;
-            if (bm.shredTimer === 0) bm.shredPercent = 0;
-          }
-        }
+                        if (bm.bleedStacks && bm.bleedStacks > 0) {
+                          let bleedPower = 0.05;
+                          if (pStats.bleedDamageMultiplier)
+                            bleedPower *= pStats.bleedDamageMultiplier;
+                          let bDmg = BigNum.from(baseAtk)
+                            .mul(bleedPower)
+                            .mul(bm.bleedStacks);
+                          bm.hp = bm.hp.sub(bDmg);
+                          bm.flashTimer = 4;
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(
+                              bm.x + bm.w / 2,
+                              bm.y + bm.h / 2,
+                              bDmg,
+                              "bleed",
+                              false,
+                              bm,
+                            );
+                          }
+                        }
+                      }
+                    }
+                    if (bm.shredTimer && bm.shredTimer > 0) {
+                      bm.shredTimer--;
+                      if (bm.shredTimer === 0) bm.shredPercent = 0;
+                    }
 
         // Tome Spell Cast Trigger on Boss
         let isTomeEquipped =
@@ -16872,104 +17262,16 @@
             }
 
             let tileX = bm.bossTileX || Math.floor(bm.x / 32);
-            let tileY = bm.bossTileY || Math.floor(bm.y / 32);
-            window.mob = null;
-            window.onBossDefeated(tileX, tileY);
-          }
-        }
-      }
+                        let tileY = bm.bossTileY || Math.floor(bm.y / 32);
+                        window.mob = null;
+                        window.onBossDefeated(tileX, tileY);
+                      }
+                    }
+                  }
+                }
 
-      // Telegraphed Boss Ability AI Engine
-      if (bm && bm.hp.gt(0)) {
-        let bossCenterX = bm.x + bm.w / 2;
-        let bossCenterY = bm.y + bm.h / 2;
-
-        if (bm.state === "telegraphing") {
-          bm.telegraphTimer--;
-          if (bm.telegraphTimer <= 0) {
-            // Detonate Telegraphed Attack
-            bm.state = "idle";
-            bm.attackCooldown = 110;
-
-            let ability = bm.activeAbility;
-            if (ability === "slam") {
-              let hitDist = Math.hypot(p.x - bm.targetX, p.y - bm.targetY);
-              if (hitDist <= 64) {
-                let slamDmg = Math.round(bm.atk * 1.8);
-                window.damagePlayer(slamDmg, bm);
-                if (p.hp <= 0) window.startDeathSequence();
-              }
-            } else if (ability === "nova") {
-              for (let i = 0; i < 8; i++) {
-                let angle = (i * Math.PI * 2) / 8;
-                let speed = 3.8;
-                window.projectiles.push({
-                  x: bossCenterX,
-                  y: bossCenterY,
-                  vx: Math.cos(angle) * speed,
-                  vy: Math.sin(angle) * speed,
-                  r: 6,
-                  pulseOffset: i,
-                  type: "boss_nova",
-                  damage: Math.round(bm.atk * 1.1),
-                  life: 120,
-                });
-              }
-              if (
-                window.SoundManager &&
-                typeof window.SoundManager.play === "function"
-              ) {
-                window.SoundManager.play("spell_fire");
-              }
-            } else if (ability === "charge") {
-              let dashDx = bm.targetX - bossCenterX;
-              let dashDy = bm.targetY - bossCenterY;
-              let dashDist = Math.hypot(dashDx, dashDy);
-              if (dashDist > 0) {
-                bm.x += (dashDx / dashDist) * 75;
-                bm.y += (dashDy / dashDist) * 75;
-              }
-              let hitDist = Math.hypot(
-                p.x - (bm.x + bm.w / 2),
-                p.y - (bm.y + bm.h / 2),
-              );
-              if (hitDist <= 42) {
-                let chargeDmg = Math.round(bm.atk * 1.5);
-                window.damagePlayer(chargeDmg, bm);
-                if (p.hp <= 0) window.startDeathSequence();
-              }
-            }
-            bm.activeAbility = null;
-          }
-        } else if (bm.attackCooldown <= 0 && dist < 220) {
-          // Roll new telegraphed ability
-          let moves = bm.moveset || ["slam", "nova", "charge"];
-          let chosen = moves[Math.floor(Math.random() * moves.length)];
-
-          bm.state = "telegraphing";
-          bm.activeAbility = chosen;
-          bm.maxTelegraphTimer = 65;
-          bm.telegraphTimer = bm.maxTelegraphTimer;
-          bm.targetX = p.x;
-          bm.targetY = p.y;
-        } else if (dist < 30 && bm.attackCooldown <= 0) {
-          bm.attackCooldown = 60;
-          p.hp = Math.max(0, p.hp - bm.atk);
-          window.spawnFloatingText(p.x, p.y - 15, `-${bm.atk}`, "#e74c3c");
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.play === "function"
-          ) {
-            window.SoundManager.play("block");
-          }
-          window.updateHUD();
-          if (p.hp <= 0) window.startDeathSequence();
-        }
-      }
-    }
-
-    // Update Active Projectiles and Test Player & Wall Hitboxes
-    for (let i = window.projectiles.length - 1; i >= 0; i--) {
+                // Update Active Projectiles and Test Player & Wall Hitboxes
+                for (let i = window.projectiles.length - 1; i >= 0; i--) {
       let proj = window.projectiles[i];
       proj.life--;
 
@@ -24253,14 +24555,20 @@
       let baseAtk = bossInfo.isMajor ? 22 : 15;
 
       let bossHp = Math.round(baseHp * repScale * enemyScale);
-      let bossAtk = Math.round(
-        baseAtk *
-          Math.pow(1.06, waveNumber) *
-          Math.pow(waveNumber, 1.15) *
-          enemyScale,
-      );
+            let bossAtk = Math.round(
+              baseAtk *
+                Math.pow(1.06, waveNumber) *
+                Math.pow(waveNumber, 1.15) *
+                enemyScale,
+            );
 
-      window.mob = {
+            // Apply progression floors (baseline minimums) to ensure engaging combat scaling in Onslaught Mode
+            let bossHpFloor = bossInfo.isMajor ? 1800 : 1200;
+            let bossAtkFloor = bossInfo.isMajor ? 35 : 25;
+            bossHp = Math.max(Math.round(bossHpFloor * (1 + waveNumber * 0.08)), bossHp);
+            bossAtk = Math.max(Math.round(bossAtkFloor * (1 + waveNumber * 0.04)), bossAtk);
+
+            window.mob = {
         type: bossInfo.isMajor ? "dungeon_boss" : "dungeon_miniboss",
         name: bossInfo.name,
         visualType: bossInfo.visualType,
@@ -24297,15 +24605,21 @@
         );
       }
     } else {
-      // --- STANDARD & ELITE MOB SPREAD SPONDING ---
-      let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
-      let mobHpVal = Math.round(40 * repScale * enemyScale);
-      let mobAtkVal = Math.round(
-        8 *
-          Math.pow(1.06, waveNumber) *
-          Math.pow(waveNumber, 1.15) *
-          enemyScale,
-      );
+          // --- STANDARD & ELITE MOB SPREAD SPONDING ---
+          let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
+          let mobHpVal = Math.round(40 * repScale * enemyScale);
+          let mobAtkVal = Math.round(
+            8 *
+              Math.pow(1.06, waveNumber) *
+              Math.pow(waveNumber, 1.15) *
+              enemyScale,
+          );
+
+          // Apply solid baseline floors to prevent early-game trivialization in Onslaught Mode
+          let mobHpFloor = 180;
+          let mobAtkFloor = 14;
+          mobHpVal = Math.max(Math.round(mobHpFloor * (1 + waveNumber * 0.08)), mobHpVal);
+          mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + waveNumber * 0.04)), mobAtkVal);
 
       let pStats =
         typeof window.resolvePlayerStats === "function"
@@ -24333,58 +24647,70 @@
           eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
         }
 
-        let finalHp = isRare ? Math.round(mobHpVal * 1.5) : mobHpVal;
-        let finalAtk = isRare ? Math.round(mobAtkVal * 1.25) : mobAtkVal;
+        let finalHp = mobHpVal;
+                      let finalAtk = mobAtkVal;
 
-        let rangedTypes = [
-          "thorn_wyrm",
-          "wyrmling",
-          "magma_elemental",
-          "toxic_fly",
-          "void_orb",
-        ];
-        let isRanged = rangedTypes.includes(mobInfo.type);
-        let projType =
-          mobInfo.type === "thorn_wyrm"
-            ? "thorn"
-            : mobInfo.type === "wyrmling"
-              ? "frost"
-              : mobInfo.type === "magma_elemental"
-                ? "fireball"
-                : mobInfo.type === "toxic_fly"
-                  ? "maelstrom"
-                  : "void";
+                      if (isElite && isRare) {
+                        finalHp = Math.round(finalHp * 2.5);
+                        finalAtk = Math.round(finalAtk * 1.6);
+                      } else if (isElite) {
+                        finalHp = Math.round(finalHp * 1.5);
+                        finalAtk = Math.round(finalAtk * 1.25);
+                      } else if (isRare) {
+                        finalHp = Math.round(finalHp * 1.75);
+                        finalAtk = Math.round(finalAtk * 1.35);
+                      }
 
-        let pos = window.getOnslaughtSpawnPosition(map);
-        let spawnX = pos.x * tileSize;
-        let spawnY = pos.y * tileSize;
+                      let rangedTypes = [
+                        "thorn_wyrm",
+                        "wyrmling",
+                        "magma_elemental",
+                        "toxic_fly",
+                        "void_orb",
+                      ];
+                      let isRanged = rangedTypes.includes(mobInfo.type);
+                      let projType =
+                        mobInfo.type === "thorn_wyrm"
+                          ? "thorn"
+                          : mobInfo.type === "wyrmling"
+                            ? "frost"
+                            : mobInfo.type === "magma_elemental"
+                              ? "fireball"
+                              : mobInfo.type === "toxic_fly"
+                                ? "maelstrom"
+                                : "void";
 
-        window.activeDungeonMobs.push({
-          id: window.idCounter++,
-          type: "mob",
-          visualTier: mobInfo.tier,
-          visualType: mobInfo.type,
-          x: spawnX,
-          y: spawnY,
-          homeX: spawnX,
-          homeY: spawnY,
-          w: 24,
-          h: 24,
-          hp: BigNum.from(finalHp),
-          maxHp: BigNum.from(finalHp),
-          atk: finalAtk,
-          flashTimer: 0,
-          attackCooldown: 0,
-          rangedCooldown: window.randInt(30, 90),
-          isRanged: isRanged,
-          projectileType: projType,
-          moveProfile:
-            mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
-              ? "relentless"
-              : "standard",
-          facing: -1,
-          isRare: isRare,
-          eliteAffix: eliteAffix,
+                      let pos = window.getOnslaughtSpawnPosition(map);
+                      let spawnX = pos.x * tileSize;
+                      let spawnY = pos.y * tileSize;
+
+                      window.activeDungeonMobs.push({
+                        id: window.idCounter++,
+                        type: "mob",
+                        visualTier: mobInfo.tier,
+                        visualType: mobInfo.type,
+                        x: spawnX,
+                        y: spawnY,
+                        homeX: spawnX,
+                        homeY: spawnY,
+                        w: 24,
+                        h: 24,
+                        hp: BigNum.from(finalHp),
+                        maxHp: BigNum.from(finalHp),
+                        atk: finalAtk,
+                        flashTimer: 0,
+                        attackCooldown: 0,
+                        rangedCooldown: window.randInt(30, 90),
+                        isRanged: isRanged,
+                        projectileType: projType,
+                        moveProfile:
+                          mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
+                            ? "relentless"
+                            : "standard",
+                        facing: -1,
+                        isRare: isRare,
+                        isElite: isElite,
+                        eliteAffix: eliteAffix,
           buffStacks: { haste: 0, def: 0, atk: 0 },
           buffTimers: { haste: 0, def: 0, atk: 0 },
           buffDecayTimers: { haste: 0, def: 0, atk: 0 },

@@ -7,6 +7,9 @@
   };
   const Date = ScopedDate;
 
+  // Feature-detect filter support once and cache it (Zero-allocation)
+  const isFilterSupported = typeof CanvasRenderingContext2D !== "undefined" && "filter" in CanvasRenderingContext2D.prototype;
+
   // Static particle themes to avoid runtime array allocations on entity death
   window.PARTICLE_THEMES = {
     calamity_specter: ["#7c3aed", "#ff0055", "#0d011a", "#000000"],
@@ -647,11 +650,52 @@
     }
 
     update() {
-      if (this.screenShakeTimer > 0) {
-        this.screenShakeTimer--;
-      }
+          if (this.screenShakeTimer > 0) {
+            this.screenShakeTimer--;
+          }
 
-      this.effectPool.pool.forEach((eff) => {
+          // --- Active Player Debuff Particle Emitters ---
+          let p = window.player;
+          if (p && !window.isGamePaused && window.ParticlePool && window.particles) {
+            // A. Poison Gaseous Bubbles
+            if (p.poisonStacks > 0 && Math.random() < 0.18) {
+              let pt = window.ParticlePool.get(
+                p.x + window.randFloat(-8, 8),
+                p.y - 12 + window.randFloat(-10, 10),
+                window.randFloat(-0.3, 0.3),
+                -window.randFloat(0.5, 1.2),
+                window.randFloat(1.2, 2.5),
+                "#2ecc71",
+                0.85,
+                window.randInt(15, 30),
+                0,
+                true
+              );
+              pt.style = "glowing_orb";
+              pt.scaleDecay = 0.02;
+              window.particles.push(pt);
+            }
+
+            // B. Crimson Bleed Droplets
+            if (p.bleedStacks > 0 && Math.random() < 0.22) {
+              let pt = window.ParticlePool.get(
+                p.x + window.randFloat(-4, 4),
+                p.y + window.randFloat(-2, 2),
+                window.randFloat(-0.5, 0.5),
+                window.randFloat(0.5, 1.5), // drip down
+                window.randFloat(1.0, 2.2),
+                "#960018",
+                0.9,
+                window.randInt(10, 20),
+                0.2, // gravity pulls drop down
+                true
+              );
+              pt.style = "streak";
+              window.particles.push(pt);
+            }
+          }
+
+          this.effectPool.pool.forEach((eff) => {
         if (!eff.active) return;
         eff.life--;
         if (eff.life <= 0) {
@@ -1523,14 +1567,190 @@
           ctx.lineJoin = "miter";
           ctx.strokeText(text, eff.x, eff.y);
           ctx.fillStyle = eff.color || "#ffffff";
-          ctx.fillText(text, eff.x, eff.y);
-        }
+                  ctx.fillText(text, eff.x, eff.y);
+                }
 
-        ctx.restore();
-      });
+                ctx.restore();
+                            });
 
-      ctx.restore();
-    }
+                            // --- Screen-Space Player Debuff Vignette & HUD Tray Overlay ---
+                            let p = window.player;
+                            if (p && p.hp > 0 && ctx.canvas) {
+                              ctx.save();
+                              ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to screen-space coordinates
+
+                              let canvas = ctx.canvas;
+                              let vg = ctx.createRadialGradient(
+                                canvas.width / 2,
+                                canvas.height / 2,
+                                Math.min(canvas.width, canvas.height) * 0.35,
+                                canvas.width / 2,
+                                canvas.height / 2,
+                                Math.max(canvas.width, canvas.height) * 0.75,
+                              );
+
+                              let vigColor = "rgba(2, 1, 6, 0.75)"; // Default dark purple
+
+                              if (p.hp / p.maxHp <= 0.25 || (p.bleedStacks && p.bleedStacks > 0)) {
+                                // Low HP / Bleeding: Pulsing Heavy Blood Crimson Vignette
+                                let pulse = Math.sin(Date.now() / 100) * 0.1 + 0.75;
+                                vigColor = `rgba(150, 0, 24, ${pulse})`;
+                              } else if (p.poisonStacks && p.poisonStacks > 0) {
+                                // Poisoned: Toxic Green Vignette
+                                let pulse = Math.sin(Date.now() / 150) * 0.08 + 0.65;
+                                vigColor = `rgba(39, 174, 96, ${pulse})`;
+                              } else if (p.snareTimer > 0 || p.inDilationField) {
+                                // Slowed / Frozen: Icy Blue Vignette
+                                vigColor = "rgba(56, 189, 248, 0.65)";
+                              } else if (p.glitchTimer > 0) {
+                                // Glitched Inverted Controls: Cyber Pink Scanline Vignette
+                                vigColor = "rgba(232, 67, 147, 0.65)";
+                              }
+
+                              vg.addColorStop(0, "rgba(0,0,0,0)");
+                              vg.addColorStop(1, vigColor);
+
+                              ctx.fillStyle = vg;
+                              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                              // Add dynamic scanline noise if glitched
+                              if (p.glitchTimer > 0 && Math.random() < 0.4) {
+                                ctx.fillStyle = "rgba(0, 240, 255, 0.06)";
+                                for (let y = 0; y < canvas.height; y += 4) {
+                                  ctx.fillRect(0, y, canvas.width, 1);
+                                }
+                              }
+
+                              // --- SCREEN-SPACE HUD DEBUFF TRAY LOOP ---
+                              let debuffs = [];
+                              if (p.snareTimer > 0 || p.inDilationField) {
+                                debuffs.push({
+                                  name: p.inDilationField ? "DILATED" : "SLOWED",
+                                  col: "#38bdf8",
+                                  val: p.inDilationField ? "FIELD" : (p.snareTimer / 60).toFixed(1) + "s",
+                                  type: "slow"
+                                });
+                              }
+                              if (p.poisonStacks > 0) {
+                                debuffs.push({
+                                  name: `POISON x${p.poisonStacks}`,
+                                  col: "#2ecc71",
+                                  val: p.poisonTimer ? (p.poisonTimer / 60).toFixed(1) + "s" : "",
+                                  type: "poison"
+                                });
+                              }
+                              if (p.bleedStacks > 0) {
+                                debuffs.push({
+                                  name: `BLEED x${p.bleedStacks}`,
+                                  col: "#e74c3c",
+                                  val: p.bleedTimer ? (p.bleedTimer / 60).toFixed(1) + "s" : "",
+                                  type: "bleed"
+                                });
+                              }
+                              if (p.glitchTimer > 0) {
+                                debuffs.push({
+                                  name: "GLITCHED",
+                                  col: "#e84393",
+                                  val: (p.glitchTimer / 60).toFixed(1) + "s",
+                                  type: "glitch"
+                                });
+                              }
+
+                              if (debuffs.length > 0) {
+                                let startX = 20;
+                                let startY = 85; // Placed comfortably below standard health/portrait systems
+                                let badgeW = 120;
+                                let badgeH = 22;
+                                let spacing = 6;
+
+                                debuffs.forEach((db, dIdx) => {
+                                  let dy = startY + dIdx * (badgeH + spacing);
+
+                                  // 1. Draw Sleek Semi-Translucent Slate Background
+                                  ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+                                  ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+                                  ctx.lineWidth = 1.0;
+                                  ctx.beginPath();
+                                  if (ctx.roundRect) {
+                                    ctx.roundRect(startX, dy, badgeW, badgeH, 3);
+                                  } else {
+                                    ctx.rect(startX, dy, badgeW, badgeH);
+                                  }
+                                  ctx.fill();
+                                  ctx.stroke();
+
+                                  // 2. Draw Left Aesthetic Indicator Accent Border
+                                  ctx.fillStyle = db.col;
+                                  ctx.beginPath();
+                                  if (ctx.roundRect) {
+                                    ctx.roundRect(startX, dy, 3, badgeH, [3, 0, 0, 3]);
+                                  } else {
+                                    ctx.rect(startX, dy, 3, badgeH);
+                                  }
+                                  ctx.fill();
+
+                                  // 3. Draw Procedural Vector Icon
+                                  ctx.save();
+                                  ctx.translate(startX + 12, dy + badgeH / 2);
+                                  ctx.strokeStyle = db.col;
+                                  ctx.lineWidth = 1.0;
+
+                                  if (db.type === "slow") {
+                                    // Concentric Runic Web
+                                    ctx.beginPath();
+                                    ctx.moveTo(-4, -4); ctx.lineTo(4, 4);
+                                    ctx.moveTo(4, -4); ctx.lineTo(-4, 4);
+                                    ctx.stroke();
+                                    ctx.beginPath();
+                                    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+                                    ctx.stroke();
+                                  } else if (db.type === "poison") {
+                                    // Toxic Bio-Bubble
+                                    ctx.fillStyle = db.col;
+                                    ctx.beginPath();
+                                    ctx.arc(0, 1, 2.5, 0, Math.PI * 2);
+                                    ctx.fill();
+                                    ctx.beginPath();
+                                    ctx.arc(-1.5, -2, 1.2, 0, Math.PI * 2);
+                                    ctx.fill();
+                                  } else if (db.type === "bleed") {
+                                    // Shard Blood Droplet
+                                    ctx.fillStyle = db.col;
+                                    ctx.beginPath();
+                                    ctx.moveTo(0, -3.5);
+                                    ctx.quadraticCurveTo(2.2, -0.1, 2.2, 2.2);
+                                    ctx.arc(0, 2.2, 2.2, 0, Math.PI);
+                                    ctx.quadraticCurveTo(-2.2, -0.1, 0, -3.5);
+                                    ctx.closePath();
+                                    ctx.fill();
+                                  } else if (db.type === "glitch") {
+                                    // Digital Double-Box Matrix Link
+                                    ctx.fillStyle = db.col;
+                                    ctx.fillRect(-3, -3, 4, 4);
+                                    ctx.fillStyle = "#00f0ff";
+                                    ctx.fillRect(0, 0, 4, 4);
+                                  }
+                                  ctx.restore();
+
+                                  // 4. Draw Typography Labels (Crisp Monospace)
+                                  ctx.font = "bold 9px monospace";
+                                  ctx.textAlign = "left";
+                                  ctx.textBaseline = "middle";
+                                  ctx.fillStyle = "#ffffff";
+                                  ctx.fillText(db.name, startX + 22, dy + badgeH / 2);
+
+                                  // 5. Draw Value Countdown Ticker
+                                  ctx.textAlign = "right";
+                                  ctx.fillStyle = db.col;
+                                  ctx.fillText(db.val, startX + badgeW - 8, dy + badgeH / 2);
+                                });
+                              }
+
+                              ctx.restore();
+                            }
+
+                            ctx.restore();
+                          }
 
     drawTargetHealthBar(ctx, target, isScreenSpace = false, bossIndex = 0) {
       if (!target || !target.hp || target.hp <= 0) return;
@@ -1825,69 +2045,108 @@
         );
         ctx.restore();
         return;
-      } else if (hpPct < 1.0) {
-        let barW = target.w || 30;
-        let barX = target.x;
-        let barY = target.y - 12;
+      } else if (hpPct < 1.0 || target.eliteAffix) {
+                    let isElite = !!target.eliteAffix;
+                    let scaleMult = isElite ? 1.25 : 1.0;
+                    let barW = (target.w || 24) * scaleMult;
+                    let barX = target.x + ((target.w || 24) - barW) / 2;
+                    let barY = target.y - (isElite ? 28 : 12);
+                    let barH = isElite ? 8 : 6;
 
-        ctx.fillStyle = "#111111";
-        ctx.fillRect(barX, barY, barW, 6);
+              ctx.fillStyle = "#111111";
+              ctx.fillRect(barX, barY, barW, barH);
 
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(barX, barY, target.trailingPct * barW, 6);
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(barX, barY, target.trailingPct * barW, barH);
 
-        ctx.fillStyle = "#e74c3c";
-        ctx.fillRect(barX, barY, hpPct * barW, 6);
+              if (isElite) {
+                let fillGrad = ctx.createLinearGradient(barX, barY, barX + barW, barY);
+                fillGrad.addColorStop(0, "#a855f7"); // Void Purple
+                fillGrad.addColorStop(0.5, "#ef4444"); // Crimson Red
+                fillGrad.addColorStop(1, "#b91c1c"); // Dark Blood
+                ctx.fillStyle = fillGrad;
+              } else {
+                ctx.fillStyle = "#e74c3c";
+              }
+              ctx.fillRect(barX, barY, hpPct * barW, barH);
 
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(barX, barY, barW, 6);
+              ctx.strokeStyle = isElite ? "#ffd700" : "#000000"; // Gilded border for Elites
+              ctx.lineWidth = isElite ? 1.8 : 1.5;
+              ctx.strokeRect(barX, barY, barW, barH);
 
-        this.drawStatusDots(
-          ctx,
-          barX,
-          barY - 6,
-          target.bleedStacks || 0,
-          "#e74c3c",
-        );
-        this.drawStatusDots(
-          ctx,
-          barX,
-          barY - 12,
-          target.poisonStacks || 0,
-          "#2ecc71",
-        );
+              this.drawStatusDots(
+                ctx,
+                barX,
+                barY - 6,
+                target.bleedStacks || 0,
+                "#e74c3c",
+              );
+              this.drawStatusDots(
+                ctx,
+                barX,
+                barY - 12,
+                target.poisonStacks || 0,
+                "#2ecc71",
+              );
 
-        if (target.buffStacks) {
-          let badgeY = barY - 18;
-          let badgeParts = [];
-          if ((target.buffStacks.haste || 0) > 0)
-            badgeParts.push({
-              text: `Haste ${target.buffStacks.haste}x`,
-              col: "#00d2ff",
-            });
-          if ((target.buffStacks.def || 0) > 0)
-            badgeParts.push({
-              text: `Def ${target.buffStacks.def}x`,
-              col: "#3498db",
-            });
-          if ((target.buffStacks.atk || 0) > 0)
-            badgeParts.push({
-              text: `Atk ${target.buffStacks.atk}x`,
-              col: "#e74c3c",
-            });
+              if (isElite) {
+                let labelY = barY - 18;
+                let affixName = target.eliteAffix.replace("_", " ").toUpperCase();
+                let labelColor = "#ffffff";
 
-          badgeParts.forEach((bp) => {
-            ctx.font = "bold 8px monospace";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 2.0;
-            ctx.strokeText(bp.text, barX, badgeY);
-            ctx.fillStyle = bp.col;
-            ctx.fillText(bp.text, barX, badgeY);
-            badgeY -= 9;
-          });
-        }
-      }
+                if (target.eliteAffix === "vitality_weaver") labelColor = "#2ecc71";
+                else if (target.eliteAffix === "iron_citadel") labelColor = "#3498db";
+                else if (target.eliteAffix === "swift_commander") labelColor = "#00d2ff";
+                else if (target.eliteAffix === "blood_berserker") labelColor = "#ef4444";
+                else if (target.eliteAffix === "nullifier") labelColor = "#a855f7";
+                else if (target.eliteAffix === "web_weaver") labelColor = "#38bdf8";
+                else if (target.eliteAffix === "glacial_warden") labelColor = "#60a5fa";
+                else if (target.eliteAffix === "slag_shaper") labelColor = "#f97316";
+                else if (target.eliteAffix === "toxic_decay") labelColor = "#a7f3d0";
+
+                ctx.font = "bold 7px monospace";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2.0;
+                let labelX = barX + barW / 2;
+                let displayLabel = `◈ ${affixName} ◈`;
+                ctx.strokeText(displayLabel, labelX, labelY);
+                ctx.fillStyle = labelColor;
+                ctx.fillText(displayLabel, labelX, labelY);
+              }
+
+              if (target.buffStacks) {
+                let badgeY = barY - (isElite ? 26 : 18);
+                let badgeParts = [];
+                if ((target.buffStacks.haste || 0) > 0)
+                  badgeParts.push({
+                    text: `Haste ${target.buffStacks.haste}x`,
+                    col: "#00d2ff",
+                  });
+                if ((target.buffStacks.def || 0) > 0)
+                  badgeParts.push({
+                    text: `Def ${target.buffStacks.def}x`,
+                    col: "#3498db",
+                  });
+                if ((target.buffStacks.atk || 0) > 0)
+                  badgeParts.push({
+                    text: `Atk ${target.buffStacks.atk}x`,
+                    col: "#e74c3c",
+                  });
+
+                badgeParts.forEach((bp) => {
+                  ctx.font = "bold 8px monospace";
+                  ctx.strokeStyle = "#000000";
+                  ctx.lineWidth = 2.0;
+                  ctx.strokeText(bp.text, barX, badgeY);
+                  ctx.fillStyle = bp.col;
+                  ctx.fillText(bp.text, barX, badgeY);
+                  badgeY -= 9;
+                });
+              }
+            }
 
       ctx.restore();
     }
@@ -6642,16 +6901,131 @@
   window.RenderEngine.drawSingleMob = (c, m) => window.drawSingleMob(c, m);
 
   window.drawSingleMob = function (c, m) {
-    if (!m) return;
-    let t = m.visualTier;
-    let rx = m.recoilX || 0;
-    let ry = m.recoilY || 0;
-    let facing = m.facing !== undefined ? m.facing : -1;
+          if (!m) return;
+          let t = m.visualTier;
+          let rx = m.recoilX || 0;
+          let ry = m.recoilY || 0;
+          let facing = m.facing !== undefined ? m.facing : -1;
 
-    c.save();
-    c.translate(rx, ry);
+          let mobIsElite = !!m.isElite || !!m.eliteAffix;
+          let mobIsRare = !!m.isRare;
 
-    if (facing === 1) {
+          // --- Core Boss & Mini-Boss AI / HP Interceptor Hook ---
+          let isBossOrMiniboss = !!(m.isBoss || m.type === "dungeon_miniboss" || m.type === "dungeon_boss" || m.visualType === "brimstone_colossus" || m.visualType === "gilded_vault_keeper" || m.visualType === "corrosive_abomination" || m.visualType === "overlord_iron_vault" || m.type === "marcus_boss" || m.type === "rift_guardian" || m.type === "prestige_boss" || m.type === "hooktail" || m.type === "nexus_overseer" || m.type === "chronos_arbitrator" || m.type === "aegis_goliath");
+
+          if (isBossOrMiniboss && !window.isGamePaused) {
+            // A. Initialize Guard Cooldowns & State Flags
+            if (m.guardTimer === undefined) {
+              m.guardTimer = 400 + Math.random() * 200; // Time until next guard pose (6-10s)
+              m.guardActiveTimer = 0; // Duration of active guard pose
+              m._berserkTriggered = false;
+              m.isBerserk = false;
+            }
+
+            // B. Progress Guard State Timers
+            if (m.guardActiveTimer > 0) {
+              m.guardActiveTimer--;
+              if (m.guardActiveTimer <= 0) {
+                m.guardTimer = 500 + Math.random() * 300; // Cooldown reset (8-13s)
+              }
+            } else if (m.guardTimer > 0) {
+              m.guardTimer--;
+              if (m.guardTimer <= 0) {
+                m.guardActiveTimer = 180; // 3 seconds of active guard stance
+              }
+            }
+
+            // C. Watertight JS Property Hook: Intercepts and mitigates all incoming HP changes
+            if (!m._hpGatedHooked) {
+              m._hpGatedHooked = true;
+              let rawHp = m.hp;
+
+              Object.defineProperty(m, "hp", {
+                get() {
+                  return rawHp;
+                },
+                set(newHp) {
+                  let numericDamage = 0;
+                  if (rawHp && rawHp.sub) {
+                    let diff = rawHp.sub(newHp);
+                    numericDamage = diff.m * Math.pow(10, diff.e);
+                  } else {
+                    numericDamage = rawHp - newHp;
+                  }
+
+                  if (numericDamage > 0) {
+                    // C.1. Frontal Parry Stance active: Blocks 80% of incoming frontal attacks
+                    if (m.guardActiveTimer > 0 && window.player) {
+                      let angleToPlayer = Math.atan2(window.player.y - m.y, window.player.x - m.x);
+                      let parryReduction = 0.80; // 80% reduction
+                      let reducedDmg = numericDamage * (1.0 - parryReduction);
+
+                      if (rawHp && rawHp.sub) {
+                        newHp = rawHp.sub(BigNum.from(Math.round(reducedDmg)));
+                      } else {
+                        newHp = rawHp - Math.round(reducedDmg);
+                      }
+
+                      // Sound & Visual Parry Feedbacks
+                                                    if (window.RenderEngine && typeof window.RenderEngine.spawnHitSparks === "function") {
+                                                      window.RenderEngine.spawnHitSparks(m.x + m.w/2, m.y + m.h/2, true, Math.cos(angleToPlayer), Math.sin(angleToPlayer));
+                                                    }
+                                                    if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(m.x + m.w/2, m.y - 20, "PARRIED!", "#38bdf8", true);
+                      }
+                      if (window.SoundManager) {
+                        window.SoundManager.play("hit");
+                      }
+                    }
+                    // C.2. Enraged Vulnerability: Takes 15% more damage when Berserk is active
+                    else if (m.isBerserk) {
+                      let extraDmg = numericDamage * 0.15;
+                      if (rawHp && rawHp.sub) {
+                        newHp = newHp.sub(BigNum.from(Math.round(extraDmg)));
+                      } else {
+                        newHp = newHp - Math.round(extraDmg);
+                      }
+                    }
+                  }
+
+                  rawHp = newHp;
+
+                  // C.3. Check Berserk Transition Threshold (Enters below 45% Max HP)
+                  let bHp = typeof rawHp === "object" ? rawHp.m * Math.pow(10, rawHp.e) : rawHp;
+                  let bMaxHp = typeof m.maxHp === "object" ? m.maxHp.m * Math.pow(10, m.maxHp.e) : m.maxHp;
+                  if (bHp / bMaxHp <= 0.45 && !m._berserkTriggered) {
+                    m._berserkTriggered = true;
+                    m.isBerserk = true;
+
+                    // Permanent 25% Attack Power Increase
+                    if (m.atk) {
+                      if (m.atk.mul) m.atk = m.atk.mul(1.25);
+                      else m.atk = Math.round(m.atk * 1.25);
+                    }
+
+                    if (typeof window.spawnFloatingText === "function") {
+                      window.spawnFloatingText(m.x + m.w/2, m.y - 30, "BERSERK!", "#e74c3c", true);
+                    }
+                  }
+                },
+                configurable: true
+              });
+            }
+          }
+
+          c.save();
+      c.translate(rx, ry);
+
+      // Apply 1.25x Physical Scale for Elites from ground base (bottom-center)
+      if (m.eliteAffix) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h;
+        c.translate(cx, cy);
+        c.scale(1.25, 1.25);
+        c.translate(-cx, -cy);
+      }
+
+      if (facing === 1) {
       let cx = m.x + m.w / 2;
       let cy = m.y + m.h / 2;
       c.translate(cx, cy);
@@ -6660,19 +7034,165 @@
     }
 
     // Ground Drop Shadow & Elite Aura Pass
-    c.save();
-    let mCx = m.x + m.w / 2;
-    let mCy = m.y + m.h - 2;
-    let mobShadowW = m.w * 0.45;
-    let mobShadowH = Math.max(3, m.h * 0.15);
+            c.save();
+            let mCx = m.x + m.w / 2;
+            let mCy = m.y + m.h - 2;
+            let mobShadowW = m.w * 0.45;
+            let mobShadowH = Math.max(3, m.h * 0.15);
 
-    c.fillStyle = "rgba(0, 0, 0, 0.35)";
-    c.beginPath();
-    c.ellipse(mCx, mCy, mobShadowW, mobShadowH, 0, 0, Math.PI * 2);
-    c.fill();
+            let time = Date.now();
 
-    // Render Blood Berserker Death Detonation Warning Circle
-    if (m.isDetonating && m.detonationTimer > 0) {
+            // --- Render Active Frontal Guard Ground Shield Arc ---
+            if (isBossOrMiniboss && m.guardActiveTimer > 0 && window.player) {
+              let angleToPlayer = Math.atan2(window.player.y - m.y, window.player.x - m.x);
+              let arcRadius = m.w * 0.9;
+
+              c.save();
+              c.strokeStyle = "rgba(0, 240, 255, 0.75)";
+              c.lineWidth = 2.5;
+              c.shadowBlur = 12;
+              c.shadowColor = "#00f0ff";
+
+              // Draw a semi-circular shield arc facing towards you on the ground
+              c.beginPath();
+              c.arc(mCx, mCy - m.h / 2, arcRadius, angleToPlayer - Math.PI / 4, angleToPlayer + Math.PI / 4);
+              c.stroke();
+              c.shadowBlur = 0;
+
+              // Inner polished white trim line
+              c.strokeStyle = "rgba(255, 255, 255, 0.4)";
+              c.lineWidth = 1.0;
+              c.beginPath();
+              c.arc(mCx, mCy - m.h / 2, arcRadius - 4, angleToPlayer - Math.PI / 4, angleToPlayer + Math.PI / 4);
+              c.stroke();
+              c.restore();
+            }
+
+            // --- Render Berserk Aura & Rising Flame Embers ---
+            if (isBossOrMiniboss && m.isBerserk) {
+              // A. Draw a pulsing heavy crimson crown glow above the boss head
+              c.save();
+              let pulse = Math.sin(time / 100) * 0.2 + 0.8;
+              c.strokeStyle = "#e74c3c";
+              c.lineWidth = 1.5;
+              c.shadowBlur = 10 * pulse;
+              c.shadowColor = "#e74c3c";
+              c.beginPath();
+              c.ellipse(mCx, m.y - 12, 8 * pulse, 2.5 * pulse, 0, 0, Math.PI * 2);
+              c.stroke();
+              c.shadowBlur = 0;
+              c.restore();
+
+              // B. Spawn rising red flame embers using the zero-allocation pool
+              if (Math.random() < 0.18 && !window.isGamePaused && window.ParticlePool && window.particles) {
+                let pt = window.ParticlePool.get(
+                  mCx + window.randFloat(-10, 10),
+                  m.y - 4 + window.randFloat(-4, 4),
+                  window.randFloat(-0.3, 0.3),
+                  -window.randFloat(0.4, 1.2),
+                  window.randFloat(1.0, 2.2),
+                  "#e74c3c",
+                  0.8,
+                  window.randInt(15, 30),
+                  -0.01,
+                  true
+                );
+                pt.style = "glowing_orb";
+                pt.scaleDecay = 0.02;
+                window.particles.push(pt);
+              }
+            }
+
+        if (mobIsElite && mobIsRare) {
+          // --- RARE ELITE: Prismatic Under-Glow (Dual-layered interlocking runic circle) ---
+          let rot1 = time / 400;
+          let rot2 = -time / 300;
+
+          // Outer Layer (Emerald)
+          c.save();
+          c.translate(mCx, mCy);
+          c.rotate(rot1);
+          c.strokeStyle = "#2ecc71";
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.ellipse(0, 0, m.w * 0.8, m.w * 0.35, 0, 0, Math.PI * 2);
+          c.stroke();
+
+          // Decorative ticks
+          for (let i = 0; i < 4; i++) {
+            let a = (i * Math.PI) / 2;
+            c.beginPath();
+            c.moveTo(Math.cos(a) * (m.w * 0.7), Math.sin(a) * (m.w * 0.3));
+            c.lineTo(Math.cos(a) * (m.w * 0.9), Math.sin(a) * (m.w * 0.4));
+            c.stroke();
+          }
+          c.restore();
+
+          // Inner Layer (Violet)
+          c.save();
+          c.translate(mCx, mCy);
+          c.rotate(rot2);
+          c.strokeStyle = "#a855f7";
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.ellipse(0, 0, m.w * 0.55, m.w * 0.24, 0, 0, Math.PI * 2);
+          c.stroke();
+          c.restore();
+
+          // Emit dual-tone embers from base
+          if (Math.random() < 0.12 && !window.isGamePaused && window.ParticlePool && window.particles) {
+            let angle = Math.random() * Math.PI * 2;
+            let radius = window.randFloat(m.w * 0.2, m.w * 0.7);
+            let ex = mCx + Math.cos(angle) * radius;
+            let ey = mCy + Math.sin(angle) * radius * 0.45;
+            let color = Math.random() < 0.5 ? "#2ecc71" : "#a855f7";
+            let pt = window.ParticlePool.get(
+              ex,
+              ey,
+              window.randFloat(-0.2, 0.2),
+              -window.randFloat(0.4, 1.2),
+              window.randFloat(1.2, 2.4),
+              color,
+              0.85,
+              window.randInt(15, 30),
+              -0.01,
+              true
+            );
+            pt.style = "glowing_orb";
+            pt.scaleDecay = 0.02;
+            window.particles.push(pt);
+          }
+        } else if (mobIsElite) {
+          // --- ELITE: Base Rift (Vibrating tattered dark-purple ground rift) ---
+          let vibX = Math.sin(time / 25) * 1.5;
+          let vibY = Math.cos(time / 20) * 0.8;
+
+          c.fillStyle = "#1e052e"; // Dark purple backing shadow
+          c.beginPath();
+          let steps = 12;
+          for (let i = 0; i <= steps; i++) {
+            let a = (i * Math.PI * 2) / steps;
+            let rX = mobShadowW * (1.1 + Math.sin(i * 3 + time / 80) * 0.12) + vibX;
+            let rY = mobShadowH * (1.1 + Math.cos(i * 3 + time / 80) * 0.12) + vibY;
+            c.lineTo(mCx + Math.cos(a) * rX, mCy + Math.sin(a) * rY);
+          }
+          c.closePath();
+          c.fill();
+
+          // Sharp tattered border
+          c.strokeStyle = "#510a74";
+          c.lineWidth = 1.2;
+          c.stroke();
+        } else {
+          // --- STANDARD / RARE shadow ---
+          c.fillStyle = "rgba(0, 0, 0, 0.35)";
+          c.beginPath();
+          c.ellipse(mCx, mCy, mobShadowW, mobShadowH, 0, 0, Math.PI * 2);
+          c.fill();
+        }
+
+        // Render Blood Berserker Death Detonation Warning Circle
+        if (m.isDetonating && m.detonationTimer > 0) {
       let pulse = Math.sin(Date.now() / 50) * 4;
       c.strokeStyle = "#e74c3c";
       c.lineWidth = 2.0;
@@ -6689,26 +7209,38 @@
     }
 
     // Render Elite Commander Ground Runic Aura Ring & Laser Tethers
-    if (m.eliteAffix) {
-      let auraColor = "#00d2ff";
-      let buffKey = "haste";
+        if (m.eliteAffix) {
+          let auraColor = "#00d2ff";
+          let buffKey = "haste";
 
-      if (m.eliteAffix === "vitality_weaver") {
-        auraColor = "#2ecc71";
-        buffKey = null;
-      } else if (m.eliteAffix === "iron_citadel") {
-        auraColor = "#3498db";
-        buffKey = "def";
-      } else if (m.eliteAffix === "swift_commander") {
-        auraColor = "#00d2ff";
-        buffKey = "haste";
-      } else if (m.eliteAffix === "blood_berserker") {
-        auraColor = "#e74c3c";
-        buffKey = "atk";
-      } else if (m.eliteAffix === "nullifier") {
-        auraColor = "#a855f7";
-        buffKey = null;
-      }
+          if (m.eliteAffix === "vitality_weaver") {
+            auraColor = "#2ecc71";
+            buffKey = null;
+          } else if (m.eliteAffix === "iron_citadel") {
+            auraColor = "#3498db";
+            buffKey = "def";
+          } else if (m.eliteAffix === "swift_commander") {
+            auraColor = "#00d2ff";
+            buffKey = "haste";
+          } else if (m.eliteAffix === "blood_berserker") {
+            auraColor = "#e74c3c";
+            buffKey = "atk";
+          } else if (m.eliteAffix === "nullifier") {
+            auraColor = "#a855f7";
+            buffKey = null;
+          } else if (m.eliteAffix === "web_weaver") {
+            auraColor = "#2ecc71";
+            buffKey = null;
+          } else if (m.eliteAffix === "glacial_warden") {
+            auraColor = "#38bdf8";
+            buffKey = null;
+          } else if (m.eliteAffix === "slag_shaper") {
+            auraColor = "#f97316";
+            buffKey = null;
+          } else if (m.eliteAffix === "toxic_decay") {
+            auraColor = "#a7f3d0";
+            buffKey = null;
+          }
 
       let rot = (Date.now() / 400) % (Math.PI * 2);
       c.strokeStyle = auraColor;
@@ -6723,30 +7255,46 @@
       c.restore();
 
       // Draw Translucent Laser Tether Links to Buffed Minion Allies
-      if (buffKey && window.activeDungeonMobs) {
-        c.strokeStyle = auraColor;
-        c.lineWidth = 1.2;
-        c.globalAlpha = 0.35;
-        c.setLineDash([2, 2]);
+            if (buffKey && window.activeDungeonMobs) {
+              c.strokeStyle = auraColor;
+              c.lineWidth = 1.2;
+              c.globalAlpha = 0.35;
+              c.setLineDash([2, 2]);
 
-        window.activeDungeonMobs.forEach((m2) => {
-          if (m2 === m || !m2.buffStacks || (m2.buffStacks[buffKey] || 0) <= 0)
-            return;
-          let m2Cx = m2.x + (m2.w || 24) / 2;
-          let m2Cy = m2.y + (m2.h || 24) / 2;
+              window.activeDungeonMobs.forEach((m2) => {
+                if (m2 === m || !m2.buffStacks || (m2.buffStacks[buffKey] || 0) <= 0)
+                  return;
+                let m2Cx = m2.x + (m2.w || 24) / 2;
+                let m2Cy = m2.y + (m2.h || 24) / 2;
 
-          c.beginPath();
-          c.moveTo(mCx, mCy - m.h / 2);
-          c.lineTo(m2Cx, m2Cy);
-          c.stroke();
-        });
-        c.setLineDash([]);
-        c.globalAlpha = 1.0;
-      }
-    }
-    c.restore();
+                c.beginPath();
+                c.moveTo(mCx, mCy - m.h / 2);
+                c.lineTo(m2Cx, m2Cy);
+                c.stroke();
+              });
+              c.setLineDash([]);
+              c.globalAlpha = 1.0;
+            }
+          }
+          c.restore();
 
-    let penWidth =
+          // --- Apply Hardware-Accelerated Rendering Filters (Phase 2) ---
+          if (isFilterSupported) {
+            let mobIsElite = !!m.isElite || !!m.eliteAffix;
+            let mobIsRare = !!m.isRare;
+
+            if (mobIsElite && mobIsRare) {
+              c.filter = "hue-rotate(280deg) saturate(250%) brightness(1.05) contrast(1.4)";
+            } else if (mobIsElite) {
+              c.filter = "hue-rotate(130deg) saturate(160%) brightness(0.8) contrast(1.25)";
+            } else if (mobIsRare) {
+              c.filter = "hue-rotate(25deg) saturate(220%) brightness(1.15) contrast(1.1)";
+            } else {
+              c.filter = "none";
+            }
+          }
+
+          let penWidth =
       m.type === "boss" ||
       m.type === "dungeon_boss" ||
       m.type === "prestige_boss" ||
@@ -11752,11 +12300,132 @@
             c.fillStyle = "#ff007f";
             c.fillRect(px - 1.2, -4, 2.4, 8);
           }
-        }
-      }
-    }
+                  }
+                }
+              }
 
-    // Kinetic Reflectors Energy Shield Arc Rendering
+              // --- Reset Hardware-Accelerated Rendering Filters (Phase 2) ---
+                  if (isFilterSupported) {
+                    c.filter = "none";
+                  }
+
+                  // --- Tiered Overhead Overlays (Phase 3) ---
+                            c.save();
+                            let mCxOverlay = m.x + m.w / 2;
+                            let headY = m.y - (mobIsElite ? 2 : 12);
+                            let timeOverlay = Date.now();
+
+                            if (mobIsElite && mobIsRare) {
+                              // --- RARE ELITE: Cosmic Crown (Ring of 4 rotating void spikes) ---
+                              let rot = timeOverlay / 600;
+                              let radiusX = 14;
+                              let radiusY = 4.5;
+                              let spikeCount = 4;
+
+                              for (let i = 0; i < spikeCount; i++) {
+                                let angle = rot + (i * Math.PI * 2) / spikeCount;
+                                let sx = mCxOverlay + Math.cos(angle) * radiusX;
+                                let sy = headY - 4 + Math.sin(angle) * radiusY;
+                      let scale = 1.0 + Math.sin(angle) * 0.22; // Simulates 3D depth scaling
+
+                      c.save();
+                      c.translate(sx, sy);
+                      c.rotate(angle + Math.PI / 2); // Orient outward
+                      c.fillStyle = "#110221"; // Dark cosmic base
+                      c.strokeStyle = "#ff007f"; // Hot pink glow edge
+                      c.lineWidth = 1.0;
+
+                      c.beginPath();
+                      c.moveTo(-2 * scale, 0);
+                      c.lineTo(0, -7 * scale);
+                      c.lineTo(2 * scale, 0);
+                      c.closePath();
+                      c.fill();
+                      c.stroke();
+                      c.restore();
+                    }
+                  } else if (mobIsElite) {
+                              // --- ELITE: Void Pillars (2 floating basalt shards rotating slowly) ---
+                              let rot = timeOverlay / 1100;
+                              let radiusX = 16;
+                              let radiusY = 5.0;
+                              let pillarCount = 2;
+
+                              for (let i = 0; i < pillarCount; i++) {
+                                let angle = rot + (i * Math.PI * 2) / pillarCount;
+                                let px = mCxOverlay + Math.cos(angle) * radiusX;
+                                let py = headY - 2 + Math.sin(angle) * radiusY;
+                      let bob = Math.sin(timeOverlay / 140 + i) * 1.5;
+                      let scale = 1.0 + Math.sin(angle) * 0.15;
+
+                      c.save();
+                      c.translate(px, py + bob);
+                      c.fillStyle = "#2c3e50"; // Basalt dark grey
+                      c.strokeStyle = "#a855f7"; // Glowing purple cracks
+                      c.lineWidth = 1.0;
+
+                      c.beginPath();
+                      c.moveTo(-1.8 * scale, -5 * scale);
+                      c.lineTo(1.8 * scale, -5 * scale);
+                      c.lineTo(2.2 * scale, 5 * scale);
+                      c.lineTo(-2.2 * scale, 5 * scale);
+                      c.closePath();
+                      c.fill();
+                      c.stroke();
+                      c.restore();
+                    }
+                  } else if (mobIsRare) {
+                    // --- RARE: Crown of Embers (3 sulfur-yellow diamonds hovering and bobbing) ---
+                    let rot = timeOverlay / 700;
+                    let radiusX = 11;
+                    let radiusY = 3.5;
+                    let emberCount = 3;
+
+                    for (let i = 0; i < emberCount; i++) {
+                                          let angle = rot + (i * Math.PI * 2) / emberCount;
+                                          let ex = mCxOverlay + Math.cos(angle) * radiusX;
+                                          let ey = headY - 12 + Math.sin(angle) * radiusY;
+                                          let bob = Math.sin(timeOverlay / 120 + i) * 1.2;
+                                          let scale = 1.0 + Math.sin(angle) * 0.15;
+
+                                          c.save();
+                                          c.translate(ex, ey + bob);
+                                          c.fillStyle = "#f1c40f"; // Sulfur yellow
+                                          c.strokeStyle = "#ffd700"; // Gold highlights
+                                          c.lineWidth = 0.8;
+
+                                          c.beginPath();
+                                          c.moveTo(0, -4 * scale);
+                                          c.lineTo(2.2 * scale, 0);
+                                          c.lineTo(0, 4 * scale);
+                                          c.lineTo(-2.2 * scale, 0);
+                                          c.closePath();
+                                          c.fill();
+                                          c.stroke();
+                                          c.restore();
+                                        }
+
+                    // --- RARE: Base Ripple (Diagonal gold light sheen sweep across mob body) ---
+                    let rippleProgress = (timeOverlay / 1500) % 1.2; // sweeps across bounds
+                    let diagonalX = m.x - m.w * 0.2 + rippleProgress * (m.w * 1.4);
+
+                    c.save();
+                    // Clip to mob rectangle to prevent overflow bounds pollution
+                    c.beginPath();
+                    c.rect(m.x, m.y, m.w, m.h);
+                    c.clip();
+
+                    c.strokeStyle = "rgba(255, 215, 0, 0.35)";
+                    c.lineWidth = 3.5;
+                    c.beginPath();
+                    c.moveTo(diagonalX - m.h * 0.5, m.y);
+                    c.lineTo(diagonalX + m.h * 0.5, m.y + m.h);
+                    c.stroke();
+                    c.restore();
+                  }
+                  c.restore();
+
+                  // Kinetic Reflectors Energy Shield Arc Rendering
     if (
       window.isCavernEffectActive &&
       window.isCavernEffectActive("kinetic_reflectors") &&
@@ -17103,25 +17772,80 @@
 
       // Draw the depth-sorted runes with size-scaling based on Z-axis
       sortedRunes.forEach((sr) => {
-        let size = 1.6 + sr.pz * 0.45;
-        ctx.save();
-        ctx.globalAlpha = 0.55 + sr.pz * 0.35;
-        drawRune(
-          sr.px,
-          sr.py,
-          size,
-          sr.rune.type,
-          sr.rune.color,
-          sr.rune.coreColor,
-        );
-        ctx.restore();
-      });
+                  let size = 1.6 + sr.pz * 0.45;
+                  ctx.save();
+                  ctx.globalAlpha = 0.55 + sr.pz * 0.35;
+                  drawRune(
+                    sr.px,
+                    sr.py,
+                    size,
+                    sr.rune.type,
+                    sr.rune.color,
+                    sr.rune.coreColor,
+                  );
+                  ctx.restore();
+                });
 
-      ctx.restore();
-    }
+                ctx.restore();
+              }
 
-    ctx.restore();
-  };
+              // --- Player Debuff Visual Overlays ---
+              let p = window.player;
+              if (p && stats && !options.isTrail) {
+                // A. Web / Snare / Dilation Field Overlay (Sticky white/yellow netting)
+                if (p.snareTimer > 0 || p.inDilationField) {
+                  ctx.save();
+                  ctx.strokeStyle = p.inDilationField ? "rgba(241, 196, 15, 0.65)" : "rgba(255, 255, 255, 0.7)";
+                  ctx.lineWidth = 1.0;
+                  ctx.beginPath();
+                  // Web mesh overlay
+                  ctx.moveTo(-8, -12); ctx.lineTo(8, 12);
+                  ctx.moveTo(8, -12); ctx.lineTo(-8, 12);
+                  ctx.moveTo(-10, 0); ctx.lineTo(10, 0);
+                  ctx.ellipse(0, 0, 7, 10, 0, 0, Math.PI * 2);
+                  ctx.stroke();
+                  ctx.restore();
+                }
+
+                // B. Poison Tint Overlay (Glowing green mist)
+                if (p.poisonStacks > 0) {
+                  ctx.save();
+                  let pulse = Math.sin(Date.now() / 100) * 0.15 + 0.85;
+                  let poisonGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 16 * pulse);
+                  poisonGrad.addColorStop(0, "rgba(46, 204, 113, 0.25)");
+                  poisonGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
+                  ctx.fillStyle = poisonGrad;
+                  ctx.beginPath();
+                  ctx.arc(0, 0, 16 * pulse, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.restore();
+                }
+
+                // C. Bleed Core Splatter Glisten
+                if (p.bleedStacks > 0 && Math.sin(Date.now() / 60) > 0.5) {
+                  ctx.save();
+                  ctx.fillStyle = "rgba(150, 0, 24, 0.35)";
+                  ctx.beginPath();
+                  ctx.arc(-2, -2, 4, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.restore();
+                }
+
+                // D. Inversion / Glitch Chromatic Displacement
+                if (p.glitchTimer > 0) {
+                  if (Math.sin(Date.now() / 20) > 0.6) {
+                    ctx.save();
+                    ctx.translate(window.randFloat(-3, 3), window.randFloat(-2, 2));
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillStyle = Math.random() < 0.5 ? "#00ffff" : "#ff007f";
+                    ctx.fillRect(-6, -12, 12, 24);
+                    ctx.restore();
+                  }
+                }
+              }
+
+              ctx.restore();
+            };
 
   window.toggleMenuHub = function () {
     let overlay = document.getElementById("menu-hub-overlay");

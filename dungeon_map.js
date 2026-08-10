@@ -29,12 +29,13 @@
       this.spawnRoomId = null;
       this.extractionRoomId = null;
       this.merchantTile = null;
-      this.merchantStock = [];
-      this.needsPreRender = true;
-      this.preRenderCanvas = null;
-      this.chestTiers = {};
-      this.chestAnimations = {};
-    }
+            this.merchantStock = [];
+            this.needsPreRender = true;
+            this.preRenderCanvas = null;
+            this.chestTiers = {};
+            this.chestAnimations = {};
+            this.portalLocked = false;
+          }
 
     getGridDimensions(depth) {
       let d = Math.max(1, Number(depth) || 1);
@@ -226,10 +227,11 @@
     }
 
     generate(depth) {
-      this.reset();
-      this.depth = depth || 1;
+          this.reset();
+          this.depth = depth || 1;
+          this.portalLocked = true; // Lock standard portal upon loading
 
-      let dims = this.getGridDimensions(depth);
+          let dims = this.getGridDimensions(depth);
       this.width = dims.width;
       this.height = dims.height;
 
@@ -1709,10 +1711,11 @@
   };
 
   window.drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
-    let time = Date.now();
-    let isChallengeActive =
-      window.playerStats && window.playerStats.activeSpecialChallenge !== null;
-    let ecoMode = window.playerStats && window.playerStats.ecoMode;
+      let map = window.activeDungeonMap;
+      let time = Date.now();
+      let isChallengeActive =
+        window.playerStats && window.playerStats.activeSpecialChallenge !== null;
+      let ecoMode = window.playerStats && window.playerStats.ecoMode;
 
     let primaryColor, secondaryColor, coreColor, bgGradColor, particleColor;
     if (isChallengeActive) {
@@ -2007,48 +2010,120 @@
     ctx.fill();
 
     // 8. HEAVY GRAVITATIONAL VORTEX SUCTION PARTICLES (Black Hole Gravitational Pull)
-    if (Math.random() < 0.42 && window.particles && window.ParticlePool) {
-      let angle = Math.random() * Math.PI * 2;
+          if (Math.random() < 0.42 && window.particles && window.ParticlePool) {
+            let angle = Math.random() * Math.PI * 2;
 
-      // Spawn further out in a wider, dramatic gravitational field boundary
-      let dist = tileSize * (1.1 + Math.random() * 1.3);
+            // Spawn further out in a wider, dramatic gravitational field boundary
+            let dist = tileSize * (1.1 + Math.random() * 1.3);
 
-      // Spawn in an elliptical ring mapped to 2.5D perspective around the hovering portal center
-      let startX = cx + Math.cos(angle) * dist;
-      let startY = pCenterY + Math.sin(angle) * dist * 0.55;
+            // Spawn in an elliptical ring mapped to 2.5D perspective around the hovering portal center
+            let startX = cx + Math.cos(angle) * dist;
+            let startY = pCenterY + Math.sin(angle) * dist * 0.55;
 
-      // Pull speed is direct and swift so particles visually rush inward
-      let speed = 1.8 + Math.random() * 1.5;
-      let swirl = 0.4 + Math.random() * 0.7;
+            // Pull speed is direct and swift so particles visually rush inward
+            let speed = 1.8 + Math.random() * 1.5;
+            let swirl = 0.4 + Math.random() * 0.7;
 
-      // Inward velocity vectors with a slight orbital spiral twist
-      let vx = -Math.cos(angle) * speed - Math.sin(angle) * swirl;
-      let vy = (-Math.sin(angle) * speed + Math.cos(angle) * swirl) * 0.55;
+            // Inward velocity vectors with a slight orbital spiral twist
+            let vx = -Math.cos(angle) * speed - Math.sin(angle) * swirl;
+            let vy = (-Math.sin(angle) * speed + Math.cos(angle) * swirl) * 0.55;
 
-      // Calculate precise lifespan so particles die EXACTLY when they hit the core center.
-      // This prevents them from overshooting, avoiding the "particles dropping below" bug.
-      let life = Math.max(6, Math.floor(dist / speed) - 1);
+            // Calculate precise lifespan so particles die EXACTLY when they hit the core center.
+            // This prevents them from overshooting, avoiding the "particles dropping below" bug.
+            let life = Math.max(6, Math.floor(dist / speed) - 1);
 
-      let pt = window.ParticlePool.get(
-        startX,
-        startY,
-        vx,
-        vy,
-        1.0 + Math.random() * 1.4,
-        particleColor,
-        1.0,
-        life,
-        0, // Force 0 gravity to prevent any downward drifting of rifts
-        true,
-        1.0, // Friction set to 1.0 (no linear decay) so speed remains constant into the core
-      );
-      pt.style = "streak";
-      pt.scaleDecay = 0.025;
-      window.particles.push(pt);
-    }
+            let pt = window.ParticlePool.get(
+              startX,
+              startY,
+              vx,
+              vy,
+              1.0 + Math.random() * 1.4,
+              particleColor,
+              1.0,
+              life,
+              0, // Force 0 gravity to prevent any downward drifting of rifts
+              true,
+              1.0, // Friction set to 1.0 (no linear decay) so speed remains constant into the core
+            );
+            pt.style = "streak";
+            pt.scaleDecay = 0.025;
+            window.particles.push(pt);
+          }
 
-    ctx.restore();
-  };
+          // 9. MAGICAL SEALS / CHAINS (If portal is locked by a Sentinel)
+          if (map.portalLocked) {
+            let sector = Math.floor((map.depth - 1) / 12);
+            ctx.save();
+            ctx.translate(cx, pCenterY);
+
+            let sealColor = "#2ecc71";
+            let glowColor = "#2ecc71";
+            if (sector === 1) { sealColor = "#38bdf8"; glowColor = "#00ffff"; }
+            else if (sector === 2) { sealColor = "#f97316"; glowColor = "#ff5500"; }
+            else if (sector === 3) { sealColor = "#a7f3d0"; glowColor = "#34d399"; }
+            else if (sector >= 4) { sealColor = "#c084fc"; glowColor = "#e879f9"; }
+
+            ctx.strokeStyle = sealColor;
+            ctx.lineWidth = 2.0;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = ecoMode ? 0 : 8;
+
+            ctx.beginPath();
+            if (sector === 0 || sector === 3) {
+              let steps = 15;
+              for (let i = 0; i <= steps; i++) {
+                let t = i / steps;
+                let lx = -pRadiusX + pRadiusX * 2 * t;
+                let ly = -pRadiusY + pRadiusY * 2 * t + Math.sin(t * Math.PI) * 4;
+                if (i === 0) ctx.moveTo(lx, ly);
+                else ctx.lineTo(lx, ly);
+
+                if (i > 0 && i % 3 === 0) {
+                  let tx = lx + 2;
+                  let ty = ly - 3;
+                  ctx.moveTo(lx, ly);
+                  ctx.lineTo(tx, ty);
+                }
+              }
+              for (let i = 0; i <= steps; i++) {
+                let t = i / steps;
+                let lx = pRadiusX - pRadiusX * 2 * t;
+                let ly = -pRadiusY + pRadiusY * 2 * t + Math.sin(t * Math.PI) * 4;
+                if (i === 0) ctx.moveTo(lx, ly);
+                else ctx.lineTo(lx, ly);
+
+                if (i > 0 && i % 3 === 0) {
+                  let tx = lx - 2;
+                  let ty = ly - 3;
+                  ctx.moveTo(lx, ly);
+                  ctx.lineTo(tx, ty);
+                }
+              }
+            } else {
+              ctx.moveTo(-pRadiusX - 2, -pRadiusY / 2);
+              ctx.lineTo(pRadiusX + 2, pRadiusY / 2);
+              ctx.moveTo(pRadiusX + 2, -pRadiusY / 2);
+              ctx.lineTo(-pRadiusX - 2, pRadiusY / 2);
+              ctx.stroke();
+
+              ctx.fillStyle = "#1e293b";
+              ctx.beginPath();
+              ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = glowColor;
+              ctx.beginPath();
+              ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            ctx.restore();
+          }
+
+          ctx.restore();
+        };
 
   window.renderTopDownMap = function (ctx, canvas) {
     let map = window.activeDungeonMap;
