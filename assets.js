@@ -3120,18 +3120,24 @@ window.AssetCatalog = {
                     <circle cx="16" cy="20" r="2.5" fill="#d4af37" stroke="#000" stroke-width="0.5" />
                   `;
             } else if (key.includes("wraith") || key.includes("drifter")) {
-              cutoutSvg = `
-                    <path d="M11 13 C11 8, 21 8, 21 13 L19 23 L13 23 Z" fill="#1b0a2a" stroke="#8e44ad" stroke-width="1.2" />
-                    <circle cx="14" cy="12" r="0.8" fill="#e84393" />
-                    <circle cx="18" cy="12" r="0.8" fill="#e84393" />
-                    <path d="M8 15 L5 12 M24 15 L27 12" stroke="#8e44ad" stroke-width="1.5" stroke-linecap="round" />
-                  `;
-            } else {
-              cutoutSvg = `
-                    <polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8" />
-                    <circle cx="16" cy="15" r="1" fill="#fff" />
-                  `;
-            }
+                          cutoutSvg = `
+                                <path d="M11 13 C11 8, 21 8, 21 13 L19 23 L13 23 Z" fill="#1b0a2a" stroke="#8e44ad" stroke-width="1.2" />
+                                <circle cx="14" cy="12" r="0.8" fill="#e84393" />
+                                <circle cx="18" cy="12" r="0.8" fill="#e84393" />
+                                <path d="M8 15 L5 12 M24 15 L27 12" stroke="#8e44ad" stroke-width="1.5" stroke-linecap="round" />
+                              `;
+                        } else if (key.includes("watcher") || key.includes("drone")) {
+                          cutoutSvg = `
+                                <circle cx="16" cy="15" r="7.5" fill="none" stroke="${color}" stroke-dasharray="2 1.5" stroke-width="0.8" />
+                                <circle cx="16" cy="15" r="5" fill="#090514" stroke="#000" stroke-width="1.2" />
+                                <circle cx="16" cy="15" r="1.5" fill="#f1c40f" />
+                              `;
+                        } else {
+                          cutoutSvg = `
+                                <polygon points="16,11 18.5,15 16,19 13.5,15" fill="${color}" stroke="#000" stroke-width="0.8" />
+                                <circle cx="16" cy="15" r="1" fill="#fff" />
+                              `;
+                        }
 
       return `
             <defs>

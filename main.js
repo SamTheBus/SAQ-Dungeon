@@ -12,8 +12,8 @@
   window.xpOrbs = [];
 
   // --- BESTIARY MONSTER CARDS DATABASE ---
-    window.MONSTER_CARDS_DATA = window.MONSTER_CARDS_DATA || {
-      slime: {
+      window.MONSTER_CARDS_DATA = Object.assign(window.MONSTER_CARDS_DATA || {}, {
+        slime: {
         name: "Green Slime",
         set: "Whispering Woods",
         hint: "Floors 1-12",
@@ -132,15 +132,30 @@
         hint: "Floor 60 Boss",
       },
       clockwork_scarab: {
-        name: "Clockwork Scarab",
-        set: "Cosmic Wardens",
-        hint: "Floors 61+",
-      },
-      star_weaver: {
-        name: "Star Weaver",
-        set: "Cosmic Wardens",
-        hint: "Floors 61+",
-      },
+              name: "Clockwork Scarab",
+              set: "Cosmic Wardens",
+              hint: "Floors 61+",
+            },
+            temporal_watcher: {
+              name: "Temporal Watcher",
+              set: "Cosmic Wardens",
+              hint: "Sector 5 rare",
+            },
+            clockwork_drone: {
+              name: "Clockwork Drone",
+              set: "Cosmic Wardens",
+              hint: "Floors 61+",
+            },
+            star_weaver: {
+              name: "Star Weaver",
+              set: "Cosmic Wardens",
+              hint: "Floors 61+",
+            },
+            cyber_wraith: {
+              name: "Cyber Wraith",
+              set: "Cosmic Wardens",
+              hint: "Floors 73+",
+            },
       neon_spider: {
         name: "Neon Spider",
         set: "Cosmic Wardens",
@@ -177,16 +192,16 @@
         hint: "Triggered from Chests",
       },
       chronos_arbitrator: {
-        name: "Chronos Arbitrator",
-        set: "Cosmic Wardens",
-        hint: "Floor 72 Boss",
-      },
-      nexus_overseer: {
-        name: "Nexus Overseer",
-        set: "Cosmic Wardens",
-        hint: "Floor 84 Boss",
-      },
-    };
+              name: "Chronos Arbitrator",
+              set: "Cosmic Wardens",
+              hint: "Floor 72 Boss",
+            },
+            nexus_overseer: {
+              name: "Nexus Overseer",
+              set: "Cosmic Wardens",
+              hint: "Floor 84 Boss",
+            },
+          });
 
   // Safe global state fallback initializer
   if (
@@ -196,13 +211,22 @@
     window.playerStats.robbingMarcusActive = false;
   }
   if (window.playerStats) {
-    if (window.playerStats.deflectionFatigueTimer === undefined) {
-      window.playerStats.deflectionFatigueTimer = 0;
+      if (window.playerStats.deflectionFatigueTimer === undefined) {
+        window.playerStats.deflectionFatigueTimer = 0;
+      }
+      if (window.playerStats.counterCooldownTimer === undefined) {
+        window.playerStats.counterCooldownTimer = 0;
+      }
+      if (!window.playerStats.monsterCards) {
+        window.playerStats.monsterCards = {};
+      }
+      const specialCards = ["hoard_mimic", "mimic_shield", "coin_elemental", "gilded_scuttler", "rift_drifter", "void_wraith"];
+      specialCards.forEach(cKey => {
+        if (window.playerStats.monsterCards[cKey] === undefined) {
+          window.playerStats.monsterCards[cKey] = 0;
+        }
+      });
     }
-    if (window.playerStats.counterCooldownTimer === undefined) {
-      window.playerStats.counterCooldownTimer = 0;
-    }
-  }
 
   // --- REVAMPED ZERO-ALLOCATION PARTICLE POOL ENGINE (SUBPHASE A.1) ---
   window.particles = window.particles || [];
@@ -16198,10 +16222,10 @@
             window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
           }
 
-          // Procedural Card Drop Roll (Regular: 0.5% base, Rare: 20% base, multiplied by Drop Rate)
-          dropMult = pStats.drop || 1.0;
-          let cardBaseChance = m.isRare ? 0.2 : 0.005;
-          if (Math.random() < cardBaseChance * dropMult) {
+          // Procedural Card Drop Roll (Regular: 0.5% base, Rare/Mimic: 20% base, multiplied by Drop Rate)
+                    dropMult = pStats.drop || 1.0;
+                    let cardBaseChance = (m.isRare || m.visualType === "hoard_mimic") ? 0.2 : 0.005;
+                    if (Math.random() < cardBaseChance * dropMult) {
             let cardKey = m.visualType || m.type;
             if (window.MONSTER_CARDS_DATA[cardKey]) {
               let cardItem = {
@@ -24200,21 +24224,22 @@
             types: ["void_orb", "void_crawler", "void_spectre", "void_wraith", "rift_drifter"],
           },
           // Sector 5 (Floors 61 - 72): Temporal Sanctorum
-          {
-            tier: 5,
-            types: ["clockwork_scarab", "star_weaver", "coin_elemental"],
-          },
-          // Sector 6 (Floors 73 - 84): Cyberspace Nexus
-          {
-            tier: 6,
-            types: [
-              "neon_spider",
-              "wireframe_orb",
-              "cursed_blade",
-              "animated_armor",
-              "mimic_shield",
-            ],
-          },
+                      {
+                        tier: 5,
+                        types: ["clockwork_scarab", "star_weaver", "coin_elemental", "temporal_watcher", "clockwork_drone"],
+                      },
+                      // Sector 6 (Floors 73 - 84): Cyberspace Nexus
+                      {
+                        tier: 6,
+                        types: [
+                          "neon_spider",
+                          "wireframe_orb",
+                          "cursed_blade",
+                          "animated_armor",
+                          "mimic_shield",
+                          "cyber_wraith",
+                        ],
+                      },
         ];
 
     // Infinite Anomaly Cycle for Floors 85+ (Sector 7+)
@@ -24583,16 +24608,17 @@
         types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
       },
       { tier: 4, types: ["void_orb", "void_crawler", "void_spectre"] },
-      { tier: 5, types: ["clockwork_scarab", "star_weaver"] },
-      {
-        tier: 6,
-        types: [
-          "neon_spider",
-          "wireframe_orb",
-          "cursed_blade",
-          "animated_armor",
-        ],
-      },
+      { tier: 5, types: ["clockwork_scarab", "star_weaver", "clockwork_drone", "temporal_watcher"] },
+                    {
+                      tier: 6,
+                      types: [
+                        "neon_spider",
+                        "wireframe_orb",
+                        "cursed_blade",
+                        "animated_armor",
+                        "cyber_wraith",
+                      ],
+                    },
     ];
     let selected =
       pools[tier] || pools[Math.floor(Math.random() * pools.length)];

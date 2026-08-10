@@ -9335,61 +9335,190 @@
         }
         c.restore();
       } else if (vType === "clockwork_scarab") {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h / 2 + Math.sin(Date.now() / 100) * 3;
-        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#dca04c";
-        c.beginPath();
-        c.ellipse(cx, cy, 12, 9, 0, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-        if (m.flashTimer === 0) {
-          c.strokeStyle = "#4d2e1a";
-          c.lineWidth = 1.2;
-          c.beginPath();
-          c.moveTo(cx, cy - 9);
-          c.lineTo(cx, cy + 9);
-          c.stroke();
-          c.save();
-          c.translate(cx, cy);
-          c.rotate((Date.now() / 1500) % (Math.PI * 2));
-          c.fillStyle = "#f1c40f";
-          c.beginPath();
-          c.arc(0, 0, 4, 0, Math.PI * 2);
-          c.fill();
-          c.stroke();
-          c.restore();
-        }
-        c.strokeStyle = "#7a5c1f";
-        c.lineWidth = 1.8;
-        for (let i = -1; i <= 1; i += 2) {
-          let legSwing = Math.sin(Date.now() / 80 + i) * 3;
-          c.beginPath();
-          c.moveTo(cx + 6 * i, cy);
-          c.lineTo(cx + 14 * i + legSwing, cy + 6);
-          c.stroke();
-          c.beginPath();
-          c.moveTo(cx + 6 * i, cy - 4);
-          c.lineTo(cx + 15 * i + legSwing, cy - 6);
-          c.stroke();
-        }
-      } else if (vType === "neon_spider") {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h / 2;
-        c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#ff007f";
-        c.lineWidth = 2.0;
-        c.beginPath();
-        c.arc(cx, cy, 6, 0, Math.PI * 2);
-        c.stroke();
-        for (let i = 0; i < 4; i++) {
-          let side = i % 2 === 0 ? -1 : 1;
-          let yDir = i < 2 ? -1 : 1;
-          c.beginPath();
-          c.moveTo(cx, cy);
-          c.lineTo(cx + 12 * side, cy + 4 * yDir);
-          c.lineTo(cx + 16 * side, cy + 14 * yDir);
-          c.stroke();
-        }
-      } else if (vType === "wireframe_orb") {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2 + Math.sin(Date.now() / 100) * 3;
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#dca04c";
+              c.beginPath();
+              c.ellipse(cx, cy, 12, 9, 0, 0, Math.PI * 2);
+              c.fill();
+              c.stroke();
+              if (m.flashTimer === 0) {
+                c.strokeStyle = "#4d2e1a";
+                c.lineWidth = 1.2;
+                c.beginPath();
+                c.moveTo(cx, cy - 9);
+                c.lineTo(cx, cy + 9);
+                c.stroke();
+                c.save();
+                c.translate(cx, cy);
+                c.rotate((Date.now() / 1500) % (Math.PI * 2));
+                c.fillStyle = "#f1c40f";
+                c.beginPath();
+                c.arc(0, 0, 4, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                c.restore();
+              }
+              c.strokeStyle = "#7a5c1f";
+              c.lineWidth = 1.8;
+              for (let i = -1; i <= 1; i += 2) {
+                let legSwing = Math.sin(Date.now() / 80 + i) * 3;
+                c.beginPath();
+                c.moveTo(cx + 6 * i, cy);
+                c.lineTo(cx + 14 * i + legSwing, cy + 6);
+                c.stroke();
+                c.beginPath();
+                c.moveTo(cx + 6 * i, cy - 4);
+                c.lineTo(cx + 15 * i + legSwing, cy - 6);
+                c.stroke();
+              }
+            } else if (vType === "temporal_watcher") {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2 + Math.sin(Date.now() / 140) * 4;
+              let time = Date.now();
+              c.save();
+              c.translate(cx, cy);
+
+              // Orbiting brass ring
+              c.strokeStyle = "rgba(220, 160, 76, 0.4)";
+              c.lineWidth = 1.0;
+              c.beginPath();
+              c.ellipse(0, 0, 18, 6, time / 800, 0, Math.PI * 2);
+              c.stroke();
+
+              // Mechanical brass eyeball housing
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#dca04c";
+              c.strokeStyle = "#000000";
+              c.lineWidth = 1.8;
+              c.beginPath();
+              c.arc(0, 0, 10, 0, Math.PI * 2);
+              c.fill();
+              c.stroke();
+
+              if (m.flashTimer === 0) {
+                // Gold pupil iris
+                c.fillStyle = "#ffd700";
+                c.beginPath();
+                c.arc(2, -1, 4.5, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+
+                // Piercing yellow lens core
+                let pulse = Math.sin(time / 100) * 0.5 + 1.5;
+                c.fillStyle = "#ffffff";
+                c.shadowBlur = 6;
+                c.shadowColor = "#f1c40f";
+                c.beginPath();
+                c.arc(2.5, -1.5, pulse, 0, Math.PI * 2);
+                c.fill();
+                c.shadowBlur = 0;
+              }
+              c.restore();
+            } else if (vType === "clockwork_drone") {
+              let cx = m.x + m.w / 2;
+              let cy = m.y + m.h / 2 + Math.sin(Date.now() / 120) * 4.5;
+              let time = Date.now();
+              c.save();
+              c.translate(cx, cy);
+
+              // Spinning top propeller
+              c.save();
+              c.translate(0, -9);
+              c.rotate(time / 80);
+              c.strokeStyle = "#7f8c8d";
+              c.lineWidth = 1.2;
+              c.beginPath();
+              c.moveTo(-12, 0);
+              c.lineTo(12, 0);
+              c.stroke();
+              c.restore();
+
+              // Drone central brass hull
+              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#b7950b";
+              c.strokeStyle = "#000000";
+              c.lineWidth = 1.8;
+              c.beginPath();
+              c.roundRect(-8, -8, 16, 14, [3]);
+              c.fill();
+              c.stroke();
+
+              // Lens sensor
+              if (m.flashTimer === 0) {
+                c.fillStyle = "#e67e22";
+                c.beginPath();
+                c.arc(0, 0, 3, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                c.fillStyle = "#ffffff";
+                c.beginPath();
+                c.arc(-0.8, -0.8, 0.8, 0, Math.PI * 2);
+                c.fill();
+              }
+              c.restore();
+            } else if (vType === "neon_spider") {
+                    let cx = m.x + m.w / 2;
+                    let cy = m.y + m.h / 2;
+                    c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#ff007f";
+                    c.lineWidth = 2.0;
+                    c.beginPath();
+                    c.arc(cx, cy, 6, 0, Math.PI * 2);
+                    c.stroke();
+                    for (let i = 0; i < 4; i++) {
+                      let side = i % 2 === 0 ? -1 : 1;
+                      let yDir = i < 2 ? -1 : 1;
+                      c.beginPath();
+                      c.moveTo(cx, cy);
+                      c.lineTo(cx + 12 * side, cy + 4 * yDir);
+                      c.lineTo(cx + 16 * side, cy + 14 * yDir);
+                      c.stroke();
+                    }
+                  } else if (vType === "cyber_wraith") {
+                    let hover = Math.sin(Date.now() / 150) * 5;
+                    let cx = m.x + m.w / 2;
+                    let cy = m.y + m.h / 2 + hover;
+                    let isGlitchedFrame = Math.sin(Date.now() / 10) > 0.82;
+                    let px = cx + (isGlitchedFrame ? window.randFloat(-3, 3) : 0);
+                    let py = cy + (isGlitchedFrame ? window.randFloat(-2, 2) : 0);
+
+                    c.save();
+                    c.translate(px, py);
+
+                    // Holographic cyan cloak trails
+                    c.fillStyle = "rgba(0, 210, 255, 0.15)";
+                    c.strokeStyle = "rgba(0, 210, 255, 0.55)";
+                    c.lineWidth = 1.5;
+                    c.beginPath();
+                    c.moveTo(-10, 4);
+                    c.quadraticCurveTo(-14, 16, -4, 24);
+                    c.lineTo(4, 24);
+                    c.quadraticCurveTo(14, 16, 10, 4);
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+
+                    // Cyber cloak torso
+                    c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#0f172a";
+                    c.strokeStyle = "#00d2ff";
+                    c.lineWidth = 1.8;
+                    c.beginPath();
+                    c.arc(0, -9, 7.5, Math.PI, 0);
+                    c.lineTo(7.5, 4);
+                    c.quadraticCurveTo(4, 11, 0, 15);
+                    c.quadraticCurveTo(-4, 11, -7.5, 4);
+                    c.closePath();
+                    c.fill();
+                    c.stroke();
+
+                    // Glowing pink cyber visor eyes
+                    if (m.flashTimer === 0) {
+                      c.fillStyle = "#ff007f";
+                      c.shadowBlur = 8;
+                      c.shadowColor = "#ff007f";
+                      c.fillRect(-4, -10, 8, 2);
+                      c.shadowBlur = 0;
+                    }
+                    c.restore();
+                  } else if (vType === "wireframe_orb") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2;
         c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#3498db";
