@@ -1869,38 +1869,46 @@
         window.recalculateAllInventoryItems();
 
         // Intercept and wrap window.salvageItem dynamically to support any script loading order and update the UI
-        let _salvageItemRef = window.salvageItem;
-        Object.defineProperty(window, "salvageItem", {
-          get() {
-            return _salvageItemRef;
-          },
-          set(newVal) {
-            if (newVal && !newVal.__wrapped) {
-              const original = newVal;
-              _salvageItemRef = function (itemId) {
-                const originalShowCustomConfirm = window.showCustomConfirm;
-                window.showCustomConfirm = function (title, body, yesText, noText, color, yesCallback, noCallback) {
-                  const wrappedYesCallback = function () {
-                    if (typeof yesCallback === "function") yesCallback();
-                    setTimeout(() => {
-                      if (typeof window.renderReliquaryTab === "function") window.renderReliquaryTab();
-                      if (typeof window.renderProfileModal === "function") window.renderProfileModal();
-                    }, 80);
-                  };
-                  if (originalShowCustomConfirm) {
-                    originalShowCustomConfirm(title, body, yesText, noText, color, wrappedYesCallback, noCallback);
-                  }
-                };
-                original(itemId);
-                window.showCustomConfirm = originalShowCustomConfirm;
-              };
-              _salvageItemRef.__wrapped = true;
-            } else {
-              _salvageItemRef = newVal;
-            }
-          },
-          configurable: true,
-        });
+                let _salvageItemRef = window.salvageItem;
+                Object.defineProperty(window, "salvageItem", {
+                  get() {
+                    return _salvageItemRef;
+                  },
+                  set(newVal) {
+                    if (newVal && !newVal.__wrapped) {
+                      const original = newVal;
+                      _salvageItemRef = function (itemId) {
+                        const originalShowCustomConfirm = window.showCustomConfirm;
+                        window.showCustomConfirm = function (title, body, yesText, noText, color, yesCallback, noCallback) {
+                          const wrappedYesCallback = function () {
+                            // Pre-find in bag and remove it to ensure the item is destroyed when salvaging in dungeon
+                            if (window.player && window.player.bag) {
+                              let bagIdx = window.player.bag.findIndex((i) => i.id == itemId);
+                              if (bagIdx !== -1) {
+                                window.player.bag.splice(bagIdx, 1);
+                              }
+                            }
+                            if (typeof yesCallback === "function") yesCallback();
+                            setTimeout(() => {
+                              if (typeof window.renderReliquaryTab === "function") window.renderReliquaryTab();
+                              if (typeof window.renderProfileModal === "function") window.renderProfileModal();
+                              if (typeof window.renderBagModalContent === "function") window.renderBagModalContent();
+                            }, 80);
+                          };
+                          if (originalShowCustomConfirm) {
+                            originalShowCustomConfirm(title, body, yesText, noText, color, wrappedYesCallback, noCallback);
+                          }
+                        };
+                        original(itemId);
+                        window.showCustomConfirm = originalShowCustomConfirm;
+                      };
+                      _salvageItemRef.__wrapped = true;
+                    } else {
+                      _salvageItemRef = newVal;
+                    }
+                  },
+                  configurable: true,
+                });
         if (_salvageItemRef) {
           window.salvageItem = _salvageItemRef;
         }
@@ -7904,10 +7912,10 @@
                         let mobAtkVal = Math.floor(8 * repScale * enemyScale);
 
                         // Apply solid baseline floors to prevent early-game trivialization
-                        let mobHpFloor = 180;
-                        let mobAtkFloor = 14;
-                        mobHpVal = Math.max(Math.round(mobHpFloor * (1 + scaleStage * 0.08)), mobHpVal);
-                        mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + scaleStage * 0.04)), mobAtkVal);
+                                        let mobHpFloor = Math.min(180, 30 + scaleStage * 12.5); // Floor 1: 42.5 HP base | Floor 12: 180 HP base
+                                        let mobAtkFloor = Math.min(14, 5 + scaleStage * 0.75);  // Floor 1: 5.75 ATK base | Floor 12: 14 ATK base
+                                        mobHpVal = Math.max(Math.round(mobHpFloor * (1 + scaleStage * 0.08)), mobHpVal);
+                                        mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + scaleStage * 0.04)), mobAtkVal);
 
       if (activeChallenge) {
         let challengeScale = 1.0 + activeChallenge.riskRating / 35;
@@ -12289,35 +12297,37 @@
         }
       }
     } else if (item.type === "aetheric_conduit") {
-      let dmg = BigNum.from(pStats.atk || p.atk || 15).mul(2.5);
-      let targetCount = 0;
+          let dmg = BigNum.from(pStats.atk || p.atk || 15).mul(2.5);
+          let targetCount = 0;
 
-      if (window.activeDungeonMobs) {
-        window.activeDungeonMobs.forEach((m) => {
-          m.hp = m.hp.sub(dmg);
-          m.flashTimer = 8;
-          m.hasTakenDamage = true;
-          targetCount++;
-          if (window.combatVisuals) {
-            window.combatVisuals.spawnDamageEffect(
-              m.x + m.w / 2,
-              m.y + m.h / 2,
-              dmg,
-              "lightning",
-              false,
-            );
-            window.cavernInteractives.push({
-              id: window.idCounter++,
-              type: "lightning_arc",
-              x: item.x,
-              y: item.y,
-              x2: m.x + m.w / 2,
-              y2: m.y + m.h / 2,
-              life: 15,
+          if (window.activeDungeonMobs) {
+            window.activeDungeonMobs.forEach((m) => {
+              if (m.hp.gt(0) && m.discovered && Math.hypot(item.x - (m.x + m.w / 2), item.y - (m.y + m.h / 2)) <= 180) {
+                m.hp = m.hp.sub(dmg);
+                m.flashTimer = 8;
+                m.hasTakenDamage = true;
+                targetCount++;
+                if (window.combatVisuals) {
+                  window.combatVisuals.spawnDamageEffect(
+                    m.x + m.w / 2,
+                    m.y + m.h / 2,
+                    dmg,
+                    "lightning",
+                    false,
+                  );
+                  window.cavernInteractives.push({
+                    id: window.idCounter++,
+                    type: "lightning_arc",
+                    x: item.x,
+                    y: item.y,
+                    x2: m.x + m.w / 2,
+                    y2: m.y + m.h / 2,
+                    life: 15,
+                  });
+                }
+              }
             });
           }
-        });
-      }
 
       window.cavernInteractives = window.cavernInteractives.filter((other) => {
         if (other.type === "aetheric_conduit" && other.id !== item.id)
@@ -14998,67 +15008,79 @@
               }
 
               // Apply Elemental Overload on each part of the Triad Convergence
-              if (pStats.hasElementalOverload) {
-                if (elem === "fire") {
-                  let splashDmg = spellDmg.mul(
-                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                  );
-                  if (window.activeDungeonMobs) {
-                    window.activeDungeonMobs.forEach((otherMob) => {
-                      if (otherMob.id !== m.id) {
-                        let dist = Math.hypot(
-                          m.x - otherMob.x,
-                          m.y - otherMob.y,
-                        );
-                        if (dist <= 80) {
-                          otherMob.hp = otherMob.hp.sub(splashDmg);
-                          otherMob.flashTimer = 6;
-                          if (window.combatVisuals) {
-                            window.combatVisuals.spawnDamageEffect(
-                              otherMob.x + otherMob.w / 2,
-                              otherMob.y + otherMob.h / 2,
-                              splashDmg,
-                              "fire",
-                              false,
-                            );
-                          }
-                        }
-                      }
-                    });
-                  }
-                } else if (elem === "lightning") {
-                  let bouncesLeft = pStats.overloadLevel;
-                  let hitIds = new Set([m.id]);
-                  let currentTarget = m;
-                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                    let nextTarget = window.activeDungeonMobs.find(
-                      (other) =>
-                        !hitIds.has(other.id) &&
-                        Math.hypot(
-                          currentTarget.x - other.x,
-                          currentTarget.y - other.y,
-                        ) <= 120,
-                    );
-                    if (nextTarget) {
-                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                      nextTarget.flashTimer = 6;
-                      hitIds.add(nextTarget.id);
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnDamageEffect(
-                          nextTarget.x + nextTarget.w / 2,
-                          nextTarget.y + nextTarget.h / 2,
-                          spellDmg,
-                          "lightning",
-                          false,
-                        );
-                      }
-                      currentTarget = nextTarget;
-                      bouncesLeft--;
-                    } else {
-                      break;
-                    }
-                  }
-                } else if (elem === "frost") {
+                            if (pStats.hasElementalOverload || elem === "lightning") {
+                              if (elem === "fire" && pStats.hasElementalOverload) {
+                                let splashDmg = spellDmg.mul(
+                                  pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                                );
+                                if (window.activeDungeonMobs) {
+                                  window.activeDungeonMobs.forEach((otherMob) => {
+                                    if (otherMob.id !== m.id) {
+                                      let dist = Math.hypot(
+                                        m.x - otherMob.x,
+                                        m.y - otherMob.y,
+                                      );
+                                      if (dist <= 80) {
+                                        otherMob.hp = otherMob.hp.sub(splashDmg);
+                                        otherMob.flashTimer = 6;
+                                        if (window.combatVisuals) {
+                                          window.combatVisuals.spawnDamageEffect(
+                                            otherMob.x + otherMob.w / 2,
+                                            otherMob.y + otherMob.h / 2,
+                                            splashDmg,
+                                            "fire",
+                                            false,
+                                          );
+                                        }
+                                      }
+                                    }
+                                  });
+                                }
+                              } else if (elem === "lightning") {
+                                let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
+                                let hitIds = new Set([m.id]);
+                                let currentTarget = m;
+                                while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                                  let nextTarget = window.activeDungeonMobs.find(
+                                    (other) =>
+                                      !hitIds.has(other.id) &&
+                                      other.hp.gt(0) &&
+                                      Math.hypot(
+                                        currentTarget.x + (currentTarget.w || 24) / 2 - (other.x + (other.w || 24) / 2),
+                                        currentTarget.y + (currentTarget.h || 24) / 2 - (other.y + (other.h || 24) / 2),
+                                      ) <= 120,
+                                  );
+                                  if (nextTarget) {
+                                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                                    nextTarget.flashTimer = 6;
+                                    hitIds.add(nextTarget.id);
+                                    if (window.combatVisuals) {
+                                      window.combatVisuals.spawnDamageEffect(
+                                        nextTarget.x + nextTarget.w / 2,
+                                        nextTarget.y + nextTarget.h / 2,
+                                        spellDmg,
+                                        "lightning",
+                                        false,
+                                      );
+                                    }
+                                    // Spawn physical, crackling procedural cavern lightning arc lines
+                                    window.cavernInteractives = window.cavernInteractives || [];
+                                    window.cavernInteractives.push({
+                                      id: window.idCounter++,
+                                      type: "lightning_arc",
+                                      x: currentTarget.x + (currentTarget.w || 24) / 2,
+                                      y: currentTarget.y + (currentTarget.h || 24) / 2,
+                                      x2: nextTarget.x + (nextTarget.w || 24) / 2,
+                                      y2: nextTarget.y + (nextTarget.h || 24) / 2,
+                                      life: 15,
+                                    });
+                                    currentTarget = nextTarget;
+                                    bouncesLeft--;
+                                  } else {
+                                    break;
+                                  }
+                                }
+                              } else if (elem === "frost" && pStats.hasElementalOverload) {
                   let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
                   if (window.activeDungeonMobs) {
                     window.activeDungeonMobs.forEach((otherMob) => {
@@ -15092,64 +15114,76 @@
             }
           } else {
             // Apply single-spell Overload logic
-            if (pStats.hasElementalOverload) {
-              if (spellEffectType === "fire") {
-                let splashDmg = spellDmg.mul(
-                  pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                );
-                if (window.activeDungeonMobs) {
-                  window.activeDungeonMobs.forEach((otherMob) => {
-                    if (otherMob.id !== m.id) {
-                      let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
-                      if (dist <= 80) {
-                        otherMob.hp = otherMob.hp.sub(splashDmg);
-                        otherMob.flashTimer = 6;
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnDamageEffect(
-                            otherMob.x + otherMob.w / 2,
-                            otherMob.y + otherMob.h / 2,
-                            splashDmg,
-                            "fire",
-                            false,
-                          );
-                        }
-                      }
-                    }
-                  });
-                }
-              } else if (spellEffectType === "lightning") {
-                let bouncesLeft = pStats.overloadLevel;
-                let hitIds = new Set([m.id]);
-                let currentTarget = m;
-                while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                  let nextTarget = window.activeDungeonMobs.find(
-                    (other) =>
-                      !hitIds.has(other.id) &&
-                      Math.hypot(
-                        currentTarget.x - other.x,
-                        currentTarget.y - other.y,
-                      ) <= 120,
-                  );
-                  if (nextTarget) {
-                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                    nextTarget.flashTimer = 6;
-                    hitIds.add(nextTarget.id);
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnDamageEffect(
-                        nextTarget.x + nextTarget.w / 2,
-                        nextTarget.y + nextTarget.h / 2,
-                        spellDmg,
-                        "lightning",
-                        false,
-                      );
-                    }
-                    currentTarget = nextTarget;
-                    bouncesLeft--;
-                  } else {
-                    break;
-                  }
-                }
-              } else if (spellEffectType === "frost") {
+            if (pStats.hasElementalOverload || spellEffectType === "lightning") {
+                          if (spellEffectType === "fire" && pStats.hasElementalOverload) {
+                            let splashDmg = spellDmg.mul(
+                              pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                            );
+                            if (window.activeDungeonMobs) {
+                              window.activeDungeonMobs.forEach((otherMob) => {
+                                if (otherMob.id !== m.id) {
+                                  let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
+                                  if (dist <= 80) {
+                                    otherMob.hp = otherMob.hp.sub(splashDmg);
+                                    otherMob.flashTimer = 6;
+                                    if (window.combatVisuals) {
+                                      window.combatVisuals.spawnDamageEffect(
+                                        otherMob.x + otherMob.w / 2,
+                                        otherMob.y + otherMob.h / 2,
+                                        splashDmg,
+                                        "fire",
+                                        false,
+                                      );
+                                    }
+                                  }
+                                }
+                              });
+                            }
+                          } else if (spellEffectType === "lightning") {
+                            let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
+                            let hitIds = new Set([m.id]);
+                            let currentTarget = m;
+                            while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                              let nextTarget = window.activeDungeonMobs.find(
+                                (other) =>
+                                  !hitIds.has(other.id) &&
+                                  other.hp.gt(0) &&
+                                  Math.hypot(
+                                    currentTarget.x + (currentTarget.w || 24) / 2 - (other.x + (other.w || 24) / 2),
+                                    currentTarget.y + (currentTarget.h || 24) / 2 - (other.y + (other.h || 24) / 2),
+                                  ) <= 120,
+                              );
+                              if (nextTarget) {
+                                nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                                nextTarget.flashTimer = 6;
+                                hitIds.add(nextTarget.id);
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnDamageEffect(
+                                    nextTarget.x + nextTarget.w / 2,
+                                    nextTarget.y + nextTarget.h / 2,
+                                    spellDmg,
+                                    "lightning",
+                                    false,
+                                  );
+                                }
+                                // Spawn physical, crackling procedural cavern lightning arc lines
+                                window.cavernInteractives = window.cavernInteractives || [];
+                                window.cavernInteractives.push({
+                                  id: window.idCounter++,
+                                  type: "lightning_arc",
+                                  x: currentTarget.x + (currentTarget.w || 24) / 2,
+                                  y: currentTarget.y + (currentTarget.h || 24) / 2,
+                                  x2: nextTarget.x + (nextTarget.w || 24) / 2,
+                                  y2: nextTarget.y + (nextTarget.h || 24) / 2,
+                                  life: 15,
+                                });
+                                currentTarget = nextTarget;
+                                bouncesLeft--;
+                              } else {
+                                break;
+                              }
+                            }
+                          } else if (spellEffectType === "frost" && pStats.hasElementalOverload) {
                 let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
                 if (window.activeDungeonMobs) {
                   window.activeDungeonMobs.forEach((otherMob) => {
@@ -16699,87 +16733,99 @@
           }
 
           // Triad Convergence / Aetheric Overload Check (Boss)
-          let isOverload =
-            window.SkillTreeManager &&
-            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-            Math.random() < 0.15;
+                    let isOverload =
+                      window.SkillTreeManager &&
+                      window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+                      Math.random() < 0.15;
 
-          if (pStats.hasTriadConvergence || isOverload) {
-            const triElements = ["fire", "lightning", "frost"];
-            triElements.forEach((elem, eIdx) => {
-              bm.hp = bm.hp.sub(spellDmg);
-              if (
-                window.RenderEngine &&
-                window.RenderEngine.spawnDamageEffect
-              ) {
-                window.RenderEngine.spawnDamageEffect(
-                  bossCenterX + (eIdx - 1) * 12,
-                  bossCenterY - 12 - eIdx * 6,
-                  spellDmg,
-                  elem,
-                  false,
-                );
-              }
-
-              if (pStats.hasElementalOverload) {
-                if (elem === "fire") {
-                  let splashDmg = spellDmg.mul(
-                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                  );
-                  if (window.activeDungeonMobs) {
-                    window.activeDungeonMobs.forEach((otherMob) => {
-                      let dist = Math.hypot(
-                        bm.x - otherMob.x,
-                        bm.y - otherMob.y,
-                      );
-                      if (dist <= 100) {
-                        otherMob.hp = otherMob.hp.sub(splashDmg);
-                        otherMob.flashTimer = 6;
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnDamageEffect(
-                            otherMob.x + otherMob.w / 2,
-                            otherMob.y + otherMob.h / 2,
-                            splashDmg,
-                            "fire",
+                    if (pStats.hasTriadConvergence || isOverload) {
+                      const triElements = ["fire", "lightning", "frost"];
+                      triElements.forEach((elem, eIdx) => {
+                        bm.hp = bm.hp.sub(spellDmg);
+                        if (
+                          window.RenderEngine &&
+                          window.RenderEngine.spawnDamageEffect
+                        ) {
+                          window.RenderEngine.spawnDamageEffect(
+                            bossCenterX + (eIdx - 1) * 12,
+                            bossCenterY - 12 - eIdx * 6,
+                            spellDmg,
+                            elem,
                             false,
                           );
                         }
-                      }
-                    });
-                  }
-                } else if (elem === "lightning") {
-                  let bouncesLeft = pStats.overloadLevel;
-                  let hitIds = new Set();
-                  let currentTarget = bm;
-                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                    let nextTarget = window.activeDungeonMobs.find(
-                      (other) =>
-                        !hitIds.has(other.id) &&
-                        Math.hypot(
-                          currentTarget.x - other.x,
-                          currentTarget.y - other.y,
-                        ) <= 120,
-                    );
-                    if (nextTarget) {
-                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                      nextTarget.flashTimer = 6;
-                      hitIds.add(nextTarget.id);
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnDamageEffect(
-                          nextTarget.x + nextTarget.w / 2,
-                          nextTarget.y + nextTarget.h / 2,
-                          spellDmg,
-                          "lightning",
-                          false,
-                        );
-                      }
-                      currentTarget = nextTarget;
-                      bouncesLeft--;
-                    } else {
-                      break;
-                    }
-                  }
-                } else if (elem === "frost") {
+
+                        if (pStats.hasElementalOverload || elem === "lightning") {
+                          if (elem === "fire" && pStats.hasElementalOverload) {
+                            let splashDmg = spellDmg.mul(
+                              pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                            );
+                            if (window.activeDungeonMobs) {
+                              window.activeDungeonMobs.forEach((otherMob) => {
+                                let dist = Math.hypot(
+                                  bm.x - otherMob.x,
+                                  bm.y - otherMob.y,
+                                );
+                                if (dist <= 100) {
+                                  otherMob.hp = otherMob.hp.sub(splashDmg);
+                                  otherMob.flashTimer = 6;
+                                  if (window.combatVisuals) {
+                                    window.combatVisuals.spawnDamageEffect(
+                                      otherMob.x + otherMob.w / 2,
+                                      otherMob.y + otherMob.h / 2,
+                                      splashDmg,
+                                      "fire",
+                                      false,
+                                    );
+                                  }
+                                }
+                              });
+                            }
+                          } else if (elem === "lightning") {
+                            let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
+                            let hitIds = new Set();
+                            let currentTarget = bm;
+                            while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                              let nextTarget = window.activeDungeonMobs.find(
+                                (other) =>
+                                  !hitIds.has(other.id) &&
+                                  other.hp.gt(0) &&
+                                  Math.hypot(
+                                    currentTarget.x + (currentTarget.w || 24) / 2 - (other.x + (other.w || 24) / 2),
+                                    currentTarget.y + (currentTarget.h || 24) / 2 - (other.y + (other.h || 24) / 2),
+                                  ) <= 120,
+                              );
+                              if (nextTarget) {
+                                nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                                nextTarget.flashTimer = 6;
+                                hitIds.add(nextTarget.id);
+                                if (window.combatVisuals) {
+                                  window.combatVisuals.spawnDamageEffect(
+                                    nextTarget.x + nextTarget.w / 2,
+                                    nextTarget.y + nextTarget.h / 2,
+                                    spellDmg,
+                                    "lightning",
+                                    false,
+                                  );
+                                }
+                                // Spawn physical, crackling procedural cavern lightning arc lines
+                                window.cavernInteractives = window.cavernInteractives || [];
+                                window.cavernInteractives.push({
+                                  id: window.idCounter++,
+                                  type: "lightning_arc",
+                                  x: currentTarget.x + (currentTarget.w || 24) / 2,
+                                  y: currentTarget.y + (currentTarget.h || 24) / 2,
+                                  x2: nextTarget.x + (nextTarget.w || 24) / 2,
+                                  y2: nextTarget.y + (nextTarget.h || 24) / 2,
+                                  life: 15,
+                                });
+                                currentTarget = nextTarget;
+                                bouncesLeft--;
+                              } else {
+                                break;
+                              }
+                            }
+                          } else if (elem === "frost" && pStats.hasElementalOverload) {
                   let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
                   if (window.activeDungeonMobs) {
                     window.activeDungeonMobs.forEach((otherMob) => {
@@ -24623,11 +24669,11 @@
               enemyScale,
           );
 
-          // Apply solid baseline floors to prevent early-game trivialization in Onslaught Mode
-          let mobHpFloor = 180;
-          let mobAtkFloor = 14;
-          mobHpVal = Math.max(Math.round(mobHpFloor * (1 + waveNumber * 0.08)), mobHpVal);
-          mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + waveNumber * 0.04)), mobAtkVal);
+          // Apply solid baseline floors to prevent early-game trivialization
+                          let sentinelHpFloor = Math.min(360, 60 + fLvl * 25); // Floor 1: 85 HP base | Floor 12: 360 HP base
+                          let sentinelAtkFloor = Math.min(28, 10 + fLvl * 1.5); // Floor 1: 11.5 ATK base | Floor 12: 28 ATK base
+                          sentinelHp = Math.max(Math.round(sentinelHpFloor * (1 + fLvl * 0.08)), sentinelHp);
+                          sentinelAtk = Math.max(Math.round(sentinelAtkFloor * (1 + fLvl * 0.04)), sentinelAtk);
 
       let pStats =
         typeof window.resolvePlayerStats === "function"
