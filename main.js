@@ -11493,14 +11493,12 @@
     }
 
     if (typeof window.invalidatePlayerStats === "function")
-      window.invalidatePlayerStats();
-    if (typeof window.updateUI === "function") window.updateUI();
-    if (typeof window.renderProfileModal === "function")
-      window.renderProfileModal();
-    let bagModal = document.getElementById("bag-modal");
-    if (bagModal && bagModal.style.display !== "none") window.toggleLootBag();
-    if (typeof window.saveGame === "function") window.saveGame();
-  };
+          window.invalidatePlayerStats();
+        if (typeof window.updateUI === "function") window.updateUI();
+        if (typeof window.renderProfileModal === "function")
+          window.renderProfileModal();
+        if (typeof window.saveGame === "function") window.saveGame();
+      };
 
   window.spawnGroundLoot = function (item, x, y) {
     if (!item) return;
@@ -23532,24 +23530,31 @@
   };
 
   window.toggleLootBag = function () {
-    let isHub = window.currentGameState === window.GAME_STATES.HUB;
-    if (isHub) {
-      window.toggleProfileModal();
-      return;
-    }
+      window.hideTooltip();
+      let modal = document.getElementById("profile-modal");
+      if (!modal) return;
 
-    let modal = document.getElementById("bag-modal");
-    if (!modal) return;
+      let isCurrentlyOpen = (modal.style.display === "flex" || modal.style.display === "block");
+      let isCurrentlyOnSatchel = (window.activeProfileMobileTab === "satchel");
 
-    if (modal.style.display === "none" || modal.style.display === "") {
-      modal.style.display = "flex";
-      window.switchBagTab(window.activeBagTab || "EQUIP");
-    } else {
-      modal.style.display = "none";
-      window.lastModalCloseTime = Date.now();
-      if (typeof window.hideTooltip === "function") window.hideTooltip();
-    }
-  };
+      if (isCurrentlyOpen && isCurrentlyOnSatchel) {
+        modal.style.display = "none";
+        window.lastModalCloseTime = Date.now();
+        if (
+          window.SkillTreeManager &&
+          typeof window.SkillTreeManager.stopAnimationLoop === "function"
+        ) {
+          window.SkillTreeManager.stopAnimationLoop();
+        }
+        if (typeof window.stopBestiaryAnimLoop === "function") {
+          window.stopBestiaryAnimLoop();
+        }
+      } else {
+        modal.style.display = "flex";
+        window.switchProfileTab("satchel");
+        window.renderProfileModal();
+      }
+    };
 
   window.openSigilPickerModal = function () {
     let modal = document.getElementById("sigil-picker-modal");
