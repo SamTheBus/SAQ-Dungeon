@@ -1051,85 +1051,59 @@ window.randFloat = (min, max) => Math.random() * (max - min) + min;
 
 window.rarityProbCache = window.rarityProbCache || {};
 
-// Universal Normalized Weight-Based Rarity Probability Solver
+// Continuous Dynamic Unlock Rarity Probability Engine
 window.calculateRarityProbabilities = function (
-  qly = 1.0,
+  quality = 1.0,
   isGacha = false,
-  floorNumber = 1,
+  stage = 1
 ) {
-  let fl = isGacha
-    ? Math.max(1, Number(floorNumber) || 1)
-    : Math.max(
-        Number(floorNumber) || 1,
-        window.playerStats.maxFloorCleared || 0,
-      );
-  let cacheKey = `${qly}_${isGacha}_${fl}`;
-  if (window.rarityProbCache[cacheKey]) {
-    return window.rarityProbCache[cacheKey];
-  }
+  let S = Math.max(1, stage || 1);
+  let Q = Math.max(0.5, quality || 1.0);
 
-  let weights = [0, 0, 0, 0, 0, 0]; // 0★ to 5★
+  // Dynamic Continuous Weight Functions
+  let w0 = Math.max(0, 100 - 0.4 * S);
+  let w1 = Math.max(0, 30 + 0.5 * Math.min(S, 80) - 0.2 * Math.max(0, S - 80));
+  let w2 = S >= 15 ? Math.max(0, 0.8 * (S - 15)) : 0;
+  let w3 = S >= 50 ? Math.max(0, 0.5 + 0.5 * (S - 50)) : 0;
+  let w4 = S >= 150 ? Math.max(0, 0.5 + 0.4 * (S - 150)) : 0;
+  let w5 = S >= 350 ? Math.max(0, 0.5 + 0.3 * (S - 350)) : 0;
 
-  let maxAllowedTier = 0;
-  if (isGacha) {
-    if (fl >= 300) maxAllowedTier = 5;
-    else if (fl >= 175) maxAllowedTier = 4;
-    else if (fl >= 100) maxAllowedTier = 3;
-    else if (fl >= 30) maxAllowedTier = 2;
-    else if (fl >= 10) maxAllowedTier = 1;
-  } else {
-    if (fl >= 120) maxAllowedTier = 5;
-    else if (fl >= 72) maxAllowedTier = 4;
-    else if (fl >= 48) maxAllowedTier = 3;
-    else if (fl >= 24) maxAllowedTier = 2;
-    else if (fl >= 12) maxAllowedTier = 1;
+  // Apply Quality Boost
+  if (Q > 1.0) {
+    let qBonus = (Q - 1.0) * 15;
+    w3 *= 1 + qBonus * 0.02;
+    w4 *= 1 + qBonus * 0.03;
+    w5 *= 1 + qBonus * 0.04;
   }
 
   if (isGacha) {
-    weights[0] = maxAllowedTier === 0 ? 100 : 0;
-    weights[1] = maxAllowedTier >= 1 ? 60 / Math.pow(qly, 0.4) : 0;
-    weights[2] = maxAllowedTier >= 2 ? 25 * Math.pow(qly, 0.4) : 0;
-    weights[3] = maxAllowedTier >= 3 ? 12 * Math.pow(qly, 0.8) : 0;
-    weights[4] = maxAllowedTier >= 4 ? 3 * Math.pow(qly, 1.2) : 0;
-    weights[5] =
-      maxAllowedTier >= 5
-        ? Math.min(
-            2.5,
-            0.2 * Math.pow((fl - 300) / 100 + 1, 1.2) * Math.pow(qly, 1.5),
-          )
-        : 0;
-  } else {
-    weights[0] = 80.0 / Math.pow(qly, 0.5);
-    weights[1] = maxAllowedTier >= 1 ? 15.0 * Math.pow(qly, 0.2) : 0;
-    weights[2] = maxAllowedTier >= 2 ? 4.0 * Math.pow(qly, 0.4) : 0;
-    weights[3] = maxAllowedTier >= 3 ? 0.9 * Math.pow(qly, 0.6) : 0;
-    weights[4] = maxAllowedTier >= 4 ? 0.1 * Math.pow(qly, 1.0) : 0;
-    weights[5] =
-      maxAllowedTier >= 5
-        ? Math.min(
-            1.0,
-            0.01 * Math.pow((fl - 300) / 100 + 1, 1.3) * Math.pow(qly, 1.4),
-          )
-        : 0;
+    w3 *= 1.5;
+    w4 *= 2.0;
+    w5 *= 2.5;
   }
 
-  let totalWeight = weights.reduce((sum, w) => sum + w, 0);
-  if (totalWeight <= 0) return [100, 0, 0, 0, 0, 0];
+  let totalWeight = w0 + w1 + w2 + w3 + w4 + w5;
+  if (totalWeight <= 0) totalWeight = 1.0;
 
-  let result = weights.map((w) => (w / totalWeight) * 100);
-  window.rarityProbCache[cacheKey] = result;
-  return result;
+  return {
+    0: (w0 / totalWeight) * 100,
+    1: (w1 / totalWeight) * 100,
+    2: (w2 / totalWeight) * 100,
+    3: (w3 / totalWeight) * 100,
+    4: (w4 / totalWeight) * 100,
+    5: (w5 / totalWeight) * 100,
+  };
 };
 
-window.rollItemRarity = function (stageLevel = 1, qly = 1.0, isGacha = false) {
-  let probs = window.calculateRarityProbabilities(qly, isGacha, stageLevel);
+window.rollItemRarity = function (stage = 1, quality = 1.0, isGacha = false) {
+  let probs = window.calculateRarityProbabilities(quality, isGacha, stage);
   let roll = Math.random() * 100;
   let cumulative = 0;
 
-  for (let stars = 5; stars >= 0; stars--) {
-    cumulative += probs[stars];
+  for (let s = 5; s >= 0; s--) {
+    cumulative += probs[s] || 0;
     if (roll <= cumulative) {
-      return stars;
+      return s;
     }
   }
   return 0;

@@ -7599,53 +7599,60 @@
     }
 
     // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-    // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
-    let repStage;
-    if (isMarcus) {
-      let peak =
-        window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-      let effectiveDepth = Math.max(scaleStage, peak) * 1.25;
-      let peakSIdx = Math.floor((effectiveDepth - 1) / 12);
-      repStage = window.getEffectiveStage(
-        effectiveDepth * 1.25 + peakSIdx * 12.0,
-      );
-    } else {
-      let sIdx = Math.floor((scaleStage - 1) / 12);
-      repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
-    }
+        // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
+        let repStage;
+        if (isMarcus) {
+          let peak =
+            window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+          let effectiveDepth = Math.max(scaleStage, peak) * 1.25;
+          let peakSIdx = Math.floor((effectiveDepth - 1) / 12);
+          repStage = window.getEffectiveStage(
+            effectiveDepth * 1.25 + peakSIdx * 12.0,
+          );
+        } else {
+          repStage =
+            typeof window.getEffectiveStage === "function"
+              ? window.getEffectiveStage(scaleStage)
+              : scaleStage;
+        }
 
-    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+        let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
+        let densityFactor = 1 + 0.005 * repStage;
 
-        // Apply Sawtooth Pacing Curve (Marcus maintains a flat difficulty/anti-farm floor)
         let localStep = (scaleStage - 1) % 12;
-        let sawtoothMod = isMarcus ? 1.0 : (0.80 + 0.045 * localStep);
-        let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
+        let sawtoothMod = isMarcus ? 1.0 : 0.85 + 0.03 * localStep;
 
         let bossHp = isMarcus
-                        ? 800 * repScale
-                        : isMini
-                          ? 300 * repScale
-                          : 500 * repScale;
-                      let bossAtk = isMarcus
-                        ? 30 * repScale
-                        : isMini
-                          ? 15 * repScale
-                          : 22 * repScale;
+          ? 1200 * repScale * densityFactor * sawtoothMod
+          : isMini
+            ? 800 * repScale * densityFactor * sawtoothMod
+            : 2000 * repScale * densityFactor * sawtoothMod;
+        let bossAtk = isMarcus
+          ? 32 * repScale * sawtoothMod
+          : isMini
+            ? 18 * repScale * sawtoothMod
+            : 26 * repScale * sawtoothMod;
 
-                      bossHp = Math.round(bossHp * enemyScale);
-                      bossAtk = Math.round(bossAtk * enemyScale);
+        bossHp = Math.round(bossHp * enemyScale);
+        bossAtk = Math.round(bossAtk * enemyScale);
 
-                      // Apply progression floors (baseline minimums) to ensure engaging combat scaling (Lowered floors and scaling multiplier to eliminate bloated HP pools)
-                      let bossHpFloor = isMarcus ? 1400 : isMini ? 350 : 650;
-                      let bossAtkFloor = isMarcus ? 30 : isMini ? 12 : 18;
-                      bossHp = Math.max(Math.round(bossHpFloor * (1 + scaleStage * 0.02)), bossHp);
-                      bossAtk = Math.max(Math.round(bossAtkFloor * (1 + scaleStage * 0.01)), bossAtk);
+        // Apply progression floors (baseline minimums) to ensure engaging combat scaling (Lowered floors and scaling multiplier to eliminate bloated HP pools)
+        let bossHpFloor = isMarcus ? 1400 : isMini ? 350 : 650;
+        let bossAtkFloor = isMarcus ? 30 : isMini ? 12 : 18;
+        bossHp = Math.max(
+          Math.round(bossHpFloor * (1 + scaleStage * 0.02)),
+          bossHp,
+        );
+        bossAtk = Math.max(
+          Math.round(bossAtkFloor * (1 + scaleStage * 0.01)),
+          bossAtk,
+        );
 
-    if (activeChallenge) {
-      let challengeScale = 1.0 + activeChallenge.riskRating / 30;
-      bossHp = Math.round(bossHp * challengeScale);
-      bossAtk = Math.round(bossAtk * challengeScale);
-    }
+        if (activeChallenge) {
+          let challengeScale = 1.0 + activeChallenge.riskRating / 30;
+          bossHp = Math.round(bossHp * challengeScale);
+          bossAtk = Math.round(bossAtk * challengeScale);
+        }
 
     let tier =
       typeof window.getStageTier === "function" ? window.getStageTier() : 0;
@@ -8022,17 +8029,15 @@
       }
 
       // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-            let sIdx = Math.floor((scaleStage - 1) / 12);
-                        let repStage = window.getEffectiveStage(scaleStage * 1.25 + sIdx * 12.0);
-                        let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+            let repStage = typeof window.getEffectiveStage === "function" ? window.getEffectiveStage(scaleStage) : scaleStage;
+                        let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
+                        let densityFactor = 1 + 0.005 * repStage;
 
-                        // Apply Sawtooth Pacing Curve
                         let localStep = (scaleStage - 1) % 12;
-                        let sawtoothMod = 0.80 + 0.045 * localStep;
-                        let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
+                        let sawtoothMod = 0.85 + 0.03 * localStep;
 
-                        let mobHpVal = Math.floor(40 * repScale * enemyScale);
-                        let mobAtkVal = Math.floor(8 * repScale * enemyScale);
+                        let mobHpVal = Math.floor(100 * repScale * densityFactor * sawtoothMod * enemyScale);
+                        let mobAtkVal = Math.floor(12 * repScale * sawtoothMod * enemyScale);
 
                         // Apply solid baseline floors to prevent early-game trivialization (Gentler scaling to align with balanced HP curves)
                                                                 let mobHpFloor = Math.min(100, 25 + scaleStage * 5.0);
@@ -24804,40 +24809,25 @@
 
     let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
-    // Polynomial-exponential stage scaling matches campaign item power
-    let sIdx = Math.floor((waveNumber - 1) / 5);
-    let repStage = waveNumber * 1.25 + sIdx * 12.0;
-    let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-    let repScale = Math.pow(repGrowth, repStage * 0.95);
+    let repStage = typeof window.getEffectiveStage === "function" ? window.getEffectiveStage(waveNumber) : waveNumber;
+          let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
+          let densityFactor = 1 + 0.005 * repStage;
 
-    if (isBossWave) {
-      // --- MILESTONE BOSS SPONDING ---
-      let cx = Math.floor(map.width / 2);
-      let cy = Math.floor(map.height / 2);
+          if (isBossWave) {
+            // --- MILESTONE BOSS SPONDING ---
+            let cx = Math.floor(map.width / 2);
+            let cy = Math.floor(map.height / 2);
 
-      // Safe Teleportation: move player to bottom of arena to prevent boss-spawn overlap
-      p.x = cx * tileSize + tileSize / 2;
-      p.y = (map.height - 4) * tileSize + tileSize / 2;
-      p.targetX = p.x;
-      p.targetY = p.y;
+            // Safe Teleportation: move player to bottom of arena to prevent boss-spawn overlap
+            p.x = cx * tileSize + tileSize / 2;
+            p.y = (map.height - 4) * tileSize + tileSize / 2;
+            p.targetX = p.x;
+            p.targetY = p.y;
 
-      let bossInfo = window.getOnslaughtBossForWave(waveNumber);
-      let baseHp = bossInfo.isMajor ? 500 : 300;
-      let baseAtk = bossInfo.isMajor ? 22 : 15;
+            let bossInfo = window.getOnslaughtBossForWave(waveNumber);
 
-      let bossHp = Math.round(baseHp * repScale * enemyScale);
-            let bossAtk = Math.round(
-              baseAtk *
-                Math.pow(1.06, waveNumber) *
-                Math.pow(waveNumber, 1.15) *
-                enemyScale,
-            );
-
-            // Apply progression floors (baseline minimums) to ensure engaging combat scaling in Onslaught Mode (Lowered floors and scaling multiplier to eliminate bloated HP pools)
-                        let bossHpFloor = bossInfo.isMajor ? 650 : 350;
-                        let bossAtkFloor = bossInfo.isMajor ? 18 : 12;
-                        bossHp = Math.max(Math.round(bossHpFloor * (1 + waveNumber * 0.02)), bossHp);
-                        bossAtk = Math.max(Math.round(bossAtkFloor * (1 + waveNumber * 0.01)), bossAtk);
+            let bossHp = Math.round((bossInfo.isMajor ? 2000 : 1200) * repScale * densityFactor * enemyScale);
+            let bossAtk = Math.round((bossInfo.isMajor ? 28 : 20) * repScale * enemyScale);
 
             window.mob = {
         type: bossInfo.isMajor ? "dungeon_boss" : "dungeon_miniboss",
@@ -24877,20 +24867,9 @@
       }
     } else {
               // --- STANDARD & ELITE MOB SPREAD SPONDING ---
-              let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
-              let mobHpVal = Math.round(40 * repScale * enemyScale);
-              let mobAtkVal = Math.round(
-                8 *
-                  Math.pow(1.06, waveNumber) *
-                  Math.pow(waveNumber, 1.15) *
-                  enemyScale,
-              );
-
-              // Apply solid baseline floors to prevent early-game trivialization (Balanced to prevent HP pool bloat and eliminate undefined fLvl ReferenceError)
-              let mobHpFloor = Math.min(100, 25 + waveNumber * 5.0);
-              let mobAtkFloor = Math.min(10, 4 + waveNumber * 0.3);
-              mobHpVal = Math.max(Math.round(mobHpFloor * (1 + waveNumber * 0.025)), mobHpVal);
-              mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + waveNumber * 0.01)), mobAtkVal);
+                    let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
+                    let mobHpVal = Math.round(100 * repScale * densityFactor * enemyScale);
+                    let mobAtkVal = Math.round(12 * repScale * enemyScale);
 
           let pStats =
         typeof window.resolvePlayerStats === "function"
