@@ -816,28 +816,28 @@
               mimicAtk = Math.max(Math.round(18 * (1 + stageScale * 0.04)), mimicAtk);
 
               window.activeDungeonMobs = window.activeDungeonMobs || [];
-              window.activeDungeonMobs.push({
-                id: window.idCounter++,
-                type: "mob",
-                isMimic: true,
-                visualTier: 1,
-                visualType: "hoard_mimic",
-                name: "Hoard Mimic",
-                x: tx * tileSize + 4,
-                y: ty * tileSize + 4,
-                w: 24,
-                h: 24,
-                hp: BigNum.from(mimicHp),
-                maxHp: BigNum.from(mimicHp),
-                atk: mimicAtk,
-                flashTimer: 0,
-                attackCooldown: 30, // Delay before snapping
-                facing: -1,
-                discovered: true,
-                hopTimer: 0,
-                isAggroed: true,
-                speedMultiplier: 1.15
-              });
+                                    window.activeDungeonMobs.push({
+                                      id: window.idCounter++,
+                                      type: "mob",
+                                      isMimic: true,
+                                      visualType: "hoard_mimic",
+                                      name: tier === "astral" ? "Astral Hoard Mimic" : tier === "gilded" ? "Gilded Hoard Mimic" : "Hoard Mimic",
+                                      mimicTier: tier,
+                                      x: tx * tileSize + 4,
+                                      y: ty * tileSize + 4,
+                                      w: 24,
+                                      h: 24,
+                                      hp: BigNum.from(mimicHp),
+                                      maxHp: BigNum.from(mimicHp),
+                                      atk: mimicAtk,
+                                      flashTimer: 0,
+                                      attackCooldown: 30, // Delay before snapping
+                                      facing: -1,
+                                      discovered: true,
+                                      hopTimer: 0,
+                                      isAggroed: true,
+                                      speedMultiplier: 1.15
+                                    });
 
               if (window.spawnFloatingText) {
                 window.spawnFloatingText(p.x, p.y - 25, "TRAP! IT'S A MIMIC!", "#ef4444");
@@ -15816,10 +15816,13 @@
 
         // Check death state after any potential hit
                 if (m.hp.lte(0)) {
-                                  // Reset Spreading Fatigue speed penalty on kill
-                                  window.fatiguePenalty = 0;
+                  // Reset Spreading Fatigue speed penalty on kill
+                  window.fatiguePenalty = 0;
 
-                                  if (m.isPortalSentinel) {
+                  let mobCenterX = m.x + (m.w || 24) / 2;
+                  let mobCenterY = m.y + (m.h || 24) / 2;
+
+                  if (m.isPortalSentinel) {
                                     window.activeDungeonMap.portalLocked = false;
                                     window.spawnFloatingText(p.x, p.y - 25, "PORTAL SEAL SHATTERED!", "#00ffff");
                                     if (window.spawnBarrierShatterVisual) {
@@ -15831,35 +15834,72 @@
                                   }
 
                                   if (m.visualType === "hoard_mimic" && m.isMimic) {
-                                    let stageScale = window.player.depth || 1;
-                                    let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
-                                    let playerQuality = pStats.qly || 1.0;
+                                                      let stageScale = window.player.depth || 1;
+                                                      let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+                                                      let playerQuality = pStats.qly || 1.0;
+                                                      let tier = m.mimicTier || "iron_bound";
 
-                                    // Secured high-tier gilded coins and gears
-                                    let chestGold = Math.floor(250 * (1 + stageScale * 1.0));
-                                    window.spawnHomingGold(mobCenterX, mobCenterY, chestGold);
+                                                      let chestGoldVal = 250;
+                                                      let minRarity = 2; // Magic (2*)
+                                                      let extraLootCount = 1;
+                                                      let sigilChance = 0.40;
+                                                      let sigilMinRarity = 2;
+                                                      let cardSacks = 1;
+                                                      let rareMatChance = 0;
+                                                      let toastMsg = "✦ Mimic defeated! Iron-bound treasury rewards secured!";
+                                                      let toastColor = "#e67e22";
 
-                                    let rolledRarity = window.rollItemRarity(stageScale * 8, playerQuality * 1.5, false);
-                                    if (rolledRarity < 2) rolledRarity = 2; // Magic+ limit
+                                                      if (tier === "gilded") {
+                                                        chestGoldVal = 350;
+                                                        minRarity = 2; // Magic
+                                                        sigilChance = 0.65;
+                                                        toastMsg = "✦ Mimic defeated! Gilded treasury rewards secured!";
+                                                        toastColor = "#ffd700";
+                                                      } else if (tier === "astral") {
+                                                        chestGoldVal = 550;
+                                                        minRarity = 3; // Epic (3*) minimum
+                                                        extraLootCount = 2; // 2x items!
+                                                        sigilChance = 1.0; // Guaranteed Sigil!
+                                                        sigilMinRarity = 3; // Guaranteed Epic Sigil or higher
+                                                        cardSacks = 2; // 2x card packs!
+                                                        rareMatChance = 0.4; // 40% chance for rare material
+                                                        toastMsg = "✦ Mimic defeated! Colossal Astral treasury rewards secured!";
+                                                        toastColor = "#a855f7";
+                                                      }
 
-                                    let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-                                    let chosenType = types[Math.floor(Math.random() * types.length)];
-                                    let droppedItem = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
-                                    window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
+                                                      let chestGold = Math.floor(chestGoldVal * (1 + stageScale * 1.0));
+                                                      window.spawnHomingGold(mobCenterX, mobCenterY, chestGold);
 
-                                    // 40% Chance for Sigil drops
-                                    if (Math.random() < 0.40) {
-                                      let rolledSigilRarity = window.rollSigilRarity(4, playerQuality * 1.25);
-                                      let sigilItem = window.createItemObject("sigil", rolledSigilRarity, stageScale, 0);
-                                      window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
-                                    }
+                                                      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+                                                      for (let i = 0; i < extraLootCount; i++) {
+                                                        let rolledRarity = window.rollItemRarity(stageScale * 8, playerQuality * 1.5, false);
+                                                        if (rolledRarity < minRarity) rolledRarity = minRarity;
+                                                        let chosenType = types[Math.floor(Math.random() * types.length)];
+                                                        let droppedItem = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
+                                                        window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
+                                                      }
 
-                                    window.addUseDrop("Monster Card Sack", 1, false);
+                                                      if (Math.random() < sigilChance) {
+                                                        let rolledSigilRarity = window.rollSigilRarity(4, playerQuality * 1.25);
+                                                        if (rolledSigilRarity < sigilMinRarity) rolledSigilRarity = sigilMinRarity;
+                                                        let sigilItem = window.createItemObject("sigil", rolledSigilRarity, stageScale, 0);
+                                                        window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
+                                                      }
 
-                                    if (typeof window.pushHeaderToast === "function") {
-                                      window.pushHeaderToast("✦ Mimic defeated! Gilded treasury rewards secured!", "#ffd700");
-                                    }
-                                  }
+                                                      window.addUseDrop("Monster Card Sack", cardSacks, false);
+
+                                                      if (Math.random() < rareMatChance) {
+                                                        let mats = ["Ancient Core", "Astral Essence", "Eridium Shard"];
+                                                        let chosenMat = mats[Math.floor(Math.random() * mats.length)];
+                                                        if (typeof window.spawnGroundMaterial === "function") {
+                                                          window.spawnGroundMaterial(chosenMat, 1, mobCenterX, mobCenterY);
+                                                        }
+                                                      }
+
+                                                      if (typeof window.pushHeaderToast === "function") {
+                                                        window.pushHeaderToast(toastMsg, toastColor);
+                                                      }
+                                                    }
 
           // --- SUBPHASE 7: SPAWNING DIVISION SPLIT ---
           let canDivide =

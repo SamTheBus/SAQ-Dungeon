@@ -31,6 +31,7 @@
         offscreenCanvas.width = mainCanvas.width;
         offscreenCanvas.height = mainCanvas.height;
       }
+      offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
       return { canvas: offscreenCanvas, ctx: offscreenCtx };
     }
 
