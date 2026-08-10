@@ -325,54 +325,58 @@
   window.ParticlePool.init();
 
   window.spawnResonantAegisRipple = function (x, y) {
-    if (!window.particles || !window.ParticlePool) return;
+      if (!window.particles || !window.ParticlePool) return;
 
-    // 1. Spawning high-density golden runic shards
-    for (let i = 0; i < 14; i++) {
-      let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.15, 0.15);
-      let speed = window.randFloat(3.2, 5.8);
-      let pt = window.ParticlePool.get(
-        x,
-        y,
-        Math.cos(angle) * speed,
-        Math.sin(angle) * speed - window.randFloat(0.5, 1.5),
-        window.randFloat(2.0, 4.0),
-        Math.random() < 0.6 ? "#f1c40f" : "#ffd700",
-        0.95,
-        window.randInt(20, 35),
-        0.15, // light gravity to pull debris down
-        true,
-        0.92, // deceleration drag
-      );
-      pt.style = "polygon";
-      pt.angle = Math.random() * Math.PI * 2;
-      pt.spinSpeed = window.randFloat(-0.25, 0.25);
-      pt.scaleDecay = 0.015;
-      window.particles.push(pt);
-    }
+      // 1. Spawning high-density golden runic shards
+      for (let i = 0; i < 14; i++) {
+        let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.15, 0.15);
+        let speed = window.randFloat(3.2, 5.8);
+        let life = window.randInt(20, 35);
+        let pt = window.ParticlePool.get(
+          x,
+          y,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed - window.randFloat(0.5, 1.5),
+          window.randFloat(2.0, 4.0),
+          Math.random() < 0.6 ? "#f1c40f" : "#ffd700",
+          0.95,
+          life,
+          life,
+          0.15, // light gravity to pull debris down
+          true,
+          0.92, // deceleration drag
+        );
+        pt.style = "polygon";
+        pt.angle = Math.random() * Math.PI * 2;
+        pt.spinSpeed = window.randFloat(-0.25, 0.25);
+        pt.scaleDecay = 0.015;
+        window.particles.push(pt);
+      }
 
-    // 2. Spawning expanding floor dust waves
-    for (let i = 0; i < 14; i++) {
-      let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.1, 0.1);
-      let speed = window.randFloat(2.0, 3.8);
-      let pt = window.ParticlePool.get(
-        x,
-        y,
-        Math.cos(angle) * speed,
-        Math.sin(angle) * speed * 0.45, // flat ellipse scatter
-        window.randFloat(3.5, 6.0),
-        "#b58700", // sand-gold
-        0.75,
-        window.randInt(15, 25),
-        0.0,
-        true,
-        0.88, // rapid deceleration
-      );
-      pt.style = "glowing_orb";
-      pt.scaleDecay = 0.02;
-      window.particles.push(pt);
-    }
-  };
+      // 2. Spawning expanding floor dust waves
+      for (let i = 0; i < 14; i++) {
+        let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.1, 0.1);
+        let speed = window.randFloat(2.0, 3.8);
+        let life = window.randInt(15, 25);
+        let pt = window.ParticlePool.get(
+          x,
+          y,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed * 0.45, // flat ellipse scatter
+          window.randFloat(3.5, 6.0),
+          "#b58700", // sand-gold
+          0.75,
+          life,
+          life,
+          0.0,
+          true,
+          0.88, // rapid deceleration
+        );
+        pt.style = "glowing_orb";
+        pt.scaleDecay = 0.02;
+        window.particles.push(pt);
+      }
+    };
 
   // Unified Earth-Breaker Bash visual spawner lives in entities.js
 
@@ -1513,12 +1517,13 @@
     }
 
     // Additive Light Blend Pass in World Coordinates
-    lightingCtx.globalCompositeOperation = "lighter";
-    lights.forEach((light) => {
-      let { x, y, r, innerColor, outerColor, isPlayerLight } = light;
-      let grad = lightingCtx.createRadialGradient(x, y, 0, x, y, r);
+        lightingCtx.globalCompositeOperation = "lighter";
+        lights.forEach((light) => {
+          let { x, y, r, innerColor, outerColor, isPlayerLight } = light;
+          let safeR = Math.max(0.1, r);
+          let grad = lightingCtx.createRadialGradient(x, y, 0, x, y, safeR);
 
-      if (isPlayerLight && hasShroudedSight) {
+          if (isPlayerLight && hasShroudedSight) {
         // High-contrast, multi-stop radial gradient for Shrouded Sight: bright center, progressive transition
         grad.addColorStop(0, "rgba(255, 255, 250, 1.0)"); // White-hot center core
         grad.addColorStop(0.18, "rgba(255, 240, 195, 0.98)"); // Highly illuminated center ring
@@ -2403,35 +2408,35 @@
             }
 
             // Spark siphon lines travelling from player to Marcus
-            if (window.combatVisuals && window.combatVisuals.particlePool) {
-              let angle = Math.atan2(cy - p.y, cx - p.x);
-              window.combatVisuals.particlePool.get(
-                p.x + window.randFloat(-6, 6),
-                p.y - 4 + window.randFloat(-6, 6),
-                Math.cos(angle) * 4.5,
-                Math.sin(angle) * 4.5,
-                window.randFloat(1.5, 3.0),
-                "#ffd700",
-                0.85,
-                15,
-                0,
-                true,
-                0,
-              );
-              window.combatVisuals.particlePool.get(
-                p.x + window.randFloat(-6, 6),
-                p.y - 4 + window.randFloat(-6, 6),
-                Math.cos(angle) * 4.5,
-                Math.sin(angle) * 4.5,
-                window.randFloat(1.5, 3.0),
-                "#e74c3c",
-                0.85,
-                15,
-                0,
-                true,
-                0,
-              );
-            }
+                        if (window.combatVisuals && window.combatVisuals.particlePool) {
+                          let angle = Math.atan2(cy - p.y, cx - p.x);
+                          window.combatVisuals.particlePool.get(
+                            p.x + window.randFloat(-6, 6),
+                            p.y - 4 + window.randFloat(-6, 6),
+                            Math.cos(angle) * 4.5,
+                            Math.sin(angle) * 4.5,
+                            window.randFloat(1.5, 3.0),
+                            "#ffd700",
+                            0.85,
+                            15,
+                            15,
+                            0,
+                            true
+                          );
+                          window.combatVisuals.particlePool.get(
+                            p.x + window.randFloat(-6, 6),
+                            p.y - 4 + window.randFloat(-6, 6),
+                            Math.cos(angle) * 4.5,
+                            Math.sin(angle) * 4.5,
+                            window.randFloat(1.5, 3.0),
+                            "#e74c3c",
+                            0.85,
+                            15,
+                            15,
+                            0,
+                            true
+                          );
+                        }
 
             if (
               window.SoundManager &&
@@ -2829,59 +2834,59 @@
               );
             }
           } else {
-            // Emit orbital Web Storm wind particles
-            if (Math.random() < 0.4) {
-              let angle = Math.random() * Math.PI * 2;
-              let orbDist = m.w * 0.75;
-              let px = cx + Math.cos(angle) * orbDist;
-              let py = cy + Math.sin(angle) * orbDist;
-              let rotSpeed = 3.5;
-              let vx = -Math.sin(angle) * rotSpeed;
-              let vy = Math.cos(angle) * rotSpeed;
-              if (window.combatVisuals && window.combatVisuals.particlePool) {
-                window.combatVisuals.particlePool.get(
-                  px,
-                  py,
-                  vx,
-                  vy,
-                  window.randFloat(1.5, 3),
-                  Math.random() < 0.5 ? "#ffffff" : "#27ae60",
-                  0.8,
-                  30,
-                  0,
-                  true,
-                  0,
-                );
-              }
-            }
-            return; // Skip normal combat movement/attack AI while shielded
-          }
-        }
+                      // Emit orbital Web Storm wind particles
+                      if (Math.random() < 0.4) {
+                        let angle = Math.random() * Math.PI * 2;
+                        let orbDist = m.w * 0.75;
+                        let px = cx + Math.cos(angle) * orbDist;
+                        let py = cy + Math.sin(angle) * orbDist;
+                        let rotSpeed = 3.5;
+                        let vx = -Math.sin(angle) * rotSpeed;
+                        let vy = Math.cos(angle) * rotSpeed;
+                        if (window.combatVisuals && window.combatVisuals.particlePool) {
+                          window.combatVisuals.particlePool.get(
+                            px,
+                            py,
+                            vx,
+                            vy,
+                            window.randFloat(1.5, 3),
+                            Math.random() < 0.5 ? "#ffffff" : "#27ae60",
+                            0.8,
+                            30,
+                            30,
+                            0,
+                            true
+                          );
+                        }
+                      }
+                      return; // Skip normal combat movement/attack AI while shielded
+                    }
+                  }
 
         if (m.actionState === "telegraphing" || m.state === "telegraphing") {
           m.telegraphTimer--;
 
           // Creeping vine particles traveling during root snare wind-up
-          if (m.activeAbility === "root_snare" && m.telegraphTimer % 3 === 0) {
-            let tRatio = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
-            let vx = cx + (m.targetX - cx) * tRatio;
-            let vy = cy + (m.targetY - cy) * tRatio;
-            if (window.combatVisuals && window.combatVisuals.particlePool) {
-              window.combatVisuals.particlePool.get(
-                vx + window.randFloat(-4, 4),
-                vy + window.randFloat(-4, 4),
-                window.randFloat(-0.2, 0.2),
-                window.randFloat(-0.2, 0.2),
-                window.randFloat(1.5, 2.5),
-                "#27ae60",
-                0.8,
-                24,
-                0,
-                true,
-                0,
-              );
-            }
-          }
+                    if (m.activeAbility === "root_snare" && m.telegraphTimer % 3 === 0) {
+                      let tRatio = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
+                      let vx = cx + (m.targetX - cx) * tRatio;
+                      let vy = cy + (m.targetY - cy) * tRatio;
+                      if (window.combatVisuals && window.combatVisuals.particlePool) {
+                        window.combatVisuals.particlePool.get(
+                          vx + window.randFloat(-4, 4),
+                          vy + window.randFloat(-4, 4),
+                          window.randFloat(-0.2, 0.2),
+                          window.randFloat(-0.2, 0.2),
+                          window.randFloat(1.5, 2.5),
+                          "#27ae60",
+                          0.8,
+                          24,
+                          24,
+                          0,
+                          true
+                        );
+                      }
+                    }
 
           if (m.telegraphTimer <= 0) {
             m.state = "idle";
@@ -3067,28 +3072,28 @@
             }
 
             // Spawn blue gravitational sparks flowing inward (Subphase C.3)
-            if (
-              m.telegraphTimer % 4 === 0 &&
-              window.combatVisuals &&
-              window.combatVisuals.particlePool
-            ) {
-              let pt = window.combatVisuals.particlePool.get(
-                p.x + window.randFloat(-10, 10),
-                p.y + window.randFloat(-10, 10),
-                Math.cos(angle) * 3,
-                Math.sin(angle) * 3,
-                window.randFloat(1.2, 2.5),
-                "#00d2ff",
-                0.8,
-                20,
-                0,
-                true,
-                0,
-              );
-              pt.style = "streak";
-              pt.scaleDecay = 0.035;
-              window.particles.push(pt);
-            }
+                        if (
+                          m.telegraphTimer % 4 === 0 &&
+                          window.combatVisuals &&
+                          window.combatVisuals.particlePool
+                        ) {
+                          let pt = window.combatVisuals.particlePool.get(
+                            p.x + window.randFloat(-10, 10),
+                            p.y + window.randFloat(-10, 10),
+                            Math.cos(angle) * 3,
+                            Math.sin(angle) * 3,
+                            window.randFloat(1.2, 2.5),
+                            "#00d2ff",
+                            0.8,
+                            20,
+                            20,
+                            0,
+                            true
+                          );
+                          pt.style = "streak";
+                          pt.scaleDecay = 0.035;
+                          window.particles.push(pt);
+                        }
           }
 
           if (m.telegraphTimer <= 0) {
@@ -3560,21 +3565,21 @@
               let vy = -Math.sin(pAngle) * (pDist / 15);
 
               let pt = window.combatVisuals.particlePool.get(
-                px,
-                py,
-                vx,
-                vy,
-                window.randFloat(1.5, 3.5),
-                Math.random() < 0.5 ? "#e84393" : "#8e44ad",
-                0.8,
-                15,
-                0,
-                true,
-                -0.05,
-              );
-              pt.style = "streak"; // Transform accretion dust into high-velocity inward streaks
-              pt.scaleDecay = 0.04;
-              window.particles.push(pt);
+                              px,
+                              py,
+                              vx,
+                              vy,
+                              window.randFloat(1.5, 3.5),
+                              Math.random() < 0.5 ? "#e84393" : "#8e44ad",
+                              0.8,
+                              15,
+                              15,
+                              -0.05,
+                              true
+                            );
+                            pt.style = "streak"; // Transform accretion dust into high-velocity inward streaks
+                            pt.scaleDecay = 0.04;
+                            window.particles.push(pt);
             }
           }
 
@@ -4152,26 +4157,26 @@
             m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
 
             // Visual golden siphon lines
-            if (
-              m.channelTimer % 3 === 0 &&
-              window.combatVisuals &&
-              window.combatVisuals.particlePool
-            ) {
-              let angle = Math.atan2(cy - p.y, cx - p.x);
-              window.combatVisuals.particlePool.get(
-                p.x + window.randFloat(-6, 6),
-                p.y - 4 + window.randFloat(-6, 6),
-                Math.cos(angle) * 4.5,
-                Math.sin(angle) * 4.5,
-                window.randFloat(1.2, 2.8),
-                "#ffd700",
-                0.8,
-                15,
-                0,
-                true,
-                0,
-              );
-            }
+                        if (
+                          m.channelTimer % 3 === 0 &&
+                          window.combatVisuals &&
+                          window.combatVisuals.particlePool
+                        ) {
+                          let angle = Math.atan2(cy - p.y, cx - p.x);
+                          window.combatVisuals.particlePool.get(
+                            p.x + window.randFloat(-6, 6),
+                            p.y - 4 + window.randFloat(-6, 6),
+                            Math.cos(angle) * 4.5,
+                            Math.sin(angle) * 4.5,
+                            window.randFloat(1.2, 2.8),
+                            "#ffd700",
+                            0.8,
+                            15,
+                            15,
+                            0,
+                            true
+                          );
+                        }
           }
 
           if (m.channelTimer <= 0) {
@@ -4387,25 +4392,26 @@
               if (window.combatVisuals) {
                 window.combatVisuals.triggerScreenShake(8, 14);
                 // Spew fire particles
-                let fAngle = m.facing === -1 ? Math.PI : 0;
-                for (let k = 0; k < 20; k++) {
-                  let dev = window.randFloat(-0.7, 0.7);
-                  let spAngle = fAngle + dev;
-                  let speed = window.randFloat(3.0, 6.0);
-                  window.combatVisuals.particlePool.get(
-                    cx,
-                    cy,
-                    Math.cos(spAngle) * speed,
-                    Math.sin(spAngle) * speed,
-                    window.randFloat(1.5, 3.8),
-                    "#ff3300",
-                    0.85,
-                    25,
-                    -0.03,
-                    true,
-                    0.05,
-                  );
-                }
+                                let fAngle = m.facing === -1 ? Math.PI : 0;
+                                for (let k = 0; k < 20; k++) {
+                                  let dev = window.randFloat(-0.7, 0.7);
+                                  let spAngle = fAngle + dev;
+                                  let speed = window.randFloat(3.0, 6.0);
+                                  window.combatVisuals.particlePool.get(
+                                    cx,
+                                    cy,
+                                    Math.cos(spAngle) * speed,
+                                    Math.sin(spAngle) * speed,
+                                    window.randFloat(1.5, 3.8),
+                                    "#ff3300",
+                                    0.85,
+                                    25,
+                                    25,
+                                    -0.03,
+                                    true,
+                                    0.05
+                                  );
+                                }
               }
               if (window.SoundManager) window.SoundManager.play("spell_fire");
 
@@ -7616,24 +7622,24 @@
         let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
 
         let bossHp = isMarcus
-                    ? 800 * repScale
-                    : isMini
-                      ? 300 * repScale
-                      : 500 * repScale;
-                  let bossAtk = isMarcus
-                    ? 30 * repScale
-                    : isMini
-                      ? 15 * repScale
-                      : 22 * repScale;
+                        ? 800 * repScale
+                        : isMini
+                          ? 300 * repScale
+                          : 500 * repScale;
+                      let bossAtk = isMarcus
+                        ? 30 * repScale
+                        : isMini
+                          ? 15 * repScale
+                          : 22 * repScale;
 
-                  bossHp = Math.round(bossHp * enemyScale);
-                  bossAtk = Math.round(bossAtk * enemyScale);
+                      bossHp = Math.round(bossHp * enemyScale);
+                      bossAtk = Math.round(bossAtk * enemyScale);
 
-                  // Apply progression floors (baseline minimums) to ensure engaging combat scaling
-                  let bossHpFloor = isMarcus ? 2500 : isMini ? 1200 : 1800;
-                  let bossAtkFloor = isMarcus ? 45 : isMini ? 25 : 35;
-                  bossHp = Math.max(Math.round(bossHpFloor * (1 + scaleStage * 0.08)), bossHp);
-                  bossAtk = Math.max(Math.round(bossAtkFloor * (1 + scaleStage * 0.04)), bossAtk);
+                      // Apply progression floors (baseline minimums) to ensure engaging combat scaling (Lowered floors and scaling multiplier to eliminate bloated HP pools)
+                      let bossHpFloor = isMarcus ? 1400 : isMini ? 350 : 650;
+                      let bossAtkFloor = isMarcus ? 30 : isMini ? 12 : 18;
+                      bossHp = Math.max(Math.round(bossHpFloor * (1 + scaleStage * 0.02)), bossHp);
+                      bossAtk = Math.max(Math.round(bossAtkFloor * (1 + scaleStage * 0.01)), bossAtk);
 
     if (activeChallenge) {
       let challengeScale = 1.0 + activeChallenge.riskRating / 30;
@@ -8028,11 +8034,11 @@
                         let mobHpVal = Math.floor(40 * repScale * enemyScale);
                         let mobAtkVal = Math.floor(8 * repScale * enemyScale);
 
-                        // Apply solid baseline floors to prevent early-game trivialization
-                                        let mobHpFloor = Math.min(180, 30 + scaleStage * 12.5); // Floor 1: 42.5 HP base | Floor 12: 180 HP base
-                                        let mobAtkFloor = Math.min(14, 5 + scaleStage * 0.75);  // Floor 1: 5.75 ATK base | Floor 12: 14 ATK base
-                                        mobHpVal = Math.max(Math.round(mobHpFloor * (1 + scaleStage * 0.08)), mobHpVal);
-                                        mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + scaleStage * 0.04)), mobAtkVal);
+                        // Apply solid baseline floors to prevent early-game trivialization (Gentler scaling to align with balanced HP curves)
+                                                                let mobHpFloor = Math.min(100, 25 + scaleStage * 5.0);
+                                                                let mobAtkFloor = Math.min(10, 4 + scaleStage * 0.3);
+                                                                mobHpVal = Math.max(Math.round(mobHpFloor * (1 + scaleStage * 0.025)), mobHpVal);
+                                                                mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + scaleStage * 0.01)), mobAtkVal);
 
       if (activeChallenge) {
         let challengeScale = 1.0 + activeChallenge.riskRating / 35;
@@ -8719,14 +8725,14 @@
                       let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
 
                       // Sentinels are 2x as tough as regular floor mobs
-                                      let sentinelHp = Math.round(80 * repScale * enemyScale);
-                                      let sentinelAtk = Math.round(11 * repScale * enemyScale);
+                                                        let sentinelHp = Math.round(80 * repScale * enemyScale);
+                                                        let sentinelAtk = Math.round(11 * repScale * enemyScale);
 
-                                      // Apply solid baseline floors to prevent early-game trivialization
-                                      let sentinelHpFloor = 360; // 2x mobHpFloor (180 * 2)
-                                      let sentinelAtkFloor = 28; // 2x mobAtkFloor (14 * 2)
-                                      sentinelHp = Math.max(Math.round(sentinelHpFloor * (1 + fLvl * 0.08)), sentinelHp);
-                                      sentinelAtk = Math.max(Math.round(sentinelAtkFloor * (1 + fLvl * 0.04)), sentinelAtk);
+                                                        // Apply solid baseline floors to prevent early-game trivialization (Balanced to eliminate health pool bloat)
+                                                        let sentinelHpFloor = 100;
+                                                        let sentinelAtkFloor = 14;
+                                                        sentinelHp = Math.max(Math.round(sentinelHpFloor * (1 + fLvl * 0.025)), sentinelHp);
+                                                        sentinelAtk = Math.max(Math.round(sentinelAtkFloor * (1 + fLvl * 0.01)), sentinelAtk);
 
                                       let sector = Math.floor((depth - 1) / 12);
                       let mobInfo = window.getMobPoolForDepth(depth);
@@ -9883,27 +9889,29 @@
           let angle = Math.random() * Math.PI * 2;
           let dist = window.randFloat(4, 16);
 
-          let pt = window.ParticlePool.get(
-            px + Math.cos(angle) * dist,
-            py + Math.sin(angle) * dist,
-            (Math.random() - 0.5) * 0.4,
-            -window.randFloat(0.6, 1.4),
-            window.randFloat(1.2, 2.5),
-            pColor,
-            0.85,
-            window.randInt(20, 35),
-            -0.01,
-            true,
-          );
-          if (pEvent === "rift") {
-            pt.style = "glowing_orb";
-          } else {
-            pt.style = "sparkle_star";
-          }
-          window.particles.push(pt);
-        }
-      }
-    }
+          let lifeVal = window.randInt(20, 35);
+                    let pt = window.ParticlePool.get(
+                      px + Math.cos(angle) * dist,
+                      py + Math.sin(angle) * dist,
+                      (Math.random() - 0.5) * 0.4,
+                      -window.randFloat(0.6, 1.4),
+                      window.randFloat(1.2, 2.5),
+                      pColor,
+                      0.85,
+                      lifeVal,
+                      lifeVal,
+                      -0.01,
+                      true
+                    );
+                    if (pEvent === "rift") {
+                      pt.style = "glowing_orb";
+                    } else {
+                      pt.style = "sparkle_star";
+                    }
+                    window.particles.push(pt);
+                  }
+                }
+              }
 
     if (
       window.logicClock % 60 === 0 &&
@@ -13835,21 +13843,23 @@
                               pStyle = "glowing_orb";
                             }
 
-                            let pt = window.ParticlePool.get(
-                              mCx + window.randFloat(-6, 6),
-                              mCy + window.randFloat(-6, 6),
-                              window.randFloat(-0.3, 0.3),
-                              window.randFloat(-0.3, 0.3) - (gravity < 0 ? 0.4 : 0),
-                              window.randFloat(1.2, 2.2),
-                              pColor,
-                              0.8,
-                              window.randInt(20, 35),
-                              gravity,
-                              true
-                            );
-                            pt.style = pStyle;
-                            pt.scaleDecay = 0.025;
-                            window.particles.push(pt);
+                            let lifeVal = window.randInt(20, 35);
+                                                        let pt = window.ParticlePool.get(
+                                                          mCx + window.randFloat(-6, 6),
+                                                          mCy + window.randFloat(-6, 6),
+                                                          window.randFloat(-0.3, 0.3),
+                                                          window.randFloat(-0.3, 0.3) - (gravity < 0 ? 0.4 : 0),
+                                                          window.randFloat(1.2, 2.2),
+                                                          pColor,
+                                                          0.8,
+                                                          lifeVal,
+                                                          lifeVal,
+                                                          gravity,
+                                                          true
+                                                        );
+                                                        pt.style = pStyle;
+                                                        pt.scaleDecay = 0.025;
+                                                        window.particles.push(pt);
                           }
 
         // --- CELESTIAL STATUS DOT TICK ENGINE ---
@@ -13993,33 +14003,33 @@
             m.castTimer--;
 
             // Windup Charge Particles
-            if (window.combatVisuals && Math.random() < 0.6) {
-              let mCx = m.x + m.w / 2;
-              let mCy = m.y + m.h / 2;
-              let pColor =
-                m.projectileType === "thorn"
-                  ? "#2ecc71"
-                  : m.projectileType === "frost"
-                    ? "#38bdf8"
-                    : m.projectileType === "fireball"
-                      ? "#e67e22"
-                      : m.projectileType === "maelstrom"
-                        ? "#a3fd83"
-                        : "#e84393";
-              window.combatVisuals.particlePool.get(
-                mCx + (Math.random() - 0.5) * 20,
-                mCy + (Math.random() - 0.5) * 20,
-                (Math.random() - 0.5) * 0.5,
-                (Math.random() - 0.5) * 0.5,
-                window.randFloat(1.0, 2.2),
-                pColor,
-                0.8,
-                12,
-                0,
-                true,
-                0,
-              );
-            }
+                        if (window.combatVisuals && Math.random() < 0.6) {
+                          let mCx = m.x + m.w / 2;
+                          let mCy = m.y + m.h / 2;
+                          let pColor =
+                            m.projectileType === "thorn"
+                              ? "#2ecc71"
+                              : m.projectileType === "frost"
+                                ? "#38bdf8"
+                                : m.projectileType === "fireball"
+                                  ? "#e67e22"
+                                  : m.projectileType === "maelstrom"
+                                    ? "#a3fd83"
+                                    : "#e84393";
+                          window.combatVisuals.particlePool.get(
+                            mCx + (Math.random() - 0.5) * 20,
+                            mCy + (Math.random() - 0.5) * 20,
+                            (Math.random() - 0.5) * 0.5,
+                            (Math.random() - 0.5) * 0.5,
+                            window.randFloat(1.0, 2.2),
+                            pColor,
+                            0.8,
+                            12,
+                            12,
+                            0,
+                            true
+                          );
+                        }
 
             if (m.castTimer === 0) {
               m.rangedCooldown = m.isRare ? 65 : 95;
@@ -17678,24 +17688,25 @@
           drag = 0.95;
         }
 
-        let pt = window.ParticlePool.get(
-          proj.x - proj.vx * 0.35,
-          proj.y - proj.vy * 0.35,
-          -proj.vx * 0.15 + window.randFloat(-0.3, 0.3),
-          -proj.vy * 0.15 + window.randFloat(-0.3, 0.3),
-          pSize,
-          color,
-          0.72,
-          window.randInt(11, 20),
-          0,
-          gravity,
-          true,
-          drag,
-        );
-        pt.style = style;
-        if (spinSpeed) pt.spinSpeed = spinSpeed;
-        pt.scaleDecay = scaleDecay;
-        window.particles.push(pt);
+        let pLife = window.randInt(11, 20);
+                let pt = window.ParticlePool.get(
+                  proj.x - proj.vx * 0.35,
+                  proj.y - proj.vy * 0.35,
+                  -proj.vx * 0.15 + window.randFloat(-0.3, 0.3),
+                  -proj.vy * 0.15 + window.randFloat(-0.3, 0.3),
+                  pSize,
+                  color,
+                  0.72,
+                  pLife,
+                  pLife,
+                  gravity,
+                  true,
+                  drag,
+                );
+                pt.style = style;
+                if (spinSpeed) pt.spinSpeed = spinSpeed;
+                pt.scaleDecay = scaleDecay;
+                window.particles.push(pt);
       }
 
       let map = window.activeDungeonMap;
@@ -19018,26 +19029,26 @@
           ctx.closePath();
           ctx.fill();
         } else if (pt.style === "streak") {
-          let speed = Math.hypot(pt.vx, pt.vy);
-          if (speed > 0.1) {
-            ctx.lineWidth =
-              (pt.size || 1.5) * (pt.scale !== undefined ? pt.scale : 1.0);
-            ctx.lineCap = "round";
+                  let speed = Math.hypot(pt.vx, pt.vy);
+                  if (speed > 0.1) {
+                    ctx.lineWidth =
+                      (pt.size || 1.5) * (pt.scale !== undefined ? pt.scale : 1.0);
+                    ctx.lineCap = "round";
 
-            let tailX = pt.x - pt.vx * 1.5;
-            let tailY = pt.y - pt.vy * 1.5;
+                    let tailX = pt.x - pt.vx * 1.5;
+                    let tailY = pt.y - pt.vy * 1.5;
 
-            // Generate motion blur gradient fading out at the tail
-            let grad = ctx.createLinearGradient(pt.x, pt.y, tailX, tailY);
-            grad.addColorStop(0, pt.color || "#ffffff");
-            grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                    // Generate motion blur gradient fading out at the tail (Added safe offsets to prevent identical coords)
+                    let grad = ctx.createLinearGradient(pt.x, pt.y, tailX + 0.1, tailY + 0.1);
+                    grad.addColorStop(0, pt.color || "#ffffff");
+                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
-            ctx.strokeStyle = grad;
-            ctx.beginPath();
-            ctx.moveTo(pt.x, pt.y);
-            ctx.lineTo(tailX, tailY);
-            ctx.stroke();
-          } else {
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(pt.x, pt.y);
+                    ctx.lineTo(tailX, tailY);
+                    ctx.stroke();
+                  } else {
             // Drop down to circle fallback if velocity falls to zero
             ctx.beginPath();
             ctx.arc(pt.x, pt.y, pt.size || 2, 0, Math.PI * 2);
@@ -19066,16 +19077,16 @@
           ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
           ctx.stroke();
         } else if (pt.style === "sparkle_star") {
-          let size = (pt.size || 4) * (pt.scale !== undefined ? pt.scale : 1.0);
-          let innerSize = size * 0.25;
+                  let size = Math.max(0.1, (pt.size || 4) * (pt.scale !== undefined ? pt.scale : 1.0));
+                  let innerSize = size * 0.25;
 
-          ctx.translate(pt.x, pt.y);
-          ctx.rotate(pt.angle || 0);
+                  ctx.translate(pt.x, pt.y);
+                  ctx.rotate(pt.angle || 0);
 
-          // 1. Draw glowing radial background aura
-          let glowGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, size * 1.8);
-          glowGrad.addColorStop(0, pt.color || "#ffffff");
-          glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                  // 1. Draw glowing radial background aura (Clamped to prevent IndexSizeError)
+                  let glowGrad = ctx.createRadialGradient(0, 0, Math.max(0.05, innerSize), 0, 0, Math.max(0.1, size * 1.8));
+                  glowGrad.addColorStop(0, pt.color || "#ffffff");
+                  glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
           ctx.fillStyle = glowGrad;
           ctx.beginPath();
@@ -19093,24 +19104,24 @@
           ctx.closePath();
           ctx.fill();
         } else if (pt.style === "glowing_orb") {
-          let size = (pt.size || 3) * (pt.scale !== undefined ? pt.scale : 1.0);
-          let timeVal = Date.now() * 0.004;
-          let seed = pt.x * 17.3 + pt.y * 23.9;
-          let breathe = 1.0 + 0.2 * Math.sin(timeVal + seed);
-          let r = size * breathe;
+                  let size = (pt.size || 3) * (pt.scale !== undefined ? pt.scale : 1.0);
+                  let timeVal = Date.now() * 0.004;
+                  let seed = pt.x * 17.3 + pt.y * 23.9;
+                  let breathe = 1.0 + 0.2 * Math.sin(timeVal + seed);
+                  let r = Math.max(0.1, size * breathe);
 
-          ctx.translate(pt.x, pt.y);
+                  ctx.translate(pt.x, pt.y);
 
-          let grad = ctx.createRadialGradient(0, 0, r * 0.15, 0, 0, r * 2.0);
-          grad.addColorStop(0, "#ffffff"); // intense center core
-          grad.addColorStop(0.35, pt.color || "#ffffff"); // soft color-mapped body
-          grad.addColorStop(1, "rgba(0, 0, 0, 0)"); // transparent fading halo
+                  let grad = ctx.createRadialGradient(0, 0, r * 0.15, 0, 0, r * 2.0);
+                  grad.addColorStop(0, "#ffffff"); // intense center core
+                  grad.addColorStop(0.35, pt.color || "#ffffff"); // soft color-mapped body
+                  grad.addColorStop(1, "rgba(0, 0, 0, 0)"); // transparent fading halo
 
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(0, 0, r * 2.0, 0, Math.PI * 2);
-          ctx.fill();
-        }
+                  ctx.fillStyle = grad;
+                  ctx.beginPath();
+                  ctx.arc(0, 0, r * 2.0, 0, Math.PI * 2);
+                  ctx.fill();
+                }
         ctx.restore();
       });
     }
@@ -19147,17 +19158,21 @@
     // Render Dynamic Ambient Lighting Pass
     window.renderLightingOverlay(ctx, canvas);
 
-    // Render Screen Vignette Overlay
-    let vg = ctx.createRadialGradient(
-      canvas.width / 2,
-      canvas.height / 2,
-      Math.min(canvas.width, canvas.height) * 0.35,
-      canvas.width / 2,
-      canvas.height / 2,
-      Math.max(canvas.width, canvas.height) * 0.75,
-    );
-    vg.addColorStop(0, "rgba(0,0,0,0)");
-    vg.addColorStop(1, "rgba(2,1,6,0.75)");
+    // Render Screen Vignette Overlay (Guarded with safe minimum dimensions to prevent exceptions during resizing)
+        let safeW = Math.max(1, canvas.width);
+        let safeH = Math.max(1, canvas.height);
+        let vgInnerR = Math.max(0.1, Math.min(safeW, safeH) * 0.35);
+        let vgOuterR = Math.max(0.2, Math.max(safeW, safeH) * 0.75);
+        let vg = ctx.createRadialGradient(
+          safeW / 2,
+          safeH / 2,
+          vgInnerR,
+          safeW / 2,
+          safeH / 2,
+          vgOuterR,
+        );
+        vg.addColorStop(0, "rgba(0,0,0,0)");
+        vg.addColorStop(1, "rgba(2,1,6,0.75)");
 
     ctx.save();
     ctx.fillStyle = vg;
@@ -24813,11 +24828,11 @@
                 enemyScale,
             );
 
-            // Apply progression floors (baseline minimums) to ensure engaging combat scaling in Onslaught Mode
-            let bossHpFloor = bossInfo.isMajor ? 1800 : 1200;
-            let bossAtkFloor = bossInfo.isMajor ? 35 : 25;
-            bossHp = Math.max(Math.round(bossHpFloor * (1 + waveNumber * 0.08)), bossHp);
-            bossAtk = Math.max(Math.round(bossAtkFloor * (1 + waveNumber * 0.04)), bossAtk);
+            // Apply progression floors (baseline minimums) to ensure engaging combat scaling in Onslaught Mode (Lowered floors and scaling multiplier to eliminate bloated HP pools)
+                        let bossHpFloor = bossInfo.isMajor ? 650 : 350;
+                        let bossAtkFloor = bossInfo.isMajor ? 18 : 12;
+                        bossHp = Math.max(Math.round(bossHpFloor * (1 + waveNumber * 0.02)), bossHp);
+                        bossAtk = Math.max(Math.round(bossAtkFloor * (1 + waveNumber * 0.01)), bossAtk);
 
             window.mob = {
         type: bossInfo.isMajor ? "dungeon_boss" : "dungeon_miniboss",
@@ -24856,23 +24871,23 @@
         );
       }
     } else {
-          // --- STANDARD & ELITE MOB SPREAD SPONDING ---
-          let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
-          let mobHpVal = Math.round(40 * repScale * enemyScale);
-          let mobAtkVal = Math.round(
-            8 *
-              Math.pow(1.06, waveNumber) *
-              Math.pow(waveNumber, 1.15) *
-              enemyScale,
-          );
+              // --- STANDARD & ELITE MOB SPREAD SPONDING ---
+              let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
+              let mobHpVal = Math.round(40 * repScale * enemyScale);
+              let mobAtkVal = Math.round(
+                8 *
+                  Math.pow(1.06, waveNumber) *
+                  Math.pow(waveNumber, 1.15) *
+                  enemyScale,
+              );
 
-          // Apply solid baseline floors to prevent early-game trivialization
-                          let sentinelHpFloor = Math.min(360, 60 + fLvl * 25); // Floor 1: 85 HP base | Floor 12: 360 HP base
-                          let sentinelAtkFloor = Math.min(28, 10 + fLvl * 1.5); // Floor 1: 11.5 ATK base | Floor 12: 28 ATK base
-                          sentinelHp = Math.max(Math.round(sentinelHpFloor * (1 + fLvl * 0.08)), sentinelHp);
-                          sentinelAtk = Math.max(Math.round(sentinelAtkFloor * (1 + fLvl * 0.04)), sentinelAtk);
+              // Apply solid baseline floors to prevent early-game trivialization (Balanced to prevent HP pool bloat and eliminate undefined fLvl ReferenceError)
+              let mobHpFloor = Math.min(100, 25 + waveNumber * 5.0);
+              let mobAtkFloor = Math.min(10, 4 + waveNumber * 0.3);
+              mobHpVal = Math.max(Math.round(mobHpFloor * (1 + waveNumber * 0.025)), mobHpVal);
+              mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + waveNumber * 0.01)), mobAtkVal);
 
-      let pStats =
+          let pStats =
         typeof window.resolvePlayerStats === "function"
           ? window.resolvePlayerStats()
           : {};
