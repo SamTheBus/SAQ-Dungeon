@@ -250,8 +250,15 @@
           secondaryBoss = eligible[Math.floor(Math.random() * eligible.length)];
         }
 
-        // Calculate baseScaleStage
-        let baseScaleStage = Math.max(1, Math.floor(peakStage * tier.scale));
+        // Calculate baseScaleStage using Rational Asymptotic Offsets to prevent exponential difficulty locks
+                let baseScaleStage = 1;
+                if (tier.id === "squire") {
+                  baseScaleStage = Math.max(1, peakStage - Math.round(1 + (12 * peakStage) / (peakStage + 24)));
+                } else if (tier.id === "veteran") {
+                  baseScaleStage = Math.max(2, peakStage);
+                } else if (tier.id === "calamity") {
+                  baseScaleStage = peakStage + Math.round(2 + (15 * peakStage) / (peakStage + 30));
+                }
 
         // Gather mutators
         let activeBuffs = [];

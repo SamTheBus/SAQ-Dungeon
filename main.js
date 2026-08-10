@@ -7655,12 +7655,20 @@
         depth,
       );
       window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
-      window.playerStats.lifetimePeakStage = Math.max(
-        window.playerStats.lifetimePeakStage || 1,
-        depth,
-      );
-    }
-    if (typeof window.saveGame === "function") window.saveGame();
+                  window.playerStats.lifetimePeakStage = Math.max(
+                    window.playerStats.lifetimePeakStage || 1,
+                    depth,
+                  );
+
+                  // Trigger first-time challenge generation upon clearing Floor 12 (or higher)
+                  if (depth >= 12 && !window.playerStats.hasTriggeredChallengesUnlock) {
+                    window.playerStats.hasTriggeredChallengesUnlock = true;
+                    if (window.ChallengeEngine && typeof window.ChallengeEngine.generateRandomChallenges === "function") {
+                      window.ChallengeEngine.generateRandomChallenges();
+                    }
+                  }
+                }
+                if (typeof window.saveGame === "function") window.saveGame();
 
     if (
       map &&
