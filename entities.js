@@ -23,17 +23,18 @@
     let offscreenCtx = null;
 
     function getOffscreenCanvas(mainCanvas) {
-      if (!offscreenCanvas) {
-        offscreenCanvas = document.createElement("canvas");
-        offscreenCtx = offscreenCanvas.getContext("2d");
-      }
-      if (offscreenCanvas.width !== mainCanvas.width || offscreenCanvas.height !== mainCanvas.height) {
-        offscreenCanvas.width = mainCanvas.width;
-        offscreenCanvas.height = mainCanvas.height;
-      }
-      offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-      return { canvas: offscreenCanvas, ctx: offscreenCtx };
-    }
+          if (!offscreenCanvas) {
+            offscreenCanvas = document.createElement("canvas");
+            offscreenCtx = offscreenCanvas.getContext("2d");
+          }
+          if (offscreenCanvas.width !== mainCanvas.width || offscreenCanvas.height !== mainCanvas.height) {
+            offscreenCanvas.width = mainCanvas.width;
+            offscreenCanvas.height = mainCanvas.height;
+          }
+          offscreenCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform first to prevent state leak afterimages
+          offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+          return { canvas: offscreenCanvas, ctx: offscreenCtx };
+        }
 
   // Static particle themes to avoid runtime array allocations on entity death
   window.PARTICLE_THEMES = {
@@ -7364,46 +7365,57 @@
     }
 
     if (m.type === "mob") {
-      if (m.isRare) {
-        c.save();
-        let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
-        let auraGrad = c.createRadialGradient(
-          m.x + m.w / 2,
-          m.y + m.h / 2,
-          2,
-          m.x + m.w / 2,
-          m.y + m.h / 2,
-          Math.max(m.w, m.h) * 1.15 * auraPulse,
-        );
-        auraGrad.addColorStop(0, "rgba(241, 196, 15, 0.45)");
-        auraGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.18)");
-        auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-        c.fillStyle = auraGrad;
-        c.beginPath();
-        c.arc(
-          m.x + m.w / 2,
-          m.y + m.h / 2,
-          Math.max(m.w, m.h) * 1.15 * auraPulse,
-          0,
-          Math.PI * 2,
-        );
-        c.fill();
-        c.restore();
-      }
+          let vType = m.visualType;
+          if (!vType) {
+            let fallbacks = {
+              0: "slime",
+              1: "golem",
+              2: "magma_elemental",
+              3: "marsh_ghost",
+              4: "void_orb",
+            };
+            vType = fallbacks[t] || "slime";
+          }
 
-      let vType = m.visualType;
-      if (!vType) {
-        let fallbacks = {
-          0: "slime",
-          1: "golem",
-          2: "magma_elemental",
-          3: "marsh_ghost",
-          4: "void_orb",
-        };
-        vType = fallbacks[t] || "slime";
-      }
+          // Check if standard mob is from Whispering Woods (Sector 0)
+          const isSectorZeroMob = ["slime", "sprout", "thorn_wyrm"].includes(vType);
+          if (!isSectorZeroMob) {
+            let cx = m.x + m.w / 2;
+            let cy = m.y + m.h / 2;
+            c.save();
+            c.translate(cx, cy);
+            c.scale(0.7, 0.7); // Downscale other stages to match player proportions
+            c.translate(-cx, -cy);
+          }
 
-      if (vType === "slime") {
+          if (m.isRare) {
+            c.save();
+            let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
+            let auraGrad = c.createRadialGradient(
+              m.x + m.w / 2,
+              m.y + m.h / 2,
+              2,
+              m.x + m.w / 2,
+              m.y + m.h / 2,
+              Math.max(m.w, m.h) * 1.15 * auraPulse,
+            );
+            auraGrad.addColorStop(0, "rgba(241, 196, 15, 0.45)");
+            auraGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.18)");
+            auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+            c.fillStyle = auraGrad;
+            c.beginPath();
+            c.arc(
+              m.x + m.w / 2,
+              m.y + m.h / 2,
+              Math.max(m.w, m.h) * 1.15 * auraPulse,
+              0,
+              Math.PI * 2,
+            );
+            c.fill();
+            c.restore();
+          }
+
+          if (vType === "slime") {
         let squish = Math.sin(Date.now() / 100) * 2.0;
         let wScale = (m.w / 2) * 0.7 + squish;
         let hScale = (m.h / 2) * 0.7 - squish;
@@ -10082,26 +10094,30 @@
       }
 
       if (m.isRare) {
-        c.save();
-        let glowTime = Date.now() / 200;
-        let hx = m.x + m.w / 2;
-        let hy = m.y - 10 + Math.sin(glowTime) * 2.5;
-        c.strokeStyle = "#f1c40f";
-        c.lineWidth = 1.8;
-        c.beginPath();
-        c.ellipse(hx, hy, 11, 3.2, 0, 0, Math.PI * 2);
-        c.stroke();
-        c.fillStyle = "#ffffff";
-        for (let i = 0; i < 3; i++) {
-          let sparkAngle = glowTime + i * ((Math.PI * 2) / 3);
-          let sx = hx + Math.cos(sparkAngle) * 11;
-          let sy = hy + Math.sin(sparkAngle) * 3.2;
-          c.fillRect(sx - 1.2, sy - 1.2, 2.4, 2.4);
-        }
-        c.restore();
-      }
-    } else if (
-      m.type === "rift_guardian" ||
+              c.save();
+              let glowTime = Date.now() / 200;
+              let hx = m.x + m.w / 2;
+              let hy = m.y - 10 + Math.sin(glowTime) * 2.5;
+              c.strokeStyle = "#f1c40f";
+              c.lineWidth = 1.8;
+              c.beginPath();
+              c.ellipse(hx, hy, 11, 3.2, 0, 0, Math.PI * 2);
+              c.stroke();
+              c.fillStyle = "#ffffff";
+              for (let i = 0; i < 3; i++) {
+                let sparkAngle = glowTime + i * ((Math.PI * 2) / 3);
+                let sx = hx + Math.cos(sparkAngle) * 11;
+                let sy = hy + Math.sin(sparkAngle) * 3.2;
+                c.fillRect(sx - 1.2, sy - 1.2, 2.4, 2.4);
+              }
+              c.restore();
+            }
+
+            if (!isSectorZeroMob) {
+              c.restore(); // Cleanly exit standard mob downscaling
+            }
+          } else if (
+            m.type === "rift_guardian" ||
       m.type === "aegis_goliath" ||
       m.visualType === "aegis_goliath"
     ) {
