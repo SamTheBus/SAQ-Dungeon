@@ -12,632 +12,632 @@
   window.xpOrbs = [];
 
   // --- BESTIARY MONSTER CARDS DATABASE ---
-      window.MONSTER_CARDS_DATA = Object.assign(window.MONSTER_CARDS_DATA || {}, {
-        slime: {
-          name: "Green Slime",
-          set: "Whispering Woods",
-          hint: "Floors 1-12",
-          stat: "maxHpPctBonus",
-          statName: "Max HP %",
-          statLabel: "Max HP %",
-          statKey: "maxHpPctBonus",
-          bonusStat: "maxHpPctBonus",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        sprout: {
-          name: "Eldritch Sprout",
-          set: "Whispering Woods",
-          hint: "Floors 1-12",
-          stat: "defPctBonus",
-          statName: "Defense %",
-          statLabel: "Defense %",
-          statKey: "defPctBonus",
-          bonusStat: "defPctBonus",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        thorn_wyrm: {
-          name: "Thorn Wyrm",
-          set: "Whispering Woods",
-          hint: "Floors 1-12",
-          stat: "atkPctBonus",
-          statName: "Attack %",
-          statLabel: "Attack %",
-          statKey: "atkPctBonus",
-          bonusStat: "atkPctBonus",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        arachnid_treant: {
-          name: "Arachnid Treant",
-          set: "Guardian Wardens",
-          hint: "Floor 12 Boss",
-          stat: "critChance",
-          statName: "Crit Chance",
-          statLabel: "Crit Chance",
-          statKey: "critChance",
-          bonusStat: "critChance",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        golem: {
-          name: "Stone Golem",
-          set: "Mountain Peaks",
-          hint: "Floors 13-24",
-          stat: "defPctBonus",
-          statName: "Defense %",
-          statLabel: "Defense %",
-          statKey: "defPctBonus",
-          bonusStat: "defPctBonus",
-          val: 0.008,
-          baseVal: 0.008,
-          perRank: 0.008,
-          bonusVal: 0.008,
-          isPct: true,
-        },
-        wyrmling: {
-          name: "Frost Wyrmling",
-          set: "Mountain Peaks",
-          hint: "Floors 13-24",
-          stat: "maxHpPctBonus",
-          statName: "Max HP %",
-          statLabel: "Max HP %",
-          statKey: "maxHpPctBonus",
-          bonusStat: "maxHpPctBonus",
-          val: 0.012,
-          baseVal: 0.012,
-          perRank: 0.012,
-          bonusVal: 0.012,
-          isPct: true,
-        },
-        gargoyle: {
-          name: "Gargoyle Warden",
-          set: "Mountain Peaks",
-          hint: "Floors 13-24",
-          stat: "block",
-          statName: "Block Rate",
-          statLabel: "Block Rate",
-          statKey: "block",
-          bonusStat: "block",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        rust_nibbler: {
-          name: "Rust Nibbler",
-          set: "Mountain Peaks",
-          hint: "Floors 13-24",
-          stat: "qly",
-          statName: "Drop Quality",
-          statLabel: "Drop Quality",
-          statKey: "qly",
-          bonusStat: "qly",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        gilded_scuttler: {
-          name: "Gilded Scuttler",
-          set: "Mountain Peaks",
-          hint: "Sector 1 rare",
-          stat: "gold",
-          statName: "Gold Multi",
-          statLabel: "Gold Multi",
-          statKey: "gold",
-          bonusStat: "gold",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        mimic_shield: {
-          name: "Mimic Shield",
-          set: "Mountain Peaks",
-          hint: "Sectors 1 & 6",
-          stat: "parry",
-          statName: "Parry Rate",
-          statLabel: "Parry Rate",
-          statKey: "parry",
-          bonusStat: "parry",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        aegis_goliath: {
-          name: "Aegis Goliath",
-          set: "Guardian Wardens",
-          hint: "Floor 24 Boss",
-          stat: "block",
-          statName: "Block Rate",
-          statLabel: "Block Rate",
-          statKey: "block",
-          bonusStat: "block",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        magma_elemental: {
-          name: "Magma Elemental",
-          set: "Inferno Depths",
-          hint: "Floors 25-36",
-          stat: "atkPctBonus",
-          statName: "Attack %",
-          statLabel: "Attack %",
-          statKey: "atkPctBonus",
-          bonusStat: "atkPctBonus",
-          val: 0.008,
-          baseVal: 0.008,
-          perRank: 0.008,
-          bonusVal: 0.008,
-          isPct: true,
-        },
-        lava_serpent: {
-          name: "Lava Serpent",
-          set: "Inferno Depths",
-          hint: "Floors 25-36",
-          stat: "critDamage",
-          statName: "Crit Multi",
-          statLabel: "Crit Multi",
-          statKey: "critDamage",
-          bonusStat: "critDamage",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        hell_bat: {
-          name: "Hell Bat",
-          set: "Inferno Depths",
-          hint: "Floors 25-36",
-          stat: "moveSpeed",
-          statName: "Move Speed",
-          statLabel: "Move Speed",
-          statKey: "moveSpeed",
-          bonusStat: "moveSpeed",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        slag_slime: {
-          name: "Slag Slime",
-          set: "Inferno Depths",
-          hint: "Floors 25-36",
-          stat: "defPctBonus",
-          statName: "Defense %",
-          statLabel: "Defense %",
-          statKey: "defPctBonus",
-          bonusStat: "defPctBonus",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        overlord_iron_vault: {
-          name: "Overlord Iron Vault",
-          set: "Guardian Wardens",
-          hint: "Floor 36 Boss",
-          stat: "defPctBonus",
-          statName: "Defense %",
-          statLabel: "Defense %",
-          statKey: "defPctBonus",
-          bonusStat: "defPctBonus",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        swamp_basilisk: {
-          name: "Swamp Basilisk",
-          set: "Fungal Swamp",
-          hint: "Floors 37-48",
-          stat: "maxHpPctBonus",
-          statName: "Max HP %",
-          statLabel: "Max HP %",
-          statKey: "maxHpPctBonus",
-          bonusStat: "maxHpPctBonus",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        toxic_fly: {
-          name: "Toxic Fly",
-          set: "Fungal Swamp",
-          hint: "Floors 37-48",
-          stat: "moveSpeed",
-          statName: "Move Speed",
-          statLabel: "Move Speed",
-          statKey: "moveSpeed",
-          bonusStat: "moveSpeed",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        marsh_ghost: {
-          name: "Marsh Ghost",
-          set: "Fungal Swamp",
-          hint: "Floors 37-48",
-          stat: "parry",
-          statName: "Parry Rate",
-          statLabel: "Parry Rate",
-          statKey: "parry",
-          bonusStat: "parry",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        corroded_golem: {
-          name: "Corroded Golem",
-          set: "Fungal Swamp",
-          hint: "Floors 37-48",
-          stat: "defPctBonus",
-          statName: "Defense %",
-          statLabel: "Defense %",
-          statKey: "defPctBonus",
-          bonusStat: "defPctBonus",
-          val: 0.012,
-          baseVal: 0.012,
-          perRank: 0.012,
-          bonusVal: 0.012,
-          isPct: true,
-        },
-        corrosive_abomination: {
-          name: "Corrosive Abomination",
-          set: "Guardian Wardens",
-          hint: "Floor 48 Boss",
-          stat: "atkPctBonus",
-          statName: "Attack %",
-          statLabel: "Attack %",
-          statKey: "atkPctBonus",
-          bonusStat: "atkPctBonus",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        void_orb: {
-          name: "Void Orb",
-          set: "Void Singularity",
-          hint: "Floors 49-60",
-          stat: "atkPctBonus",
-          statName: "Attack %",
-          statLabel: "Attack %",
-          statKey: "atkPctBonus",
-          bonusStat: "atkPctBonus",
-          val: 0.012,
-          baseVal: 0.012,
-          perRank: 0.012,
-          bonusVal: 0.012,
-          isPct: true,
-        },
-        void_crawler: {
-          name: "Void Crawler",
-          set: "Void Singularity",
-          hint: "Floors 49-60",
-          stat: "critChance",
-          statName: "Crit Chance",
-          statLabel: "Crit Chance",
-          statKey: "critChance",
-          bonusStat: "critChance",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        void_spectre: {
-          name: "Void Spectre",
-          set: "Void Singularity",
-          hint: "Floors 49-60",
-          stat: "parry",
-          statName: "Parry Rate",
-          statLabel: "Parry Rate",
-          statKey: "parry",
-          bonusStat: "parry",
-          val: 0.005,
-          baseVal: 0.005,
-          perRank: 0.005,
-          bonusVal: 0.005,
-          isPct: true,
-        },
-        void_wraith: {
-          name: "Void Wraith",
-          set: "Void Singularity",
-          hint: "Sector 4 rare",
-          stat: "critDamage",
-          statName: "Crit Multi",
-          statLabel: "Crit Multi",
-          statKey: "critDamage",
-          bonusStat: "critDamage",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        rift_drifter: {
-          name: "Rift Drifter",
-          set: "Void Singularity",
-          hint: "Sector 4 rare",
-          stat: "drop",
-          statName: "Drop Rate",
-          statLabel: "Drop Rate",
-          statKey: "drop",
-          bonusStat: "drop",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        void_overseer: {
-          name: "Void Overseer",
-          set: "Cosmic Overlords",
-          hint: "Floor 60 Boss",
-          stat: "maxHpPctBonus",
-          statName: "Max HP %",
-          statLabel: "Max HP %",
-          statKey: "maxHpPctBonus",
-          bonusStat: "maxHpPctBonus",
-          val: 0.02,
-          baseVal: 0.02,
-          perRank: 0.02,
-          bonusVal: 0.02,
-          isPct: true,
-        },
-        clockwork_scarab: {
-          name: "Clockwork Scarab",
-          set: "Temporal Sanctorum",
-          hint: "Floors 61+",
-          stat: "defPctBonus",
-          statName: "Defense %",
-          statLabel: "Defense %",
-          statKey: "defPctBonus",
-          bonusStat: "defPctBonus",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        temporal_watcher: {
-          name: "Temporal Watcher",
-          set: "Temporal Sanctorum",
-          hint: "Sector 5 rare",
-          stat: "gold",
-          statName: "Gold Multi",
-          statLabel: "Gold Multi",
-          statKey: "gold",
-          bonusStat: "gold",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        clockwork_drone: {
-          name: "Clockwork Drone",
-          set: "Temporal Sanctorum",
-          hint: "Floors 61+",
-          stat: "atkPctBonus",
-          statName: "Attack %",
-          statLabel: "Attack %",
-          statKey: "atkPctBonus",
-          bonusStat: "atkPctBonus",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        star_weaver: {
-          name: "Star Weaver",
-          set: "Temporal Sanctorum",
-          hint: "Floors 61+",
-          stat: "critChance",
-          statName: "Crit Chance",
-          statLabel: "Crit Chance",
-          statKey: "critChance",
-          bonusStat: "critChance",
-          val: 0.008,
-          baseVal: 0.008,
-          perRank: 0.008,
-          bonusVal: 0.008,
-          isPct: true,
-        },
-        coin_elemental: {
-          name: "Coin Elemental",
-          set: "Temporal Sanctorum",
-          hint: "Sector 5 rare",
-          stat: "gold",
-          statName: "Gold Multi",
-          statLabel: "Gold Multi",
-          statKey: "gold",
-          bonusStat: "gold",
-          val: 0.02,
-          baseVal: 0.02,
-          perRank: 0.02,
-          bonusVal: 0.02,
-          isPct: true,
-        },
-        cyber_wraith: {
-          name: "Cyber Wraith",
-          set: "Cyberspace Nexus",
-          hint: "Floors 73+",
-          stat: "drop",
-          statName: "Drop Rate",
-          statLabel: "Drop Rate",
-          statKey: "drop",
-          bonusStat: "drop",
-          val: 0.015,
-          baseVal: 0.015,
-          perRank: 0.015,
-          bonusVal: 0.015,
-          isPct: true,
-        },
-        neon_spider: {
-          name: "Neon Spider",
-          set: "Cyberspace Nexus",
-          hint: "Floors 61+",
-          stat: "moveSpeed",
-          statName: "Move Speed",
-          statLabel: "Move Speed",
-          statKey: "moveSpeed",
-          bonusStat: "moveSpeed",
-          val: 0.02,
-          baseVal: 0.02,
-          perRank: 0.02,
-          bonusVal: 0.02,
-          isPct: true,
-        },
-        wireframe_orb: {
-          name: "Wireframe Orb",
-          set: "Cyberspace Nexus",
-          hint: "Floors 61+",
-          stat: "qly",
-          statName: "Drop Quality",
-          statLabel: "Drop Quality",
-          statKey: "qly",
-          bonusStat: "qly",
-          val: 0.01,
-          baseVal: 0.01,
-          perRank: 0.01,
-          bonusVal: 0.01,
-          isPct: true,
-        },
-        cursed_blade: {
-          name: "Cursed Blade",
-          set: "Cyberspace Nexus",
-          hint: "Floors 61+",
-          stat: "atkPctBonus",
-          statName: "Attack %",
-          statLabel: "Attack %",
-          statKey: "atkPctBonus",
-          bonusStat: "atkPctBonus",
-          val: 0.02,
-          baseVal: 0.02,
-          perRank: 0.02,
-          bonusVal: 0.02,
-          isPct: true,
-        },
-        animated_armor: {
-          name: "Animated Armor",
-          set: "Cyberspace Nexus",
-          hint: "Floors 61+",
-          stat: "defPctBonus",
-          statName: "Defense %",
-          statLabel: "Defense %",
-          statKey: "defPctBonus",
-          bonusStat: "defPctBonus",
-          val: 0.018,
-          baseVal: 0.018,
-          perRank: 0.018,
-          bonusVal: 0.018,
-          isPct: true,
-        },
-        hoard_mimic: {
-          name: "Hoard Mimic",
-          set: "Cosmic Overlords",
-          hint: "Triggered from Chests",
-          stat: "drop",
-          statName: "Drop Rate",
-          statLabel: "Drop Rate",
-          statKey: "drop",
-          bonusStat: "drop",
-          val: 0.02,
-          baseVal: 0.02,
-          perRank: 0.02,
-          bonusVal: 0.02,
-          isPct: true,
-        },
-        chronos_arbitrator: {
-          name: "Chronos Arbitrator",
-          set: "Cosmic Overlords",
-          hint: "Floor 72 Boss",
-          stat: "critDamage",
-          statName: "Crit Multi",
-          statLabel: "Crit Multi",
-          statKey: "critDamage",
-          bonusStat: "critDamage",
-          val: 0.02,
-          baseVal: 0.02,
-          perRank: 0.02,
-          bonusVal: 0.02,
-          isPct: true,
-        },
-        nexus_overseer: {
-          name: "Nexus Overseer",
-          set: "Cosmic Overlords",
-          hint: "Floor 84 Boss",
-          stat: "atkPctBonus",
-          statName: "Attack %",
-          statLabel: "Attack %",
-          statKey: "atkPctBonus",
-          bonusStat: "atkPctBonus",
-          val: 0.025,
-          baseVal: 0.025,
-          perRank: 0.025,
-          bonusVal: 0.025,
-          isPct: true,
-        },
-      });
+  window.MONSTER_CARDS_DATA = Object.assign(window.MONSTER_CARDS_DATA || {}, {
+    slime: {
+      name: "Green Slime",
+      set: "Whispering Woods",
+      hint: "Floors 1-12",
+      stat: "maxHpPctBonus",
+      statName: "Max HP %",
+      statLabel: "Max HP %",
+      statKey: "maxHpPctBonus",
+      bonusStat: "maxHpPctBonus",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    sprout: {
+      name: "Eldritch Sprout",
+      set: "Whispering Woods",
+      hint: "Floors 1-12",
+      stat: "defPctBonus",
+      statName: "Defense %",
+      statLabel: "Defense %",
+      statKey: "defPctBonus",
+      bonusStat: "defPctBonus",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    thorn_wyrm: {
+      name: "Thorn Wyrm",
+      set: "Whispering Woods",
+      hint: "Floors 1-12",
+      stat: "atkPctBonus",
+      statName: "Attack %",
+      statLabel: "Attack %",
+      statKey: "atkPctBonus",
+      bonusStat: "atkPctBonus",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    arachnid_treant: {
+      name: "Arachnid Treant",
+      set: "Guardian Wardens",
+      hint: "Floor 12 Boss",
+      stat: "critChance",
+      statName: "Crit Chance",
+      statLabel: "Crit Chance",
+      statKey: "critChance",
+      bonusStat: "critChance",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    golem: {
+      name: "Stone Golem",
+      set: "Mountain Peaks",
+      hint: "Floors 13-24",
+      stat: "defPctBonus",
+      statName: "Defense %",
+      statLabel: "Defense %",
+      statKey: "defPctBonus",
+      bonusStat: "defPctBonus",
+      val: 0.008,
+      baseVal: 0.008,
+      perRank: 0.008,
+      bonusVal: 0.008,
+      isPct: true,
+    },
+    wyrmling: {
+      name: "Frost Wyrmling",
+      set: "Mountain Peaks",
+      hint: "Floors 13-24",
+      stat: "maxHpPctBonus",
+      statName: "Max HP %",
+      statLabel: "Max HP %",
+      statKey: "maxHpPctBonus",
+      bonusStat: "maxHpPctBonus",
+      val: 0.012,
+      baseVal: 0.012,
+      perRank: 0.012,
+      bonusVal: 0.012,
+      isPct: true,
+    },
+    gargoyle: {
+      name: "Gargoyle Warden",
+      set: "Mountain Peaks",
+      hint: "Floors 13-24",
+      stat: "block",
+      statName: "Block Rate",
+      statLabel: "Block Rate",
+      statKey: "block",
+      bonusStat: "block",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    rust_nibbler: {
+      name: "Rust Nibbler",
+      set: "Mountain Peaks",
+      hint: "Floors 13-24",
+      stat: "qly",
+      statName: "Drop Quality",
+      statLabel: "Drop Quality",
+      statKey: "qly",
+      bonusStat: "qly",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    gilded_scuttler: {
+      name: "Gilded Scuttler",
+      set: "Mountain Peaks",
+      hint: "Sector 1 rare",
+      stat: "gold",
+      statName: "Gold Multi",
+      statLabel: "Gold Multi",
+      statKey: "gold",
+      bonusStat: "gold",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    mimic_shield: {
+      name: "Mimic Shield",
+      set: "Mountain Peaks",
+      hint: "Sectors 1 & 6",
+      stat: "parry",
+      statName: "Parry Rate",
+      statLabel: "Parry Rate",
+      statKey: "parry",
+      bonusStat: "parry",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    aegis_goliath: {
+      name: "Aegis Goliath",
+      set: "Guardian Wardens",
+      hint: "Floor 24 Boss",
+      stat: "block",
+      statName: "Block Rate",
+      statLabel: "Block Rate",
+      statKey: "block",
+      bonusStat: "block",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    magma_elemental: {
+      name: "Magma Elemental",
+      set: "Inferno Depths",
+      hint: "Floors 25-36",
+      stat: "atkPctBonus",
+      statName: "Attack %",
+      statLabel: "Attack %",
+      statKey: "atkPctBonus",
+      bonusStat: "atkPctBonus",
+      val: 0.008,
+      baseVal: 0.008,
+      perRank: 0.008,
+      bonusVal: 0.008,
+      isPct: true,
+    },
+    lava_serpent: {
+      name: "Lava Serpent",
+      set: "Inferno Depths",
+      hint: "Floors 25-36",
+      stat: "critDamage",
+      statName: "Crit Multi",
+      statLabel: "Crit Multi",
+      statKey: "critDamage",
+      bonusStat: "critDamage",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    hell_bat: {
+      name: "Hell Bat",
+      set: "Inferno Depths",
+      hint: "Floors 25-36",
+      stat: "moveSpeed",
+      statName: "Move Speed",
+      statLabel: "Move Speed",
+      statKey: "moveSpeed",
+      bonusStat: "moveSpeed",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    slag_slime: {
+      name: "Slag Slime",
+      set: "Inferno Depths",
+      hint: "Floors 25-36",
+      stat: "defPctBonus",
+      statName: "Defense %",
+      statLabel: "Defense %",
+      statKey: "defPctBonus",
+      bonusStat: "defPctBonus",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    overlord_iron_vault: {
+      name: "Overlord Iron Vault",
+      set: "Guardian Wardens",
+      hint: "Floor 36 Boss",
+      stat: "defPctBonus",
+      statName: "Defense %",
+      statLabel: "Defense %",
+      statKey: "defPctBonus",
+      bonusStat: "defPctBonus",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    swamp_basilisk: {
+      name: "Swamp Basilisk",
+      set: "Fungal Swamp",
+      hint: "Floors 37-48",
+      stat: "maxHpPctBonus",
+      statName: "Max HP %",
+      statLabel: "Max HP %",
+      statKey: "maxHpPctBonus",
+      bonusStat: "maxHpPctBonus",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    toxic_fly: {
+      name: "Toxic Fly",
+      set: "Fungal Swamp",
+      hint: "Floors 37-48",
+      stat: "moveSpeed",
+      statName: "Move Speed",
+      statLabel: "Move Speed",
+      statKey: "moveSpeed",
+      bonusStat: "moveSpeed",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    marsh_ghost: {
+      name: "Marsh Ghost",
+      set: "Fungal Swamp",
+      hint: "Floors 37-48",
+      stat: "parry",
+      statName: "Parry Rate",
+      statLabel: "Parry Rate",
+      statKey: "parry",
+      bonusStat: "parry",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    corroded_golem: {
+      name: "Corroded Golem",
+      set: "Fungal Swamp",
+      hint: "Floors 37-48",
+      stat: "defPctBonus",
+      statName: "Defense %",
+      statLabel: "Defense %",
+      statKey: "defPctBonus",
+      bonusStat: "defPctBonus",
+      val: 0.012,
+      baseVal: 0.012,
+      perRank: 0.012,
+      bonusVal: 0.012,
+      isPct: true,
+    },
+    corrosive_abomination: {
+      name: "Corrosive Abomination",
+      set: "Guardian Wardens",
+      hint: "Floor 48 Boss",
+      stat: "atkPctBonus",
+      statName: "Attack %",
+      statLabel: "Attack %",
+      statKey: "atkPctBonus",
+      bonusStat: "atkPctBonus",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    void_orb: {
+      name: "Void Orb",
+      set: "Void Singularity",
+      hint: "Floors 49-60",
+      stat: "atkPctBonus",
+      statName: "Attack %",
+      statLabel: "Attack %",
+      statKey: "atkPctBonus",
+      bonusStat: "atkPctBonus",
+      val: 0.012,
+      baseVal: 0.012,
+      perRank: 0.012,
+      bonusVal: 0.012,
+      isPct: true,
+    },
+    void_crawler: {
+      name: "Void Crawler",
+      set: "Void Singularity",
+      hint: "Floors 49-60",
+      stat: "critChance",
+      statName: "Crit Chance",
+      statLabel: "Crit Chance",
+      statKey: "critChance",
+      bonusStat: "critChance",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    void_spectre: {
+      name: "Void Spectre",
+      set: "Void Singularity",
+      hint: "Floors 49-60",
+      stat: "parry",
+      statName: "Parry Rate",
+      statLabel: "Parry Rate",
+      statKey: "parry",
+      bonusStat: "parry",
+      val: 0.005,
+      baseVal: 0.005,
+      perRank: 0.005,
+      bonusVal: 0.005,
+      isPct: true,
+    },
+    void_wraith: {
+      name: "Void Wraith",
+      set: "Void Singularity",
+      hint: "Sector 4 rare",
+      stat: "critDamage",
+      statName: "Crit Multi",
+      statLabel: "Crit Multi",
+      statKey: "critDamage",
+      bonusStat: "critDamage",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    rift_drifter: {
+      name: "Rift Drifter",
+      set: "Void Singularity",
+      hint: "Sector 4 rare",
+      stat: "drop",
+      statName: "Drop Rate",
+      statLabel: "Drop Rate",
+      statKey: "drop",
+      bonusStat: "drop",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    void_overseer: {
+      name: "Void Overseer",
+      set: "Cosmic Overlords",
+      hint: "Floor 60 Boss",
+      stat: "maxHpPctBonus",
+      statName: "Max HP %",
+      statLabel: "Max HP %",
+      statKey: "maxHpPctBonus",
+      bonusStat: "maxHpPctBonus",
+      val: 0.02,
+      baseVal: 0.02,
+      perRank: 0.02,
+      bonusVal: 0.02,
+      isPct: true,
+    },
+    clockwork_scarab: {
+      name: "Clockwork Scarab",
+      set: "Temporal Sanctorum",
+      hint: "Floors 61+",
+      stat: "defPctBonus",
+      statName: "Defense %",
+      statLabel: "Defense %",
+      statKey: "defPctBonus",
+      bonusStat: "defPctBonus",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    temporal_watcher: {
+      name: "Temporal Watcher",
+      set: "Temporal Sanctorum",
+      hint: "Sector 5 rare",
+      stat: "gold",
+      statName: "Gold Multi",
+      statLabel: "Gold Multi",
+      statKey: "gold",
+      bonusStat: "gold",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    clockwork_drone: {
+      name: "Clockwork Drone",
+      set: "Temporal Sanctorum",
+      hint: "Floors 61+",
+      stat: "atkPctBonus",
+      statName: "Attack %",
+      statLabel: "Attack %",
+      statKey: "atkPctBonus",
+      bonusStat: "atkPctBonus",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    star_weaver: {
+      name: "Star Weaver",
+      set: "Temporal Sanctorum",
+      hint: "Floors 61+",
+      stat: "critChance",
+      statName: "Crit Chance",
+      statLabel: "Crit Chance",
+      statKey: "critChance",
+      bonusStat: "critChance",
+      val: 0.008,
+      baseVal: 0.008,
+      perRank: 0.008,
+      bonusVal: 0.008,
+      isPct: true,
+    },
+    coin_elemental: {
+      name: "Coin Elemental",
+      set: "Temporal Sanctorum",
+      hint: "Sector 5 rare",
+      stat: "gold",
+      statName: "Gold Multi",
+      statLabel: "Gold Multi",
+      statKey: "gold",
+      bonusStat: "gold",
+      val: 0.02,
+      baseVal: 0.02,
+      perRank: 0.02,
+      bonusVal: 0.02,
+      isPct: true,
+    },
+    cyber_wraith: {
+      name: "Cyber Wraith",
+      set: "Cyberspace Nexus",
+      hint: "Floors 73+",
+      stat: "drop",
+      statName: "Drop Rate",
+      statLabel: "Drop Rate",
+      statKey: "drop",
+      bonusStat: "drop",
+      val: 0.015,
+      baseVal: 0.015,
+      perRank: 0.015,
+      bonusVal: 0.015,
+      isPct: true,
+    },
+    neon_spider: {
+      name: "Neon Spider",
+      set: "Cyberspace Nexus",
+      hint: "Floors 61+",
+      stat: "moveSpeed",
+      statName: "Move Speed",
+      statLabel: "Move Speed",
+      statKey: "moveSpeed",
+      bonusStat: "moveSpeed",
+      val: 0.02,
+      baseVal: 0.02,
+      perRank: 0.02,
+      bonusVal: 0.02,
+      isPct: true,
+    },
+    wireframe_orb: {
+      name: "Wireframe Orb",
+      set: "Cyberspace Nexus",
+      hint: "Floors 61+",
+      stat: "qly",
+      statName: "Drop Quality",
+      statLabel: "Drop Quality",
+      statKey: "qly",
+      bonusStat: "qly",
+      val: 0.01,
+      baseVal: 0.01,
+      perRank: 0.01,
+      bonusVal: 0.01,
+      isPct: true,
+    },
+    cursed_blade: {
+      name: "Cursed Blade",
+      set: "Cyberspace Nexus",
+      hint: "Floors 61+",
+      stat: "atkPctBonus",
+      statName: "Attack %",
+      statLabel: "Attack %",
+      statKey: "atkPctBonus",
+      bonusStat: "atkPctBonus",
+      val: 0.02,
+      baseVal: 0.02,
+      perRank: 0.02,
+      bonusVal: 0.02,
+      isPct: true,
+    },
+    animated_armor: {
+      name: "Animated Armor",
+      set: "Cyberspace Nexus",
+      hint: "Floors 61+",
+      stat: "defPctBonus",
+      statName: "Defense %",
+      statLabel: "Defense %",
+      statKey: "defPctBonus",
+      bonusStat: "defPctBonus",
+      val: 0.018,
+      baseVal: 0.018,
+      perRank: 0.018,
+      bonusVal: 0.018,
+      isPct: true,
+    },
+    hoard_mimic: {
+      name: "Hoard Mimic",
+      set: "Cosmic Overlords",
+      hint: "Triggered from Chests",
+      stat: "drop",
+      statName: "Drop Rate",
+      statLabel: "Drop Rate",
+      statKey: "drop",
+      bonusStat: "drop",
+      val: 0.02,
+      baseVal: 0.02,
+      perRank: 0.02,
+      bonusVal: 0.02,
+      isPct: true,
+    },
+    chronos_arbitrator: {
+      name: "Chronos Arbitrator",
+      set: "Cosmic Overlords",
+      hint: "Floor 72 Boss",
+      stat: "critDamage",
+      statName: "Crit Multi",
+      statLabel: "Crit Multi",
+      statKey: "critDamage",
+      bonusStat: "critDamage",
+      val: 0.02,
+      baseVal: 0.02,
+      perRank: 0.02,
+      bonusVal: 0.02,
+      isPct: true,
+    },
+    nexus_overseer: {
+      name: "Nexus Overseer",
+      set: "Cosmic Overlords",
+      hint: "Floor 84 Boss",
+      stat: "atkPctBonus",
+      statName: "Attack %",
+      statLabel: "Attack %",
+      statKey: "atkPctBonus",
+      bonusStat: "atkPctBonus",
+      val: 0.025,
+      baseVal: 0.025,
+      perRank: 0.025,
+      bonusVal: 0.025,
+      isPct: true,
+    },
+  });
 
-    // Safe global state fallback initializer
-    if (
-      window.playerStats &&
-      window.playerStats.robbingMarcusActive === undefined
-    ) {
-      window.playerStats.robbingMarcusActive = false;
+  // Safe global state fallback initializer
+  if (
+    window.playerStats &&
+    window.playerStats.robbingMarcusActive === undefined
+  ) {
+    window.playerStats.robbingMarcusActive = false;
+  }
+  if (window.playerStats) {
+    if (window.playerStats.deflectionFatigueTimer === undefined) {
+      window.playerStats.deflectionFatigueTimer = 0;
     }
-    if (window.playerStats) {
-      if (window.playerStats.deflectionFatigueTimer === undefined) {
-        window.playerStats.deflectionFatigueTimer = 0;
-      }
-      if (window.playerStats.counterCooldownTimer === undefined) {
-        window.playerStats.counterCooldownTimer = 0;
-      }
-      if (!window.playerStats.monsterCards) {
-        window.playerStats.monsterCards = {};
-      }
-      Object.keys(window.MONSTER_CARDS_DATA).forEach((cKey) => {
-        if (window.playerStats.monsterCards[cKey] === undefined) {
-          window.playerStats.monsterCards[cKey] = 0;
-        }
-      });
+    if (window.playerStats.counterCooldownTimer === undefined) {
+      window.playerStats.counterCooldownTimer = 0;
     }
+    if (!window.playerStats.monsterCards) {
+      window.playerStats.monsterCards = {};
+    }
+    Object.keys(window.MONSTER_CARDS_DATA).forEach((cKey) => {
+      if (window.playerStats.monsterCards[cKey] === undefined) {
+        window.playerStats.monsterCards[cKey] = 0;
+      }
+    });
+  }
 
   // --- REVAMPED ZERO-ALLOCATION PARTICLE POOL ENGINE (SUBPHASE A.1) ---
   window.particles = window.particles || [];
@@ -736,58 +736,58 @@
   window.ParticlePool.init();
 
   window.spawnResonantAegisRipple = function (x, y) {
-      if (!window.particles || !window.ParticlePool) return;
+    if (!window.particles || !window.ParticlePool) return;
 
-      // 1. Spawning high-density golden runic shards
-      for (let i = 0; i < 14; i++) {
-        let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.15, 0.15);
-        let speed = window.randFloat(3.2, 5.8);
-        let life = window.randInt(20, 35);
-        let pt = window.ParticlePool.get(
-          x,
-          y,
-          Math.cos(angle) * speed,
-          Math.sin(angle) * speed - window.randFloat(0.5, 1.5),
-          window.randFloat(2.0, 4.0),
-          Math.random() < 0.6 ? "#f1c40f" : "#ffd700",
-          0.95,
-          life,
-          life,
-          0.15, // light gravity to pull debris down
-          true,
-          0.92, // deceleration drag
-        );
-        pt.style = "polygon";
-        pt.angle = Math.random() * Math.PI * 2;
-        pt.spinSpeed = window.randFloat(-0.25, 0.25);
-        pt.scaleDecay = 0.015;
-        window.particles.push(pt);
-      }
+    // 1. Spawning high-density golden runic shards
+    for (let i = 0; i < 14; i++) {
+      let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.15, 0.15);
+      let speed = window.randFloat(3.2, 5.8);
+      let life = window.randInt(20, 35);
+      let pt = window.ParticlePool.get(
+        x,
+        y,
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed - window.randFloat(0.5, 1.5),
+        window.randFloat(2.0, 4.0),
+        Math.random() < 0.6 ? "#f1c40f" : "#ffd700",
+        0.95,
+        life,
+        life,
+        0.15, // light gravity to pull debris down
+        true,
+        0.92, // deceleration drag
+      );
+      pt.style = "polygon";
+      pt.angle = Math.random() * Math.PI * 2;
+      pt.spinSpeed = window.randFloat(-0.25, 0.25);
+      pt.scaleDecay = 0.015;
+      window.particles.push(pt);
+    }
 
-      // 2. Spawning expanding floor dust waves
-      for (let i = 0; i < 14; i++) {
-        let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.1, 0.1);
-        let speed = window.randFloat(2.0, 3.8);
-        let life = window.randInt(15, 25);
-        let pt = window.ParticlePool.get(
-          x,
-          y,
-          Math.cos(angle) * speed,
-          Math.sin(angle) * speed * 0.45, // flat ellipse scatter
-          window.randFloat(3.5, 6.0),
-          "#b58700", // sand-gold
-          0.75,
-          life,
-          life,
-          0.0,
-          true,
-          0.88, // rapid deceleration
-        );
-        pt.style = "glowing_orb";
-        pt.scaleDecay = 0.02;
-        window.particles.push(pt);
-      }
-    };
+    // 2. Spawning expanding floor dust waves
+    for (let i = 0; i < 14; i++) {
+      let angle = (i * Math.PI * 2) / 14 + window.randFloat(-0.1, 0.1);
+      let speed = window.randFloat(2.0, 3.8);
+      let life = window.randInt(15, 25);
+      let pt = window.ParticlePool.get(
+        x,
+        y,
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed * 0.45, // flat ellipse scatter
+        window.randFloat(3.5, 6.0),
+        "#b58700", // sand-gold
+        0.75,
+        life,
+        life,
+        0.0,
+        true,
+        0.88, // rapid deceleration
+      );
+      pt.style = "glowing_orb";
+      pt.scaleDecay = 0.02;
+      window.particles.push(pt);
+    }
+  };
 
   // Unified Earth-Breaker Bash visual spawner lives in entities.js
 
@@ -1191,83 +1191,131 @@
         }
       }
     } else if (tile === window.TILE_TYPES.CHEST_SPAWN) {
-          if (!window.isChestOpened(tx, ty)) {
-            window.setChestOpened(tx, ty);
-            let stageScale = window.player.depth;
-            let tier =
-              typeof window.getChestTierAt === "function"
-                ? window.getChestTierAt(tx, ty)
-                : "iron_bound";
-            let pStats =
-              typeof window.resolvePlayerStats === "function"
-                ? window.resolvePlayerStats()
-                : {};
-            let playerQuality = pStats.qly || 1.0;
+      if (!window.isChestOpened(tx, ty)) {
+        window.setChestOpened(tx, ty);
+        let stageScale = window.player.depth;
+        let tier =
+          typeof window.getChestTierAt === "function"
+            ? window.getChestTierAt(tx, ty)
+            : "iron_bound";
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : {};
+        let playerQuality = pStats.qly || 1.0;
 
-            // Roll for Surprise Hoard Mimic (7% base chance on standard non-boss floors)
-            let isBossRoom = stageScale % 12 === 4 || stageScale % 12 === 8 || stageScale % 12 === 0;
-            let isChallenge = window.playerStats && window.playerStats.activeSpecialChallenge !== null;
-            let isRift = window.playerStats && window.playerStats.isRiftMode === true;
-            let isCrucible = window.playerStats && window.playerStats.isCrucibleMode === true;
-            let p = window.player;
+        // Roll for Surprise Hoard Mimic (7% base chance on standard non-boss floors)
+        let isBossRoom =
+          stageScale % 12 === 4 ||
+          stageScale % 12 === 8 ||
+          stageScale % 12 === 0;
+        let isChallenge =
+          window.playerStats &&
+          window.playerStats.activeSpecialChallenge !== null;
+        let isRift =
+          window.playerStats && window.playerStats.isRiftMode === true;
+        let isCrucible =
+          window.playerStats && window.playerStats.isCrucibleMode === true;
+        let p = window.player;
 
-            if (!isBossRoom && !isChallenge && !isRift && !isCrucible && p && p.hp > p.maxHp * 0.25 && Math.random() < 0.07) {
-              map.grid[ty][tx] = window.TILE_TYPES.FLOOR; // Clear chest tile
+        if (
+          !isBossRoom &&
+          !isChallenge &&
+          !isRift &&
+          !isCrucible &&
+          p &&
+          p.hp > p.maxHp * 0.25 &&
+          Math.random() < 0.07
+        ) {
+          map.grid[ty][tx] = window.TILE_TYPES.FLOOR; // Clear chest tile
 
-              if (map.chestAnimations) {
-                delete map.chestAnimations[`${tx},${ty}`];
-              }
+          if (map.chestAnimations) {
+            delete map.chestAnimations[`${tx},${ty}`];
+          }
 
-              let sIdx = Math.floor((stageScale - 1) / 12);
-              let repStage = window.getEffectiveStage(stageScale * 1.25 + sIdx * 12.0);
-              let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
-              let repScale = Math.pow(repGrowth, repStage * 0.95);
+          let sIdx = Math.floor((stageScale - 1) / 12);
+          let repStage = window.getEffectiveStage(
+            stageScale * 1.25 + sIdx * 12.0,
+          );
+          let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+          let repScale = Math.pow(repGrowth, repStage * 0.95);
 
-              // Configure robust mini-boss parameters
-              let mimicHp = Math.round(180 * repScale * (window.playerStats.currentRunEnemyStrength || 1.0));
-              let mimicAtk = Math.round(14 * repScale * (window.playerStats.currentRunEnemyStrength || 1.0));
+          // Configure robust mini-boss parameters
+          let mimicHp = Math.round(
+            180 *
+              repScale *
+              (window.playerStats.currentRunEnemyStrength || 1.0),
+          );
+          let mimicAtk = Math.round(
+            14 * repScale * (window.playerStats.currentRunEnemyStrength || 1.0),
+          );
 
-              mimicHp = Math.max(Math.round(450 * (1 + stageScale * 0.08)), mimicHp);
-              mimicAtk = Math.max(Math.round(18 * (1 + stageScale * 0.04)), mimicAtk);
+          mimicHp = Math.max(
+            Math.round(450 * (1 + stageScale * 0.08)),
+            mimicHp,
+          );
+          mimicAtk = Math.max(
+            Math.round(18 * (1 + stageScale * 0.04)),
+            mimicAtk,
+          );
 
-              window.activeDungeonMobs = window.activeDungeonMobs || [];
-                                    window.activeDungeonMobs.push({
-                                      id: window.idCounter++,
-                                      type: "mob",
-                                      isMimic: true,
-                                      visualType: "hoard_mimic",
-                                      name: tier === "astral" ? "Astral Hoard Mimic" : tier === "gilded" ? "Gilded Hoard Mimic" : "Hoard Mimic",
-                                      mimicTier: tier,
-                                      x: tx * tileSize + 4,
-                                      y: ty * tileSize + 4,
-                                      w: 24,
-                                      h: 24,
-                                      hp: BigNum.from(mimicHp),
-                                      maxHp: BigNum.from(mimicHp),
-                                      atk: mimicAtk,
-                                      flashTimer: 0,
-                                      attackCooldown: 30, // Delay before snapping
-                                      facing: -1,
-                                      discovered: true,
-                                      hopTimer: 0,
-                                      isAggroed: true,
-                                      speedMultiplier: 1.15
-                                    });
+          window.activeDungeonMobs = window.activeDungeonMobs || [];
+          window.activeDungeonMobs.push({
+            id: window.idCounter++,
+            type: "mob",
+            isMimic: true,
+            visualType: "hoard_mimic",
+            name:
+              tier === "astral"
+                ? "Astral Hoard Mimic"
+                : tier === "gilded"
+                  ? "Gilded Hoard Mimic"
+                  : "Hoard Mimic",
+            mimicTier: tier,
+            x: tx * tileSize + 4,
+            y: ty * tileSize + 4,
+            w: 24,
+            h: 24,
+            hp: BigNum.from(mimicHp),
+            maxHp: BigNum.from(mimicHp),
+            atk: mimicAtk,
+            flashTimer: 0,
+            attackCooldown: 30, // Delay before snapping
+            facing: -1,
+            discovered: true,
+            hopTimer: 0,
+            isAggroed: true,
+            speedMultiplier: 1.15,
+          });
 
-              if (window.spawnFloatingText) {
-                window.spawnFloatingText(p.x, p.y - 25, "TRAP! IT'S A MIMIC!", "#ef4444");
-              }
-              if (window.combatVisuals) {
-                window.combatVisuals.triggerScreenShake(8, 14);
-                window.combatVisuals.spawnParticles(tx * tileSize + tileSize / 2, ty * tileSize + tileSize / 2, 25, "hoard_mimic", 4);
-              }
-              if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                window.SoundManager.play("death");
-              }
-              return; // Block default chest loot drops
-            }
+          if (window.spawnFloatingText) {
+            window.spawnFloatingText(
+              p.x,
+              p.y - 25,
+              "TRAP! IT'S A MIMIC!",
+              "#ef4444",
+            );
+          }
+          if (window.combatVisuals) {
+            window.combatVisuals.triggerScreenShake(8, 14);
+            window.combatVisuals.spawnParticles(
+              tx * tileSize + tileSize / 2,
+              ty * tileSize + tileSize / 2,
+              25,
+              "hoard_mimic",
+              4,
+            );
+          }
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("death");
+          }
+          return; // Block default chest loot drops
+        }
 
-            // Custom Helper to spawn tiered equipment drops
+        // Custom Helper to spawn tiered equipment drops
         let spawnTieredEquipment = (qualityMult, minRarity) => {
           if (isChallengeActive) {
             // Convert to high-value gold and rare crafting material payload
@@ -1296,11 +1344,11 @@
           }
 
           let effectiveStage = stageScale;
-                    let rolledRarity = window.rollItemRarity(
-                      effectiveStage,
-                      qualityMult,
-                      false,
-                    );
+          let rolledRarity = window.rollItemRarity(
+            effectiveStage,
+            qualityMult,
+            false,
+          );
           if (rolledRarity < minRarity) {
             rolledRarity = minRarity;
           }
@@ -1928,13 +1976,13 @@
     }
 
     // Additive Light Blend Pass in World Coordinates
-        lightingCtx.globalCompositeOperation = "lighter";
-        lights.forEach((light) => {
-          let { x, y, r, innerColor, outerColor, isPlayerLight } = light;
-          let safeR = Math.max(0.1, r);
-          let grad = lightingCtx.createRadialGradient(x, y, 0, x, y, safeR);
+    lightingCtx.globalCompositeOperation = "lighter";
+    lights.forEach((light) => {
+      let { x, y, r, innerColor, outerColor, isPlayerLight } = light;
+      let safeR = Math.max(0.1, r);
+      let grad = lightingCtx.createRadialGradient(x, y, 0, x, y, safeR);
 
-          if (isPlayerLight && hasShroudedSight) {
+      if (isPlayerLight && hasShroudedSight) {
         // High-contrast, multi-stop radial gradient for Shrouded Sight: bright center, progressive transition
         grad.addColorStop(0, "rgba(255, 255, 250, 1.0)"); // White-hot center core
         grad.addColorStop(0.18, "rgba(255, 240, 195, 0.98)"); // Highly illuminated center ring
@@ -2393,60 +2441,230 @@
     });
 
     // Recalculate all existing inventory & equipped items to migrate stats
-        if (window.playerStats) {
-          if (!window.playerStats.skillTree) window.playerStats.skillTree = {};
-          if (window.playerStats.skillTree.utility_treasure_hunter === undefined) {
-            window.playerStats.skillTree.utility_treasure_hunter = 0;
+    if (window.playerStats) {
+      if (!window.playerStats.skillTree) window.playerStats.skillTree = {};
+      if (window.playerStats.skillTree.utility_treasure_hunter === undefined) {
+        window.playerStats.skillTree.utility_treasure_hunter = 0;
+      }
+    }
+    window.recalculateAllInventoryItems();
+
+    // Intercept and wrap window.salvageItem dynamically to support any script loading order and update the UI
+    let _salvageItemRef = window.salvageItem;
+    Object.defineProperty(window, "salvageItem", {
+      get() {
+        return _salvageItemRef;
+      },
+      set(newVal) {
+        if (newVal && !newVal.__wrapped) {
+          const original = newVal;
+          _salvageItemRef = function (itemId) {
+            const originalShowCustomConfirm = window.showCustomConfirm;
+            window.showCustomConfirm = function (
+              title,
+              body,
+              yesText,
+              noText,
+              color,
+              yesCallback,
+              noCallback,
+            ) {
+              const wrappedYesCallback = function () {
+                // Pre-find in bag and remove it to ensure the item is destroyed when salvaging in dungeon
+                if (window.player && window.player.bag) {
+                  let bagIdx = window.player.bag.findIndex(
+                    (i) => i.id == itemId,
+                  );
+                  if (bagIdx !== -1) {
+                    window.player.bag.splice(bagIdx, 1);
+                  }
+                }
+                if (typeof yesCallback === "function") yesCallback();
+                setTimeout(() => {
+                  if (typeof window.renderReliquaryTab === "function")
+                    window.renderReliquaryTab();
+                  if (typeof window.renderProfileModal === "function")
+                    window.renderProfileModal();
+                  if (typeof window.renderBagModalContent === "function")
+                    window.renderBagModalContent();
+                }, 80);
+              };
+              if (originalShowCustomConfirm) {
+                originalShowCustomConfirm(
+                  title,
+                  body,
+                  yesText,
+                  noText,
+                  color,
+                  wrappedYesCallback,
+                  noCallback,
+                );
+              }
+            };
+            original(itemId);
+            window.showCustomConfirm = originalShowCustomConfirm;
+          };
+          _salvageItemRef.__wrapped = true;
+        } else {
+          _salvageItemRef = newVal;
+        }
+      },
+      configurable: true,
+    });
+    if (_salvageItemRef) {
+      window.salvageItem = _salvageItemRef;
+    }
+
+    // --- ZERO-ALLOCATION TANGENTIAL STEERING & CORNER UNSTICK ENGINE ---
+    const PROBE_OFFSETS_CW = [
+      Math.PI / 12, // 15 deg
+      Math.PI / 6, // 30 deg
+      Math.PI / 4, // 45 deg
+      Math.PI / 3, // 60 deg
+      (5 * Math.PI) / 12, // 75 deg
+      Math.PI / 2, // 90 deg
+      (7 * Math.PI) / 12, // 105 deg
+      (2 * Math.PI) / 3, // 120 deg
+      (3 * Math.PI) / 4, // 135 deg
+      (5 * Math.PI) / 6, // 150 deg
+      -Math.PI / 12,
+      -Math.PI / 6,
+      -Math.PI / 4,
+      -Math.PI / 3,
+      -Math.PI / 2,
+      -(2 * Math.PI) / 3,
+      -(3 * Math.PI) / 4,
+      Math.PI,
+    ];
+
+    const PROBE_OFFSETS_CCW = [
+      -Math.PI / 12,
+      -Math.PI / 6,
+      -Math.PI / 4,
+      -Math.PI / 3,
+      -(5 * Math.PI) / 12,
+      -Math.PI / 2,
+      -(7 * Math.PI) / 12,
+      -(2 * Math.PI) / 3,
+      -(3 * Math.PI) / 4,
+      -(5 * Math.PI) / 6,
+      Math.PI / 12,
+      Math.PI / 6,
+      Math.PI / 4,
+      Math.PI / 3,
+      Math.PI / 2,
+      (2 * Math.PI) / 3,
+      (3 * Math.PI) / 4,
+      Math.PI,
+    ];
+
+    window.moveEntityWithSmartSteering = function (
+      entity,
+      targetX,
+      targetY,
+      speed,
+      map,
+      radius,
+    ) {
+      if (!entity) return false;
+      let w = entity.w || 24;
+      let h = entity.h || 24;
+
+      let cx = entity.x + w / 2;
+      let cy = entity.y + h / 2;
+      let dx = targetX - cx;
+      let dy = targetY - cy;
+      let dist = Math.hypot(dx, dy);
+
+      if (dist < 0.5) return false;
+
+      if (!map || !map.grid) {
+        let step = Math.min(speed, dist);
+        entity.x += (dx / dist) * step;
+        entity.y += (dy / dist) * step;
+        return true;
+      }
+
+      let baseAngle = Math.atan2(dy, dx);
+      let r = radius !== undefined ? radius : w * 0.4;
+      let step = Math.min(speed, dist);
+
+      if (entity.wallFollowTimer === undefined) entity.wallFollowTimer = 0;
+      if (entity.wallFollowDir === undefined)
+        entity.wallFollowDir = Math.random() < 0.5 ? 1 : -1;
+
+      // 1. If currently locked in wall-following mode, test if direct path is NOW clear
+      if (entity.wallFollowTimer > 0) {
+        entity.wallFollowTimer--;
+        let dirVx = Math.cos(baseAngle) * step;
+        let dirVy = Math.sin(baseAngle) * step;
+        // Check 1.5 steps ahead along direct path to ensure we fully cleared the corner
+        if (
+          !window.checkCollisionAt(map, cx + dirVx * 1.5, cy + dirVy * 1.5, r)
+        ) {
+          entity.wallFollowTimer = 0;
+          entity.x += dirVx;
+          entity.y += dirVy;
+          return true;
+        }
+      } else {
+        // 2. Try Direct Step toward Target
+        let vx = Math.cos(baseAngle) * step;
+        let vy = Math.sin(baseAngle) * step;
+        if (!window.checkCollisionAt(map, cx + vx, cy + vy, r)) {
+          entity.x += vx;
+          entity.y += vy;
+          return true;
+        }
+      }
+
+      // 3. Direct path is blocked or wallFollowTimer > 0: Probe Tangent/Wall Angles
+      let offsets =
+        entity.wallFollowDir > 0 ? PROBE_OFFSETS_CW : PROBE_OFFSETS_CCW;
+      for (let i = 0; i < offsets.length; i++) {
+        let probeAngle = baseAngle + offsets[i];
+        let pVx = Math.cos(probeAngle) * step;
+        let pVy = Math.sin(probeAngle) * step;
+
+        if (!window.checkCollisionAt(map, cx + pVx, cy + pVy, r)) {
+          entity.x += pVx;
+          entity.y += pVy;
+
+          // Lock wall-following momentum for 25 frames (~0.4s) to smoothly round corners
+          entity.wallFollowTimer = 25;
+          // Maintain consistent wall-follow direction based on chosen probe offset
+          if (offsets[i] < 0) {
+            entity.wallFollowDir = -1;
+          } else if (offsets[i] > 0) {
+            entity.wallFollowDir = 1;
           }
+          return true;
         }
-        window.recalculateAllInventoryItems();
+      }
 
-        // Intercept and wrap window.salvageItem dynamically to support any script loading order and update the UI
-                let _salvageItemRef = window.salvageItem;
-                Object.defineProperty(window, "salvageItem", {
-                  get() {
-                    return _salvageItemRef;
-                  },
-                  set(newVal) {
-                    if (newVal && !newVal.__wrapped) {
-                      const original = newVal;
-                      _salvageItemRef = function (itemId) {
-                        const originalShowCustomConfirm = window.showCustomConfirm;
-                        window.showCustomConfirm = function (title, body, yesText, noText, color, yesCallback, noCallback) {
-                          const wrappedYesCallback = function () {
-                            // Pre-find in bag and remove it to ensure the item is destroyed when salvaging in dungeon
-                            if (window.player && window.player.bag) {
-                              let bagIdx = window.player.bag.findIndex((i) => i.id == itemId);
-                              if (bagIdx !== -1) {
-                                window.player.bag.splice(bagIdx, 1);
-                              }
-                            }
-                            if (typeof yesCallback === "function") yesCallback();
-                            setTimeout(() => {
-                              if (typeof window.renderReliquaryTab === "function") window.renderReliquaryTab();
-                              if (typeof window.renderProfileModal === "function") window.renderProfileModal();
-                              if (typeof window.renderBagModalContent === "function") window.renderBagModalContent();
-                            }, 80);
-                          };
-                          if (originalShowCustomConfirm) {
-                            originalShowCustomConfirm(title, body, yesText, noText, color, wrappedYesCallback, noCallback);
-                          }
-                        };
-                        original(itemId);
-                        window.showCustomConfirm = originalShowCustomConfirm;
-                      };
-                      _salvageItemRef.__wrapped = true;
-                    } else {
-                      _salvageItemRef = newVal;
-                    }
-                  },
-                  configurable: true,
-                });
-        if (_salvageItemRef) {
-          window.salvageItem = _salvageItemRef;
-        }
+      // 4. Axis-Decoupled Sliding Fallback if probes fail
+      let vx = Math.cos(baseAngle) * step;
+      let vy = Math.sin(baseAngle) * step;
+      let moved = false;
+      if (
+        Math.abs(vx) > 0.001 &&
+        !window.checkCollisionAt(map, cx + vx, cy, r)
+      ) {
+        entity.x += vx;
+        moved = true;
+      }
+      if (
+        Math.abs(vy) > 0.001 &&
+        !window.checkCollisionAt(map, entity.x + w / 2, cy + vy, r)
+      ) {
+        entity.y += vy;
+        moved = true;
+      }
 
-        window.BossAIEngine = {
+      return moved;
+    };
+
+    window.BossAIEngine = {
       initBoss(m) {
         if (m.bossInitialized) return;
         m.bossInitialized = true;
@@ -2690,9 +2908,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.8 * (m.speedMultiplier || 1.0);
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -2740,7 +2963,7 @@
           m.maxStaggerShield = m.maxHp.mul(0.2);
 
           // Teleport directly to the center of the arena
-          let map = window.activeDungeonMap;
+          map = window.activeDungeonMap;
           let mapW = map ? map.width : 24;
           let mapH = map ? map.height : 18;
           let tSize = map ? map.tileSize : 32;
@@ -2819,35 +3042,35 @@
             }
 
             // Spark siphon lines travelling from player to Marcus
-                        if (window.combatVisuals && window.combatVisuals.particlePool) {
-                          let angle = Math.atan2(cy - p.y, cx - p.x);
-                          window.combatVisuals.particlePool.get(
-                            p.x + window.randFloat(-6, 6),
-                            p.y - 4 + window.randFloat(-6, 6),
-                            Math.cos(angle) * 4.5,
-                            Math.sin(angle) * 4.5,
-                            window.randFloat(1.5, 3.0),
-                            "#ffd700",
-                            0.85,
-                            15,
-                            15,
-                            0,
-                            true
-                          );
-                          window.combatVisuals.particlePool.get(
-                            p.x + window.randFloat(-6, 6),
-                            p.y - 4 + window.randFloat(-6, 6),
-                            Math.cos(angle) * 4.5,
-                            Math.sin(angle) * 4.5,
-                            window.randFloat(1.5, 3.0),
-                            "#e74c3c",
-                            0.85,
-                            15,
-                            15,
-                            0,
-                            true
-                          );
-                        }
+            if (window.combatVisuals && window.combatVisuals.particlePool) {
+              let angle = Math.atan2(cy - p.y, cx - p.x);
+              window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-6, 6),
+                p.y - 4 + window.randFloat(-6, 6),
+                Math.cos(angle) * 4.5,
+                Math.sin(angle) * 4.5,
+                window.randFloat(1.5, 3.0),
+                "#ffd700",
+                0.85,
+                15,
+                15,
+                0,
+                true,
+              );
+              window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-6, 6),
+                p.y - 4 + window.randFloat(-6, 6),
+                Math.cos(angle) * 4.5,
+                Math.sin(angle) * 4.5,
+                window.randFloat(1.5, 3.0),
+                "#e74c3c",
+                0.85,
+                15,
+                15,
+                0,
+                true,
+              );
+            }
 
             if (
               window.SoundManager &&
@@ -2911,8 +3134,8 @@
                 m.lassoVisualY = p.y;
 
                 // Pull player coordinate smoothly
-                                p.knockbackVx = (pullX - p.x) * 0.35;
-                                p.knockbackVy = (pullY - p.y) * 0.35;
+                p.knockbackVx = (pullX - p.x) * 0.35;
+                p.knockbackVy = (pullY - p.y) * 0.35;
 
                 // Inflict heavy damage & snare slow
                 window.damagePlayer(Math.round(m.atk * 1.55), m);
@@ -3072,9 +3295,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.8 * (m.speedMultiplier || 1.0);
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -3236,59 +3464,59 @@
               );
             }
           } else {
-                      // Emit orbital Web Storm wind particles
-                      if (Math.random() < 0.4) {
-                        let angle = Math.random() * Math.PI * 2;
-                        let orbDist = m.w * 0.75;
-                        let px = cx + Math.cos(angle) * orbDist;
-                        let py = cy + Math.sin(angle) * orbDist;
-                        let rotSpeed = 3.5;
-                        let vx = -Math.sin(angle) * rotSpeed;
-                        let vy = Math.cos(angle) * rotSpeed;
-                        if (window.combatVisuals && window.combatVisuals.particlePool) {
-                          window.combatVisuals.particlePool.get(
-                            px,
-                            py,
-                            vx,
-                            vy,
-                            window.randFloat(1.5, 3),
-                            Math.random() < 0.5 ? "#ffffff" : "#27ae60",
-                            0.8,
-                            30,
-                            30,
-                            0,
-                            true
-                          );
-                        }
-                      }
-                      return; // Skip normal combat movement/attack AI while shielded
-                    }
-                  }
+            // Emit orbital Web Storm wind particles
+            if (Math.random() < 0.4) {
+              let angle = Math.random() * Math.PI * 2;
+              let orbDist = m.w * 0.75;
+              let px = cx + Math.cos(angle) * orbDist;
+              let py = cy + Math.sin(angle) * orbDist;
+              let rotSpeed = 3.5;
+              let vx = -Math.sin(angle) * rotSpeed;
+              let vy = Math.cos(angle) * rotSpeed;
+              if (window.combatVisuals && window.combatVisuals.particlePool) {
+                window.combatVisuals.particlePool.get(
+                  px,
+                  py,
+                  vx,
+                  vy,
+                  window.randFloat(1.5, 3),
+                  Math.random() < 0.5 ? "#ffffff" : "#27ae60",
+                  0.8,
+                  30,
+                  30,
+                  0,
+                  true,
+                );
+              }
+            }
+            return; // Skip normal combat movement/attack AI while shielded
+          }
+        }
 
         if (m.actionState === "telegraphing" || m.state === "telegraphing") {
           m.telegraphTimer--;
 
           // Creeping vine particles traveling during root snare wind-up
-                    if (m.activeAbility === "root_snare" && m.telegraphTimer % 3 === 0) {
-                      let tRatio = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
-                      let vx = cx + (m.targetX - cx) * tRatio;
-                      let vy = cy + (m.targetY - cy) * tRatio;
-                      if (window.combatVisuals && window.combatVisuals.particlePool) {
-                        window.combatVisuals.particlePool.get(
-                          vx + window.randFloat(-4, 4),
-                          vy + window.randFloat(-4, 4),
-                          window.randFloat(-0.2, 0.2),
-                          window.randFloat(-0.2, 0.2),
-                          window.randFloat(1.5, 2.5),
-                          "#27ae60",
-                          0.8,
-                          24,
-                          24,
-                          0,
-                          true
-                        );
-                      }
-                    }
+          if (m.activeAbility === "root_snare" && m.telegraphTimer % 3 === 0) {
+            let tRatio = 1.0 - m.telegraphTimer / m.maxTelegraphTimer;
+            let vx = cx + (m.targetX - cx) * tRatio;
+            let vy = cy + (m.targetY - cy) * tRatio;
+            if (window.combatVisuals && window.combatVisuals.particlePool) {
+              window.combatVisuals.particlePool.get(
+                vx + window.randFloat(-4, 4),
+                vy + window.randFloat(-4, 4),
+                window.randFloat(-0.2, 0.2),
+                window.randFloat(-0.2, 0.2),
+                window.randFloat(1.5, 2.5),
+                "#27ae60",
+                0.8,
+                24,
+                24,
+                0,
+                true,
+              );
+            }
+          }
 
           if (m.telegraphTimer <= 0) {
             m.state = "idle";
@@ -3312,45 +3540,45 @@
               }
               if (window.SoundManager) window.SoundManager.play("block");
             } else if (ability === "root_snare") {
-                          if (window.combatVisuals) {
-                            window.combatVisuals.triggerScreenShake(5, 8);
-                            window.combatVisuals.spawnParticles(
-                              m.targetX,
-                              m.targetY,
-                              20,
-                              "slag_slime",
-                              2.2,
-                            );
-                          }
+              if (window.combatVisuals) {
+                window.combatVisuals.triggerScreenShake(5, 8);
+                window.combatVisuals.spawnParticles(
+                  m.targetX,
+                  m.targetY,
+                  20,
+                  "slag_slime",
+                  2.2,
+                );
+              }
 
-                          // Spawn persistent spider web hazard on the ground
-                          window.cavernInteractives = window.cavernInteractives || [];
-                          window.cavernInteractives.push({
-                            id: window.idCounter++,
-                            type: "spider_web_zone",
-                            x: m.targetX,
-                            y: m.targetY,
-                            w: 56,
-                            h: 24,
-                            life: 300, // 5 seconds of persistence
-                            maxLife: 300
-                          });
+              // Spawn persistent spider web hazard on the ground
+              window.cavernInteractives = window.cavernInteractives || [];
+              window.cavernInteractives.push({
+                id: window.idCounter++,
+                type: "spider_web_zone",
+                x: m.targetX,
+                y: m.targetY,
+                w: 56,
+                h: 24,
+                life: 300, // 5 seconds of persistence
+                maxLife: 300,
+              });
 
-                          if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 75) {
-                            window.damagePlayer(Math.round(m.atk * 1.3), m);
-                            p.snareTimer = 132; // 2.2s snare slow
-                            if (typeof window.spawnFloatingText === "function") {
-                              window.spawnFloatingText(
-                                p.x,
-                                p.y - 12,
-                                "[SNARED] -60% Speed!",
-                                "#2ecc71",
-                                true,
-                              );
-                            }
-                          }
-                          if (window.SoundManager) window.SoundManager.play("block");
-                        }
+              if (Math.hypot(p.x - m.targetX, p.y - m.targetY) <= 75) {
+                window.damagePlayer(Math.round(m.atk * 1.3), m);
+                p.snareTimer = 132; // 2.2s snare slow
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    p.x,
+                    p.y - 12,
+                    "[SNARED] -60% Speed!",
+                    "#2ecc71",
+                    true,
+                  );
+                }
+              }
+              if (window.SoundManager) window.SoundManager.play("block");
+            }
             m.activeAbility = null;
           }
         } else {
@@ -3359,9 +3587,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.3;
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -3474,28 +3707,28 @@
             }
 
             // Spawn blue gravitational sparks flowing inward (Subphase C.3)
-                        if (
-                          m.telegraphTimer % 4 === 0 &&
-                          window.combatVisuals &&
-                          window.combatVisuals.particlePool
-                        ) {
-                          let pt = window.combatVisuals.particlePool.get(
-                            p.x + window.randFloat(-10, 10),
-                            p.y + window.randFloat(-10, 10),
-                            Math.cos(angle) * 3,
-                            Math.sin(angle) * 3,
-                            window.randFloat(1.2, 2.5),
-                            "#00d2ff",
-                            0.8,
-                            20,
-                            20,
-                            0,
-                            true
-                          );
-                          pt.style = "streak";
-                          pt.scaleDecay = 0.035;
-                          window.particles.push(pt);
-                        }
+            if (
+              m.telegraphTimer % 4 === 0 &&
+              window.combatVisuals &&
+              window.combatVisuals.particlePool
+            ) {
+              let pt = window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-10, 10),
+                p.y + window.randFloat(-10, 10),
+                Math.cos(angle) * 3,
+                Math.sin(angle) * 3,
+                window.randFloat(1.2, 2.5),
+                "#00d2ff",
+                0.8,
+                20,
+                20,
+                0,
+                true,
+              );
+              pt.style = "streak";
+              pt.scaleDecay = 0.035;
+              window.particles.push(pt);
+            }
           }
 
           if (m.telegraphTimer <= 0) {
@@ -3556,8 +3789,8 @@
                 // Player hit!
                 window.damagePlayer(Math.round(m.atk * 1.7), m);
                 // Apply knockback
-                                p.knockbackVx = Math.cos(m.shieldAngle) * 10;
-                                p.knockbackVy = Math.sin(m.shieldAngle) * 10;
+                p.knockbackVx = Math.cos(m.shieldAngle) * 10;
+                p.knockbackVy = Math.sin(m.shieldAngle) * 10;
                 if (window.combatVisuals) {
                   window.combatVisuals.triggerScreenShake(6, 10);
                   window.combatVisuals.spawnParticles(
@@ -3596,9 +3829,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = m.phase === 2 ? 1.4 : 1.7; // Slightly heavier and slower while shield raised
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -3704,9 +3942,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.35;
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -3869,10 +4112,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.6;
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
-              m.isMoving = true;
+              m.isMoving = window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             } else {
               m.isMoving = false;
             }
@@ -3954,21 +4201,21 @@
               let vy = -Math.sin(pAngle) * (pDist / 15);
 
               let pt = window.combatVisuals.particlePool.get(
-                              px,
-                              py,
-                              vx,
-                              vy,
-                              window.randFloat(1.5, 3.5),
-                              Math.random() < 0.5 ? "#e84393" : "#8e44ad",
-                              0.8,
-                              15,
-                              15,
-                              -0.05,
-                              true
-                            );
-                            pt.style = "streak"; // Transform accretion dust into high-velocity inward streaks
-                            pt.scaleDecay = 0.04;
-                            window.particles.push(pt);
+                px,
+                py,
+                vx,
+                vy,
+                window.randFloat(1.5, 3.5),
+                Math.random() < 0.5 ? "#e84393" : "#8e44ad",
+                0.8,
+                15,
+                15,
+                -0.05,
+                true,
+              );
+              pt.style = "streak"; // Transform accretion dust into high-velocity inward streaks
+              pt.scaleDecay = 0.04;
+              window.particles.push(pt);
             }
           }
 
@@ -4029,9 +4276,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.6;
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -4220,9 +4472,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.7;
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -4451,9 +4708,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.7;
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -4546,26 +4808,26 @@
             m.hp = window.BigNumMin(m.maxHp, m.hp.add(healVal));
 
             // Visual golden siphon lines
-                        if (
-                          m.channelTimer % 3 === 0 &&
-                          window.combatVisuals &&
-                          window.combatVisuals.particlePool
-                        ) {
-                          let angle = Math.atan2(cy - p.y, cx - p.x);
-                          window.combatVisuals.particlePool.get(
-                            p.x + window.randFloat(-6, 6),
-                            p.y - 4 + window.randFloat(-6, 6),
-                            Math.cos(angle) * 4.5,
-                            Math.sin(angle) * 4.5,
-                            window.randFloat(1.2, 2.8),
-                            "#ffd700",
-                            0.8,
-                            15,
-                            15,
-                            0,
-                            true
-                          );
-                        }
+            if (
+              m.channelTimer % 3 === 0 &&
+              window.combatVisuals &&
+              window.combatVisuals.particlePool
+            ) {
+              let angle = Math.atan2(cy - p.y, cx - p.x);
+              window.combatVisuals.particlePool.get(
+                p.x + window.randFloat(-6, 6),
+                p.y - 4 + window.randFloat(-6, 6),
+                Math.cos(angle) * 4.5,
+                Math.sin(angle) * 4.5,
+                window.randFloat(1.2, 2.8),
+                "#ffd700",
+                0.8,
+                15,
+                15,
+                0,
+                true,
+              );
+            }
           }
 
           if (m.channelTimer <= 0) {
@@ -4654,9 +4916,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = 1.45;
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -4781,26 +5048,26 @@
               if (window.combatVisuals) {
                 window.combatVisuals.triggerScreenShake(8, 14);
                 // Spew fire particles
-                                let fAngle = m.facing === -1 ? Math.PI : 0;
-                                for (let k = 0; k < 20; k++) {
-                                  let dev = window.randFloat(-0.7, 0.7);
-                                  let spAngle = fAngle + dev;
-                                  let speed = window.randFloat(3.0, 6.0);
-                                  window.combatVisuals.particlePool.get(
-                                    cx,
-                                    cy,
-                                    Math.cos(spAngle) * speed,
-                                    Math.sin(spAngle) * speed,
-                                    window.randFloat(1.5, 3.8),
-                                    "#ff3300",
-                                    0.85,
-                                    25,
-                                    25,
-                                    -0.03,
-                                    true,
-                                    0.05
-                                  );
-                                }
+                let fAngle = m.facing === -1 ? Math.PI : 0;
+                for (let k = 0; k < 20; k++) {
+                  let dev = window.randFloat(-0.7, 0.7);
+                  let spAngle = fAngle + dev;
+                  let speed = window.randFloat(3.0, 6.0);
+                  window.combatVisuals.particlePool.get(
+                    cx,
+                    cy,
+                    Math.cos(spAngle) * speed,
+                    Math.sin(spAngle) * speed,
+                    window.randFloat(1.5, 3.8),
+                    "#ff3300",
+                    0.85,
+                    25,
+                    25,
+                    -0.03,
+                    true,
+                    0.05,
+                  );
+                }
               }
               if (window.SoundManager) window.SoundManager.play("spell_fire");
 
@@ -4873,9 +5140,14 @@
             m.hopTimer = (m.hopTimer || 0) + 1;
             if (m.hopTimer % 30 < 15) {
               let speed = m.phase === 2 ? 1.8 : 1.5; // Dragon charges faster in Phase 2
-              let angle = Math.atan2(dy, dx);
-              m.x += Math.cos(angle) * speed;
-              m.y += Math.sin(angle) * speed;
+              window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                window.activeDungeonMap,
+                m.w ? m.w * 0.4 : 14,
+              );
             }
           }
 
@@ -6167,24 +6439,24 @@
 
     // Decorate damagePlayer globally with safe double-wrap protection to monitor and trigger defensive counters
     if (window.damagePlayer && !window.damagePlayer.__wrappedByMain) {
-        const originalDamagePlayer = window.damagePlayer;
-        window.damagePlayer = function (amount, attacker) {
-          let p = window.player;
-          let pStats =
-            typeof window.resolvePlayerStats === "function"
-              ? window.resolvePlayerStats()
-              : {};
+      const originalDamagePlayer = window.damagePlayer;
+      window.damagePlayer = function (amount, attacker) {
+        let p = window.player;
+        let pStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : {};
 
-          // Nullifier Disruption: Instantly nullify all offhand defensive values
-          if (p.nullifierDisrupted) {
-            pStats.block = 0;
-            pStats.parry = 0;
-            pStats.arcaneBarrier = 0;
-          }
+        // Nullifier Disruption: Instantly nullify all offhand defensive values
+        if (p.nullifierDisrupted) {
+          pStats.block = 0;
+          pStats.parry = 0;
+          pStats.arcaneBarrier = 0;
+        }
 
-          let shieldFortifiedGuardLvl = window.SkillTreeManager
-            ? window.SkillTreeManager.getSkillLevel("shield_fortified_guard")
-            : 0;
+        let shieldFortifiedGuardLvl = window.SkillTreeManager
+          ? window.SkillTreeManager.getSkillLevel("shield_fortified_guard")
+          : 0;
 
         // Compute block mitigation modifications
         let blockMit = 0.7;
@@ -7988,60 +8260,60 @@
     }
 
     // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-        // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
-        let repStage;
-        if (isMarcus) {
-          let peak =
-            window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-          let effectiveDepth = Math.max(scaleStage, peak) * 1.25;
-          let peakSIdx = Math.floor((effectiveDepth - 1) / 12);
-          repStage = window.getEffectiveStage(
-            effectiveDepth * 1.25 + peakSIdx * 12.0,
-          );
-        } else {
-          repStage =
-            typeof window.getEffectiveStage === "function"
-              ? window.getEffectiveStage(scaleStage)
-              : scaleStage;
-        }
+    // Robbery Anti-Farming: Bounded to maximum of current stage or peak stage with a 1.25x penalty scaling multiplier
+    let repStage;
+    if (isMarcus) {
+      let peak =
+        window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
+      let effectiveDepth = Math.max(scaleStage, peak) * 1.25;
+      let peakSIdx = Math.floor((effectiveDepth - 1) / 12);
+      repStage = window.getEffectiveStage(
+        effectiveDepth * 1.25 + peakSIdx * 12.0,
+      );
+    } else {
+      repStage =
+        typeof window.getEffectiveStage === "function"
+          ? window.getEffectiveStage(scaleStage)
+          : scaleStage;
+    }
 
-        let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
-        let densityFactor = 1 + 0.005 * repStage;
+    let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
+    let densityFactor = 1 + 0.005 * repStage;
 
-        let localStep = (scaleStage - 1) % 12;
-        let sawtoothMod = isMarcus ? 1.0 : 0.85 + 0.03 * localStep;
+    let localStep = (scaleStage - 1) % 12;
+    let sawtoothMod = isMarcus ? 1.0 : 0.85 + 0.03 * localStep;
 
-        let bossHp = isMarcus
-          ? 1200 * repScale * densityFactor * sawtoothMod
-          : isMini
-            ? 800 * repScale * densityFactor * sawtoothMod
-            : 2000 * repScale * densityFactor * sawtoothMod;
-        let bossAtk = isMarcus
-          ? 32 * repScale * sawtoothMod
-          : isMini
-            ? 18 * repScale * sawtoothMod
-            : 26 * repScale * sawtoothMod;
+    let bossHp = isMarcus
+      ? 1200 * repScale * densityFactor * sawtoothMod
+      : isMini
+        ? 800 * repScale * densityFactor * sawtoothMod
+        : 2000 * repScale * densityFactor * sawtoothMod;
+    let bossAtk = isMarcus
+      ? 32 * repScale * sawtoothMod
+      : isMini
+        ? 18 * repScale * sawtoothMod
+        : 26 * repScale * sawtoothMod;
 
-        bossHp = Math.round(bossHp * enemyScale);
-        bossAtk = Math.round(bossAtk * enemyScale);
+    bossHp = Math.round(bossHp * enemyScale);
+    bossAtk = Math.round(bossAtk * enemyScale);
 
-        // Apply progression floors (baseline minimums) to ensure engaging combat scaling (Lowered floors and scaling multiplier to eliminate bloated HP pools)
-        let bossHpFloor = isMarcus ? 1400 : isMini ? 350 : 650;
-        let bossAtkFloor = isMarcus ? 30 : isMini ? 12 : 18;
-        bossHp = Math.max(
-          Math.round(bossHpFloor * (1 + scaleStage * 0.02)),
-          bossHp,
-        );
-        bossAtk = Math.max(
-          Math.round(bossAtkFloor * (1 + scaleStage * 0.01)),
-          bossAtk,
-        );
+    // Apply progression floors (baseline minimums) to ensure engaging combat scaling (Lowered floors and scaling multiplier to eliminate bloated HP pools)
+    let bossHpFloor = isMarcus ? 1400 : isMini ? 350 : 650;
+    let bossAtkFloor = isMarcus ? 30 : isMini ? 12 : 18;
+    bossHp = Math.max(
+      Math.round(bossHpFloor * (1 + scaleStage * 0.02)),
+      bossHp,
+    );
+    bossAtk = Math.max(
+      Math.round(bossAtkFloor * (1 + scaleStage * 0.01)),
+      bossAtk,
+    );
 
-        if (activeChallenge) {
-          let challengeScale = 1.0 + activeChallenge.riskRating / 30;
-          bossHp = Math.round(bossHp * challengeScale);
-          bossAtk = Math.round(bossAtk * challengeScale);
-        }
+    if (activeChallenge) {
+      let challengeScale = 1.0 + activeChallenge.riskRating / 30;
+      bossHp = Math.round(bossHp * challengeScale);
+      bossAtk = Math.round(bossAtk * challengeScale);
+    }
 
     let tier =
       typeof window.getStageTier === "function" ? window.getStageTier() : 0;
@@ -8182,20 +8454,23 @@
         depth,
       );
       window.playerStats.stage = Math.max(window.playerStats.stage || 1, depth);
-                  window.playerStats.lifetimePeakStage = Math.max(
-                    window.playerStats.lifetimePeakStage || 1,
-                    depth,
-                  );
+      window.playerStats.lifetimePeakStage = Math.max(
+        window.playerStats.lifetimePeakStage || 1,
+        depth,
+      );
 
-                  // Trigger first-time challenge generation upon clearing Floor 12 (or higher)
-                  if (depth >= 12 && !window.playerStats.hasTriggeredChallengesUnlock) {
-                    window.playerStats.hasTriggeredChallengesUnlock = true;
-                    if (window.ChallengeEngine && typeof window.ChallengeEngine.generateRandomChallenges === "function") {
-                      window.ChallengeEngine.generateRandomChallenges();
-                    }
-                  }
-                }
-                if (typeof window.saveGame === "function") window.saveGame();
+      // Trigger first-time challenge generation upon clearing Floor 12 (or higher)
+      if (depth >= 12 && !window.playerStats.hasTriggeredChallengesUnlock) {
+        window.playerStats.hasTriggeredChallengesUnlock = true;
+        if (
+          window.ChallengeEngine &&
+          typeof window.ChallengeEngine.generateRandomChallenges === "function"
+        ) {
+          window.ChallengeEngine.generateRandomChallenges();
+        }
+      }
+    }
+    if (typeof window.saveGame === "function") window.saveGame();
 
     if (
       map &&
@@ -8418,21 +8693,32 @@
       }
 
       // Aligned with exponential item scaling to maintain a tight, balanced progression curve
-            let repStage = typeof window.getEffectiveStage === "function" ? window.getEffectiveStage(scaleStage) : scaleStage;
-                        let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
-                        let densityFactor = 1 + 0.005 * repStage;
+      let repStage =
+        typeof window.getEffectiveStage === "function"
+          ? window.getEffectiveStage(scaleStage)
+          : scaleStage;
+      let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
+      let densityFactor = 1 + 0.005 * repStage;
 
-                        let localStep = (scaleStage - 1) % 12;
-                        let sawtoothMod = 0.85 + 0.03 * localStep;
+      let localStep = (scaleStage - 1) % 12;
+      let sawtoothMod = 0.85 + 0.03 * localStep;
 
-                        let mobHpVal = Math.floor(100 * repScale * densityFactor * sawtoothMod * enemyScale);
-                        let mobAtkVal = Math.floor(12 * repScale * sawtoothMod * enemyScale);
+      let mobHpVal = Math.floor(
+        100 * repScale * densityFactor * sawtoothMod * enemyScale,
+      );
+      let mobAtkVal = Math.floor(12 * repScale * sawtoothMod * enemyScale);
 
-                        // Apply solid baseline floors to prevent early-game trivialization (Gentler scaling to align with balanced HP curves)
-                                                                let mobHpFloor = Math.min(100, 25 + scaleStage * 5.0);
-                                                                let mobAtkFloor = Math.min(10, 4 + scaleStage * 0.3);
-                                                                mobHpVal = Math.max(Math.round(mobHpFloor * (1 + scaleStage * 0.025)), mobHpVal);
-                                                                mobAtkVal = Math.max(Math.round(mobAtkFloor * (1 + scaleStage * 0.01)), mobAtkVal);
+      // Apply solid baseline floors to prevent early-game trivialization (Gentler scaling to align with balanced HP curves)
+      let mobHpFloor = Math.min(100, 25 + scaleStage * 5.0);
+      let mobAtkFloor = Math.min(10, 4 + scaleStage * 0.3);
+      mobHpVal = Math.max(
+        Math.round(mobHpFloor * (1 + scaleStage * 0.025)),
+        mobHpVal,
+      );
+      mobAtkVal = Math.max(
+        Math.round(mobAtkFloor * (1 + scaleStage * 0.01)),
+        mobAtkVal,
+      );
 
       if (activeChallenge) {
         let challengeScale = 1.0 + activeChallenge.riskRating / 35;
@@ -8474,84 +8760,84 @@
         }
 
         if (Math.random() < affixChance) {
-                  const affixes = [
-                    "vitality_weaver",
-                    "iron_citadel",
-                    "swift_commander",
-                    "blood_berserker",
-                    "nullifier",
-                    "web_weaver",
-                    "glacial_warden",
-                    "slag_shaper",
-                    "toxic_decay"
-                  ];
-                  eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
-                }
+          const affixes = [
+            "vitality_weaver",
+            "iron_citadel",
+            "swift_commander",
+            "blood_berserker",
+            "nullifier",
+            "web_weaver",
+            "glacial_warden",
+            "slag_shaper",
+            "toxic_decay",
+          ];
+          eliteAffix = affixes[Math.floor(Math.random() * affixes.length)];
+        }
 
         let finalHp = mobHpVal;
-                    let finalAtk = mobAtkVal;
-                    let isElite = !!eliteAffix;
+        let finalAtk = mobAtkVal;
+        let isElite = !!eliteAffix;
 
-                    if (isElite && isRare) {
-                      finalHp = Math.round(finalHp * 2.5);
-                      finalAtk = Math.round(finalAtk * 1.6);
-                    } else if (isElite) {
-                      finalHp = Math.round(finalHp * 1.5);
-                      finalAtk = Math.round(finalAtk * 1.25);
-                    } else if (isRare) {
-                      finalHp = Math.round(finalHp * 1.75);
-                      finalAtk = Math.round(finalAtk * 1.35);
-                    }
+        if (isElite && isRare) {
+          finalHp = Math.round(finalHp * 2.5);
+          finalAtk = Math.round(finalAtk * 1.6);
+        } else if (isElite) {
+          finalHp = Math.round(finalHp * 1.5);
+          finalAtk = Math.round(finalAtk * 1.25);
+        } else if (isRare) {
+          finalHp = Math.round(finalHp * 1.75);
+          finalAtk = Math.round(finalAtk * 1.35);
+        }
 
-                let rangedTypes = [
-                  "thorn_wyrm",
-                  "wyrmling",
-                  "magma_elemental",
-                  "toxic_fly",
-                  "void_orb",
-                ];
-                let isRanged = rangedTypes.includes(mobInfo.type);
-                let projType =
-                  mobInfo.type === "thorn_wyrm"
-                    ? "thorn"
-                    : mobInfo.type === "wyrmling"
-                      ? "frost"
-                      : mobInfo.type === "magma_elemental"
-                        ? "fireball"
-                        : mobInfo.type === "toxic_fly"
-                          ? "maelstrom"
-                          : "void";
+        let rangedTypes = [
+          "thorn_wyrm",
+          "wyrmling",
+          "magma_elemental",
+          "toxic_fly",
+          "void_orb",
+        ];
+        let isRanged = rangedTypes.includes(mobInfo.type);
+        let projType =
+          mobInfo.type === "thorn_wyrm"
+            ? "thorn"
+            : mobInfo.type === "wyrmling"
+              ? "frost"
+              : mobInfo.type === "magma_elemental"
+                ? "fireball"
+                : mobInfo.type === "toxic_fly"
+                  ? "maelstrom"
+                  : "void";
 
-                let spawnX = sp.x * tileSize;
-                let spawnY = sp.y * tileSize;
+        let spawnX = sp.x * tileSize;
+        let spawnY = sp.y * tileSize;
 
-                window.activeDungeonMobs.push({
-                  id: window.idCounter++,
-                  type: "mob",
-                  visualTier: mobInfo.tier,
-                  visualType: mobInfo.type,
-                  x: spawnX,
-                  y: spawnY,
-                  homeX: spawnX,
-                  homeY: spawnY,
-                  w: 24,
-                  h: 24,
-                  hp: BigNum.from(finalHp),
-                  maxHp: BigNum.from(finalHp),
-                  atk: finalAtk,
-                  flashTimer: 0,
-                  attackCooldown: 0,
-                  rangedCooldown: window.randInt(30, 90),
-                  isRanged: isRanged,
-                  projectileType: projType,
-                  moveProfile:
-                    mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
-                      ? "relentless"
-                      : "standard",
-                  facing: -1,
-                  isRare: isRare,
-                  isElite: isElite,
-                  eliteAffix: eliteAffix,
+        window.activeDungeonMobs.push({
+          id: window.idCounter++,
+          type: "mob",
+          visualTier: mobInfo.tier,
+          visualType: mobInfo.type,
+          x: spawnX,
+          y: spawnY,
+          homeX: spawnX,
+          homeY: spawnY,
+          w: 24,
+          h: 24,
+          hp: BigNum.from(finalHp),
+          maxHp: BigNum.from(finalHp),
+          atk: finalAtk,
+          flashTimer: 0,
+          attackCooldown: 0,
+          rangedCooldown: window.randInt(30, 90),
+          isRanged: isRanged,
+          projectileType: projType,
+          moveProfile:
+            mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
+              ? "relentless"
+              : "standard",
+          facing: -1,
+          isRare: isRare,
+          isElite: isElite,
+          eliteAffix: eliteAffix,
           buffStacks: { haste: 0, def: 0, atk: 0 },
           buffTimers: { haste: 0, def: 0, atk: 0 },
           buffDecayTimers: { haste: 0, def: 0, atk: 0 },
@@ -9099,93 +9385,114 @@
     };
 
     if (map && map.revealSightRadius) {
-          let originalReveal = map.revealSightRadius;
-          map.revealSightRadius = function (px, py, intBonus) {
-            originalReveal.call(this, px, py, intBonus);
-          };
-        }
+      let originalReveal = map.revealSightRadius;
+      map.revealSightRadius = function (px, py, intBonus) {
+        originalReveal.call(this, px, py, intBonus);
+      };
+    }
 
-        // 6. Spawn Floor Sentinel if Portal is Locked (Standard Floors Only)
-                    if (map.portalLocked && !isMiniBoss && !isMajorBoss && !window.playerStats.isCrucibleMode && !isRift) {
-                      let fLvl = depth;
-                      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
-                      let sIdx = Math.floor((fLvl - 1) / 12);
-                      let repStage = window.getEffectiveStage(fLvl * 1.25 + sIdx * 12.0);
-                      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
+    // 6. Spawn Floor Sentinel if Portal is Locked (Standard Floors Only)
+    if (
+      map.portalLocked &&
+      !isMiniBoss &&
+      !isMajorBoss &&
+      !window.playerStats.isCrucibleMode &&
+      !isRift
+    ) {
+      let fLvl = depth;
+      let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
+      let sIdx = Math.floor((fLvl - 1) / 12);
+      let repStage = window.getEffectiveStage(fLvl * 1.25 + sIdx * 12.0);
+      let repGrowth = 1.045 + (repStage * 0.04) / (repStage + 200);
 
-                      // Apply Sawtooth Pacing Curve
-                      let localStep = (fLvl - 1) % 12;
-                      let sawtoothMod = 0.80 + 0.045 * localStep;
-                      let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
+      // Apply Sawtooth Pacing Curve
+      let localStep = (fLvl - 1) % 12;
+      let sawtoothMod = 0.8 + 0.045 * localStep;
+      let repScale = Math.pow(repGrowth, repStage * 0.95) * sawtoothMod;
 
-                      // Sentinels are 2x as tough as regular floor mobs
-                                                        let sentinelHp = Math.round(80 * repScale * enemyScale);
-                                                        let sentinelAtk = Math.round(11 * repScale * enemyScale);
+      // Sentinels are 2x as tough as regular floor mobs
+      let sentinelHp = Math.round(80 * repScale * enemyScale);
+      let sentinelAtk = Math.round(11 * repScale * enemyScale);
 
-                                                        // Apply solid baseline floors to prevent early-game trivialization (Balanced to eliminate health pool bloat)
-                                                        let sentinelHpFloor = 100;
-                                                        let sentinelAtkFloor = 14;
-                                                        sentinelHp = Math.max(Math.round(sentinelHpFloor * (1 + fLvl * 0.025)), sentinelHp);
-                                                        sentinelAtk = Math.max(Math.round(sentinelAtkFloor * (1 + fLvl * 0.01)), sentinelAtk);
+      // Apply solid baseline floors to prevent early-game trivialization (Balanced to eliminate health pool bloat)
+      let sentinelHpFloor = 100;
+      let sentinelAtkFloor = 14;
+      sentinelHp = Math.max(
+        Math.round(sentinelHpFloor * (1 + fLvl * 0.025)),
+        sentinelHp,
+      );
+      sentinelAtk = Math.max(
+        Math.round(sentinelAtkFloor * (1 + fLvl * 0.01)),
+        sentinelAtk,
+      );
 
-                                      let sector = Math.floor((depth - 1) / 12);
-                      let mobInfo = window.getMobPoolForDepth(depth);
+      let sector = Math.floor((depth - 1) / 12);
+      let mobInfo = window.getMobPoolForDepth(depth);
 
-                      const sentinelNames = [
-                        "Oakheart Sentinel",
-                        "Glacial Sentinel",
-                        "Smelt-Iron Sentinel",
-                        "Basilisk Sentinel",
-                        "Singularity Sentinel",
-                        "Clockwork Sentinel",
-                        "Nexus Sentinel"
-                      ];
-                      let name = sentinelNames[sector] || "Floor Sentinel";
+      const sentinelNames = [
+        "Oakheart Sentinel",
+        "Glacial Sentinel",
+        "Smelt-Iron Sentinel",
+        "Basilisk Sentinel",
+        "Singularity Sentinel",
+        "Clockwork Sentinel",
+        "Nexus Sentinel",
+      ];
+      let name = sentinelNames[sector] || "Floor Sentinel";
 
-                      let pStats =
-                        typeof window.resolvePlayerStats === "function"
-                          ? window.resolvePlayerStats()
-                          : {};
-                      let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
-                      let isRare = Math.random() < rareRate;
-                      let isElite = true; // Sentinels are Elites by default
+      let pStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
+      let isRare = Math.random() < rareRate;
+      let isElite = true; // Sentinels are Elites by default
 
-                      let finalHp = sentinelHp;
-                      let finalAtk = sentinelAtk;
+      let finalHp = sentinelHp;
+      let finalAtk = sentinelAtk;
 
-                      if (isElite && isRare) {
-                        finalHp = Math.round(finalHp * 2.5);
-                        finalAtk = Math.round(finalAtk * 1.6);
-                      } else if (isElite) {
-                        finalHp = Math.round(finalHp * 1.5);
-                        finalAtk = Math.round(finalAtk * 1.25);
-                      }
+      if (isElite && isRare) {
+        finalHp = Math.round(finalHp * 2.5);
+        finalAtk = Math.round(finalAtk * 1.6);
+      } else if (isElite) {
+        finalHp = Math.round(finalHp * 1.5);
+        finalAtk = Math.round(finalAtk * 1.25);
+      }
 
-                      window.activeDungeonMobs.push({
-                        id: window.idCounter++,
-                        type: "mob",
-                        isPortalSentinel: true,
-                        isElite: isElite,
-                        isRare: isRare,
-                        eliteAffix: sector === 0 ? "web_weaver" : sector === 1 ? "glacial_warden" : sector === 2 ? "slag_shaper" : sector === 3 ? "toxic_decay" : null,
-                        visualTier: mobInfo.tier,
-                        visualType: mobInfo.type,
-                        name: isRare ? `RARE ${name.toUpperCase()}` : name,
-                        x: map.extractionTile.x * tileSize + 4,
-                        y: map.extractionTile.y * tileSize + 4,
-                        w: 24,
-                        h: 24,
-                        hp: BigNum.from(finalHp),
-                        maxHp: BigNum.from(finalHp),
-                        atk: finalAtk,
-                        flashTimer: 0,
-                        attackCooldown: 0,
-                        discovered: true,
-                        hopTimer: 0,
-                      });
-                    }
+      window.activeDungeonMobs.push({
+        id: window.idCounter++,
+        type: "mob",
+        isPortalSentinel: true,
+        isElite: isElite,
+        isRare: isRare,
+        eliteAffix:
+          sector === 0
+            ? "web_weaver"
+            : sector === 1
+              ? "glacial_warden"
+              : sector === 2
+                ? "slag_shaper"
+                : sector === 3
+                  ? "toxic_decay"
+                  : null,
+        visualTier: mobInfo.tier,
+        visualType: mobInfo.type,
+        name: isRare ? `RARE ${name.toUpperCase()}` : name,
+        x: map.extractionTile.x * tileSize + 4,
+        y: map.extractionTile.y * tileSize + 4,
+        w: 24,
+        h: 24,
+        hp: BigNum.from(finalHp),
+        maxHp: BigNum.from(finalHp),
+        atk: finalAtk,
+        flashTimer: 0,
+        attackCooldown: 0,
+        discovered: true,
+        hopTimer: 0,
+      });
+    }
 
-        window.updateHUD();
+    window.updateHUD();
     let floorTitle = isMajorBoss
       ? `FLOOR ${depth} - MAJOR DUNGEON BOSS`
       : isMiniBoss
@@ -9378,24 +9685,24 @@
   };
 
   window.executePortalDescend = function (bypassWarning = false) {
-      if (window.activeDungeonMap.portalLocked) {
-        let p = window.player;
-        if (window.logicClock % 60 === 0) {
-          window.spawnFloatingText(
-            p.x,
-            p.y - 25,
-            "PORTAL SEALED: DEFEAT THE SENTINEL!",
-            "#ef4444",
-          );
-          if (window.combatVisuals) {
-            window.combatVisuals.triggerScreenShake(3, 6);
-          }
-          if (window.SoundManager) window.SoundManager.play("block");
+    if (window.activeDungeonMap.portalLocked) {
+      let p = window.player;
+      if (window.logicClock % 60 === 0) {
+        window.spawnFloatingText(
+          p.x,
+          p.y - 25,
+          "PORTAL SEALED: DEFEAT THE SENTINEL!",
+          "#ef4444",
+        );
+        if (window.combatVisuals) {
+          window.combatVisuals.triggerScreenShake(3, 6);
         }
-        return;
+        if (window.SoundManager) window.SoundManager.play("block");
       }
+      return;
+    }
 
-      if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
+    if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
       let modal = document.getElementById("portal-modal");
       if (modal) modal.style.display = "none";
 
@@ -9444,24 +9751,24 @@
   };
 
   window.executePortalExtract = function (bypassWarning = false) {
-      if (window.activeDungeonMap.portalLocked) {
-        let p = window.player;
-        if (window.logicClock % 60 === 0) {
-          window.spawnFloatingText(
-            p.x,
-            p.y - 25,
-            "PORTAL SEALED: DEFEAT THE SENTINEL!",
-            "#ef4444",
-          );
-          if (window.combatVisuals) {
-            window.combatVisuals.triggerScreenShake(3, 6);
-          }
-          if (window.SoundManager) window.SoundManager.play("block");
+    if (window.activeDungeonMap.portalLocked) {
+      let p = window.player;
+      if (window.logicClock % 60 === 0) {
+        window.spawnFloatingText(
+          p.x,
+          p.y - 25,
+          "PORTAL SEALED: DEFEAT THE SENTINEL!",
+          "#ef4444",
+        );
+        if (window.combatVisuals) {
+          window.combatVisuals.triggerScreenShake(3, 6);
         }
-        return;
+        if (window.SoundManager) window.SoundManager.play("block");
       }
+      return;
+    }
 
-      if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
+    if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
       let modal = document.getElementById("portal-modal");
       if (modal) modal.style.display = "none";
 
@@ -10284,28 +10591,28 @@
           let dist = window.randFloat(4, 16);
 
           let lifeVal = window.randInt(20, 35);
-                    let pt = window.ParticlePool.get(
-                      px + Math.cos(angle) * dist,
-                      py + Math.sin(angle) * dist,
-                      (Math.random() - 0.5) * 0.4,
-                      -window.randFloat(0.6, 1.4),
-                      window.randFloat(1.2, 2.5),
-                      pColor,
-                      0.85,
-                      lifeVal,
-                      lifeVal,
-                      -0.01,
-                      true
-                    );
-                    if (pEvent === "rift") {
-                      pt.style = "glowing_orb";
-                    } else {
-                      pt.style = "sparkle_star";
-                    }
-                    window.particles.push(pt);
-                  }
-                }
-              }
+          let pt = window.ParticlePool.get(
+            px + Math.cos(angle) * dist,
+            py + Math.sin(angle) * dist,
+            (Math.random() - 0.5) * 0.4,
+            -window.randFloat(0.6, 1.4),
+            window.randFloat(1.2, 2.5),
+            pColor,
+            0.85,
+            lifeVal,
+            lifeVal,
+            -0.01,
+            true,
+          );
+          if (pEvent === "rift") {
+            pt.style = "glowing_orb";
+          } else {
+            pt.style = "sparkle_star";
+          }
+          window.particles.push(pt);
+        }
+      }
+    }
 
     if (
       window.logicClock % 60 === 0 &&
@@ -10476,44 +10783,51 @@
       p.lastDamageTimer--;
     }
     if (window.playerStats) {
-          let maxCharges = window.playerStats.maxFlaskCharges || 1;
+      let maxCharges = window.playerStats.maxFlaskCharges || 1;
 
-          // If we are below max charges and the recharge timer isn't running, start it
-          if ((window.playerStats.flaskCharges || 0) < maxCharges && (window.playerStats.flaskCooldownTimer || 0) <= 0) {
+      // If we are below max charges and the recharge timer isn't running, start it
+      if (
+        (window.playerStats.flaskCharges || 0) < maxCharges &&
+        (window.playerStats.flaskCooldownTimer || 0) <= 0
+      ) {
+        window.playerStats.flaskCooldownTimer = 2700;
+      }
+
+      if (window.playerStats.flaskCooldownTimer > 0) {
+        window.playerStats.flaskCooldownTimer--;
+        if (window.playerStats.flaskCooldownTimer === 0) {
+          // Grant 1 charge back when the 45-second timer completes
+          if ((window.playerStats.flaskCharges || 0) < maxCharges) {
+            window.playerStats.flaskCharges =
+              (window.playerStats.flaskCharges || 0) + 1;
+            if (typeof window.updateHUD === "function") {
+              window.updateHUD();
+            }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[✦] Field Flask Gained 1 Charge!",
+                "#34d399",
+              );
+            }
+          }
+          // If still below maximum charges, restart the recharge cycle
+          if ((window.playerStats.flaskCharges || 0) < maxCharges) {
             window.playerStats.flaskCooldownTimer = 2700;
           }
-
-          if (window.playerStats.flaskCooldownTimer > 0) {
-            window.playerStats.flaskCooldownTimer--;
-            if (window.playerStats.flaskCooldownTimer === 0) {
-              // Grant 1 charge back when the 45-second timer completes
-              if ((window.playerStats.flaskCharges || 0) < maxCharges) {
-                window.playerStats.flaskCharges = (window.playerStats.flaskCharges || 0) + 1;
-                if (typeof window.updateHUD === "function") {
-                  window.updateHUD();
-                }
-                if (typeof window.pushHeaderToast === "function") {
-                  window.pushHeaderToast("[✦] Field Flask Gained 1 Charge!", "#34d399");
-                }
-              }
-              // If still below maximum charges, restart the recharge cycle
-              if ((window.playerStats.flaskCharges || 0) < maxCharges) {
-                window.playerStats.flaskCooldownTimer = 2700;
-              }
-            }
-            if (
-              window.logicClock % 3 === 0 ||
-              window.playerStats.flaskCooldownTimer === 0
-            ) {
-              if (typeof window.updateFlaskCooldownHUDOnly === "function") {
-                window.updateFlaskCooldownHUDOnly();
-              }
-            }
+        }
+        if (
+          window.logicClock % 3 === 0 ||
+          window.playerStats.flaskCooldownTimer === 0
+        ) {
+          if (typeof window.updateFlaskCooldownHUDOnly === "function") {
+            window.updateFlaskCooldownHUDOnly();
           }
-          if (window.playerStats.flaskUseCooldownTimer > 0) {
-            window.playerStats.flaskUseCooldownTimer--;
-          }
-          if (window.playerStats.deflectionFatigueTimer > 0) {
+        }
+      }
+      if (window.playerStats.flaskUseCooldownTimer > 0) {
+        window.playerStats.flaskUseCooldownTimer--;
+      }
+      if (window.playerStats.deflectionFatigueTimer > 0) {
         window.playerStats.deflectionFatigueTimer--;
       }
       if (window.playerStats.counterCooldownTimer > 0) {
@@ -10667,6 +10981,72 @@
       p.snareTimer--;
       p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4);
     }
+
+    // --- PLAYER POISON DOT & TIMER DECAY ENGINE ---
+    if (p.poisonTimer && p.poisonTimer > 0) {
+      p.poisonTimer--;
+      if (window.playerStats) {
+        window.playerStats.poisonTimer = p.poisonTimer;
+        window.playerStats.poisonStacks = p.poisonStacks;
+      }
+
+      p.poisonTickTimer = (p.poisonTickTimer || 0) + 1;
+      if (p.poisonTickTimer >= 60) {
+        p.poisonTickTimer = 0;
+        let stacks = p.poisonStacks || 1;
+        let tickDmg = Math.max(1, Math.round(p.maxHp * 0.025 * stacks)); // 2.5% Max HP per stack / sec
+
+        p.hp = Math.max(0, p.hp - tickDmg);
+        p.lastDamageTimer = 30;
+
+        if (typeof window.spawnFloatingText === "function") {
+          window.spawnFloatingText(
+            p.x,
+            p.y - 16,
+            `-${tickDmg} POISON`,
+            "#2ecc71",
+            true,
+          );
+        }
+
+        if (window.combatVisuals && window.combatVisuals.particlePool) {
+          window.combatVisuals.particlePool.get(
+            p.x + window.randFloat(-6, 6),
+            p.y - 8 + window.randFloat(-6, 6),
+            window.randFloat(-0.3, 0.3),
+            -window.randFloat(0.5, 1.2),
+            window.randFloat(1.5, 2.8),
+            "#2ecc71",
+            0.85,
+            20,
+            20,
+            -0.02,
+            true,
+          );
+        }
+
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("hit");
+        }
+
+        if (p.hp <= 0 && typeof window.startDeathSequence === "function") {
+          window.startDeathSequence();
+        }
+      }
+
+      if (p.poisonTimer <= 0) {
+        p.poisonStacks = 0;
+        p.poisonTimer = 0;
+        p.poisonTickTimer = 0;
+        if (window.playerStats) {
+          window.playerStats.poisonTimer = 0;
+          window.playerStats.poisonStacks = 0;
+        }
+      }
+    }
     p.inDilationField = false; // Reset on every frame
 
     let map = window.activeDungeonMap;
@@ -10747,64 +11127,64 @@
     // -----------------------------------------------------------
 
     // --- KNOCKBACK IMPULSE DECAY ---
-        p.knockbackVx = p.knockbackVx || 0;
-        p.knockbackVy = p.knockbackVy || 0;
+    p.knockbackVx = p.knockbackVx || 0;
+    p.knockbackVy = p.knockbackVy || 0;
 
-        if (p.knockbackVx !== 0 || p.knockbackVy !== 0) {
-          let pRadius = p.radius || 9;
-          let nextX = p.x + p.knockbackVx;
-          let nextY = p.y + p.knockbackVy;
+    if (p.knockbackVx !== 0 || p.knockbackVy !== 0) {
+      let pRadius = p.radius || 9;
+      let nextX = p.x + p.knockbackVx;
+      let nextY = p.y + p.knockbackVy;
 
-          if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
-            p.x = nextX;
-          } else {
-            p.knockbackVx = 0;
-          }
+      if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
+        p.x = nextX;
+      } else {
+        p.knockbackVx = 0;
+      }
 
-          if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
-            p.y = nextY;
-          } else {
-            p.knockbackVy = 0;
-          }
+      if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
+        p.y = nextY;
+      } else {
+        p.knockbackVy = 0;
+      }
 
-          p.knockbackVx *= 0.72;
-          p.knockbackVy *= 0.72;
+      p.knockbackVx *= 0.72;
+      p.knockbackVy *= 0.72;
 
-          if (Math.abs(p.knockbackVx) < 0.1) p.knockbackVx = 0;
-          if (Math.abs(p.knockbackVy) < 0.1) p.knockbackVy = 0;
+      if (Math.abs(p.knockbackVx) < 0.1) p.knockbackVx = 0;
+      if (Math.abs(p.knockbackVy) < 0.1) p.knockbackVy = 0;
+    }
+
+    if (vx !== 0 || vy !== 0) {
+      if (vx < -0.1) p.facing = -1;
+      else if (vx > 0.1) p.facing = 1;
+
+      let pRadius = p.radius || 9;
+
+      let moved = false;
+      if (vx !== 0) {
+        let nextX = p.x + vx;
+        if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
+          p.x = nextX;
+          moved = true;
         }
+      }
 
-        if (vx !== 0 || vy !== 0) {
-          if (vx < -0.1) p.facing = -1;
-          else if (vx > 0.1) p.facing = 1;
-
-          let pRadius = p.radius || 9;
-
-          let moved = false;
-          if (vx !== 0) {
-            let nextX = p.x + vx;
-            if (!checkCollisionAt(map, nextX, p.y, pRadius)) {
-              p.x = nextX;
-              moved = true;
-            }
-          }
-
-          if (vy !== 0) {
-            let nextY = p.y + vy;
-            if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
-              p.y = nextY;
-              moved = true;
-            }
-          }
-
-          p.isMoving = moved;
-          if (!moved) {
-            p.targetX = p.x;
-            p.targetY = p.y;
-          }
-        } else {
-          p.isMoving = false;
+      if (vy !== 0) {
+        let nextY = p.y + vy;
+        if (!checkCollisionAt(map, p.x, nextY, pRadius)) {
+          p.y = nextY;
+          moved = true;
         }
+      }
+
+      p.isMoving = moved;
+      if (!moved) {
+        p.targetX = p.x;
+        p.targetY = p.y;
+      }
+    } else {
+      p.isMoving = false;
+    }
 
     // --- REAL-TIME SPATIAL DISPLACEMENT AND COMBAT STAT TRACKERS ---
     if (
@@ -10991,38 +11371,42 @@
     window.updateSpellAnimations();
 
     // Real-Time Camera & Line-Of-Sight Viewport Tracker
-        let cam = window.DungeonCamera;
-        if (cam && canvas && map && map.grid) {
-          cam.viewportW = canvas.width;
-          cam.viewportH = canvas.height;
-          if (!cam.__smoothed) {
-            let origUpdate = cam.update;
-            cam.update = function (px, py, mapW, mapH) {
-              let zoom = this.zoom || 1.0;
-              let targetX = px - (this.viewportW / zoom) / 2;
-              let targetY = py - (this.viewportH / zoom) / 2;
+    let cam = window.DungeonCamera;
+    if (cam && canvas && map && map.grid) {
+      cam.viewportW = canvas.width;
+      cam.viewportH = canvas.height;
+      if (!cam.__smoothed) {
+        let origUpdate = cam.update;
+        cam.update = function (px, py, mapW, mapH) {
+          let zoom = this.zoom || 1.0;
+          let targetX = px - this.viewportW / zoom / 2;
+          let targetY = py - this.viewportH / zoom / 2;
 
-              let maxX = mapW - this.viewportW / zoom;
-              let maxY = mapH - this.viewportH / zoom;
+          let maxX = mapW - this.viewportW / zoom;
+          let maxY = mapH - this.viewportH / zoom;
 
-              if (maxX > 0) targetX = Math.max(0, Math.min(maxX, targetX));
-              else targetX = (mapW - this.viewportW / zoom) / 2;
+          if (maxX > 0) targetX = Math.max(0, Math.min(maxX, targetX));
+          else targetX = (mapW - this.viewportW / zoom) / 2;
 
-              if (maxY > 0) targetY = Math.max(0, Math.min(maxY, targetY));
-              else targetY = (mapH - this.viewportH / zoom) / 2;
+          if (maxY > 0) targetY = Math.max(0, Math.min(maxY, targetY));
+          else targetY = (mapH - this.viewportH / zoom) / 2;
 
-              if (this.x === undefined || Math.abs(this.x - targetX) > 600 || Math.abs(this.y - targetY) > 600) {
-                              this.x = targetX;
-                              this.y = targetY;
-                            } else {
-                              this.x += (targetX - this.x) * 0.18;
-                              this.y += (targetY - this.y) * 0.18;
-                            }
-            };
-            cam.__smoothed = true;
+          if (
+            this.x === undefined ||
+            Math.abs(this.x - targetX) > 600 ||
+            Math.abs(this.y - targetY) > 600
+          ) {
+            this.x = targetX;
+            this.y = targetY;
+          } else {
+            this.x += (targetX - this.x) * 0.18;
+            this.y += (targetY - this.y) * 0.18;
           }
-          cam.update(p.x, p.y, map.width * tileSize, map.height * tileSize);
-        }
+        };
+        cam.__smoothed = true;
+      }
+      cam.update(p.x, p.y, map.width * tileSize, map.height * tileSize);
+    }
 
     let zoom = cam ? cam.zoom : 1.0;
     let viewW = (canvas ? canvas.width : 750) / zoom;
@@ -11759,16 +12143,16 @@
     } else if (name === "Monster Card Sack") {
       // Reusable weighted random card roller helper
       window.rollRandomMonsterCard = function () {
-              const SET_WEIGHTS = {
-                "Whispering Woods": 35,
-                "Mountain Peaks": 25,
-                "Inferno Depths": 18,
-                "Fungal Swamp": 12,
-                "Void Singularity": 6,
-                "Temporal Sanctorum": 3,
-                "Cyberspace Nexus": 1,
-                "Cosmic Wardens": 0.5,
-              };
+        const SET_WEIGHTS = {
+          "Whispering Woods": 35,
+          "Mountain Peaks": 25,
+          "Inferno Depths": 18,
+          "Fungal Swamp": 12,
+          "Void Singularity": 6,
+          "Temporal Sanctorum": 3,
+          "Cyberspace Nexus": 1,
+          "Cosmic Wardens": 0.5,
+        };
 
         let cardsBySet = {};
         for (let key in window.MONSTER_CARDS_DATA) {
@@ -11943,12 +12327,12 @@
     }
 
     if (typeof window.invalidatePlayerStats === "function")
-          window.invalidatePlayerStats();
-        if (typeof window.updateUI === "function") window.updateUI();
-        if (typeof window.renderProfileModal === "function")
-          window.renderProfileModal();
-        if (typeof window.saveGame === "function") window.saveGame();
-      };
+      window.invalidatePlayerStats();
+    if (typeof window.updateUI === "function") window.updateUI();
+    if (typeof window.renderProfileModal === "function")
+      window.renderProfileModal();
+    if (typeof window.saveGame === "function") window.saveGame();
+  };
 
   window.spawnGroundLoot = function (item, x, y) {
     if (!item) return;
@@ -12028,15 +12412,15 @@
 
               let cardData = window.MONSTER_CARDS_DATA[cKey];
               let setColors = {
-                              "Whispering Woods": "#2ecc71",
-                              "Mountain Peaks": "#3498db",
-                              "Inferno Depths": "#e74c3c",
-                              "Fungal Swamp": "#1abc9c",
-                              "Void Singularity": "#9b59b6",
-                              "Temporal Sanctorum": "#e879f9",
-                              "Cyberspace Nexus": "#00ffff",
-                              "Cosmic Wardens": "#f1c40f",
-                            };
+                "Whispering Woods": "#2ecc71",
+                "Mountain Peaks": "#3498db",
+                "Inferno Depths": "#e74c3c",
+                "Fungal Swamp": "#1abc9c",
+                "Void Singularity": "#9b59b6",
+                "Temporal Sanctorum": "#e879f9",
+                "Cyberspace Nexus": "#00ffff",
+                "Cosmic Wardens": "#f1c40f",
+              };
               let setCol = setColors[cardData.set] || "#ffd700";
               if (typeof window.pushHeaderToast === "function") {
                 window.pushHeaderToast(
@@ -12292,7 +12676,10 @@
     }
 
     // Only execute the random spawning timer if there is an active Sigil or Contract
-    let hasSigilOrContract = !!(window.playerStats.activeDungeonSigil || window.playerStats.activeSpecialChallenge);
+    let hasSigilOrContract = !!(
+      window.playerStats.activeDungeonSigil ||
+      window.playerStats.activeSpecialChallenge
+    );
     if (hasSigilOrContract) {
       window.cavernSpawnTimer = (window.cavernSpawnTimer || 0) - 1;
       if (window.cavernSpawnTimer <= 0) {
@@ -12302,7 +12689,8 @@
         let sig = window.playerStats.activeDungeonSigil;
         if (sig) {
           if (sig.buffs) sig.buffs.forEach((b) => activeIds.push(b.id || b));
-          if (sig.debuffs) sig.debuffs.forEach((d) => activeIds.push(d.id || d));
+          if (sig.debuffs)
+            sig.debuffs.forEach((d) => activeIds.push(d.id || d));
         }
         let challenge = window.playerStats.activeSpecialChallenge;
         if (challenge) {
@@ -12361,14 +12749,14 @@
         }
 
         if (targetEffects.length > 0 && activeStructuresCount < 3) {
-                  let chosenId =
-                    targetEffects[Math.floor(Math.random() * targetEffects.length)];
-                  window.spawnCavernInteractive(chosenId);
-                }
-              }
-            }
+          let chosenId =
+            targetEffects[Math.floor(Math.random() * targetEffects.length)];
+          window.spawnCavernInteractive(chosenId);
+        }
+      }
+    }
 
-            for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
+    for (let i = window.cavernInteractives.length - 1; i >= 0; i--) {
       let item = window.cavernInteractives[i];
       item.life--;
 
@@ -12434,28 +12822,31 @@
       }
 
       if (item.type === "dilation_field") {
-              let dist = Math.hypot(p.x - item.x, p.y - item.y);
-              if (dist <= pRadius + 35) {
-                p.inDilationField = true;
-                p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.6); // 40% slow
-              }
-            }
+        let dist = Math.hypot(p.x - item.x, p.y - item.y);
+        if (dist <= pRadius + 35) {
+          p.inDilationField = true;
+          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.6); // 40% slow
+        }
+      }
 
-            if (item.type === "spider_web_zone") {
-                          let dist = Math.hypot(p.x - item.x, p.y - item.y);
-                          if (dist <= pRadius + 75) {
-                            p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4); // 60% slow
-                            if (window.logicClock % 40 === 0 && typeof window.spawnFloatingText === "function") {
-                              window.spawnFloatingText(
-                                p.x,
-                                p.y - 12,
-                                "[WEB SLOWED]",
-                                "#2ecc71",
-                                true,
-                              );
-                            }
-                          }
-                        }
+      if (item.type === "spider_web_zone") {
+        let dist = Math.hypot(p.x - item.x, p.y - item.y);
+        if (dist <= pRadius + 75) {
+          p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4); // 60% slow
+          if (
+            window.logicClock % 40 === 0 &&
+            typeof window.spawnFloatingText === "function"
+          ) {
+            window.spawnFloatingText(
+              p.x,
+              p.y - 12,
+              "[WEB SLOWED]",
+              "#2ecc71",
+              true,
+            );
+          }
+        }
+      }
 
       if (item.life <= 0) {
         // Expiration of Void Rupture Core (Failed debuff event triggers damage)
@@ -12769,12 +13160,12 @@
       );
 
       let depth = window.player ? window.player.depth || 1 : 1;
-            let fairyEquip = window.createItemObject(
-              "weapon",
-              Math.max(1, window.rollItemRarity(depth, 1.2, false)),
-              depth,
-              0,
-            );
+      let fairyEquip = window.createItemObject(
+        "weapon",
+        Math.max(1, window.rollItemRarity(depth, 1.2, false)),
+        depth,
+        0,
+      );
       window.spawnGroundLoot(fairyEquip, item.x, item.y);
 
       let fairyRank = window.SkillTreeManager
@@ -12878,37 +13269,42 @@
         }
       }
     } else if (item.type === "aetheric_conduit") {
-          let dmg = BigNum.from(pStats.atk || p.atk || 15).mul(2.5);
-          let targetCount = 0;
+      let dmg = BigNum.from(pStats.atk || p.atk || 15).mul(2.5);
+      let targetCount = 0;
 
-          if (window.activeDungeonMobs) {
-            window.activeDungeonMobs.forEach((m) => {
-              if (m.hp.gt(0) && m.discovered && Math.hypot(item.x - (m.x + m.w / 2), item.y - (m.y + m.h / 2)) <= 180) {
-                m.hp = m.hp.sub(dmg);
-                m.flashTimer = 8;
-                m.hasTakenDamage = true;
-                targetCount++;
-                if (window.combatVisuals) {
-                  window.combatVisuals.spawnDamageEffect(
-                    m.x + m.w / 2,
-                    m.y + m.h / 2,
-                    dmg,
-                    "lightning",
-                    false,
-                  );
-                  window.cavernInteractives.push({
-                    id: window.idCounter++,
-                    type: "lightning_arc",
-                    x: item.x,
-                    y: item.y,
-                    x2: m.x + m.w / 2,
-                    y2: m.y + m.h / 2,
-                    life: 15,
-                  });
-                }
-              }
-            });
+      if (window.activeDungeonMobs) {
+        window.activeDungeonMobs.forEach((m) => {
+          if (
+            m.hp.gt(0) &&
+            m.discovered &&
+            Math.hypot(item.x - (m.x + m.w / 2), item.y - (m.y + m.h / 2)) <=
+              180
+          ) {
+            m.hp = m.hp.sub(dmg);
+            m.flashTimer = 8;
+            m.hasTakenDamage = true;
+            targetCount++;
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnDamageEffect(
+                m.x + m.w / 2,
+                m.y + m.h / 2,
+                dmg,
+                "lightning",
+                false,
+              );
+              window.cavernInteractives.push({
+                id: window.idCounter++,
+                type: "lightning_arc",
+                x: item.x,
+                y: item.y,
+                x2: m.x + m.w / 2,
+                y2: m.y + m.h / 2,
+                life: 15,
+              });
+            }
           }
+        });
+      }
 
       window.cavernInteractives = window.cavernInteractives.filter((other) => {
         if (other.type === "aetheric_conduit" && other.id !== item.id)
@@ -13202,75 +13598,86 @@
     }
 
     if (item.type === "dilation_field") {
-          let time = Date.now();
-          let pulse = Math.sin(time / 150) * 1.5;
-          ctx.save();
-          // Golden clockwork distortion zone
-          ctx.fillStyle = "rgba(241, 196, 15, 0.12)";
-          ctx.strokeStyle = "rgba(212, 175, 55, 0.55)";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.ellipse(
-            item.x,
-            item.y,
-            40 + pulse,
-            18 + pulse * 0.4,
-            0,
-            0,
-            Math.PI * 2,
-          );
-          ctx.fill();
-          ctx.stroke();
+      let time = Date.now();
+      let pulse = Math.sin(time / 150) * 1.5;
+      ctx.save();
+      // Golden clockwork distortion zone
+      ctx.fillStyle = "rgba(241, 196, 15, 0.12)";
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.55)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(
+        item.x,
+        item.y,
+        40 + pulse,
+        18 + pulse * 0.4,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+      ctx.stroke();
 
-          // Draw ticking clock hands inside the zone
-          ctx.translate(item.x, item.y);
-          ctx.rotate(time / 800);
-          ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(0, -12);
-          ctx.moveTo(0, 0);
-          ctx.lineTo(8, 0);
-          ctx.stroke();
-          ctx.restore();
-          return;
-        }
+      // Draw ticking clock hands inside the zone
+      ctx.translate(item.x, item.y);
+      ctx.rotate(time / 800);
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.25)";
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -12);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(8, 0);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
 
-        if (item.type === "spider_web_zone") {
-                  let time = Date.now();
-                  let alpha = item.life / item.maxLife;
-                  ctx.save();
+    if (item.type === "spider_web_zone") {
+      let time = Date.now();
+      let alpha = item.life / item.maxLife;
+      ctx.save();
 
-                  // Draw faint backing drop shadow
-                  ctx.fillStyle = `rgba(39, 174, 96, ${alpha * 0.08})`;
-                  ctx.beginPath();
-                  ctx.ellipse(item.x, item.y, 75, 33.75, 0, 0, Math.PI * 2);
-                  ctx.fill();
+      // Draw faint backing drop shadow
+      ctx.fillStyle = `rgba(39, 174, 96, ${alpha * 0.08})`;
+      ctx.beginPath();
+      ctx.ellipse(item.x, item.y, 75, 33.75, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-                  // Concentric web rings
-                  ctx.strokeStyle = `rgba(0, 255, 204, ${alpha * 0.45})`;
-                  ctx.lineWidth = 1.4;
-                  let rings = 4;
-                  for (let r = 1; r <= rings; r++) {
-                    let rScale = r / rings;
-                    ctx.beginPath();
-                    ctx.ellipse(item.x, item.y, 75 * rScale, 33.75 * rScale, 0, 0, Math.PI * 2);
-                    ctx.stroke();
-                  }
+      // Concentric web rings
+      ctx.strokeStyle = `rgba(0, 255, 204, ${alpha * 0.45})`;
+      ctx.lineWidth = 1.4;
+      let rings = 4;
+      for (let r = 1; r <= rings; r++) {
+        let rScale = r / rings;
+        ctx.beginPath();
+        ctx.ellipse(
+          item.x,
+          item.y,
+          75 * rScale,
+          33.75 * rScale,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      }
 
-                  // Radial web support spokes
-                  let spokes = 8;
-                  ctx.beginPath();
-                  for (let s = 0; s < spokes; s++) {
-                    let angle = (s * Math.PI * 2) / spokes;
-                    ctx.moveTo(item.x, item.y);
-                    ctx.lineTo(item.x + Math.cos(angle) * 75, item.y + Math.sin(angle) * 33.75);
-                  }
-                  ctx.stroke();
-                  ctx.restore();
-                  return;
-                }
+      // Radial web support spokes
+      let spokes = 8;
+      ctx.beginPath();
+      for (let s = 0; s < spokes; s++) {
+        let angle = (s * Math.PI * 2) / spokes;
+        ctx.moveTo(item.x, item.y);
+        ctx.lineTo(
+          item.x + Math.cos(angle) * 75,
+          item.y + Math.sin(angle) * 33.75,
+        );
+      }
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
 
     ctx.save();
     let pulse = Math.sin(Date.now() / 150) * 1.5;
@@ -13567,12 +13974,12 @@
   };
 
   window.updateDungeonCombat = function () {
-      let p = window.player;
-      if (!p || p.hp <= 0) return;
-      if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
-      let map = window.activeDungeonMap;
+    let p = window.player;
+    if (!p || p.hp <= 0) return;
+    if (window.currentGameState !== window.GAME_STATES.DUNGEON) return;
+    let map = window.activeDungeonMap;
 
-      p.nullifierDisrupted = false; // Reset on each combat frame
+    p.nullifierDisrupted = false; // Reset on each combat frame
 
     let pStats =
       typeof window.resolvePlayerStats === "function"
@@ -13753,7 +14160,7 @@
       if (window.unstableCrustTimer >= 1200) {
         // 20s
         window.unstableCrustTimer = 0;
-        let map = window.activeDungeonMap;
+        map = window.activeDungeonMap;
         if (map && map.grid) {
           let pTileX = Math.floor(p.x / map.tileSize);
           let pTileY = Math.floor(p.y / map.tileSize);
@@ -14055,6 +14462,8 @@
             let dx = m2.x + (m2.w || 24) / 2 - mCx;
             let dy = m2.y + (m2.h || 24) / 2 - mCy;
             if (dx * dx + dy * dy <= radiusSq) {
+              m2.buffTimers = m2.buffTimers || { haste: 0, def: 0, atk: 0 };
+              m2.buffStacks = m2.buffStacks || { haste: 0, def: 0, atk: 0 };
               m2.buffTimers.haste = 300; // 5-second lingering window
               if (logicClock % 90 === 0) {
                 m2.buffStacks.haste = Math.min(
@@ -14071,6 +14480,8 @@
             let dx = m2.x + (m2.w || 24) / 2 - mCx;
             let dy = m2.y + (m2.h || 24) / 2 - mCy;
             if (dx * dx + dy * dy <= radiusSq) {
+              m2.buffTimers = m2.buffTimers || { haste: 0, def: 0, atk: 0 };
+              m2.buffStacks = m2.buffStacks || { haste: 0, def: 0, atk: 0 };
               m2.buffTimers.def = 300; // 5-second lingering window
               if (logicClock % 90 === 0) {
                 m2.buffStacks.def = Math.min(3, (m2.buffStacks.def || 0) + 1);
@@ -14084,6 +14495,8 @@
             let dx = m2.x + (m2.w || 24) / 2 - mCx;
             let dy = m2.y + (m2.h || 24) / 2 - mCy;
             if (dx * dx + dy * dy <= radiusSq) {
+              m2.buffTimers = m2.buffTimers || { haste: 0, def: 0, atk: 0 };
+              m2.buffStacks = m2.buffStacks || { haste: 0, def: 0, atk: 0 };
               m2.buffTimers.atk = 300; // 5-second lingering window
               if (logicClock % 90 === 0) {
                 m2.buffStacks.atk = Math.min(3, (m2.buffStacks.atk || 0) + 1);
@@ -14091,68 +14504,98 @@
             }
           });
         } else if (m.eliteAffix === "nullifier") {
-                  let dx = p.x - mCx;
-                  let dy = p.y - mCy;
-                  if (dx * dx + dy * dy <= 8100) {
-                    // 90px hero disruptor radius
-                    p.nullifierDisrupted = true;
-                  }
-                } else if (m.eliteAffix === "glacial_warden") {
-                  if (logicClock % 120 === 0) {
-                    let dx = p.x - mCx;
-                    let dy = p.y - mCy;
-                    if (dx * dx + dy * dy <= 12100) {
-                      p.snareTimer = 60;
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(p.x, p.y - 12, "FROST PULSE -40%", "#38bdf8", true);
-                      }
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnParticles(mCx, mCy, 12, "void_orb", 2.0);
-                      }
-                    }
-                  }
-                } else if (m.eliteAffix === "slag_shaper") {
-                  if (logicClock % 180 === 0) {
-                    window.cavernInteractives = window.cavernInteractives || [];
-                    window.cavernInteractives.push({
-                      id: window.idCounter++,
-                      type: "acid_pool",
-                      color: "#f97316",
-                      isSlag: true,
-                      x: mCx,
-                      y: mCy,
-                      w: 24,
-                      h: 12,
-                      life: 300,
-                      maxLife: 300
-                    });
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnParticles(mCx, mCy, 10, "magma_elemental", 2.0);
-                    }
-                  }
-                } else if (m.eliteAffix === "web_weaver") {
-                  if (logicClock % 210 === 0) {
-                    window.cavernInteractives = window.cavernInteractives || [];
-                    window.cavernInteractives.push({
-                      id: window.idCounter++,
-                      type: "spider_web_zone",
-                      x: p.x,
-                      y: p.y,
-                      w: 56,
-                      h: 24,
-                      life: 240,
-                      maxLife: 240
-                    });
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnParticles(p.x, p.y, 8, "slag_slime", 1.8);
-                    }
-                  }
-                }
+          let dx = p.x - mCx;
+          let dy = p.y - mCy;
+          if (dx * dx + dy * dy <= 8100) {
+            // 90px hero disruptor radius
+            p.nullifierDisrupted = true;
+          }
+        } else if (m.eliteAffix === "glacial_warden") {
+          if (logicClock % 120 === 0) {
+            let dx = p.x - mCx;
+            let dy = p.y - mCy;
+            if (dx * dx + dy * dy <= 12100) {
+              p.snareTimer = 60;
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 12,
+                  "FROST PULSE -40%",
+                  "#38bdf8",
+                  true,
+                );
+              }
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnParticles(
+                  mCx,
+                  mCy,
+                  12,
+                  "void_orb",
+                  2.0,
+                );
+              }
+            }
+          }
+        } else if (m.eliteAffix === "slag_shaper") {
+          if (logicClock % 180 === 0) {
+            window.cavernInteractives = window.cavernInteractives || [];
+            window.cavernInteractives.push({
+              id: window.idCounter++,
+              type: "acid_pool",
+              color: "#f97316",
+              isSlag: true,
+              x: mCx,
+              y: mCy,
+              w: 24,
+              h: 12,
+              life: 300,
+              maxLife: 300,
+            });
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                mCx,
+                mCy,
+                10,
+                "magma_elemental",
+                2.0,
+              );
+            }
+          }
+        } else if (m.eliteAffix === "web_weaver") {
+          let distToHero = Math.hypot(p.x - mCx, p.y - mCy);
+          if (
+            logicClock % 210 === 0 &&
+            (m.discovered || m.isAggroed) &&
+            distToHero <= 220
+          ) {
+            window.cavernInteractives = window.cavernInteractives || [];
+            window.cavernInteractives.push({
+              id: window.idCounter++,
+              type: "spider_web_zone",
+              x: p.x,
+              y: p.y,
+              w: 56,
+              h: 24,
+              life: 240,
+              maxLife: 240,
+            });
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                p.x,
+                p.y,
+                8,
+                "slag_slime",
+                1.8,
+              );
+            }
+          }
+        }
       });
 
       // 2. Process Lingering Window Countdown & Gradual 2.5s Stack Falloff
       mobs.forEach((m) => {
         if (!m.buffStacks) return;
+        m.buffTimers = m.buffTimers || { haste: 0, def: 0, atk: 0 };
         ["haste", "def", "atk"].forEach((b) => {
           if (m.buffTimers[b] > 0) {
             m.buffTimers[b]--;
@@ -14175,51 +14618,51 @@
     }
 
     // Build unified target list (including breakable debuff/hazard entities and room props)
-        let targetables = [];
-        if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
-          window.activeDungeonMobs.forEach((m) => {
-            if (m.isSpecter) return; // Exclude Specter from target locks entirely
+    let targetables = [];
+    if (window.activeDungeonMobs && window.activeDungeonMobs.length > 0) {
+      window.activeDungeonMobs.forEach((m) => {
+        if (m.isSpecter) return; // Exclude Specter from target locks entirely
 
-            targetables.push({
-              obj: m,
-              type: "mob",
-              x: m.x + m.w / 2,
-              y: m.y + m.h / 2,
-              radius: (m.w || 24) * 0.45,
-            });
+        targetables.push({
+          obj: m,
+          type: "mob",
+          x: m.x + m.w / 2,
+          y: m.y + m.h / 2,
+          radius: (m.w || 24) * 0.45,
+        });
+      });
+    }
+    if (window.cavernInteractives && window.cavernInteractives.length > 0) {
+      window.cavernInteractives.forEach((item) => {
+        if (item.hp !== undefined && item.hp > 0) {
+          targetables.push({
+            obj: item,
+            type: "cavern",
+            x: item.x,
+            y: item.y,
+            radius: item.w / 2,
           });
         }
-        if (window.cavernInteractives && window.cavernInteractives.length > 0) {
-          window.cavernInteractives.forEach((item) => {
-            if (item.hp !== undefined && item.hp > 0) {
-              targetables.push({
-                obj: item,
-                type: "cavern",
-                x: item.x,
-                y: item.y,
-                radius: item.w / 2,
-              });
-            }
+      });
+    }
+    let mapInst = window.activeDungeonMap;
+    if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
+      let tSize = mapInst.tileSize || 32;
+      mapInst.breakables.forEach((b) => {
+        if (b.flashTimer > 0) b.flashTimer--;
+        if (b.hp > 0) {
+          targetables.push({
+            obj: b,
+            type: "breakable",
+            x: b.x * tSize + tSize / 2,
+            y: b.y * tSize + tSize / 2,
+            radius: 12,
           });
         }
-        let mapInst = window.activeDungeonMap;
-        if (mapInst && mapInst.breakables && mapInst.breakables.length > 0) {
-          let tSize = mapInst.tileSize || 32;
-          mapInst.breakables.forEach((b) => {
-            if (b.flashTimer > 0) b.flashTimer--;
-            if (b.hp > 0) {
-              targetables.push({
-                obj: b,
-                type: "breakable",
-                x: b.x * tSize + tSize / 2,
-                y: b.y * tSize + tSize / 2,
-                radius: 12,
-              });
-            }
-          });
-        }
+      });
+    }
 
-        // Find the closest overall target (mob or breakable cavern entity)
+    // Find the closest overall target (mob or breakable cavern entity)
     let closestTarget = null;
     let closestDist = Infinity;
     targetables.forEach((t) => {
@@ -14248,42 +14691,42 @@
       else if (dxToTarget > 0.1) p.facing = 1;
 
       if (closestTarget.type === "mob") {
-                let m = closestTarget.obj;
-                m.lastHitTime = window.logicClock; // Set hit timestamp for regenerative brood tracking
+        let m = closestTarget.obj;
+        m.lastHitTime = window.logicClock; // Set hit timestamp for regenerative brood tracking
 
-                // Transition into active combat state
-                if (typeof window.triggerCombatState === "function") {
-                  window.triggerCombatState();
-                }
+        // Transition into active combat state
+        if (typeof window.triggerCombatState === "function") {
+          window.triggerCombatState();
+        }
 
-                let isCrit = Math.random() < (pStats.critChance || 0.05);
-                if (window.playerStats && window.playerStats.guaranteedCrit) {
-                  isCrit = true;
-                  window.playerStats.guaranteedCrit = false;
-                }
-                if (
-                  window.playerStats &&
-                  window.playerStats.viperShadowDanceCharges > 0
-                ) {
-                  isCrit = true;
-                  window.playerStats.viperShadowDanceCharges--;
-                }
-                let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-                let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+        let isCrit = Math.random() < (pStats.critChance || 0.05);
+        if (window.playerStats && window.playerStats.guaranteedCrit) {
+          isCrit = true;
+          window.playerStats.guaranteedCrit = false;
+        }
+        if (
+          window.playerStats &&
+          window.playerStats.viperShadowDanceCharges > 0
+        ) {
+          isCrit = true;
+          window.playerStats.viperShadowDanceCharges--;
+        }
+        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
-                // Synergy Sanguine DoT damage scaling (+8% damage per Poison, Bleed, Burn)
-                                if (window.checkArtifactTrait("synergy_sanguine")) {
-                                  let slotLvl = window.getArtifactTemperLevel
-                                    ? window.getArtifactTemperLevel("synergy_sanguine")
-                                    : 0;
-                                  let slotMult = 1.0 + slotLvl * 0.01;
-                                  let uniqueDoTs = 0;
-                                  if ((m.poisonStacks || 0) > 0) uniqueDoTs++;
-                                  if ((m.bleedStacks || 0) > 0) uniqueDoTs++;
-                                  if ((m.burnStacks || 0) > 0 || m.isBurning) uniqueDoTs++;
-                                  let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
-                                  pAtk = pAtk.mul(multiplier);
-                                }
+        // Synergy Sanguine DoT damage scaling (+8% damage per Poison, Bleed, Burn)
+        if (window.checkArtifactTrait("synergy_sanguine")) {
+          let slotLvl = window.getArtifactTemperLevel
+            ? window.getArtifactTemperLevel("synergy_sanguine")
+            : 0;
+          let slotMult = 1.0 + slotLvl * 0.01;
+          let uniqueDoTs = 0;
+          if ((m.poisonStacks || 0) > 0) uniqueDoTs++;
+          if ((m.bleedStacks || 0) > 0) uniqueDoTs++;
+          if ((m.burnStacks || 0) > 0 || m.isBurning) uniqueDoTs++;
+          let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
+          pAtk = pAtk.mul(multiplier);
+        }
 
         // --- SUBPHASE 7: KINETIC REFLECTORS CONE CHECK ---
         if (
@@ -14532,29 +14975,29 @@
         }
 
         let curHr = new Date().getHours();
-                    if (curHr >= 0 && curHr < 4)
-                      window.playerStats.hasTriggeredNightOwl = true;
-                    if (curHr >= 5 && curHr < 8)
-                      window.playerStats.hasTriggeredEarlyBird = true;
-                    let curDay = new Date().getDay();
-                    if (curDay === 0 || curDay === 6)
-                      window.playerStats.hasTriggeredWeekendWarrior = true;
+        if (curHr >= 0 && curHr < 4)
+          window.playerStats.hasTriggeredNightOwl = true;
+        if (curHr >= 5 && curHr < 8)
+          window.playerStats.hasTriggeredEarlyBird = true;
+        let curDay = new Date().getDay();
+        if (curDay === 0 || curDay === 6)
+          window.playerStats.hasTriggeredWeekendWarrior = true;
 
-                    mobCenterX = closestTarget.x;
-                    mobCenterY = closestTarget.y;
-                    dx = closestTarget.x - p.x;
-                    dy = closestTarget.y - p.y;
-                    dist = Math.hypot(dx, dy);
+        mobCenterX = closestTarget.x;
+        mobCenterY = closestTarget.y;
+        dx = closestTarget.x - p.x;
+        dy = closestTarget.y - p.y;
+        dist = Math.hypot(dx, dy);
 
-                    if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                      window.RenderEngine.spawnDamageEffect(
-                        mobCenterX,
-                        mobCenterY,
-                        pAtk,
-                        "slash",
-                        isCrit,
-                      );
-                    }
+        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+          window.RenderEngine.spawnDamageEffect(
+            mobCenterX,
+            mobCenterY,
+            pAtk,
+            "slash",
+            isCrit,
+          );
+        }
 
         // Artifact: Vampirism (Blood-Soaked Chalice)
         if (window.checkArtifactTrait("vampirism")) {
@@ -14602,60 +15045,60 @@
         }
 
         // Unique: Sanguine Reaver (Sword Bleed Rupture)
-                    if (window.hasUniquePassive("weapon_sword")) {
-                      m.bleedStacks = (m.bleedStacks || 0) + 1;
-                      m.bleedTimer = 300; // 5-second duration
-                      if (m.bleedStacks >= 5) {
-                        m.bleedStacks = 0;
-                        m.bleedTimer = 0;
-                        let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
-                        m.hp = m.hp.sub(ruptureDmg);
-                        let siphonedHp = Math.round(p.maxHp * 0.1);
-                        p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
-                        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                          window.RenderEngine.spawnDamageEffect(
-                            mobCenterX,
-                            mobCenterY,
-                            ruptureDmg,
-                            "crit",
-                            true,
-                          );
-                        }
-                        if (typeof window.spawnFloatingText === "function") {
-                          window.spawnFloatingText(
-                            p.x,
-                            p.y - 20,
-                            `+${siphonedHp} HP (RUPTURE)`,
-                            "#2ecc71",
-                          );
-                        }
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnParticles(
-                            mobCenterX,
-                            mobCenterY,
-                            20,
-                            "magma_elemental",
-                            4,
-                          );
-                        }
-                      } else {
-                        let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
-                        if (pStats.bleedDamageMultiplier) {
-                          bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
-                        }
-                        m.hp = m.hp.sub(bleedTick);
-                        m.bleedTimer = 300; // Refresh 5-second duration
-                        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-                          window.RenderEngine.spawnDamageEffect(
-                            mobCenterX,
-                            mobCenterY - 10,
-                            bleedTick,
-                            "bleed",
-                            false,
-                          );
-                        }
-                      }
-                    }
+        if (window.hasUniquePassive("weapon_sword")) {
+          m.bleedStacks = (m.bleedStacks || 0) + 1;
+          m.bleedTimer = 300; // 5-second duration
+          if (m.bleedStacks >= 5) {
+            m.bleedStacks = 0;
+            m.bleedTimer = 0;
+            let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
+            m.hp = m.hp.sub(ruptureDmg);
+            let siphonedHp = Math.round(p.maxHp * 0.1);
+            p.hp = Math.min(p.maxHp, p.hp + siphonedHp);
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY,
+                ruptureDmg,
+                "crit",
+                true,
+              );
+            }
+            if (typeof window.spawnFloatingText === "function") {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 20,
+                `+${siphonedHp} HP (RUPTURE)`,
+                "#2ecc71",
+              );
+            }
+            if (window.combatVisuals) {
+              window.combatVisuals.spawnParticles(
+                mobCenterX,
+                mobCenterY,
+                20,
+                "magma_elemental",
+                4,
+              );
+            }
+          } else {
+            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
+            if (pStats.bleedDamageMultiplier) {
+              bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
+            }
+            m.hp = m.hp.sub(bleedTick);
+            m.bleedTimer = 300; // Refresh 5-second duration
+            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+              window.RenderEngine.spawnDamageEffect(
+                mobCenterX,
+                mobCenterY - 10,
+                bleedTick,
+                "bleed",
+                false,
+              );
+            }
+          }
+        }
 
         // Unique: Maelstrom Gale-Glaive (Wind Gales & Speed Stacks)
         if (isCrit && window.hasUniquePassive("weapon_maelstrom")) {
@@ -14779,9 +15222,11 @@
         }
 
         // Dagger Offhand Multi-Strike & DoT Application (Blocked if Nullifier Disrupted)
-                if (pStats.subType === "dagger") {
-                  let finalOffhandChance = p.nullifierDisrupted ? 0 : (pStats.offhandChance || 0.35);
-                  if (Math.random() < finalOffhandChance) {
+        if (pStats.subType === "dagger") {
+          let finalOffhandChance = p.nullifierDisrupted
+            ? 0
+            : pStats.offhandChance || 0.35;
+          if (Math.random() < finalOffhandChance) {
             let offhandDmgMult = pStats.offhandDmgMultiplier || 1.0;
             let offhandHit = BigNum.from(pStats.atk || 15).mul(
               (pStats.offhandDmg || 0.45) * offhandDmgMult,
@@ -14886,16 +15331,18 @@
         }
 
         // Tome Spell Cast Trigger (Blocked if Nullifier Disrupted)
-                let isTomeEquipped =
-                  pStats.subType === "tome" ||
-                  (window.equippedSlots &&
-                    window.equippedSlots.subweapon &&
-                    (window.equippedSlots.subweapon.subType === "tome" ||
-                      window.equippedSlots.subweapon.type === "tome"));
-                let activeSpellChance = p.nullifierDisrupted ? 0 : (pStats.spellChance || (isTomeEquipped ? 0.35 : 0));
-                let activeSpellType = pStats.spellType || "tri";
+        let isTomeEquipped =
+          pStats.subType === "tome" ||
+          (window.equippedSlots &&
+            window.equippedSlots.subweapon &&
+            (window.equippedSlots.subweapon.subType === "tome" ||
+              window.equippedSlots.subweapon.type === "tome"));
+        let activeSpellChance = p.nullifierDisrupted
+          ? 0
+          : pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
+        let activeSpellType = pStats.spellType || "tri";
 
-                if (isTomeEquipped && Math.random() < activeSpellChance) {
+        if (isTomeEquipped && Math.random() < activeSpellChance) {
           // Gain +1 Tome Mastery XP on Spell Proc
           if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
 
@@ -15043,79 +15490,84 @@
               }
 
               // Apply Elemental Overload on each part of the Triad Convergence
-                            if (pStats.hasElementalOverload || elem === "lightning") {
-                              if (elem === "fire" && pStats.hasElementalOverload) {
-                                let splashDmg = spellDmg.mul(
-                                  pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                                );
-                                if (window.activeDungeonMobs) {
-                                  window.activeDungeonMobs.forEach((otherMob) => {
-                                    if (otherMob.id !== m.id) {
-                                      let dist = Math.hypot(
-                                        m.x - otherMob.x,
-                                        m.y - otherMob.y,
-                                      );
-                                      if (dist <= 80) {
-                                        otherMob.hp = otherMob.hp.sub(splashDmg);
-                                        otherMob.flashTimer = 6;
-                                        if (window.combatVisuals) {
-                                          window.combatVisuals.spawnDamageEffect(
-                                            otherMob.x + otherMob.w / 2,
-                                            otherMob.y + otherMob.h / 2,
-                                            splashDmg,
-                                            "fire",
-                                            false,
-                                          );
-                                        }
-                                      }
-                                    }
-                                  });
-                                }
-                              } else if (elem === "lightning") {
-                                let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
-                                let hitIds = new Set([m.id]);
-                                let currentTarget = m;
-                                while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                                  let nextTarget = window.activeDungeonMobs.find(
-                                    (other) =>
-                                      !hitIds.has(other.id) &&
-                                      other.hp.gt(0) &&
-                                      Math.hypot(
-                                        currentTarget.x + (currentTarget.w || 24) / 2 - (other.x + (other.w || 24) / 2),
-                                        currentTarget.y + (currentTarget.h || 24) / 2 - (other.y + (other.h || 24) / 2),
-                                      ) <= 120,
-                                  );
-                                  if (nextTarget) {
-                                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                                    nextTarget.flashTimer = 6;
-                                    hitIds.add(nextTarget.id);
-                                    if (window.combatVisuals) {
-                                      window.combatVisuals.spawnDamageEffect(
-                                        nextTarget.x + nextTarget.w / 2,
-                                        nextTarget.y + nextTarget.h / 2,
-                                        spellDmg,
-                                        "lightning",
-                                        false,
-                                      );
-                                    }
-                                    // Spawn physical, crackling procedural cavern lightning arc lines
-                                    window.cavernInteractives = window.cavernInteractives || [];
-                                    window.cavernInteractives.push({
-                                      id: window.idCounter++,
-                                      type: "lightning_arc",
-                                      x: currentTarget.x + (currentTarget.w || 24) / 2,
-                                      y: currentTarget.y + (currentTarget.h || 24) / 2,
-                                      x2: nextTarget.x + (nextTarget.w || 24) / 2,
-                                      y2: nextTarget.y + (nextTarget.h || 24) / 2,
-                                      life: 15,
-                                    });
-                                    currentTarget = nextTarget;
-                                    bouncesLeft--;
-                                  } else {
-                                    break;
-                                  }
-                                }
-                              } else if (elem === "frost" && pStats.hasElementalOverload) {
+              if (pStats.hasElementalOverload || elem === "lightning") {
+                if (elem === "fire" && pStats.hasElementalOverload) {
+                  let splashDmg = spellDmg.mul(
+                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                  );
+                  if (window.activeDungeonMobs) {
+                    window.activeDungeonMobs.forEach((otherMob) => {
+                      if (otherMob.id !== m.id) {
+                        let dist = Math.hypot(
+                          m.x - otherMob.x,
+                          m.y - otherMob.y,
+                        );
+                        if (dist <= 80) {
+                          otherMob.hp = otherMob.hp.sub(splashDmg);
+                          otherMob.flashTimer = 6;
+                          if (window.combatVisuals) {
+                            window.combatVisuals.spawnDamageEffect(
+                              otherMob.x + otherMob.w / 2,
+                              otherMob.y + otherMob.h / 2,
+                              splashDmg,
+                              "fire",
+                              false,
+                            );
+                          }
+                        }
+                      }
+                    });
+                  }
+                } else if (elem === "lightning") {
+                  let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
+                  let hitIds = new Set([m.id]);
+                  let currentTarget = m;
+                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                    let nextTarget = window.activeDungeonMobs.find(
+                      (other) =>
+                        !hitIds.has(other.id) &&
+                        other.hp.gt(0) &&
+                        Math.hypot(
+                          currentTarget.x +
+                            (currentTarget.w || 24) / 2 -
+                            (other.x + (other.w || 24) / 2),
+                          currentTarget.y +
+                            (currentTarget.h || 24) / 2 -
+                            (other.y + (other.h || 24) / 2),
+                        ) <= 120,
+                    );
+                    if (nextTarget) {
+                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                      nextTarget.flashTimer = 6;
+                      hitIds.add(nextTarget.id);
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnDamageEffect(
+                          nextTarget.x + nextTarget.w / 2,
+                          nextTarget.y + nextTarget.h / 2,
+                          spellDmg,
+                          "lightning",
+                          false,
+                        );
+                      }
+                      // Spawn physical, crackling procedural cavern lightning arc lines
+                      window.cavernInteractives =
+                        window.cavernInteractives || [];
+                      window.cavernInteractives.push({
+                        id: window.idCounter++,
+                        type: "lightning_arc",
+                        x: currentTarget.x + (currentTarget.w || 24) / 2,
+                        y: currentTarget.y + (currentTarget.h || 24) / 2,
+                        x2: nextTarget.x + (nextTarget.w || 24) / 2,
+                        y2: nextTarget.y + (nextTarget.h || 24) / 2,
+                        life: 15,
+                      });
+                      currentTarget = nextTarget;
+                      bouncesLeft--;
+                    } else {
+                      break;
+                    }
+                  }
+                } else if (elem === "frost" && pStats.hasElementalOverload) {
                   let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
                   if (window.activeDungeonMobs) {
                     window.activeDungeonMobs.forEach((otherMob) => {
@@ -15149,76 +15601,86 @@
             }
           } else {
             // Apply single-spell Overload logic
-            if (pStats.hasElementalOverload || spellEffectType === "lightning") {
-                          if (spellEffectType === "fire" && pStats.hasElementalOverload) {
-                            let splashDmg = spellDmg.mul(
-                              pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                            );
-                            if (window.activeDungeonMobs) {
-                              window.activeDungeonMobs.forEach((otherMob) => {
-                                if (otherMob.id !== m.id) {
-                                  let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
-                                  if (dist <= 80) {
-                                    otherMob.hp = otherMob.hp.sub(splashDmg);
-                                    otherMob.flashTimer = 6;
-                                    if (window.combatVisuals) {
-                                      window.combatVisuals.spawnDamageEffect(
-                                        otherMob.x + otherMob.w / 2,
-                                        otherMob.y + otherMob.h / 2,
-                                        splashDmg,
-                                        "fire",
-                                        false,
-                                      );
-                                    }
-                                  }
-                                }
-                              });
-                            }
-                          } else if (spellEffectType === "lightning") {
-                            let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
-                            let hitIds = new Set([m.id]);
-                            let currentTarget = m;
-                            while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                              let nextTarget = window.activeDungeonMobs.find(
-                                (other) =>
-                                  !hitIds.has(other.id) &&
-                                  other.hp.gt(0) &&
-                                  Math.hypot(
-                                    currentTarget.x + (currentTarget.w || 24) / 2 - (other.x + (other.w || 24) / 2),
-                                    currentTarget.y + (currentTarget.h || 24) / 2 - (other.y + (other.h || 24) / 2),
-                                  ) <= 120,
-                              );
-                              if (nextTarget) {
-                                nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                                nextTarget.flashTimer = 6;
-                                hitIds.add(nextTarget.id);
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnDamageEffect(
-                                    nextTarget.x + nextTarget.w / 2,
-                                    nextTarget.y + nextTarget.h / 2,
-                                    spellDmg,
-                                    "lightning",
-                                    false,
-                                  );
-                                }
-                                // Spawn physical, crackling procedural cavern lightning arc lines
-                                window.cavernInteractives = window.cavernInteractives || [];
-                                window.cavernInteractives.push({
-                                  id: window.idCounter++,
-                                  type: "lightning_arc",
-                                  x: currentTarget.x + (currentTarget.w || 24) / 2,
-                                  y: currentTarget.y + (currentTarget.h || 24) / 2,
-                                  x2: nextTarget.x + (nextTarget.w || 24) / 2,
-                                  y2: nextTarget.y + (nextTarget.h || 24) / 2,
-                                  life: 15,
-                                });
-                                currentTarget = nextTarget;
-                                bouncesLeft--;
-                              } else {
-                                break;
-                              }
-                            }
-                          } else if (spellEffectType === "frost" && pStats.hasElementalOverload) {
+            if (
+              pStats.hasElementalOverload ||
+              spellEffectType === "lightning"
+            ) {
+              if (spellEffectType === "fire" && pStats.hasElementalOverload) {
+                let splashDmg = spellDmg.mul(
+                  pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                );
+                if (window.activeDungeonMobs) {
+                  window.activeDungeonMobs.forEach((otherMob) => {
+                    if (otherMob.id !== m.id) {
+                      let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
+                      if (dist <= 80) {
+                        otherMob.hp = otherMob.hp.sub(splashDmg);
+                        otherMob.flashTimer = 6;
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnDamageEffect(
+                            otherMob.x + otherMob.w / 2,
+                            otherMob.y + otherMob.h / 2,
+                            splashDmg,
+                            "fire",
+                            false,
+                          );
+                        }
+                      }
+                    }
+                  });
+                }
+              } else if (spellEffectType === "lightning") {
+                let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
+                let hitIds = new Set([m.id]);
+                let currentTarget = m;
+                while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                  let nextTarget = window.activeDungeonMobs.find(
+                    (other) =>
+                      !hitIds.has(other.id) &&
+                      other.hp.gt(0) &&
+                      Math.hypot(
+                        currentTarget.x +
+                          (currentTarget.w || 24) / 2 -
+                          (other.x + (other.w || 24) / 2),
+                        currentTarget.y +
+                          (currentTarget.h || 24) / 2 -
+                          (other.y + (other.h || 24) / 2),
+                      ) <= 120,
+                  );
+                  if (nextTarget) {
+                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                    nextTarget.flashTimer = 6;
+                    hitIds.add(nextTarget.id);
+                    if (window.combatVisuals) {
+                      window.combatVisuals.spawnDamageEffect(
+                        nextTarget.x + nextTarget.w / 2,
+                        nextTarget.y + nextTarget.h / 2,
+                        spellDmg,
+                        "lightning",
+                        false,
+                      );
+                    }
+                    // Spawn physical, crackling procedural cavern lightning arc lines
+                    window.cavernInteractives = window.cavernInteractives || [];
+                    window.cavernInteractives.push({
+                      id: window.idCounter++,
+                      type: "lightning_arc",
+                      x: currentTarget.x + (currentTarget.w || 24) / 2,
+                      y: currentTarget.y + (currentTarget.h || 24) / 2,
+                      x2: nextTarget.x + (nextTarget.w || 24) / 2,
+                      y2: nextTarget.y + (nextTarget.h || 24) / 2,
+                      life: 15,
+                    });
+                    currentTarget = nextTarget;
+                    bouncesLeft--;
+                  } else {
+                    break;
+                  }
+                }
+              } else if (
+                spellEffectType === "frost" &&
+                pStats.hasElementalOverload
+              ) {
                 let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
                 if (window.activeDungeonMobs) {
                   window.activeDungeonMobs.forEach((otherMob) => {
@@ -15433,8 +15895,14 @@
             let hdy = nearestHostile.y + nearestHostile.h / 2 - (m.y + 12);
             let hdist = Math.hypot(hdx, hdy);
             if (hdist > 20) {
-              m.x += (hdx / hdist) * 1.1; // Slow wisp drift speed
-              m.y += (hdy / hdist) * 1.1;
+              window.moveEntityWithSmartSteering(
+                m,
+                nearestHostile.x + nearestHostile.w / 2,
+                nearestHostile.y + nearestHostile.h / 2,
+                1.1,
+                map,
+                8,
+              );
             }
           }
 
@@ -15727,91 +16195,134 @@
         }
 
         // Check death state after any potential hit
-                if (m.hp.lte(0)) {
-                  // Reset Spreading Fatigue speed penalty on kill
-                  window.fatiguePenalty = 0;
+        if (m.hp.lte(0)) {
+          // Reset Spreading Fatigue speed penalty on kill
+          window.fatiguePenalty = 0;
 
-                  let mobCenterX = m.x + (m.w || 24) / 2;
-                  let mobCenterY = m.y + (m.h || 24) / 2;
+          let mobCenterX = m.x + (m.w || 24) / 2;
+          let mobCenterY = m.y + (m.h || 24) / 2;
 
-                  if (m.isPortalSentinel) {
-                                    window.activeDungeonMap.portalLocked = false;
-                                    window.spawnFloatingText(p.x, p.y - 25, "PORTAL SEAL SHATTERED!", "#00ffff");
-                                    if (window.spawnBarrierShatterVisual) {
-                                      window.spawnBarrierShatterVisual(m.x + m.w/2, m.y + m.h/2);
-                                    }
-                                    if (typeof window.pushHeaderToast === "function") {
-                                      window.pushHeaderToast("✦ Portal Sentinel slain! Descent Portal unlocked!", "#2ecc71");
-                                    }
-                                  }
+          if (m.isPortalSentinel) {
+            window.activeDungeonMap.portalLocked = false;
+            window.spawnFloatingText(
+              p.x,
+              p.y - 25,
+              "PORTAL SEAL SHATTERED!",
+              "#00ffff",
+            );
+            if (window.spawnBarrierShatterVisual) {
+              window.spawnBarrierShatterVisual(m.x + m.w / 2, m.y + m.h / 2);
+            }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "✦ Portal Sentinel slain! Descent Portal unlocked!",
+                "#2ecc71",
+              );
+            }
+          }
 
-                                  if (m.visualType === "hoard_mimic" && m.isMimic) {
-                                                      let stageScale = window.player.depth || 1;
-                                                      let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
-                                                      let playerQuality = pStats.qly || 1.0;
-                                                      let tier = m.mimicTier || "iron_bound";
+          if (m.visualType === "hoard_mimic" && m.isMimic) {
+            let stageScale = window.player.depth || 1;
+            let pStats =
+              typeof window.resolvePlayerStats === "function"
+                ? window.resolvePlayerStats()
+                : {};
+            let playerQuality = pStats.qly || 1.0;
+            let tier = m.mimicTier || "iron_bound";
 
-                                                      let chestGoldVal = 250;
-                                                      let minRarity = 2; // Magic (2*)
-                                                      let extraLootCount = 1;
-                                                      let sigilChance = 0.40;
-                                                      let sigilMinRarity = 2;
-                                                      let cardSacks = 1;
-                                                      let rareMatChance = 0;
-                                                      let toastMsg = "✦ Mimic defeated! Iron-bound treasury rewards secured!";
-                                                      let toastColor = "#e67e22";
+            let chestGoldVal = 250;
+            let minRarity = 2; // Magic (2*)
+            let extraLootCount = 1;
+            let sigilChance = 0.4;
+            let sigilMinRarity = 2;
+            let cardSacks = 1;
+            let rareMatChance = 0;
+            let toastMsg =
+              "✦ Mimic defeated! Iron-bound treasury rewards secured!";
+            let toastColor = "#e67e22";
 
-                                                      if (tier === "gilded") {
-                                                        chestGoldVal = 350;
-                                                        minRarity = 2; // Magic
-                                                        sigilChance = 0.65;
-                                                        toastMsg = "✦ Mimic defeated! Gilded treasury rewards secured!";
-                                                        toastColor = "#ffd700";
-                                                      } else if (tier === "astral") {
-                                                        chestGoldVal = 550;
-                                                        minRarity = 3; // Epic (3*) minimum
-                                                        extraLootCount = 2; // 2x items!
-                                                        sigilChance = 1.0; // Guaranteed Sigil!
-                                                        sigilMinRarity = 3; // Guaranteed Epic Sigil or higher
-                                                        cardSacks = 2; // 2x card packs!
-                                                        rareMatChance = 0.4; // 40% chance for rare material
-                                                        toastMsg = "✦ Mimic defeated! Colossal Astral treasury rewards secured!";
-                                                        toastColor = "#a855f7";
-                                                      }
+            if (tier === "gilded") {
+              chestGoldVal = 350;
+              minRarity = 2; // Magic
+              sigilChance = 0.65;
+              toastMsg = "✦ Mimic defeated! Gilded treasury rewards secured!";
+              toastColor = "#ffd700";
+            } else if (tier === "astral") {
+              chestGoldVal = 550;
+              minRarity = 3; // Epic (3*) minimum
+              extraLootCount = 2; // 2x items!
+              sigilChance = 1.0; // Guaranteed Sigil!
+              sigilMinRarity = 3; // Guaranteed Epic Sigil or higher
+              cardSacks = 2; // 2x card packs!
+              rareMatChance = 0.4; // 40% chance for rare material
+              toastMsg =
+                "✦ Mimic defeated! Colossal Astral treasury rewards secured!";
+              toastColor = "#a855f7";
+            }
 
-                                                      let chestGold = Math.floor(chestGoldVal * (1 + stageScale * 1.0));
-                                                      window.spawnHomingGold(mobCenterX, mobCenterY, chestGold);
+            let chestGold = Math.floor(chestGoldVal * (1 + stageScale * 1.0));
+            window.spawnHomingGold(mobCenterX, mobCenterY, chestGold);
 
-                                                      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-                                                      for (let i = 0; i < extraLootCount; i++) {
-                                                        let rolledRarity = window.rollItemRarity(stageScale * 8, playerQuality * 1.5, false);
-                                                        if (rolledRarity < minRarity) rolledRarity = minRarity;
-                                                        let chosenType = types[Math.floor(Math.random() * types.length)];
-                                                        let droppedItem = window.createItemObject(chosenType, rolledRarity, stageScale, 0);
-                                                        window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
-                                                      }
+            let types = [
+              "weapon",
+              "subweapon",
+              "helmet",
+              "chest",
+              "boots",
+              "ring",
+            ];
+            for (let i = 0; i < extraLootCount; i++) {
+              let rolledRarity = window.rollItemRarity(
+                stageScale * 8,
+                playerQuality * 1.5,
+                false,
+              );
+              if (rolledRarity < minRarity) rolledRarity = minRarity;
+              let chosenType = types[Math.floor(Math.random() * types.length)];
+              let droppedItem = window.createItemObject(
+                chosenType,
+                rolledRarity,
+                stageScale,
+                0,
+              );
+              window.spawnGroundLoot(droppedItem, mobCenterX, mobCenterY);
+            }
 
-                                                      if (Math.random() < sigilChance) {
-                                                        let rolledSigilRarity = window.rollSigilRarity(4, playerQuality * 1.25);
-                                                        if (rolledSigilRarity < sigilMinRarity) rolledSigilRarity = sigilMinRarity;
-                                                        let sigilItem = window.createItemObject("sigil", rolledSigilRarity, stageScale, 0);
-                                                        window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
-                                                      }
+            if (Math.random() < sigilChance) {
+              let rolledSigilRarity = window.rollSigilRarity(
+                4,
+                playerQuality * 1.25,
+              );
+              if (rolledSigilRarity < sigilMinRarity)
+                rolledSigilRarity = sigilMinRarity;
+              let sigilItem = window.createItemObject(
+                "sigil",
+                rolledSigilRarity,
+                stageScale,
+                0,
+              );
+              window.spawnGroundLoot(sigilItem, mobCenterX, mobCenterY);
+            }
 
-                                                      window.addUseDrop("Monster Card Sack", cardSacks, false);
+            window.addUseDrop("Monster Card Sack", cardSacks, false);
 
-                                                      if (Math.random() < rareMatChance) {
-                                                        let mats = ["Ancient Core", "Astral Essence", "Eridium Shard"];
-                                                        let chosenMat = mats[Math.floor(Math.random() * mats.length)];
-                                                        if (typeof window.spawnGroundMaterial === "function") {
-                                                          window.spawnGroundMaterial(chosenMat, 1, mobCenterX, mobCenterY);
-                                                        }
-                                                      }
+            if (Math.random() < rareMatChance) {
+              let mats = ["Ancient Core", "Astral Essence", "Eridium Shard"];
+              let chosenMat = mats[Math.floor(Math.random() * mats.length)];
+              if (typeof window.spawnGroundMaterial === "function") {
+                window.spawnGroundMaterial(
+                  chosenMat,
+                  1,
+                  mobCenterX,
+                  mobCenterY,
+                );
+              }
+            }
 
-                                                      if (typeof window.pushHeaderToast === "function") {
-                                                        window.pushHeaderToast(toastMsg, toastColor);
-                                                      }
-                                                    }
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(toastMsg, toastColor);
+            }
+          }
 
           // --- SUBPHASE 7: SPAWNING DIVISION SPLIT ---
           let canDivide =
@@ -15947,32 +16458,32 @@
 
           // Trigger 1.2s telegraphed detonation phase for Blood Berserkers
           if (m.eliteAffix === "blood_berserker" && !m.isDetonating) {
-                            m.isDetonating = true;
-                            m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
-                            m.detonationMax = 70;
-                            m.isStopped = true;
-                            if (typeof window.pushHeaderToast === "function") {
-                              window.pushHeaderToast(
-                                "[!] BLOOD BERSERKER DETONATING!",
-                                "#e74c3c",
-                              );
-                            }
-                            if (
-                              window.SoundManager &&
-                              typeof window.SoundManager.play === "function"
-                            ) {
-                              window.SoundManager.play("spell_fire");
-                            }
-                            continue;
-                          }
+            m.isDetonating = true;
+            m.detonationTimer = 70; // 70 frames (~1.2s) reaction window
+            m.detonationMax = 70;
+            m.isStopped = true;
+            if (typeof window.pushHeaderToast === "function") {
+              window.pushHeaderToast(
+                "[!] BLOOD BERSERKER DETONATING!",
+                "#e74c3c",
+              );
+            }
+            if (
+              window.SoundManager &&
+              typeof window.SoundManager.play === "function"
+            ) {
+              window.SoundManager.play("spell_fire");
+            }
+            continue;
+          }
 
-                          mobCenterX = m.x + m.w / 2;
-                          mobCenterY = m.y + m.h / 2;
+          mobCenterX = m.x + m.w / 2;
+          mobCenterY = m.y + m.h / 2;
 
-                          // Trigger Noxious Bloom on qualified death
-                          if (window.checkAndSpawnNoxiousBloom) {
-                            window.checkAndSpawnNoxiousBloom(m, mobCenterX, mobCenterY);
-                          }
+          // Trigger Noxious Bloom on qualified death
+          if (window.checkAndSpawnNoxiousBloom) {
+            window.checkAndSpawnNoxiousBloom(m, mobCenterX, mobCenterY);
+          }
 
           if (
             window.isCavernEffectActive &&
@@ -16071,12 +16582,12 @@
               }
             }
 
-            // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Rare Kill)
+            // Unique: Warp-Core Greaves (Spatial Leap Portal Drop on Boss Defeat)
             if (
               window.hasUniquePassive("boots_warpcore") &&
               Math.random() < 0.2
             ) {
-              let map = window.activeDungeonMap;
+              map = window.activeDungeonMap;
               let tSize = map ? map.tileSize : 32;
               let tileX = Math.floor(mobCenterX / tSize);
               let tileY = Math.floor(mobCenterY / tSize);
@@ -16175,9 +16686,10 @@
           }
 
           // Procedural Card Drop Roll (Regular: 0.5% base, Rare/Mimic: 20% base, multiplied by Drop Rate)
-                    dropMult = pStats.drop || 1.0;
-                    let cardBaseChance = (m.isRare || m.visualType === "hoard_mimic") ? 0.2 : 0.005;
-                    if (Math.random() < cardBaseChance * dropMult) {
+          dropMult = pStats.drop || 1.0;
+          let cardBaseChance =
+            m.isRare || m.visualType === "hoard_mimic" ? 0.2 : 0.005;
+          if (Math.random() < cardBaseChance * dropMult) {
             let cardKey = m.visualType || m.type;
             if (window.MONSTER_CARDS_DATA[cardKey]) {
               let cardItem = {
@@ -16196,16 +16708,16 @@
           let isChallengeActive =
             window.playerStats.activeSpecialChallenge !== null;
           if (
-                      !window.playerStats.isCrucibleMode &&
-                      !isChallengeActive &&
-                      Math.random() < 0.05
-                    ) {
-                      let stageScale = window.player.depth || 1;
-                      let rolledRarity = window.rollItemRarity(
-                        stageScale,
-                        pStats.qly || 1.0,
-                        false,
-                      );
+            !window.playerStats.isCrucibleMode &&
+            !isChallengeActive &&
+            Math.random() < 0.05
+          ) {
+            let stageScale = window.player.depth || 1;
+            let rolledRarity = window.rollItemRarity(
+              stageScale,
+              pStats.qly || 1.0,
+              false,
+            );
             let types = [
               "weapon",
               "subweapon",
@@ -16248,154 +16760,163 @@
         }
 
         // 1. Decrement Active Mob Timers
-                if (m.flashTimer > 0) m.flashTimer--;
-                if (m.attackCooldown > 0) m.attackCooldown--;
-                if (m.rangedCooldown > 0) m.rangedCooldown--;
-                if (m.stunTimer > 0) {
-                  m.stunTimer--;
-                  continue;
-                }
+        if (m.flashTimer > 0) m.flashTimer--;
+        if (m.attackCooldown > 0) m.attackCooldown--;
+        if (m.rangedCooldown > 0) m.rangedCooldown--;
+        if (m.stunTimer > 0) {
+          m.stunTimer--;
+          continue;
+        }
 
-                if (m.isStopped) continue;
+        if (m.isStopped) continue;
 
-                // 2. Mob Contact Melee Attack on Player
-                if (dist < 20 && m.attackCooldown <= 0) {
-                  m.attackCooldown = 60; // 1s attack cooldown
-                  window.damagePlayer(m.atk, m);
+        // 2. Mob Contact Melee Attack on Player
+        if (dist < 20 && m.attackCooldown <= 0) {
+          m.attackCooldown = 60; // 1s attack cooldown
+          window.damagePlayer(m.atk, m);
 
-                  if (m.eliteAffix === "toxic_decay" && p.hp > 0) {
-                    p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 1);
-                    p.poisonTimer = 240; // 4s tick
-                    if (window.spawnFloatingText) {
-                      window.spawnFloatingText(p.x, p.y - 12, "TOXIC ROT!", "#2ecc71", true);
-                    }
-                  }
+          if (m.eliteAffix === "toxic_decay" && p.hp > 0) {
+            p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 1);
+            p.poisonTimer = 240; // 4s tick
+            if (window.spawnFloatingText) {
+              window.spawnFloatingText(
+                p.x,
+                p.y - 12,
+                "TOXIC ROT!",
+                "#2ecc71",
+                true,
+              );
+            }
+          }
 
-                  if (p.hp <= 0) {
-                    window.startDeathSequence();
-                  }
-                }
+          if (p.hp <= 0) {
+            window.startDeathSequence();
+          }
+        }
 
-                // 3. Mob Movement & Ranged Attack AI
-                let mCx = m.x + (m.w || 24) / 2;
-                let mCy = m.y + (m.h || 24) / 2;
+        // 3. Mob Movement & Ranged Attack AI
+        let mCx = m.x + (m.w || 24) / 2;
+        let mCy = m.y + (m.h || 24) / 2;
 
-                if (dist < 260 || m.isAggroed || m.hasTakenDamage || m.isRare || m.isElite) {
-                  m.isAggroed = true;
+        if (
+          dist < 260 ||
+          m.isAggroed ||
+          m.hasTakenDamage ||
+          m.isRare ||
+          m.isElite
+        ) {
+          m.isAggroed = true;
 
-                  if (dx < -1) m.facing = -1;
-                  else if (dx > 1) m.facing = 1;
+          if (dx < -1) m.facing = -1;
+          else if (dx > 1) m.facing = 1;
 
-                  let baseSpeed = m.moveProfile === "relentless" ? 1.8 : 1.35;
-                  let hasteMult = (m.buffStacks && m.buffStacks.haste > 0) ? (1 + m.buffStacks.haste * 0.15) : 1.0;
-                  let speed = baseSpeed * (m.speedMultiplier || 1.0) * hasteMult;
+          let baseSpeed = m.moveProfile === "relentless" ? 1.8 : 1.35;
+          let hasteMult =
+            m.buffStacks && m.buffStacks.haste > 0
+              ? 1 + m.buffStacks.haste * 0.15
+              : 1.0;
+          let speed = baseSpeed * (m.speedMultiplier || 1.0) * hasteMult;
 
-                  if (m.isRanged) {
-                    // Ranged Projectile Attack Execution
-                    if (m.rangedCooldown <= 0 && dist <= 220) {
-                      m.rangedCooldown = window.randInt(90, 150);
-                      let projAngle = Math.atan2(p.y - mCy, p.x - mCx);
-                      let projSpeed = 4.2;
+          if (m.isRanged) {
+            // Ranged Projectile Attack Execution
+            if (m.rangedCooldown <= 0 && dist <= 220) {
+              m.rangedCooldown = window.randInt(90, 150);
+              let projAngle = Math.atan2(p.y - mCy, p.x - mCx);
+              let projSpeed = 4.2;
 
-                      window.projectiles.push({
-                        x: mCx,
-                        y: mCy,
-                        vx: Math.cos(projAngle) * projSpeed,
-                        vy: Math.sin(projAngle) * projSpeed,
-                        r: 6,
-                        type: m.projectileType || "thorn",
-                        damage: m.atk,
-                        life: 180,
-                        pulseOffset: Math.random() * 10
-                      });
+              window.projectiles.push({
+                x: mCx,
+                y: mCy,
+                vx: Math.cos(projAngle) * projSpeed,
+                vy: Math.sin(projAngle) * projSpeed,
+                r: 6,
+                type: m.projectileType || "thorn",
+                damage: m.atk,
+                life: 180,
+                pulseOffset: Math.random() * 10,
+              });
 
-                      if (window.SoundManager && typeof window.SoundManager.play === "function") {
-                        window.SoundManager.play("swing");
-                      }
-                    }
+              if (
+                window.SoundManager &&
+                typeof window.SoundManager.play === "function"
+              ) {
+                window.SoundManager.play("swing");
+              }
+            }
 
-                    // Ranged Distance Keeping
-                    if (dist > 140) {
-                      let nx = dx / dist;
-                      let ny = dy / dist;
-                      let testX = m.x + nx * speed;
-                      let testY = m.y + ny * speed;
-                      if (map && !checkCollisionAt(map, testX + 12, testY + 12, 10)) {
-                        m.x = testX;
-                        m.y = testY;
-                        m.isMoving = true;
-                      }
-                    } else if (dist < 60) {
-                      let nx = -dx / dist;
-                      let ny = -dy / dist;
-                      let testX = m.x + nx * (speed * 0.7);
-                      let testY = m.y + ny * (speed * 0.7);
-                      if (map && !checkCollisionAt(map, testX + 12, testY + 12, 10)) {
-                        m.x = testX;
-                        m.y = testY;
-                        m.isMoving = true;
-                      }
-                    }
-                  } else {
-                    // Melee Mob Pursuit
-                    if (dist > 14) {
-                      m.hopTimer = ((m.hopTimer || 0) + 1) % 30;
-                      let nx = dx / dist;
-                      let ny = dy / dist;
-                      let testX = m.x + nx * speed;
-                      let testY = m.y + ny * speed;
+            // Ranged Distance Keeping
+            if (dist > 140) {
+              m.isMoving = window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                map,
+                10,
+              );
+            } else if (dist < 60) {
+              let kX = mCx - dx;
+              let kY = mCy - dy;
+              m.isMoving = window.moveEntityWithSmartSteering(
+                m,
+                kX,
+                kY,
+                speed * 0.7,
+                map,
+                10,
+              );
+            }
+          } else {
+            // Melee Mob Pursuit
+            if (dist > 14) {
+              m.hopTimer = ((m.hopTimer || 0) + 1) % 30;
+              m.isMoving = window.moveEntityWithSmartSteering(
+                m,
+                p.x,
+                p.y,
+                speed,
+                map,
+                10,
+              );
+            }
+          }
+        } else {
+          // Wandering Idle AI when unaggroed
+          m.wanderTimer = (m.wanderTimer || 0) - 1;
+          if (m.wanderTimer <= 0) {
+            m.wanderTimer = window.randInt(60, 150);
+            if (Math.random() < 0.5) {
+              let wanderAngle = Math.random() * Math.PI * 2;
+              m.wanderVx = Math.cos(wanderAngle) * 0.6;
+              m.wanderVy = Math.sin(wanderAngle) * 0.6;
+              m.isWandering = true;
+            } else {
+              m.wanderVx = 0;
+              m.wanderVy = 0;
+              m.isWandering = false;
+            }
+          }
 
-                      let moved = false;
-                      if (map) {
-                        if (!checkCollisionAt(map, testX + 12, m.y + 12, 10)) {
-                          m.x = testX;
-                          moved = true;
-                        }
-                        if (!checkCollisionAt(map, m.x + 12, testY + 12, 10)) {
-                          m.y = testY;
-                          moved = true;
-                        }
-                      } else {
-                        m.x = testX;
-                        m.y = testY;
-                        moved = true;
-                      }
-                      m.isMoving = moved;
-                    }
-                  }
-                } else {
-                  // Wandering Idle AI when unaggroed
-                  m.wanderTimer = (m.wanderTimer || 0) - 1;
-                  if (m.wanderTimer <= 0) {
-                    m.wanderTimer = window.randInt(60, 150);
-                    if (Math.random() < 0.5) {
-                      let wanderAngle = Math.random() * Math.PI * 2;
-                      m.wanderVx = Math.cos(wanderAngle) * 0.6;
-                      m.wanderVy = Math.sin(wanderAngle) * 0.6;
-                      m.isWandering = true;
-                    } else {
-                      m.wanderVx = 0;
-                      m.wanderVy = 0;
-                      m.isWandering = false;
-                    }
-                  }
-
-                  if (m.isWandering && (m.wanderVx !== 0 || m.wanderVy !== 0)) {
-                    let testX = m.x + m.wanderVx;
-                    let testY = m.y + m.wanderVy;
-                    if (map && !checkCollisionAt(map, testX + 12, testY + 12, 10)) {
-                      m.x = testX;
-                      m.y = testY;
-                      m.isMoving = true;
-                    } else {
-                      m.isWandering = false;
-                      m.wanderVx = 0;
-                      m.wanderVy = 0;
-                    }
-                  } else {
-                    m.isMoving = false;
-                  }
-                }
+          if (m.isWandering && (m.wanderVx !== 0 || m.wanderVy !== 0)) {
+            let wTargetX = m.x + 12 + m.wanderVx * 20;
+            let wTargetY = m.y + 12 + m.wanderVy * 20;
+            m.isMoving = window.moveEntityWithSmartSteering(
+              m,
+              wTargetX,
+              wTargetY,
+              0.6,
+              map,
+              10,
+            );
+            if (!m.isMoving) {
+              m.isWandering = false;
+              m.wanderVx = 0;
+              m.wanderVy = 0;
+            }
+          } else {
+            m.isMoving = false;
+          }
+        }
       }
     }
 
@@ -16409,54 +16930,54 @@
       let dist = Math.hypot(dx, dy);
 
       if (dist < 48 && p.attackTimer >= 20) {
-              p.attackTimer = 0;
+        p.attackTimer = 0;
 
-              // Transition into active combat state
-              if (typeof window.triggerCombatState === "function") {
-                window.triggerCombatState();
-              }
+        // Transition into active combat state
+        if (typeof window.triggerCombatState === "function") {
+          window.triggerCombatState();
+        }
 
-              if (
-                window.SoundManager &&
-                typeof window.SoundManager.play === "function"
-              ) {
-                window.SoundManager.play("swing");
-              }
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("swing");
+        }
 
-              let bossCenterX = bm.x + bm.w / 2;
-              // Face the boss being attacked!
-              let dxToBoss = bossCenterX - p.x;
-              if (dxToBoss < -0.1) p.facing = -1;
-              else if (dxToBoss > 0.1) p.facing = 1;
+        let bossCenterX = bm.x + bm.w / 2;
+        // Face the boss being attacked!
+        let dxToBoss = bossCenterX - p.x;
+        if (dxToBoss < -0.1) p.facing = -1;
+        else if (dxToBoss > 0.1) p.facing = 1;
 
-              let isCrit = Math.random() < (pStats.critChance || 0.05);
-                            if (window.playerStats && window.playerStats.guaranteedCrit) {
-                              isCrit = true;
-                              window.playerStats.guaranteedCrit = false;
-                            }
-                            if (
-                              window.playerStats &&
-                              window.playerStats.viperShadowDanceCharges > 0
-                            ) {
-                              isCrit = true;
-                              window.playerStats.viperShadowDanceCharges--;
-                            }
-                            let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
-                            let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
+        let isCrit = Math.random() < (pStats.critChance || 0.05);
+        if (window.playerStats && window.playerStats.guaranteedCrit) {
+          isCrit = true;
+          window.playerStats.guaranteedCrit = false;
+        }
+        if (
+          window.playerStats &&
+          window.playerStats.viperShadowDanceCharges > 0
+        ) {
+          isCrit = true;
+          window.playerStats.viperShadowDanceCharges--;
+        }
+        let critMult = isCrit ? pStats.critDamage || 1.5 : 1.0;
+        let pAtk = BigNum.from(pStats.atk || p.atk).mul(critMult);
 
-                            // Synergy Sanguine DoT damage scaling (Boss)
-                            if (window.checkArtifactTrait("synergy_sanguine")) {
-                              let slotLvl = window.getArtifactTemperLevel
-                                ? window.getArtifactTemperLevel("synergy_sanguine")
-                                : 0;
-                              let slotMult = 1.0 + slotLvl * 0.01;
-                              let uniqueDoTs = 0;
-                              if ((bm.poisonStacks || 0) > 0) uniqueDoTs++;
-                              if ((bm.bleedStacks || 0) > 0) uniqueDoTs++;
-                              if ((bm.burnStacks || 0) > 0 || bm.isBurning) uniqueDoTs++;
-                              let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
-                              pAtk = pAtk.mul(multiplier);
-                            }
+        // Synergy Sanguine DoT damage scaling (Boss)
+        if (window.checkArtifactTrait("synergy_sanguine")) {
+          let slotLvl = window.getArtifactTemperLevel
+            ? window.getArtifactTemperLevel("synergy_sanguine")
+            : 0;
+          let slotMult = 1.0 + slotLvl * 0.01;
+          let uniqueDoTs = 0;
+          if ((bm.poisonStacks || 0) > 0) uniqueDoTs++;
+          if ((bm.bleedStacks || 0) > 0) uniqueDoTs++;
+          if ((bm.burnStacks || 0) > 0 || bm.isBurning) uniqueDoTs++;
+          let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
+          pAtk = pAtk.mul(multiplier);
+        }
 
         // Track Critical Streaks for Wind-Razor Flurry (Boss)
         let windFlurryLevel = window.SkillTreeManager
@@ -16803,62 +17324,62 @@
           }
         }
 
-          if (
-                      (bm.poisonStacks && bm.poisonStacks > 0) ||
-                      (bm.bleedStacks && bm.bleedStacks > 0)
-                    ) {
-                      bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
-                      if (bm.dotTickTimer >= 60) {
-                        bm.dotTickTimer = 0;
-                        let baseAtk = pStats.atk || p.atk || 15;
+        if (
+          (bm.poisonStacks && bm.poisonStacks > 0) ||
+          (bm.bleedStacks && bm.bleedStacks > 0)
+        ) {
+          bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
+          if (bm.dotTickTimer >= 60) {
+            bm.dotTickTimer = 0;
+            let baseAtk = pStats.atk || p.atk || 15;
 
-                        if (bm.poisonStacks && bm.poisonStacks > 0) {
-                          let poisonPower = 0.1 * (bm.poisonLevel || 1);
-                          if (pStats.poisonDamageMultiplier)
-                            poisonPower *= pStats.poisonDamageMultiplier;
-                          let pDmg = BigNum.from(baseAtk)
-                            .mul(poisonPower)
-                            .mul(bm.poisonStacks);
-                          bm.hp = bm.hp.sub(pDmg);
-                          bm.flashTimer = 4;
-                          if (window.combatVisuals) {
-                            window.combatVisuals.spawnDamageEffect(
-                              bm.x + bm.w / 2,
-                              bm.y + bm.h / 2,
-                              pDmg,
-                              "poison",
-                              false,
-                              bm,
-                            );
-                          }
-                        }
+            if (bm.poisonStacks && bm.poisonStacks > 0) {
+              let poisonPower = 0.1 * (bm.poisonLevel || 1);
+              if (pStats.poisonDamageMultiplier)
+                poisonPower *= pStats.poisonDamageMultiplier;
+              let pDmg = BigNum.from(baseAtk)
+                .mul(poisonPower)
+                .mul(bm.poisonStacks);
+              bm.hp = bm.hp.sub(pDmg);
+              bm.flashTimer = 4;
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnDamageEffect(
+                  bm.x + bm.w / 2,
+                  bm.y + bm.h / 2,
+                  pDmg,
+                  "poison",
+                  false,
+                  bm,
+                );
+              }
+            }
 
-                        if (bm.bleedStacks && bm.bleedStacks > 0) {
-                          let bleedPower = 0.05;
-                          if (pStats.bleedDamageMultiplier)
-                            bleedPower *= pStats.bleedDamageMultiplier;
-                          let bDmg = BigNum.from(baseAtk)
-                            .mul(bleedPower)
-                            .mul(bm.bleedStacks);
-                          bm.hp = bm.hp.sub(bDmg);
-                          bm.flashTimer = 4;
-                          if (window.combatVisuals) {
-                            window.combatVisuals.spawnDamageEffect(
-                              bm.x + bm.w / 2,
-                              bm.y + bm.h / 2,
-                              bDmg,
-                              "bleed",
-                              false,
-                              bm,
-                            );
-                          }
-                        }
-                      }
-                    }
-                    if (bm.shredTimer && bm.shredTimer > 0) {
-                      bm.shredTimer--;
-                      if (bm.shredTimer === 0) bm.shredPercent = 0;
-                    }
+            if (bm.bleedStacks && bm.bleedStacks > 0) {
+              let bleedPower = 0.05;
+              if (pStats.bleedDamageMultiplier)
+                bleedPower *= pStats.bleedDamageMultiplier;
+              let bDmg = BigNum.from(baseAtk)
+                .mul(bleedPower)
+                .mul(bm.bleedStacks);
+              bm.hp = bm.hp.sub(bDmg);
+              bm.flashTimer = 4;
+              if (window.combatVisuals) {
+                window.combatVisuals.spawnDamageEffect(
+                  bm.x + bm.w / 2,
+                  bm.y + bm.h / 2,
+                  bDmg,
+                  "bleed",
+                  false,
+                  bm,
+                );
+              }
+            }
+          }
+        }
+        if (bm.shredTimer && bm.shredTimer > 0) {
+          bm.shredTimer--;
+          if (bm.shredTimer === 0) bm.shredPercent = 0;
+        }
 
         // Tome Spell Cast Trigger on Boss
         let isTomeEquipped =
@@ -16971,99 +17492,104 @@
           }
 
           // Triad Convergence / Aetheric Overload Check (Boss)
-                    let isOverload =
-                      window.SkillTreeManager &&
-                      window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-                      Math.random() < 0.15;
+          let isOverload =
+            window.SkillTreeManager &&
+            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
+            Math.random() < 0.15;
 
-                    if (pStats.hasTriadConvergence || isOverload) {
-                      const triElements = ["fire", "lightning", "frost"];
-                      triElements.forEach((elem, eIdx) => {
-                        bm.hp = bm.hp.sub(spellDmg);
-                        if (
-                          window.RenderEngine &&
-                          window.RenderEngine.spawnDamageEffect
-                        ) {
-                          window.RenderEngine.spawnDamageEffect(
-                            bossCenterX + (eIdx - 1) * 12,
-                            bossCenterY - 12 - eIdx * 6,
-                            spellDmg,
-                            elem,
+          if (pStats.hasTriadConvergence || isOverload) {
+            const triElements = ["fire", "lightning", "frost"];
+            triElements.forEach((elem, eIdx) => {
+              bm.hp = bm.hp.sub(spellDmg);
+              if (
+                window.RenderEngine &&
+                window.RenderEngine.spawnDamageEffect
+              ) {
+                window.RenderEngine.spawnDamageEffect(
+                  bossCenterX + (eIdx - 1) * 12,
+                  bossCenterY - 12 - eIdx * 6,
+                  spellDmg,
+                  elem,
+                  false,
+                );
+              }
+
+              if (pStats.hasElementalOverload || elem === "lightning") {
+                if (elem === "fire" && pStats.hasElementalOverload) {
+                  let splashDmg = spellDmg.mul(
+                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
+                  );
+                  if (window.activeDungeonMobs) {
+                    window.activeDungeonMobs.forEach((otherMob) => {
+                      let dist = Math.hypot(
+                        bm.x - otherMob.x,
+                        bm.y - otherMob.y,
+                      );
+                      if (dist <= 100) {
+                        otherMob.hp = otherMob.hp.sub(splashDmg);
+                        otherMob.flashTimer = 6;
+                        if (window.combatVisuals) {
+                          window.combatVisuals.spawnDamageEffect(
+                            otherMob.x + otherMob.w / 2,
+                            otherMob.y + otherMob.h / 2,
+                            splashDmg,
+                            "fire",
                             false,
                           );
                         }
-
-                        if (pStats.hasElementalOverload || elem === "lightning") {
-                          if (elem === "fire" && pStats.hasElementalOverload) {
-                            let splashDmg = spellDmg.mul(
-                              pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                            );
-                            if (window.activeDungeonMobs) {
-                              window.activeDungeonMobs.forEach((otherMob) => {
-                                let dist = Math.hypot(
-                                  bm.x - otherMob.x,
-                                  bm.y - otherMob.y,
-                                );
-                                if (dist <= 100) {
-                                  otherMob.hp = otherMob.hp.sub(splashDmg);
-                                  otherMob.flashTimer = 6;
-                                  if (window.combatVisuals) {
-                                    window.combatVisuals.spawnDamageEffect(
-                                      otherMob.x + otherMob.w / 2,
-                                      otherMob.y + otherMob.h / 2,
-                                      splashDmg,
-                                      "fire",
-                                      false,
-                                    );
-                                  }
-                                }
-                              });
-                            }
-                          } else if (elem === "lightning") {
-                            let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
-                            let hitIds = new Set();
-                            let currentTarget = bm;
-                            while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                              let nextTarget = window.activeDungeonMobs.find(
-                                (other) =>
-                                  !hitIds.has(other.id) &&
-                                  other.hp.gt(0) &&
-                                  Math.hypot(
-                                    currentTarget.x + (currentTarget.w || 24) / 2 - (other.x + (other.w || 24) / 2),
-                                    currentTarget.y + (currentTarget.h || 24) / 2 - (other.y + (other.h || 24) / 2),
-                                  ) <= 120,
-                              );
-                              if (nextTarget) {
-                                nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                                nextTarget.flashTimer = 6;
-                                hitIds.add(nextTarget.id);
-                                if (window.combatVisuals) {
-                                  window.combatVisuals.spawnDamageEffect(
-                                    nextTarget.x + nextTarget.w / 2,
-                                    nextTarget.y + nextTarget.h / 2,
-                                    spellDmg,
-                                    "lightning",
-                                    false,
-                                  );
-                                }
-                                // Spawn physical, crackling procedural cavern lightning arc lines
-                                window.cavernInteractives = window.cavernInteractives || [];
-                                window.cavernInteractives.push({
-                                  id: window.idCounter++,
-                                  type: "lightning_arc",
-                                  x: currentTarget.x + (currentTarget.w || 24) / 2,
-                                  y: currentTarget.y + (currentTarget.h || 24) / 2,
-                                  x2: nextTarget.x + (nextTarget.w || 24) / 2,
-                                  y2: nextTarget.y + (nextTarget.h || 24) / 2,
-                                  life: 15,
-                                });
-                                currentTarget = nextTarget;
-                                bouncesLeft--;
-                              } else {
-                                break;
-                              }
-                            }
-                          } else if (elem === "frost" && pStats.hasElementalOverload) {
+                      }
+                    });
+                  }
+                } else if (elem === "lightning") {
+                  let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
+                  let hitIds = new Set();
+                  let currentTarget = bm;
+                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
+                    let nextTarget = window.activeDungeonMobs.find(
+                      (other) =>
+                        !hitIds.has(other.id) &&
+                        other.hp.gt(0) &&
+                        Math.hypot(
+                          currentTarget.x +
+                            (currentTarget.w || 24) / 2 -
+                            (other.x + (other.w || 24) / 2),
+                          currentTarget.y +
+                            (currentTarget.h || 24) / 2 -
+                            (other.y + (other.h || 24) / 2),
+                        ) <= 120,
+                    );
+                    if (nextTarget) {
+                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
+                      nextTarget.flashTimer = 6;
+                      hitIds.add(nextTarget.id);
+                      if (window.combatVisuals) {
+                        window.combatVisuals.spawnDamageEffect(
+                          nextTarget.x + nextTarget.w / 2,
+                          nextTarget.y + nextTarget.h / 2,
+                          spellDmg,
+                          "lightning",
+                          false,
+                        );
+                      }
+                      // Spawn physical, crackling procedural cavern lightning arc lines
+                      window.cavernInteractives =
+                        window.cavernInteractives || [];
+                      window.cavernInteractives.push({
+                        id: window.idCounter++,
+                        type: "lightning_arc",
+                        x: currentTarget.x + (currentTarget.w || 24) / 2,
+                        y: currentTarget.y + (currentTarget.h || 24) / 2,
+                        x2: nextTarget.x + (nextTarget.w || 24) / 2,
+                        y2: nextTarget.y + (nextTarget.h || 24) / 2,
+                        life: 15,
+                      });
+                      currentTarget = nextTarget;
+                      bouncesLeft--;
+                    } else {
+                      break;
+                    }
+                  }
+                } else if (elem === "frost" && pStats.hasElementalOverload) {
                   let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
                   if (window.activeDungeonMobs) {
                     window.activeDungeonMobs.forEach((otherMob) => {
@@ -17390,8 +17916,8 @@
             }
 
             // Boss Card Drop Roll (10% base chance, multiplied by Drop Rate)
-                        let dropMult = pStats.drop || 1.0;
-                        if (Math.random() < 0.10 * dropMult) {
+            let dropMult = pStats.drop || 1.0;
+            if (Math.random() < 0.1 * dropMult) {
               let cardKey = bm.visualType || bm.type;
               if (window.MONSTER_CARDS_DATA[cardKey]) {
                 let cardItem = {
@@ -17445,18 +17971,18 @@
                   0,
                 );
               } else {
-                              let rolledRarity = window.rollItemRarity(
-                                stageScale,
-                                pStats.qly || 1.0,
-                                false,
-                              );
-                              bossEquip = window.createItemObject(
-                                chosenType,
-                                rolledRarity,
-                                stageScale,
-                                0,
-                              );
-                            }
+                let rolledRarity = window.rollItemRarity(
+                  stageScale,
+                  pStats.qly || 1.0,
+                  false,
+                );
+                bossEquip = window.createItemObject(
+                  chosenType,
+                  rolledRarity,
+                  stageScale,
+                  0,
+                );
+              }
 
               window.spawnGroundLoot(bossEquip, bossCenterX, bossCenterY);
             }
@@ -17554,16 +18080,16 @@
             }
 
             let tileX = bm.bossTileX || Math.floor(bm.x / 32);
-                        let tileY = bm.bossTileY || Math.floor(bm.y / 32);
-                        window.mob = null;
-                        window.onBossDefeated(tileX, tileY);
-                      }
-                    }
-                  }
-                }
+            let tileY = bm.bossTileY || Math.floor(bm.y / 32);
+            window.mob = null;
+            window.onBossDefeated(tileX, tileY);
+          }
+        }
+      }
+    }
 
-                // Update Active Projectiles and Test Player & Wall Hitboxes
-                for (let i = window.projectiles.length - 1; i >= 0; i--) {
+    // Update Active Projectiles and Test Player & Wall Hitboxes
+    for (let i = window.projectiles.length - 1; i >= 0; i--) {
       let proj = window.projectiles[i];
       proj.life--;
 
@@ -17723,27 +18249,26 @@
         }
 
         let pLife = window.randInt(11, 20);
-                let pt = window.ParticlePool.get(
-                  proj.x - proj.vx * 0.35,
-                  proj.y - proj.vy * 0.35,
-                  -proj.vx * 0.15 + window.randFloat(-0.3, 0.3),
-                  -proj.vy * 0.15 + window.randFloat(-0.3, 0.3),
-                  pSize,
-                  color,
-                  0.72,
-                  pLife,
-                  pLife,
-                  gravity,
-                  true,
-                  drag,
-                );
-                pt.style = style;
-                if (spinSpeed) pt.spinSpeed = spinSpeed;
-                pt.scaleDecay = scaleDecay;
-                window.particles.push(pt);
+        let pt = window.ParticlePool.get(
+          proj.x - proj.vx * 0.35,
+          proj.y - proj.vy * 0.35,
+          -proj.vx * 0.15 + window.randFloat(-0.3, 0.3),
+          -proj.vy * 0.15 + window.randFloat(-0.3, 0.3),
+          pSize,
+          color,
+          0.72,
+          pLife,
+          pLife,
+          gravity,
+          true,
+          drag,
+        );
+        pt.style = style;
+        if (spinSpeed) pt.spinSpeed = spinSpeed;
+        pt.scaleDecay = scaleDecay;
+        window.particles.push(pt);
       }
 
-      let map = window.activeDungeonMap;
       if (map && map.grid && checkCollisionAt(map, proj.x, proj.y, proj.r)) {
         if (window.combatVisuals) {
           if (
@@ -19063,26 +19588,31 @@
           ctx.closePath();
           ctx.fill();
         } else if (pt.style === "streak") {
-                  let speed = Math.hypot(pt.vx, pt.vy);
-                  if (speed > 0.1) {
-                    ctx.lineWidth =
-                      (pt.size || 1.5) * (pt.scale !== undefined ? pt.scale : 1.0);
-                    ctx.lineCap = "round";
+          let speed = Math.hypot(pt.vx, pt.vy);
+          if (speed > 0.1) {
+            ctx.lineWidth =
+              (pt.size || 1.5) * (pt.scale !== undefined ? pt.scale : 1.0);
+            ctx.lineCap = "round";
 
-                    let tailX = pt.x - pt.vx * 1.5;
-                    let tailY = pt.y - pt.vy * 1.5;
+            let tailX = pt.x - pt.vx * 1.5;
+            let tailY = pt.y - pt.vy * 1.5;
 
-                    // Generate motion blur gradient fading out at the tail (Added safe offsets to prevent identical coords)
-                    let grad = ctx.createLinearGradient(pt.x, pt.y, tailX + 0.1, tailY + 0.1);
-                    grad.addColorStop(0, pt.color || "#ffffff");
-                    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+            // Generate motion blur gradient fading out at the tail (Added safe offsets to prevent identical coords)
+            let grad = ctx.createLinearGradient(
+              pt.x,
+              pt.y,
+              tailX + 0.1,
+              tailY + 0.1,
+            );
+            grad.addColorStop(0, pt.color || "#ffffff");
+            grad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
-                    ctx.strokeStyle = grad;
-                    ctx.beginPath();
-                    ctx.moveTo(pt.x, pt.y);
-                    ctx.lineTo(tailX, tailY);
-                    ctx.stroke();
-                  } else {
+            ctx.strokeStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y);
+            ctx.lineTo(tailX, tailY);
+            ctx.stroke();
+          } else {
             // Drop down to circle fallback if velocity falls to zero
             ctx.beginPath();
             ctx.arc(pt.x, pt.y, pt.size || 2, 0, Math.PI * 2);
@@ -19111,16 +19641,26 @@
           ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
           ctx.stroke();
         } else if (pt.style === "sparkle_star") {
-                  let size = Math.max(0.1, (pt.size || 4) * (pt.scale !== undefined ? pt.scale : 1.0));
-                  let innerSize = size * 0.25;
+          let size = Math.max(
+            0.1,
+            (pt.size || 4) * (pt.scale !== undefined ? pt.scale : 1.0),
+          );
+          let innerSize = size * 0.25;
 
-                  ctx.translate(pt.x, pt.y);
-                  ctx.rotate(pt.angle || 0);
+          ctx.translate(pt.x, pt.y);
+          ctx.rotate(pt.angle || 0);
 
-                  // 1. Draw glowing radial background aura (Clamped to prevent IndexSizeError)
-                  let glowGrad = ctx.createRadialGradient(0, 0, Math.max(0.05, innerSize), 0, 0, Math.max(0.1, size * 1.8));
-                  glowGrad.addColorStop(0, pt.color || "#ffffff");
-                  glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          // 1. Draw glowing radial background aura (Clamped to prevent IndexSizeError)
+          let glowGrad = ctx.createRadialGradient(
+            0,
+            0,
+            Math.max(0.05, innerSize),
+            0,
+            0,
+            Math.max(0.1, size * 1.8),
+          );
+          glowGrad.addColorStop(0, pt.color || "#ffffff");
+          glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
           ctx.fillStyle = glowGrad;
           ctx.beginPath();
@@ -19138,24 +19678,24 @@
           ctx.closePath();
           ctx.fill();
         } else if (pt.style === "glowing_orb") {
-                  let size = (pt.size || 3) * (pt.scale !== undefined ? pt.scale : 1.0);
-                  let timeVal = Date.now() * 0.004;
-                  let seed = pt.x * 17.3 + pt.y * 23.9;
-                  let breathe = 1.0 + 0.2 * Math.sin(timeVal + seed);
-                  let r = Math.max(0.1, size * breathe);
+          let size = (pt.size || 3) * (pt.scale !== undefined ? pt.scale : 1.0);
+          let timeVal = Date.now() * 0.004;
+          let seed = pt.x * 17.3 + pt.y * 23.9;
+          let breathe = 1.0 + 0.2 * Math.sin(timeVal + seed);
+          let r = Math.max(0.1, size * breathe);
 
-                  ctx.translate(pt.x, pt.y);
+          ctx.translate(pt.x, pt.y);
 
-                  let grad = ctx.createRadialGradient(0, 0, r * 0.15, 0, 0, r * 2.0);
-                  grad.addColorStop(0, "#ffffff"); // intense center core
-                  grad.addColorStop(0.35, pt.color || "#ffffff"); // soft color-mapped body
-                  grad.addColorStop(1, "rgba(0, 0, 0, 0)"); // transparent fading halo
+          let grad = ctx.createRadialGradient(0, 0, r * 0.15, 0, 0, r * 2.0);
+          grad.addColorStop(0, "#ffffff"); // intense center core
+          grad.addColorStop(0.35, pt.color || "#ffffff"); // soft color-mapped body
+          grad.addColorStop(1, "rgba(0, 0, 0, 0)"); // transparent fading halo
 
-                  ctx.fillStyle = grad;
-                  ctx.beginPath();
-                  ctx.arc(0, 0, r * 2.0, 0, Math.PI * 2);
-                  ctx.fill();
-                }
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 2.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.restore();
       });
     }
@@ -19193,20 +19733,20 @@
     window.renderLightingOverlay(ctx, canvas);
 
     // Render Screen Vignette Overlay (Guarded with safe minimum dimensions to prevent exceptions during resizing)
-        let safeW = Math.max(1, canvas.width);
-        let safeH = Math.max(1, canvas.height);
-        let vgInnerR = Math.max(0.1, Math.min(safeW, safeH) * 0.35);
-        let vgOuterR = Math.max(0.2, Math.max(safeW, safeH) * 0.75);
-        let vg = ctx.createRadialGradient(
-          safeW / 2,
-          safeH / 2,
-          vgInnerR,
-          safeW / 2,
-          safeH / 2,
-          vgOuterR,
-        );
-        vg.addColorStop(0, "rgba(0,0,0,0)");
-        vg.addColorStop(1, "rgba(2,1,6,0.75)");
+    let safeW = Math.max(1, canvas.width);
+    let safeH = Math.max(1, canvas.height);
+    let vgInnerR = Math.max(0.1, Math.min(safeW, safeH) * 0.35);
+    let vgOuterR = Math.max(0.2, Math.max(safeW, safeH) * 0.75);
+    let vg = ctx.createRadialGradient(
+      safeW / 2,
+      safeH / 2,
+      vgInnerR,
+      safeW / 2,
+      safeH / 2,
+      vgOuterR,
+    );
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(2,1,6,0.75)");
 
     ctx.save();
     ctx.fillStyle = vg;
@@ -19802,7 +20342,46 @@
     if (!tray) return;
 
     let stats = window.playerStats || {};
+    let p = window.player || {};
     let badges = [];
+
+    // --- PLAYER DEBUFFS (POISON, SNARE, GLITCH) ---
+    let poisonTimer = p.poisonTimer || stats.poisonTimer || 0;
+    let poisonStacks = p.poisonStacks || stats.poisonStacks || 0;
+    if (poisonTimer > 0 && poisonStacks > 0) {
+      let secLeft = (poisonTimer / 60).toFixed(1);
+      badges.push({
+        label: `POISON x${poisonStacks}`,
+        val: `${secLeft}s`,
+        col: "#2ecc71",
+        isDebuff: true,
+        title: `Poisoned (${poisonStacks} Stack(s)): Taking periodic toxic damage!`,
+      });
+    }
+
+    let snareTimer = p.snareTimer || stats.snareTimer || 0;
+    if (snareTimer > 0) {
+      let secLeft = (snareTimer / 60).toFixed(1);
+      badges.push({
+        label: "SNARED",
+        val: `${secLeft}s`,
+        col: "#f59e0b",
+        isDebuff: true,
+        title: "Snared (-60% Movement Speed)",
+      });
+    }
+
+    let glitchTimer = p.glitchTimer || stats.glitchTimer || 0;
+    if (glitchTimer > 0) {
+      let secLeft = (glitchTimer / 60).toFixed(1);
+      badges.push({
+        label: "GLITCHED",
+        val: `${secLeft}s`,
+        col: "#ff007f",
+        isDebuff: true,
+        title: "Control Glitch (Inverted Movement Controls)",
+      });
+    }
 
     let getAtkCol = (s) =>
       s >= 0.35 ? "#00ffcc" : s >= 0.2 ? "#10b981" : "#2ecc71";
@@ -19972,11 +20551,11 @@
     tray.innerHTML = badges
       .map(
         (b) => `
-                    <div class="hud-buff-badge" style="border-color:${b.col}; box-shadow: 0 0 6px ${b.col}44;" title="${b.title}">
-                      <span class="buff-label" style="color:${b.col};">${b.label}</span>
-                      <span class="buff-runs" style="color:#ffffff;">${b.val}</span>
-                    </div>
-                  `,
+                        <div class="hud-buff-badge ${b.isDebuff ? "hud-debuff-badge" : ""}" style="border-color:${b.col}; box-shadow: 0 0 8px ${b.col}55; background: ${b.isDebuff ? "rgba(20, 8, 14, 0.92)" : "rgba(10, 8, 20, 0.88)"};" title="${b.title}">
+                          <span class="buff-label" style="color:${b.col}; font-weight: 800;">${b.label}</span>
+                          <span class="buff-runs" style="color:#ffffff; font-family: monospace;">${b.val}</span>
+                        </div>
+                      `,
       )
       .join("");
   };
@@ -20812,47 +21391,54 @@
   };
 
   // --- BESTIARY ALBUM RENDERER & ANIMATION LOOP ---
-    window.renderBestiaryAlbum = function () {
-      let container = document.getElementById("bestiary-album-content");
-      if (!container) {
-        let sec = document.getElementById("profile-sec-album");
-        if (sec) {
-          sec.innerHTML = `<div id="bestiary-album-content" style="width:100%; height:100%; display:flex; flex-direction:column; box-sizing:border-box;"></div>`;
-          container = document.getElementById("bestiary-album-content");
-        }
+  window.renderBestiaryAlbum = function () {
+    let container = document.getElementById("bestiary-album-content");
+    if (!container) {
+      let sec = document.getElementById("profile-sec-album");
+      if (sec) {
+        sec.innerHTML = `<div id="bestiary-album-content" style="width:100%; height:100%; display:flex; flex-direction:column; box-sizing:border-box;"></div>`;
+        container = document.getElementById("bestiary-album-content");
       }
-      if (!container) return;
+    }
+    if (!container) return;
 
-      let db = window.MONSTER_CARDS_DATA || {};
-      let owned = (window.playerStats && window.playerStats.monsterCards) || {};
-      let dust = (window.playerStats && window.playerStats.astralDust) || 0;
-      let claimedSets = (window.playerStats && window.playerStats.claimedBestiarySets) || {};
+    let db = window.MONSTER_CARDS_DATA || {};
+    let owned = (window.playerStats && window.playerStats.monsterCards) || {};
+    let dust = (window.playerStats && window.playerStats.astralDust) || 0;
+    let claimedSets =
+      (window.playerStats && window.playerStats.claimedBestiarySets) || {};
 
-      let totalCards = Object.keys(db).length;
-      let unlockedCardsCount = 0;
+    let totalCards = Object.keys(db).length;
+    let unlockedCardsCount = 0;
 
-      // Calculate total combined bestiary passives
-      let combinedPassives = {};
+    // Calculate total combined bestiary passives
+    let combinedPassives = {};
 
-      Object.keys(db).forEach((key) => {
-        let card = db[key];
-        let count = owned[key] || 0;
-        if (count > 0) {
-          unlockedCardsCount++;
-          let tier = typeof window.getCardTier === "function" ? window.getCardTier(count) : 0;
-          let rank = Math.max(1, tier + 1);
-          let statKey = card.statKey || card.bonusStat || card.stat || "maxHp";
-          let baseVal = card.perRank || card.baseVal || card.val || card.bonusVal || 1;
-          let totalStatVal = baseVal * rank;
+    Object.keys(db).forEach((key) => {
+      let card = db[key];
+      let count = owned[key] || 0;
+      if (count > 0) {
+        unlockedCardsCount++;
+        let tier =
+          typeof window.getCardTier === "function"
+            ? window.getCardTier(count)
+            : 0;
+        let rank = Math.max(1, tier + 1);
+        let statKey = card.statKey || card.bonusStat || card.stat || "maxHp";
+        let baseVal =
+          card.perRank || card.baseVal || card.val || card.bonusVal || 1;
+        let totalStatVal = baseVal * rank;
 
-          combinedPassives[statKey] = (combinedPassives[statKey] || 0) + totalStatVal;
-        }
-      });
+        combinedPassives[statKey] =
+          (combinedPassives[statKey] || 0) + totalStatVal;
+      }
+    });
 
-      let passivesList = [];
-      for (let sKey in combinedPassives) {
-        let val = combinedPassives[sKey];
-        let isPct = [
+    let passivesList = [];
+    for (let sKey in combinedPassives) {
+      let val = combinedPassives[sKey];
+      let isPct =
+        [
           "drop",
           "qly",
           "critChance",
@@ -20861,107 +21447,156 @@
           "parry",
           "gold",
           "expPct",
-        ].includes(sKey) || (db[sKey] && db[sKey].isPct);
+        ].includes(sKey) ||
+        (db[sKey] && db[sKey].isPct);
 
-        let label = window.getStatLabel ? window.getStatLabel(sKey) : sKey.toUpperCase();
-        let valStr = isPct ? `+${(val * 100).toFixed(1)}%` : `+${Math.round(val)}`;
-        passivesList.push(`${label}: ${valStr}`);
+      let label = window.getStatLabel
+        ? window.getStatLabel(sKey)
+        : sKey.toUpperCase();
+      let valStr = isPct
+        ? `+${(val * 100).toFixed(1)}%`
+        : `+${Math.round(val)}`;
+      passivesList.push(`${label}: ${valStr}`);
+    }
+
+    let passivesSummaryStr =
+      passivesList.length > 0
+        ? passivesList.join(" • ")
+        : "No active card bonuses yet.";
+
+    let pctUnlocked =
+      totalCards > 0 ? Math.round((unlockedCardsCount / totalCards) * 100) : 0;
+
+    // Group cards by Set
+    const SET_ORDER = [
+      "Whispering Woods",
+      "Mountain Peaks",
+      "Inferno Depths",
+      "Fungal Swamp",
+      "Void Singularity",
+      "Temporal Sanctorum",
+      "Cyberspace Nexus",
+      "Guardian Wardens",
+      "Cosmic Overlords",
+    ];
+
+    const SET_COLORS = {
+      "Whispering Woods": "#2ecc71",
+      "Mountain Peaks": "#3498db",
+      "Inferno Depths": "#e74c3c",
+      "Fungal Swamp": "#1abc9c",
+      "Void Singularity": "#9b59b6",
+      "Temporal Sanctorum": "#e879f9",
+      "Cyberspace Nexus": "#00ffff",
+      "Guardian Wardens": "#f59e0b",
+      "Cosmic Overlords": "#f1c40f",
+    };
+
+    let setGroups = {};
+    SET_ORDER.forEach((setName) => {
+      setGroups[setName] = [];
+    });
+
+    Object.keys(db).forEach((key) => {
+      let card = db[key];
+      let setName = card.set || "Whispering Woods";
+      if (!setGroups[setName]) setGroups[setName] = [];
+      setGroups[setName].push({ key: key, ...card });
+    });
+
+    let setsHtml = "";
+
+    SET_ORDER.forEach((setName) => {
+      let cards = setGroups[setName] || [];
+      if (cards.length === 0) return;
+
+      let setCol = SET_COLORS[setName] || "#ffd700";
+      let setOwnedCount = cards.filter((c) => (owned[c.key] || 0) > 0).length;
+      let isSetComplete = setOwnedCount === cards.length;
+      let isClaimed = !!claimedSets[setName];
+
+      let resonanceStatus = "";
+      if (isClaimed) {
+        resonanceStatus = `<span style="color:#2ecc71; font-weight:bold;">RESONANCE: CLAIMED (+2 Sacks, +50 Dust)</span>`;
+      } else if (isSetComplete) {
+        resonanceStatus = `<button class="action-btn-sm" style="background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#ffd700; color:#fff; font-weight:900;" onclick="event.stopPropagation(); window.claimBestiarySetReward('${setName}')">CLAIM SET BONUS</button>`;
+      } else {
+        resonanceStatus = `<span style="color:#64748b;">RESONANCE: INACTIVE (${setOwnedCount}/${cards.length})</span>`;
       }
 
-      let passivesSummaryStr =
-        passivesList.length > 0
-          ? passivesList.join(" • ")
-          : "No active card bonuses yet.";
+      let cardsGridHtml = cards
+        .map((card) => {
+          let count = owned[card.key] || 0;
+          let isUnlocked = count > 0;
+          let tier = isUnlocked
+            ? typeof window.getCardTier === "function"
+              ? window.getCardTier(count)
+              : 0
+            : -1;
+          let rank = isUnlocked ? Math.max(1, tier + 1) : 0;
 
-      let pctUnlocked = totalCards > 0 ? Math.round((unlockedCardsCount / totalCards) * 100) : 0;
+          let rankNames = [
+            "BRONZE RANK",
+            "IRON RANK",
+            "SILVER RANK",
+            "GOLD RANK",
+            "PLATINUM RANK",
+            "DIAMOND RANK",
+            "MYTHIC RANK",
+          ];
+          let rankLabel = isUnlocked
+            ? rankNames[tier] || "MYTHIC RANK"
+            : "LOCKED";
 
-      // Group cards by Set
-      const SET_ORDER = [
-                  "Whispering Woods",
-                  "Mountain Peaks",
-                  "Inferno Depths",
-                  "Fungal Swamp",
-                  "Void Singularity",
-                  "Temporal Sanctorum",
-                  "Cyberspace Nexus",
-                  "Guardian Wardens",
-                  "Cosmic Overlords",
-                ];
+          let statKey = card.statKey || card.bonusStat || card.stat || "maxHp";
+          let statName =
+            card.statName ||
+            card.statLabel ||
+            (window.getStatLabel ? window.getStatLabel(statKey) : "Bonus");
+          let baseVal =
+            card.perRank || card.baseVal || card.val || card.bonusVal || 1;
+          let isPct =
+            card.isPct ||
+            [
+              "drop",
+              "qly",
+              "critChance",
+              "critDamage",
+              "block",
+              "parry",
+              "gold",
+              "expPct",
+            ].includes(statKey);
 
-                const SET_COLORS = {
-                  "Whispering Woods": "#2ecc71",
-                  "Mountain Peaks": "#3498db",
-                  "Inferno Depths": "#e74c3c",
-                  "Fungal Swamp": "#1abc9c",
-                  "Void Singularity": "#9b59b6",
-                  "Temporal Sanctorum": "#e879f9",
-                  "Cyberspace Nexus": "#00ffff",
-                  "Guardian Wardens": "#f59e0b",
-                  "Cosmic Overlords": "#f1c40f",
-                };
+          let bonusValText = "";
+          if (isUnlocked) {
+            let mult =
+              (window.SET_CARD_MULTIPLIERS &&
+                window.SET_CARD_MULTIPLIERS[card.set]) ||
+              1.0;
+            let totalVal =
+              (typeof window.getCardValue === "function"
+                ? window.getCardValue(baseVal, tier)
+                : baseVal) * mult;
+            let formattedVal = isPct
+              ? `+${(totalVal * 100).toFixed(1)}%`
+              : `+${Math.round(totalVal)}`;
+            bonusValText = `<span style="color:#2ecc71; font-weight:bold;">${statName}: ${formattedVal}</span>`;
+          } else {
+            bonusValText = `<span style="color:#64748b;">${statName}: LOCKED</span>`;
+          }
 
-      let setGroups = {};
-      SET_ORDER.forEach((setName) => {
-        setGroups[setName] = [];
-      });
+          let thresholds = window.CARD_UPGRADE_THRESHOLDS || [
+            1, 25, 100, 300, 750, 1500, 2500,
+          ];
+          let nextReq = isUnlocked
+            ? thresholds[tier + 1] || thresholds[thresholds.length - 1]
+            : 1;
+          let progressPct = isUnlocked
+            ? Math.min(100, Math.round((count / nextReq) * 100))
+            : 0;
 
-      Object.keys(db).forEach((key) => {
-        let card = db[key];
-        let setName = card.set || "Whispering Woods";
-        if (!setGroups[setName]) setGroups[setName] = [];
-        setGroups[setName].push({ key: key, ...card });
-      });
-
-      let setsHtml = "";
-
-      SET_ORDER.forEach((setName) => {
-        let cards = setGroups[setName] || [];
-        if (cards.length === 0) return;
-
-        let setCol = SET_COLORS[setName] || "#ffd700";
-        let setOwnedCount = cards.filter((c) => (owned[c.key] || 0) > 0).length;
-        let isSetComplete = setOwnedCount === cards.length;
-        let isClaimed = !!claimedSets[setName];
-
-        let resonanceStatus = "";
-        if (isClaimed) {
-          resonanceStatus = `<span style="color:#2ecc71; font-weight:bold;">RESONANCE: CLAIMED (+2 Sacks, +50 Dust)</span>`;
-        } else if (isSetComplete) {
-          resonanceStatus = `<button class="action-btn-sm" style="background:linear-gradient(180deg, #10b981 0%, #047857 100%); border-color:#ffd700; color:#fff; font-weight:900;" onclick="event.stopPropagation(); window.claimBestiarySetReward('${setName}')">CLAIM SET BONUS</button>`;
-        } else {
-          resonanceStatus = `<span style="color:#64748b;">RESONANCE: INACTIVE (${setOwnedCount}/${cards.length})</span>`;
-        }
-
-        let cardsGridHtml = cards
-          .map((card) => {
-            let count = owned[card.key] || 0;
-            let isUnlocked = count > 0;
-            let tier = isUnlocked ? (typeof window.getCardTier === "function" ? window.getCardTier(count) : 0) : -1;
-            let rank = isUnlocked ? Math.max(1, tier + 1) : 0;
-
-            let rankNames = ["BRONZE RANK", "IRON RANK", "SILVER RANK", "GOLD RANK", "PLATINUM RANK", "DIAMOND RANK", "MYTHIC RANK"];
-                        let rankLabel = isUnlocked ? (rankNames[tier] || "MYTHIC RANK") : "LOCKED";
-
-                        let statKey = card.statKey || card.bonusStat || card.stat || "maxHp";
-                        let statName = card.statName || card.statLabel || (window.getStatLabel ? window.getStatLabel(statKey) : "Bonus");
-                        let baseVal = card.perRank || card.baseVal || card.val || card.bonusVal || 1;
-                        let isPct = card.isPct || ["drop", "qly", "critChance", "critDamage", "block", "parry", "gold", "expPct"].includes(statKey);
-
-                        let bonusValText = "";
-                        if (isUnlocked) {
-                          let mult = (window.SET_CARD_MULTIPLIERS && window.SET_CARD_MULTIPLIERS[card.set]) || 1.0;
-                          let totalVal = (typeof window.getCardValue === "function" ? window.getCardValue(baseVal, tier) : baseVal) * mult;
-                          let formattedVal = isPct ? `+${(totalVal * 100).toFixed(1)}%` : `+${Math.round(totalVal)}`;
-                          bonusValText = `<span style="color:#2ecc71; font-weight:bold;">${statName}: ${formattedVal}</span>`;
-                        } else {
-                          bonusValText = `<span style="color:#64748b;">${statName}: LOCKED</span>`;
-                        }
-
-                        let thresholds = window.CARD_UPGRADE_THRESHOLDS || [1, 25, 100, 300, 750, 1500, 2500];
-                        let nextReq = isUnlocked ? (thresholds[tier + 1] || thresholds[thresholds.length - 1]) : 1;
-            let progressPct = isUnlocked ? Math.min(100, Math.round((count / nextReq) * 100)) : 0;
-
-            return `
+          return `
               <div class="bestiary-card-item ${isUnlocked ? "unlocked-card" : "locked-card"}" style="border-color: ${isUnlocked ? setCol : "#334155"}; background: ${isUnlocked ? "rgba(18, 14, 28, 0.85)" : "rgba(8, 6, 14, 0.6)"};">
                 <div style="font-size: 7.5px; font-weight: 900; color: ${isUnlocked ? setCol : "#64748b"}; font-family: monospace; text-transform: uppercase;">
                   ${rankLabel}
@@ -20984,10 +21619,10 @@
                 </div>
               </div>
             `;
-          })
-          .join("");
+        })
+        .join("");
 
-        setsHtml += `
+      setsHtml += `
           <div style="margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid ${setCol}; padding-bottom: 4px; margin-bottom: 8px; font-family: monospace; font-size: 10.5px;">
               <strong style="color: ${setCol}; text-transform: uppercase; letter-spacing: 1px;">${setName.toUpperCase()} SET</strong>
@@ -20998,9 +21633,9 @@
             </div>
           </div>
         `;
-      });
+    });
 
-      container.innerHTML = `
+    container.innerHTML = `
         <div class="bestiary-wrapper" style="display:flex; flex-direction:column; gap:10px; width:100%; height:100%; box-sizing:border-box;">
           <!-- Top Summary Banner -->
           <div style="background: linear-gradient(180deg, #181226 0%, #0a0712 100%); border: 1.5px solid #d4af37; border-radius: 8px; padding: 10px 14px; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.8);">
@@ -21026,13 +21661,13 @@
         </div>
       `;
 
-      if (typeof window.startBestiaryAnimLoop === "function") {
-        window.startBestiaryAnimLoop();
-      }
-    };
+    if (typeof window.startBestiaryAnimLoop === "function") {
+      window.startBestiaryAnimLoop();
+    }
+  };
 
-    // --- BESTIARY ANIMATED VIEWPORT LOOP & SET REWARD HANDLERS ---
-    window.bestiaryAnimFrameId = null;
+  // --- BESTIARY ANIMATED VIEWPORT LOOP & SET REWARD HANDLERS ---
+  window.bestiaryAnimFrameId = null;
 
   window.stopBestiaryAnimLoop = function () {
     if (window.bestiaryAnimFrameId) {
@@ -23786,31 +24421,32 @@
   };
 
   window.toggleLootBag = function () {
-      window.hideTooltip();
-      let modal = document.getElementById("profile-modal");
-      if (!modal) return;
+    window.hideTooltip();
+    let modal = document.getElementById("profile-modal");
+    if (!modal) return;
 
-      let isCurrentlyOpen = (modal.style.display === "flex" || modal.style.display === "block");
-      let isCurrentlyOnSatchel = (window.activeProfileMobileTab === "satchel");
+    let isCurrentlyOpen =
+      modal.style.display === "flex" || modal.style.display === "block";
+    let isCurrentlyOnSatchel = window.activeProfileMobileTab === "satchel";
 
-      if (isCurrentlyOpen && isCurrentlyOnSatchel) {
-        modal.style.display = "none";
-        window.lastModalCloseTime = Date.now();
-        if (
-          window.SkillTreeManager &&
-          typeof window.SkillTreeManager.stopAnimationLoop === "function"
-        ) {
-          window.SkillTreeManager.stopAnimationLoop();
-        }
-        if (typeof window.stopBestiaryAnimLoop === "function") {
-          window.stopBestiaryAnimLoop();
-        }
-      } else {
-        modal.style.display = "flex";
-        window.switchProfileTab("satchel");
-        window.renderProfileModal();
+    if (isCurrentlyOpen && isCurrentlyOnSatchel) {
+      modal.style.display = "none";
+      window.lastModalCloseTime = Date.now();
+      if (
+        window.SkillTreeManager &&
+        typeof window.SkillTreeManager.stopAnimationLoop === "function"
+      ) {
+        window.SkillTreeManager.stopAnimationLoop();
       }
-    };
+      if (typeof window.stopBestiaryAnimLoop === "function") {
+        window.stopBestiaryAnimLoop();
+      }
+    } else {
+      modal.style.display = "flex";
+      window.switchProfileTab("satchel");
+      window.renderProfileModal();
+    }
+  };
 
   window.openSigilPickerModal = function () {
     let modal = document.getElementById("sigil-picker-modal");
@@ -24520,43 +25156,65 @@
     }
 
     let pools = [
-          // Sector 0 (Floors 1 - 12): Whispering Woods
-          { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
-          // Sector 1 (Floors 13 - 24): Mountain Peaks & Alpine Mines
-          { tier: 1, types: ["golem", "wyrmling", "gargoyle", "rust_nibbler", "gilded_scuttler", "mimic_shield"] },
-          // Sector 2 (Floors 25 - 36): Inferno Depths & Smeltery
-          {
-            tier: 2,
-            types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"],
-          },
-          // Sector 3 (Floors 37 - 48): Fungal Swamp & Ruins
-          {
-            tier: 3,
-            types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
-          },
-          // Sector 4 (Floors 49 - 60): Void Singularity
-          {
-            tier: 4,
-            types: ["void_orb", "void_crawler", "void_spectre", "void_wraith", "rift_drifter"],
-          },
-          // Sector 5 (Floors 61 - 72): Temporal Sanctorum
-                      {
-                        tier: 5,
-                        types: ["clockwork_scarab", "star_weaver", "coin_elemental", "temporal_watcher", "clockwork_drone"],
-                      },
-                      // Sector 6 (Floors 73 - 84): Cyberspace Nexus
-                      {
-                        tier: 6,
-                        types: [
-                          "neon_spider",
-                          "wireframe_orb",
-                          "cursed_blade",
-                          "animated_armor",
-                          "mimic_shield",
-                          "cyber_wraith",
-                        ],
-                      },
-        ];
+      // Sector 0 (Floors 1 - 12): Whispering Woods
+      { tier: 0, types: ["slime", "sprout", "thorn_wyrm"] },
+      // Sector 1 (Floors 13 - 24): Mountain Peaks & Alpine Mines
+      {
+        tier: 1,
+        types: [
+          "golem",
+          "wyrmling",
+          "gargoyle",
+          "rust_nibbler",
+          "gilded_scuttler",
+          "mimic_shield",
+        ],
+      },
+      // Sector 2 (Floors 25 - 36): Inferno Depths & Smeltery
+      {
+        tier: 2,
+        types: ["magma_elemental", "lava_serpent", "hell_bat", "slag_slime"],
+      },
+      // Sector 3 (Floors 37 - 48): Fungal Swamp & Ruins
+      {
+        tier: 3,
+        types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
+      },
+      // Sector 4 (Floors 49 - 60): Void Singularity
+      {
+        tier: 4,
+        types: [
+          "void_orb",
+          "void_crawler",
+          "void_spectre",
+          "void_wraith",
+          "rift_drifter",
+        ],
+      },
+      // Sector 5 (Floors 61 - 72): Temporal Sanctorum
+      {
+        tier: 5,
+        types: [
+          "clockwork_scarab",
+          "star_weaver",
+          "coin_elemental",
+          "temporal_watcher",
+          "clockwork_drone",
+        ],
+      },
+      // Sector 6 (Floors 73 - 84): Cyberspace Nexus
+      {
+        tier: 6,
+        types: [
+          "neon_spider",
+          "wireframe_orb",
+          "cursed_blade",
+          "animated_armor",
+          "mimic_shield",
+          "cyber_wraith",
+        ],
+      },
+    ];
 
     // Infinite Anomaly Cycle for Floors 85+ (Sector 7+)
     let effectiveSector = sector >= 7 ? sector % 7 : sector;
@@ -24618,36 +25276,39 @@
   };
 
   window.useDungeonFlask = function () {
-      let p = window.player;
-      let stats = window.playerStats;
-      if (!p || !stats || p.hp <= 0) return;
-      if (stats.editHudMode) return;
+    let p = window.player;
+    let stats = window.playerStats;
+    if (!p || !stats || p.hp <= 0) return;
+    if (stats.editHudMode) return;
 
-      // Prevent accidental double-activation (1-second safety use lockout)
-      if ((stats.flaskUseCooldownTimer || 0) > 0) {
-        return;
+    // Prevent accidental double-activation (1-second safety use lockout)
+    if ((stats.flaskUseCooldownTimer || 0) > 0) {
+      return;
+    }
+
+    if ((stats.flaskCharges || 0) <= 0) {
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[!] Flask empty! Wait for it to recharge.",
+          "#e74c3c",
+        );
       }
+      return;
+    }
 
-      if ((stats.flaskCharges || 0) <= 0) {
-        if (typeof window.pushHeaderToast === "function") {
-          window.pushHeaderToast(
-            "[!] Flask empty! Wait for it to recharge.",
-            "#e74c3c",
-          );
-        }
-        return;
-      }
+    stats.flaskCharges--;
+    stats.flaskUseCooldownTimer = 60; // 1-second safety lockout (60 FPS)
 
-      stats.flaskCharges--;
-      stats.flaskUseCooldownTimer = 60; // 1-second safety lockout (60 FPS)
+    // Ensure the 45-second recharge timer is active if below maximum charges
+    let maxCharges = stats.maxFlaskCharges || 1;
+    if (
+      stats.flaskCharges < maxCharges &&
+      (stats.flaskCooldownTimer || 0) <= 0
+    ) {
+      stats.flaskCooldownTimer = 2700;
+    }
 
-      // Ensure the 45-second recharge timer is active if below maximum charges
-      let maxCharges = stats.maxFlaskCharges || 1;
-      if (stats.flaskCharges < maxCharges && (stats.flaskCooldownTimer || 0) <= 0) {
-        stats.flaskCooldownTimer = 2700;
-      }
-
-      if (typeof window.progressMission === "function") {
+    if (typeof window.progressMission === "function") {
       window.progressMission("flask", 1);
     }
 
@@ -24924,17 +25585,25 @@
         types: ["swamp_basilisk", "toxic_fly", "marsh_ghost", "corroded_golem"],
       },
       { tier: 4, types: ["void_orb", "void_crawler", "void_spectre"] },
-      { tier: 5, types: ["clockwork_scarab", "star_weaver", "clockwork_drone", "temporal_watcher"] },
-                    {
-                      tier: 6,
-                      types: [
-                        "neon_spider",
-                        "wireframe_orb",
-                        "cursed_blade",
-                        "animated_armor",
-                        "cyber_wraith",
-                      ],
-                    },
+      {
+        tier: 5,
+        types: [
+          "clockwork_scarab",
+          "star_weaver",
+          "clockwork_drone",
+          "temporal_watcher",
+        ],
+      },
+      {
+        tier: 6,
+        types: [
+          "neon_spider",
+          "wireframe_orb",
+          "cursed_blade",
+          "animated_armor",
+          "cyber_wraith",
+        ],
+      },
     ];
     let selected =
       pools[tier] || pools[Math.floor(Math.random() * pools.length)];
@@ -25060,27 +25729,37 @@
 
     let enemyScale = window.playerStats.currentRunEnemyStrength || 1.0;
 
-    let repStage = typeof window.getEffectiveStage === "function" ? window.getEffectiveStage(waveNumber) : waveNumber;
-          let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
-          let densityFactor = 1 + 0.005 * repStage;
+    let repStage =
+      typeof window.getEffectiveStage === "function"
+        ? window.getEffectiveStage(waveNumber)
+        : waveNumber;
+    let repScale = Math.pow(1.012, repStage) * (1 + 0.015 * repStage);
+    let densityFactor = 1 + 0.005 * repStage;
 
-          if (isBossWave) {
-            // --- MILESTONE BOSS SPONDING ---
-            let cx = Math.floor(map.width / 2);
-            let cy = Math.floor(map.height / 2);
+    if (isBossWave) {
+      // --- MILESTONE BOSS SPONDING ---
+      let cx = Math.floor(map.width / 2);
+      let cy = Math.floor(map.height / 2);
 
-            // Safe Teleportation: move player to bottom of arena to prevent boss-spawn overlap
-            p.x = cx * tileSize + tileSize / 2;
-            p.y = (map.height - 4) * tileSize + tileSize / 2;
-            p.targetX = p.x;
-            p.targetY = p.y;
+      // Safe Teleportation: move player to bottom of arena to prevent boss-spawn overlap
+      p.x = cx * tileSize + tileSize / 2;
+      p.y = (map.height - 4) * tileSize + tileSize / 2;
+      p.targetX = p.x;
+      p.targetY = p.y;
 
-            let bossInfo = window.getOnslaughtBossForWave(waveNumber);
+      let bossInfo = window.getOnslaughtBossForWave(waveNumber);
 
-            let bossHp = Math.round((bossInfo.isMajor ? 2000 : 1200) * repScale * densityFactor * enemyScale);
-            let bossAtk = Math.round((bossInfo.isMajor ? 28 : 20) * repScale * enemyScale);
+      let bossHp = Math.round(
+        (bossInfo.isMajor ? 2000 : 1200) *
+          repScale *
+          densityFactor *
+          enemyScale,
+      );
+      let bossAtk = Math.round(
+        (bossInfo.isMajor ? 28 : 20) * repScale * enemyScale,
+      );
 
-            window.mob = {
+      window.mob = {
         type: bossInfo.isMajor ? "dungeon_boss" : "dungeon_miniboss",
         name: bossInfo.name,
         visualType: bossInfo.visualType,
@@ -25117,12 +25796,12 @@
         );
       }
     } else {
-              // --- STANDARD & ELITE MOB SPREAD SPONDING ---
-                    let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
-                    let mobHpVal = Math.round(100 * repScale * densityFactor * enemyScale);
-                    let mobAtkVal = Math.round(12 * repScale * enemyScale);
+      // --- STANDARD & ELITE MOB SPREAD SPONDING ---
+      let spawnCount = Math.min(15, 3 + Math.floor(waveNumber / 2));
+      let mobHpVal = Math.round(100 * repScale * densityFactor * enemyScale);
+      let mobAtkVal = Math.round(12 * repScale * enemyScale);
 
-          let pStats =
+      let pStats =
         typeof window.resolvePlayerStats === "function"
           ? window.resolvePlayerStats()
           : {};
@@ -25149,69 +25828,69 @@
         }
 
         let finalHp = mobHpVal;
-                      let finalAtk = mobAtkVal;
+        let finalAtk = mobAtkVal;
 
-                      if (isElite && isRare) {
-                        finalHp = Math.round(finalHp * 2.5);
-                        finalAtk = Math.round(finalAtk * 1.6);
-                      } else if (isElite) {
-                        finalHp = Math.round(finalHp * 1.5);
-                        finalAtk = Math.round(finalAtk * 1.25);
-                      } else if (isRare) {
-                        finalHp = Math.round(finalHp * 1.75);
-                        finalAtk = Math.round(finalAtk * 1.35);
-                      }
+        if (isElite && isRare) {
+          finalHp = Math.round(finalHp * 2.5);
+          finalAtk = Math.round(finalAtk * 1.6);
+        } else if (isElite) {
+          finalHp = Math.round(finalHp * 1.5);
+          finalAtk = Math.round(finalAtk * 1.25);
+        } else if (isRare) {
+          finalHp = Math.round(finalHp * 1.75);
+          finalAtk = Math.round(finalAtk * 1.35);
+        }
 
-                      let rangedTypes = [
-                        "thorn_wyrm",
-                        "wyrmling",
-                        "magma_elemental",
-                        "toxic_fly",
-                        "void_orb",
-                      ];
-                      let isRanged = rangedTypes.includes(mobInfo.type);
-                      let projType =
-                        mobInfo.type === "thorn_wyrm"
-                          ? "thorn"
-                          : mobInfo.type === "wyrmling"
-                            ? "frost"
-                            : mobInfo.type === "magma_elemental"
-                              ? "fireball"
-                              : mobInfo.type === "toxic_fly"
-                                ? "maelstrom"
-                                : "void";
+        let rangedTypes = [
+          "thorn_wyrm",
+          "wyrmling",
+          "magma_elemental",
+          "toxic_fly",
+          "void_orb",
+        ];
+        let isRanged = rangedTypes.includes(mobInfo.type);
+        let projType =
+          mobInfo.type === "thorn_wyrm"
+            ? "thorn"
+            : mobInfo.type === "wyrmling"
+              ? "frost"
+              : mobInfo.type === "magma_elemental"
+                ? "fireball"
+                : mobInfo.type === "toxic_fly"
+                  ? "maelstrom"
+                  : "void";
 
-                      let pos = window.getOnslaughtSpawnPosition(map);
-                      let spawnX = pos.x * tileSize;
-                      let spawnY = pos.y * tileSize;
+        let pos = window.getOnslaughtSpawnPosition(map);
+        let spawnX = pos.x * tileSize;
+        let spawnY = pos.y * tileSize;
 
-                      window.activeDungeonMobs.push({
-                        id: window.idCounter++,
-                        type: "mob",
-                        visualTier: mobInfo.tier,
-                        visualType: mobInfo.type,
-                        x: spawnX,
-                        y: spawnY,
-                        homeX: spawnX,
-                        homeY: spawnY,
-                        w: 24,
-                        h: 24,
-                        hp: BigNum.from(finalHp),
-                        maxHp: BigNum.from(finalHp),
-                        atk: finalAtk,
-                        flashTimer: 0,
-                        attackCooldown: 0,
-                        rangedCooldown: window.randInt(30, 90),
-                        isRanged: isRanged,
-                        projectileType: projType,
-                        moveProfile:
-                          mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
-                            ? "relentless"
-                            : "standard",
-                        facing: -1,
-                        isRare: isRare,
-                        isElite: isElite,
-                        eliteAffix: eliteAffix,
+        window.activeDungeonMobs.push({
+          id: window.idCounter++,
+          type: "mob",
+          visualTier: mobInfo.tier,
+          visualType: mobInfo.type,
+          x: spawnX,
+          y: spawnY,
+          homeX: spawnX,
+          homeY: spawnY,
+          w: 24,
+          h: 24,
+          hp: BigNum.from(finalHp),
+          maxHp: BigNum.from(finalHp),
+          atk: finalAtk,
+          flashTimer: 0,
+          attackCooldown: 0,
+          rangedCooldown: window.randInt(30, 90),
+          isRanged: isRanged,
+          projectileType: projType,
+          moveProfile:
+            mobInfo.type === "golem" || mobInfo.type === "corroded_golem"
+              ? "relentless"
+              : "standard",
+          facing: -1,
+          isRare: isRare,
+          isElite: isElite,
+          eliteAffix: eliteAffix,
           buffStacks: { haste: 0, def: 0, atk: 0 },
           buffTimers: { haste: 0, def: 0, atk: 0 },
           buffDecayTimers: { haste: 0, def: 0, atk: 0 },
@@ -26121,18 +26800,18 @@
 
     // Card Level Projections Formula aligned perfectly with Bestiary Ranks
     window.calculateCardLevelInfo = function (totalOwned) {
-          let thresholds = window.CARD_UPGRADE_THRESHOLDS || [
-            1, 25, 100, 300, 750, 1500, 2500,
-          ];
-          let rankNames = [
-            "Bronze",
-            "Iron",
-            "Silver",
-            "Gold",
-            "Platinum",
-            "Diamond",
-            "Mythic",
-          ];
+      let thresholds = window.CARD_UPGRADE_THRESHOLDS || [
+        1, 25, 100, 300, 750, 1500, 2500,
+      ];
+      let rankNames = [
+        "Bronze",
+        "Iron",
+        "Silver",
+        "Gold",
+        "Platinum",
+        "Diamond",
+        "Mythic",
+      ];
 
       let tier = window.getCardTier(totalOwned);
       if (tier < 0) {

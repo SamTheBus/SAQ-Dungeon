@@ -1058,18 +1058,21 @@ window.rarityProbCache = window.rarityProbCache || {};
 window.calculateRarityProbabilities = function (
   quality = 1.0,
   isGacha = false,
-  stage = 1
+  stage = 1,
 ) {
   let S = Math.max(1, stage || 1);
   let Q = Math.max(0.5, quality || 1.0);
 
   // Dynamic Continuous Weight Functions
-    let w0 = Math.max(5, 100 - 0.3 * S);
-    let w1 = Math.max(10, 30 + 0.4 * Math.min(S, 100) - 0.1 * Math.max(0, S - 100));
-    let w2 = S >= 25 ? Math.max(0, 0.6 * (S - 25)) : 0;
-    let w3 = S >= 100 ? Math.max(0, 0.5 * (S - 100)) : 0;
-    let w4 = S >= 250 ? Math.max(0, 0.4 * (S - 250)) : 0;
-    let w5 = S >= 500 ? Math.max(0, 0.3 * (S - 500)) : 0;
+  let w0 = Math.max(5, 100 - 0.3 * S);
+  let w1 = Math.max(
+    10,
+    30 + 0.4 * Math.min(S, 100) - 0.1 * Math.max(0, S - 100),
+  );
+  let w2 = S >= 25 ? Math.max(0, 0.6 * (S - 25)) : 0;
+  let w3 = S >= 100 ? Math.max(0, 0.5 * (S - 100)) : 0;
+  let w4 = S >= 250 ? Math.max(0, 0.4 * (S - 250)) : 0;
+  let w5 = S >= 500 ? Math.max(0, 0.3 * (S - 500)) : 0;
 
   // Apply Quality Boost
   if (Q > 1.0) {
@@ -5820,8 +5823,8 @@ window.SET_RESONANCE_BASE_VALUES = {
   "Void Singularity": 0.12, // 12% Base
   "Temporal Sanctorum": 0.15, // 15% Base
   "Cyberspace Nexus": 0.18, // 18% Base
-  "Guardian Wardens": 0.10, // 10% Base
-  "Cosmic Overlords": 0.20, // 20% Base
+  "Guardian Wardens": 0.1, // 10% Base
+  "Cosmic Overlords": 0.2, // 20% Base
 };
 
 window.SET_CARD_MULTIPLIERS = {
@@ -6008,16 +6011,24 @@ window.renderBestiaryAlbum = function () {
     "Cosmic Wardens",
   ];
 
-  const rankNames = ["Bronze", "Iron", "Silver", "Gold", "Platinum", "Diamond", "Mythic"];
-    const rankColors = [
-      "#cd7f32",
-      "#b2bec3",
-      "#bdc3c7",
-      "#ffd700",
-      "#e5e7eb",
-      "#00ffff",
-      "#df9ffb",
-    ];
+  const rankNames = [
+    "Bronze",
+    "Iron",
+    "Silver",
+    "Gold",
+    "Platinum",
+    "Diamond",
+    "Mythic",
+  ];
+  const rankColors = [
+    "#cd7f32",
+    "#b2bec3",
+    "#bdc3c7",
+    "#ffd700",
+    "#e5e7eb",
+    "#00ffff",
+    "#df9ffb",
+  ];
 
   setKeys.forEach((setName) => {
     let setData = window.CARD_SETS_DATA[setName];

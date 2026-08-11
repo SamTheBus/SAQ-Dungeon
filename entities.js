@@ -8,33 +8,42 @@
   const Date = ScopedDate;
 
   // Feature-detect filter support once and cache it (Zero-allocation)
-    const isFilterSupported = typeof CanvasRenderingContext2D !== "undefined" && "filter" in CanvasRenderingContext2D.prototype;
+  const isFilterSupported =
+    typeof CanvasRenderingContext2D !== "undefined" &&
+    "filter" in CanvasRenderingContext2D.prototype;
 
-    const isSafari = typeof navigator !== "undefined" && (
-      /^((?!chrome|android).)*safari/i.test(navigator.userAgent) ||
+  const isSafari =
+    typeof navigator !== "undefined" &&
+    (/^((?!chrome|android).)*safari/i.test(navigator.userAgent) ||
       /iPad|iPhone|iPod/.test(navigator.platform) ||
-      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2)
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2));
+  // Force tint fallback on all mobile devices and Safari for performance and iOS visual correctness
+  const isMobileDevice =
+    typeof navigator !== "undefined" &&
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
     );
-    // Force tint fallback on all mobile devices and Safari for performance and iOS visual correctness
-    const isMobileDevice = typeof navigator !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const useTintFallback = !isFilterSupported || isSafari || isMobileDevice;
+  const useTintFallback = !isFilterSupported || isSafari || isMobileDevice;
 
-    let offscreenCanvas = null;
-    let offscreenCtx = null;
+  let offscreenCanvas = null;
+  let offscreenCtx = null;
 
-    function getOffscreenCanvas(mainCanvas) {
-          if (!offscreenCanvas) {
-            offscreenCanvas = document.createElement("canvas");
-            offscreenCtx = offscreenCanvas.getContext("2d");
-          }
-          if (offscreenCanvas.width !== mainCanvas.width || offscreenCanvas.height !== mainCanvas.height) {
-            offscreenCanvas.width = mainCanvas.width;
-            offscreenCanvas.height = mainCanvas.height;
-          }
-          offscreenCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform first to prevent state leak afterimages
-          offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-          return { canvas: offscreenCanvas, ctx: offscreenCtx };
-        }
+  function getOffscreenCanvas(mainCanvas) {
+    if (!offscreenCanvas) {
+      offscreenCanvas = document.createElement("canvas");
+      offscreenCtx = offscreenCanvas.getContext("2d");
+    }
+    if (
+      offscreenCanvas.width !== mainCanvas.width ||
+      offscreenCanvas.height !== mainCanvas.height
+    ) {
+      offscreenCanvas.width = mainCanvas.width;
+      offscreenCanvas.height = mainCanvas.height;
+    }
+    offscreenCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform first to prevent state leak afterimages
+    offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+    return { canvas: offscreenCanvas, ctx: offscreenCtx };
+  }
 
   // Static particle themes to avoid runtime array allocations on entity death
   window.PARTICLE_THEMES = {
@@ -676,52 +685,57 @@
     }
 
     update() {
-          if (this.screenShakeTimer > 0) {
-            this.screenShakeTimer--;
-          }
+      if (this.screenShakeTimer > 0) {
+        this.screenShakeTimer--;
+      }
 
-          // --- Active Player Debuff Particle Emitters ---
-          let p = window.player;
-          if (p && !window.isGamePaused && window.ParticlePool && window.particles) {
-            // A. Poison Gaseous Bubbles
-            if (p.poisonStacks > 0 && Math.random() < 0.18) {
-              let pt = window.ParticlePool.get(
-                p.x + window.randFloat(-8, 8),
-                p.y - 12 + window.randFloat(-10, 10),
-                window.randFloat(-0.3, 0.3),
-                -window.randFloat(0.5, 1.2),
-                window.randFloat(1.2, 2.5),
-                "#2ecc71",
-                0.85,
-                window.randInt(15, 30),
-                0,
-                true
-              );
-              pt.style = "glowing_orb";
-              pt.scaleDecay = 0.02;
-              window.particles.push(pt);
-            }
+      // --- Active Player Debuff Particle Emitters ---
+      let p = window.player;
+      if (
+        p &&
+        !window.isGamePaused &&
+        window.ParticlePool &&
+        window.particles
+      ) {
+        // A. Poison Gaseous Bubbles
+        if (p.poisonStacks > 0 && Math.random() < 0.18) {
+          let pt = window.ParticlePool.get(
+            p.x + window.randFloat(-8, 8),
+            p.y - 12 + window.randFloat(-10, 10),
+            window.randFloat(-0.3, 0.3),
+            -window.randFloat(0.5, 1.2),
+            window.randFloat(1.2, 2.5),
+            "#2ecc71",
+            0.85,
+            window.randInt(15, 30),
+            0,
+            true,
+          );
+          pt.style = "glowing_orb";
+          pt.scaleDecay = 0.02;
+          window.particles.push(pt);
+        }
 
-            // B. Crimson Bleed Droplets
-            if (p.bleedStacks > 0 && Math.random() < 0.22) {
-              let pt = window.ParticlePool.get(
-                p.x + window.randFloat(-4, 4),
-                p.y + window.randFloat(-2, 2),
-                window.randFloat(-0.5, 0.5),
-                window.randFloat(0.5, 1.5), // drip down
-                window.randFloat(1.0, 2.2),
-                "#960018",
-                0.9,
-                window.randInt(10, 20),
-                0.2, // gravity pulls drop down
-                true
-              );
-              pt.style = "streak";
-              window.particles.push(pt);
-            }
-          }
+        // B. Crimson Bleed Droplets
+        if (p.bleedStacks > 0 && Math.random() < 0.22) {
+          let pt = window.ParticlePool.get(
+            p.x + window.randFloat(-4, 4),
+            p.y + window.randFloat(-2, 2),
+            window.randFloat(-0.5, 0.5),
+            window.randFloat(0.5, 1.5), // drip down
+            window.randFloat(1.0, 2.2),
+            "#960018",
+            0.9,
+            window.randInt(10, 20),
+            0.2, // gravity pulls drop down
+            true,
+          );
+          pt.style = "streak";
+          window.particles.push(pt);
+        }
+      }
 
-          this.effectPool.pool.forEach((eff) => {
+      this.effectPool.pool.forEach((eff) => {
         if (!eff.active) return;
         eff.life--;
         if (eff.life <= 0) {
@@ -1593,190 +1607,194 @@
           ctx.lineJoin = "miter";
           ctx.strokeText(text, eff.x, eff.y);
           ctx.fillStyle = eff.color || "#ffffff";
-                  ctx.fillText(text, eff.x, eff.y);
-                }
+          ctx.fillText(text, eff.x, eff.y);
+        }
 
-                ctx.restore();
-                            });
+        ctx.restore();
+      });
 
-                            // --- Screen-Space Player Debuff Vignette & HUD Tray Overlay ---
-                            let p = window.player;
-                            if (p && p.hp > 0 && ctx.canvas) {
-                              ctx.save();
-                              ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to screen-space coordinates
+      // --- Screen-Space Player Debuff Vignette & HUD Tray Overlay ---
+      let p = window.player;
+      if (p && p.hp > 0 && ctx.canvas) {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to screen-space coordinates
 
-                              let canvas = ctx.canvas;
-                              let vg = ctx.createRadialGradient(
-                                canvas.width / 2,
-                                canvas.height / 2,
-                                Math.min(canvas.width, canvas.height) * 0.35,
-                                canvas.width / 2,
-                                canvas.height / 2,
-                                Math.max(canvas.width, canvas.height) * 0.75,
-                              );
+        let canvas = ctx.canvas;
+        let vg = ctx.createRadialGradient(
+          canvas.width / 2,
+          canvas.height / 2,
+          Math.min(canvas.width, canvas.height) * 0.35,
+          canvas.width / 2,
+          canvas.height / 2,
+          Math.max(canvas.width, canvas.height) * 0.75,
+        );
 
-                              let vigColor = "rgba(2, 1, 6, 0.75)"; // Default dark purple
+        let vigColor = "rgba(2, 1, 6, 0.75)"; // Default dark purple
 
-                              if (p.hp / p.maxHp <= 0.25 || (p.bleedStacks && p.bleedStacks > 0)) {
-                                // Low HP / Bleeding: Pulsing Heavy Blood Crimson Vignette
-                                let pulse = Math.sin(Date.now() / 100) * 0.1 + 0.75;
-                                vigColor = `rgba(150, 0, 24, ${pulse})`;
-                              } else if (p.poisonStacks && p.poisonStacks > 0) {
-                                // Poisoned: Toxic Green Vignette
-                                let pulse = Math.sin(Date.now() / 150) * 0.08 + 0.65;
-                                vigColor = `rgba(39, 174, 96, ${pulse})`;
-                              } else if (p.snareTimer > 0 || p.inDilationField) {
-                                // Slowed / Frozen: Icy Blue Vignette
-                                vigColor = "rgba(56, 189, 248, 0.65)";
-                              } else if (p.glitchTimer > 0) {
-                                // Glitched Inverted Controls: Cyber Pink Scanline Vignette
-                                vigColor = "rgba(232, 67, 147, 0.65)";
-                              }
+        if (p.hp / p.maxHp <= 0.25 || (p.bleedStacks && p.bleedStacks > 0)) {
+          // Low HP / Bleeding: Pulsing Heavy Blood Crimson Vignette
+          let pulse = Math.sin(Date.now() / 100) * 0.1 + 0.75;
+          vigColor = `rgba(150, 0, 24, ${pulse})`;
+        } else if (p.poisonStacks && p.poisonStacks > 0) {
+          // Poisoned: Toxic Green Vignette
+          let pulse = Math.sin(Date.now() / 150) * 0.08 + 0.65;
+          vigColor = `rgba(39, 174, 96, ${pulse})`;
+        } else if (p.snareTimer > 0 || p.inDilationField) {
+          // Slowed / Frozen: Icy Blue Vignette
+          vigColor = "rgba(56, 189, 248, 0.65)";
+        } else if (p.glitchTimer > 0) {
+          // Glitched Inverted Controls: Cyber Pink Scanline Vignette
+          vigColor = "rgba(232, 67, 147, 0.65)";
+        }
 
-                              vg.addColorStop(0, "rgba(0,0,0,0)");
-                              vg.addColorStop(1, vigColor);
+        vg.addColorStop(0, "rgba(0,0,0,0)");
+        vg.addColorStop(1, vigColor);
 
-                              ctx.fillStyle = vg;
-                              ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                              // Add dynamic scanline noise if glitched
-                              if (p.glitchTimer > 0 && Math.random() < 0.4) {
-                                ctx.fillStyle = "rgba(0, 240, 255, 0.06)";
-                                for (let y = 0; y < canvas.height; y += 4) {
-                                  ctx.fillRect(0, y, canvas.width, 1);
-                                }
-                              }
+        // Add dynamic scanline noise if glitched
+        if (p.glitchTimer > 0 && Math.random() < 0.4) {
+          ctx.fillStyle = "rgba(0, 240, 255, 0.06)";
+          for (let y = 0; y < canvas.height; y += 4) {
+            ctx.fillRect(0, y, canvas.width, 1);
+          }
+        }
 
-                              // --- SCREEN-SPACE HUD DEBUFF TRAY LOOP ---
-                              let debuffs = [];
-                              if (p.snareTimer > 0 || p.inDilationField) {
-                                debuffs.push({
-                                  name: p.inDilationField ? "DILATED" : "SLOWED",
-                                  col: "#38bdf8",
-                                  val: p.inDilationField ? "FIELD" : (p.snareTimer / 60).toFixed(1) + "s",
-                                  type: "slow"
-                                });
-                              }
-                              if (p.poisonStacks > 0) {
-                                debuffs.push({
-                                  name: `POISON x${p.poisonStacks}`,
-                                  col: "#2ecc71",
-                                  val: p.poisonTimer ? (p.poisonTimer / 60).toFixed(1) + "s" : "",
-                                  type: "poison"
-                                });
-                              }
-                              if (p.bleedStacks > 0) {
-                                debuffs.push({
-                                  name: `BLEED x${p.bleedStacks}`,
-                                  col: "#e74c3c",
-                                  val: p.bleedTimer ? (p.bleedTimer / 60).toFixed(1) + "s" : "",
-                                  type: "bleed"
-                                });
-                              }
-                              if (p.glitchTimer > 0) {
-                                debuffs.push({
-                                  name: "GLITCHED",
-                                  col: "#e84393",
-                                  val: (p.glitchTimer / 60).toFixed(1) + "s",
-                                  type: "glitch"
-                                });
-                              }
+        // --- SCREEN-SPACE HUD DEBUFF TRAY LOOP ---
+        let debuffs = [];
+        if (p.snareTimer > 0 || p.inDilationField) {
+          debuffs.push({
+            name: p.inDilationField ? "DILATED" : "SLOWED",
+            col: "#38bdf8",
+            val: p.inDilationField
+              ? "FIELD"
+              : (p.snareTimer / 60).toFixed(1) + "s",
+            type: "slow",
+          });
+        }
+        if (p.poisonStacks > 0) {
+          debuffs.push({
+            name: `POISON x${p.poisonStacks}`,
+            col: "#2ecc71",
+            val: p.poisonTimer ? (p.poisonTimer / 60).toFixed(1) + "s" : "",
+            type: "poison",
+          });
+        }
+        if (p.bleedStacks > 0) {
+          debuffs.push({
+            name: `BLEED x${p.bleedStacks}`,
+            col: "#e74c3c",
+            val: p.bleedTimer ? (p.bleedTimer / 60).toFixed(1) + "s" : "",
+            type: "bleed",
+          });
+        }
+        if (p.glitchTimer > 0) {
+          debuffs.push({
+            name: "GLITCHED",
+            col: "#e84393",
+            val: (p.glitchTimer / 60).toFixed(1) + "s",
+            type: "glitch",
+          });
+        }
 
-                              if (debuffs.length > 0) {
-                                let startX = 20;
-                                let startY = 85; // Placed comfortably below standard health/portrait systems
-                                let badgeW = 120;
-                                let badgeH = 22;
-                                let spacing = 6;
+        if (debuffs.length > 0) {
+          let startX = 20;
+          let startY = 85; // Placed comfortably below standard health/portrait systems
+          let badgeW = 120;
+          let badgeH = 22;
+          let spacing = 6;
 
-                                debuffs.forEach((db, dIdx) => {
-                                  let dy = startY + dIdx * (badgeH + spacing);
+          debuffs.forEach((db, dIdx) => {
+            let dy = startY + dIdx * (badgeH + spacing);
 
-                                  // 1. Draw Sleek Semi-Translucent Slate Background
-                                  ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-                                  ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
-                                  ctx.lineWidth = 1.0;
-                                  ctx.beginPath();
-                                  if (ctx.roundRect) {
-                                    ctx.roundRect(startX, dy, badgeW, badgeH, 3);
-                                  } else {
-                                    ctx.rect(startX, dy, badgeW, badgeH);
-                                  }
-                                  ctx.fill();
-                                  ctx.stroke();
+            // 1. Draw Sleek Semi-Translucent Slate Background
+            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(startX, dy, badgeW, badgeH, 3);
+            } else {
+              ctx.rect(startX, dy, badgeW, badgeH);
+            }
+            ctx.fill();
+            ctx.stroke();
 
-                                  // 2. Draw Left Aesthetic Indicator Accent Border
-                                  ctx.fillStyle = db.col;
-                                  ctx.beginPath();
-                                  if (ctx.roundRect) {
-                                    ctx.roundRect(startX, dy, 3, badgeH, [3, 0, 0, 3]);
-                                  } else {
-                                    ctx.rect(startX, dy, 3, badgeH);
-                                  }
-                                  ctx.fill();
+            // 2. Draw Left Aesthetic Indicator Accent Border
+            ctx.fillStyle = db.col;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(startX, dy, 3, badgeH, [3, 0, 0, 3]);
+            } else {
+              ctx.rect(startX, dy, 3, badgeH);
+            }
+            ctx.fill();
 
-                                  // 3. Draw Procedural Vector Icon
-                                  ctx.save();
-                                  ctx.translate(startX + 12, dy + badgeH / 2);
-                                  ctx.strokeStyle = db.col;
-                                  ctx.lineWidth = 1.0;
+            // 3. Draw Procedural Vector Icon
+            ctx.save();
+            ctx.translate(startX + 12, dy + badgeH / 2);
+            ctx.strokeStyle = db.col;
+            ctx.lineWidth = 1.0;
 
-                                  if (db.type === "slow") {
-                                    // Concentric Runic Web
-                                    ctx.beginPath();
-                                    ctx.moveTo(-4, -4); ctx.lineTo(4, 4);
-                                    ctx.moveTo(4, -4); ctx.lineTo(-4, 4);
-                                    ctx.stroke();
-                                    ctx.beginPath();
-                                    ctx.arc(0, 0, 3, 0, Math.PI * 2);
-                                    ctx.stroke();
-                                  } else if (db.type === "poison") {
-                                    // Toxic Bio-Bubble
-                                    ctx.fillStyle = db.col;
-                                    ctx.beginPath();
-                                    ctx.arc(0, 1, 2.5, 0, Math.PI * 2);
-                                    ctx.fill();
-                                    ctx.beginPath();
-                                    ctx.arc(-1.5, -2, 1.2, 0, Math.PI * 2);
-                                    ctx.fill();
-                                  } else if (db.type === "bleed") {
-                                    // Shard Blood Droplet
-                                    ctx.fillStyle = db.col;
-                                    ctx.beginPath();
-                                    ctx.moveTo(0, -3.5);
-                                    ctx.quadraticCurveTo(2.2, -0.1, 2.2, 2.2);
-                                    ctx.arc(0, 2.2, 2.2, 0, Math.PI);
-                                    ctx.quadraticCurveTo(-2.2, -0.1, 0, -3.5);
-                                    ctx.closePath();
-                                    ctx.fill();
-                                  } else if (db.type === "glitch") {
-                                    // Digital Double-Box Matrix Link
-                                    ctx.fillStyle = db.col;
-                                    ctx.fillRect(-3, -3, 4, 4);
-                                    ctx.fillStyle = "#00f0ff";
-                                    ctx.fillRect(0, 0, 4, 4);
-                                  }
-                                  ctx.restore();
+            if (db.type === "slow") {
+              // Concentric Runic Web
+              ctx.beginPath();
+              ctx.moveTo(-4, -4);
+              ctx.lineTo(4, 4);
+              ctx.moveTo(4, -4);
+              ctx.lineTo(-4, 4);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(0, 0, 3, 0, Math.PI * 2);
+              ctx.stroke();
+            } else if (db.type === "poison") {
+              // Toxic Bio-Bubble
+              ctx.fillStyle = db.col;
+              ctx.beginPath();
+              ctx.arc(0, 1, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(-1.5, -2, 1.2, 0, Math.PI * 2);
+              ctx.fill();
+            } else if (db.type === "bleed") {
+              // Shard Blood Droplet
+              ctx.fillStyle = db.col;
+              ctx.beginPath();
+              ctx.moveTo(0, -3.5);
+              ctx.quadraticCurveTo(2.2, -0.1, 2.2, 2.2);
+              ctx.arc(0, 2.2, 2.2, 0, Math.PI);
+              ctx.quadraticCurveTo(-2.2, -0.1, 0, -3.5);
+              ctx.closePath();
+              ctx.fill();
+            } else if (db.type === "glitch") {
+              // Digital Double-Box Matrix Link
+              ctx.fillStyle = db.col;
+              ctx.fillRect(-3, -3, 4, 4);
+              ctx.fillStyle = "#00f0ff";
+              ctx.fillRect(0, 0, 4, 4);
+            }
+            ctx.restore();
 
-                                  // 4. Draw Typography Labels (Crisp Monospace)
-                                  ctx.font = "bold 9px monospace";
-                                  ctx.textAlign = "left";
-                                  ctx.textBaseline = "middle";
-                                  ctx.fillStyle = "#ffffff";
-                                  ctx.fillText(db.name, startX + 22, dy + badgeH / 2);
+            // 4. Draw Typography Labels (Crisp Monospace)
+            ctx.font = "bold 9px monospace";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(db.name, startX + 22, dy + badgeH / 2);
 
-                                  // 5. Draw Value Countdown Ticker
-                                  ctx.textAlign = "right";
-                                  ctx.fillStyle = db.col;
-                                  ctx.fillText(db.val, startX + badgeW - 8, dy + badgeH / 2);
-                                });
-                              }
+            // 5. Draw Value Countdown Ticker
+            ctx.textAlign = "right";
+            ctx.fillStyle = db.col;
+            ctx.fillText(db.val, startX + badgeW - 8, dy + badgeH / 2);
+          });
+        }
 
-                              ctx.restore();
-                            }
+        ctx.restore();
+      }
 
-                            ctx.restore();
-                          }
+      ctx.restore();
+    }
 
     drawTargetHealthBar(ctx, target, isScreenSpace = false, bossIndex = 0) {
       if (!target || !target.hp || target.hp <= 0) return;
@@ -2072,107 +2090,115 @@
         ctx.restore();
         return;
       } else if (hpPct < 1.0 || target.eliteAffix) {
-                    let isElite = !!target.eliteAffix;
-                    let scaleMult = isElite ? 1.25 : 1.0;
-                    let barW = (target.w || 24) * scaleMult;
-                    let barX = target.x + ((target.w || 24) - barW) / 2;
-                    let barY = target.y - (isElite ? 28 : 12);
-                    let barH = isElite ? 8 : 6;
+        let isElite = !!target.eliteAffix;
+        let scaleMult = isElite ? 1.25 : 1.0;
+        let barW = (target.w || 24) * scaleMult;
+        let barX = target.x + ((target.w || 24) - barW) / 2;
+        let barY = target.y - (isElite ? 28 : 12);
+        let barH = isElite ? 8 : 6;
 
-              ctx.fillStyle = "#111111";
-              ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(barX, barY, barW, barH);
 
-              ctx.fillStyle = "#ffffff";
-              ctx.fillRect(barX, barY, target.trailingPct * barW, barH);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(barX, barY, target.trailingPct * barW, barH);
 
-              if (isElite) {
-                let fillGrad = ctx.createLinearGradient(barX, barY, barX + barW, barY);
-                fillGrad.addColorStop(0, "#a855f7"); // Void Purple
-                fillGrad.addColorStop(0.5, "#ef4444"); // Crimson Red
-                fillGrad.addColorStop(1, "#b91c1c"); // Dark Blood
-                ctx.fillStyle = fillGrad;
-              } else {
-                ctx.fillStyle = "#e74c3c";
-              }
-              ctx.fillRect(barX, barY, hpPct * barW, barH);
+        if (isElite) {
+          let fillGrad = ctx.createLinearGradient(
+            barX,
+            barY,
+            barX + barW,
+            barY,
+          );
+          fillGrad.addColorStop(0, "#a855f7"); // Void Purple
+          fillGrad.addColorStop(0.5, "#ef4444"); // Crimson Red
+          fillGrad.addColorStop(1, "#b91c1c"); // Dark Blood
+          ctx.fillStyle = fillGrad;
+        } else {
+          ctx.fillStyle = "#e74c3c";
+        }
+        ctx.fillRect(barX, barY, hpPct * barW, barH);
 
-              ctx.strokeStyle = isElite ? "#ffd700" : "#000000"; // Gilded border for Elites
-              ctx.lineWidth = isElite ? 1.8 : 1.5;
-              ctx.strokeRect(barX, barY, barW, barH);
+        ctx.strokeStyle = isElite ? "#ffd700" : "#000000"; // Gilded border for Elites
+        ctx.lineWidth = isElite ? 1.8 : 1.5;
+        ctx.strokeRect(barX, barY, barW, barH);
 
-              this.drawStatusDots(
-                ctx,
-                barX,
-                barY - 6,
-                target.bleedStacks || 0,
-                "#e74c3c",
-              );
-              this.drawStatusDots(
-                ctx,
-                barX,
-                barY - 12,
-                target.poisonStacks || 0,
-                "#2ecc71",
-              );
+        this.drawStatusDots(
+          ctx,
+          barX,
+          barY - 6,
+          target.bleedStacks || 0,
+          "#e74c3c",
+        );
+        this.drawStatusDots(
+          ctx,
+          barX,
+          barY - 12,
+          target.poisonStacks || 0,
+          "#2ecc71",
+        );
 
-              if (isElite) {
-                let labelY = barY - 18;
-                let affixName = target.eliteAffix.replace("_", " ").toUpperCase();
-                let labelColor = "#ffffff";
+        if (isElite) {
+          let labelY = barY - 18;
+          let affixName = target.eliteAffix.replace("_", " ").toUpperCase();
+          let labelColor = "#ffffff";
 
-                if (target.eliteAffix === "vitality_weaver") labelColor = "#2ecc71";
-                else if (target.eliteAffix === "iron_citadel") labelColor = "#3498db";
-                else if (target.eliteAffix === "swift_commander") labelColor = "#00d2ff";
-                else if (target.eliteAffix === "blood_berserker") labelColor = "#ef4444";
-                else if (target.eliteAffix === "nullifier") labelColor = "#a855f7";
-                else if (target.eliteAffix === "web_weaver") labelColor = "#38bdf8";
-                else if (target.eliteAffix === "glacial_warden") labelColor = "#60a5fa";
-                else if (target.eliteAffix === "slag_shaper") labelColor = "#f97316";
-                else if (target.eliteAffix === "toxic_decay") labelColor = "#a7f3d0";
+          if (target.eliteAffix === "vitality_weaver") labelColor = "#2ecc71";
+          else if (target.eliteAffix === "iron_citadel") labelColor = "#3498db";
+          else if (target.eliteAffix === "swift_commander")
+            labelColor = "#00d2ff";
+          else if (target.eliteAffix === "blood_berserker")
+            labelColor = "#ef4444";
+          else if (target.eliteAffix === "nullifier") labelColor = "#a855f7";
+          else if (target.eliteAffix === "web_weaver") labelColor = "#38bdf8";
+          else if (target.eliteAffix === "glacial_warden")
+            labelColor = "#60a5fa";
+          else if (target.eliteAffix === "slag_shaper") labelColor = "#f97316";
+          else if (target.eliteAffix === "toxic_decay") labelColor = "#a7f3d0";
 
-                ctx.font = "bold 7px monospace";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "bottom";
+          ctx.font = "bold 7px monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
 
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2.0;
-                let labelX = barX + barW / 2;
-                let displayLabel = `◈ ${affixName} ◈`;
-                ctx.strokeText(displayLabel, labelX, labelY);
-                ctx.fillStyle = labelColor;
-                ctx.fillText(displayLabel, labelX, labelY);
-              }
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2.0;
+          let labelX = barX + barW / 2;
+          let displayLabel = `◈ ${affixName} ◈`;
+          ctx.strokeText(displayLabel, labelX, labelY);
+          ctx.fillStyle = labelColor;
+          ctx.fillText(displayLabel, labelX, labelY);
+        }
 
-              if (target.buffStacks) {
-                let badgeY = barY - (isElite ? 26 : 18);
-                let badgeParts = [];
-                if ((target.buffStacks.haste || 0) > 0)
-                  badgeParts.push({
-                    text: `Haste ${target.buffStacks.haste}x`,
-                    col: "#00d2ff",
-                  });
-                if ((target.buffStacks.def || 0) > 0)
-                  badgeParts.push({
-                    text: `Def ${target.buffStacks.def}x`,
-                    col: "#3498db",
-                  });
-                if ((target.buffStacks.atk || 0) > 0)
-                  badgeParts.push({
-                    text: `Atk ${target.buffStacks.atk}x`,
-                    col: "#e74c3c",
-                  });
+        if (target.buffStacks) {
+          let badgeY = barY - (isElite ? 26 : 18);
+          let badgeParts = [];
+          if ((target.buffStacks.haste || 0) > 0)
+            badgeParts.push({
+              text: `Haste ${target.buffStacks.haste}x`,
+              col: "#00d2ff",
+            });
+          if ((target.buffStacks.def || 0) > 0)
+            badgeParts.push({
+              text: `Def ${target.buffStacks.def}x`,
+              col: "#3498db",
+            });
+          if ((target.buffStacks.atk || 0) > 0)
+            badgeParts.push({
+              text: `Atk ${target.buffStacks.atk}x`,
+              col: "#e74c3c",
+            });
 
-                badgeParts.forEach((bp) => {
-                  ctx.font = "bold 8px monospace";
-                  ctx.strokeStyle = "#000000";
-                  ctx.lineWidth = 2.0;
-                  ctx.strokeText(bp.text, barX, badgeY);
-                  ctx.fillStyle = bp.col;
-                  ctx.fillText(bp.text, barX, badgeY);
-                  badgeY -= 9;
-                });
-              }
-            }
+          badgeParts.forEach((bp) => {
+            ctx.font = "bold 8px monospace";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 2.0;
+            ctx.strokeText(bp.text, barX, badgeY);
+            ctx.fillStyle = bp.col;
+            ctx.fillText(bp.text, barX, badgeY);
+            badgeY -= 9;
+          });
+        }
+      }
 
       ctx.restore();
     }
@@ -6927,131 +6953,176 @@
   window.RenderEngine.drawSingleMob = (c, m) => window.drawSingleMob(c, m);
 
   window.drawSingleMob = function (c, m) {
-          if (!m) return;
-          let t = m.visualTier;
-          let rx = m.recoilX || 0;
-          let ry = m.recoilY || 0;
-          let facing = m.facing !== undefined ? m.facing : -1;
+    if (!m) return;
+    let t = m.visualTier;
+    let rx = m.recoilX || 0;
+    let ry = m.recoilY || 0;
+    let facing = m.facing !== undefined ? m.facing : -1;
 
-          let mobIsElite = !!m.isElite || !!m.eliteAffix;
-          let mobIsRare = !!m.isRare;
+    let mobIsElite = !!m.isElite || !!m.eliteAffix;
+    let mobIsRare = !!m.isRare;
 
-          // --- Core Boss & Mini-Boss AI / HP Interceptor Hook ---
-          let isBossOrMiniboss = !!(m.isBoss || m.type === "dungeon_miniboss" || m.type === "dungeon_boss" || m.visualType === "brimstone_colossus" || m.visualType === "gilded_vault_keeper" || m.visualType === "corrosive_abomination" || m.visualType === "overlord_iron_vault" || m.type === "marcus_boss" || m.type === "rift_guardian" || m.type === "prestige_boss" || m.type === "hooktail" || m.type === "nexus_overseer" || m.type === "chronos_arbitrator" || m.type === "aegis_goliath");
+    // --- Core Boss & Mini-Boss AI / HP Interceptor Hook ---
+    let isBossOrMiniboss = !!(
+      m.isBoss ||
+      m.type === "dungeon_miniboss" ||
+      m.type === "dungeon_boss" ||
+      m.visualType === "brimstone_colossus" ||
+      m.visualType === "gilded_vault_keeper" ||
+      m.visualType === "corrosive_abomination" ||
+      m.visualType === "overlord_iron_vault" ||
+      m.type === "marcus_boss" ||
+      m.type === "rift_guardian" ||
+      m.type === "prestige_boss" ||
+      m.type === "hooktail" ||
+      m.type === "nexus_overseer" ||
+      m.type === "chronos_arbitrator" ||
+      m.type === "aegis_goliath"
+    );
 
-          if (isBossOrMiniboss && !window.isGamePaused) {
-            // A. Initialize Guard Cooldowns & State Flags
-            if (m.guardTimer === undefined) {
-              m.guardTimer = 400 + Math.random() * 200; // Time until next guard pose (6-10s)
-              m.guardActiveTimer = 0; // Duration of active guard pose
-              m._berserkTriggered = false;
-              m.isBerserk = false;
-            }
-
-            // B. Progress Guard State Timers
-            if (m.guardActiveTimer > 0) {
-              m.guardActiveTimer--;
-              if (m.guardActiveTimer <= 0) {
-                m.guardTimer = 500 + Math.random() * 300; // Cooldown reset (8-13s)
-              }
-            } else if (m.guardTimer > 0) {
-              m.guardTimer--;
-              if (m.guardTimer <= 0) {
-                m.guardActiveTimer = 180; // 3 seconds of active guard stance
-              }
-            }
-
-            // C. Watertight JS Property Hook: Intercepts and mitigates all incoming HP changes
-            if (!m._hpGatedHooked) {
-              m._hpGatedHooked = true;
-              let rawHp = m.hp;
-
-              Object.defineProperty(m, "hp", {
-                get() {
-                  return rawHp;
-                },
-                set(newHp) {
-                  let numericDamage = 0;
-                  if (rawHp && rawHp.sub) {
-                    let diff = rawHp.sub(newHp);
-                    numericDamage = diff.m * Math.pow(10, diff.e);
-                  } else {
-                    numericDamage = rawHp - newHp;
-                  }
-
-                  if (numericDamage > 0) {
-                    // C.1. Frontal Parry Stance active: Blocks 80% of incoming frontal attacks
-                    if (m.guardActiveTimer > 0 && window.player) {
-                      let angleToPlayer = Math.atan2(window.player.y - m.y, window.player.x - m.x);
-                      let parryReduction = 0.80; // 80% reduction
-                      let reducedDmg = numericDamage * (1.0 - parryReduction);
-
-                      if (rawHp && rawHp.sub) {
-                        newHp = rawHp.sub(BigNum.from(Math.round(reducedDmg)));
-                      } else {
-                        newHp = rawHp - Math.round(reducedDmg);
-                      }
-
-                      // Sound & Visual Parry Feedbacks
-                                                    if (window.RenderEngine && typeof window.RenderEngine.spawnHitSparks === "function") {
-                                                      window.RenderEngine.spawnHitSparks(m.x + m.w/2, m.y + m.h/2, true, Math.cos(angleToPlayer), Math.sin(angleToPlayer));
-                                                    }
-                                                    if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(m.x + m.w/2, m.y - 20, "PARRIED!", "#38bdf8", true);
-                      }
-                      if (window.SoundManager) {
-                        window.SoundManager.play("hit");
-                      }
-                    }
-                    // C.2. Enraged Vulnerability: Takes 15% more damage when Berserk is active
-                    else if (m.isBerserk) {
-                      let extraDmg = numericDamage * 0.15;
-                      if (rawHp && rawHp.sub) {
-                        newHp = newHp.sub(BigNum.from(Math.round(extraDmg)));
-                      } else {
-                        newHp = newHp - Math.round(extraDmg);
-                      }
-                    }
-                  }
-
-                  rawHp = newHp;
-
-                  // C.3. Check Berserk Transition Threshold (Enters below 45% Max HP)
-                  let bHp = typeof rawHp === "object" ? rawHp.m * Math.pow(10, rawHp.e) : rawHp;
-                  let bMaxHp = typeof m.maxHp === "object" ? m.maxHp.m * Math.pow(10, m.maxHp.e) : m.maxHp;
-                  if (bHp / bMaxHp <= 0.45 && !m._berserkTriggered) {
-                    m._berserkTriggered = true;
-                    m.isBerserk = true;
-
-                    // Permanent 25% Attack Power Increase
-                    if (m.atk) {
-                      if (m.atk.mul) m.atk = m.atk.mul(1.25);
-                      else m.atk = Math.round(m.atk * 1.25);
-                    }
-
-                    if (typeof window.spawnFloatingText === "function") {
-                      window.spawnFloatingText(m.x + m.w/2, m.y - 30, "BERSERK!", "#e74c3c", true);
-                    }
-                  }
-                },
-                configurable: true
-              });
-            }
-          }
-
-          c.save();
-      c.translate(rx, ry);
-
-      // Apply 1.25x Physical Scale for Elites from ground base (bottom-center)
-      if (m.eliteAffix) {
-        let cx = m.x + m.w / 2;
-        let cy = m.y + m.h;
-        c.translate(cx, cy);
-        c.scale(1.25, 1.25);
-        c.translate(-cx, -cy);
+    if (isBossOrMiniboss && !window.isGamePaused) {
+      // A. Initialize Guard Cooldowns & State Flags
+      if (m.guardTimer === undefined) {
+        m.guardTimer = 400 + Math.random() * 200; // Time until next guard pose (6-10s)
+        m.guardActiveTimer = 0; // Duration of active guard pose
+        m._berserkTriggered = false;
+        m.isBerserk = false;
       }
 
-      if (facing === 1) {
+      // B. Progress Guard State Timers
+      if (m.guardActiveTimer > 0) {
+        m.guardActiveTimer--;
+        if (m.guardActiveTimer <= 0) {
+          m.guardTimer = 500 + Math.random() * 300; // Cooldown reset (8-13s)
+        }
+      } else if (m.guardTimer > 0) {
+        m.guardTimer--;
+        if (m.guardTimer <= 0) {
+          m.guardActiveTimer = 180; // 3 seconds of active guard stance
+        }
+      }
+
+      // C. Watertight JS Property Hook: Intercepts and mitigates all incoming HP changes
+      if (!m._hpGatedHooked) {
+        m._hpGatedHooked = true;
+        let rawHp = m.hp;
+
+        Object.defineProperty(m, "hp", {
+          get() {
+            return rawHp;
+          },
+          set(newHp) {
+            let numericDamage = 0;
+            if (rawHp && rawHp.sub) {
+              let diff = rawHp.sub(newHp);
+              numericDamage = diff.m * Math.pow(10, diff.e);
+            } else {
+              numericDamage = rawHp - newHp;
+            }
+
+            if (numericDamage > 0) {
+              // C.1. Frontal Parry Stance active: Blocks 80% of incoming frontal attacks
+              if (m.guardActiveTimer > 0 && window.player) {
+                let angleToPlayer = Math.atan2(
+                  window.player.y - m.y,
+                  window.player.x - m.x,
+                );
+                let parryReduction = 0.8; // 80% reduction
+                let reducedDmg = numericDamage * (1.0 - parryReduction);
+
+                if (rawHp && rawHp.sub) {
+                  newHp = rawHp.sub(BigNum.from(Math.round(reducedDmg)));
+                } else {
+                  newHp = rawHp - Math.round(reducedDmg);
+                }
+
+                // Sound & Visual Parry Feedbacks
+                if (
+                  window.RenderEngine &&
+                  typeof window.RenderEngine.spawnHitSparks === "function"
+                ) {
+                  window.RenderEngine.spawnHitSparks(
+                    m.x + m.w / 2,
+                    m.y + m.h / 2,
+                    true,
+                    Math.cos(angleToPlayer),
+                    Math.sin(angleToPlayer),
+                  );
+                }
+                if (typeof window.spawnFloatingText === "function") {
+                  window.spawnFloatingText(
+                    m.x + m.w / 2,
+                    m.y - 20,
+                    "PARRIED!",
+                    "#38bdf8",
+                    true,
+                  );
+                }
+                if (window.SoundManager) {
+                  window.SoundManager.play("hit");
+                }
+              }
+              // C.2. Enraged Vulnerability: Takes 15% more damage when Berserk is active
+              else if (m.isBerserk) {
+                let extraDmg = numericDamage * 0.15;
+                if (rawHp && rawHp.sub) {
+                  newHp = newHp.sub(BigNum.from(Math.round(extraDmg)));
+                } else {
+                  newHp = newHp - Math.round(extraDmg);
+                }
+              }
+            }
+
+            rawHp = newHp;
+
+            // C.3. Check Berserk Transition Threshold (Enters below 45% Max HP)
+            let bHp =
+              typeof rawHp === "object"
+                ? rawHp.m * Math.pow(10, rawHp.e)
+                : rawHp;
+            let bMaxHp =
+              typeof m.maxHp === "object"
+                ? m.maxHp.m * Math.pow(10, m.maxHp.e)
+                : m.maxHp;
+            if (bHp / bMaxHp <= 0.45 && !m._berserkTriggered) {
+              m._berserkTriggered = true;
+              m.isBerserk = true;
+
+              // Permanent 25% Attack Power Increase
+              if (m.atk) {
+                if (m.atk.mul) m.atk = m.atk.mul(1.25);
+                else m.atk = Math.round(m.atk * 1.25);
+              }
+
+              if (typeof window.spawnFloatingText === "function") {
+                window.spawnFloatingText(
+                  m.x + m.w / 2,
+                  m.y - 30,
+                  "BERSERK!",
+                  "#e74c3c",
+                  true,
+                );
+              }
+            }
+          },
+          configurable: true,
+        });
+      }
+    }
+
+    c.save();
+    c.translate(rx, ry);
+
+    // Apply 1.25x Physical Scale for Elites from ground base (bottom-center)
+    if (m.eliteAffix) {
+      let cx = m.x + m.w / 2;
+      let cy = m.y + m.h;
+      c.translate(cx, cy);
+      c.scale(1.25, 1.25);
+      c.translate(-cx, -cy);
+    }
+
+    if (facing === 1) {
       let cx = m.x + m.w / 2;
       let cy = m.y + m.h / 2;
       c.translate(cx, cy);
@@ -7060,165 +7131,190 @@
     }
 
     // Ground Drop Shadow & Elite Aura Pass
-            c.save();
-            let mCx = m.x + m.w / 2;
-            let mCy = m.y + m.h - 2;
-            let mobShadowW = m.w * 0.45;
-            let mobShadowH = Math.max(3, m.h * 0.15);
+    c.save();
+    let mCx = m.x + m.w / 2;
+    let mCy = m.y + m.h - 2;
+    let mobShadowW = m.w * 0.45;
+    let mobShadowH = Math.max(3, m.h * 0.15);
 
-            let time = Date.now();
+    let time = Date.now();
 
-            // --- Render Active Frontal Guard Ground Shield Arc ---
-            if (isBossOrMiniboss && m.guardActiveTimer > 0 && window.player) {
-              let angleToPlayer = Math.atan2(window.player.y - m.y, window.player.x - m.x);
-              let arcRadius = m.w * 0.9;
+    // --- Render Active Frontal Guard Ground Shield Arc ---
+    if (isBossOrMiniboss && m.guardActiveTimer > 0 && window.player) {
+      let angleToPlayer = Math.atan2(
+        window.player.y - m.y,
+        window.player.x - m.x,
+      );
+      let arcRadius = m.w * 0.9;
 
-              c.save();
-              c.strokeStyle = "rgba(0, 240, 255, 0.75)";
-              c.lineWidth = 2.5;
-              c.shadowBlur = 12;
-              c.shadowColor = "#00f0ff";
+      c.save();
+      c.strokeStyle = "rgba(0, 240, 255, 0.75)";
+      c.lineWidth = 2.5;
+      c.shadowBlur = 12;
+      c.shadowColor = "#00f0ff";
 
-              // Draw a semi-circular shield arc facing towards you on the ground
-              c.beginPath();
-              c.arc(mCx, mCy - m.h / 2, arcRadius, angleToPlayer - Math.PI / 4, angleToPlayer + Math.PI / 4);
-              c.stroke();
-              c.shadowBlur = 0;
+      // Draw a semi-circular shield arc facing towards you on the ground
+      c.beginPath();
+      c.arc(
+        mCx,
+        mCy - m.h / 2,
+        arcRadius,
+        angleToPlayer - Math.PI / 4,
+        angleToPlayer + Math.PI / 4,
+      );
+      c.stroke();
+      c.shadowBlur = 0;
 
-              // Inner polished white trim line
-              c.strokeStyle = "rgba(255, 255, 255, 0.4)";
-              c.lineWidth = 1.0;
-              c.beginPath();
-              c.arc(mCx, mCy - m.h / 2, arcRadius - 4, angleToPlayer - Math.PI / 4, angleToPlayer + Math.PI / 4);
-              c.stroke();
-              c.restore();
-            }
+      // Inner polished white trim line
+      c.strokeStyle = "rgba(255, 255, 255, 0.4)";
+      c.lineWidth = 1.0;
+      c.beginPath();
+      c.arc(
+        mCx,
+        mCy - m.h / 2,
+        arcRadius - 4,
+        angleToPlayer - Math.PI / 4,
+        angleToPlayer + Math.PI / 4,
+      );
+      c.stroke();
+      c.restore();
+    }
 
-            // --- Render Berserk Aura & Rising Flame Embers ---
-            if (isBossOrMiniboss && m.isBerserk) {
-              // A. Draw a pulsing heavy crimson crown glow above the boss head
-              c.save();
-              let pulse = Math.sin(time / 100) * 0.2 + 0.8;
-              c.strokeStyle = "#e74c3c";
-              c.lineWidth = 1.5;
-              c.shadowBlur = 10 * pulse;
-              c.shadowColor = "#e74c3c";
-              c.beginPath();
-              c.ellipse(mCx, m.y - 12, 8 * pulse, 2.5 * pulse, 0, 0, Math.PI * 2);
-              c.stroke();
-              c.shadowBlur = 0;
-              c.restore();
+    // --- Render Berserk Aura & Rising Flame Embers ---
+    if (isBossOrMiniboss && m.isBerserk) {
+      // A. Draw a pulsing heavy crimson crown glow above the boss head
+      c.save();
+      let pulse = Math.sin(time / 100) * 0.2 + 0.8;
+      c.strokeStyle = "#e74c3c";
+      c.lineWidth = 1.5;
+      c.shadowBlur = 10 * pulse;
+      c.shadowColor = "#e74c3c";
+      c.beginPath();
+      c.ellipse(mCx, m.y - 12, 8 * pulse, 2.5 * pulse, 0, 0, Math.PI * 2);
+      c.stroke();
+      c.shadowBlur = 0;
+      c.restore();
 
-              // B. Spawn rising red flame embers using the zero-allocation pool
-              if (Math.random() < 0.18 && !window.isGamePaused && window.ParticlePool && window.particles) {
-                let pt = window.ParticlePool.get(
-                  mCx + window.randFloat(-10, 10),
-                  m.y - 4 + window.randFloat(-4, 4),
-                  window.randFloat(-0.3, 0.3),
-                  -window.randFloat(0.4, 1.2),
-                  window.randFloat(1.0, 2.2),
-                  "#e74c3c",
-                  0.8,
-                  window.randInt(15, 30),
-                  -0.01,
-                  true
-                );
-                pt.style = "glowing_orb";
-                pt.scaleDecay = 0.02;
-                window.particles.push(pt);
-              }
-            }
+      // B. Spawn rising red flame embers using the zero-allocation pool
+      if (
+        Math.random() < 0.18 &&
+        !window.isGamePaused &&
+        window.ParticlePool &&
+        window.particles
+      ) {
+        let pt = window.ParticlePool.get(
+          mCx + window.randFloat(-10, 10),
+          m.y - 4 + window.randFloat(-4, 4),
+          window.randFloat(-0.3, 0.3),
+          -window.randFloat(0.4, 1.2),
+          window.randFloat(1.0, 2.2),
+          "#e74c3c",
+          0.8,
+          window.randInt(15, 30),
+          -0.01,
+          true,
+        );
+        pt.style = "glowing_orb";
+        pt.scaleDecay = 0.02;
+        window.particles.push(pt);
+      }
+    }
 
-        if (mobIsElite && mobIsRare) {
-          // --- RARE ELITE: Prismatic Under-Glow (Dual-layered interlocking runic circle) ---
-          let rot1 = time / 400;
-          let rot2 = -time / 300;
+    if (mobIsElite && mobIsRare) {
+      // --- RARE ELITE: Prismatic Under-Glow (Dual-layered interlocking runic circle) ---
+      let rot1 = time / 400;
+      let rot2 = -time / 300;
 
-          // Outer Layer (Emerald)
-          c.save();
-          c.translate(mCx, mCy);
-          c.rotate(rot1);
-          c.strokeStyle = "#2ecc71";
-          c.lineWidth = 1.5;
-          c.beginPath();
-          c.ellipse(0, 0, m.w * 0.8, m.w * 0.35, 0, 0, Math.PI * 2);
-          c.stroke();
+      // Outer Layer (Emerald)
+      c.save();
+      c.translate(mCx, mCy);
+      c.rotate(rot1);
+      c.strokeStyle = "#2ecc71";
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.ellipse(0, 0, m.w * 0.8, m.w * 0.35, 0, 0, Math.PI * 2);
+      c.stroke();
 
-          // Decorative ticks
-          for (let i = 0; i < 4; i++) {
-            let a = (i * Math.PI) / 2;
-            c.beginPath();
-            c.moveTo(Math.cos(a) * (m.w * 0.7), Math.sin(a) * (m.w * 0.3));
-            c.lineTo(Math.cos(a) * (m.w * 0.9), Math.sin(a) * (m.w * 0.4));
-            c.stroke();
-          }
-          c.restore();
+      // Decorative ticks
+      for (let i = 0; i < 4; i++) {
+        let a = (i * Math.PI) / 2;
+        c.beginPath();
+        c.moveTo(Math.cos(a) * (m.w * 0.7), Math.sin(a) * (m.w * 0.3));
+        c.lineTo(Math.cos(a) * (m.w * 0.9), Math.sin(a) * (m.w * 0.4));
+        c.stroke();
+      }
+      c.restore();
 
-          // Inner Layer (Violet)
-          c.save();
-          c.translate(mCx, mCy);
-          c.rotate(rot2);
-          c.strokeStyle = "#a855f7";
-          c.lineWidth = 1.2;
-          c.beginPath();
-          c.ellipse(0, 0, m.w * 0.55, m.w * 0.24, 0, 0, Math.PI * 2);
-          c.stroke();
-          c.restore();
+      // Inner Layer (Violet)
+      c.save();
+      c.translate(mCx, mCy);
+      c.rotate(rot2);
+      c.strokeStyle = "#a855f7";
+      c.lineWidth = 1.2;
+      c.beginPath();
+      c.ellipse(0, 0, m.w * 0.55, m.w * 0.24, 0, 0, Math.PI * 2);
+      c.stroke();
+      c.restore();
 
-          // Emit dual-tone embers from base
-          if (Math.random() < 0.12 && !window.isGamePaused && window.ParticlePool && window.particles) {
-            let angle = Math.random() * Math.PI * 2;
-            let radius = window.randFloat(m.w * 0.2, m.w * 0.7);
-            let ex = mCx + Math.cos(angle) * radius;
-            let ey = mCy + Math.sin(angle) * radius * 0.45;
-            let color = Math.random() < 0.5 ? "#2ecc71" : "#a855f7";
-            let pt = window.ParticlePool.get(
-              ex,
-              ey,
-              window.randFloat(-0.2, 0.2),
-              -window.randFloat(0.4, 1.2),
-              window.randFloat(1.2, 2.4),
-              color,
-              0.85,
-              window.randInt(15, 30),
-              -0.01,
-              true
-            );
-            pt.style = "glowing_orb";
-            pt.scaleDecay = 0.02;
-            window.particles.push(pt);
-          }
-        } else if (mobIsElite) {
-          // --- ELITE: Base Rift (Vibrating tattered dark-purple ground rift) ---
-          let vibX = Math.sin(time / 25) * 1.5;
-          let vibY = Math.cos(time / 20) * 0.8;
+      // Emit dual-tone embers from base
+      if (
+        Math.random() < 0.12 &&
+        !window.isGamePaused &&
+        window.ParticlePool &&
+        window.particles
+      ) {
+        let angle = Math.random() * Math.PI * 2;
+        let radius = window.randFloat(m.w * 0.2, m.w * 0.7);
+        let ex = mCx + Math.cos(angle) * radius;
+        let ey = mCy + Math.sin(angle) * radius * 0.45;
+        let color = Math.random() < 0.5 ? "#2ecc71" : "#a855f7";
+        let pt = window.ParticlePool.get(
+          ex,
+          ey,
+          window.randFloat(-0.2, 0.2),
+          -window.randFloat(0.4, 1.2),
+          window.randFloat(1.2, 2.4),
+          color,
+          0.85,
+          window.randInt(15, 30),
+          -0.01,
+          true,
+        );
+        pt.style = "glowing_orb";
+        pt.scaleDecay = 0.02;
+        window.particles.push(pt);
+      }
+    } else if (mobIsElite) {
+      // --- ELITE: Base Rift (Vibrating tattered dark-purple ground rift) ---
+      let vibX = Math.sin(time / 25) * 1.5;
+      let vibY = Math.cos(time / 20) * 0.8;
 
-          c.fillStyle = "#1e052e"; // Dark purple backing shadow
-          c.beginPath();
-          let steps = 12;
-          for (let i = 0; i <= steps; i++) {
-            let a = (i * Math.PI * 2) / steps;
-            let rX = mobShadowW * (1.1 + Math.sin(i * 3 + time / 80) * 0.12) + vibX;
-            let rY = mobShadowH * (1.1 + Math.cos(i * 3 + time / 80) * 0.12) + vibY;
-            c.lineTo(mCx + Math.cos(a) * rX, mCy + Math.sin(a) * rY);
-          }
-          c.closePath();
-          c.fill();
+      c.fillStyle = "#1e052e"; // Dark purple backing shadow
+      c.beginPath();
+      let steps = 12;
+      for (let i = 0; i <= steps; i++) {
+        let a = (i * Math.PI * 2) / steps;
+        let rX = mobShadowW * (1.1 + Math.sin(i * 3 + time / 80) * 0.12) + vibX;
+        let rY = mobShadowH * (1.1 + Math.cos(i * 3 + time / 80) * 0.12) + vibY;
+        c.lineTo(mCx + Math.cos(a) * rX, mCy + Math.sin(a) * rY);
+      }
+      c.closePath();
+      c.fill();
 
-          // Sharp tattered border
-          c.strokeStyle = "#510a74";
-          c.lineWidth = 1.2;
-          c.stroke();
-        } else {
-          // --- STANDARD / RARE shadow ---
-          c.fillStyle = "rgba(0, 0, 0, 0.35)";
-          c.beginPath();
-          c.ellipse(mCx, mCy, mobShadowW, mobShadowH, 0, 0, Math.PI * 2);
-          c.fill();
-        }
+      // Sharp tattered border
+      c.strokeStyle = "#510a74";
+      c.lineWidth = 1.2;
+      c.stroke();
+    } else {
+      // --- STANDARD / RARE shadow ---
+      c.fillStyle = "rgba(0, 0, 0, 0.35)";
+      c.beginPath();
+      c.ellipse(mCx, mCy, mobShadowW, mobShadowH, 0, 0, Math.PI * 2);
+      c.fill();
+    }
 
-        // Render Blood Berserker Death Detonation Warning Circle
-        if (m.isDetonating && m.detonationTimer > 0) {
+    // Render Blood Berserker Death Detonation Warning Circle
+    if (m.isDetonating && m.detonationTimer > 0) {
       let pulse = Math.sin(Date.now() / 50) * 4;
       c.strokeStyle = "#e74c3c";
       c.lineWidth = 2.0;
@@ -7235,38 +7331,38 @@
     }
 
     // Render Elite Commander Ground Runic Aura Ring & Laser Tethers
-        if (m.eliteAffix) {
-          let auraColor = "#00d2ff";
-          let buffKey = "haste";
+    if (m.eliteAffix) {
+      let auraColor = "#00d2ff";
+      let buffKey = "haste";
 
-          if (m.eliteAffix === "vitality_weaver") {
-            auraColor = "#2ecc71";
-            buffKey = null;
-          } else if (m.eliteAffix === "iron_citadel") {
-            auraColor = "#3498db";
-            buffKey = "def";
-          } else if (m.eliteAffix === "swift_commander") {
-            auraColor = "#00d2ff";
-            buffKey = "haste";
-          } else if (m.eliteAffix === "blood_berserker") {
-            auraColor = "#e74c3c";
-            buffKey = "atk";
-          } else if (m.eliteAffix === "nullifier") {
-            auraColor = "#a855f7";
-            buffKey = null;
-          } else if (m.eliteAffix === "web_weaver") {
-            auraColor = "#2ecc71";
-            buffKey = null;
-          } else if (m.eliteAffix === "glacial_warden") {
-            auraColor = "#38bdf8";
-            buffKey = null;
-          } else if (m.eliteAffix === "slag_shaper") {
-            auraColor = "#f97316";
-            buffKey = null;
-          } else if (m.eliteAffix === "toxic_decay") {
-            auraColor = "#a7f3d0";
-            buffKey = null;
-          }
+      if (m.eliteAffix === "vitality_weaver") {
+        auraColor = "#2ecc71";
+        buffKey = null;
+      } else if (m.eliteAffix === "iron_citadel") {
+        auraColor = "#3498db";
+        buffKey = "def";
+      } else if (m.eliteAffix === "swift_commander") {
+        auraColor = "#00d2ff";
+        buffKey = "haste";
+      } else if (m.eliteAffix === "blood_berserker") {
+        auraColor = "#e74c3c";
+        buffKey = "atk";
+      } else if (m.eliteAffix === "nullifier") {
+        auraColor = "#a855f7";
+        buffKey = null;
+      } else if (m.eliteAffix === "web_weaver") {
+        auraColor = "#2ecc71";
+        buffKey = null;
+      } else if (m.eliteAffix === "glacial_warden") {
+        auraColor = "#38bdf8";
+        buffKey = null;
+      } else if (m.eliteAffix === "slag_shaper") {
+        auraColor = "#f97316";
+        buffKey = null;
+      } else if (m.eliteAffix === "toxic_decay") {
+        auraColor = "#a7f3d0";
+        buffKey = null;
+      }
 
       let rot = (Date.now() / 400) % (Math.PI * 2);
       c.strokeStyle = auraColor;
@@ -7281,65 +7377,68 @@
       c.restore();
 
       // Draw Translucent Laser Tether Links to Buffed Minion Allies
-            if (buffKey && window.activeDungeonMobs) {
-              c.strokeStyle = auraColor;
-              c.lineWidth = 1.2;
-              c.globalAlpha = 0.35;
-              c.setLineDash([2, 2]);
+      if (buffKey && window.activeDungeonMobs) {
+        c.strokeStyle = auraColor;
+        c.lineWidth = 1.2;
+        c.globalAlpha = 0.35;
+        c.setLineDash([2, 2]);
 
-              window.activeDungeonMobs.forEach((m2) => {
-                if (m2 === m || !m2.buffStacks || (m2.buffStacks[buffKey] || 0) <= 0)
-                  return;
-                let m2Cx = m2.x + (m2.w || 24) / 2;
-                let m2Cy = m2.y + (m2.h || 24) / 2;
+        window.activeDungeonMobs.forEach((m2) => {
+          if (m2 === m || !m2.buffStacks || (m2.buffStacks[buffKey] || 0) <= 0)
+            return;
+          let m2Cx = m2.x + (m2.w || 24) / 2;
+          let m2Cy = m2.y + (m2.h || 24) / 2;
 
-                c.beginPath();
-                c.moveTo(mCx, mCy - m.h / 2);
-                c.lineTo(m2Cx, m2Cy);
-                c.stroke();
-              });
-              c.setLineDash([]);
-              c.globalAlpha = 1.0;
-            }
-          }
-          c.restore();
+          c.beginPath();
+          c.moveTo(mCx, mCy - m.h / 2);
+          c.lineTo(m2Cx, m2Cy);
+          c.stroke();
+        });
+        c.setLineDash([]);
+        c.globalAlpha = 1.0;
+      }
+    }
+    c.restore();
 
-          // --- Apply Hardware-Accelerated Rendering Filters (Phase 2) ---
-                    let originalCtx = c;
-                    let activeTint = null;
+    // --- Apply Hardware-Accelerated Rendering Filters (Phase 2) ---
+    let originalCtx = c;
+    let activeTint = null;
 
-                    if (mobIsElite && mobIsRare) {
-                      activeTint = "rgba(232, 67, 147, 0.38)"; // Rare Elite: Bright magenta/pink tint
-                    } else if (mobIsElite) {
-                      activeTint = "rgba(168, 85, 247, 0.32)"; // Elite: Deep purple/blue tint
-                    } else if (mobIsRare) {
-                      activeTint = "rgba(241, 196, 15, 0.28)"; // Rare: Gold/yellow tint
-                    }
+    if (mobIsElite && mobIsRare) {
+      activeTint = "rgba(232, 67, 147, 0.38)"; // Rare Elite: Bright magenta/pink tint
+    } else if (mobIsElite) {
+      activeTint = "rgba(168, 85, 247, 0.32)"; // Elite: Deep purple/blue tint
+    } else if (mobIsRare) {
+      activeTint = "rgba(241, 196, 15, 0.28)"; // Rare: Gold/yellow tint
+    }
 
-                    const shouldTint = useTintFallback && activeTint !== null;
+    const shouldTint = useTintFallback && activeTint !== null;
 
-                    if (shouldTint) {
-                      let offscreen = getOffscreenCanvas(c.canvas);
-                      offscreenCtx = offscreen.ctx;
-                      offscreenCtx.setTransform(c.getTransform());
-                      // Clear only the bounding box of the mob in world coordinates
-                      offscreenCtx.clearRect(m.x - 50, m.y - 100, m.w + 100, m.h + 150);
-                      c = offscreenCtx; // Redirect all subsequent drawing commands to offscreen canvas
-                    } else {
-                      if (isFilterSupported) {
-                        if (mobIsElite && mobIsRare) {
-                          c.filter = "hue-rotate(280deg) saturate(250%) brightness(1.05) contrast(1.4)";
-                        } else if (mobIsElite) {
-                          c.filter = "hue-rotate(130deg) saturate(160%) brightness(0.8) contrast(1.25)";
-                        } else if (mobIsRare) {
-                          c.filter = "hue-rotate(25deg) saturate(220%) brightness(1.15) contrast(1.1)";
-                        } else {
-                          c.filter = "none";
-                        }
-                      }
-                    }
+    if (shouldTint) {
+      let offscreen = getOffscreenCanvas(c.canvas);
+      offscreenCtx = offscreen.ctx;
+      offscreenCtx.setTransform(c.getTransform());
+      // Clear only the bounding box of the mob in world coordinates
+      offscreenCtx.clearRect(m.x - 50, m.y - 100, m.w + 100, m.h + 150);
+      c = offscreenCtx; // Redirect all subsequent drawing commands to offscreen canvas
+    } else {
+      if (isFilterSupported) {
+        if (mobIsElite && mobIsRare) {
+          c.filter =
+            "hue-rotate(280deg) saturate(250%) brightness(1.05) contrast(1.4)";
+        } else if (mobIsElite) {
+          c.filter =
+            "hue-rotate(130deg) saturate(160%) brightness(0.8) contrast(1.25)";
+        } else if (mobIsRare) {
+          c.filter =
+            "hue-rotate(25deg) saturate(220%) brightness(1.15) contrast(1.1)";
+        } else {
+          c.filter = "none";
+        }
+      }
+    }
 
-          let penWidth =
+    let penWidth =
       m.type === "boss" ||
       m.type === "dungeon_boss" ||
       m.type === "prestige_boss" ||
@@ -7365,57 +7464,57 @@
     }
 
     if (m.type === "mob") {
-          let vType = m.visualType;
-          if (!vType) {
-            let fallbacks = {
-              0: "slime",
-              1: "golem",
-              2: "magma_elemental",
-              3: "marsh_ghost",
-              4: "void_orb",
-            };
-            vType = fallbacks[t] || "slime";
-          }
+      let vType = m.visualType;
+      if (!vType) {
+        let fallbacks = {
+          0: "slime",
+          1: "golem",
+          2: "magma_elemental",
+          3: "marsh_ghost",
+          4: "void_orb",
+        };
+        vType = fallbacks[t] || "slime";
+      }
 
-          // Check if standard mob is from Whispering Woods (Sector 0)
-          const isSectorZeroMob = ["slime", "sprout", "thorn_wyrm"].includes(vType);
-          if (!isSectorZeroMob) {
-            let cx = m.x + m.w / 2;
-            let cy = m.y + m.h / 2;
-            c.save();
-            c.translate(cx, cy);
-            c.scale(0.7, 0.7); // Downscale other stages to match player proportions
-            c.translate(-cx, -cy);
-          }
+      // Check if standard mob is from Whispering Woods (Sector 0)
+      const isSectorZeroMob = ["slime", "sprout", "thorn_wyrm"].includes(vType);
+      if (!isSectorZeroMob) {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+        c.save();
+        c.translate(cx, cy);
+        c.scale(0.7, 0.7); // Downscale other stages to match player proportions
+        c.translate(-cx, -cy);
+      }
 
-          if (m.isRare) {
-            c.save();
-            let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
-            let auraGrad = c.createRadialGradient(
-              m.x + m.w / 2,
-              m.y + m.h / 2,
-              2,
-              m.x + m.w / 2,
-              m.y + m.h / 2,
-              Math.max(m.w, m.h) * 1.15 * auraPulse,
-            );
-            auraGrad.addColorStop(0, "rgba(241, 196, 15, 0.45)");
-            auraGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.18)");
-            auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-            c.fillStyle = auraGrad;
-            c.beginPath();
-            c.arc(
-              m.x + m.w / 2,
-              m.y + m.h / 2,
-              Math.max(m.w, m.h) * 1.15 * auraPulse,
-              0,
-              Math.PI * 2,
-            );
-            c.fill();
-            c.restore();
-          }
+      if (m.isRare) {
+        c.save();
+        let auraPulse = 1 + Math.sin(Date.now() / 150) * 0.12;
+        let auraGrad = c.createRadialGradient(
+          m.x + m.w / 2,
+          m.y + m.h / 2,
+          2,
+          m.x + m.w / 2,
+          m.y + m.h / 2,
+          Math.max(m.w, m.h) * 1.15 * auraPulse,
+        );
+        auraGrad.addColorStop(0, "rgba(241, 196, 15, 0.45)");
+        auraGrad.addColorStop(0.6, "rgba(230, 126, 34, 0.18)");
+        auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        c.fillStyle = auraGrad;
+        c.beginPath();
+        c.arc(
+          m.x + m.w / 2,
+          m.y + m.h / 2,
+          Math.max(m.w, m.h) * 1.15 * auraPulse,
+          0,
+          Math.PI * 2,
+        );
+        c.fill();
+        c.restore();
+      }
 
-          if (vType === "slime") {
+      if (vType === "slime") {
         let squish = Math.sin(Date.now() / 100) * 2.0;
         let wScale = (m.w / 2) * 0.7 + squish;
         let hScale = (m.h / 2) * 0.7 - squish;
@@ -7661,455 +7760,574 @@
           if (!cn.isBehind) drawCoinPiece(cn);
         });
       } else if (vType === "hoard_mimic") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h - 10;
-              let time = Date.now();
-              let isFlash = m.flashTimer > 0;
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h - 10;
+        let time = Date.now();
+        let isFlash = m.flashTimer > 0;
 
-              // Resolve Localized Mimic Disguise Tier matching player progression / generation settings
-              if (!m.mimicTier) {
-                let tx = Math.floor(m.x / 32);
-                let ty = Math.floor(m.y / 32);
-                let map = window.activeDungeonMap;
-                let foundTier = map && map.chestTiers && map.chestTiers[`${tx},${ty}`];
-                if (!foundTier && map && map.chestTiers) {
-                  for (let dx = -1; dx <= 1; dx++) {
-                    for (let dy = -1; dy <= 1; dy++) {
-                      let nt = map.chestTiers[`${tx + dx},${ty + dy}`];
-                      if (nt) { foundTier = nt; break; }
-                    }
-                    if (foundTier) break;
-                  }
-                }
-                if (!foundTier) {
-                  let rLevel = (window.playerStats && window.playerStats.skillTree && window.playerStats.skillTree.utility_treasure_hunter) || 0;
-                  let seedVal = Math.sin(m.x * 12.9898 + m.y * 78.233) * 43758.5453;
-                  let r = Math.abs(seedVal - Math.floor(seedVal));
-                  foundTier = "iron_bound";
-                  if (rLevel === 1) {
-                    if (r < 0.25) foundTier = "gilded";
-                  } else if (rLevel === 2) {
-                    if (r < 0.05) foundTier = "astral";
-                    else if (r < 0.35) foundTier = "gilded";
-                  } else if (rLevel >= 3) {
-                    if (r < 0.12) foundTier = "astral";
-                    else if (r < 0.45) foundTier = "gilded";
-                  }
-                }
-                m.mimicTier = foundTier;
-              }
-              let tier = m.mimicTier;
-
-              // Snapping dynamics: mimics twitch subtly when idle, snap violently on aggressive behaviors
-              let snap = Math.abs(Math.sin(time / 160));
-              let isAttacking = m.isAttacking || (m.state === "CHASE") || m.vx !== 0 || m.vy !== 0;
-              let P = isAttacking ? snap * 0.95 : (Math.sin(time / 1000) > 0.85 ? 0.14 : 0.0);
-
-              let closedScaleY = Math.max(0, Math.cos((P * Math.PI) / 2));
-              let openScaleY = Math.max(0, Math.sin((P * Math.PI) / 2));
-
-              // 1. Soft Ambient Occlusion Drop Shadow
-              let baseShadowW = 13 + (tier !== "iron_bound" ? 1 : 0);
-              c.fillStyle = "rgba(0, 0, 0, 0.55)";
-              c.beginPath();
-              c.ellipse(cx, cy + 9, baseShadowW, 5, 0, 0, Math.PI * 2);
-              c.fill();
-
-              // 2. Warm Tiered Floor Glow
-              let pulse = Math.sin(time / 200) * 1.8;
-              let auraRadius = (tier === "iron_bound" ? 16 : tier === "gilded" ? 18 : 20) + pulse;
-              let auraGrad = c.createRadialGradient(cx, cy + 2, 2, cx, cy + 2, auraRadius);
-              if (tier === "iron_bound") {
-                auraGrad.addColorStop(0, "rgba(230, 126, 34, 0.35)");
-                auraGrad.addColorStop(0.6, "rgba(139, 69, 19, 0.12)");
-              } else if (tier === "gilded") {
-                auraGrad.addColorStop(0, "rgba(255, 215, 0, 0.45)");
-                auraGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.18)");
-              } else {
-                auraGrad.addColorStop(0, "rgba(0, 255, 255, 0.55)");
-                auraGrad.addColorStop(0.5, "rgba(168, 85, 247, 0.22)");
-              }
-              auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-              c.fillStyle = auraGrad;
-              c.beginPath();
-              c.arc(cx, cy + 2, auraRadius, 0, Math.PI * 2);
-              c.fill();
-
-              let w = 22;
-              let bodyH = 11;
-              let lidH = 6;
-              let x = cx - w / 2;
-              let y = cy - (bodyH + lidH) / 2 + 3;
-              let y_hinge = y + lidH;
-
-              // 3. BACK LAYER: openScaleY Rotating Open Lid (Back Face)
-              if (openScaleY > 0.01) {
-                c.save();
-                c.translate(cx, y_hinge);
-                c.scale(1, -openScaleY);
-
-                if (isFlash) {
-                  c.fillStyle = "#ffffff";
-                  c.strokeStyle = "#ffffff";
-                  c.lineWidth = 1.5;
-                  c.beginPath();
-                  c.moveTo(-w / 2, 0);
-                  c.lineTo(-w / 2, -lidH * 1.5);
-                  c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
-                  c.lineTo(w / 2, 0);
-                  c.closePath();
-                  c.fill();
-                  c.stroke();
-                } else {
-                  if (tier === "iron_bound") {
-                    c.fillStyle = "#2a1204";
-                    c.strokeStyle = "#100903";
-                    c.lineWidth = 1.5;
-                    c.beginPath();
-                    c.moveTo(-w / 2, 0);
-                    c.lineTo(-w / 2, -lidH * 1.5);
-                    c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
-                    c.lineTo(w / 2, 0);
-                    c.closePath();
-                    c.fill();
-                    c.stroke();
-
-                    c.fillStyle = "#0c0502";
-                    c.fillRect(-w / 2 + 1.5, -lidH * 1.5 + 1.5, w - 3, lidH * 1.5 - 1.5);
-
-                    c.fillStyle = "#334155";
-                    c.strokeStyle = "#0f172a";
-                    c.lineWidth = 1.0;
-                    c.fillRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
-                    c.strokeRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
-                    c.fillRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
-                    c.strokeRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
-                  } else if (tier === "gilded") {
-                    c.fillStyle = "#4a0404";
-                    c.strokeStyle = "#200101";
-                    c.lineWidth = 1.5;
-                    c.beginPath();
-                    c.moveTo(-w / 2, 0);
-                    c.lineTo(-w / 2, -lidH * 1.5);
-                    c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
-                    c.lineTo(w / 2, 0);
-                    c.closePath();
-                    c.fill();
-                    c.stroke();
-
-                    c.fillStyle = "#220101";
-                    c.fillRect(-w / 2 + 1.5, -lidH * 1.5 + 1.5, w - 3, lidH * 1.5 - 1.5);
-
-                    c.fillStyle = "#ffd700";
-                    c.strokeStyle = "#855800";
-                    c.lineWidth = 1.0;
-                    c.fillRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
-                    c.strokeRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
-                    c.fillRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
-                    c.strokeRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
-                  } else {
-                    c.fillStyle = "#0c0a1a";
-                    c.strokeStyle = "#02e8ff";
-                    c.lineWidth = 1.5;
-                    c.beginPath();
-                    c.moveTo(-w / 2, 0);
-                    c.lineTo(-w / 2, -lidH * 1.5);
-                    c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
-                    c.lineTo(w / 2, 0);
-                    c.closePath();
-                    c.fill();
-                    c.stroke();
-
-                    c.fillStyle = "#02020a";
-                    c.fillRect(-w / 2 + 1.5, -lidH * 1.5 + 1.5, w - 3, lidH * 1.5 - 1.5);
-
-                    c.strokeStyle = "rgba(0, 255, 255, 0.6)";
-                    c.lineWidth = 1.0;
-                    c.beginPath();
-                    c.moveTo(-w / 2 + 4, -lidH * 1.5 + 3);
-                    c.lineTo(-w / 2 + 4, -1);
-                    c.moveTo(w / 2 - 4, -lidH * 1.5 + 3);
-                    c.lineTo(w / 2 - 4, -1);
-                    c.stroke();
-                  }
-                }
-                c.restore();
-              }
-
-              // 4. MIDDLE LAYER: Standard Lower Box Base Container
-              let bodyGrad = c.createLinearGradient(x, y_hinge, x, y_hinge + bodyH);
-              if (isFlash) {
-                c.fillStyle = "#ffffff";
-                c.strokeStyle = "#ffffff";
-              } else {
-                if (tier === "iron_bound") {
-                  bodyGrad.addColorStop(0, "#5c2e0b");
-                  bodyGrad.addColorStop(0.5, "#411f05");
-                  bodyGrad.addColorStop(1, "#1c0b02");
-                  c.fillStyle = bodyGrad;
-                  c.strokeStyle = "#100903";
-                } else if (tier === "gilded") {
-                  bodyGrad.addColorStop(0, "#800020");
-                  bodyGrad.addColorStop(0.5, "#4a0404");
-                  bodyGrad.addColorStop(1, "#200101");
-                  c.fillStyle = bodyGrad;
-                  c.strokeStyle = "#200101";
-                } else {
-                  bodyGrad.addColorStop(0, "#1e1b4b");
-                  bodyGrad.addColorStop(0.5, "#0f0b29");
-                  bodyGrad.addColorStop(1, "#030010");
-                  c.fillStyle = bodyGrad;
-                  c.strokeStyle = "#a855f7";
+        // Resolve Localized Mimic Disguise Tier matching player progression / generation settings
+        if (!m.mimicTier) {
+          let tx = Math.floor(m.x / 32);
+          let ty = Math.floor(m.y / 32);
+          let map = window.activeDungeonMap;
+          let foundTier =
+            map && map.chestTiers && map.chestTiers[`${tx},${ty}`];
+          if (!foundTier && map && map.chestTiers) {
+            for (let dx = -1; dx <= 1; dx++) {
+              for (let dy = -1; dy <= 1; dy++) {
+                let nt = map.chestTiers[`${tx + dx},${ty + dy}`];
+                if (nt) {
+                  foundTier = nt;
+                  break;
                 }
               }
+              if (foundTier) break;
+            }
+          }
+          if (!foundTier) {
+            let rLevel =
+              (window.playerStats &&
+                window.playerStats.skillTree &&
+                window.playerStats.skillTree.utility_treasure_hunter) ||
+              0;
+            let seedVal = Math.sin(m.x * 12.9898 + m.y * 78.233) * 43758.5453;
+            let r = Math.abs(seedVal - Math.floor(seedVal));
+            foundTier = "iron_bound";
+            if (rLevel === 1) {
+              if (r < 0.25) foundTier = "gilded";
+            } else if (rLevel === 2) {
+              if (r < 0.05) foundTier = "astral";
+              else if (r < 0.35) foundTier = "gilded";
+            } else if (rLevel >= 3) {
+              if (r < 0.12) foundTier = "astral";
+              else if (r < 0.45) foundTier = "gilded";
+            }
+          }
+          m.mimicTier = foundTier;
+        }
+        let tier = m.mimicTier;
+
+        // Snapping dynamics: mimics twitch subtly when idle, snap violently on aggressive behaviors
+        let snap = Math.abs(Math.sin(time / 160));
+        let isAttacking =
+          m.isAttacking || m.state === "CHASE" || m.vx !== 0 || m.vy !== 0;
+        let P = isAttacking
+          ? snap * 0.95
+          : Math.sin(time / 1000) > 0.85
+            ? 0.14
+            : 0.0;
+
+        let closedScaleY = Math.max(0, Math.cos((P * Math.PI) / 2));
+        let openScaleY = Math.max(0, Math.sin((P * Math.PI) / 2));
+
+        // 1. Soft Ambient Occlusion Drop Shadow
+        let baseShadowW = 13 + (tier !== "iron_bound" ? 1 : 0);
+        c.fillStyle = "rgba(0, 0, 0, 0.55)";
+        c.beginPath();
+        c.ellipse(cx, cy + 9, baseShadowW, 5, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // 2. Warm Tiered Floor Glow
+        let pulse = Math.sin(time / 200) * 1.8;
+        let auraRadius =
+          (tier === "iron_bound" ? 16 : tier === "gilded" ? 18 : 20) + pulse;
+        let auraGrad = c.createRadialGradient(
+          cx,
+          cy + 2,
+          2,
+          cx,
+          cy + 2,
+          auraRadius,
+        );
+        if (tier === "iron_bound") {
+          auraGrad.addColorStop(0, "rgba(230, 126, 34, 0.35)");
+          auraGrad.addColorStop(0.6, "rgba(139, 69, 19, 0.12)");
+        } else if (tier === "gilded") {
+          auraGrad.addColorStop(0, "rgba(255, 215, 0, 0.45)");
+          auraGrad.addColorStop(0.5, "rgba(230, 126, 34, 0.18)");
+        } else {
+          auraGrad.addColorStop(0, "rgba(0, 255, 255, 0.55)");
+          auraGrad.addColorStop(0.5, "rgba(168, 85, 247, 0.22)");
+        }
+        auraGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        c.fillStyle = auraGrad;
+        c.beginPath();
+        c.arc(cx, cy + 2, auraRadius, 0, Math.PI * 2);
+        c.fill();
+
+        let w = 22;
+        let bodyH = 11;
+        let lidH = 6;
+        let x = cx - w / 2;
+        let y = cy - (bodyH + lidH) / 2 + 3;
+        let y_hinge = y + lidH;
+
+        // 3. BACK LAYER: openScaleY Rotating Open Lid (Back Face)
+        if (openScaleY > 0.01) {
+          c.save();
+          c.translate(cx, y_hinge);
+          c.scale(1, -openScaleY);
+
+          if (isFlash) {
+            c.fillStyle = "#ffffff";
+            c.strokeStyle = "#ffffff";
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(-w / 2, 0);
+            c.lineTo(-w / 2, -lidH * 1.5);
+            c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+            c.lineTo(w / 2, 0);
+            c.closePath();
+            c.fill();
+            c.stroke();
+          } else {
+            if (tier === "iron_bound") {
+              c.fillStyle = "#2a1204";
+              c.strokeStyle = "#100903";
               c.lineWidth = 1.5;
-              c.fillRect(x, y_hinge, w, bodyH);
-              c.strokeRect(x, y_hinge, w, bodyH);
+              c.beginPath();
+              c.moveTo(-w / 2, 0);
+              c.lineTo(-w / 2, -lidH * 1.5);
+              c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+              c.lineTo(w / 2, 0);
+              c.closePath();
+              c.fill();
+              c.stroke();
 
-              // Hardware Straps on Base Container
-              if (!isFlash) {
-                c.fillStyle = tier === "iron_bound" ? "#334155" : tier === "gilded" ? "#ffd700" : "#00ffff";
-                c.strokeStyle = tier === "iron_bound" ? "#0f172a" : tier === "gilded" ? "#855800" : "rgba(255,255,255,0.8)";
-                c.lineWidth = 1.0;
-                if (tier === "astral") {
-                  c.save();
-                  c.shadowBlur = 4;
-                  c.shadowColor = "#00ffff";
-                }
-                c.fillRect(x + 3, y_hinge, 3.5, bodyH);
-                c.strokeRect(x + 3, y_hinge, 3.5, bodyH);
-                c.fillRect(x + w - 6.5, y_hinge, 3.5, bodyH);
-                c.strokeRect(x + w - 6.5, y_hinge, 3.5, bodyH);
-                if (tier === "astral") c.restore();
-              }
+              c.fillStyle = "#0c0502";
+              c.fillRect(
+                -w / 2 + 1.5,
+                -lidH * 1.5 + 1.5,
+                w - 3,
+                lidH * 1.5 - 1.5,
+              );
 
-              // 5. INTERNAL CAVITY VOID REVEAL (SINISTER MIMIC BITE & TONGUE REVEAL)
-              if (P > 0.01) {
-                c.save();
-                let revealH = Math.round(5 * P);
+              c.fillStyle = "#334155";
+              c.strokeStyle = "#0f172a";
+              c.lineWidth = 1.0;
+              c.fillRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+              c.strokeRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+              c.fillRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+              c.strokeRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+            } else if (tier === "gilded") {
+              c.fillStyle = "#4a0404";
+              c.strokeStyle = "#200101";
+              c.lineWidth = 1.5;
+              c.beginPath();
+              c.moveTo(-w / 2, 0);
+              c.lineTo(-w / 2, -lidH * 1.5);
+              c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+              c.lineTo(w / 2, 0);
+              c.closePath();
+              c.fill();
+              c.stroke();
 
+              c.fillStyle = "#220101";
+              c.fillRect(
+                -w / 2 + 1.5,
+                -lidH * 1.5 + 1.5,
+                w - 3,
+                lidH * 1.5 - 1.5,
+              );
+
+              c.fillStyle = "#ffd700";
+              c.strokeStyle = "#855800";
+              c.lineWidth = 1.0;
+              c.fillRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+              c.strokeRect(-w / 2 + 3, -lidH * 1.5, 3.5, lidH * 1.5);
+              c.fillRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+              c.strokeRect(w / 2 - 6.5, -lidH * 1.5, 3.5, lidH * 1.5);
+            } else {
+              c.fillStyle = "#0c0a1a";
+              c.strokeStyle = "#02e8ff";
+              c.lineWidth = 1.5;
+              c.beginPath();
+              c.moveTo(-w / 2, 0);
+              c.lineTo(-w / 2, -lidH * 1.5);
+              c.quadraticCurveTo(0, -lidH * 1.5 - 4, w / 2, -lidH * 1.5);
+              c.lineTo(w / 2, 0);
+              c.closePath();
+              c.fill();
+              c.stroke();
+
+              c.fillStyle = "#02020a";
+              c.fillRect(
+                -w / 2 + 1.5,
+                -lidH * 1.5 + 1.5,
+                w - 3,
+                lidH * 1.5 - 1.5,
+              );
+
+              c.strokeStyle = "rgba(0, 255, 255, 0.6)";
+              c.lineWidth = 1.0;
+              c.beginPath();
+              c.moveTo(-w / 2 + 4, -lidH * 1.5 + 3);
+              c.lineTo(-w / 2 + 4, -1);
+              c.moveTo(w / 2 - 4, -lidH * 1.5 + 3);
+              c.lineTo(w / 2 - 4, -1);
+              c.stroke();
+            }
+          }
+          c.restore();
+        }
+
+        // 4. MIDDLE LAYER: Standard Lower Box Base Container
+        let bodyGrad = c.createLinearGradient(x, y_hinge, x, y_hinge + bodyH);
+        if (isFlash) {
+          c.fillStyle = "#ffffff";
+          c.strokeStyle = "#ffffff";
+        } else {
+          if (tier === "iron_bound") {
+            bodyGrad.addColorStop(0, "#5c2e0b");
+            bodyGrad.addColorStop(0.5, "#411f05");
+            bodyGrad.addColorStop(1, "#1c0b02");
+            c.fillStyle = bodyGrad;
+            c.strokeStyle = "#100903";
+          } else if (tier === "gilded") {
+            bodyGrad.addColorStop(0, "#800020");
+            bodyGrad.addColorStop(0.5, "#4a0404");
+            bodyGrad.addColorStop(1, "#200101");
+            c.fillStyle = bodyGrad;
+            c.strokeStyle = "#200101";
+          } else {
+            bodyGrad.addColorStop(0, "#1e1b4b");
+            bodyGrad.addColorStop(0.5, "#0f0b29");
+            bodyGrad.addColorStop(1, "#030010");
+            c.fillStyle = bodyGrad;
+            c.strokeStyle = "#a855f7";
+          }
+        }
+        c.lineWidth = 1.5;
+        c.fillRect(x, y_hinge, w, bodyH);
+        c.strokeRect(x, y_hinge, w, bodyH);
+
+        // Hardware Straps on Base Container
+        if (!isFlash) {
+          c.fillStyle =
+            tier === "iron_bound"
+              ? "#334155"
+              : tier === "gilded"
+                ? "#ffd700"
+                : "#00ffff";
+          c.strokeStyle =
+            tier === "iron_bound"
+              ? "#0f172a"
+              : tier === "gilded"
+                ? "#855800"
+                : "rgba(255,255,255,0.8)";
+          c.lineWidth = 1.0;
+          if (tier === "astral") {
+            c.save();
+            c.shadowBlur = 4;
+            c.shadowColor = "#00ffff";
+          }
+          c.fillRect(x + 3, y_hinge, 3.5, bodyH);
+          c.strokeRect(x + 3, y_hinge, 3.5, bodyH);
+          c.fillRect(x + w - 6.5, y_hinge, 3.5, bodyH);
+          c.strokeRect(x + w - 6.5, y_hinge, 3.5, bodyH);
+          if (tier === "astral") c.restore();
+        }
+
+        // 5. INTERNAL CAVITY VOID REVEAL (SINISTER MIMIC BITE & TONGUE REVEAL)
+        if (P > 0.01) {
+          c.save();
+          let revealH = Math.round(5 * P);
+
+          c.beginPath();
+          c.rect(x + 1.5, y_hinge, w - 3, revealH + 1);
+          c.clip();
+
+          c.fillStyle = "#0c0202";
+          c.fillRect(x + 1.5, y_hinge, w - 3, revealH + 1);
+
+          // Wiggling Purple/Acidic Tongue
+          let tongueSway = Math.sin(time / 60) * 4;
+          let tongueLength = Math.max(2, 10 * P);
+          let tongueGrad = c.createLinearGradient(
+            cx,
+            y_hinge,
+            cx + tongueSway,
+            y_hinge + tongueLength,
+          );
+          tongueGrad.addColorStop(0, "#c026d3");
+          tongueGrad.addColorStop(1, "#8e44ad");
+
+          c.fillStyle = tongueGrad;
+          c.strokeStyle = "#4a044e";
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.moveTo(cx - 3.5, y_hinge + 1);
+          c.quadraticCurveTo(
+            cx - 4 + tongueSway * 0.5,
+            y_hinge + tongueLength * 0.7,
+            cx + tongueSway,
+            y_hinge + tongueLength,
+          );
+          c.arc(cx + tongueSway, y_hinge + tongueLength, 2.5, 0, Math.PI);
+          c.quadraticCurveTo(
+            cx + 4 + tongueSway * 0.5,
+            y_hinge + tongueLength * 0.7,
+            cx + 3.5,
+            y_hinge + 1,
+          );
+          c.closePath();
+          c.fill();
+          c.stroke();
+
+          // Razor-sharp Golden Fangs lining the lower edge
+          c.fillStyle = "#ffeaa7";
+          c.strokeStyle = "#4d2e1a";
+          c.lineWidth = 0.8;
+          let toothSpacing = 3.5;
+          for (
+            let tOff = -w / 2 + 3.5;
+            tOff <= w / 2 - 3.5;
+            tOff += toothSpacing
+          ) {
+            c.beginPath();
+            c.moveTo(cx + tOff - 1.2, y_hinge + revealH);
+            c.lineTo(cx + tOff, y_hinge + revealH - Math.max(1, 4 * P));
+            c.lineTo(cx + tOff + 1.2, y_hinge + revealH);
+            c.closePath();
+            c.fill();
+            c.stroke();
+          }
+
+          // Spooky glowing eyes peering from the depths of the void
+          let eyePulse = 0.5 + Math.sin(time / 100) * 0.5;
+          c.fillStyle = `rgba(239, 68, 68, ${0.45 + eyePulse * 0.55})`;
+          c.beginPath();
+          c.arc(cx - 5, y_hinge + 2, 0.85, 0, Math.PI * 2);
+          c.arc(cx + 5, y_hinge + 2, 0.85, 0, Math.PI * 2);
+          c.fill();
+
+          c.restore();
+        }
+
+        // 6. LATCH CLASP HANGING REVEAL
+        if (P > 0.01) {
+          c.save();
+          c.translate(cx, y_hinge);
+          let latchAngle = P * ((55 * Math.PI) / 180);
+          c.rotate(-latchAngle);
+
+          c.fillStyle =
+            tier === "iron_bound"
+              ? "#475569"
+              : tier === "gilded"
+                ? "#ffd700"
+                : "#00ffff";
+          c.strokeStyle =
+            tier === "iron_bound"
+              ? "#0f172a"
+              : tier === "gilded"
+                ? "#855800"
+                : "#ffffff";
+          c.lineWidth = 0.8;
+          c.fillRect(-1.5, 0, 3, 5);
+          c.strokeRect(-1.5, 0, 3, 5);
+          c.restore();
+        }
+
+        // 7. FRONT LAYER: closedScaleY Rotating Closed Lid (Front Face)
+        if (closedScaleY > 0.01) {
+          c.save();
+          c.translate(cx, y_hinge);
+          c.scale(1, closedScaleY);
+
+          if (isFlash) {
+            c.fillStyle = "#ffffff";
+            c.strokeStyle = "#ffffff";
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(-w / 2, 0);
+            c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
+            c.closePath();
+            c.fill();
+            c.stroke();
+          } else {
+            let lidGrad = c.createLinearGradient(-w / 2, -lidH, -w / 2, 0);
+            if (tier === "iron_bound") {
+              lidGrad.addColorStop(0, "#7c3f12");
+              lidGrad.addColorStop(0.5, "#5c2e0b");
+              lidGrad.addColorStop(1, "#2a1204");
+            } else if (tier === "gilded") {
+              lidGrad.addColorStop(0, "#9e1b32");
+              lidGrad.addColorStop(0.5, "#800020");
+              lidGrad.addColorStop(1, "#4a0404");
+            } else {
+              lidGrad.addColorStop(0, "#312e81");
+              lidGrad.addColorStop(0.5, "#1e1b4b");
+              lidGrad.addColorStop(1, "#09051d");
+            }
+
+            c.fillStyle = lidGrad;
+            c.strokeStyle =
+              tier === "iron_bound"
+                ? "#100903"
+                : tier === "gilded"
+                  ? "#200101"
+                  : "#a855f7";
+            c.lineWidth = 1.5;
+
+            c.beginPath();
+            c.moveTo(-w / 2, 0);
+            c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
+            c.closePath();
+            c.fill();
+            c.stroke();
+
+            // Highlight line on lid
+            c.strokeStyle =
+              tier === "astral"
+                ? "rgba(0, 255, 255, 0.35)"
+                : "rgba(255, 255, 255, 0.15)";
+            c.lineWidth = 1.0;
+            c.beginPath();
+            c.moveTo(-w / 2 + 3, -2);
+            c.quadraticCurveTo(0, -lidH + 1, w / 2 - 3, -2);
+            c.stroke();
+
+            // Bandings clipped to closed lid
+            c.save();
+            c.beginPath();
+            c.moveTo(-w / 2, 0);
+            c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
+            c.closePath();
+            c.clip();
+
+            c.fillStyle =
+              tier === "iron_bound"
+                ? "#334155"
+                : tier === "gilded"
+                  ? "#ffd700"
+                  : "#00ffff";
+            c.strokeStyle =
+              tier === "iron_bound"
+                ? "#0f172a"
+                : tier === "gilded"
+                  ? "#855800"
+                  : "#ffffff";
+            c.lineWidth = 0.8;
+            c.fillRect(-w / 2 + 3, -lidH - 2, 3.5, lidH + 2);
+            c.strokeRect(-w / 2 + 3, -lidH - 2, 3.5, lidH + 2);
+            c.fillRect(w / 2 - 6.5, -lidH - 2, 3.5, lidH + 2);
+            c.strokeRect(w / 2 - 6.5, -lidH - 2, 3.5, lidH + 2);
+            c.restore();
+
+            // Top-lip teeth lining the underside of the lid
+            if (P > 0.01) {
+              c.fillStyle = "#ffeaa7";
+              c.strokeStyle = "#4d2e1a";
+              c.lineWidth = 0.5;
+              let topToothSpacing = 4.0;
+              for (
+                let tOff = -w / 2 + 4.5;
+                tOff <= w / 2 - 4.5;
+                tOff += topToothSpacing
+              ) {
                 c.beginPath();
-                c.rect(x + 1.5, y_hinge, w - 3, revealH + 1);
-                c.clip();
-
-                c.fillStyle = "#0c0202";
-                c.fillRect(x + 1.5, y_hinge, w - 3, revealH + 1);
-
-                // Wiggling Purple/Acidic Tongue
-                let tongueSway = Math.sin(time / 60) * 4;
-                let tongueLength = Math.max(2, 10 * P);
-                let tongueGrad = c.createLinearGradient(cx, y_hinge, cx + tongueSway, y_hinge + tongueLength);
-                tongueGrad.addColorStop(0, "#c026d3");
-                tongueGrad.addColorStop(1, "#8e44ad");
-
-                c.fillStyle = tongueGrad;
-                c.strokeStyle = "#4a044e";
-                c.lineWidth = 1.2;
-                c.beginPath();
-                c.moveTo(cx - 3.5, y_hinge + 1);
-                c.quadraticCurveTo(cx - 4 + tongueSway * 0.5, y_hinge + tongueLength * 0.7, cx + tongueSway, y_hinge + tongueLength);
-                c.arc(cx + tongueSway, y_hinge + tongueLength, 2.5, 0, Math.PI);
-                c.quadraticCurveTo(cx + 4 + tongueSway * 0.5, y_hinge + tongueLength * 0.7, cx + 3.5, y_hinge + 1);
+                c.moveTo(tOff - 1.0, 0);
+                c.lineTo(tOff, Math.max(0.5, 3.5 * P));
+                c.lineTo(tOff + 1.0, 0);
                 c.closePath();
                 c.fill();
                 c.stroke();
-
-                // Razor-sharp Golden Fangs lining the lower edge
-                c.fillStyle = "#ffeaa7";
-                c.strokeStyle = "#4d2e1a";
-                c.lineWidth = 0.8;
-                let toothSpacing = 3.5;
-                for (let tOff = -w/2 + 3.5; tOff <= w/2 - 3.5; tOff += toothSpacing) {
-                  c.beginPath();
-                  c.moveTo(cx + tOff - 1.2, y_hinge + revealH);
-                  c.lineTo(cx + tOff, y_hinge + revealH - Math.max(1, 4 * P));
-                  c.lineTo(cx + tOff + 1.2, y_hinge + revealH);
-                  c.closePath();
-                  c.fill();
-                  c.stroke();
-                }
-
-                // Spooky glowing eyes peering from the depths of the void
-                let eyePulse = 0.5 + Math.sin(time / 100) * 0.5;
-                c.fillStyle = `rgba(239, 68, 68, ${0.45 + eyePulse * 0.55})`;
-                c.beginPath();
-                c.arc(cx - 5, y_hinge + 2, 0.85, 0, Math.PI * 2);
-                c.arc(cx + 5, y_hinge + 2, 0.85, 0, Math.PI * 2);
-                c.fill();
-
-                c.restore();
               }
+            }
 
-              // 6. LATCH CLASP HANGING REVEAL
-              if (P > 0.01) {
-                c.save();
-                c.translate(cx, y_hinge);
-                let latchAngle = P * ((55 * Math.PI) / 180);
-                c.rotate(-latchAngle);
+            // Dividing Seam
+            c.strokeStyle =
+              tier === "iron_bound"
+                ? "#100903"
+                : tier === "gilded"
+                  ? "#855800"
+                  : "#a855f7";
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(-w / 2, 0);
+            c.lineTo(w / 2, 0);
+            c.stroke();
 
-                c.fillStyle = tier === "iron_bound" ? "#475569" : tier === "gilded" ? "#ffd700" : "#00ffff";
-                c.strokeStyle = tier === "iron_bound" ? "#0f172a" : tier === "gilded" ? "#855800" : "#ffffff";
-                c.lineWidth = 0.8;
-                c.fillRect(-1.5, 0, 3, 5);
-                c.strokeRect(-1.5, 0, 3, 5);
-                c.restore();
+            // Lock hardware plate
+            let lockW = 6;
+            let lockH = 7;
+            let lockX = -lockW / 2;
+            let lockY = -3;
+
+            let lockGrad = c.createLinearGradient(
+              lockX,
+              lockY,
+              lockX,
+              lockY + lockH,
+            );
+            if (tier === "iron_bound") {
+              lockGrad.addColorStop(0, "#64748b");
+              lockGrad.addColorStop(1, "#334155");
+              c.strokeStyle = "#0f172a";
+            } else if (tier === "gilded") {
+              lockGrad.addColorStop(0, "#ffe57f");
+              lockGrad.addColorStop(1, "#ffc107");
+              c.strokeStyle = "#855800";
+            } else {
+              lockGrad.addColorStop(0, "#ffffff");
+              lockGrad.addColorStop(0.5, "#00ffff");
+              lockGrad.addColorStop(1, "#008b8b");
+              c.strokeStyle = "#008b8b";
+            }
+
+            c.fillStyle = lockGrad;
+            c.lineWidth = 1.0;
+            c.fillRect(lockX, lockY, lockW, lockH);
+            c.strokeRect(lockX, lockY, lockW, lockH);
+
+            if (tier === "gilded") {
+              c.fillStyle = "#e74c3c";
+              c.beginPath();
+              c.arc(0, lockY + 2.5, 1.2, 0, Math.PI * 2);
+              c.fill();
+            } else {
+              c.fillStyle = "#100903";
+              c.beginPath();
+              c.arc(0, lockY + 2.5, 1.0, 0, Math.PI * 2);
+              c.fill();
+              if (tier === "iron_bound") {
+                c.fillRect(-0.5, lockY + 2.5, 1.0, 2.5);
               }
+            }
+          }
+          c.restore();
+        }
 
-              // 7. FRONT LAYER: closedScaleY Rotating Closed Lid (Front Face)
-              if (closedScaleY > 0.01) {
-                c.save();
-                c.translate(cx, y_hinge);
-                c.scale(1, closedScaleY);
-
-                if (isFlash) {
-                  c.fillStyle = "#ffffff";
-                  c.strokeStyle = "#ffffff";
-                  c.lineWidth = 1.5;
-                  c.beginPath();
-                  c.moveTo(-w / 2, 0);
-                  c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
-                  c.closePath();
-                  c.fill();
-                  c.stroke();
-                } else {
-                  let lidGrad = c.createLinearGradient(-w / 2, -lidH, -w / 2, 0);
-                  if (tier === "iron_bound") {
-                    lidGrad.addColorStop(0, "#7c3f12");
-                    lidGrad.addColorStop(0.5, "#5c2e0b");
-                    lidGrad.addColorStop(1, "#2a1204");
-                  } else if (tier === "gilded") {
-                    lidGrad.addColorStop(0, "#9e1b32");
-                    lidGrad.addColorStop(0.5, "#800020");
-                    lidGrad.addColorStop(1, "#4a0404");
-                  } else {
-                    lidGrad.addColorStop(0, "#312e81");
-                    lidGrad.addColorStop(0.5, "#1e1b4b");
-                    lidGrad.addColorStop(1, "#09051d");
-                  }
-
-                  c.fillStyle = lidGrad;
-                  c.strokeStyle = tier === "iron_bound" ? "#100903" : tier === "gilded" ? "#200101" : "#a855f7";
-                  c.lineWidth = 1.5;
-
-                  c.beginPath();
-                  c.moveTo(-w / 2, 0);
-                  c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
-                  c.closePath();
-                  c.fill();
-                  c.stroke();
-
-                  // Highlight line on lid
-                  c.strokeStyle = tier === "astral" ? "rgba(0, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.15)";
-                  c.lineWidth = 1.0;
-                  c.beginPath();
-                  c.moveTo(-w / 2 + 3, -2);
-                  c.quadraticCurveTo(0, -lidH + 1, w / 2 - 3, -2);
-                  c.stroke();
-
-                  // Bandings clipped to closed lid
-                  c.save();
-                  c.beginPath();
-                  c.moveTo(-w / 2, 0);
-                  c.quadraticCurveTo(0, -lidH - 2, w / 2, 0);
-                  c.closePath();
-                  c.clip();
-
-                  c.fillStyle = tier === "iron_bound" ? "#334155" : tier === "gilded" ? "#ffd700" : "#00ffff";
-                  c.strokeStyle = tier === "iron_bound" ? "#0f172a" : tier === "gilded" ? "#855800" : "#ffffff";
-                  c.lineWidth = 0.8;
-                  c.fillRect(-w / 2 + 3, -lidH - 2, 3.5, lidH + 2);
-                  c.strokeRect(-w / 2 + 3, -lidH - 2, 3.5, lidH + 2);
-                  c.fillRect(w / 2 - 6.5, -lidH - 2, 3.5, lidH + 2);
-                  c.strokeRect(w / 2 - 6.5, -lidH - 2, 3.5, lidH + 2);
-                  c.restore();
-
-                  // Top-lip teeth lining the underside of the lid
-                  if (P > 0.01) {
-                    c.fillStyle = "#ffeaa7";
-                    c.strokeStyle = "#4d2e1a";
-                    c.lineWidth = 0.5;
-                    let topToothSpacing = 4.0;
-                    for (let tOff = -w/2 + 4.5; tOff <= w/2 - 4.5; tOff += topToothSpacing) {
-                      c.beginPath();
-                      c.moveTo(tOff - 1.0, 0);
-                      c.lineTo(tOff, Math.max(0.5, 3.5 * P));
-                      c.lineTo(tOff + 1.0, 0);
-                      c.closePath();
-                      c.fill();
-                      c.stroke();
-                    }
-                  }
-
-                  // Dividing Seam
-                  c.strokeStyle = tier === "iron_bound" ? "#100903" : tier === "gilded" ? "#855800" : "#a855f7";
-                  c.lineWidth = 1.5;
-                  c.beginPath();
-                  c.moveTo(-w / 2, 0);
-                  c.lineTo(w / 2, 0);
-                  c.stroke();
-
-                  // Lock hardware plate
-                  let lockW = 6;
-                  let lockH = 7;
-                  let lockX = -lockW / 2;
-                  let lockY = -3;
-
-                  let lockGrad = c.createLinearGradient(lockX, lockY, lockX, lockY + lockH);
-                  if (tier === "iron_bound") {
-                    lockGrad.addColorStop(0, "#64748b");
-                    lockGrad.addColorStop(1, "#334155");
-                    c.strokeStyle = "#0f172a";
-                  } else if (tier === "gilded") {
-                    lockGrad.addColorStop(0, "#ffe57f");
-                    lockGrad.addColorStop(1, "#ffc107");
-                    c.strokeStyle = "#855800";
-                  } else {
-                    lockGrad.addColorStop(0, "#ffffff");
-                    lockGrad.addColorStop(0.5, "#00ffff");
-                    lockGrad.addColorStop(1, "#008b8b");
-                    c.strokeStyle = "#008b8b";
-                  }
-
-                  c.fillStyle = lockGrad;
-                  c.lineWidth = 1.0;
-                  c.fillRect(lockX, lockY, lockW, lockH);
-                  c.strokeRect(lockX, lockY, lockW, lockH);
-
-                  if (tier === "gilded") {
-                    c.fillStyle = "#e74c3c";
-                    c.beginPath();
-                    c.arc(0, lockY + 2.5, 1.2, 0, Math.PI * 2);
-                    c.fill();
-                  } else {
-                    c.fillStyle = "#100903";
-                    c.beginPath();
-                    c.arc(0, lockY + 2.5, 1.0, 0, Math.PI * 2);
-                    c.fill();
-                    if (tier === "iron_bound") {
-                      c.fillRect(-0.5, lockY + 2.5, 1.0, 2.5);
-                    }
-                  }
-                }
-                c.restore();
-              }
-
-              // 8. Active Spark/Ember Spawning
-              if (P > 0.4 && Math.random() < 0.15 && window.particles.length < 250 && !window.isGamePaused) {
-                let pColor = tier === "iron_bound" ? "#e67e22" : tier === "gilded" ? "#ffd700" : "#00ffff";
-                window.particles.push(window.ParticlePool.get(
-                  cx + window.randFloat(-8, 8),
-                  cy - 4,
-                  window.randFloat(-1, 1),
-                  -window.randFloat(1, 2.5),
-                  window.randFloat(1, 2.2),
-                  pColor,
-                  0.9,
-                  window.randInt(15, 30),
-                  0.15,
-                  true
-                ));
-              }
-            } else if (vType === "gilded_scuttler") {
+        // 8. Active Spark/Ember Spawning
+        if (
+          P > 0.4 &&
+          Math.random() < 0.15 &&
+          window.particles.length < 250 &&
+          !window.isGamePaused
+        ) {
+          let pColor =
+            tier === "iron_bound"
+              ? "#e67e22"
+              : tier === "gilded"
+                ? "#ffd700"
+                : "#00ffff";
+          window.particles.push(
+            window.ParticlePool.get(
+              cx + window.randFloat(-8, 8),
+              cy - 4,
+              window.randFloat(-1, 1),
+              -window.randFloat(1, 2.5),
+              window.randFloat(1, 2.2),
+              pColor,
+              0.9,
+              window.randInt(15, 30),
+              0.15,
+              true,
+            ),
+          );
+        }
+      } else if (vType === "gilded_scuttler") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h - 15;
         let time = Date.now();
@@ -9348,190 +9566,190 @@
         }
         c.restore();
       } else if (vType === "clockwork_scarab") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2 + Math.sin(Date.now() / 100) * 3;
-              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#dca04c";
-              c.beginPath();
-              c.ellipse(cx, cy, 12, 9, 0, 0, Math.PI * 2);
-              c.fill();
-              c.stroke();
-              if (m.flashTimer === 0) {
-                c.strokeStyle = "#4d2e1a";
-                c.lineWidth = 1.2;
-                c.beginPath();
-                c.moveTo(cx, cy - 9);
-                c.lineTo(cx, cy + 9);
-                c.stroke();
-                c.save();
-                c.translate(cx, cy);
-                c.rotate((Date.now() / 1500) % (Math.PI * 2));
-                c.fillStyle = "#f1c40f";
-                c.beginPath();
-                c.arc(0, 0, 4, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
-                c.restore();
-              }
-              c.strokeStyle = "#7a5c1f";
-              c.lineWidth = 1.8;
-              for (let i = -1; i <= 1; i += 2) {
-                let legSwing = Math.sin(Date.now() / 80 + i) * 3;
-                c.beginPath();
-                c.moveTo(cx + 6 * i, cy);
-                c.lineTo(cx + 14 * i + legSwing, cy + 6);
-                c.stroke();
-                c.beginPath();
-                c.moveTo(cx + 6 * i, cy - 4);
-                c.lineTo(cx + 15 * i + legSwing, cy - 6);
-                c.stroke();
-              }
-            } else if (vType === "temporal_watcher") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2 + Math.sin(Date.now() / 140) * 4;
-              let time = Date.now();
-              c.save();
-              c.translate(cx, cy);
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + Math.sin(Date.now() / 100) * 3;
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#dca04c";
+        c.beginPath();
+        c.ellipse(cx, cy, 12, 9, 0, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        if (m.flashTimer === 0) {
+          c.strokeStyle = "#4d2e1a";
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.moveTo(cx, cy - 9);
+          c.lineTo(cx, cy + 9);
+          c.stroke();
+          c.save();
+          c.translate(cx, cy);
+          c.rotate((Date.now() / 1500) % (Math.PI * 2));
+          c.fillStyle = "#f1c40f";
+          c.beginPath();
+          c.arc(0, 0, 4, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+          c.restore();
+        }
+        c.strokeStyle = "#7a5c1f";
+        c.lineWidth = 1.8;
+        for (let i = -1; i <= 1; i += 2) {
+          let legSwing = Math.sin(Date.now() / 80 + i) * 3;
+          c.beginPath();
+          c.moveTo(cx + 6 * i, cy);
+          c.lineTo(cx + 14 * i + legSwing, cy + 6);
+          c.stroke();
+          c.beginPath();
+          c.moveTo(cx + 6 * i, cy - 4);
+          c.lineTo(cx + 15 * i + legSwing, cy - 6);
+          c.stroke();
+        }
+      } else if (vType === "temporal_watcher") {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + Math.sin(Date.now() / 140) * 4;
+        let time = Date.now();
+        c.save();
+        c.translate(cx, cy);
 
-              // Orbiting brass ring
-              c.strokeStyle = "rgba(220, 160, 76, 0.4)";
-              c.lineWidth = 1.0;
-              c.beginPath();
-              c.ellipse(0, 0, 18, 6, time / 800, 0, Math.PI * 2);
-              c.stroke();
+        // Orbiting brass ring
+        c.strokeStyle = "rgba(220, 160, 76, 0.4)";
+        c.lineWidth = 1.0;
+        c.beginPath();
+        c.ellipse(0, 0, 18, 6, time / 800, 0, Math.PI * 2);
+        c.stroke();
 
-              // Mechanical brass eyeball housing
-              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#dca04c";
-              c.strokeStyle = "#000000";
-              c.lineWidth = 1.8;
-              c.beginPath();
-              c.arc(0, 0, 10, 0, Math.PI * 2);
-              c.fill();
-              c.stroke();
+        // Mechanical brass eyeball housing
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#dca04c";
+        c.strokeStyle = "#000000";
+        c.lineWidth = 1.8;
+        c.beginPath();
+        c.arc(0, 0, 10, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
 
-              if (m.flashTimer === 0) {
-                // Gold pupil iris
-                c.fillStyle = "#ffd700";
-                c.beginPath();
-                c.arc(2, -1, 4.5, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
+        if (m.flashTimer === 0) {
+          // Gold pupil iris
+          c.fillStyle = "#ffd700";
+          c.beginPath();
+          c.arc(2, -1, 4.5, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
 
-                // Piercing yellow lens core
-                let pulse = Math.sin(time / 100) * 0.5 + 1.5;
-                c.fillStyle = "#ffffff";
-                c.shadowBlur = 6;
-                c.shadowColor = "#f1c40f";
-                c.beginPath();
-                c.arc(2.5, -1.5, pulse, 0, Math.PI * 2);
-                c.fill();
-                c.shadowBlur = 0;
-              }
-              c.restore();
-            } else if (vType === "clockwork_drone") {
-              let cx = m.x + m.w / 2;
-              let cy = m.y + m.h / 2 + Math.sin(Date.now() / 120) * 4.5;
-              let time = Date.now();
-              c.save();
-              c.translate(cx, cy);
+          // Piercing yellow lens core
+          let pulse = Math.sin(time / 100) * 0.5 + 1.5;
+          c.fillStyle = "#ffffff";
+          c.shadowBlur = 6;
+          c.shadowColor = "#f1c40f";
+          c.beginPath();
+          c.arc(2.5, -1.5, pulse, 0, Math.PI * 2);
+          c.fill();
+          c.shadowBlur = 0;
+        }
+        c.restore();
+      } else if (vType === "clockwork_drone") {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + Math.sin(Date.now() / 120) * 4.5;
+        let time = Date.now();
+        c.save();
+        c.translate(cx, cy);
 
-              // Spinning top propeller
-              c.save();
-              c.translate(0, -9);
-              c.rotate(time / 80);
-              c.strokeStyle = "#7f8c8d";
-              c.lineWidth = 1.2;
-              c.beginPath();
-              c.moveTo(-12, 0);
-              c.lineTo(12, 0);
-              c.stroke();
-              c.restore();
+        // Spinning top propeller
+        c.save();
+        c.translate(0, -9);
+        c.rotate(time / 80);
+        c.strokeStyle = "#7f8c8d";
+        c.lineWidth = 1.2;
+        c.beginPath();
+        c.moveTo(-12, 0);
+        c.lineTo(12, 0);
+        c.stroke();
+        c.restore();
 
-              // Drone central brass hull
-              c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#b7950b";
-              c.strokeStyle = "#000000";
-              c.lineWidth = 1.8;
-              c.beginPath();
-              c.roundRect(-8, -8, 16, 14, [3]);
-              c.fill();
-              c.stroke();
+        // Drone central brass hull
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#b7950b";
+        c.strokeStyle = "#000000";
+        c.lineWidth = 1.8;
+        c.beginPath();
+        c.roundRect(-8, -8, 16, 14, [3]);
+        c.fill();
+        c.stroke();
 
-              // Lens sensor
-              if (m.flashTimer === 0) {
-                c.fillStyle = "#e67e22";
-                c.beginPath();
-                c.arc(0, 0, 3, 0, Math.PI * 2);
-                c.fill();
-                c.stroke();
-                c.fillStyle = "#ffffff";
-                c.beginPath();
-                c.arc(-0.8, -0.8, 0.8, 0, Math.PI * 2);
-                c.fill();
-              }
-              c.restore();
-            } else if (vType === "neon_spider") {
-                    let cx = m.x + m.w / 2;
-                    let cy = m.y + m.h / 2;
-                    c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#ff007f";
-                    c.lineWidth = 2.0;
-                    c.beginPath();
-                    c.arc(cx, cy, 6, 0, Math.PI * 2);
-                    c.stroke();
-                    for (let i = 0; i < 4; i++) {
-                      let side = i % 2 === 0 ? -1 : 1;
-                      let yDir = i < 2 ? -1 : 1;
-                      c.beginPath();
-                      c.moveTo(cx, cy);
-                      c.lineTo(cx + 12 * side, cy + 4 * yDir);
-                      c.lineTo(cx + 16 * side, cy + 14 * yDir);
-                      c.stroke();
-                    }
-                  } else if (vType === "cyber_wraith") {
-                    let hover = Math.sin(Date.now() / 150) * 5;
-                    let cx = m.x + m.w / 2;
-                    let cy = m.y + m.h / 2 + hover;
-                    let isGlitchedFrame = Math.sin(Date.now() / 10) > 0.82;
-                    let px = cx + (isGlitchedFrame ? window.randFloat(-3, 3) : 0);
-                    let py = cy + (isGlitchedFrame ? window.randFloat(-2, 2) : 0);
+        // Lens sensor
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#e67e22";
+          c.beginPath();
+          c.arc(0, 0, 3, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+          c.fillStyle = "#ffffff";
+          c.beginPath();
+          c.arc(-0.8, -0.8, 0.8, 0, Math.PI * 2);
+          c.fill();
+        }
+        c.restore();
+      } else if (vType === "neon_spider") {
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2;
+        c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#ff007f";
+        c.lineWidth = 2.0;
+        c.beginPath();
+        c.arc(cx, cy, 6, 0, Math.PI * 2);
+        c.stroke();
+        for (let i = 0; i < 4; i++) {
+          let side = i % 2 === 0 ? -1 : 1;
+          let yDir = i < 2 ? -1 : 1;
+          c.beginPath();
+          c.moveTo(cx, cy);
+          c.lineTo(cx + 12 * side, cy + 4 * yDir);
+          c.lineTo(cx + 16 * side, cy + 14 * yDir);
+          c.stroke();
+        }
+      } else if (vType === "cyber_wraith") {
+        let hover = Math.sin(Date.now() / 150) * 5;
+        let cx = m.x + m.w / 2;
+        let cy = m.y + m.h / 2 + hover;
+        let isGlitchedFrame = Math.sin(Date.now() / 10) > 0.82;
+        let px = cx + (isGlitchedFrame ? window.randFloat(-3, 3) : 0);
+        let py = cy + (isGlitchedFrame ? window.randFloat(-2, 2) : 0);
 
-                    c.save();
-                    c.translate(px, py);
+        c.save();
+        c.translate(px, py);
 
-                    // Holographic cyan cloak trails
-                    c.fillStyle = "rgba(0, 210, 255, 0.15)";
-                    c.strokeStyle = "rgba(0, 210, 255, 0.55)";
-                    c.lineWidth = 1.5;
-                    c.beginPath();
-                    c.moveTo(-10, 4);
-                    c.quadraticCurveTo(-14, 16, -4, 24);
-                    c.lineTo(4, 24);
-                    c.quadraticCurveTo(14, 16, 10, 4);
-                    c.closePath();
-                    c.fill();
-                    c.stroke();
+        // Holographic cyan cloak trails
+        c.fillStyle = "rgba(0, 210, 255, 0.15)";
+        c.strokeStyle = "rgba(0, 210, 255, 0.55)";
+        c.lineWidth = 1.5;
+        c.beginPath();
+        c.moveTo(-10, 4);
+        c.quadraticCurveTo(-14, 16, -4, 24);
+        c.lineTo(4, 24);
+        c.quadraticCurveTo(14, 16, 10, 4);
+        c.closePath();
+        c.fill();
+        c.stroke();
 
-                    // Cyber cloak torso
-                    c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#0f172a";
-                    c.strokeStyle = "#00d2ff";
-                    c.lineWidth = 1.8;
-                    c.beginPath();
-                    c.arc(0, -9, 7.5, Math.PI, 0);
-                    c.lineTo(7.5, 4);
-                    c.quadraticCurveTo(4, 11, 0, 15);
-                    c.quadraticCurveTo(-4, 11, -7.5, 4);
-                    c.closePath();
-                    c.fill();
-                    c.stroke();
+        // Cyber cloak torso
+        c.fillStyle = m.flashTimer > 0 ? "#ffffff" : "#0f172a";
+        c.strokeStyle = "#00d2ff";
+        c.lineWidth = 1.8;
+        c.beginPath();
+        c.arc(0, -9, 7.5, Math.PI, 0);
+        c.lineTo(7.5, 4);
+        c.quadraticCurveTo(4, 11, 0, 15);
+        c.quadraticCurveTo(-4, 11, -7.5, 4);
+        c.closePath();
+        c.fill();
+        c.stroke();
 
-                    // Glowing pink cyber visor eyes
-                    if (m.flashTimer === 0) {
-                      c.fillStyle = "#ff007f";
-                      c.shadowBlur = 8;
-                      c.shadowColor = "#ff007f";
-                      c.fillRect(-4, -10, 8, 2);
-                      c.shadowBlur = 0;
-                    }
-                    c.restore();
-                  } else if (vType === "wireframe_orb") {
+        // Glowing pink cyber visor eyes
+        if (m.flashTimer === 0) {
+          c.fillStyle = "#ff007f";
+          c.shadowBlur = 8;
+          c.shadowColor = "#ff007f";
+          c.fillRect(-4, -10, 8, 2);
+          c.shadowBlur = 0;
+        }
+        c.restore();
+      } else if (vType === "wireframe_orb") {
         let cx = m.x + m.w / 2;
         let cy = m.y + m.h / 2;
         c.strokeStyle = m.flashTimer > 0 ? "#ffffff" : "#3498db";
@@ -10094,30 +10312,30 @@
       }
 
       if (m.isRare) {
-              c.save();
-              let glowTime = Date.now() / 200;
-              let hx = m.x + m.w / 2;
-              let hy = m.y - 10 + Math.sin(glowTime) * 2.5;
-              c.strokeStyle = "#f1c40f";
-              c.lineWidth = 1.8;
-              c.beginPath();
-              c.ellipse(hx, hy, 11, 3.2, 0, 0, Math.PI * 2);
-              c.stroke();
-              c.fillStyle = "#ffffff";
-              for (let i = 0; i < 3; i++) {
-                let sparkAngle = glowTime + i * ((Math.PI * 2) / 3);
-                let sx = hx + Math.cos(sparkAngle) * 11;
-                let sy = hy + Math.sin(sparkAngle) * 3.2;
-                c.fillRect(sx - 1.2, sy - 1.2, 2.4, 2.4);
-              }
-              c.restore();
-            }
+        c.save();
+        let glowTime = Date.now() / 200;
+        let hx = m.x + m.w / 2;
+        let hy = m.y - 10 + Math.sin(glowTime) * 2.5;
+        c.strokeStyle = "#f1c40f";
+        c.lineWidth = 1.8;
+        c.beginPath();
+        c.ellipse(hx, hy, 11, 3.2, 0, 0, Math.PI * 2);
+        c.stroke();
+        c.fillStyle = "#ffffff";
+        for (let i = 0; i < 3; i++) {
+          let sparkAngle = glowTime + i * ((Math.PI * 2) / 3);
+          let sx = hx + Math.cos(sparkAngle) * 11;
+          let sy = hy + Math.sin(sparkAngle) * 3.2;
+          c.fillRect(sx - 1.2, sy - 1.2, 2.4, 2.4);
+        }
+        c.restore();
+      }
 
-            if (!isSectorZeroMob) {
-              c.restore(); // Cleanly exit standard mob downscaling
-            }
-          } else if (
-            m.type === "rift_guardian" ||
+      if (!isSectorZeroMob) {
+        c.restore(); // Cleanly exit standard mob downscaling
+      }
+    } else if (
+      m.type === "rift_guardian" ||
       m.type === "aegis_goliath" ||
       m.visualType === "aegis_goliath"
     ) {
@@ -12845,150 +13063,150 @@
             c.fillStyle = "#ff007f";
             c.fillRect(px - 1.2, -4, 2.4, 8);
           }
-                  }
-                }
-              }
+        }
+      }
+    }
 
-              // --- Reset Hardware-Accelerated Rendering Filters (Phase 2) ---
-                            if (shouldTint) {
-                              // Apply the tint only on the drawn mob pixels on the offscreen canvas
-                              offscreenCtx.save();
-                              offscreenCtx.globalCompositeOperation = "source-atop";
-                              offscreenCtx.fillStyle = activeTint;
-                              offscreenCtx.fillRect(m.x - 50, m.y - 100, m.w + 100, m.h + 150);
-                              offscreenCtx.restore();
+    // --- Reset Hardware-Accelerated Rendering Filters (Phase 2) ---
+    if (shouldTint) {
+      // Apply the tint only on the drawn mob pixels on the offscreen canvas
+      offscreenCtx.save();
+      offscreenCtx.globalCompositeOperation = "source-atop";
+      offscreenCtx.fillStyle = activeTint;
+      offscreenCtx.fillRect(m.x - 50, m.y - 100, m.w + 100, m.h + 150);
+      offscreenCtx.restore();
 
-                              // Restore the original main canvas context
-                              c = originalCtx;
+      // Restore the original main canvas context
+      c = originalCtx;
 
-                              // Draw the tinted mob from the offscreen canvas onto the main canvas
-                              c.save();
-                              c.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to screen space
-                              c.drawImage(offscreenCanvas, 0, 0);
-                              c.restore();
-                            } else {
-                              if (isFilterSupported) {
-                                c.filter = "none";
-                              }
-                            }
+      // Draw the tinted mob from the offscreen canvas onto the main canvas
+      c.save();
+      c.setTransform(1, 0, 0, 1, 0, 0); // Reset transform to screen space
+      c.drawImage(offscreenCanvas, 0, 0);
+      c.restore();
+    } else {
+      if (isFilterSupported) {
+        c.filter = "none";
+      }
+    }
 
-                  // --- Tiered Overhead Overlays (Phase 3) ---
-                            c.save();
-                            let mCxOverlay = m.x + m.w / 2;
-                            let headY = m.y - (mobIsElite ? 2 : 12);
-                            let timeOverlay = Date.now();
+    // --- Tiered Overhead Overlays (Phase 3) ---
+    c.save();
+    let mCxOverlay = m.x + m.w / 2;
+    let headY = m.y - (mobIsElite ? 2 : 12);
+    let timeOverlay = Date.now();
 
-                            if (mobIsElite && mobIsRare) {
-                              // --- RARE ELITE: Cosmic Crown (Ring of 4 rotating void spikes) ---
-                              let rot = timeOverlay / 600;
-                              let radiusX = 14;
-                              let radiusY = 4.5;
-                              let spikeCount = 4;
+    if (mobIsElite && mobIsRare) {
+      // --- RARE ELITE: Cosmic Crown (Ring of 4 rotating void spikes) ---
+      let rot = timeOverlay / 600;
+      let radiusX = 14;
+      let radiusY = 4.5;
+      let spikeCount = 4;
 
-                              for (let i = 0; i < spikeCount; i++) {
-                                let angle = rot + (i * Math.PI * 2) / spikeCount;
-                                let sx = mCxOverlay + Math.cos(angle) * radiusX;
-                                let sy = headY - 4 + Math.sin(angle) * radiusY;
-                      let scale = 1.0 + Math.sin(angle) * 0.22; // Simulates 3D depth scaling
+      for (let i = 0; i < spikeCount; i++) {
+        let angle = rot + (i * Math.PI * 2) / spikeCount;
+        let sx = mCxOverlay + Math.cos(angle) * radiusX;
+        let sy = headY - 4 + Math.sin(angle) * radiusY;
+        let scale = 1.0 + Math.sin(angle) * 0.22; // Simulates 3D depth scaling
 
-                      c.save();
-                      c.translate(sx, sy);
-                      c.rotate(angle + Math.PI / 2); // Orient outward
-                      c.fillStyle = "#110221"; // Dark cosmic base
-                      c.strokeStyle = "#ff007f"; // Hot pink glow edge
-                      c.lineWidth = 1.0;
+        c.save();
+        c.translate(sx, sy);
+        c.rotate(angle + Math.PI / 2); // Orient outward
+        c.fillStyle = "#110221"; // Dark cosmic base
+        c.strokeStyle = "#ff007f"; // Hot pink glow edge
+        c.lineWidth = 1.0;
 
-                      c.beginPath();
-                      c.moveTo(-2 * scale, 0);
-                      c.lineTo(0, -7 * scale);
-                      c.lineTo(2 * scale, 0);
-                      c.closePath();
-                      c.fill();
-                      c.stroke();
-                      c.restore();
-                    }
-                  } else if (mobIsElite) {
-                              // --- ELITE: Void Pillars (2 floating basalt shards rotating slowly) ---
-                              let rot = timeOverlay / 1100;
-                              let radiusX = 16;
-                              let radiusY = 5.0;
-                              let pillarCount = 2;
+        c.beginPath();
+        c.moveTo(-2 * scale, 0);
+        c.lineTo(0, -7 * scale);
+        c.lineTo(2 * scale, 0);
+        c.closePath();
+        c.fill();
+        c.stroke();
+        c.restore();
+      }
+    } else if (mobIsElite) {
+      // --- ELITE: Void Pillars (2 floating basalt shards rotating slowly) ---
+      let rot = timeOverlay / 1100;
+      let radiusX = 16;
+      let radiusY = 5.0;
+      let pillarCount = 2;
 
-                              for (let i = 0; i < pillarCount; i++) {
-                                let angle = rot + (i * Math.PI * 2) / pillarCount;
-                                let px = mCxOverlay + Math.cos(angle) * radiusX;
-                                let py = headY - 2 + Math.sin(angle) * radiusY;
-                      let bob = Math.sin(timeOverlay / 140 + i) * 1.5;
-                      let scale = 1.0 + Math.sin(angle) * 0.15;
+      for (let i = 0; i < pillarCount; i++) {
+        let angle = rot + (i * Math.PI * 2) / pillarCount;
+        let px = mCxOverlay + Math.cos(angle) * radiusX;
+        let py = headY - 2 + Math.sin(angle) * radiusY;
+        let bob = Math.sin(timeOverlay / 140 + i) * 1.5;
+        let scale = 1.0 + Math.sin(angle) * 0.15;
 
-                      c.save();
-                      c.translate(px, py + bob);
-                      c.fillStyle = "#2c3e50"; // Basalt dark grey
-                      c.strokeStyle = "#a855f7"; // Glowing purple cracks
-                      c.lineWidth = 1.0;
+        c.save();
+        c.translate(px, py + bob);
+        c.fillStyle = "#2c3e50"; // Basalt dark grey
+        c.strokeStyle = "#a855f7"; // Glowing purple cracks
+        c.lineWidth = 1.0;
 
-                      c.beginPath();
-                      c.moveTo(-1.8 * scale, -5 * scale);
-                      c.lineTo(1.8 * scale, -5 * scale);
-                      c.lineTo(2.2 * scale, 5 * scale);
-                      c.lineTo(-2.2 * scale, 5 * scale);
-                      c.closePath();
-                      c.fill();
-                      c.stroke();
-                      c.restore();
-                    }
-                  } else if (mobIsRare) {
-                    // --- RARE: Crown of Embers (3 sulfur-yellow diamonds hovering and bobbing) ---
-                    let rot = timeOverlay / 700;
-                    let radiusX = 11;
-                    let radiusY = 3.5;
-                    let emberCount = 3;
+        c.beginPath();
+        c.moveTo(-1.8 * scale, -5 * scale);
+        c.lineTo(1.8 * scale, -5 * scale);
+        c.lineTo(2.2 * scale, 5 * scale);
+        c.lineTo(-2.2 * scale, 5 * scale);
+        c.closePath();
+        c.fill();
+        c.stroke();
+        c.restore();
+      }
+    } else if (mobIsRare) {
+      // --- RARE: Crown of Embers (3 sulfur-yellow diamonds hovering and bobbing) ---
+      let rot = timeOverlay / 700;
+      let radiusX = 11;
+      let radiusY = 3.5;
+      let emberCount = 3;
 
-                    for (let i = 0; i < emberCount; i++) {
-                                          let angle = rot + (i * Math.PI * 2) / emberCount;
-                                          let ex = mCxOverlay + Math.cos(angle) * radiusX;
-                                          let ey = headY - 12 + Math.sin(angle) * radiusY;
-                                          let bob = Math.sin(timeOverlay / 120 + i) * 1.2;
-                                          let scale = 1.0 + Math.sin(angle) * 0.15;
+      for (let i = 0; i < emberCount; i++) {
+        let angle = rot + (i * Math.PI * 2) / emberCount;
+        let ex = mCxOverlay + Math.cos(angle) * radiusX;
+        let ey = headY - 12 + Math.sin(angle) * radiusY;
+        let bob = Math.sin(timeOverlay / 120 + i) * 1.2;
+        let scale = 1.0 + Math.sin(angle) * 0.15;
 
-                                          c.save();
-                                          c.translate(ex, ey + bob);
-                                          c.fillStyle = "#f1c40f"; // Sulfur yellow
-                                          c.strokeStyle = "#ffd700"; // Gold highlights
-                                          c.lineWidth = 0.8;
+        c.save();
+        c.translate(ex, ey + bob);
+        c.fillStyle = "#f1c40f"; // Sulfur yellow
+        c.strokeStyle = "#ffd700"; // Gold highlights
+        c.lineWidth = 0.8;
 
-                                          c.beginPath();
-                                          c.moveTo(0, -4 * scale);
-                                          c.lineTo(2.2 * scale, 0);
-                                          c.lineTo(0, 4 * scale);
-                                          c.lineTo(-2.2 * scale, 0);
-                                          c.closePath();
-                                          c.fill();
-                                          c.stroke();
-                                          c.restore();
-                                        }
+        c.beginPath();
+        c.moveTo(0, -4 * scale);
+        c.lineTo(2.2 * scale, 0);
+        c.lineTo(0, 4 * scale);
+        c.lineTo(-2.2 * scale, 0);
+        c.closePath();
+        c.fill();
+        c.stroke();
+        c.restore();
+      }
 
-                    // --- RARE: Base Ripple (Diagonal gold light sheen sweep across mob body) ---
-                    let rippleProgress = (timeOverlay / 1500) % 1.2; // sweeps across bounds
-                    let diagonalX = m.x - m.w * 0.2 + rippleProgress * (m.w * 1.4);
+      // --- RARE: Base Ripple (Diagonal gold light sheen sweep across mob body) ---
+      let rippleProgress = (timeOverlay / 1500) % 1.2; // sweeps across bounds
+      let diagonalX = m.x - m.w * 0.2 + rippleProgress * (m.w * 1.4);
 
-                    c.save();
-                    // Clip to mob rectangle to prevent overflow bounds pollution
-                    c.beginPath();
-                    c.rect(m.x, m.y, m.w, m.h);
-                    c.clip();
+      c.save();
+      // Clip to mob rectangle to prevent overflow bounds pollution
+      c.beginPath();
+      c.rect(m.x, m.y, m.w, m.h);
+      c.clip();
 
-                    c.strokeStyle = "rgba(255, 215, 0, 0.35)";
-                    c.lineWidth = 3.5;
-                    c.beginPath();
-                    c.moveTo(diagonalX - m.h * 0.5, m.y);
-                    c.lineTo(diagonalX + m.h * 0.5, m.y + m.h);
-                    c.stroke();
-                    c.restore();
-                  }
-                  c.restore();
+      c.strokeStyle = "rgba(255, 215, 0, 0.35)";
+      c.lineWidth = 3.5;
+      c.beginPath();
+      c.moveTo(diagonalX - m.h * 0.5, m.y);
+      c.lineTo(diagonalX + m.h * 0.5, m.y + m.h);
+      c.stroke();
+      c.restore();
+    }
+    c.restore();
 
-                  // Kinetic Reflectors Energy Shield Arc Rendering
+    // Kinetic Reflectors Energy Shield Arc Rendering
     if (
       window.isCavernEffectActive &&
       window.isCavernEffectActive("kinetic_reflectors") &&
@@ -18335,80 +18553,85 @@
 
       // Draw the depth-sorted runes with size-scaling based on Z-axis
       sortedRunes.forEach((sr) => {
-                  let size = 1.6 + sr.pz * 0.45;
-                  ctx.save();
-                  ctx.globalAlpha = 0.55 + sr.pz * 0.35;
-                  drawRune(
-                    sr.px,
-                    sr.py,
-                    size,
-                    sr.rune.type,
-                    sr.rune.color,
-                    sr.rune.coreColor,
-                  );
-                  ctx.restore();
-                });
+        let size = 1.6 + sr.pz * 0.45;
+        ctx.save();
+        ctx.globalAlpha = 0.55 + sr.pz * 0.35;
+        drawRune(
+          sr.px,
+          sr.py,
+          size,
+          sr.rune.type,
+          sr.rune.color,
+          sr.rune.coreColor,
+        );
+        ctx.restore();
+      });
 
-                ctx.restore();
-              }
+      ctx.restore();
+    }
 
-              // --- Player Debuff Visual Overlays ---
-              let p = window.player;
-              if (p && stats && !options.isTrail) {
-                // A. Web / Snare / Dilation Field Overlay (Sticky white/yellow netting)
-                if (p.snareTimer > 0 || p.inDilationField) {
-                  ctx.save();
-                  ctx.strokeStyle = p.inDilationField ? "rgba(241, 196, 15, 0.65)" : "rgba(255, 255, 255, 0.7)";
-                  ctx.lineWidth = 1.0;
-                  ctx.beginPath();
-                  // Web mesh overlay
-                  ctx.moveTo(-8, -12); ctx.lineTo(8, 12);
-                  ctx.moveTo(8, -12); ctx.lineTo(-8, 12);
-                  ctx.moveTo(-10, 0); ctx.lineTo(10, 0);
-                  ctx.ellipse(0, 0, 7, 10, 0, 0, Math.PI * 2);
-                  ctx.stroke();
-                  ctx.restore();
-                }
+    // --- Player Debuff Visual Overlays ---
+    let p = window.player;
+    if (p && stats && !options.isTrail) {
+      // A. Web / Snare / Dilation Field Overlay (Sticky white/yellow netting)
+      if (p.snareTimer > 0 || p.inDilationField) {
+        ctx.save();
+        ctx.strokeStyle = p.inDilationField
+          ? "rgba(241, 196, 15, 0.65)"
+          : "rgba(255, 255, 255, 0.7)";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        // Web mesh overlay
+        ctx.moveTo(-8, -12);
+        ctx.lineTo(8, 12);
+        ctx.moveTo(8, -12);
+        ctx.lineTo(-8, 12);
+        ctx.moveTo(-10, 0);
+        ctx.lineTo(10, 0);
+        ctx.ellipse(0, 0, 7, 10, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
 
-                // B. Poison Tint Overlay (Glowing green mist)
-                if (p.poisonStacks > 0) {
-                  ctx.save();
-                  let pulse = Math.sin(Date.now() / 100) * 0.15 + 0.85;
-                  let poisonGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 16 * pulse);
-                  poisonGrad.addColorStop(0, "rgba(46, 204, 113, 0.25)");
-                  poisonGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
-                  ctx.fillStyle = poisonGrad;
-                  ctx.beginPath();
-                  ctx.arc(0, 0, 16 * pulse, 0, Math.PI * 2);
-                  ctx.fill();
-                  ctx.restore();
-                }
+      // B. Poison Tint Overlay (Glowing green mist)
+      if (p.poisonStacks > 0) {
+        ctx.save();
+        let pulse = Math.sin(Date.now() / 100) * 0.15 + 0.85;
+        let poisonGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 16 * pulse);
+        poisonGrad.addColorStop(0, "rgba(46, 204, 113, 0.25)");
+        poisonGrad.addColorStop(1, "rgba(46, 204, 113, 0)");
+        ctx.fillStyle = poisonGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 16 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
 
-                // C. Bleed Core Splatter Glisten
-                if (p.bleedStacks > 0 && Math.sin(Date.now() / 60) > 0.5) {
-                  ctx.save();
-                  ctx.fillStyle = "rgba(150, 0, 24, 0.35)";
-                  ctx.beginPath();
-                  ctx.arc(-2, -2, 4, 0, Math.PI * 2);
-                  ctx.fill();
-                  ctx.restore();
-                }
+      // C. Bleed Core Splatter Glisten
+      if (p.bleedStacks > 0 && Math.sin(Date.now() / 60) > 0.5) {
+        ctx.save();
+        ctx.fillStyle = "rgba(150, 0, 24, 0.35)";
+        ctx.beginPath();
+        ctx.arc(-2, -2, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
 
-                // D. Inversion / Glitch Chromatic Displacement
-                if (p.glitchTimer > 0) {
-                  if (Math.sin(Date.now() / 20) > 0.6) {
-                    ctx.save();
-                    ctx.translate(window.randFloat(-3, 3), window.randFloat(-2, 2));
-                    ctx.globalAlpha = 0.3;
-                    ctx.fillStyle = Math.random() < 0.5 ? "#00ffff" : "#ff007f";
-                    ctx.fillRect(-6, -12, 12, 24);
-                    ctx.restore();
-                  }
-                }
-              }
+      // D. Inversion / Glitch Chromatic Displacement
+      if (p.glitchTimer > 0) {
+        if (Math.sin(Date.now() / 20) > 0.6) {
+          ctx.save();
+          ctx.translate(window.randFloat(-3, 3), window.randFloat(-2, 2));
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = Math.random() < 0.5 ? "#00ffff" : "#ff007f";
+          ctx.fillRect(-6, -12, 12, 24);
+          ctx.restore();
+        }
+      }
+    }
 
-              ctx.restore();
-            };
+    ctx.restore();
+  };
 
   window.toggleMenuHub = function () {
     let overlay = document.getElementById("menu-hub-overlay");
