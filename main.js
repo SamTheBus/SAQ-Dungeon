@@ -1589,16 +1589,18 @@
     lightingCtx.translate(-Math.floor(camX), -Math.floor(camY));
 
     // Bounding box with 200px padding for frustum culling offscreen lights
-    let pad = 200;
-    let minCamX = camX - pad;
-    let maxCamX = camX + viewW / zoom + pad;
-    let minCamY = camY - pad;
-    let maxCamY = camY + viewH / zoom + pad;
+        let pad = 200;
+        let minCamX = camX - pad;
+        let maxCamX = camX + viewW / zoom + pad;
+        let minCamY = camY - pad;
+        let maxCamY = camY + viewH / zoom + pad;
 
-    // 3. Collect Light Emitters in World Coordinates
-    let lights = [];
+        // 3. Collect Light Emitters in World Coordinates (Zero-Allocation Array Reuse)
+        if (!window._sharedLightsArray) window._sharedLightsArray = [];
+        let lights = window._sharedLightsArray;
+        lights.length = 0;
 
-    // Active Spell Lights (temporary glows)
+        // Active Spell Lights (temporary glows)
     if (window.activeSpellLights) {
       window.activeSpellLights.forEach((sl) => {
         if (
@@ -7302,11 +7304,23 @@
     window.inventory.EQUIP = window.player.stash;
 
     if (window.player) window.player.pendingScraps = {};
-    if (window.player.bag && window.player.bag.length > 0) {
-      window.player.stash.push(...window.player.bag);
-      window.player.bag = [];
-      if (typeof window.saveGame === "function") window.saveGame();
-    }
+        if (window.player.bag && window.player.bag.length > 0) {
+          window.player.bag.forEach((item) => {
+            if (item && typeof item === "object") {
+              if (item.type === "artifact") {
+                if (!window.inventory.ARTIFACT) window.inventory.ARTIFACT = [];
+                window.inventory.ARTIFACT.push(item);
+              } else if (item.type === "sigil") {
+                if (!window.inventory.SIGIL) window.inventory.SIGIL = [];
+                window.inventory.SIGIL.push(item);
+              } else {
+                window.player.stash.push(item);
+              }
+            }
+          });
+          window.player.bag = [];
+          if (typeof window.saveGame === "function") window.saveGame();
+        }
 
     window.updateHUD();
     window.spawnFloatingText(
@@ -8775,19 +8789,24 @@
         }
 
         let finalHp = mobHpVal;
-        let finalAtk = mobAtkVal;
-        let isElite = !!eliteAffix;
+                let finalAtk = mobAtkVal;
+                let isElite = !!eliteAffix;
 
-        if (isElite && isRare) {
-          finalHp = Math.round(finalHp * 2.5);
-          finalAtk = Math.round(finalAtk * 1.6);
-        } else if (isElite) {
-          finalHp = Math.round(finalHp * 1.5);
-          finalAtk = Math.round(finalAtk * 1.25);
-        } else if (isRare) {
-          finalHp = Math.round(finalHp * 1.75);
-          finalAtk = Math.round(finalAtk * 1.35);
-        }
+                if (isElite && isRare) {
+                  finalHp = Math.round(finalHp * 2.5);
+                  finalAtk = Math.round(finalAtk * 1.6);
+                } else if (isElite) {
+                  finalHp = Math.round(finalHp * 1.5);
+                  finalAtk = Math.round(finalAtk * 1.25);
+                } else if (isRare) {
+                  finalHp = Math.round(finalHp * 1.75);
+                  finalAtk = Math.round(finalAtk * 1.35);
+                }
+
+                // Nullifier Elites disable offhands, so they receive a 35% HP reduction to allow quick bursting
+                if (eliteAffix === "nullifier") {
+                  finalHp = Math.round(finalHp * 0.65);
+                }
 
         let rangedTypes = [
           "thorn_wyrm",
@@ -10991,10 +11010,10 @@
       }
 
       p.poisonTickTimer = (p.poisonTickTimer || 0) + 1;
-      if (p.poisonTickTimer >= 60) {
-        p.poisonTickTimer = 0;
-        let stacks = p.poisonStacks || 1;
-        let tickDmg = Math.max(1, Math.round(p.maxHp * 0.025 * stacks)); // 2.5% Max HP per stack / sec
+            if (p.poisonTickTimer >= 60) {
+              p.poisonTickTimer = 0;
+              let stacks = p.poisonStacks || 1;
+              let tickDmg = Math.max(1, Math.round(p.maxHp * 0.012 * stacks)); // Reduced to 1.2% Max HP per stack / sec
 
         p.hp = Math.max(0, p.hp - tickDmg);
         p.lastDamageTimer = 30;
@@ -12463,7 +12482,31 @@
     }
   };
 
-  window.addGoldFloatingText = function (p, amount) {
+  window.rechargePlayerArcaneShield = function (amount) {
+      let p = window.player;
+      if (!p || p.hp <= 0) return;
+
+      let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
+      let maxShield = pStats.arcaneShieldMax || p.arcaneShieldMax || 0;
+      if (maxShield <= 0) {
+        p.hp = Math.min(p.maxHp, p.hp + Math.round(amount * 0.5));
+        return;
+      }
+
+      p.arcaneShield = p.arcaneShield || 0;
+      let needed = maxShield - p.arcaneShield;
+
+      if (amount <= needed) {
+        p.arcaneShield += amount;
+      } else {
+        p.arcaneShield = maxShield;
+        let overflow = amount - needed;
+        let hpHeal = Math.round(overflow * 0.5);
+        p.hp = Math.min(p.maxHp, p.hp + hpHeal);
+      }
+    };
+
+    window.addGoldFloatingText = function (p, amount) {
     let existing = window.floatingTexts.find(
       (ft) => ft.isGoldBatch && ft.life > 0,
     );
@@ -15429,42 +15472,46 @@
             window.playerStats.lastSpellCastType = spellEffectType;
           }
 
-          // Arcane Syphon: Spell procs restore 1%/2%/3% HP, grant +4%/+8%/+12% INT
-          if (pStats.hasArcaneSyphon) {
-            let healAmt = Math.round(
-              p.maxHp * (pStats.arcaneSyphonLevel * 0.01),
-            );
-            p.hp = Math.min(p.maxHp, p.hp + healAmt);
-            window.playerStats.syphonIntStacks = Math.min(
-              3,
-              (window.playerStats.syphonIntStacks || 0) + 1,
-            );
-            window.playerStats.syphonIntTimer = 360; // 6s at 60 FPS
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 12,
-                `+${healAmt} HP (SYPHON)`,
-                "#2ecc71",
-                true,
-              );
-            }
-          }
+          // Arcane Syphon: Spell procs recharge Arcane Shield (overflows 50% to HP)
+                    if (pStats.hasArcaneSyphon) {
+                      let rechargeAmt = Math.round(
+                        (p.arcaneShieldMax || p.maxHp) * (pStats.arcaneSyphonLevel * 0.015),
+                      );
+                      if (typeof window.rechargePlayerArcaneShield === "function") {
+                        window.rechargePlayerArcaneShield(rechargeAmt);
+                      }
+                      window.playerStats.syphonIntStacks = Math.min(
+                        3,
+                        (window.playerStats.syphonIntStacks || 0) + 1,
+                      );
+                      window.playerStats.syphonIntTimer = 360; // 6s at 60 FPS
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(
+                          p.x,
+                          p.y - 12,
+                          `+${rechargeAmt} SHIELD (SYPHON)`,
+                          "#00ffff",
+                          true,
+                        );
+                      }
+                    }
 
-          // Mana Shielding (Restored original Tome heal on spell proc)
-          if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
-            let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
-            p.hp = Math.min(p.maxHp, p.hp + healAmt);
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 15,
-                `+${healAmt} HP (MANA SHIELD)`,
-                "#2ecc71",
-                true,
-              );
-            }
-          }
+                    // Mana Shielding: Recharges Arcane Shield on spell cast
+                    if (pStats.manaShieldingRecharge && pStats.manaShieldingRecharge > 0) {
+                      let rechargeAmt = Math.round((p.arcaneShieldMax || p.maxHp) * pStats.manaShieldingRecharge);
+                      if (typeof window.rechargePlayerArcaneShield === "function") {
+                        window.rechargePlayerArcaneShield(rechargeAmt);
+                      }
+                      if (typeof window.spawnFloatingText === "function") {
+                        window.spawnFloatingText(
+                          p.x,
+                          p.y - 15,
+                          `+${rechargeAmt} SHIELD (MANA SHIELD)`,
+                          "#00ffff",
+                          true,
+                        );
+                      }
+                    }
 
           // Triad Convergence / Aetheric Overload Check
           let isOverload =
@@ -16183,10 +16230,16 @@
               );
             }
 
-            let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
-            let rewardXp = Math.floor(15 + window.player.depth * 4);
-            window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
-            window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
+            let pLvl = window.playerStats ? window.playerStats.level || 1 : 1;
+                        let depthVal = window.player ? window.player.depth || 1 : 1;
+                        let gap = Math.abs(depthVal - pLvl);
+                        let gapMult = 1.0 / (1.0 + 0.08 * gap);
+
+                        let rewardGold = Math.floor(15 * (1 + depthVal * 0.5));
+                        let rewardXp = Math.floor((15 + depthVal * 3.0) * gapMult);
+
+                        window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
+                        window.spawnHomingXp(mobCenterX, mobCenterY, rewardXp);
 
             window.activeDungeonMobs.splice(i, 1);
             continue;
@@ -16776,18 +16829,23 @@
           window.damagePlayer(m.atk, m);
 
           if (m.eliteAffix === "toxic_decay" && p.hp > 0) {
-            p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 1);
-            p.poisonTimer = 240; // 4s tick
-            if (window.spawnFloatingText) {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 12,
-                "TOXIC ROT!",
-                "#2ecc71",
-                true,
-              );
-            }
-          }
+                      let now = window.logicClock || 0;
+                      // 2-second Internal Cooldown (120 frames) & max 3 stacks to prevent instant death from fast hits
+                      if (!m.lastToxicApplyTime || now - m.lastToxicApplyTime >= 120) {
+                        m.lastToxicApplyTime = now;
+                        p.poisonStacks = Math.min(3, (p.poisonStacks || 0) + 1);
+                        p.poisonTimer = 240; // 4s tick
+                        if (window.spawnFloatingText) {
+                          window.spawnFloatingText(
+                            p.x,
+                            p.y - 12,
+                            "TOXIC ROT!",
+                            "#2ecc71",
+                            true,
+                          );
+                        }
+                      }
+                    }
 
           if (p.hp <= 0) {
             window.startDeathSequence();
@@ -17741,9 +17799,13 @@
           let rewardGold, rewardXp;
 
           if (isMarcus) {
-            // Scales strictly to current depth to prevent low-floor farming exploits
-            rewardGold = Math.floor(80 * (1 + depth * 0.45));
-            rewardXp = Math.floor(60 + depth * 12);
+                      let pLvl = window.playerStats ? window.playerStats.level || 1 : 1;
+                      let gap = Math.abs(depth - pLvl);
+                      let gapMult = 1.0 / (1.0 + 0.08 * gap);
+
+                      // Scales strictly to current depth to prevent low-floor farming exploits
+                      rewardGold = Math.floor(80 * (1 + depth * 0.45));
+                      rewardXp = Math.floor((60 + depth * 8) * gapMult);
 
             // Drop any unpurchased/stolen wares as ground loot when Marcus dies!
             let map = window.activeDungeonMap;
@@ -17760,9 +17822,14 @@
               });
             }
           } else {
-            rewardGold = Math.floor(150 * (1 + window.player.depth * 0.5));
-            rewardXp = Math.floor(120 + window.player.depth * 25);
-          }
+                      let pLvl = window.playerStats ? window.playerStats.level || 1 : 1;
+                      let depthVal = window.player ? window.player.depth || 1 : 1;
+                      let gap = Math.abs(depthVal - pLvl);
+                      let gapMult = 1.0 / (1.0 + 0.08 * gap);
+
+                      rewardGold = Math.floor(150 * (1 + depthVal * 0.5));
+                      rewardXp = Math.floor((120 + depthVal * 15) * gapMult);
+                    }
 
           window.spawnHomingGold(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardGold);
           window.spawnHomingXp(bm.x + bm.w / 2, bm.y + bm.h / 2, rewardXp);
@@ -18422,10 +18489,12 @@
       }
     };
 
-    // 2. Y-Sorted Depth Queue (Structures, Mobs, Boss, and Hero)
-    let depthQueue = [];
-    let mapInst = window.activeDungeonMap;
-    let tSize = mapInst ? mapInst.tileSize : 32;
+    // 2. Y-Sorted Depth Queue (Zero-Allocation Array Reuse)
+        if (!window._sharedDepthQueue) window._sharedDepthQueue = [];
+        let depthQueue = window._sharedDepthQueue;
+        depthQueue.length = 0;
+        let mapInst = window.activeDungeonMap;
+        let tSize = mapInst ? mapInst.tileSize : 32;
 
     // A. Hub Stations (Hub State)
     if (
@@ -19285,44 +19354,51 @@
         );
         ctx.restore();
 
-        // Render Player Overhead Healthbar
-        let pHpPct = Math.max(0, Math.min(1, p.hp / p.maxHp));
-        if (p.trailingHpPct === undefined) p.trailingHpPct = pHpPct;
-        if (p.trailingHpPct > pHpPct) {
-          p.trailingHpPct = Math.max(pHpPct, p.trailingHpPct - 0.015);
-        } else {
-          p.trailingHpPct = pHpPct;
-        }
+        // Render Player Overhead Healthbar & Arcane Shield Bar
+                let pHpPct = Math.max(0, Math.min(1, p.hp / p.maxHp));
+                if (p.trailingHpPct === undefined) p.trailingHpPct = pHpPct;
+                if (p.trailingHpPct > pHpPct) {
+                  p.trailingHpPct = Math.max(pHpPct, p.trailingHpPct - 0.015);
+                } else {
+                  p.trailingHpPct = pHpPct;
+                }
 
-        let isLowHp = pHpPct <= 0.2 && p.hp > 0;
-        let showPlayerHpBar =
-          (p.lastDamageTimer && p.lastDamageTimer > 0) || isLowHp;
+                let isLowHp = pHpPct <= 0.2 && p.hp > 0;
+                let showPlayerHpBar =
+                  (p.lastDamageTimer && p.lastDamageTimer > 0) || isLowHp || (p.arcaneShield > 0);
 
-        if (showPlayerHpBar && p.hp > 0) {
-          let barW = 32;
-          let barH = 5;
-          let barX = p.x - barW / 2;
-          let barY = p.y - 28;
+                if (showPlayerHpBar && p.hp > 0) {
+                  let barW = 32;
+                  let barH = 5;
+                  let barX = p.x - barW / 2;
+                  let barY = p.y - 28;
 
-          let borderCol = "#000000";
-          if (isLowHp) {
-            let pulse = Math.sin(Date.now() / 120) * 0.5 + 0.5;
-            borderCol = `rgba(231, 76, 60, ${0.4 + pulse * 0.5})`;
-          }
+                  let borderCol = "#000000";
+                  if (isLowHp) {
+                    let pulse = Math.sin(Date.now() / 120) * 0.5 + 0.5;
+                    borderCol = `rgba(231, 76, 60, ${0.4 + pulse * 0.5})`;
+                  }
 
-          ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
-          ctx.fillRect(barX, barY, barW, barH);
+                  ctx.fillStyle = "rgba(10, 10, 10, 0.85)";
+                  ctx.fillRect(barX, barY, barW, barH);
 
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(barX, barY, barW * p.trailingHpPct, barH);
+                  ctx.fillStyle = "#ffffff";
+                  ctx.fillRect(barX, barY, barW * p.trailingHpPct, barH);
 
-          ctx.fillStyle = isLowHp ? "#e74c3c" : "#2ecc71";
-          ctx.fillRect(barX, barY, barW * pHpPct, barH);
+                  ctx.fillStyle = isLowHp ? "#e74c3c" : "#2ecc71";
+                  ctx.fillRect(barX, barY, barW * pHpPct, barH);
 
-          ctx.strokeStyle = borderCol;
-          ctx.lineWidth = 1.2;
-          ctx.strokeRect(barX, barY, barW, barH);
-        }
+                  // Cyan Arcane Shield Overlay Bar
+                  if (p.arcaneShield > 0 && p.arcaneShieldMax > 0) {
+                    let shieldPct = Math.min(1.0, p.arcaneShield / p.arcaneShieldMax);
+                    ctx.fillStyle = "rgba(0, 210, 255, 0.85)";
+                    ctx.fillRect(barX, barY, barW * shieldPct, barH);
+                  }
+
+                  ctx.strokeStyle = borderCol;
+                  ctx.lineWidth = 1.2;
+                  ctx.strokeRect(barX, barY, barW, barH);
+                }
       },
     });
 
@@ -25828,18 +25904,23 @@
         }
 
         let finalHp = mobHpVal;
-        let finalAtk = mobAtkVal;
+                let finalAtk = mobAtkVal;
 
-        if (isElite && isRare) {
-          finalHp = Math.round(finalHp * 2.5);
-          finalAtk = Math.round(finalAtk * 1.6);
-        } else if (isElite) {
-          finalHp = Math.round(finalHp * 1.5);
-          finalAtk = Math.round(finalAtk * 1.25);
-        } else if (isRare) {
-          finalHp = Math.round(finalHp * 1.75);
-          finalAtk = Math.round(finalAtk * 1.35);
-        }
+                if (isElite && isRare) {
+                  finalHp = Math.round(finalHp * 2.5);
+                  finalAtk = Math.round(finalAtk * 1.6);
+                } else if (isElite) {
+                  finalHp = Math.round(finalHp * 1.5);
+                  finalAtk = Math.round(finalAtk * 1.25);
+                } else if (isRare) {
+                  finalHp = Math.round(finalHp * 1.75);
+                  finalAtk = Math.round(finalAtk * 1.35);
+                }
+
+                // Nullifier Elites disable offhands, so they receive a 35% HP reduction to allow quick bursting
+                if (eliteAffix === "nullifier") {
+                  finalHp = Math.round(finalHp * 0.65);
+                }
 
         let rangedTypes = [
           "thorn_wyrm",

@@ -7,10 +7,10 @@
   const DEBUFF_EXCLUSIONS = window.DEBUFF_EXCLUSIONS;
 
   window.getRarityMultiplier = function (stars) {
-    if (stars === "UNIQUE" || stars === "unique") return 1.5;
-    const multipliers = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5];
-    return multipliers[stars] || 1.0;
-  };
+      if (stars === "UNIQUE" || stars === "unique") return 1.35;
+      const multipliers = [1.0, 1.07, 1.14, 1.21, 1.28, 1.35];
+      return multipliers[stars] || 1.0;
+    };
 
   window.isItemUnique = function (item) {
     if (!item) return false;
@@ -3583,7 +3583,8 @@
         rarityMult *= 1.8;
         pctRarityMult *= 1.8;
       }
-      let actualStatLines = chosenType === "artifact" ? 3 : statLinesCount;
+      // Artifacts receive 3 affixes + trait; Mythics/Uniques (5★ or UNIQUE) receive 5 full affixes
+            let actualStatLines = chosenType === "artifact" ? 3 : (statLinesCount === "UNIQUE" || statLinesCount === 5 ? 5 : statLinesCount);
 
       for (let i = 0; i < actualStatLines; i++) {
         if (pool.length === 0) break;
@@ -4691,15 +4692,16 @@
           );
           item.bonusMoveSpeed = Math.ceil(1.5 * stageScale * 1.75);
         } else if (item.isUniqueAegis) {
-          item.baseDef = Math.ceil(15 * stageScale * 10.0);
-          item.baseBlock = 0.1;
-          item.bonusDef = Math.ceil(0.25 * hpDefExpScale * 10.0);
-          item.bonusMaxHp = Math.ceil(0.8 * hpDefExpScale * 10.0);
-          item.bonusBlock = parseFloat(
-            (0.015 * Math.sqrt(stageScale) * 1.75).toFixed(4),
-          );
-          item.bonusStr = Math.ceil(3 * Math.pow(stageScale, 1.2) * 2.25);
-        } else if (item.isUniqueWatch) {
+                  item.baseDef = Math.ceil(15 * stageScale * 10.0);
+                  item.baseBlock = 0.1;
+                  item.bonusDef = Math.ceil(0.25 * hpDefExpScale * 10.0);
+                  item.bonusMaxHp = Math.ceil(0.8 * hpDefExpScale * 10.0);
+                  item.bonusBlock = parseFloat(
+                    (0.015 * Math.sqrt(stageScale) * 1.75).toFixed(4),
+                  );
+                  item.bonusStr = Math.ceil(3 * Math.pow(stageScale, 1.2) * 2.25);
+                  item.bonusAtk = Math.ceil(0.2 * expScale * 10.0); // 5th Bonus Affix for Unique Aegis
+                } else if (item.isUniqueWatch) {
           item.baseInt = Math.ceil(15 * stageScale * 10.0);
           item.baseAtk = Math.ceil(5 * stageScale * 10.0);
           item.bonusInt = Math.ceil(3 * Math.pow(stageScale, 1.2) * 2.25);

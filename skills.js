@@ -684,18 +684,18 @@
             `Proc: ${35 + rank * 5}%, Power: ${150 + rank * 25}% Atk`,
         },
         {
-          id: "tome_runic_barrier",
-          name: "Runic Shielding",
-          iconKey: "tome_barrier",
-          x: 38,
-          y: 48,
-          tier: 2,
-          maxRank: 3,
-          costPerRank: 1,
-          prereqs: ["tome_atk"],
-          desc: "Increases Arcane Barrier base absorption to 24%/28%/32% (up to 40% cap).",
-          getStatText: (rank) => `Absorb: ${20 + rank * 4}%, Cap: 40%`,
-        },
+                  id: "tome_runic_barrier",
+                  name: "Runic Shielding",
+                  iconKey: "tome_barrier",
+                  x: 38,
+                  y: 48,
+                  tier: 2,
+                  maxRank: 3,
+                  costPerRank: 1,
+                  prereqs: ["tome_atk"],
+                  desc: "Grants +10%/+20%/+30% Max HP as Arcane Shield Capacity.",
+                  getStatText: (rank) => `+${rank * 10}% Max HP as Arcane Shield`,
+                },
         {
           id: "tome_elemental_overload",
           name: "Elemental Overload",
@@ -710,32 +710,32 @@
           getStatText: (rank) => `Overload Level ${rank} Spell Effects`,
         },
         {
-          id: "tome_arcane_syphon",
-          name: "Arcane Syphon",
-          iconKey: "tome_power",
-          x: 85,
-          y: 48,
-          tier: 2,
-          maxRank: 3,
-          costPerRank: 1,
-          prereqs: ["tome_exp"],
-          desc: "Spell procs restore 1%/2%/3% Max HP and grant +4%/+8%/+12% INT for 6s (stacks 3x).",
-          getStatText: (rank) =>
-            `Restore ${rank}% HP & +${rank * 4}% INT on Spell Proc`,
-        },
-        {
-          id: "tome_barrier_shatter",
-          name: "Barrier Shatter",
-          iconKey: "tome_keystone",
-          x: 20,
-          y: 28,
-          tier: 3,
-          maxRank: 1,
-          costPerRank: 2,
-          prereqs: ["tome_runic_barrier"],
-          desc: "Storing 100% absorbed damage in Arcane Barrier detonates an explosion dealing 250% INT as Magic Damage.",
-          getStatText: () => "Explosive Shield Shatter at 100% Absorbed",
-        },
+                  id: "tome_arcane_syphon",
+                  name: "Arcane Syphon",
+                  iconKey: "tome_power",
+                  x: 85,
+                  y: 48,
+                  tier: 2,
+                  maxRank: 3,
+                  costPerRank: 1,
+                  prereqs: ["tome_exp"],
+                  desc: "Spell procs recharge 1.5%/3.0%/4.5% Arcane Shield (50% overflows to HP if Shield is full) & grant +4%/+8%/+12% INT for 6s.",
+                  getStatText: (rank) =>
+                    `Recharge ${(rank * 1.5).toFixed(1)}% Arcane Shield & +${rank * 4}% INT`,
+                },
+                {
+                  id: "tome_barrier_shatter",
+                  name: "Shield Shatter",
+                  iconKey: "tome_keystone",
+                  x: 20,
+                  y: 28,
+                  tier: 3,
+                  maxRank: 1,
+                  costPerRank: 2,
+                  prereqs: ["tome_runic_barrier"],
+                  desc: "When Arcane Shield is fully depleted by an attack, it detonates an Arcane Nova dealing 250% INT as AoE Magic Damage.",
+                  getStatText: () => "250% INT Nova on Arcane Shield Depletion",
+                },
         {
           id: "tome_spell_weaving",
           name: "Spell Weaving",
@@ -750,18 +750,18 @@
           getStatText: (rank) => `+${rank * 15}% Spell Power on element shift`,
         },
         {
-          id: "tome_resilience",
-          name: "Mana Shielding",
-          iconKey: "tome_power",
-          x: 80,
-          y: 28,
-          tier: 3,
-          maxRank: 3,
-          costPerRank: 2,
-          prereqs: ["tome_arcane_syphon"],
-          desc: "Casting spells restores an additional 2% of Max Health per rank.",
-          getStatText: (rank) => `Heals +${rank * 2}% Max HP on Spell Cast`,
-        },
+                  id: "tome_resilience",
+                  name: "Mana Shielding",
+                  iconKey: "tome_power",
+                  x: 80,
+                  y: 28,
+                  tier: 3,
+                  maxRank: 3,
+                  costPerRank: 2,
+                  prereqs: ["tome_arcane_syphon"],
+                  desc: "Casting any spell instantly recharges 1%/2%/3% Arcane Shield.",
+                  getStatText: (rank) => `Recharge +${rank}% Arcane Shield on Spell Cast`,
+                },
         {
           id: "tome_keystone_triad",
           name: "Triad Convergence",
@@ -777,19 +777,19 @@
           getStatText: () => "Simultaneous Triple Element Casts",
         },
         {
-          id: "tome_keystone_singularity",
-          name: "Aetheric Singularity",
-          iconKey: "tome_keystone",
-          x: 65,
-          y: 12,
-          tier: 4,
-          maxRank: 1,
-          costPerRank: 3,
-          isKeystone: true,
-          prereqs: ["tome_barrier_shatter"],
-          desc: "Arcane Barrier absorbs an absolute 45% of damage. While active, 80% of total INT is added directly to Attack Power.",
-          getStatText: () => "45% Fixed Barrier & +80% INT to Atk",
-        },
+                  id: "tome_keystone_singularity",
+                  name: "Aetheric Singularity",
+                  iconKey: "tome_keystone",
+                  x: 65,
+                  y: 12,
+                  tier: 4,
+                  maxRank: 1,
+                  costPerRank: 3,
+                  isKeystone: true,
+                  prereqs: ["tome_barrier_shatter"],
+                  desc: "Grants +50% Max HP as Arcane Shield Capacity. 80% of total INT is added directly to Attack Power.",
+                  getStatText: () => "+50% Shield Capacity & +80% INT to Atk",
+                },
         {
           id: "tome_filler_barrier_regen",
           name: "Aether Flow",
@@ -2206,38 +2206,38 @@ if (window.playerStats && window.playerStats.usp === undefined) {
         stats.spellPower = 1.5 + tomeEmpoweredCatalystsLvl * 0.25;
       }
       let tomeRunicBarrierLvl = getLevel("tome_runic_barrier");
-      if (tomeRunicBarrierLvl > 0) {
-        stats.arcaneBarrier = 0.2 + tomeRunicBarrierLvl * 0.04;
-      }
-      let tomeElementalOverloadLvl = getLevel("tome_elemental_overload");
-      if (tomeElementalOverloadLvl > 0) {
-        stats.hasElementalOverload = true;
-        stats.overloadLevel = tomeElementalOverloadLvl;
-      }
-      let tomeArcaneSyphonLvl = getLevel("tome_arcane_syphon");
-      if (tomeArcaneSyphonLvl > 0) {
-        stats.hasArcaneSyphon = true;
-        stats.arcaneSyphonLevel = tomeArcaneSyphonLvl;
-      }
-      if (getLevel("tome_barrier_shatter") > 0) {
-        stats.hasBarrierShatter = true;
-      }
-      let tomeSpellWeavingLvl = getLevel("tome_spell_weaving");
-      if (tomeSpellWeavingLvl > 0) {
-        stats.hasSpellWeaving = true;
-        stats.spellWeavingLevel = tomeSpellWeavingLvl;
-      }
-      let tomeResilienceLvl = getLevel("tome_resilience");
-      if (tomeResilienceLvl > 0) {
-        stats.manaShieldingHeal = tomeResilienceLvl * 0.02;
-      }
-      if (getLevel("tome_keystone_triad") > 0) {
-        stats.hasTriadConvergence = true;
-      }
-      if (getLevel("tome_keystone_singularity") > 0) {
-        stats.arcaneBarrier = 0.45;
-        stats.atk = (stats.atk || 15) + (stats.int || 5) * 0.8;
-      }
+            if (tomeRunicBarrierLvl > 0) {
+              stats.arcaneShieldBonusPct = (stats.arcaneShieldBonusPct || 0) + tomeRunicBarrierLvl * 0.10;
+            }
+            let tomeElementalOverloadLvl = getLevel("tome_elemental_overload");
+            if (tomeElementalOverloadLvl > 0) {
+              stats.hasElementalOverload = true;
+              stats.overloadLevel = tomeElementalOverloadLvl;
+            }
+            let tomeArcaneSyphonLvl = getLevel("tome_arcane_syphon");
+            if (tomeArcaneSyphonLvl > 0) {
+              stats.hasArcaneSyphon = true;
+              stats.arcaneSyphonLevel = tomeArcaneSyphonLvl;
+            }
+            if (getLevel("tome_barrier_shatter") > 0) {
+              stats.hasBarrierShatter = true;
+            }
+            let tomeSpellWeavingLvl = getLevel("tome_spell_weaving");
+            if (tomeSpellWeavingLvl > 0) {
+              stats.hasSpellWeaving = true;
+              stats.spellWeavingLevel = tomeSpellWeavingLvl;
+            }
+            let tomeResilienceLvl = getLevel("tome_resilience");
+            if (tomeResilienceLvl > 0) {
+              stats.manaShieldingRecharge = tomeResilienceLvl * 0.01;
+            }
+            if (getLevel("tome_keystone_triad") > 0) {
+              stats.hasTriadConvergence = true;
+            }
+            if (getLevel("tome_keystone_singularity") > 0) {
+              stats.arcaneShieldBonusPct = (stats.arcaneShieldBonusPct || 0) + 0.50;
+              stats.atk = (stats.atk || 15) + (stats.int || 5) * 0.8;
+            }
 
       // --- STANDARD FILLER SKILLS RESOLUTION ---
 

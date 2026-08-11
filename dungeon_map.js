@@ -5626,64 +5626,60 @@
           ctx.restore();
         }
       }
-      // Sector 2: Inferno Depths - Lava Vents & Rising Embers
-      else if (sector === 2) {
-        for (let r = startRow; r <= endRow; r++) {
-          for (let c = startCol; c <= endCol; c++) {
-            if (map.grid[r][c] === window.TILE_TYPES.FLOOR) {
-              let tileHash =
-                Math.abs(Math.sin(c * 17.123 + r * 43.51) * 43758.5453) % 1.0;
-              if (tileHash > 0.88) {
-                let vx = c * tileSize + tileSize / 2;
-                let vy = r * tileSize + tileSize / 2;
-                let vPulse = Math.sin(time / 150 + tileHash * 10) * 0.5 + 0.5;
+      // Sector 2: Inferno Depths - Lava Vents & Rising Embers (Optimized Bitwise Hash)
+            else if (sector === 2) {
+              for (let r = startRow; r <= endRow; r++) {
+                for (let c = startCol; c <= endCol; c++) {
+                  if (map.grid[r][c] === window.TILE_TYPES.FLOOR) {
+                    if (((c * 17 + r * 43) & 31) === 0) {
+                      let vx = c * tileSize + tileSize / 2;
+                      let vy = r * tileSize + tileSize / 2;
+                      let vPulse = Math.sin(time / 150 + (c + r)) * 0.5 + 0.5;
 
-                ctx.fillStyle = `rgba(249, 115, 22, ${0.2 + vPulse * 0.25})`;
-                ctx.beginPath();
-                ctx.ellipse(
-                  vx,
-                  vy,
-                  10 + vPulse * 3,
-                  5 + vPulse * 1.5,
-                  0,
-                  0,
-                  Math.PI * 2,
-                );
-                ctx.fill();
+                      ctx.fillStyle = `rgba(249, 115, 22, ${0.2 + vPulse * 0.25})`;
+                      ctx.beginPath();
+                      ctx.ellipse(
+                        vx,
+                        vy,
+                        10 + vPulse * 3,
+                        5 + vPulse * 1.5,
+                        0,
+                        0,
+                        Math.PI * 2,
+                      );
+                      ctx.fill();
 
-                if (!isEco && vPulse > 0.7) {
-                  let sparkY = vy - (vPulse - 0.7) * 20;
-                  ctx.fillStyle = "#fef08a";
-                  ctx.fillRect(vx + (tileHash * 8 - 4), sparkY, 1.5, 1.5);
+                      if (!isEco && vPulse > 0.7) {
+                        let sparkY = vy - (vPulse - 0.7) * 20;
+                        ctx.fillStyle = "#fef08a";
+                        ctx.fillRect(vx, sparkY, 1.5, 1.5);
+                      }
+                    }
+                  }
                 }
               }
             }
-          }
-        }
-      }
-      // Sector 3: Fungal Swamp - Toxic Spore Bubbles & Puddle Ripples
-      else if (sector === 3) {
-        for (let r = startRow; r <= endRow; r++) {
-          for (let c = startCol; c <= endCol; c++) {
-            if (map.grid[r][c] === window.TILE_TYPES.FLOOR) {
-              let tileHash =
-                Math.abs(Math.sin(c * 23.45 + r * 81.12) * 43758.5453) % 1.0;
-              if (tileHash > 0.85) {
-                let px = c * tileSize + tileSize / 2;
-                let py = r * tileSize + tileSize / 2;
-                let ripRad = ((time / 40 + tileHash * 20) % 12) + 1;
-                let ripAlpha = (1.0 - ripRad / 13) * 0.4;
+            // Sector 3: Fungal Swamp - Toxic Spore Bubbles & Puddle Ripples (Optimized Bitwise Hash)
+            else if (sector === 3) {
+              for (let r = startRow; r <= endRow; r++) {
+                for (let c = startCol; c <= endCol; c++) {
+                  if (map.grid[r][c] === window.TILE_TYPES.FLOOR) {
+                    if (((c * 23 + r * 81) & 31) === 0) {
+                      let px = c * tileSize + tileSize / 2;
+                      let py = r * tileSize + tileSize / 2;
+                      let ripRad = ((time / 40 + (c + r) * 5) % 12) + 1;
+                      let ripAlpha = (1.0 - ripRad / 13) * 0.4;
 
-                ctx.strokeStyle = `rgba(52, 211, 153, ${ripAlpha})`;
-                ctx.lineWidth = 1.0;
-                ctx.beginPath();
-                ctx.ellipse(px, py, ripRad, ripRad * 0.5, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                      ctx.strokeStyle = `rgba(52, 211, 153, ${ripAlpha})`;
+                      ctx.lineWidth = 1.0;
+                      ctx.beginPath();
+                      ctx.ellipse(px, py, ripRad, ripRad * 0.5, 0, 0, Math.PI * 2);
+                      ctx.stroke();
+                    }
+                  }
+                }
               }
             }
-          }
-        }
-      }
       // Sector 4+: Void Singularity - Upgraded Star Drift (Subphase C.4)
       else {
         let starCount = isEco ? 6 : 20;

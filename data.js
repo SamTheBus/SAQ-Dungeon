@@ -745,8 +745,9 @@ window.CombatEffectPool = window.CombatEffectPool || {
 window.getEffectiveStage = function (stage) {
   let s = Number(stage);
   if (isNaN(s) || s < 1) s = 1;
-  // Smoothed, continuously dampening sub-exponential transition post-100 to avoid sudden cliffs
-  return s <= 100 ? s : 100 + Math.pow(s - 100, 0.7) * 1.5;
+  // Group stage levels into 4-floor milestone bands (Floors 1-4 = Band 4, 5-8 = Band 8, etc.)
+  let band = Math.ceil(s / 4) * 4;
+  return band <= 100 ? band : 100 + Math.pow(band - 100, 0.7) * 1.5;
 };
 
 window.isValidCheckpoint = function (floor) {
@@ -1178,10 +1179,10 @@ Object.assign(window.GameState, {
         }
       }
 
-      // Calculate next xpReq safely using quadratic scaling
-      let lvl = window.playerStats.level || 1;
-      let rawXpReq = Math.round(300 + 100 * lvl + 50 * lvl * lvl);
-      xpReq = BigNum.from(rawXpReq);
+      // Calculate next xpReq safely using compounding power-law scaling
+            let lvl = window.playerStats.level || 1;
+            let rawXpReq = Math.floor(400 * Math.pow(lvl, 1.8) + 150 * Math.pow(lvl, 2.4));
+            xpReq = BigNum.from(rawXpReq);
       leveledUp = true;
     }
 
@@ -3169,15 +3170,26 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.parry = sParry + range * (excess / (excess + range));
   }
 
-  // Calculate Tome passive Arcane Barrier
-  hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
-  if (hasTome) {
-    // Base 20% absorption, scaling up to 35% with INT
-    let intBonus = Math.min(0.15, (effectiveInt * 0.15) / (effectiveInt + 150));
-    p.arcaneBarrier = 0.2 + intBonus;
-  } else {
-    p.arcaneBarrier = 0.0;
-  }
+  // Calculate Tome Arcane Shield Capacity (Energy Shield)
+    hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
+    if (hasTome) {
+      let baseShieldPct = 0.20 + (p.arcaneShieldBonusPct || 0);
+      let intBonusPct = Math.min(0.20, (effectiveInt * 0.20) / (effectiveInt + 150));
+      let maxHpVal = p.maxHp.valueOf ? p.maxHp.valueOf() : Number(p.maxHp || 100);
+      p.arcaneShieldMax = Math.round(maxHpVal * (baseShieldPct + intBonusPct));
+    } else {
+      p.arcaneShieldMax = 0;
+    }
+
+    // Ensure current player Arcane Shield stays initialized and bounded
+    if (window.player) {
+      window.player.arcaneShieldMax = p.arcaneShieldMax;
+      if (window.player.arcaneShield === undefined) {
+        window.player.arcaneShield = p.arcaneShieldMax;
+      } else {
+        window.player.arcaneShield = Math.min(window.player.arcaneShield, p.arcaneShieldMax);
+      }
+    }
 
   let rawRare = p.rareSpawn;
   let limit = window.checkArtifactTrait("void_pull") ? 0.1 : 0.075;
@@ -3314,7 +3326,11 @@ window.resolvePlayerStats = function (useDraft = false) {
     expBonusMult +=
       (window.playerStats.xpPotionStrength || 1.0) * potStrengthMultiplier;
   }
-  p.xpRate = parseFloat(expBonusMult.toFixed(2));
+  // Apply asymptotic soft cap on global XP Rate once bonuses exceed +100% (2.0x)
+    if (expBonusMult > 2.0) {
+      expBonusMult = 2.0 + (3.0 * (expBonusMult - 2.0)) / ((expBonusMult - 2.0) + 3.0);
+    }
+    p.xpRate = parseFloat(expBonusMult.toFixed(2));
 
   if (p.hasReflectKeystone) {
     let defVal = p.def.valueOf ? p.def.valueOf() : Number(p.def || 0);
@@ -3782,20 +3798,19 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
     return 0;
   }
 
-  // Step 1: Arcane Barrier Absorption (Tomes)
-  let absorbed = 0;
-  if (pStats.arcaneBarrier && pStats.arcaneBarrier > 0) {
-    absorbed = Math.floor(rawDmg * pStats.arcaneBarrier);
-    if (absorbed > 0) {
-      // Gain +10 Tome Mastery XP on Arcane Barrier Absorption
-      if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 10);
+  // Step 1: Arcane Shield Absorption (Energy Shield)
+    p.arcaneShield = p.arcaneShield || 0;
+    let absorbed = 0;
+    if (p.arcaneShield > 0) {
+      absorbed = Math.min(rawDmg, p.arcaneShield);
+      p.arcaneShield -= absorbed;
+      rawDmg -= absorbed;
 
-      // Barrier Shatter accumulated charge check
-      if (pStats.hasBarrierShatter) {
-        window.playerStats.barrierAbsorbedDmg =
-          (window.playerStats.barrierAbsorbedDmg || 0) + absorbed;
-        if (window.playerStats.barrierAbsorbedDmg >= p.maxHp) {
-          window.playerStats.barrierAbsorbedDmg = 0; // consume
+      if (absorbed > 0) {
+        if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 10);
+
+        // Shield Shatter Detonation on Shield Depletion
+        if (p.arcaneShield <= 0 && pStats.hasBarrierShatter) {
           let intVal = pStats.int || 5;
           let shatterDmg = BigNum.from(intVal).mul(2.5);
           if (window.activeDungeonMobs) {
@@ -3828,37 +3843,36 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
             window.spawnFloatingText(
               p.x,
               p.y - 25,
-              "BARRIER SHATTER DETONATION!",
-              "#9b59b6",
+              "SHIELD SHATTER DETONATION!",
+              "#00ffff",
               true,
             );
           }
-          // Barrier Shatter Mastery Hook (+30 Base XP)
           if (window.gainSubweaponXp) {
             let depth = window.player ? window.player.depth || 1 : 1;
             let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
             window.gainSubweaponXp("tome", Math.round(30 * triggerMult));
           }
         }
-      }
 
-      if (window.SoundManager) window.SoundManager.play("spell");
-      if (window.combatVisuals) {
-        window.combatVisuals.spawnParticles(p.x, p.y - 12, 10, "void_orb", 2.5);
-      }
-      if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-        window.RenderEngine.spawnDamageEffect(
-          p.x,
-          p.y - 22,
-          absorbed,
-          "barrier",
-          false,
-        );
+        if (window.SoundManager) window.SoundManager.play("spell");
+        if (window.combatVisuals) {
+          window.combatVisuals.spawnParticles(p.x, p.y - 12, 10, "void_orb", 2.5);
+        }
+        if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
+          window.RenderEngine.spawnDamageEffect(
+            p.x,
+            p.y - 22,
+            absorbed,
+            "barrier",
+            false,
+          );
+        }
       }
     }
-  }
 
-  let remainingDmg = Math.max(1, rawDmg - absorbed);
+    let remainingDmg = Math.max(0, rawDmg);
+    if (remainingDmg <= 0) return 0;
 
   // Soft-capped asymptotic damage reduction based on Defense to prevent 1-damage trivialization exploits
   let currentFloor = window.player ? window.player.depth || 1 : 1;
@@ -5608,7 +5622,7 @@ window.sessionStartTime = Date.now();
 window.respawnIntervalId = null;
 window.recalculateXpRequirement = function () {
   let lvl = window.playerStats.level || 1;
-  let rawXpReq = Math.round(300 + 100 * lvl + 50 * lvl * lvl);
+  let rawXpReq = Math.floor(400 * Math.pow(lvl, 1.8) + 150 * Math.pow(lvl, 2.4));
   window.playerStats.xpReq = BigNum.from(rawXpReq);
 };
 // Expose the manual boss rechallenge actuator to the DOM window
@@ -6854,37 +6868,8 @@ window.loadGame = function () {
     }
 
     if (parsed.equippedSlots) {
-      window.equippedSlots = parsed.equippedSlots;
-
-      // Safe Migration: Unequip physical artifacts from art1, art2, art3 slots on load and deposit in bag/stash
-      const relicSlots = ["art1", "art2", "art3"];
-      let migratedAny = false;
-      relicSlots.forEach((slotKey) => {
-        let item = window.equippedSlots[slotKey];
-        if (item) {
-          delete item.isEquippedSlot;
-          if (!window.inventory) {
-            window.inventory = {
-              EQUIP: [],
-              ARTIFACT: [],
-              SIGIL: [],
-              ETC: {},
-              USE: {},
-            };
-          }
-          if (!window.inventory.ARTIFACT) {
-            window.inventory.ARTIFACT = [];
-          }
-          window.inventory.ARTIFACT.push(item);
-          window.equippedSlots[slotKey] = null;
-          migratedAny = true;
+          window.equippedSlots = parsed.equippedSlots;
         }
-      });
-
-      if (migratedAny && typeof window.saveGame === "function") {
-        window.saveGame();
-      }
-    }
 
     // Safe Skill Tree Migration & Fallback Initialization
     if (window.playerStats.activeStarterSubweapon === undefined) {
@@ -6915,15 +6900,31 @@ window.loadGame = function () {
     });
 
     let mergedItems = Array.from(itemMap.values());
-    if (!window.inventory)
-      window.inventory = {
-        EQUIP: [],
-        ARTIFACT: [],
-        SIGIL: [],
-        ETC: {},
-        USE: {},
-      };
-    window.inventory.EQUIP = mergedItems;
+        if (!window.inventory)
+          window.inventory = {
+            EQUIP: [],
+            ARTIFACT: [],
+            SIGIL: [],
+            ETC: {},
+            USE: {},
+          };
+
+        // Auto-Recovery: Route any artifacts or sigils accidentally trapped in EQUIP back to their proper vaults
+        window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+        window.inventory.SIGIL = window.inventory.SIGIL || [];
+        window.inventory.EQUIP = [];
+
+        mergedItems.forEach((item) => {
+          if (item && typeof item === "object") {
+            if (item.type === "artifact") {
+              window.inventory.ARTIFACT.push(item);
+            } else if (item.type === "sigil") {
+              window.inventory.SIGIL.push(item);
+            } else {
+              window.inventory.EQUIP.push(item);
+            }
+          }
+        });
 
     if (window.player) {
       window.player.stash = window.inventory.EQUIP;

@@ -4534,22 +4534,26 @@
   };
 
   window.spawnShadowDecoyVisual = function (x, y) {
-    if (!window.activeSpellAnims) return;
-    window.activeSpellAnims.push({
-      type: "shadow_decoy",
-      x: x,
-      y: y,
-      life: 120, // 2 seconds
-      maxLife: 120,
-      facing: window.player ? -window.player.facing : -1,
-      equippedSlots: window.equippedSlots
-        ? JSON.parse(JSON.stringify(window.equippedSlots))
-        : {},
-      playerStats: window.playerStats
-        ? { ...window.playerStats, shadowStepTimer: 0, fortitudeStacks: 0 }
-        : {},
-    });
-  };
+      if (!window.activeSpellAnims) return;
+      let shallowEquipped = {};
+      if (window.equippedSlots) {
+        for (let key in window.equippedSlots) {
+          shallowEquipped[key] = window.equippedSlots[key];
+        }
+      }
+      window.activeSpellAnims.push({
+        type: "shadow_decoy",
+        x: x,
+        y: y,
+        life: 120, // 2 seconds
+        maxLife: 120,
+        facing: window.player ? -window.player.facing : -1,
+        equippedSlots: shallowEquipped,
+        playerStats: window.playerStats
+          ? { ...window.playerStats, shadowStepTimer: 0, fortitudeStacks: 0 }
+          : {},
+      });
+    };
 
   window.spawnArcaneSyphonVisual = function (p, m) {
     if (!window.activeSpellAnims) return;
@@ -13404,22 +13408,28 @@
           }
 
           let last =
-            window.shadowStepHistory[window.shadowStepHistory.length - 1];
-          let dist = last ? Math.hypot(x - last.x, y - last.y) : 999;
-          if (dist > 6) {
-            window.shadowStepHistory.push({
-              x: x,
-              y: y,
-              bounce: bounce,
-              facing: options.facing !== undefined ? options.facing : -1,
-              equippedSlots: JSON.parse(JSON.stringify(equippedSlots || {})),
-              playerStats: { ...stats, shadowStepTimer: 0 }, // Prevent infinite recursion
-              time: Date.now(),
-            });
-            if (window.shadowStepHistory.length > 4) {
-              window.shadowStepHistory.shift();
-            }
-          }
+                      window.shadowStepHistory[window.shadowStepHistory.length - 1];
+                    let dist = last ? Math.hypot(x - last.x, y - last.y) : 999;
+                    if (dist > 6) {
+                      let shallowEquipped = {};
+                      if (equippedSlots) {
+                        for (let sKey in equippedSlots) {
+                          shallowEquipped[sKey] = equippedSlots[sKey];
+                        }
+                      }
+                      window.shadowStepHistory.push({
+                        x: x,
+                        y: y,
+                        bounce: bounce,
+                        facing: options.facing !== undefined ? options.facing : -1,
+                        equippedSlots: shallowEquipped,
+                        playerStats: { ...stats, shadowStepTimer: 0 }, // Prevent infinite recursion
+                        time: Date.now(),
+                      });
+                      if (window.shadowStepHistory.length > 4) {
+                        window.shadowStepHistory.shift();
+                      }
+                    }
         }
       } else {
         if (window.shadowStepHistory.length > 0 && !window.isGamePaused) {
