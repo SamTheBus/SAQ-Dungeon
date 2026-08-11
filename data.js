@@ -750,6 +750,12 @@ window.getEffectiveStage = function (stage) {
   return band <= 100 ? band : 100 + Math.pow(band - 100, 0.7) * 1.5;
 };
 
+window.getFloorItemLevel = function (floor) {
+  let f = Number(floor);
+  if (isNaN(f) || f < 1) f = 1;
+  return Math.floor(f / 4) + 1;
+};
+
 window.isValidCheckpoint = function (floor) {
   if (floor === 1) return true;
   let prev = floor - 1;
@@ -1566,6 +1572,7 @@ window.recalculateAchievementTotals = function () {
     intPct: 0,
     idleSpeedPct: 0,
     activeSpeedPct: 0,
+        bonusAreaRadius: 0,
   };
   if (window.playerStats.unlockedAchievements) {
     window.playerStats.unlockedAchievements.forEach((id) => {
@@ -1953,6 +1960,7 @@ window.ARTIFACT_BASE_STATS = {
   synergy_nexus: { int: 4 },
   synergy_sanguine: { critChance: 0.03 },
   speed_to_momentum: { dex: 5 },
+    astral_expansion: { int: 5, bonusAreaRadius: 0.25 },
 };
 
 window.resolvePlayerStats = function (useDraft = false) {
@@ -1992,7 +2000,9 @@ window.resolvePlayerStats = function (useDraft = false) {
     activeSpeedPct: 0,
     idleSpeedPct: 0,
     atkPct: 0,
-    maxHpPct: 0,
+        maxHpPct: 0,
+        bonusAreaRadius: 0,
+        areaRadiusMult: 1.0,
   };
 
   // Initialize subweapon parameters early to protect from downstream overrides
@@ -2337,6 +2347,7 @@ window.resolvePlayerStats = function (useDraft = false) {
       if (item.strPct) itemStrPct += item.strPct * slotMult;
       if (item.dexPct) itemDexPct += item.dexPct * slotMult;
       if (item.intPct) itemIntPct += item.intPct * slotMult;
+            if (item.bonusAreaRadius) p.bonusAreaRadius += item.bonusAreaRadius * slotMult;
 
       // Commented out to prevent flat-to-percentage double-dipping in late game
       // itemAtkPct += (BigNum.from(item.bonusAtk || 0).div(100).mul(slotMult).valueOf());
@@ -2400,7 +2411,9 @@ window.resolvePlayerStats = function (useDraft = false) {
               } else if (sKey === "maxHpPct") {
                 itemHpPct += scaledVal;
               } else if (sKey === "defPct") {
-                itemDefPct += scaledVal;
+                              itemDefPct += scaledVal;
+                            } else if (sKey === "bonusAreaRadius") {
+                              p.bonusAreaRadius += scaledVal;
               } else if (p[sKey] !== undefined) {
                 p[sKey] += scaledVal;
               }
@@ -3693,10 +3706,15 @@ window.resolvePlayerStats = function (useDraft = false) {
   // Hard physical engine limit safeguard: No combination of temporary buffs can exceed 3x base speed
   p.moveSpeed = Math.min(window.playerStats.baseMoveSpeed * 3.0, p.moveSpeed);
 
-  if (!useDraft) {
-    window.cachedPlayerStats = p;
-    window.playerStatsDirty = false;
-  }
+  // Calculate Universal Area of Effect Multiplier (Asymptotic Soft-Cap)
+    let rawAreaBonus = p.bonusAreaRadius || 0;
+    p.areaRadiusMult = 1.0 + (rawAreaBonus * 0.85) / (1.0 + rawAreaBonus * 0.65);
+    p.spellRadiusMult = p.areaRadiusMult; // Legacy compatibility alias
+
+    if (!useDraft) {
+      window.cachedPlayerStats = p;
+      window.playerStatsDirty = false;
+    }
 
   return p;
 };
@@ -4866,6 +4884,7 @@ window.playerStats = {
   baseParry: 0.0,
   baseRareSpawn: 0.01,
   baseFairySpawn: 1.0,
+    baseAreaRadius: 1.0,
   currentHp: new BigNum(100, 0),
   coins: new BigNum(0, 0),
   stage: 1,
@@ -6586,6 +6605,7 @@ window.sanitizeBasePlayerStats = function () {
   window.playerStats.baseParry = 0.0;
   window.playerStats.baseRareSpawn = 0.01;
   window.playerStats.baseFairySpawn = 1.0;
+    window.playerStats.baseAreaRadius = 1.0;
 };
 
 window.loadGame = function () {

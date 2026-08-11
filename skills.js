@@ -697,18 +697,18 @@
                   getStatText: (rank) => `+${rank * 10}% Max HP as Arcane Shield`,
                 },
         {
-          id: "tome_elemental_overload",
-          name: "Elemental Overload",
-          iconKey: "tome_proc",
-          x: 62,
-          y: 48,
-          tier: 2,
-          maxRank: 2,
-          costPerRank: 1,
-          prereqs: ["tome_exp"],
-          desc: "Fireball deals 35%/70% splash; Chain Zap bounces +1/+2 times; Frost Nova slows by 20%/40%.",
-          getStatText: (rank) => `Overload Level ${rank} Spell Effects`,
-        },
+                  id: "tome_elemental_overload",
+                  name: "Elemental Overload",
+                  iconKey: "tome_proc",
+                  x: 62,
+                  y: 48,
+                  tier: 2,
+                  maxRank: 2,
+                  costPerRank: 1,
+                  prereqs: ["tome_exp"],
+                  desc: "Fireball deals 35%/70% splash; Chain Zap bounces +1/+2 times; Frost Nova slows by 20%/40%. Increases Area Radius by +20% per rank.",
+                  getStatText: (rank) => `Overload Level ${rank} & +${rank * 20}% Area Radius`,
+                },
         {
                   id: "tome_arcane_syphon",
                   name: "Arcane Syphon",
@@ -791,19 +791,19 @@
                   getStatText: () => "+50% Shield Capacity & +80% INT to Atk",
                 },
         {
-          id: "tome_filler_barrier_regen",
-          name: "Aether Flow",
-          iconKey: "tome_barrier",
-          x: 50,
-          y: 58,
-          maxRank: 3,
-          costPerRank: 1,
-          tier: 2,
-          prereqs: ["tome_starter"],
-          desc: "Refines mana channels to stabilize spell output, increasing Spell Power by +4% and Arcane Barrier by +1% per rank.",
-          getStatText: (rank) =>
-            `+${rank * 4}% Spell Power & +${rank}% Barrier`,
-        },
+                  id: "tome_filler_barrier_regen",
+                  name: "Aether Flow",
+                  iconKey: "tome_barrier",
+                  x: 50,
+                  y: 58,
+                  maxRank: 3,
+                  costPerRank: 1,
+                  tier: 2,
+                  prereqs: ["tome_starter"],
+                  desc: "Refines mana channels to stabilize spell output, increasing Spell Power by +4%, Arcane Barrier by +1%, and Area Radius by +5% per rank.",
+                  getStatText: (rank) =>
+                    `+${rank * 4}% Spell Power, +${rank}% Barrier & +${rank * 5}% Area Radius`,
+                },
         {
           id: "tome_filler_spell_crit",
           name: "Runic Spark",
@@ -819,21 +819,21 @@
             `+${(rank * 1.5).toFixed(1)}% Crit Chance & +${rank * 2}% Attack`,
         },
         {
-          id: "tome_inf_spell",
-          name: "Arcane Singularity",
-          iconKey: "tome_atk",
-          x: 35,
-          y: 3,
-          maxRank: Infinity,
-          isInfinite: true,
-          tier: 5,
-          getCostForRank: (rank) =>
-            Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
-          prereqs: ["tome_keystone_triad"],
-          desc: "Ascend with the Arcane Singularity to infinitely compound your overall Spell Power.",
-          getStatText: (rank) =>
-            `x${Math.pow(1.12, rank).toFixed(2)} Compounding Spell Power (+12% per rank)`,
-        },
+                  id: "tome_inf_spell",
+                  name: "Arcane Singularity",
+                  iconKey: "tome_atk",
+                  x: 35,
+                  y: 3,
+                  maxRank: Infinity,
+                  isInfinite: true,
+                  tier: 5,
+                  getCostForRank: (rank) =>
+                    Math.max(2, Math.round(2 * Math.pow(1.18, rank - 1))),
+                  prereqs: ["tome_keystone_triad"],
+                  desc: "Ascend with the Arcane Singularity to infinitely compound your overall Spell Power and Area Radius.",
+                  getStatText: (rank) =>
+                    `x${Math.pow(1.12, rank).toFixed(2)} Spell Power & +${(2.0 * Math.pow(rank, 0.65)).toFixed(1)}% Area Radius`,
+                },
         {
           id: "tome_inf_intel",
           name: "Aetheric Infusion",
@@ -2189,8 +2189,24 @@ if (window.playerStats && window.playerStats.usp === undefined) {
         stats.offhandDmg = stats.offhandDmg || 0.45;
       }
 
-      // 3. Tome Tree Branching Nodes
-      let tomeAtkLvl = getLevel("tome_atk");
+      // Auto-initialize base Tome attributes if equipped
+            if (
+              window.equippedSlots &&
+              window.equippedSlots.subweapon &&
+              (window.equippedSlots.subweapon.type === "tome" ||
+                window.equippedSlots.subweapon.subType === "tome" ||
+                (window.equippedSlots.subweapon.name &&
+                  window.equippedSlots.subweapon.name.toLowerCase().includes("lexicon")))
+            ) {
+              let sub = window.equippedSlots.subweapon;
+              stats.subType = "tome";
+              stats.baseBarrierPct = sub.baseBarrierPct || 0.25;
+              stats.barrierRechargeDelay = sub.barrierRechargeDelay || 3.0;
+              stats.barrierRegenRate = sub.barrierRegenRate || 0.10;
+            }
+
+            // 3. Tome Tree Branching Nodes
+            let tomeAtkLvl = getLevel("tome_atk");
       if (tomeAtkLvl > 0) {
         stats.atk = (stats.atk || 15) * (1 + tomeAtkLvl * 0.035);
         stats.spellPower = (stats.spellPower || 1.5) * (1 + tomeAtkLvl * 0.035);
@@ -2210,10 +2226,11 @@ if (window.playerStats && window.playerStats.usp === undefined) {
               stats.arcaneShieldBonusPct = (stats.arcaneShieldBonusPct || 0) + tomeRunicBarrierLvl * 0.10;
             }
             let tomeElementalOverloadLvl = getLevel("tome_elemental_overload");
-            if (tomeElementalOverloadLvl > 0) {
-              stats.hasElementalOverload = true;
-              stats.overloadLevel = tomeElementalOverloadLvl;
-            }
+                        if (tomeElementalOverloadLvl > 0) {
+                          stats.hasElementalOverload = true;
+                          stats.overloadLevel = tomeElementalOverloadLvl;
+                          stats.bonusAreaRadius = (stats.bonusAreaRadius || 0) + tomeElementalOverloadLvl * 0.20;
+                        }
             let tomeArcaneSyphonLvl = getLevel("tome_arcane_syphon");
             if (tomeArcaneSyphonLvl > 0) {
               stats.hasArcaneSyphon = true;
@@ -2275,10 +2292,11 @@ if (window.playerStats && window.playerStats.usp === undefined) {
 
       // 3. Tome Tree Fillers
       let tomeFiller1 = getLevel("tome_filler_barrier_regen");
-      if (tomeFiller1 > 0) {
-        stats.spellPower = (stats.spellPower || 1.5) + tomeFiller1 * 0.04;
-        stats.arcaneBarrier = (stats.arcaneBarrier || 0.2) + tomeFiller1 * 0.01;
-      }
+            if (tomeFiller1 > 0) {
+              stats.spellPower = (stats.spellPower || 1.5) + tomeFiller1 * 0.04;
+              stats.arcaneBarrier = (stats.arcaneBarrier || 0.2) + tomeFiller1 * 0.01;
+              stats.bonusAreaRadius = (stats.bonusAreaRadius || 0) + tomeFiller1 * 0.05;
+            }
       let tomeFiller2 = getLevel("tome_filler_spell_crit");
       if (tomeFiller2 > 0) {
         stats.critChance = (stats.critChance || 0.05) + tomeFiller2 * 0.015;
@@ -2316,10 +2334,12 @@ if (window.playerStats && window.playerStats.usp === undefined) {
 
       // 3. Tome Tree Compounding
       let ArcaneSingularityLvl = getLevel("tome_inf_spell");
-      if (ArcaneSingularityLvl > 0) {
-        stats.spellPower =
-          (stats.spellPower || 1.5) * Math.pow(1.12, ArcaneSingularityLvl);
-      }
+            if (ArcaneSingularityLvl > 0) {
+              stats.spellPower =
+                (stats.spellPower || 1.5) * Math.pow(1.12, ArcaneSingularityLvl);
+              let infRadiusBonus = 0.02 * Math.pow(ArcaneSingularityLvl, 0.65);
+              stats.bonusAreaRadius = (stats.bonusAreaRadius || 0) + infRadiusBonus;
+            }
       let AethericInfusionLvl = getLevel("tome_inf_intel");
       if (AethericInfusionLvl > 0) {
         stats.atk = (stats.atk || 15) * Math.pow(1.1, AethericInfusionLvl);
@@ -2340,8 +2360,19 @@ if (window.playerStats && window.playerStats.usp === undefined) {
       stats.emergencySalvageRate = getLevel("utility_emergency_salvage") * 0.05;
       stats.fairySpawnChance = getLevel("utility_fairy_sanctuary") * 0.05;
 
-      // Apply active timers and modifications
-      if (window.playerStats) {
+      // Compute Max Arcane Barrier Pool Capacity
+            if (stats.subType === "tome" || (stats.baseBarrierPct && stats.baseBarrierPct > 0)) {
+              let effInt = Math.max(0, (stats.int || 5) - 5);
+              let intBonus = Math.min(0.15, (effInt * 0.15) / (effInt + 150));
+              let totalBarrierPct = (stats.baseBarrierPct || 0.25) + intBonus + (stats.arcaneShieldBonusPct || 0);
+              let maxHpVal = stats.maxHp && stats.maxHp.valueOf ? stats.maxHp.valueOf() : Number(stats.maxHp || 100);
+              stats.arcaneShieldMax = Math.round(maxHpVal * totalBarrierPct);
+            } else {
+              stats.arcaneShieldMax = 0;
+            }
+
+            // Apply active timers and modifications
+            if (window.playerStats) {
         if (
           window.playerStats.colossusAtkBonusTimer > 0 &&
           window.playerStats.colossusAtkBonusVal > 0

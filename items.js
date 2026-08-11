@@ -523,22 +523,25 @@
 
           let barrierPct = Math.round(potentialBarrier * 100);
 
-          let tomeDesc = `Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-          let tomeTitle = "✦ Arcane Triad Array & Barrier:";
-          let tomeTitleColor = "#9b59b6";
-          if (item.spellType === "fire") {
-            tomeTitle = "✦ Fireball Burst & Barrier:";
-            tomeTitleColor = "#e67e22";
-            tomeDesc = `Launches concentrated Fireball bursts dealing heavy burst damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-          } else if (item.spellType === "lightning") {
-            tomeTitle = "✦ Chain Zap Arcs & Barrier:";
-            tomeTitleColor = "#f1c40f";
-            tomeDesc = `Triggers rapid Chain Zap electrical arcs with high proc frequency. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-          } else if (item.spellType === "frost") {
-            tomeTitle = "✦ Glacial Frost Nova & Barrier:";
-            tomeTitleColor = "#3498db";
-            tomeDesc = `Emits Glacial Frost Novas dealing area frost damage. Absorbs ${barrierPct}% of incoming damage before Defense (scales with INT).`;
-          }
+          let delaySec = (item.barrierRechargeDelay || 3.0).toFixed(1);
+                    let regenRatePct = Math.round((item.barrierRegenRate || 0.10) * 100);
+
+                    let tomeDesc = `Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
+                    let tomeTitle = "✦ Arcane Triad Array & Barrier:";
+                    let tomeTitleColor = "#9b59b6";
+                    if (item.spellType === "fire") {
+                      tomeTitle = "✦ Fireball Burst & Barrier:";
+                      tomeTitleColor = "#e67e22";
+                      tomeDesc = `Launches concentrated Fireball bursts dealing heavy burst damage. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
+                    } else if (item.spellType === "lightning") {
+                      tomeTitle = "✦ Chain Zap Arcs & Barrier:";
+                      tomeTitleColor = "#f1c40f";
+                      tomeDesc = `Triggers rapid Chain Zap electrical arcs with high proc frequency. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
+                    } else if (item.spellType === "frost") {
+                      tomeTitle = "✦ Glacial Frost Nova & Barrier:";
+                      tomeTitleColor = "#34d399";
+                      tomeDesc = `Emits Glacial Frost Novas dealing area frost damage. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
+                    }
 
           specialtyHtml = `
                           <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
@@ -847,8 +850,9 @@
           baseKey: "baseIdleSpeed",
         },
         { key: "dropRate", label: "Drop Rate", isPct: true },
-        { key: "quality", label: "Drop Quality", isPct: true },
-        { key: "goldMulti", label: "Gold Multi", isPct: true },
+                { key: "quality", label: "Drop Quality", isPct: true },
+                { key: "goldMulti", label: "Gold Multi", isPct: true },
+                { key: "bonusAreaRadius", label: "Area Radius", isPct: true },
       ];
 
       statsKeys.forEach((s) => {
@@ -2036,11 +2040,17 @@
         isPct: true,
       },
       {
-        key: "idleAttackSpeed",
-        icon: window.getUiIconSvg("idleAttackSpeed", 11),
-        label: "Idle Atk Spd",
-        isPct: true,
-      },
+              key: "idleAttackSpeed",
+              icon: window.getUiIconSvg("idleAttackSpeed", 11),
+              label: "Idle Atk Spd",
+              isPct: true,
+            },
+            {
+              key: "bonusAreaRadius",
+              icon: window.getUiIconSvg("int", 11),
+              label: "Area Radius",
+              isPct: true,
+            },
     ];
     statsToCompare.forEach((s) => {
       let curVal = item[s.key] || 0;
@@ -2716,20 +2726,21 @@
       }
     } else if (window.forgeMode === "reforge") {
       let bonusKeys = [
-        "bonusAtk",
-        "bonusMaxHp",
-        "bonusDef",
-        "bonusMoveSpeed",
-        "bonusCritChance",
-        "bonusCritDamage",
-        "bonusBlock",
-        "bonusParry",
-        "bonusActiveSpeed",
-        "bonusIdleSpeed",
-        "bonusStr",
-        "bonusDex",
-        "bonusInt",
-      ];
+              "bonusAtk",
+              "bonusMaxHp",
+              "bonusDef",
+              "bonusMoveSpeed",
+              "bonusCritChance",
+              "bonusCritDamage",
+              "bonusBlock",
+              "bonusParry",
+              "bonusActiveSpeed",
+              "bonusIdleSpeed",
+              "bonusStr",
+              "bonusDex",
+              "bonusInt",
+              "bonusAreaRadius",
+            ];
       let activeBonuses = bonusKeys.filter((k) => item[k] !== 0);
 
       if (activeBonuses.length === 0) {
@@ -2755,13 +2766,14 @@
           let affixButtonsHtml = activeBonuses
             .map((bKey) => {
               let isPct = [
-                "bonusCritChance",
-                "bonusCritDamage",
-                "bonusBlock",
-                "bonusParry",
-                "bonusActiveSpeed",
-                "bonusIdleSpeed",
-              ].includes(bKey);
+                              "bonusCritChance",
+                              "bonusCritDamage",
+                              "bonusBlock",
+                              "bonusParry",
+                              "bonusActiveSpeed",
+                              "bonusIdleSpeed",
+                              "bonusAreaRadius",
+                            ].includes(bKey);
               let valText = isPct
                 ? `${Math.round(item[bKey] * 100)}%`
                 : item[bKey] > 0
@@ -3268,9 +3280,10 @@
         bonusActiveSpeed: 0,
         bonusIdleSpeed: 0,
         bonusStr: 0,
-        bonusDex: 0,
-        bonusInt: 0,
-        str: 0,
+                bonusDex: 0,
+                bonusInt: 0,
+                bonusAreaRadius: 0,
+                str: 0,
         dex: 0,
         int: 0,
         strPct: 0,
@@ -3341,40 +3354,30 @@
           item.baseDef = Math.ceil(5.0 * repScale * baseRarityMult);
           item.baseMoveSpeed = Math.ceil(1.0 * stageScale);
         } else if (item.type === "ring") {
-          // Decoupled Wildcard Implicit Ring Generation - Supplemental, balanced linear scaling
-          let flatRoll = Math.random();
-          if (flatRoll < 0.33) {
-            item.implicitType = "atk";
-            item.baseAtk = Math.ceil(0.6 * repScale * baseRarityMult);
-          } else if (flatRoll < 0.66) {
-            item.implicitType = "maxHp";
-            item.baseMaxHp = Math.ceil(1.5 * repScale * baseRarityMult);
-          } else {
-            item.implicitType = "def";
-            item.baseDef = Math.ceil(0.35 * repScale * baseRarityMult);
-          }
+                  // Re-balanced Ring Generation with Asymptotic Percentage Soft-Cap and 25% Flat Base Ratio
+                  let flatRoll = Math.random();
+                  if (flatRoll < 0.33) {
+                    item.implicitType = "atk";
+                    item.baseAtk = Math.ceil(4.0 * repScale * baseRarityMult);
+                  } else if (flatRoll < 0.66) {
+                    item.implicitType = "maxHp";
+                    item.baseMaxHp = Math.ceil(10.0 * repScale * baseRarityMult);
+                  } else {
+                    item.implicitType = "def";
+                    item.baseDef = Math.ceil(2.5 * repScale * baseRarityMult);
+                  }
 
-          let pctRoll = Math.random();
-          let scaleFactor = Math.pow(stageScale, 0.8);
-          if (pctRoll < 0.16) {
-            item.atkPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          } else if (pctRoll < 0.32) {
-            item.maxHpPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          } else if (pctRoll < 0.48) {
-            item.defPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          } else if (pctRoll < 0.64) {
-            item.strPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          } else if (pctRoll < 0.8) {
-            item.dexPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          } else {
-            item.intPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          }
-        } else if (item.type === "subweapon") {
-          // Standard subweapon base stats are computed dynamically during recalculation.
-        }
-      }
+                  const pctTypes = ["atkPct", "maxHpPct", "defPct", "strPct", "dexPct", "intPct"];
+                  let chosenPctType = pctTypes[Math.floor(Math.random() * pctTypes.length)] || "atkPct";
+                  item.implicitPctType = chosenPctType;
 
-      if (chosenType === "sigil") {
+                  let s = Math.max(1, stageScale);
+                  let implicitPctVal = parseFloat((0.03 + (0.22 * (s - 1)) / ((s - 1) + 40)).toFixed(4));
+                  item[chosenPctType] = implicitPctVal;
+                }
+              }
+
+              if (chosenType === "sigil") {
         let stars = statLinesCount;
         let buffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
         let debuffsCount = stars <= 1 ? 1 : stars <= 3 ? 2 : 3;
@@ -3546,30 +3549,31 @@
       } else if (chosenType === "chest" || chosenType === "overall") {
         pool = ["maxHp", "def", "str", "dex", "int"];
       } else if (chosenType === "helmet") {
-        pool = ["critChance", "activeSpd", "idleSpd"];
+              pool = ["critChance", "activeSpd", "idleSpd", "bonusAreaRadius"];
       } else if (chosenType === "leggings") {
         pool = ["maxHp", "def", "str", "dex", "int"];
       } else if (chosenType === "boots") {
         pool = ["moveSpeed", "idleSpd", "activeSpd"];
       } else if (chosenType === "ring") {
-        // Rings act as the dedicated Flat Base Suffix Engine (restricted strictly to flat rolls)
-        pool = [
-          "atk",
-          "maxHp",
-          "def",
-          "str",
-          "dex",
-          "int",
-          "critChance",
-          "moveSpeed",
-        ];
-      } else if (chosenType === "subweapon") {
-        if (item.subType === "shield") pool = ["block", "moveSpeed"];
-        else if (item.subType === "dagger")
-          pool = ["parry", "critChance", "moveSpeed"];
-        else if (item.subType === "tome")
-          pool = ["critDamage", "activeSpd", "idleSpd", "critChance"];
-      }
+              // Rings act as the dedicated Flat Base Suffix Engine (restricted strictly to flat rolls)
+              pool = [
+                "atk",
+                "maxHp",
+                "def",
+                "str",
+                "dex",
+                "int",
+                "critChance",
+                "moveSpeed",
+                "bonusAreaRadius",
+              ];
+            } else if (chosenType === "subweapon") {
+              if (item.subType === "shield") pool = ["block", "moveSpeed", "bonusAreaRadius"];
+              else if (item.subType === "dagger")
+                pool = ["parry", "critChance", "moveSpeed", "bonusAreaRadius"];
+              else if (item.subType === "tome")
+                pool = ["critDamage", "activeSpd", "idleSpd", "critChance", "bonusAreaRadius"];
+            }
 
       pool.sort(() => Math.random() - 0.5);
       // Differentiate flat stats (exponentially scaled) from percentage stats (mildly scaled) to prevent breaking caps
@@ -3718,17 +3722,23 @@
             ).toFixed(4),
           );
         } else if (selectedStat === "fairySpawn") {
-          let utilityScale =
-            1.0 + Math.sqrt(Math.max(1, stageScale) - 1) * 0.12;
-          item.fairySpawn += parseFloat(
-            (
-              window.randFloat(0.02, 0.06) *
-              pctRarityMult *
-              prestigeMult *
-              utilityScale
-            ).toFixed(4),
-          );
-        }
+                  let utilityScale =
+                    1.0 + Math.sqrt(Math.max(1, stageScale) - 1) * 0.12;
+                  item.fairySpawn += parseFloat(
+                    (
+                      window.randFloat(0.02, 0.06) *
+                      pctRarityMult *
+                      prestigeMult *
+                      utilityScale
+                    ).toFixed(4),
+                  );
+                } else if (selectedStat === "bonusAreaRadius") {
+                  let rolled =
+                    window.randFloat(0.04, 0.10) *
+                    pctRarityMult *
+                    prestigeMult;
+                  item.bonusAreaRadius += parseFloat(rolled.toFixed(4));
+                }
       }
 
       item.atk = (item.baseAtk || 0) + item.bonusAtk;
@@ -4028,10 +4038,13 @@
         min += 0.02 * rarityMult * utilityScale;
         max += 0.05 * rarityMult * utilityScale;
       } else if (statKey === "fairySpawn" && item.fairySpawn > 0) {
-        let utilityScale = 1.0 + Math.sqrt(Math.max(1, stageLevel) - 1) * 0.12;
-        min += 0.02 * rarityMult * utilityScale;
-        max += 0.06 * rarityMult * utilityScale;
-      }
+              let utilityScale = 1.0 + Math.sqrt(Math.max(1, stageLevel) - 1) * 0.12;
+              min += 0.02 * rarityMult * utilityScale;
+              max += 0.06 * rarityMult * utilityScale;
+            } else if (statKey === "bonusAreaRadius" && item.bonusAreaRadius > 0) {
+              min += 0.04 * rarityMult;
+              max += 0.10 * rarityMult;
+            }
 
       const unscaledStats = ["activeAttackSpeed", "idleAttackSpeed"];
       if (!unscaledStats.includes(statKey)) {
@@ -4231,14 +4244,15 @@
       ];
 
       const pctKeys = [
-        "bonusMoveSpeed",
-        "bonusCritChance",
-        "bonusCritDamage",
-        "bonusBlock",
-        "bonusParry",
-        "bonusActiveSpeed",
-        "bonusIdleSpeed",
-      ];
+              "bonusMoveSpeed",
+              "bonusCritChance",
+              "bonusCritDamage",
+              "bonusBlock",
+              "bonusParry",
+              "bonusActiveSpeed",
+              "bonusIdleSpeed",
+              "bonusAreaRadius",
+            ];
 
       flatKeys.forEach((k) => {
         if (item[k]) {
@@ -4291,8 +4305,9 @@
       item.bonusActiveSpeed = item.bonusActiveSpeed || 0;
       item.bonusIdleSpeed = item.bonusIdleSpeed || 0;
       item.bonusStr = item.bonusStr || 0;
-      item.bonusDex = item.bonusDex || 0;
-      item.bonusInt = item.bonusInt || 0;
+            item.bonusDex = item.bonusDex || 0;
+            item.bonusInt = item.bonusInt || 0;
+            item.bonusAreaRadius = item.bonusAreaRadius || 0;
 
       // Self-Healing Integrity Check: Scan and downscale legacy over-bloated flat attribute rolls in existing saved game data
       let maxSaneBonus = Math.round(2 + stageScale * 0.75);
@@ -4481,32 +4496,42 @@
             item.baseMoveSpeed = baseSpdVal;
           }
         } else if (item.type === "ring") {
-          if (item.implicitType === undefined) {
-            if (item.baseAtk > 0) item.implicitType = "atk";
-            else if (item.baseMaxHp > 0) item.implicitType = "maxHp";
-            else item.implicitType = "def";
-          }
-          if (item.implicitType === "atk")
-            item.baseAtk = Math.ceil(0.6 * repScale * baseRarityMult);
-          else if (item.implicitType === "maxHp")
-            item.baseMaxHp = Math.ceil(1.5 * repScale * baseRarityMult);
-          else if (item.implicitType === "def")
-            item.baseDef = Math.ceil(0.35 * repScale * baseRarityMult);
+                    if (item.implicitType === undefined) {
+                      if (item.baseAtk > 0) item.implicitType = "atk";
+                      else if (item.baseMaxHp > 0) item.implicitType = "maxHp";
+                      else item.implicitType = "def";
+                    }
+                    if (item.implicitType === "atk")
+                      item.baseAtk = Math.ceil(4.0 * repScale * baseRarityMult);
+                    else if (item.implicitType === "maxHp")
+                      item.baseMaxHp = Math.ceil(10.0 * repScale * baseRarityMult);
+                    else if (item.implicitType === "def")
+                      item.baseDef = Math.ceil(2.5 * repScale * baseRarityMult);
 
-          let scaleFactor = Math.pow(stageScale, 0.8);
-          if (item.atkPct > 0)
-            item.atkPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          if (item.maxHpPct > 0)
-            item.maxHpPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          if (item.defPct > 0)
-            item.defPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          if (item.strPct > 0)
-            item.strPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          if (item.dexPct > 0)
-            item.dexPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-          if (item.intPct > 0)
-            item.intPct = parseFloat((0.04 * scaleFactor).toFixed(4));
-        } else if (
+                    if (!item.implicitPctType) {
+                      if ((item.atkPct || 0) > 0) item.implicitPctType = "atkPct";
+                      else if ((item.maxHpPct || 0) > 0) item.implicitPctType = "maxHpPct";
+                      else if ((item.defPct || 0) > 0) item.implicitPctType = "defPct";
+                      else if ((item.strPct || 0) > 0) item.implicitPctType = "strPct";
+                      else if ((item.dexPct || 0) > 0) item.implicitPctType = "dexPct";
+                      else if ((item.intPct || 0) > 0) item.implicitPctType = "intPct";
+                      else item.implicitPctType = "atkPct";
+                    }
+
+                    let s = Math.max(1, stageScale);
+                    let implicitPctVal = parseFloat((0.03 + (0.22 * (s - 1)) / ((s - 1) + 40)).toFixed(4));
+
+                    item.atkPct = 0;
+                    item.maxHpPct = 0;
+                    item.defPct = 0;
+                    item.strPct = 0;
+                    item.dexPct = 0;
+                    item.intPct = 0;
+
+                    if (item.implicitPctType) {
+                      item[item.implicitPctType] = implicitPctVal;
+                    }
+                  } else if (
           item.type === "subweapon" &&
           !item.isUniqueAegis &&
           !item.isUniqueWatch &&
@@ -4576,32 +4601,44 @@
               item.bleedChance = 0.15;
             }
           } else if (item.subType === "tome") {
-            item.baseInt = Math.ceil(1.5 * stageScale * baseRarityMult);
-            item.baseAtk = Math.ceil(0.4 * repScale * baseRarityMult);
-            let noun = item.noun ? item.noun.toLowerCase() : "";
-            let stars =
-              typeof item.statsRolled === "number" ? item.statsRolled : 0;
-            if (noun.includes("grimoire")) item.spellType = "fire";
-            else if (noun.includes("codex")) item.spellType = "lightning";
-            else if (noun.includes("lexicon")) item.spellType = "frost";
-            else if (noun.includes("spellbook") || noun.includes("chronicle"))
-              item.spellType = "tri";
-            else if (!item.spellType) item.spellType = "tri";
+                      item.baseInt = Math.ceil(1.5 * stageScale * baseRarityMult);
+                      item.baseAtk = Math.ceil(0.4 * repScale * baseRarityMult);
+                      let noun = item.noun ? item.noun.toLowerCase() : "";
+                      let stars =
+                        typeof item.statsRolled === "number" ? item.statsRolled : 0;
+                      if (noun.includes("grimoire")) item.spellType = "fire";
+                      else if (noun.includes("codex")) item.spellType = "lightning";
+                      else if (noun.includes("lexicon")) item.spellType = "frost";
+                      else if (noun.includes("spellbook") || noun.includes("chronicle"))
+                        item.spellType = "tri";
+                      else if (!item.spellType) item.spellType = "tri";
 
-            if (item.spellType === "fire") {
-              item.spellChance = Math.min(0.5, 0.25 + stars * 0.02);
-              item.spellPower = 1.8 + stars * 0.2;
-            } else if (item.spellType === "lightning") {
-              item.spellChance = Math.min(0.6, 0.38 + stars * 0.03);
-              item.spellPower = 1.2 + stars * 0.15;
-            } else if (item.spellType === "frost") {
-              item.spellChance = Math.min(0.5, 0.3 + stars * 0.025);
-              item.spellPower = 1.45 + stars * 0.15;
-            } else {
-              item.spellChance = Math.min(0.5, 0.33 + stars * 0.02);
-              item.spellPower = 1.5 + stars * 0.18;
-            }
-          }
+                      if (item.spellType === "fire") {
+                        item.spellChance = Math.min(0.5, 0.25 + stars * 0.02);
+                        item.spellPower = 1.8 + stars * 0.2;
+                        item.baseBarrierPct = 0.20;
+                        item.barrierRechargeDelay = 3.0;
+                        item.barrierRegenRate = 0.10;
+                      } else if (item.spellType === "lightning") {
+                        item.spellChance = Math.min(0.6, 0.38 + stars * 0.03);
+                        item.spellPower = 1.2 + stars * 0.15;
+                        item.baseBarrierPct = 0.15;
+                        item.barrierRechargeDelay = 2.0;
+                        item.barrierRegenRate = 0.15;
+                      } else if (item.spellType === "frost") {
+                        item.spellChance = Math.min(0.5, 0.3 + stars * 0.025);
+                        item.spellPower = 1.45 + stars * 0.15;
+                        item.baseBarrierPct = 0.30;
+                        item.barrierRechargeDelay = 4.0;
+                        item.barrierRegenRate = 0.08;
+                      } else {
+                        item.spellChance = Math.min(0.5, 0.33 + stars * 0.02);
+                        item.spellPower = 1.5 + stars * 0.18;
+                        item.baseBarrierPct = 0.25;
+                        item.barrierRechargeDelay = 3.0;
+                        item.barrierRegenRate = 0.10;
+                      }
+                    }
         }
       } else if (item.type === "artifact") {
         // Artifact parameters are managed statically on drop; preserve them as is
@@ -4980,16 +5017,17 @@
           "int",
         ];
       } else {
-        pool = [
-          "critChance",
-          "critDamage",
-          "block",
-          "parry",
-          "moveSpeed",
-          "activeSpd",
-          "idleSpd",
-        ];
-      }
+              pool = [
+                "critChance",
+                "critDamage",
+                "block",
+                "parry",
+                "moveSpeed",
+                "activeSpd",
+                "idleSpd",
+                "bonusAreaRadius",
+              ];
+            }
       if (item.type === "subweapon") {
         if (item.subType === "shield")
           pool = ["block", "atk", "maxHp", "def", "str"];
@@ -5128,12 +5166,19 @@
             prestigeMult,
         );
       else if (selectedStat === "int")
-        item.bonusInt += Math.ceil(
-          window.randFloat(0.4, 0.8) *
-            (3 + Math.pow(stageScale, 0.75)) *
-            rarityMult *
-            prestigeMult,
-        );
+              item.bonusInt += Math.ceil(
+                window.randFloat(0.4, 0.8) *
+                  (3 + Math.pow(stageScale, 0.75)) *
+                  rarityMult *
+                  prestigeMult,
+              );
+            else if (selectedStat === "bonusAreaRadius") {
+              let rolled =
+                window.randFloat(0.04, 0.10) *
+                rarityMult *
+                prestigeMult;
+              item.bonusAreaRadius += parseFloat(rolled.toFixed(4));
+            }
 
       window.recalculateItemStats(item);
     },
@@ -6621,6 +6666,8 @@
         bonusStr: "Strength",
         bonusDex: "Dexterity",
         bonusInt: "Intelligence",
+                bonusAreaRadius: "Area Radius",
+                areaRadiusMult: "Area Radius",
 
         atk: "Attack",
         maxHp: "Max HP",
@@ -6734,20 +6781,21 @@
       item[rProp] = 0;
 
       let mapping = {
-        bonusAtk: "atk",
-        bonusMaxHp: "maxHp",
-        bonusDef: "def",
-        bonusMoveSpeed: "moveSpeed",
-        bonusCritChance: "critChance",
-        bonusCritDamage: "critDamage",
-        bonusBlock: "block",
-        bonusParry: "parry",
-        bonusActiveSpeed: "activeAttackSpeed",
-        bonusIdleSpeed: "idleAttackSpeed",
-        bonusStr: "str",
-        bonusDex: "dex",
-        bonusInt: "int",
-      };
+              bonusAtk: "atk",
+              bonusMaxHp: "maxHp",
+              bonusDef: "def",
+              bonusMoveSpeed: "moveSpeed",
+              bonusCritChance: "critChance",
+              bonusCritDamage: "critDamage",
+              bonusBlock: "block",
+              bonusParry: "parry",
+              bonusActiveSpeed: "activeAttackSpeed",
+              bonusIdleSpeed: "idleAttackSpeed",
+              bonusStr: "str",
+              bonusDex: "dex",
+              bonusInt: "int",
+              bonusAreaRadius: "bonusAreaRadius",
+            };
 
       let possiblePool = Object.keys(mapping);
       if (item.type === "subweapon") {
@@ -6857,7 +6905,9 @@
       else if (newProp === "bonusDex")
         rolledValue = Math.ceil(window.randInt(1, 3) * stageScale * rarityMult);
       else if (newProp === "bonusInt")
-        rolledValue = Math.ceil(window.randInt(1, 3) * stageScale * rarityMult);
+              rolledValue = Math.ceil(window.randInt(1, 3) * stageScale * rarityMult);
+            else if (newProp === "bonusAreaRadius")
+              rolledValue = parseFloat((window.randFloat(0.04, 0.10) * rarityMult).toFixed(4));
 
       item[newProp] = rolledValue;
       item.reforgedProperty = newProp;
@@ -7002,13 +7052,14 @@
     }
 
     let checkpoints = window.playerStats.unlockedCheckpoints || [1];
-    let highestCheckpoint = checkpoints[checkpoints.length - 1] || 1;
-    let newItem = window.createItemObject(
-      chosenType,
-      statLinesCount,
-      highestCheckpoint,
-      0,
-    );
+        let highestCheckpoint = checkpoints[checkpoints.length - 1] || 1;
+        let itemLevel = window.getFloorItemLevel ? window.getFloorItemLevel(highestCheckpoint) : highestCheckpoint;
+        let newItem = window.createItemObject(
+          chosenType,
+          statLinesCount,
+          itemLevel,
+          0,
+        );
 
     if (newItem.type === "artifact") {
       window.inventory.ARTIFACT.push(newItem);
@@ -7116,7 +7167,8 @@
     }
 
     let checkpoints = window.playerStats.unlockedCheckpoints || [1];
-    let stageScale = checkpoints[checkpoints.length - 1] || 1;
+        let highestFloor = checkpoints[checkpoints.length - 1] || 1;
+        let stageScale = window.getFloorItemLevel ? window.getFloorItemLevel(highestFloor) : highestFloor;
     let shopLvl = window.playerStats.shopQLevel || 0;
 
     let types = [
@@ -8302,9 +8354,19 @@
     if (typeof window.saveGame === "function") window.saveGame();
   };
 
-  // Immediate execution after script load
-  window.recalculateAllInventoryItems();
-})();
+  if (window.ARTIFACT_POOL && !window.ARTIFACT_POOL.some((a) => a.trait === "astral_expansion")) {
+      window.ARTIFACT_POOL.push({
+        trait: "astral_expansion",
+        name: "Aetheric Lens",
+        tier: 2,
+        desc: "Expands all Shield, Dagger, and Tome AoE radii by +25%. Passive +5 INT.",
+        breakdown: "Expands area of effect radii for all offhand abilities, attacks, and spells.",
+      });
+    }
+
+    // Immediate execution after script load
+    window.recalculateAllInventoryItems();
+  })();
 
 window.executeParagonUpgrade = function () {
   let p = window.playerStats;
@@ -9125,7 +9187,9 @@ window.getDynamicArtifactDescription = function (item) {
     case "synergy_nexus":
       return `Equipping specific offhands unlocks dual-resonance: Shields have ${u(20)}% cast-on-block spell chance; Dagger parries reset Field Flask; Tomes boost Block/Parry by ${u(5)}% for 3s. Passive +${b(4)} INT.`;
     case "synergy_sanguine":
-      return `Increases all damage dealt to targets by +${(8 * slotMult).toFixed(1)}% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +${p(0.03)}% base Crit Chance.`;
+          return `Increases all damage dealt to targets by +${(8 * slotMult).toFixed(1)}% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +${p(0.03)}% base Crit Chance.`;
+        case "astral_expansion":
+          return `Expands all Shield, Dagger, and Tome AoE radii by +${p(0.25)}%. Passive +${b(5)} INT.`;
     default:
       return item.breakdown || item.desc || "";
   }
