@@ -12429,13 +12429,26 @@
         p.stage || 1,
         p.maxFloorCleared || 1,
       );
-      let stageScale = peakRunStage;
+      let itemLevel = window.getFloorItemLevel
+        ? window.getFloorItemLevel(peakRunStage)
+        : Math.floor(peakRunStage / 4) + 1;
+      let stageScale = itemLevel;
+
       let rolledRarity = window.rollItemRarity(
         peakRunStage,
         p.baseQuality || 1.0,
         false,
       );
-      let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
+      let types = [
+        "weapon",
+        "subweapon",
+        "helmet",
+        "chest",
+        "leggings",
+        "overall",
+        "boots",
+        "ring",
+      ];
       let chosenType = types[Math.floor(Math.random() * types.length)];
       let newItem = window.createItemObject(
         chosenType,
@@ -12444,14 +12457,26 @@
         0,
       );
 
-      // Grant 1-2 random Basic Elixirs on opening sacks
+      // Sack Variant Logic (Renown & Materials)
+      let isWeeklySack =
+        name === "Weekly Reward Sack" || name === "Clan Weekly Sack";
+      if (isWeeklySack) {
+        p.renown = (p.renown || 0) + 3;
+        window.addEtcDrop("Ancient Core", 1, true);
+      } else if (name === "Daily Reward Sack" || name === "Clan Reward Sack") {
+        p.renown = (p.renown || 0) + 1;
+      }
+
+      // Grant random Basic Elixirs on opening sacks
       const basicElixirs = [
         "Basic Attack Elixir",
         "Basic Vitality Elixir",
         "Basic Armored Elixir",
         "Basic Haste Elixir",
       ];
-      let numElixirs = window.randInt(1, 2);
+      let numElixirs = isWeeklySack
+        ? window.randInt(2, 3)
+        : window.randInt(1, 2);
       let chosenElixirs = [];
       for (let eIdx = 0; eIdx < numElixirs; eIdx++) {
         let chosenElixir =
@@ -23006,6 +23031,17 @@
       };
     }
 
+    // Calculate Set Counts for UI badges
+    let setCounts = {};
+    const eligibleSetSlots = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
+    eligibleSetSlots.forEach(slot => {
+      let item = window.equippedSlots[slot];
+      if (item) {
+        let setName = window.getItemSetName ? window.getItemSetName(item) : (item.setName || null);
+        if (setName) setCounts[setName] = (setCounts[setName] || 0) + (slot === "overall" ? 2 : 1);
+      }
+    });
+
     paperdollEl.innerHTML = slotKeys
       .map((s) => {
         let item = window.equippedSlots[s.key];
@@ -23040,6 +23076,14 @@
         let iconHtml = window.getItemIconSvg(item, 28);
         let isInsured = !!item.locked;
 
+        let setName = window.getItemSetName ? window.getItemSetName(item) : (item.setName || null);
+        let setBadge = "";
+        if (setName && setCounts[setName]) {
+           let setDef = window.SET_DEFINITIONS ? window.SET_DEFINITIONS[setName] : null;
+           let maxSet = (setDef && setDef.bonuses) ? setDef.bonuses[setDef.bonuses.length-1].count : 3;
+           setBadge = `<span class="set-badge">${setName} [${setCounts[setName]}/${maxSet}]</span>`;
+        }
+
         let insureBtn = `<button class="action-btn-sm ${isInsured ? "action-btn-insured" : "action-btn-insure"}" onclick="event.stopPropagation(); window.toggleInsurance(${item.id})">${isInsured ? "[ BOUND ]" : "SOUL BIND"}</button>`;
 
         let actionHtml = isHub
@@ -23055,7 +23099,7 @@
                                       <div class="paperdoll-slot" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, window.equippedSlots['${s.key}'])">
                                         ${iconHtml}
                                         <div class="item-info">
-                                          <span class="item-title" style="color:${col};">${item.name}</span>
+                                          <span class="item-title" style="color:${col};">${item.name} ${setBadge}</span>
                                           <span class="item-sub">LV.${item.stageLevel || 1} • ${starsLabel} ${lvl > 0 ? `<strong style="color: #df9ffb;">(ATN +${lvl}%)</strong>` : ""}</span>
                                         </div>
                                         <div class="item-actions">
@@ -23098,6 +23142,14 @@
               : "";
             let isInsured = !!item.locked;
 
+        let setName = window.getItemSetName ? window.getItemSetName(item) : (item.setName || null);
+        let setBadge = "";
+        if (setName && setCounts[setName]) {
+           let setDef = window.SET_DEFINITIONS ? window.SET_DEFINITIONS[setName] : null;
+           let maxSet = (setDef && setDef.bonuses) ? setDef.bonuses[setDef.bonuses.length-1].count : 3;
+           setBadge = `<span class="set-badge">${setName} [${setCounts[setName]}/${maxSet}]</span>`;
+        }
+
             let statPreview = [];
             if (item.atk)
               statPreview.push(
@@ -23137,7 +23189,7 @@
                                           <div class="stash-card" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, ${isHub ? "window.inventory.EQUIP" : "window.player.bag"}[${actualIdx}])">
                                             ${iconHtml}
                             <div class="item-info">
-                              <span class="item-title" style="color:${col};">${item.name}</span>
+                              <span class="item-title" style="color:${col};">${item.name} ${setBadge}</span>
                               <span class="item-sub">${typeLabel} • LV.${item.stageLevel || 1}</span>
                               <span class="item-sub" style="color:#2ecc71;">${statStr}</span>
                             </div>
@@ -23171,6 +23223,14 @@
               : "";
             let isInsured = !!item.locked;
 
+        let setName = window.getItemSetName ? window.getItemSetName(item) : (item.setName || null);
+        let setBadge = "";
+        if (setName && setCounts[setName]) {
+           let setDef = window.SET_DEFINITIONS ? window.SET_DEFINITIONS[setName] : null;
+           let maxSet = (setDef && setDef.bonuses) ? setDef.bonuses[setDef.bonuses.length-1].count : 3;
+           setBadge = `<span class="set-badge">${setName} [${setCounts[setName]}/${maxSet}]</span>`;
+        }
+
             let salvageBtn = `<button class="action-btn-sm action-btn-salvage" onclick="event.stopPropagation(); window.salvageItem(${item.id}); window.renderProfileModal();">SALVAGE</button>`;
 
             let arrayName = isHub
@@ -23196,7 +23256,7 @@
                   <div class="stash-card" style="border-left:3px solid ${col}; cursor:pointer;" onclick="window.showItemTooltip(event, ${arrayName}[${tooltipIdx}])">
                     ${iconHtml}
                     <div class="item-info">
-                      <span class="item-title" style="color:${col};">${item.name}</span>
+                      <span class="item-title" style="color:${col};">${item.name} ${setBadge}</span>
                       <span class="item-sub">SIGIL • LV.${item.stageLevel || 1}</span>
                       <span class="item-sub" style="color:#a855f7;">Focus: +${((item.rewardMultiplier || 0) * 100).toFixed(0)}% Rewards</span>
                     </div>
@@ -24439,6 +24499,14 @@
             ? window.getItemIconSvg(item, 32)
             : "";
           let isInsured = !!item.locked;
+
+        let setName = window.getItemSetName ? window.getItemSetName(item) : (item.setName || null);
+        let setBadge = "";
+        if (setName && setCounts[setName]) {
+           let setDef = window.SET_DEFINITIONS ? window.SET_DEFINITIONS[setName] : null;
+           let maxSet = (setDef && setDef.bonuses) ? setDef.bonuses[setDef.bonuses.length-1].count : 3;
+           setBadge = `<span class="set-badge">${setName} [${setCounts[setName]}/${maxSet}]</span>`;
+        }
 
           let statPreview = [];
           if (item.atk)
