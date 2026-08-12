@@ -1354,14 +1354,7 @@
           if (rolledRarity < minRarity) {
             rolledRarity = minRarity;
           }
-          let types = [
-            "weapon",
-            "subweapon",
-            "helmet",
-            "chest",
-            "boots",
-            "ring",
-          ];
+          let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
           let chosenType = types[Math.floor(Math.random() * types.length)];
           let newItem = window.createItemObject(
             chosenType,
@@ -7936,7 +7929,7 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
               <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
+                <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR ${effBadge}</label>
                 <div style="background: #0f172a; color: #ffd700; border: 1px solid #1e293b; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%;">Floor 1 (Contract Core Entry)</div>
               </div>
               <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
@@ -7952,6 +7945,22 @@
         let selectedFloor = window.state.deploymentFloor || 1;
         let rec = window.playerStats && window.playerStats.recoveryLoot;
 
+        let effBadge = "";
+        let activeSub = window.equippedSlots && window.equippedSlots.subweapon;
+        if (activeSub) {
+          let subType = activeSub.subType || activeSub.type;
+          let mast = window.playerStats.subweaponMastery[subType];
+          let pLevel = window.playerStats.level || 1;
+          if (mast) {
+            if (pLevel - selectedFloor > 20) { effBadge = ` <span style="color:#ef4444; font-size:9px; font-weight:bold;">[TRIVIAL (0 XP)]</span>`; }
+            else {
+              let diff = selectedFloor - mast.level;
+              if (diff > 5) { let bonus = Math.min(100, (diff - 5) * 10); effBadge = ` <span style="color:#38bdf8; font-size:9px; font-weight:bold;">[HEROIC +${bonus}% XP]</span>`; }
+              else if (diff < -5) { let penalty = Math.min(90, (Math.abs(diff) - 5) * 10); effBadge = ` <span style="color:#facc15; font-size:9px; font-weight:bold;">[INEFFICIENT -${penalty}%]</span>`; }
+              else { effBadge = ` <span style="color:#4ade80; font-size:9px; font-weight:bold;">[IDEAL XP]</span>`; }
+            }
+          }
+        }
         let floorOptions = checkpoints
           .map((startFloor) => {
             let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
@@ -8034,7 +8043,7 @@
                       </div>
                       <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                         <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR</label>
+                          <label style="font-family: monospace; font-size: 8.5px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">1. TARGET DUNGEON FLOOR ${effBadge}</label>
                           <select id="deploy-floor-select" style="background: #1e293b; color: #ffd700; border: 1px solid #334155; padding: 8px; border-radius: 6px; font-weight: bold; font-family: monospace; font-size: 11px; width: 100%; outline: none;" onchange="window.changeDeploymentFloor(this.value)">
                             ${floorOptions}
                           </select>
@@ -12355,7 +12364,7 @@
       );
       let stageScale = peakRunStage;
       let newItem = null;
-      let types = ["weapon", "subweapon", "helmet", "chest", "boots"];
+      let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots"];
 
       // Roll until a unique is found
       for (let attempt = 0; attempt < 2000; attempt++) {
@@ -12426,7 +12435,7 @@
         p.baseQuality || 1.0,
         false,
       );
-      let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
+      let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
       let chosenType = types[Math.floor(Math.random() * types.length)];
       let newItem = window.createItemObject(
         chosenType,
@@ -15517,8 +15526,8 @@
         let activeSpellType = pStats.spellType || "tri";
 
         if (isTomeEquipped && Math.random() < activeSpellChance) {
-          // Gain +1 Tome Mastery XP on Spell Proc
-          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
+          // Gain +3 Tome Mastery XP on Spell Proc (Buffed)
+          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 3);
 
           if (typeof window.progressMission === "function") {
             window.progressMission("spells", 1);
@@ -16464,14 +16473,7 @@
             let chestGold = Math.floor(chestGoldVal * (1 + stageScale * 1.0));
             window.spawnHomingGold(mobCenterX, mobCenterY, chestGold);
 
-            let types = [
-              "weapon",
-              "subweapon",
-              "helmet",
-              "chest",
-              "boots",
-              "ring",
-            ];
+            let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
             for (let i = 0; i < extraLootCount; i++) {
               let rolledRarity = window.rollItemRarity(
                 stageScale * 8,
@@ -16920,14 +16922,7 @@
                         pStats.qly || 1.0,
                         false,
                       );
-                      let types = [
-                        "weapon",
-                        "subweapon",
-                        "helmet",
-                        "chest",
-                        "boots",
-                        "ring",
-                      ];
+                      let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
                       let chosenType = types[Math.floor(Math.random() * types.length)];
                       let droppedItem = window.createItemObject(
                         chosenType,
@@ -17600,8 +17595,8 @@
         let activeSpellType = pStats.spellType || "tri";
 
         if (isTomeEquipped && Math.random() < activeSpellChance) {
-          // Gain +1 Tome Mastery XP on Spell Proc (Boss)
-          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 1);
+          // Gain +3 Tome Mastery XP on Spell Proc (Buffed) (Boss)
+          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 3);
 
           let spellDmg = BigNum.from(pStats.atk || 15).mul(
             pStats.spellPower || 1.5,
@@ -18163,14 +18158,7 @@
                           !window.playerStats.activeSpecialChallenge
                         ) {
                           let itemLevel = window.getFloorItemLevel ? window.getFloorItemLevel(depth) : Math.floor(depth / 4) + 1;
-                          let types = [
-                            "weapon",
-                            "subweapon",
-                            "helmet",
-                            "chest",
-                            "boots",
-                            "ring",
-                          ];
+                          let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
                           let chosenType = types[Math.floor(Math.random() * types.length)];
                           let bossEquip;
 
@@ -20328,9 +20316,14 @@
         // Subphase 19: Display active special challenge name and progress
         depthLabel.innerText = `${activeChallenge.name.toUpperCase()} [STAGE ${p.depth} OF 4]`;
       } else {
-        let text = window.playerStats.isCrucibleMode
-          ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}`
-          : `DUNGEON FLOOR ${p.depth}`;
+                let text = window.playerStats.isCrucibleMode ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}` : `DUNGEON FLOOR ${p.depth}`;
+        if (window.lastXpMultiplier !== undefined) {
+          let mult = window.lastXpMultiplier;
+          if (mult === 0) { text += ` <span style="color:#ef4444; font-size:9px;">[TRIVIAL]</span>`; }
+          else if (mult > 1.0) { let bonus = Math.round((mult - 1.0) * 100); text += ` <span style="color:#38bdf8; font-size:9px;">[HEROIC +${bonus}%]</span>`; }
+          else if (mult < 1.0) { let penalty = Math.round((1.0 - mult) * 100); text += ` <span style="color:#facc15; font-size:9px;">[-${penalty}% XP]</span>`; }
+          else { text += ` <span style="color:#4ade80; font-size:9px;">[IDEAL XP]</span>`; }
+        }
 
         let rec = window.playerStats && window.playerStats.recoveryLoot;
         if (rec && rec.floor === p.depth && rec.items && rec.items.length > 0) {
@@ -27906,3 +27899,8 @@
     };
   };
 })();
+
+
+
+
+

@@ -5362,9 +5362,6 @@ Object.assign(window.QuestSystem, {
 
     // Regenerate active missions & Special Challenges
     this.generateDailyMissions();
-    if (window.isWeeklyQuestUnlocked()) {
-      this.generateWeeklyMissions();
-    }
     if (
       window.ChallengeEngine &&
       typeof window.ChallengeEngine.generateRandomChallenges === "function"

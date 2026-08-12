@@ -587,7 +587,7 @@
     generateMerchantStock() {
       this.merchantStock = [];
       let types = ["weapon", "subweapon", "helmet", "chest", "boots", "ring"];
-      let stageScale = this.depth;
+      let stageScale = window.getFloorItemLevel ? window.getFloorItemLevel(this.depth) : Math.floor(this.depth / 4) + 1;
       let pStats =
         typeof window.resolvePlayerStats === "function"
           ? window.resolvePlayerStats()

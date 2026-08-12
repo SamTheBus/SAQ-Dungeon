@@ -7051,6 +7051,10 @@
       }
     }
 
+    if (isGlimmering && chosenType !== "artifact") {
+      statLinesCount = Math.max(3, statLinesCount);
+    }
+
     let checkpoints = window.playerStats.unlockedCheckpoints || [1];
         let highestCheckpoint = checkpoints[checkpoints.length - 1] || 1;
         let itemLevel = window.getFloorItemLevel ? window.getFloorItemLevel(highestCheckpoint) : highestCheckpoint;

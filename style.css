@@ -6292,3 +6292,19 @@ summary {
   border-color: #ffd700;
   color: #ffd700;
 }
+
+/* --- ITEM SET BADGE STYLES --- */
+.set-badge {
+  display: inline-block;
+  background: rgba(168, 85, 247, 0.2);
+  color: #df9ffb;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  padding: 1.5px 4px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: bold;
+  font-family: monospace;
+  margin-top: 2px;
+  line-height: 1;
+}
+
