@@ -3,10 +3,10 @@
    Renders 2D branching node graphs with vector icons and celestial connections.
    ========================================================================= */
 
-(function () {
   // Global defensive fallback to prevent TypeError crashes during destructive confirmations
+  let showCustomConfirm = window.showCustomConfirm;
   if (typeof window.showCustomConfirm !== "function") {
-    window.showCustomConfirm = function (
+    showCustomConfirm = function (
       title,
       message,
       confirmText,
@@ -20,9 +20,10 @@
         if (typeof onConfirm === "function") onConfirm();
       }
     };
+    window.showCustomConfirm = showCustomConfirm;
   }
 
-  window.getSubweaponXpRequired = function (level) {
+  const getSubweaponXpRequired = function (level) {
     if (level <= 50) {
       // Heavier base (1000) with lower growth (18%) to prevent early surge and late wall
       return Math.round(1000 * Math.pow(1.18, level - 1));
@@ -31,8 +32,9 @@
       return Math.round(3800000 + (level - 50) * 250000);
     }
   };
+  window.getSubweaponXpRequired = getSubweaponXpRequired;
 
-  window.gainSubweaponXp = function (subType, amount) {
+  const gainSubweaponXp = function (subType, amount) {
     if (!window.playerStats || !window.playerStats.subweaponMastery) return;
     let mast = window.playerStats.subweaponMastery[subType];
     if (!mast) return;
@@ -127,8 +129,9 @@
       }
     }
   };
+  window.gainSubweaponXp = gainSubweaponXp;
 
-  window.SKILL_TREE_DATA = {
+  const SKILL_TREE_DATA = {
     shield: {
       id: "shield",
       name: "Shield Mastery",
@@ -1127,8 +1130,9 @@
       ],
     },
   };
+  window.SKILL_TREE_DATA = SKILL_TREE_DATA;
 
-  window.SkillTreeManager = {
+  const SkillTreeManager = {
     selectedNodeId: "shield_starter",
     animFrameId: null,
     panX: 0,
@@ -2029,7 +2033,7 @@
       ctx.restore();
     },
   };
-})();
+  window.SkillTreeManager = SkillTreeManager;
 
 // Retroactive migration for separate Utility SP (USP)
 if (window.playerStats && window.playerStats.usp === undefined) {
@@ -2052,13 +2056,13 @@ if (window.playerStats && window.playerStats.usp === undefined) {
   }
 }
 
-(function () {
+let resolvePlayerStats = window.resolvePlayerStats;
   if (
-    window.resolvePlayerStats &&
-    !window.resolvePlayerStats.__wrappedBySkills
+    resolvePlayerStats &&
+    !resolvePlayerStats.__wrappedBySkills
   ) {
-    const originalResolve = window.resolvePlayerStats;
-    window.resolvePlayerStats = function (isDraft = false) {
+    const originalResolve = resolvePlayerStats;
+    resolvePlayerStats = function (isDraft = false) {
       let rawStats = originalResolve ? originalResolve(isDraft) : {};
       if (!rawStats) return rawStats;
 
@@ -2067,30 +2071,35 @@ if (window.playerStats && window.playerStats.usp === undefined) {
 
             const safeNum = (val, fallback = 0) => {
               if (val === null || val === undefined) return fallback;
-              if (typeof val === "number") return isNaN(val) ? fallback : val;
+              if (typeof val === "number")
+                return Number.isFinite(val) ? val : fallback;
               if (typeof val === "object") {
                 if (typeof val.toNumber === "function") {
                   let res = val.toNumber();
-                  if (typeof res === "number" && !isNaN(res)) return res;
+                  if (typeof res === "number" && Number.isFinite(res))
+                    return res;
                 }
                 if (typeof val.valueOf === "function") {
                   let v = val.valueOf();
-                  if (typeof v === "number" && !isNaN(v)) return v;
+                  if (typeof v === "number" && Number.isFinite(v)) return v;
                 }
                 if (val.m !== undefined && val.e !== undefined) {
                   let res = val.m * Math.pow(10, val.e);
-                  if (!isNaN(res)) return res;
+                  if (Number.isFinite(res)) return res;
                 }
               }
               let parsed = parseFloat(val);
-              return isNaN(parsed) ? fallback : parsed;
+              return Number.isFinite(parsed) ? parsed : fallback;
             };
 
-            // Ensure core base numerical attributes are primitive numbers
+            const safeBigNum = (val, fallback = 0) =>
+              BigNum.from(val === null || val === undefined ? fallback : val);
+
+            // Preserve infinitely scaling combat stats as BigNum values.
             stats.int = safeNum(stats.int, 5);
-            stats.atk = safeNum(stats.atk, 15);
-            stats.def = safeNum(stats.def, 5);
-            stats.maxHp = safeNum(stats.maxHp, 100);
+            stats.atk = safeBigNum(stats.atk, 15);
+            stats.def = safeBigNum(stats.def, 5);
+            stats.maxHp = safeBigNum(stats.maxHp, 100);
             stats.spellPower = safeNum(stats.spellPower, 1.5);
 
             let getLevel = (id) =>
@@ -2122,11 +2131,11 @@ if (window.playerStats && window.playerStats.usp === undefined) {
             // 1. Shield Tree Branching Nodes
             let shieldHpLvl = getLevel("shield_hp");
             if (shieldHpLvl > 0) {
-              stats.maxHp = safeNum(stats.maxHp, 100) * (1 + shieldHpLvl * 0.04);
+              stats.maxHp = stats.maxHp.mul(1 + shieldHpLvl * 0.04);
             }
             let shieldDefLvl = getLevel("shield_def");
             if (shieldDefLvl > 0) {
-              stats.def = safeNum(stats.def, 5) * (1 + shieldDefLvl * 0.03);
+              stats.def = stats.def.mul(1 + shieldDefLvl * 0.03);
             }
             let shieldIronWallLvl = getLevel("shield_iron_wall");
             if (shieldIronWallLvl > 0) {
@@ -2141,12 +2150,12 @@ if (window.playerStats && window.playerStats.usp === undefined) {
               window.playerStats.fortitudeTimer > 0 &&
               window.playerStats.fortitudeStacks > 0
             ) {
-              stats.def =
-                safeNum(stats.def, 5) *
-                (1 +
+              stats.def = stats.def.mul(
+                1 +
                   window.playerStats.fortitudeStacks *
                     shieldFortifiedGuardLvl *
-                    0.04);
+                    0.04,
+              );
             }
             let shieldImpactTremorLvl = getLevel("shield_impact_tremor");
             if (shieldImpactTremorLvl > 0) {
@@ -2166,7 +2175,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
               stats.colossusBlock = true;
             }
             if (getLevel("shield_keystone_reflect") > 0) {
-              stats.atk = safeNum(stats.atk, 15) + safeNum(stats.def, 5) * 0.4;
+              stats.atk = stats.atk.add(stats.def.mul(0.4));
               stats.reflectSingularityActive = true;
             }
 
@@ -2254,7 +2263,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
             // 3. Tome Tree Branching Nodes
             let tomeAtkLvl = getLevel("tome_atk");
             if (tomeAtkLvl > 0) {
-              stats.atk = safeNum(stats.atk, 15) * (1 + tomeAtkLvl * 0.035);
+              stats.atk = stats.atk.mul(1 + tomeAtkLvl * 0.035);
               stats.spellPower = safeNum(stats.spellPower, 1.5) * (1 + tomeAtkLvl * 0.035);
             }
             let tomeExpLvl = getLevel("tome_exp");
@@ -2300,7 +2309,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
             }
             if (getLevel("tome_keystone_singularity") > 0) {
               stats.arcaneShieldBonusPct = (stats.arcaneShieldBonusPct || 0) + 0.50;
-              stats.atk = safeNum(stats.atk, 15) + safeNum(stats.int, 5) * 0.8;
+              stats.atk = stats.atk.add(BigNum.from(safeNum(stats.int, 5)).mul(0.8));
             }
 
             // --- STANDARD FILLER SKILLS RESOLUTION ---
@@ -2314,13 +2323,13 @@ if (window.playerStats && window.playerStats.usp === undefined) {
 
             let shieldFiller1 = getLevel("shield_filler_hp_flat");
             if (shieldFiller1 > 0) {
-              stats.maxHp = safeNum(stats.maxHp, 100) * (1 + shieldFiller1 * 0.04);
-              stats.def = safeNum(stats.def, 5) * (1 + shieldFiller1 * 0.03);
+              stats.maxHp = stats.maxHp.mul(1 + shieldFiller1 * 0.04);
+              stats.def = stats.def.mul(1 + shieldFiller1 * 0.03);
             }
             let shieldFiller2 = getLevel("shield_filler_flat_def");
             if (shieldFiller2 > 0) {
-              stats.def = safeNum(stats.def, 5) + shieldFiller2 * 5;
-              stats.maxHp = safeNum(stats.maxHp, 100) + shieldFiller2 * 25;
+              stats.def = stats.def.add(shieldFiller2 * 5);
+              stats.maxHp = stats.maxHp.add(shieldFiller2 * 25);
             }
 
             // 2. Dagger Tree Fillers
@@ -2332,7 +2341,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
             }
             let daggerFiller2 = getLevel("dagger_filler_armor_pen");
             if (daggerFiller2 > 0) {
-              stats.atk = safeNum(stats.atk, 15) * (1 + daggerFiller2 * 0.04);
+              stats.atk = stats.atk.mul(1 + daggerFiller2 * 0.04);
               stats.critDamage = (stats.critDamage || 1.5) + daggerFiller2 * 0.03;
             }
 
@@ -2346,7 +2355,7 @@ if (window.playerStats && window.playerStats.usp === undefined) {
             let tomeFiller2 = getLevel("tome_filler_spell_crit");
             if (tomeFiller2 > 0) {
               stats.critChance = (stats.critChance || 0.05) + tomeFiller2 * 0.015;
-              stats.atk = safeNum(stats.atk, 15) * (1 + tomeFiller2 * 0.02);
+              stats.atk = stats.atk.mul(1 + tomeFiller2 * 0.02);
             }
 
             // --- INFINITE ASCENSION SKILLS RESOLUTION ---
@@ -2354,7 +2363,9 @@ if (window.playerStats && window.playerStats.usp === undefined) {
             // 1. Shield Tree Compounding
             let EndlessBastionLvl = getLevel("shield_inf_defense");
             if (EndlessBastionLvl > 0) {
-              stats.def = safeNum(stats.def, 5) * Math.pow(1.1, EndlessBastionLvl);
+              stats.def = stats.def.mul(
+                BigNum.from(1.1).pow(EndlessBastionLvl),
+              );
             }
             let SpikeResonanceLvl = getLevel("shield_inf_bash");
             if (SpikeResonanceLvl > 0) {
@@ -2388,7 +2399,9 @@ if (window.playerStats && window.playerStats.usp === undefined) {
             }
             let AethericInfusionLvl = getLevel("tome_inf_intel");
             if (AethericInfusionLvl > 0) {
-              stats.atk = safeNum(stats.atk, 15) * Math.pow(1.1, AethericInfusionLvl);
+              stats.atk = stats.atk.mul(
+                BigNum.from(1.1).pow(AethericInfusionLvl),
+              );
               stats.int = safeNum(stats.int, 5) * Math.pow(1.1, AethericInfusionLvl);
             }
 
@@ -2411,7 +2424,9 @@ if (window.playerStats && window.playerStats.usp === undefined) {
               let effInt = Math.max(0, safeNum(stats.int, 5) - 5);
               let intBonus = Math.min(0.15, (effInt * 0.15) / (effInt + 150));
               let totalBarrierPct = (stats.baseBarrierPct || 0.25) + intBonus + (stats.arcaneShieldBonusPct || 0);
-              let maxHpVal = safeNum(stats.maxHp, 100);
+              let maxHpVal = stats.maxHp.toFiniteNumber(
+                Number.MAX_VALUE / 16,
+              );
               stats.arcaneShieldMax = Math.max(0, Math.round(maxHpVal * totalBarrierPct));
             } else {
               stats.arcaneShieldMax = 0;
@@ -2423,8 +2438,9 @@ if (window.playerStats && window.playerStats.usp === undefined) {
                 window.playerStats.colossusAtkBonusTimer > 0 &&
                 window.playerStats.colossusAtkBonusVal > 0
               ) {
-                stats.atk =
-                  safeNum(stats.atk, 15) + safeNum(window.playerStats.colossusAtkBonusVal, 0);
+                stats.atk = stats.atk.add(
+                  safeBigNum(window.playerStats.colossusAtkBonusVal, 0),
+                );
               }
               if (
                 window.playerStats.shadowStepTimer > 0 &&
@@ -2463,6 +2479,15 @@ if (window.playerStats && window.playerStats.usp === undefined) {
 
             return stats;
     };
+    window.resolvePlayerStats = resolvePlayerStats;
     window.resolvePlayerStats.__wrappedBySkills = true;
   }
-})();
+
+export {
+  showCustomConfirm,
+  getSubweaponXpRequired,
+  gainSubweaponXp,
+  SKILL_TREE_DATA,
+  SkillTreeManager,
+  resolvePlayerStats,
+};

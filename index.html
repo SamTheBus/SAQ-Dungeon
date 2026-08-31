@@ -2013,15 +2013,78 @@
     </div>
 
     <!-- Core Modular Scripts -->
-    <script src="constants.js?v=1.002"></script>
-    <script src="data.js?v=1.002"></script>
-    <script src="assets.js?v=1.002"></script>
-    <script src="audio.js?v=1.002"></script>
-    <script src="items.js?v=1.002"></script>
-    <script src="entities.js?v=1.002"></script>
-    <script src="skills.js?v=1.002"></script>
-    <script src="dungeon_map.js?v=1.002"></script>
-    <script src="challenges.js?v=1.002"></script>
-    <script src="main.js?v=1.002"></script>
+    <script type="module">
+      import {
+        MYSTICAL_STOCK,
+        POTION_TRANSMUTATIONS,
+        etcDex,
+        useDex,
+        ARTIFACT_POOL,
+        SET_DEFINITIONS,
+        AchievementsData,
+        slotNouns,
+        COSMETIC_SKINS,
+        COSMETIC_COSTUMES,
+        CAVERN_BUFFS,
+        CAVERN_DEBUFFS,
+        ASTRAL_SHOP_STOCK,
+        TITLES_DATA,
+        CARD_UPGRADE_THRESHOLDS,
+        MONSTER_CARDS_DATA,
+        CARD_SETS_DATA,
+        TILE_TYPES,
+        DUNGEON_CONFIG,
+        GAME_STATES,
+        BOSS_BAR_THEMES,
+      } from "./constants.js?v=1.043";
+
+      Object.assign(window, {
+        MYSTICAL_STOCK,
+        POTION_TRANSMUTATIONS,
+        etcDex,
+        useDex,
+        ARTIFACT_POOL,
+        SET_DEFINITIONS,
+        AchievementsData,
+        slotNouns,
+        COSMETIC_SKINS,
+        COSMETIC_COSTUMES,
+        CAVERN_BUFFS,
+        CAVERN_DEBUFFS,
+        ASTRAL_SHOP_STOCK,
+        TITLES_DATA,
+        CARD_UPGRADE_THRESHOLDS,
+        MONSTER_CARDS_DATA,
+        CARD_SETS_DATA,
+        TILE_TYPES,
+        DUNGEON_CONFIG,
+        GAME_STATES,
+        BOSS_BAR_THEMES,
+      });
+    </script>
+    <script type="module">
+      import "./player_runtime.js?v=1.001";
+      import * as dataApi from "./data.js?v=1.071";
+
+      Object.assign(window, dataApi);
+      dataApi.loadGame();
+    </script>
+    <script type="module">
+      import * as assetApi from "./assets.js?v=1.043";
+
+      Object.assign(window, assetApi);
+    </script>
+    <script type="module">
+      import * as audioApi from "./audio.js?v=1.045";
+
+      Object.assign(window, audioApi);
+    </script>
+    <script type="module">
+      import * as itemsApi from "./items.js?v=1.046";
+
+      Object.assign(window, itemsApi);
+      itemsApi.recalculateAllInventoryItems();
+    </script>
+    <script type="module" src="module_bootstrap.js?v=1.172"></script>
   </body>
 </html>

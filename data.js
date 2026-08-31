@@ -1,13 +1,28 @@
+import { setGamePaused } from "./runtime_state.js?v=1.002";
+import { setPrimaryMob } from "./encounter_state.js?v=1.004";
+import {
+  getNextPersistedEntityId,
+  setEntityIdCounter,
+} from "./entity_id.js?v=1.002";
+import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+import {
+  ENGINE_PLAYER_STAT_FIELDS,
+  EngineSaveSchemaError,
+  buildEngineSaveSnapshot,
+  hydrateEngineSavePayload,
+  stableStringifyEngineSave,
+} from "./save_schema.js?v=1.004";
+
 /* ==========================================================================
    PRIMARY PURPOSE: Stores global game state, constant dictionaries,
    initial global state, and system utility functions.
    ========================================================================= */
 
-window.GAME_VERSION = 1.03; // Release Version 1.0.03 (Unified Cavern Mutator Architecture)
-window.MIN_COMPATIBLE_VERSION = 1.0; // Hard reset epoch threshold
+export const GAME_VERSION = 1.04; // Release Version 1.0.04 (Post-release stability hotfix)
+export const MIN_COMPATIBLE_VERSION = 1.0; // Hard reset epoch threshold
 
 // --- STATIC MUTUALLY EXCLUSIVE DEBUFF MATRIX ---
-window.DEBUFF_EXCLUSIONS = {
+export const DEBUFF_EXCLUSIONS = {
   slick_ice: ["magnetic_creep"],
   magnetic_creep: ["slick_ice"],
   creeping_miasma: ["heavy_mist"],
@@ -21,7 +36,7 @@ window.DEBUFF_EXCLUSIONS = {
 };
 
 // --- CENTRALIZED CAVERN MUTATORS REGISTRY ---
-window.CAVERN_MUTATORS = {
+export const CAVERN_MUTATORS = {
   // --- BUFFS ---
   giant_might: {
     id: "giant_might",
@@ -440,19 +455,19 @@ window.CAVERN_MUTATORS = {
   },
 };
 
-window.CAVERN_BUFFS = Object.values(window.CAVERN_MUTATORS).filter(
+export const CAVERN_BUFFS = Object.values(CAVERN_MUTATORS).filter(
   (m) => m.isBuff,
 );
-window.CAVERN_DEBUFFS = Object.values(window.CAVERN_MUTATORS).filter(
+export const CAVERN_DEBUFFS = Object.values(CAVERN_MUTATORS).filter(
   (m) => !m.isBuff,
 );
 
 // --- GLOBAL COMBAT BALANCE CONSTANTS ---
-window.BOSS_GUARD_PENETRATION = 0.35; // 35% damage seepage / rate reduction
-window.DEFLECTION_FATIGUE_FRAMES = 30; // 0.5s at 60 FPS
-window.COUNTER_COOLDOWN_FRAMES = 60; // 1.0s Internal Cooldown (ICD) against bosses
+export const BOSS_GUARD_PENETRATION = 0.35; // 35% damage seepage / rate reduction
+export const DEFLECTION_FATIGUE_FRAMES = 30; // 0.5s at 60 FPS
+export const COUNTER_COOLDOWN_FRAMES = 60; // 1.0s Internal Cooldown (ICD) against bosses
 
-window.BigNumMin = function (a, b) {
+export const BigNumMin = function (a, b) {
   let ba = BigNum.from(a);
   let bb = BigNum.from(b);
   let res = ba.gt(bb) ? bb : ba;
@@ -460,7 +475,7 @@ window.BigNumMin = function (a, b) {
 };
 
 // Core Security: HTML Sanitizer to prevent XSS injection in user lists
-window.escapeHTML = function (str) {
+export const escapeHTML = function (str) {
   if (!str) return "";
   return str.replace(
     /[&<>'"]/g,
@@ -471,14 +486,14 @@ window.escapeHTML = function (str) {
   );
 };
 
-window.triggerCombatState = function () {
+export const triggerCombatState = function () {
   if (window.playerStats) {
     window.playerStats.combatTimer = 300; // Flag player as active in combat for 5 seconds (300 frames)
   }
 };
 
 // Global Custom Confirmation Modal Handler
-window.showCustomConfirm = function (
+export const showCustomConfirm = function (
   title,
   message,
   confirmText,
@@ -545,7 +560,7 @@ window.showCustomConfirm = function (
 
 window.uiIconSvgCache = window.uiIconSvgCache || {};
 
-window.getUiIconSvg = function (key, size = 12) {
+export const getUiIconSvg = function (key, size = 12) {
   let cacheKey = `${key}_${size}`;
   if (window.uiIconSvgCache[cacheKey] !== undefined) {
     return window.uiIconSvgCache[cacheKey];
@@ -562,7 +577,7 @@ window.getUiIconSvg = function (key, size = 12) {
 
 // --- SYSTEM UTILS ---
 
-window.initSPDraft = function () {
+export const initSPDraft = function () {
   if (
     window.draftSPAllocations === undefined ||
     window.draftSPAllocations === null
@@ -572,7 +587,7 @@ window.initSPDraft = function () {
   }
 };
 
-window.stageSP = function (statKey, amount) {
+export const stageSP = function (statKey, amount) {
   let p = window.playerStats;
   if (!p) return;
   window.initSPDraft();
@@ -607,7 +622,7 @@ window.stageSP = function (statKey, amount) {
   }
 };
 
-window.resetDraftSP = function () {
+export const resetDraftSP = function () {
   if (window.draftSPAllocations) {
     let stagedTotal =
       (window.draftSPAllocations.spStr || 0) +
@@ -626,7 +641,7 @@ window.resetDraftSP = function () {
   }
 };
 
-window.confirmSP = function () {
+export const confirmSP = function () {
   let p = window.playerStats;
   if (!p) return;
   window.initSPDraft();
@@ -742,7 +757,7 @@ window.CombatEffectPool = window.CombatEffectPool || {
   },
 };
 
-window.getEffectiveStage = function (stage) {
+export const getEffectiveStage = function (stage) {
   let s = Number(stage);
   if (isNaN(s) || s < 1) s = 1;
   // Group stage levels into 4-floor milestone bands (Floors 1-4 = Band 4, 5-8 = Band 8, etc.)
@@ -750,25 +765,25 @@ window.getEffectiveStage = function (stage) {
   return band <= 100 ? band : 100 + Math.pow(band - 100, 0.7) * 1.5;
 };
 
-window.getFloorItemLevel = function (floor) {
+export const getFloorItemLevel = function (floor) {
   let f = Number(floor);
   if (isNaN(f) || f < 1) f = 1;
   return Math.floor(f / 4) + 1;
 };
 
-window.isValidCheckpoint = function (floor) {
+export const isValidCheckpoint = function (floor) {
   if (floor === 1) return true;
   let prev = floor - 1;
   return prev % 12 === 4 || prev % 12 === 8 || prev % 12 === 0;
 };
 
-window.getMilestoneMultiplier = function (level) {
+export const getMilestoneMultiplier = function (level) {
   let milestones = Math.floor(level / 10);
   // Asymptotic square-root scaling dampens late-game stat inflation while preserving milestone achievements
   return 1.0 + Math.sqrt(milestones) * 0.25;
 };
 
-window.getBountyRerollCost = function (peakStage, rerollsToday) {
+export const getBountyRerollCost = function (peakStage, rerollsToday) {
   let s = Math.max(1, Math.floor(peakStage || 1));
   let r = Math.max(0, Math.floor(rerollsToday || 0));
 
@@ -788,7 +803,7 @@ window.getBountyRerollCost = function (peakStage, rerollsToday) {
   };
 };
 
-window.isWeeklyQuestUnlocked = function () {
+export const isWeeklyQuestUnlocked = function () {
   if (!window.playerStats) return false;
   return (
     (window.playerStats.maxFloorCleared || 0) >= 12 ||
@@ -796,7 +811,7 @@ window.isWeeklyQuestUnlocked = function () {
   );
 };
 
-window.calculateRenownForStageRange = function (fromStage, toStage) {
+export const calculateRenownForStageRange = function (fromStage, toStage) {
   if (toStage <= fromStage) return 0;
   let start = Math.max(0, fromStage);
   let end = toStage;
@@ -813,9 +828,9 @@ window.calculateRenownForStageRange = function (fromStage, toStage) {
   }
 };
 
-window.CARD_UPGRADE_THRESHOLDS = [1, 25, 100, 300, 750, 1500, 2500];
+export const CARD_UPGRADE_THRESHOLDS = [1, 25, 100, 300, 750, 1500, 2500];
 
-function getCardTier(count) {
+export function getCardTier(count) {
   let thresholds = window.CARD_UPGRADE_THRESHOLDS;
   let t = -1;
   for (let idx = 0; idx < thresholds.length; idx++) {
@@ -824,24 +839,21 @@ function getCardTier(count) {
   }
   return t;
 }
-window.getCardTier = getCardTier;
 
-function getCardValue(base, tier) {
+export function getCardValue(base, tier) {
   if (tier < 0) return 0;
   const rates = [1.0, 2.0, 3.5, 5.0, 6.5, 8.0, 10.0];
   return base * (rates[tier] !== undefined ? rates[tier] : 10.0);
 }
-window.getCardValue = getCardValue;
 
-function getUtilityCardValue(tier) {
+export function getUtilityCardValue(tier) {
   if (tier < 0) return 0;
   const rates = [0.02, 0.04, 0.06, 0.08, 0.11, 0.15];
   return rates[tier] || 0;
 }
-window.getUtilityCardValue = getUtilityCardValue;
 
 // High-performance arbitrary-precision scientific notation library for infinite scalability
-class BigNum {
+export class BigNum {
   constructor(m = 0, e = 0) {
     this.m = m;
     this.e = e;
@@ -938,6 +950,35 @@ class BigNum {
     return new BigNum(this.m / b.m, this.e - b.e);
   }
 
+  round() {
+    if (this.m === 0) return new BigNum(0, 0);
+
+    // Mantissas are normalized to 12 decimal places. At exponent 12 and
+    // above that precision already represents whole units, so retaining the
+    // scientific value avoids overflowing through Number/Math.round.
+    if (this.e >= 12) return new BigNum(this.m, this.e);
+
+    return BigNum.fromNumber(Math.round(this.valueOf()));
+  }
+
+  floor() {
+    if (this.m === 0) return new BigNum(0, 0);
+
+    // Normalization already removes sub-unit precision at this scale.
+    if (this.e >= 12) return new BigNum(this.m, this.e);
+
+    return BigNum.fromNumber(Math.floor(this.valueOf()));
+  }
+
+  toFiniteNumber(maxMagnitude = Number.MAX_VALUE) {
+    let limit = Number(maxMagnitude);
+    if (!Number.isFinite(limit) || limit <= 0) limit = Number.MAX_VALUE;
+
+    let value = this.valueOf();
+    if (!Number.isFinite(value)) return this.m < 0 ? -limit : limit;
+    return Math.max(-limit, Math.min(limit, value));
+  }
+
   // Fast binary exponentiation for infinite scale exponents
   pow(power) {
     let p = Math.floor(power);
@@ -1000,9 +1041,7 @@ class BigNum {
   }
 }
 
-window.BigNum = BigNum;
-
-window.formatNumber = function (val) {
+export const formatNumber = function (val) {
   if (val === null || val === undefined) return "0";
   let b = BigNum.from(val);
   if (b.m === 0) return "0";
@@ -1055,14 +1094,14 @@ window.formatNumber = function (val) {
   return `${displayVal.toFixed(2)}${suffix}`;
 };
 
-window.randInt = (min, max) =>
+export const randInt = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
-window.randFloat = (min, max) => Math.random() * (max - min) + min;
+export const randFloat = (min, max) => Math.random() * (max - min) + min;
 
 window.rarityProbCache = window.rarityProbCache || {};
 
 // Continuous Dynamic Unlock Rarity Probability Engine
-window.calculateRarityProbabilities = function (
+export const calculateRarityProbabilities = function (
   quality = 1.0,
   isGacha = false,
   stage = 1,
@@ -1108,7 +1147,7 @@ window.calculateRarityProbabilities = function (
   };
 };
 
-window.rollItemRarity = function (stage = 1, quality = 1.0, isGacha = false) {
+export const rollItemRarity = function (stage = 1, quality = 1.0, isGacha = false) {
   let probs = window.calculateRarityProbabilities(quality, isGacha, stage);
   let roll = Math.random() * 100;
   let cumulative = 0;
@@ -1122,7 +1161,7 @@ window.rollItemRarity = function (stage = 1, quality = 1.0, isGacha = false) {
   return 0;
 };
 
-window.rollSigilRarity = function (maxStars, qly = 1.0) {
+export const rollSigilRarity = function (maxStars, qly = 1.0) {
   let weights = [];
   let totalWeight = 0;
   for (let i = 0; i <= maxStars; i++) {
@@ -1139,7 +1178,7 @@ window.rollSigilRarity = function (maxStars, qly = 1.0) {
   return 0;
 };
 
-window.getDepthQualityMultiplier = function (stage) {
+export const getDepthQualityMultiplier = function (stage) {
   let s = Number(stage);
   if (isNaN(s) || s < 1) s = 1;
   // Asymptotic scaling: smoothly scales from 1.0 up to a hard cap of 2.0
@@ -1248,11 +1287,7 @@ Object.assign(window.GameState, {
         window.playerStats.hasTriggeredLevel13Unlock = true;
         setTimeout(() => {
           if (typeof window.playGlobalUnlockAnimation === "function") {
-            window.playGlobalUnlockAnimation("CLAN HALL UNLOCKED", "✦", () => {
-              if (typeof window.toggleMenuHub === "function") {
-                window.toggleMenuHub(); // Pop open the Hub so the padlock shatters right over the locked button!
-              }
-            });
+            window.playGlobalUnlockAnimation("CLAN HALL UNLOCKED", "✦", () => {});
           }
         }, 1500);
       }
@@ -1278,10 +1313,9 @@ Object.assign(window.GameState, {
       let p = window.resolvePlayerStats();
 
       if (window.player) {
-        let newMaxHp =
-          p.maxHp && p.maxHp.valueOf
-            ? p.maxHp.valueOf()
-            : Number(p.maxHp || 100);
+        let newMaxHp = BigNum.from(p.maxHp || 100).toFiniteNumber(
+          Number.MAX_VALUE / 16,
+        );
         window.player.maxHp = Math.round(newMaxHp);
 
         // Restore 25% Max HP burst on level up instead of full 100% refill
@@ -1289,10 +1323,12 @@ Object.assign(window.GameState, {
         window.player.hp = Math.min(newMaxHp, window.player.hp + healBurst);
         window.playerStats.currentHp = BigNum.from(window.player.hp);
 
-        window.player.atk =
-          p.atk && p.atk.valueOf ? p.atk.valueOf() : Number(p.atk || 15);
-        window.player.def =
-          p.def && p.def.valueOf ? p.def.valueOf() : Number(p.def || 5);
+        window.player.atk = BigNum.from(p.atk || 15).toFiniteNumber(
+          Number.MAX_VALUE / 16,
+        );
+        window.player.def = BigNum.from(p.def || 5).toFiniteNumber(
+          Number.MAX_VALUE / 16,
+        );
       }
 
       if (window.SoundManager) window.SoundManager.play("revive");
@@ -1398,38 +1434,31 @@ Object.assign(window.GameState, {
 });
 
 // Legacy Compatibility Aliases to protect references
-window.gainXp = (amount, isOffline) =>
+export const gainXp = (amount, isOffline) =>
   window.GameState.gainXp(amount, isOffline);
-window.addCoins = (amount) => window.GameState.addCoins(amount);
-window.spendCoins = (amount) => window.GameState.spendCoins(amount);
+export const addCoins = (amount) => window.GameState.addCoins(amount);
+export const spendCoins = (amount) => window.GameState.spendCoins(amount);
 
-window.absorbGoldParticle = function (amount, isDungeon, isCrucible) {
+export const absorbGoldParticle = function (amount, isDungeon) {
   let amt = BigNum.from(amount);
   if (amt.lte(0)) return;
 
-  if (isCrucible) {
-    window.playerStats.crucibleAccumulatedGold =
-      (window.playerStats.crucibleAccumulatedGold || 0) + amount;
-  } else {
-    window.playerStats.totalGoldEarned = BigNum.from(
-      window.playerStats.totalGoldEarned || 0,
+  window.playerStats.totalGoldEarned = BigNum.from(
+    window.playerStats.totalGoldEarned || 0,
+  ).add(amt);
+
+  if (isDungeon) {
+    window.playerStats.runGold = BigNum.from(
+      window.playerStats.runGold || 0,
     ).add(amt);
+  } else {
+    window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(
+      amt,
+    );
+  }
 
-    if (isDungeon) {
-      window.playerStats.runGold = BigNum.from(
-        window.playerStats.runGold || 0,
-      ).add(amt);
-      window.playerStats.dungeonAccumulatedGold =
-        (window.playerStats.dungeonAccumulatedGold || 0) + amount;
-    } else {
-      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0).add(
-        amt,
-      );
-    }
-
-    if (typeof window.progressMission === "function") {
-      window.progressMission("gold", amount);
-    }
+  if (typeof window.progressMission === "function") {
+    window.progressMission("gold", amount);
   }
 
   if (typeof window.updateUI === "function") {
@@ -1437,7 +1466,7 @@ window.absorbGoldParticle = function (amount, isDungeon, isCrucible) {
   }
 };
 
-window.getAchievementProgress = function (ach) {
+export const getAchievementProgress = function (ach) {
   if (!window.playerStats) return 0;
   if (ach.reqType === "kills")
     return window.playerStats.totalLifetimeKills || 0;
@@ -1542,7 +1571,7 @@ window.getAchievementProgress = function (ach) {
   return 0;
 };
 
-window.recalculateAchievementTotals = function () {
+export const recalculateAchievementTotals = function () {
   let totals = {
     atk: 0,
     maxHp: 0,
@@ -1587,7 +1616,7 @@ window.recalculateAchievementTotals = function () {
   window.playerStats.cachedAchievementBonusTotals = totals;
 };
 
-window.checkAchievements = function () {
+export const checkAchievements = function () {
   if (!window.playerStats.unlockedAchievements)
     window.playerStats.unlockedAchievements = [];
   if (!window.playerStats.achievementTimestamps)
@@ -1678,7 +1707,7 @@ window.checkAchievements = function () {
   }
 };
 
-window.isCavernEffectActive = function (id) {
+export const isCavernEffectActive = function (id) {
   if (window.currentGameState !== window.GAME_STATES.DUNGEON) return false;
 
   // 1. Check active Dungeon Sigil
@@ -1716,7 +1745,7 @@ window.isCavernEffectActive = function (id) {
   return false;
 };
 
-window.checkArtifactTrait = function (trait) {
+export const checkArtifactTrait = function (trait) {
   if (
     window.playerStats &&
     window.playerStats.activeRelics &&
@@ -1732,7 +1761,7 @@ window.checkArtifactTrait = function (trait) {
   );
 };
 
-window.getArtifactTemperLevel = function (trait) {
+export const getArtifactTemperLevel = function (trait) {
   if (window.playerStats && window.playerStats.activeRelics) {
     let idx = window.playerStats.activeRelics.indexOf(trait);
     if (idx !== -1) {
@@ -1754,7 +1783,7 @@ window.getArtifactTemperLevel = function (trait) {
   return 0;
 };
 
-window.hasUniquePassive = function (uniqueKey) {
+export const hasUniquePassive = function (uniqueKey) {
   if (
     window.playerStats &&
     window.playerStats.activeSpectralResonance === uniqueKey
@@ -1821,13 +1850,13 @@ window.hasUniquePassive = function (uniqueKey) {
   }
 };
 
-window.getItemSetName = function (item) {
+export const getItemSetName = function (item) {
   if (!item || item.type === "artifact" || item.statsRolled === "UNIQUE")
     return null;
   return item.setName || null;
 };
 
-window.getMaxBagSlots = function () {
+export const getMaxBagSlots = function () {
   let base = window.checkArtifactTrait("bag_space") ? 50 : 20;
   let missionBag =
     ((window.playerStats.missionUpgrades &&
@@ -1836,13 +1865,13 @@ window.getMaxBagSlots = function () {
   return base + missionBag;
 };
 
-window.getTierName = function (stars) {
+export const getTierName = function (stars) {
   if (stars === "UNIQUE") return "Unique Artifact";
   const tiers = ["Common", "Rare", "Magic", "Epic", "Legendary", "Mythic"];
   return tiers[stars] || "Unknown";
 };
 
-window.getTierColor = function (stars) {
+export const getTierColor = function (stars) {
   if (stars === "UNIQUE") return "#1abc9c";
   const colors = [
     "#ffffff",
@@ -1855,7 +1884,7 @@ window.getTierColor = function (stars) {
   return colors[stars] || "#fff";
 };
 
-window.getScrapYieldName = function (stars) {
+export const getScrapYieldName = function (stars) {
   if (stars === "UNIQUE") return "Astral Essence";
   const scraps = [
     "Monster Soul",
@@ -1872,20 +1901,20 @@ window.getScrapYieldName = function (stars) {
 window.cachedPlayerStats = null;
 window.playerStatsDirty = true;
 
-window.invalidatePlayerStats = function () {
+export const invalidatePlayerStats = function () {
   window.playerStatsDirty = true;
 };
 
-window.updateUI = function () {
+export const updateUI = function () {
   window.invalidatePlayerStats();
   let resolved = window.resolvePlayerStats();
 
   if (window.player && resolved) {
     let oldMaxHp = window.player.maxHp || 100;
     let newMaxHp = Math.round(
-      resolved.maxHp && resolved.maxHp.valueOf
-        ? resolved.maxHp.valueOf()
-        : Number(resolved.maxHp || 100),
+      BigNum.from(resolved.maxHp || 100).toFiniteNumber(
+        Number.MAX_VALUE / 16,
+      ),
     );
     window.player.maxHp = newMaxHp;
 
@@ -1901,13 +1930,13 @@ window.updateUI = function () {
     }
 
     if (resolved.atk)
-      window.player.atk = resolved.atk.valueOf
-        ? resolved.atk.valueOf()
-        : Number(resolved.atk || 15);
+      window.player.atk = BigNum.from(resolved.atk).toFiniteNumber(
+        Number.MAX_VALUE / 16,
+      );
     if (resolved.def)
-      window.player.def = resolved.def.valueOf
-        ? resolved.def.valueOf()
-        : Number(resolved.def || 5);
+      window.player.def = BigNum.from(resolved.def).toFiniteNumber(
+        Number.MAX_VALUE / 16,
+      );
     if (resolved.moveSpeed) {
       window.player.speed = resolved.moveSpeed * 0.38; // Bind actual character movement speed to resolved stats
     }
@@ -1927,7 +1956,7 @@ window.updateUI = function () {
   }
 };
 
-window.ARTIFACT_BASE_STATS = {
+export const ARTIFACT_BASE_STATS = {
   frenzy: { critChance: 0.03 },
   vampirism: { maxHp: 20 },
   gold_hoard: { atk: 10, goldMulti: 0.3 },
@@ -1963,7 +1992,7 @@ window.ARTIFACT_BASE_STATS = {
     astral_expansion: { int: 5, bonusAreaRadius: 0.25 },
 };
 
-window.resolvePlayerStats = function (useDraft = false) {
+export const resolvePlayerStats = function (useDraft = false) {
   if (!useDraft && !window.playerStatsDirty && window.cachedPlayerStats) {
     return window.cachedPlayerStats;
   }
@@ -2426,7 +2455,9 @@ window.resolvePlayerStats = function (useDraft = false) {
 
   if (
     window.checkArtifactTrait("golem_stance") &&
-    window.playerStats.currentHp / p.maxHp >= 0.8
+    window.player &&
+    Number(window.player.maxHp) > 0 &&
+    Number(window.player.hp) / Number(window.player.maxHp) >= 0.8
   )
     itemAtkPct += 0.2;
 
@@ -3184,11 +3215,13 @@ window.resolvePlayerStats = function (useDraft = false) {
   }
 
   // Calculate Tome Arcane Shield Capacity (Energy Shield)
-    hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
+    let hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
     if (hasTome) {
       let baseShieldPct = 0.20 + (p.arcaneShieldBonusPct || 0);
       let intBonusPct = Math.min(0.20, (effectiveInt * 0.20) / (effectiveInt + 150));
-      let maxHpVal = p.maxHp.valueOf ? p.maxHp.valueOf() : Number(p.maxHp || 100);
+      let maxHpVal = BigNum.from(p.maxHp || 100).toFiniteNumber(
+        Number.MAX_VALUE / 16,
+      );
       p.arcaneShieldMax = Math.round(maxHpVal * (baseShieldPct + intBonusPct));
     } else {
       p.arcaneShieldMax = 0;
@@ -3209,14 +3242,6 @@ window.resolvePlayerStats = function (useDraft = false) {
   let excessRare = Math.max(0, rawRare - 0.01);
   let scale = limit - 0.01;
   p.rareSpawn = 0.01 + (excessRare * scale) / (excessRare + scale);
-
-  if (!window.playerStats.isCrucibleMode && !window.playerStats.isDungeonMode) {
-    window.playerStats.targetsRequired = 3;
-  } else if (window.playerStats.isCrucibleMode) {
-    window.playerStats.targetsRequired = 3;
-  } else if (window.playerStats.isDungeonMode) {
-    window.playerStats.targetsRequired = 3;
-  }
 
   if (
     window.hasUniquePassive("boots_warpcore") &&
@@ -3346,8 +3371,7 @@ window.resolvePlayerStats = function (useDraft = false) {
     p.xpRate = parseFloat(expBonusMult.toFixed(2));
 
   if (p.hasReflectKeystone) {
-    let defVal = p.def.valueOf ? p.def.valueOf() : Number(p.def || 0);
-    p.atk = p.atk.add(Math.round(defVal * 0.4));
+    p.atk = p.atk.add(BigNum.from(p.def || 0).mul(0.4).round());
   }
   if (p.hasAethericSingularity) {
     p.atk = p.atk.add(Math.round(p.int * 0.8));
@@ -3720,7 +3744,7 @@ window.resolvePlayerStats = function (useDraft = false) {
 };
 
 // --- REAL-TIME COMBAT DAMAGE RESOLUTION PIPELINE ---
-window.damagePlayer = function (rawDmg, sourceMob = null) {
+export const damagePlayer = function (rawDmg, sourceMob = null) {
   let p = window.player;
   if (!p || p.hp <= 0) return 0;
 
@@ -3739,8 +3763,9 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
         ? window.getArtifactTemperLevel("breach_barrier")
         : 0;
       let slotMult = 1.0 + slotLvl * 0.01;
-      let maxHpVal =
-        p.maxHp && p.maxHp.valueOf ? p.maxHp.valueOf() : Number(p.maxHp || 100);
+      let maxHpVal = BigNum.from(p.maxHp || 100).toFiniteNumber(
+        Number.MAX_VALUE / 16,
+      );
       window.playerStats.overshieldConsumed =
         window.playerStats.overshieldConsumed || 0;
       let maxOvershield = maxHpVal * slotMult;
@@ -3834,6 +3859,7 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
           if (window.activeDungeonMobs) {
             window.activeDungeonMobs.forEach((otherMob) => {
               if (
+                isPlayerTargetableMob(otherMob) &&
                 Math.hypot(
                   p.x - (otherMob.x + otherMob.w / 2),
                   p.y - (otherMob.y + otherMob.h / 2),
@@ -3941,9 +3967,9 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
         window.invalidatePlayerStats();
         let pStatsLocal = window.resolvePlayerStats();
         p.maxHp = Math.round(
-          pStatsLocal.maxHp.valueOf
-            ? pStatsLocal.maxHp.valueOf()
-            : Number(pStatsLocal.maxHp || 100),
+          BigNum.from(pStatsLocal.maxHp || 100).toFiniteNumber(
+            Number.MAX_VALUE / 16,
+          ),
         );
         p.hp = Math.min(p.hp, p.maxHp);
         window.playerStats.currentHp = BigNum.from(p.hp);
@@ -4225,9 +4251,9 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
         window.invalidatePlayerStats();
         let pStatsLocal = window.resolvePlayerStats();
         p.maxHp = Math.round(
-          pStatsLocal.maxHp.valueOf
-            ? pStatsLocal.maxHp.valueOf()
-            : Number(pStatsLocal.maxHp || 100),
+          BigNum.from(pStatsLocal.maxHp || 100).toFiniteNumber(
+            Number.MAX_VALUE / 16,
+          ),
         );
         p.hp = Math.min(p.hp, p.maxHp);
         window.playerStats.currentHp = BigNum.from(p.hp);
@@ -4295,7 +4321,7 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       if (window.activeDungeonMobs) {
         window.activeDungeonMobs.forEach((m) => {
           let dist = Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2));
-          if (dist <= 75) {
+          if (dist <= 75 && isPlayerTargetableMob(m)) {
             m.hp = m.hp.sub(shockwaveDmg);
             m.flashTimer = 8;
             let dx = m.x + m.w / 2 - p.x;
@@ -4439,7 +4465,7 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       if (window.activeDungeonMobs) {
         window.activeDungeonMobs.forEach((m) => {
           let dist = Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2));
-          if (dist <= 64) {
+          if (dist <= 64 && isPlayerTargetableMob(m)) {
             m.hp = m.hp.sub(shockwaveDmg);
             m.flashTimer = 8;
             if (window.combatVisuals) {
@@ -4479,9 +4505,9 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
       window.invalidatePlayerStats();
       let pStatsLocal = window.resolvePlayerStats();
       p.maxHp = Math.round(
-        pStatsLocal.maxHp.valueOf
-          ? pStatsLocal.maxHp.valueOf()
-          : Number(pStatsLocal.maxHp || 100),
+        BigNum.from(pStatsLocal.maxHp || 100).toFiniteNumber(
+          Number.MAX_VALUE / 16,
+        ),
       );
       p.hp = Math.min(p.hp, p.maxHp);
       window.playerStats.currentHp = BigNum.from(p.hp);
@@ -4583,7 +4609,7 @@ window.damagePlayer = function (rawDmg, sourceMob = null) {
 
 // --- INITIAL GLOBAL STATE ---
 
-window.CRUCIBLE_DRAFT_POOL = [
+export const CRUCIBLE_DRAFT_POOL = [
   // --- STANDARD UPGRADES (Infinite Stacking) ---
   {
     id: "steel_resolve",
@@ -4766,14 +4792,6 @@ window.playerStats = {
   outOfCombatTicks: 0,
 
   hasTriggeredOnslaughtUnlock: false,
-  isCrucibleMode: false,
-  crucibleWave: 1,
-  cruciblePeak: 0,
-  crucibleDraftDeck: [],
-  astralShards: 0,
-  crucibleAccumulatedShards: 0,
-  crucibleAccumulatedCores: 0,
-  crucibleAccumulatedLoot: [],
   subweaponMastery: {
     shield: { xp: 0, level: 1, sp: 0, spentSp: 0 },
     dagger: { xp: 0, level: 1, sp: 0, spentSp: 0 },
@@ -4810,10 +4828,6 @@ window.playerStats = {
   skillTree: {},
   recoveryLoot: null,
   currentRunEnemyStrength: 1.0,
-  currentRunDropRateBonus: 0.0,
-  currentRunDropQualityBonus: 0.0,
-  currentRunGoldBonus: 0.0,
-  hasUsedFreeInsurance: false,
   maxLevel: 1,
   lastDailyLoginDayStr: "",
   loginStreak: 0,
@@ -4833,13 +4847,7 @@ window.playerStats = {
     art2: 0,
     art3: 0,
   },
-  crucibleAccumulatedGold: 0,
-  crucibleAccumulatedXp: 0,
   crucibleDraftDeck: [],
-  crucibleAccumulatedLoot: [],
-  dungeonAccumulatedGold: 0,
-  dungeonAccumulatedXp: 0,
-  dungeonAccumulatedLoot: [],
   hasRefundedLegacyTempers: false,
   level: 1,
   xp: new BigNum(0, 0),
@@ -4888,13 +4896,8 @@ window.playerStats = {
   currentHp: new BigNum(100, 0),
   coins: new BigNum(0, 0),
   stage: 1,
-  maxStage: 1,
-  killCount: 0,
   totalLifetimeKills: 0,
   successfulExtractions: 0,
-  rareSpawnsSlain: 0,
-  totalDeflections: 0,
-  peakSingleHit: 0,
   hasTriggeredRecovery: false,
   hasTriggeredFullBag: false,
   hasTriggeredSoulBound: false,
@@ -4910,20 +4913,10 @@ window.playerStats = {
     nexus_overseer: 0,
     gilded_vault_keeper: 0,
   },
-  targetsRequired: 3, // Reduced from 5 to 3 for snappier stage runs
-  isBossMode: false,
-  isFarmingLoop: false,
-  isUberBoss: false,
-  currentUberBoss: "guardian",
   frenzyTimer: 0,
   frenzyKillCount: 0,
   adrenalineTimer: 0,
   usedSecondWind: false,
-  isDungeonMode: false,
-  currentDungeon: null,
-  dungeonWave: 1,
-  dungeonKeys: 5,
-  nextDungeonKeyTime: 0,
   shopRefreshTime: 0,
   shopItems: [],
   atkPotionRuns: 0,
@@ -4956,40 +4949,19 @@ window.playerStats = {
   fairiesClicked: 0,
   deathCount: 0,
   lootPityCounter: 0,
-  dungeonPeaks: { equip: 1, gold: 1, mat: 1 },
-  currentDungeonStage: { equip: 1, gold: 1, mat: 1 },
   astralShards: 0,
   crucibleWave: 1,
   cruciblePeak: 1,
-  crucibleRunActive: false,
   crucibleAccumulatedShards: 0,
   crucibleAccumulatedCores: 0,
-  crucibleActiveBuff: null,
-  crucibleActiveDebuff: null,
-  crucibleInfusedType: "none",
-  crucibleLootMult: 1.0,
   crucibleStartWave: 1,
   isCrucibleMode: false,
-  crucibleKills: 0,
-  runKills: 0,
-  runGold: 0,
-  runXp: 0,
+  dungeonRunInProgress: false,
+  runGold: BigNum.from(0),
+  runXp: BigNum.from(0),
   killedBy: "Unknown Foe",
   killedByMob: null,
-  prestigePoints: 0,
-  prestigeUpgrades: {
-    bag: 0,
-    gold: 0,
-    exp: 0,
-    drop: 0,
-    atk: 0,
-    fort: 0,
-    fairy: 0,
-  },
-  prestigeCount: 0,
   lifetimePeakStage: 1,
-  isPrestigeBossMode: false,
-  prestigeApproachTimer: 0,
   highestRiftLevel: 0,
   activeRift: null,
   abyssalDecayAccumulated: 0,
@@ -5007,20 +4979,6 @@ window.playerStats = {
   fairyClicksWindow: [],
   canvasClicksWindow: [],
   recentHeals: [], // Track siphoned heals in a sliding 1,000ms window
-  pendingClanProgress: {
-    kills: 0,
-    rifts: 0,
-    prestige: 0,
-    dungeons: 0,
-    fairies: 0,
-    tempers: 0,
-    reforges: 0,
-    potions: 0,
-    salvage: 0,
-    crits: 0,
-    renown: 0,
-  },
-
   // Achievement Checkpoint Flags
   hasTriggeredMurphysLaw: false,
   hasTriggeredAgainstOdds: false,
@@ -5035,19 +4993,13 @@ window.playerStats = {
   hasTriggeredAlchemicalSynthesis: false,
   hasTriggeredPatientShepherd: false,
   hasTriggeredBareFists: false,
-  hasTriggeredPerfectDeflection: false,
-  hasTriggeredWitchingHour: false,
   hasTriggeredHighNoon: false,
-  hasTriggeredAethericRecharge: false,
   hasTriggeredNightOwl: false,
   hasTriggeredEarlyBird: false,
   hasTriggeredCoffeeRun: false,
   hasTriggeredWeekendWarrior: false,
   hasTriggeredPhoenixRising: false,
-  hasTriggeredPerfectDeflection: false,
-  hasTriggeredWitchingHour: false,
   hasTriggeredTimeCapsule: false,
-  hasTriggeredAethericRecharge: false,
   hasClickedThisBattle: false,
   damageTakenThisBattle: 0,
   ankhTriggeredThisBattle: false,
@@ -5068,7 +5020,6 @@ window.playerStats = {
   dailyRewardClaimed: false,
   weeklyRewardClaimed: false,
   unviewedAchievements: [],
-  selectedPrestigeStage: 80,
   unlockedCheckpoints: [1],
   selectedCheckpoint: 1,
   maxFloorCleared: 0,
@@ -5079,30 +5030,15 @@ window.playerStats = {
   visitedSubTabs: [],
   hasTriggeredLevel13Unlock: false,
   hasTriggeredLevel25Unlock: false,
-  hasTriggeredPrestigeUnlock: false,
   equippedTitle: null,
   achievementTimestamps: {},
-  claimedMailIds: [],
   unlockedSkins: ["default"],
   equippedCostume: "knight",
   unlockedCostumes: ["knight"],
   playerName: "Hero",
-  clanId: null,
   activeSpecialChallenge: null,
   bountyRerollsToday: 0,
   mixWithBackground: false, // Default false bypasses the physical ringer/silent switch so sound works out-of-the-box
-  clanName: null,
-  clanEmblem: null,
-  clanLevel: 1,
-  clanSkills: {
-    steel_phalanx: 0,
-    vitality_well: 0,
-    prosperity_accord: 0,
-    voyagers_guidance: 0,
-    aetheric_wisdom: 0,
-    clan_supply_depot: 0,
-  },
-  clanContribution: 0,
   paragonLevel: 0,
   spectralCodex: [],
   activeSpectralResonance: null,
@@ -5128,7 +5064,7 @@ window.playerStats = {
   highestRiftLevelCleared: 0,
 };
 
-window.toggleControlMode = function () {
+export const toggleControlMode = function () {
   let current = window.playerStats.controlMode || "joystick";
   window.playerStats.controlMode =
     current === "joystick" ? "cursor" : "joystick";
@@ -5301,8 +5237,8 @@ window.QuestSystem = {
 };
 
 // Legacy Compatibility Aliases to protect references
-window.generateDailyMissions = () => window.QuestSystem.generateDailyMissions();
-window.generateWeeklyMissions = () =>
+export const generateDailyMissions = () => window.QuestSystem.generateDailyMissions();
+export let generateWeeklyMissions = () =>
   window.QuestSystem.generateWeeklyMissions();
 
 // Append rerollBountyBoard inside window.QuestSystem
@@ -5383,13 +5319,13 @@ Object.assign(window.QuestSystem, {
   },
 });
 
-window.rerollBountyBoard = () => window.QuestSystem.rerollBountyBoard();
+export const rerollBountyBoard = () => window.QuestSystem.rerollBountyBoard();
 
 // Legacy Compatibility Aliases to protect references
-window.generateWeeklyMissions = () =>
+generateWeeklyMissions = () =>
   window.QuestSystem.generateWeeklyMissions();
 
-window.getPacificDate = function () {
+export const getPacificDate = function () {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Los_Angeles",
@@ -5411,7 +5347,7 @@ window.getPacificDate = function () {
   return new Date(pt.year, pt.month - 1, pt.day, hour, pt.minute, pt.second);
 };
 
-window.getPacificTimeDiffs = function () {
+export const getPacificTimeDiffs = function () {
   const laDate = window.getPacificDate();
   const laTime = laDate.getTime();
 
@@ -5443,7 +5379,7 @@ window.getPacificTimeDiffs = function () {
   };
 };
 
-window.formatRemainingTime = function (ms) {
+export const formatRemainingTime = function (ms) {
   let seconds = Math.floor(ms / 1000);
   let days = Math.floor(seconds / 86400);
   seconds %= 86400;
@@ -5514,9 +5450,6 @@ Object.assign(window.QuestSystem, {
         window.playerStats.lastWeeklyResetTime = now;
         window.playerStats.weeklyRewardClaimed = false;
 
-        // Add this line below:
-        window.playerStats.weeklyClanCrateClaimed = false;
-
         if (typeof window.pushLog === "function")
           window.pushLog(
             "<span style='color:#9b59b6; font-weight:bold;'>[SYSTEM] Clan Weekly Board refreshed!</span>",
@@ -5529,7 +5462,7 @@ Object.assign(window.QuestSystem, {
 });
 
 // Legacy Compatibility Aliases to protect references
-window.checkAndResetMissions = () => window.QuestSystem.checkAndResetMissions();
+export const checkAndResetMissions = () => window.QuestSystem.checkAndResetMissions();
 
 // Append progressMission inside window.QuestSystem
 Object.assign(window.QuestSystem, {
@@ -5574,7 +5507,7 @@ Object.assign(window.QuestSystem, {
 });
 
 // Legacy Compatibility Aliases to protect references
-window.progressMission = (type, amount) =>
+export const progressMission = (type, amount) =>
   window.QuestSystem.progressMission(type, amount);
 
 window.equippedSlots = {
@@ -5603,7 +5536,7 @@ window.hero = {
   attackTimer: 0,
   slashFrame: false,
 };
-window.mob = null;
+setPrimaryMob(null);
 window.effects = [];
 window.particles = [];
 window.beams = [];
@@ -5628,121 +5561,158 @@ window.state = {
   currentActivitiesSubTab: "DUNGEONS",
   preferredRingComparisonSlot: "ring1",
 };
-window.isGamePaused = false;
-window.isCloudSynced = false;
+setGamePaused(false);
 window.reviveTimer = 0;
 window.deathAnimationTimer = 0;
 window.deathMaxFrames = 90;
 window.lastUpdateTime = Date.now();
 window.sessionStartTime = Date.now();
 window.respawnIntervalId = null;
-window.recalculateXpRequirement = function () {
+export const recalculateXpRequirement = function () {
   let lvl = window.playerStats.level || 1;
   let rawXpReq = Math.floor(400 * Math.pow(lvl, 1.8) + 150 * Math.pow(lvl, 2.4));
   window.playerStats.xpReq = BigNum.from(rawXpReq);
 };
-// Expose the manual boss rechallenge actuator to the DOM window
-window.rechallengeBoss = function () {
-  let p = window.resolvePlayerStats();
-  window.playerStats.currentHp = p.maxHp;
-  window.playerStats.isFarmingLoop = false;
-  window.playerStats.isBossMode = false;
-  window.playerStats.killCount = 0;
-  window.mob = null;
-  window.projectiles = [];
-  window.hero.x = 40;
-  if (typeof window.updateUI === "function") window.updateUI();
-};
 
 // --- PERSISTENT SAVE & LOAD ENGINE ---
-window.saveGame = function () {
-  try {
-    if (!window.playerStats) return;
+const ENGINE_SAVE_STORAGE_KEY = "extraction_crawler_save";
 
-    if (window.player && window.inventory && window.inventory.EQUIP) {
-      window.player.stash = window.inventory.EQUIP;
+const createEngineBigNum = (mantissa, exponent) =>
+  new BigNum(mantissa, exponent);
+
+const buildCurrentEngineSaveSnapshot = function () {
+  return buildEngineSaveSnapshot({
+    gameVersion: window.GAME_VERSION || GAME_VERSION,
+    playerStats: window.playerStats,
+    equippedSlots: window.equippedSlots,
+    inventory: window.inventory,
+    bag: window.player?.bag || [],
+    pendingScraps: window.player?.pendingScraps || {},
+  });
+};
+
+// Captured before any saved data is applied. It is the clean Engine 1.0 reset
+// target for supported persistent fields and containers.
+const ENGINE_DEFAULT_SAVE_SNAPSHOT = buildCurrentEngineSaveSnapshot();
+
+let lastEngineSaveResetInfo = null;
+
+export const getEngineSaveResetInfo = function () {
+  return lastEngineSaveResetInfo;
+};
+
+const recalculateHydratedItems = function () {
+  if (typeof window.recalculateItemStats !== "function") return;
+  const allItems = new Set([
+    ...Object.values(window.equippedSlots || {}),
+    ...(window.inventory?.EQUIP || []),
+    ...(window.inventory?.ARTIFACT || []),
+    ...(window.inventory?.SIGIL || []),
+    ...(window.player?.bag || []),
+  ]);
+  allItems.forEach((item) => {
+    if (item && typeof item === "object" && item.type) {
+      window.recalculateItemStats(item);
     }
+  });
+};
 
-    let saveData = {
-      playerStats: { ...window.playerStats },
-      equippedSlots: window.equippedSlots || {},
-      inventory: window.inventory || {
-        EQUIP: [],
-        ARTIFACT: [],
-        SIGIL: [],
-        ETC: {},
-        USE: {},
-      },
-      stash: window.player && window.player.stash ? window.player.stash : [],
-      bag: window.player && window.player.bag ? window.player.bag : [],
-      pendingScraps:
-        window.player && window.player.pendingScraps
-          ? window.player.pendingScraps
-          : {},
-      version: window.GAME_VERSION || 1.0,
-    };
+const commitEngineSaveState = function (hydratedSave) {
+  const nextPersistedEntityId = getNextPersistedEntityId(hydratedSave);
+  const hydratedDefaults = hydrateEngineSavePayload(
+    ENGINE_DEFAULT_SAVE_SNAPSHOT,
+    createEngineBigNum,
+  );
 
-    if (saveData.playerStats.xp)
-      saveData.playerStats.xp = {
-        m: saveData.playerStats.xp.m,
-        e: saveData.playerStats.xp.e,
-      };
-    if (saveData.playerStats.xpReq)
-      saveData.playerStats.xpReq = {
-        m: saveData.playerStats.xpReq.m,
-        e: saveData.playerStats.xpReq.e,
-      };
-    if (saveData.playerStats.currentHp)
-      saveData.playerStats.currentHp = {
-        m: saveData.playerStats.currentHp.m,
-        e: saveData.playerStats.currentHp.e,
-      };
-    if (saveData.playerStats.coins)
-      saveData.playerStats.coins = {
-        m: saveData.playerStats.coins.m,
-        e: saveData.playerStats.coins.e,
-      };
-    if (saveData.playerStats.runGold)
-      saveData.playerStats.runGold = {
-        m: saveData.playerStats.runGold.m,
-        e: saveData.playerStats.runGold.e,
-      };
-    if (saveData.playerStats.totalGoldEarned)
-      saveData.playerStats.totalGoldEarned = {
-        m: saveData.playerStats.totalGoldEarned.m,
-        e: saveData.playerStats.totalGoldEarned.e,
-      };
-    if (
-      saveData.playerStats.recoveryLoot &&
-      saveData.playerStats.recoveryLoot.gold
-    ) {
-      saveData.playerStats.recoveryLoot.gold = {
-        m: saveData.playerStats.recoveryLoot.gold.m,
-        e: saveData.playerStats.recoveryLoot.gold.e,
-      };
-    }
+  // Preserve the canonical playerStats identity while ensuring omitted
+  // supported fields return to Engine 1.0 defaults instead of retaining stale
+  // values from a prior in-memory load.
+  ENGINE_PLAYER_STAT_FIELDS.forEach((field) => {
+    delete window.playerStats[field];
+  });
+  Object.assign(
+    window.playerStats,
+    hydratedDefaults.playerStats,
+    hydratedSave.playerStats,
+  );
 
-    // Subphase 13: Serialize Special Challenge rewards safely without mutating live memory references
-    if (saveData.playerStats.activeSpecialChallenge) {
-      let challengeCopy = JSON.parse(
-        JSON.stringify(saveData.playerStats.activeSpecialChallenge),
-      );
-      if (challengeCopy.rewards) {
-        let r = challengeCopy.rewards;
-        if (r.gold)
-          r.gold = { m: BigNum.from(r.gold).m, e: BigNum.from(r.gold).e };
-        if (r.xp) r.xp = { m: BigNum.from(r.xp).m, e: BigNum.from(r.xp).e };
-      }
-      saveData.playerStats.activeSpecialChallenge = challengeCopy;
-    }
+  window.equippedSlots = hydratedSave.equippedSlots;
+  window.inventory = hydratedSave.inventory;
 
-    localStorage.setItem("extraction_crawler_save", JSON.stringify(saveData));
-  } catch (err) {
-    console.warn("Failed to save game to localStorage:", err);
+  if (window.player) {
+    window.player.stash = window.inventory.EQUIP;
+    window.player.bag = hydratedSave.bag;
+    window.player.pendingScraps = hydratedSave.pendingScraps;
+  }
+
+  // Item IDs survive saves while the shared runtime counter does not. Advance
+  // it past every hydrated ID before startup can generate another item/entity.
+  setEntityIdCounter(nextPersistedEntityId);
+
+  // Runtime-only/derived navigation state is rebuilt from the supported
+  // progression marker; it is never accepted from the save payload.
+  const maxClearedFloor = window.playerStats.maxFloorCleared || 0;
+  window.playerStats.stage = Math.max(1, maxClearedFloor);
+  window.playerStats.lifetimePeakStage = Math.max(
+    window.playerStats.lifetimePeakStage || 1,
+    maxClearedFloor,
+  );
+  window.sanitizeBasePlayerStats();
+
+  if (typeof window.hydrateCavernSigils === "function") {
+    window.hydrateCavernSigils();
+  }
+  recalculateHydratedItems();
+
+  if (typeof window.invalidatePlayerStats === "function") {
+    window.invalidatePlayerStats();
+  }
+  if (typeof window.updateUI === "function") {
+    window.updateUI();
   }
 };
 
-window.hydrateCavernSigils = function () {
+const rejectEngineSave = function (error) {
+  const isSchemaError = error instanceof EngineSaveSchemaError;
+  lastEngineSaveResetInfo = Object.freeze({
+    code: isSchemaError ? error.code : "invalid-json",
+    path: isSchemaError ? error.path : "save",
+    message: isSchemaError
+      ? error.message
+      : "Saved data was not valid JSON.",
+  });
+
+  try {
+    localStorage.removeItem(ENGINE_SAVE_STORAGE_KEY);
+  } catch (_storageError) {
+    // The in-memory reset still succeeds if browser storage is unavailable.
+  }
+
+  commitEngineSaveState(
+    hydrateEngineSavePayload(
+      ENGINE_DEFAULT_SAVE_SNAPSHOT,
+      createEngineBigNum,
+    ),
+  );
+  return false;
+};
+
+export const saveGame = function () {
+  try {
+    if (!window.playerStats) return false;
+    const saveSnapshot = buildCurrentEngineSaveSnapshot();
+    localStorage.setItem(
+      ENGINE_SAVE_STORAGE_KEY,
+      stableStringifyEngineSave(saveSnapshot),
+    );
+    return true;
+  } catch (err) {
+    console.warn("Failed to save game to localStorage:", err);
+    return false;
+  }
+};
+
+export const hydrateCavernSigils = function () {
   if (!window.inventory) return;
   if (!window.inventory.SIGIL) {
     window.inventory.SIGIL = [];
@@ -5845,7 +5815,7 @@ window.hydrateCavernSigils = function () {
 };
 
 // --- BESTIARY RARITY SCALING CONFIGURATIONS ---
-window.SET_RESONANCE_BASE_VALUES = {
+export const SET_RESONANCE_BASE_VALUES = {
   "Whispering Woods": 0.02, // 2% Base
   "Mountain Peaks": 0.04, // 4% Base
   "Inferno Depths": 0.06, // 6% Base
@@ -5857,7 +5827,7 @@ window.SET_RESONANCE_BASE_VALUES = {
   "Cosmic Overlords": 0.2, // 20% Base
 };
 
-window.SET_CARD_MULTIPLIERS = {
+export const SET_CARD_MULTIPLIERS = {
   "Whispering Woods": 1.0,
   "Mountain Peaks": 1.25,
   "Inferno Depths": 1.5,
@@ -5869,7 +5839,7 @@ window.SET_CARD_MULTIPLIERS = {
   "Cosmic Overlords": 3.0,
 };
 
-window.getCardDustRates = function (setName) {
+export const getCardDustRates = function (setName) {
   const rates = {
     "Whispering Woods": { craft: 10, salvage: 1 },
     "Mountain Peaks": { craft: 25, salvage: 2 },
@@ -5882,7 +5852,7 @@ window.getCardDustRates = function (setName) {
 };
 
 // --- CENTRALIZED MONSTER CARD ACQUISITION HELPER ---
-window.addMonsterCard = function (cKey, qty = 1) {
+export const addMonsterCard = function (cKey, qty = 1) {
   if (!window.playerStats) return;
   window.playerStats.monsterCards = window.playerStats.monsterCards || {};
   let cardData = window.MONSTER_CARDS_DATA[cKey];
@@ -5921,7 +5891,7 @@ window.addMonsterCard = function (cKey, qty = 1) {
   }
 };
 
-window.renderBestiaryAlbum = function () {
+export const renderBestiaryAlbum = function () {
   let container = document.getElementById("album-content-panel");
   if (!container) return;
 
@@ -6212,7 +6182,7 @@ window.renderBestiaryAlbum = function () {
   }
 };
 
-window.craftCard = function (cKey) {
+export const craftCard = function (cKey) {
   let cardData = window.MONSTER_CARDS_DATA[cKey];
   if (!cardData) return;
 
@@ -6265,7 +6235,7 @@ window.craftCard = function (cKey) {
   );
 };
 
-window.salvageAllDuplicateCards = function () {
+export const salvageAllDuplicateCards = function () {
   let cards = window.playerStats.monsterCards || {};
   let totalDustYield = 0;
   let totalCardsSalvaged = 0;
@@ -6332,7 +6302,7 @@ window.salvageAllDuplicateCards = function () {
   );
 };
 
-window.openMonsterCardSackAnimation = function (rolledCards) {
+export const openMonsterCardSackAnimation = function (rolledCards) {
   window.isGamePaused = true;
   let overlay = document.createElement("div");
   overlay.id = "card-opening-overlay";
@@ -6582,7 +6552,7 @@ window.openMonsterCardSackAnimation = function (rolledCards) {
   window.startUnboxingAnimLoop();
 };
 
-window.sanitizeBasePlayerStats = function () {
+export const sanitizeBasePlayerStats = function () {
   if (!window.playerStats) return;
   window.playerStats.baseStr = 5;
   window.playerStats.baseDex = 5;
@@ -6605,382 +6575,43 @@ window.sanitizeBasePlayerStats = function () {
     window.playerStats.baseAreaRadius = 1.0;
 };
 
-window.loadGame = function () {
+export const loadGame = function () {
+  let saved;
   try {
-    let saved = localStorage.getItem("extraction_crawler_save");
-    if (!saved) return;
-    let parsed = JSON.parse(saved);
-    if (!parsed) return;
-
-    if (parsed.playerStats) {
-      Object.assign(window.playerStats, parsed.playerStats);
-      window.sanitizeBasePlayerStats();
-
-      // Ensure stage and lifetimePeakStage are synchronized with maxFloorCleared
-      let maxClearedFloor = window.playerStats.maxFloorCleared || 1;
-      window.playerStats.stage = Math.max(
-        window.playerStats.stage || 1,
-        maxClearedFloor,
-      );
-      window.playerStats.lifetimePeakStage = Math.max(
-        window.playerStats.lifetimePeakStage || 1,
-        maxClearedFloor,
-      );
-
-      // Safe Migration for Phase 2 Trackers
-      window.playerStats.floorActiveTicks =
-        window.playerStats.floorActiveTicks || 0;
-      window.playerStats.kineticFrictionCharges =
-        window.playerStats.kineticFrictionCharges || 0;
-      window.playerStats.kineticDistanceTraveled =
-        window.playerStats.kineticDistanceTraveled || 0;
-      window.playerStats.kineticStillTimer =
-        window.playerStats.kineticStillTimer || 0;
-      window.playerStats.combatTimer = window.playerStats.combatTimer || 0;
-      window.playerStats.tenacityStacks =
-        window.playerStats.tenacityStacks || 0;
-      window.playerStats.activeCombatTicks =
-        window.playerStats.activeCombatTicks || 0;
-      window.playerStats.outOfCombatTicks =
-        window.playerStats.outOfCombatTicks || 0;
-      window.playerStats.overshieldConsumed =
-        window.playerStats.overshieldConsumed || 0;
-      window.playerStats.nexusTomeShieldTimer =
-        window.playerStats.nexusTomeShieldTimer || 0;
-
-      window.playerStats.recoveryLoot = parsed.playerStats.recoveryLoot || null;
-      window.playerStats.monsterCards = parsed.playerStats.monsterCards || {};
-      window.playerStats.astralDust = parsed.playerStats.astralDust || 0;
-      window.playerStats.hasTriggeredOnslaughtUnlock =
-        parsed.playerStats.hasTriggeredOnslaughtUnlock || false;
-      window.playerStats.isCrucibleMode =
-        parsed.playerStats.isCrucibleMode || false;
-
-      // Subphase 13: Safely Hydrate Active Special Challenge BigNum Rewards
-      if (
-        window.playerStats.activeSpecialChallenge &&
-        window.playerStats.activeSpecialChallenge.rewards
-      ) {
-        let r = window.playerStats.activeSpecialChallenge.rewards;
-        if (r.gold) r.gold = BigNum.from(r.gold);
-        if (r.xp) r.xp = BigNum.from(r.xp);
-      }
-      window.playerStats.crucibleWave = parsed.playerStats.crucibleWave || 1;
-      window.playerStats.cruciblePeak = parsed.playerStats.cruciblePeak || 0;
-      window.playerStats.crucibleDraftDeck =
-        parsed.playerStats.crucibleDraftDeck || [];
-      window.playerStats.astralShards = parsed.playerStats.astralShards || 0;
-      window.playerStats.crucibleAccumulatedShards =
-        parsed.playerStats.crucibleAccumulatedShards || 0;
-      window.playerStats.crucibleAccumulatedCores =
-        parsed.playerStats.crucibleAccumulatedCores || 0;
-      window.playerStats.crucibleAccumulatedLoot =
-        parsed.playerStats.crucibleAccumulatedLoot || [];
-      window.playerStats.crucibleStartWave =
-        parsed.playerStats.crucibleStartWave || 1;
-      window.playerStats.crucibleActiveTab =
-        parsed.playerStats.crucibleActiveTab || "setup";
-      window.playerStats.pendingCrucibleDrafts =
-        parsed.playerStats.pendingCrucibleDrafts || 0;
-
-      // Backward Compatibility Migration: convert real-time timers to run charges
-      const potKeys = ["atk", "hp", "def", "haste", "xp", "drop", "qly"];
-      potKeys.forEach((key) => {
-        let timerKey = key + "PotionTimer";
-        let runKey = key + "PotionRuns";
-        if (
-          window.playerStats[runKey] === undefined ||
-          window.playerStats[runKey] === null
-        ) {
-          let timerVal = window.playerStats[timerKey] || 0;
-          window.playerStats[runKey] =
-            timerVal > 0 ? Math.max(1, Math.ceil(timerVal / 18000)) : 0;
-        }
-        window.playerStats[timerKey] = 0;
-      });
-
-      window.playerStats.xp = BigNum.from(window.playerStats.xp || 0);
-      window.playerStats.xpReq = BigNum.from(window.playerStats.xpReq || 350);
-      window.playerStats.currentHp = BigNum.from(
-        window.playerStats.currentHp || 100,
-      );
-      window.playerStats.coins = BigNum.from(window.playerStats.coins || 0);
-      window.playerStats.runGold = BigNum.from(window.playerStats.runGold || 0);
-
-      // Convert legacy prestigePoints to Astral Shards if present
-      if (
-        window.playerStats.prestigePoints &&
-        window.playerStats.prestigePoints > 0
-      ) {
-        let pts = window.playerStats.prestigePoints;
-        window.playerStats.astralShards =
-          (window.playerStats.astralShards || 0) + pts * 10;
-        window.playerStats.prestigePoints = 0;
-      }
-
-      if (
-        window.playerStats.recoveryLoot &&
-        window.playerStats.recoveryLoot.gold
-      ) {
-        window.playerStats.recoveryLoot.gold = BigNum.from(
-          window.playerStats.recoveryLoot.gold,
-        );
-      }
-
-      // Fallback initializer for Boss Kill progress tracking
-      window.playerStats.bossKillRegistry = window.playerStats
-        .bossKillRegistry || {
-        arachnid_treant: 0,
-        brimstone_colossus: 0,
-        corrosive_abomination: 0,
-        void_overseer: 0,
-        overlord_iron_vault: 0,
-        hooktail: 0,
-        aegis_goliath: 0,
-        chronos_arbitrator: 0,
-        nexus_overseer: 0,
-        gilded_vault_keeper: 0,
-      };
-
-      // Fallback initializers for separate Utility SP
-      if (window.playerStats.usp === undefined) {
-        window.playerStats.usp = 0;
-      }
-
-      // Fallback initializers for Artifact Codex properties
-      if (window.playerStats.activeRelics === undefined) {
-        window.playerStats.activeRelics = [];
-      }
-      if (window.playerStats.artifactCodex === undefined) {
-        window.playerStats.artifactCodex = {};
-      }
-
-      // Fallback initializers for Special Challenges and Bounty Boards
-      if (window.playerStats.activeSpecialChallenge === undefined) {
-        window.playerStats.activeSpecialChallenge = null;
-      }
-      if (window.playerStats.highestRiftLevelCleared === undefined) {
-        window.playerStats.highestRiftLevelCleared = 0;
-      }
-      if (window.playerStats.bountyRerollsToday === undefined) {
-        window.playerStats.bountyRerollsToday = 0;
-      }
-      if (window.playerStats.abyssalDecayAccumulated === undefined) {
-        window.playerStats.abyssalDecayAccumulated = 0;
-      }
-
-      // Backward Compatibility: Migrate legacy slot attunement or reforge quests
-      let hasLegacyDailies =
-        window.playerStats.dailyMissions &&
-        window.playerStats.dailyMissions.some(
-          (m) => m.type === "tempers" || m.type === "reforges",
-        );
-      let hasLegacyWeeklies =
-        window.playerStats.weeklyMissions &&
-        window.playerStats.weeklyMissions.some(
-          (m) => m.type === "tempers" || m.type === "reforges",
-        );
-
-      if (
-        hasLegacyDailies ||
-        !window.playerStats.dailyMissions ||
-        window.playerStats.dailyMissions.length === 0
-      ) {
-        window.QuestSystem.generateDailyMissions();
-      }
-      if (
-        hasLegacyWeeklies ||
-        (window.isWeeklyQuestUnlocked() &&
-          (!window.playerStats.weeklyMissions ||
-            window.playerStats.weeklyMissions.length === 0))
-      ) {
-        window.QuestSystem.generateWeeklyMissions();
-      }
-
-      // Safely hydrate serialized BigNum rewards back into live instances
-      if (window.playerStats.dailyMissions) {
-        window.playerStats.dailyMissions.forEach((m) => {
-          if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
-          if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
-        });
-      }
-      if (window.playerStats.weeklyMissions) {
-        window.playerStats.weeklyMissions.forEach((m) => {
-          if (m.goldReward) m.goldReward = BigNum.from(m.goldReward);
-          if (m.xpReward) m.xpReward = BigNum.from(m.xpReward);
-        });
-      }
-
-      // Fallback initializers for Field Flask properties
-      if (window.playerStats.maxFlaskCharges === undefined)
-        window.playerStats.maxFlaskCharges = 1;
-      if (window.playerStats.flaskCharges === undefined)
-        window.playerStats.flaskCharges = window.playerStats.maxFlaskCharges;
-      if (window.playerStats.flaskPotency === undefined)
-        window.playerStats.flaskPotency = 0.25;
-      if (window.playerStats.flaskCooldownTimer === undefined)
-        window.playerStats.flaskCooldownTimer = 0;
-      if (window.playerStats.flaskX === undefined)
-        window.playerStats.flaskX = null;
-      if (window.playerStats.flaskY === undefined)
-        window.playerStats.flaskY = null;
-      window.playerStats.totalGoldEarned = BigNum.from(
-        window.playerStats.totalGoldEarned || 0,
-      );
-
-      // Fallback initializers for Subweapon Mastery
-      if (!window.playerStats.subweaponMastery) {
-        window.playerStats.subweaponMastery = {
-          shield: { xp: 0, level: 1, sp: 0, spentSp: 0 },
-          dagger: { xp: 0, level: 1, sp: 0, spentSp: 0 },
-          tome: { xp: 0, level: 1, sp: 0, spentSp: 0 },
-          nodes: {},
-        };
-      }
-      if (!window.playerStats.subweaponMastery.nodes) {
-        window.playerStats.subweaponMastery.nodes = {};
-      }
-      const defaultNodes = [
-        "shield_spiked_rim",
-        "shield_iron_wall",
-        "shield_impact_tremor",
-        "shield_fortified_guard",
-        "shield_retaliatory_strike",
-        "shield_aegis_pulse",
-        "shield_keystone_colossus",
-        "shield_keystone_reflect",
-        "dagger_lethal_precision",
-        "dagger_vipers_coating",
-        "dagger_shadow_step",
-        "dagger_expose_weakness",
-        "dagger_shadow_flurry",
-        "dagger_sanguine_rupture",
-        "dagger_keystone_assassin",
-        "dagger_keystone_duellist",
-        "tome_empowered_catalysts",
-        "tome_runic_barrier",
-        "tome_elemental_overload",
-        "tome_arcane_syphon",
-        "tome_barrier_shatter",
-        "tome_spell_weaving",
-        "tome_keystone_triad",
-        "tome_keystone_singularity",
-      ];
-      defaultNodes.forEach((nodeId) => {
-        if (window.playerStats.subweaponMastery.nodes[nodeId] === undefined) {
-          window.playerStats.subweaponMastery.nodes[nodeId] = 0;
-        }
-      });
-
-      // Backfill starting stage checkpoints for beaten boss/mini-boss floors
-      let maxCleared = window.playerStats.maxFloorCleared || 0;
-      let checkpoints = new Set(window.playerStats.unlockedCheckpoints || [1]);
-      checkpoints.add(1);
-      for (let f = 4; f <= maxCleared; f += 4) {
-        checkpoints.add(f + 1);
-      }
-      window.playerStats.unlockedCheckpoints = Array.from(checkpoints)
-        .filter(window.isValidCheckpoint)
-        .sort((a, b) => a - b);
-    }
-
-    if (parsed.equippedSlots) {
-          window.equippedSlots = parsed.equippedSlots;
-        }
-
-    // Safe Skill Tree Migration & Fallback Initialization
-    if (window.playerStats.activeStarterSubweapon === undefined) {
-      window.playerStats.activeStarterSubweapon = "none";
-    }
-    if (!window.playerStats.skillTree) {
-      window.playerStats.skillTree = {};
-    }
-
-    if (parsed.inventory) {
-      window.inventory = parsed.inventory;
-      if (typeof window.hydrateCavernSigils === "function") {
-        window.hydrateCavernSigils();
-      }
-    }
-
-    // Merge Stash and Inventory EQUIP arrays cleanly to prevent empty array overwrites
-    let itemMap = new Map();
-    let savedEquip = (window.inventory && window.inventory.EQUIP) || [];
-    let savedStash = parsed.stash || [];
-
-    savedEquip.forEach((item) => {
-      if (item && item.id !== undefined) itemMap.set(item.id, item);
-    });
-    savedStash.forEach((item) => {
-      if (item && item.id !== undefined && !itemMap.has(item.id))
-        itemMap.set(item.id, item);
-    });
-
-    let mergedItems = Array.from(itemMap.values());
-        if (!window.inventory)
-          window.inventory = {
-            EQUIP: [],
-            ARTIFACT: [],
-            SIGIL: [],
-            ETC: {},
-            USE: {},
-          };
-
-        // Auto-Recovery: Route any artifacts or sigils accidentally trapped in EQUIP back to their proper vaults
-        window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
-        window.inventory.SIGIL = window.inventory.SIGIL || [];
-        window.inventory.EQUIP = [];
-
-        mergedItems.forEach((item) => {
-          if (item && typeof item === "object") {
-            if (item.type === "artifact") {
-              window.inventory.ARTIFACT.push(item);
-            } else if (item.type === "sigil") {
-              window.inventory.SIGIL.push(item);
-            } else {
-              window.inventory.EQUIP.push(item);
-            }
-          }
-        });
-
-    if (window.player) {
-      window.player.stash = window.inventory.EQUIP;
-      if (parsed.bag && Array.isArray(parsed.bag)) {
-        window.player.bag = parsed.bag;
-      }
-      window.player.pendingScraps = parsed.pendingScraps || {};
-    }
-
-    if (typeof window.recalculateItemStats === "function") {
-      let allItems = [
-        ...Object.values(window.equippedSlots || {}),
-        ...(window.inventory?.EQUIP || []),
-        ...(window.inventory?.ARTIFACT || []),
-        ...(window.player?.stash || []),
-        ...(window.player?.bag || []),
-      ];
-      allItems.forEach((item) => {
-        if (item && typeof item === "object" && item.type) {
-          window.recalculateItemStats(item);
-        }
-      });
-    }
-
-    if (typeof window.invalidatePlayerStats === "function") {
-      window.invalidatePlayerStats();
-    }
-    if (typeof window.updateUI === "function") {
-      window.updateUI();
-    }
+    saved = localStorage.getItem(ENGINE_SAVE_STORAGE_KEY);
   } catch (err) {
-    console.warn("Failed to load game from localStorage:", err);
+    console.warn("Failed to read game save from localStorage:", err);
+    return false;
+  }
+
+  if (!saved) {
+    lastEngineSaveResetInfo = null;
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+    const hydratedSave = hydrateEngineSavePayload(
+      parsed,
+      createEngineBigNum,
+    );
+
+    // No live root or canonical object is touched until the complete payload,
+    // including every nested BigNum, has passed validation and hydration.
+    commitEngineSaveState(hydratedSave);
+    lastEngineSaveResetInfo = null;
+    return true;
+  } catch (err) {
+    if (err instanceof EngineSaveSchemaError || err instanceof SyntaxError) {
+      return rejectEngineSave(err);
+    }
+    console.warn("Failed to load Engine 1.0 save:", err);
+    return false;
   }
 };
 
 // Auto-load saved state on boot
-window.loadGame();
-
-window.calculateCumulativeOnslaughtShards = function (startWave) {
+export const calculateCumulativeOnslaughtShards = function (startWave) {
   let totalShards = 0;
   let totalGold = 0;
   let totalXp = 0;
@@ -6997,12 +6628,12 @@ window.calculateCumulativeOnslaughtShards = function (startWave) {
     xp: Math.floor(totalXp * 0.7),
   };
 };
-window.changeOnslaughtStartWave = function (waveVal) {
+export const changeOnslaughtStartWave = function (waveVal) {
   window.playerStats.crucibleStartWave = parseInt(waveVal, 10) || 1;
   window.renderDeploymentModal();
 };
 
-window.renderDeploymentModal = function () {
+export const renderDeploymentModal = function () {
   if (typeof window.renderDeploymentModal === "function") {
     // Falls back seamlessly to the fully unified version loaded in main.js
     window.renderDeploymentModal();

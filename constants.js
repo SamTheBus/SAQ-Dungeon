@@ -1,9 +1,12 @@
-/* ==========================================================================
+/* ========================================================================== 
    PRIMARY PURPOSE: Stores static, declarative, and immutable game databases
    including items, sets, cosmetics, achievements, and modifiers.
    ========================================================================= */
 
-window.MYSTICAL_STOCK = [
+import { setCurrentGameState } from "./runtime_state.js?v=1.002";
+import "./player_runtime.js?v=1.001";
+
+export const MYSTICAL_STOCK = [
   {
     name: "SP Reset Scroll",
     cost: 2500,
@@ -27,7 +30,7 @@ window.MYSTICAL_STOCK = [
   },
 ];
 
-window.POTION_TRANSMUTATIONS = [
+export const POTION_TRANSMUTATIONS = [
   {
     result: "Greater Attack Elixir",
     req: "Attack Elixir",
@@ -86,7 +89,7 @@ window.POTION_TRANSMUTATIONS = [
   },
 ];
 
-window.etcDex = {
+export const etcDex = {
   "Eridium Shard":
     "A glowing, alien fragment used in the Forge to Tier Up an item's Star Rarity.",
   "Glimmering Gachapon Key":
@@ -116,7 +119,7 @@ window.etcDex = {
     "A clean scrap of rare metal, useful for early-to-mid-tier tempering.",
 };
 
-window.useDex = {
+export const useDex = {
   "Astral Singularity Cache": {
     desc: "A locked container vibrating with concentrated void energy. Unboxes a guaranteed 5★ Uber Unique weapon, offhand, or armor scaled to your lifetime peak stage.",
     color: "#a855f7",
@@ -219,7 +222,7 @@ window.useDex = {
   },
 };
 
-window.ARTIFACT_POOL = [
+export const ARTIFACT_POOL = [
   {
     name: "Berserker Stone",
     trait: "frenzy",
@@ -524,8 +527,8 @@ window.ARTIFACT_POOL = [
     philosopher_catalyst: 2,
     cauldron_eternity: 2,
   };
-  if (window.ARTIFACT_POOL) {
-    window.ARTIFACT_POOL.forEach((art) => {
+  if (ARTIFACT_POOL) {
+    ARTIFACT_POOL.forEach((art) => {
       art.tier = tierMapping[art.trait] || 1;
     });
 
@@ -659,11 +662,11 @@ window.ARTIFACT_POOL = [
       },
     ];
 
-    window.ARTIFACT_POOL.push(...newArtifacts);
+    ARTIFACT_POOL.push(...newArtifacts);
   }
 })();
 
-window.SET_DEFINITIONS = {
+export const SET_DEFINITIONS = {
   Vanguard: {
     name: "Vanguard",
     bonuses: [
@@ -1020,7 +1023,7 @@ window.SET_DEFINITIONS = {
   },
 };
 
-window.AchievementsData = [
+export const AchievementsData = [
   // 1. SLAYERS (Monster Slayings)
   {
     id: "slayer_1",
@@ -2002,7 +2005,7 @@ window.AchievementsData = [
   },
 ];
 
-window.slotNouns = {
+export const slotNouns = {
   weapon: [
     "Greatsword",
     "Longsword",
@@ -2039,7 +2042,7 @@ window.slotNouns = {
   ring: ["Signet Ring", "Loop Ring", "Band Ring", "Seal Ring"],
 };
 
-window.COSMETIC_SKINS = {
+export const COSMETIC_SKINS = {
   default: {
     id: "default",
     name: "Steel Grey Color",
@@ -2082,7 +2085,7 @@ window.COSMETIC_SKINS = {
   },
 };
 
-window.COSMETIC_COSTUMES = {
+export const COSMETIC_COSTUMES = {
   knight: {
     id: "knight",
     name: "Knight's Armor",
@@ -2141,7 +2144,7 @@ window.COSMETIC_COSTUMES = {
   },
 };
 
-window.CAVERN_BUFFS = [
+export const CAVERN_BUFFS = [
   // --- STAT-BASED BUFFS (Available from Tier 1 up, scaling magnitudes) ---
   {
     id: "giant_might",
@@ -2274,7 +2277,7 @@ window.CAVERN_BUFFS = [
   },
 ];
 
-window.CAVERN_DEBUFFS = [
+export const CAVERN_DEBUFFS = [
   // --- STAT-BASED PENALTIES (Scale with stars) ---
   {
     id: "dull_blades",
@@ -2461,7 +2464,7 @@ window.CAVERN_DEBUFFS = [
   },
 ];
 
-window.ASTRAL_SHOP_STOCK = [
+export const ASTRAL_SHOP_STOCK = [
   {
     name: "Astral Singularity Cache",
     cost: 7500,
@@ -2537,7 +2540,7 @@ window.ASTRAL_SHOP_STOCK = [
   },
 ];
 
-window.TITLES_DATA = {
+export const TITLES_DATA = {
   hoors_beta_boi: {
     id: "hoors_beta_boi",
     name: "Hoor's Beta Boi",
@@ -2565,9 +2568,9 @@ window.TITLES_DATA = {
   },
 };
 
-window.CARD_UPGRADE_THRESHOLDS = [1, 50, 150, 300, 750, 1800];
+export const CARD_UPGRADE_THRESHOLDS = [1, 50, 150, 300, 750, 1800];
 
-window.MONSTER_CARDS_DATA = {
+export const MONSTER_CARDS_DATA = {
   // Whispering Woods (T0)
   slime: {
     name: "Slime Card",
@@ -2785,7 +2788,7 @@ window.MONSTER_CARDS_DATA = {
   },
 };
 
-window.CARD_SETS_DATA = {
+export const CARD_SETS_DATA = {
   "Whispering Woods": {
     name: "Whispering Woods Set",
     theme: "XP Rate Multiplier",
@@ -2835,7 +2838,7 @@ window.CARD_SETS_DATA = {
   },
 };
 
-window.useDex["Monster Card Sack"] = {
+useDex["Monster Card Sack"] = {
   desc: "A heavy, dust-covered burlap booster pack sealed with a runic wax stamp. Tearing it open dispenses a booster pack of 5 random cards for your Bestiary Album. Duplicates are spent on card rank elevations.",
   color: "#a855f7",
 };
@@ -2844,7 +2847,7 @@ window.useDex["Monster Card Sack"] = {
    TOP-DOWN DUNGEON & ADVENTURER'S HUB CONSTANTS
    ========================================================================= */
 
-window.TILE_TYPES = {
+export const TILE_TYPES = {
   VOID: 0,
   FLOOR: 1,
   WALL: 2,
@@ -2868,7 +2871,7 @@ window.TILE_TYPES = {
   STATION_BOUNTY: 20,
 };
 
-window.DUNGEON_CONFIG = {
+export const DUNGEON_CONFIG = {
   BASE_WIDTH: 40,
   BASE_HEIGHT: 24,
   TILE_SIZE: 32,
@@ -2876,33 +2879,14 @@ window.DUNGEON_CONFIG = {
   MAX_ROOM_SIZE: 10,
 };
 
-window.GAME_STATES = {
+export const GAME_STATES = {
   HUB: "HUB",
   DUNGEON: "DUNGEON",
 };
 
-window.currentGameState = window.GAME_STATES.HUB;
+setCurrentGameState(GAME_STATES.HUB);
 
-window.player = {
-  x: 0,
-  y: 0,
-  targetX: 0,
-  targetY: 0,
-  radius: 9,
-  speed: 3.0,
-  hp: 100,
-  maxHp: 100,
-  atk: 15,
-  def: 5,
-  bag: [],
-  stash: [],
-  pendingScraps: {},
-  depth: 1,
-  facing: 1,
-};
-window.topDownPlayer = window.player;
-
-window.BOSS_BAR_THEMES = {
+export const BOSS_BAR_THEMES = {
   aegis_goliath: {
     title: "AEGIS GOLIATH",
     subtitle: "COSMIC SHIELD WARDEN",

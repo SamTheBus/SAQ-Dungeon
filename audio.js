@@ -3,7 +3,7 @@
    Generates all game audio in real-time using the Web Audio API.
    ========================================================================= */
 
-window.SoundManager = {
+export const SoundManager = {
   ctx: null,
   activeChannelCount: 0,
   maxConcurrent: 5,
@@ -2026,7 +2026,7 @@ window.SoundManager = {
 };
 
 /* --- PROCEDURAL LOOT DROP ACOUSTIC SYNTHESIZER --- */
-window.SoundManager.playLootDrop = function (stars) {
+SoundManager.playLootDrop = function (stars) {
   if (!window.SoundManager.init()) return;
   let audioCtx = window.SoundManager.ctx;
 
@@ -2135,10 +2135,10 @@ window.SoundManager.playLootDrop = function (stars) {
 /* --- TACTILE INTERFACE SYNTHESIZER & AUTO-BINDINGS --- */
 
 // Track timestamp to prevent sweep fatigue
-window.SoundManager.lastHoverTime = 0;
+SoundManager.lastHoverTime = 0;
 
 // 1. Synthesize a Satisfying, Soft, "Bubbly Pop" Button Click
-window.SoundManager.playClick = function () {
+SoundManager.playClick = function () {
   if (!window.SoundManager.init()) return;
   let audioCtx = window.SoundManager.ctx;
 
@@ -2191,7 +2191,7 @@ window.SoundManager.playClick = function () {
 };
 
 // 2. Synthesize Reward/Purchase "Gold Chime & Settle" Sound
-window.SoundManager.playPurchase = function () {
+SoundManager.playPurchase = function () {
   if (!window.SoundManager.init()) return;
   let audioCtx = window.SoundManager.ctx;
 
@@ -2281,7 +2281,7 @@ window.SoundManager.playPurchase = function () {
 };
 
 // 3. Synthesize Ethereal Hover Glide (with fatigue throttle)
-window.SoundManager.playHover = function () {
+SoundManager.playHover = function () {
   let nowMs = Date.now();
   if (nowMs - window.SoundManager.lastHoverTime < 120) return;
   window.SoundManager.lastHoverTime = nowMs;
@@ -2323,7 +2323,7 @@ window.SoundManager.playHover = function () {
 };
 
 // 4. Synthesize Sigil Sack Opening Chime sequence
-window.SoundManager.playSigilSackOpen = function () {
+SoundManager.playSigilSackOpen = function () {
   if (!window.SoundManager.init()) return;
   let audioCtx = window.SoundManager.ctx;
 
@@ -2418,7 +2418,7 @@ window.SoundManager.playSigilSackOpen = function () {
 };
 
 // 5. Synthesize Monster Card Pack Opening sequence
-window.SoundManager.playCardPackOpen = function () {
+SoundManager.playCardPackOpen = function () {
   if (!window.SoundManager.init()) return;
   let audioCtx = window.SoundManager.ctx;
 
@@ -2521,7 +2521,7 @@ window.SoundManager.playCardPackOpen = function () {
 };
 
 // 6. Centralized Non-Blocking DOM Event Delegator with Fallbacks
-window.SoundManager.unlockMobileAudio = function () {
+SoundManager.unlockMobileAudio = function () {
   if (!this.ctx) {
     this.init();
   }
@@ -2570,7 +2570,7 @@ window.SoundManager.unlockMobileAudio = function () {
   }
 };
 
-window.SoundManager.initTactileFeedback = function () {
+SoundManager.initTactileFeedback = function () {
   const triggerUnlock = () => {
     window.SoundManager.unlockMobileAudio();
   };
@@ -2651,7 +2651,7 @@ window.SoundManager.initTactileFeedback = function () {
   );
 };
 
-window.SoundManager.playCardPickup = function () {
+SoundManager.playCardPickup = function () {
   if (!this.init()) return;
   let audioCtx = this.ctx;
   const settings = this.getSafeSettings();
@@ -2710,7 +2710,7 @@ if (document.readyState === "loading") {
     window.SoundManager.initTactileFeedback();
   });
 } else {
-  window.SoundManager.initTactileFeedback();
+  SoundManager.initTactileFeedback();
 }
 
 /* ==========================================================================
@@ -2719,7 +2719,7 @@ if (document.readyState === "loading") {
    to prevent iOS Safari lockscreen hijacking.
    ========================================================================== */
 
-window.MusicManager = {
+export const MusicManager = {
   ctx: null,
   gainNode: null,
   synthFilter: null,
@@ -3216,10 +3216,11 @@ window.MusicManager = {
           p.hp !== null &&
           p.maxHp !== null
         ) {
-          const hpVal = Number(p.hp.m) * Math.pow(10, Number(p.hp.e) || 0);
-          const maxHpVal =
-            Number(p.maxHp.m) * Math.pow(10, Number(p.maxHp.e) || 0);
-          hpRatio = maxHpVal > 0 ? hpVal / maxHpVal : 1.0;
+          const hpValue = window.BigNum.from(p.hp);
+          const maxHpValue = window.BigNum.from(p.maxHp);
+          hpRatio = maxHpValue.gt(0)
+            ? hpValue.div(maxHpValue).toFiniteNumber(1)
+            : 1.0;
         } else {
           hpRatio = Number(p.hp) / Number(p.maxHp);
         }

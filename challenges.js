@@ -1,9 +1,14 @@
-/* ==========================================================================
+/* ========================================================================== 
    PRIMARY PURPOSE: Special Challenges, Bounty Boards, and Cavern Mutators.
    Extends ItemFactory for Calamity Sigils and handles Contract Signing.
    ========================================================================= */
 
-(function () {
+import {
+  addActiveDungeonMob,
+  getPrimaryMob,
+  setPrimaryMob,
+} from "./encounter_state.js?v=1.004";
+
   // --- SUBPHASE 11: LOCAL MUTATOR EXCLUSION MATRIX ---
   const DEBUFF_EXCLUSIONS = window.DEBUFF_EXCLUSIONS || {};
 
@@ -12,7 +17,7 @@
 
   // --- SUBPHASE 12: CALAMITY SIGIL PROJECTION GENERATOR ---
   window.ItemFactory = window.ItemFactory || {};
-  window.ItemFactory.createCalamitySigil = function (challengeId) {
+  const createCalamitySigil = function (challengeId) {
     let challenge = window.SPECIAL_CHALLENGES_DATABASE[challengeId];
     if (!challenge) return null;
 
@@ -53,9 +58,10 @@
 
     return sigil;
   };
+  window.ItemFactory.createCalamitySigil = createCalamitySigil;
 
   // --- SUBPHASE 14: CONTRACT SIGNING SYSTEM ---
-  window.signSpecialChallengeContract = function (challengeId) {
+  const signSpecialChallengeContract = function (challengeId) {
     let challenge = window.SPECIAL_CHALLENGES_DATABASE[challengeId];
     if (!challenge) return;
 
@@ -88,8 +94,9 @@
     if (typeof window.updateUI === "function") window.updateUI();
     if (typeof window.saveGame === "function") window.saveGame();
   };
+  window.signSpecialChallengeContract = signSpecialChallengeContract;
 
-  window.abandonSpecialChallenge = function () {
+  const abandonSpecialChallenge = function () {
     if (!window.playerStats.activeSpecialChallenge) return;
     let name = window.playerStats.activeSpecialChallenge.name;
     window.playerStats.activeSpecialChallenge = null;
@@ -104,6 +111,7 @@
     if (typeof window.updateUI === "function") window.updateUI();
     if (typeof window.saveGame === "function") window.saveGame();
   };
+  window.abandonSpecialChallenge = abandonSpecialChallenge;
 
   class SpecialChallengeEngine {
     constructor() {
@@ -536,7 +544,7 @@
 
       // Spawn Boss 1 (Primary Target) on Left side
       window.spawnBossEncounter(cx - 3, cy, "major");
-      let boss1 = window.mob;
+      let boss1 = getPrimaryMob();
       boss1.id = window.idCounter++;
       boss1.x = (cx - 3) * map.tileSize - 16;
       boss1.y = cy * map.tileSize - 16;
@@ -544,13 +552,12 @@
       boss1.name = pTar.name;
       boss1.visualTier = pTar.tier;
 
-      window.activeDungeonMobs = window.activeDungeonMobs || [];
-      window.activeDungeonMobs.push(boss1);
+      addActiveDungeonMob(boss1);
 
       if (sTar) {
         // Spawn Boss 2 (Secondary Target) on Right side
         window.spawnBossEncounter(cx + 3, cy, "major");
-        let boss2 = window.mob;
+        let boss2 = getPrimaryMob();
         boss2.id = window.idCounter++;
         boss2.x = (cx + 3) * map.tileSize - 16;
         boss2.y = cy * map.tileSize - 16;
@@ -558,10 +565,10 @@
         boss2.name = sTar.name;
         boss2.visualTier = sTar.tier;
 
-        window.activeDungeonMobs.push(boss2);
-        window.mob = boss2; // Primary anchor hook for rendering
+        addActiveDungeonMob(boss2);
+        setPrimaryMob(boss2); // Primary anchor hook for rendering
       } else {
-        window.mob = boss1;
+        setPrimaryMob(boss1);
       }
     }
 
@@ -611,6 +618,13 @@
     }
   }
 
-  window.ChallengeEngine = new SpecialChallengeEngine();
-  window.ChallengeEngine.init();
-})();
+  const ChallengeEngine = new SpecialChallengeEngine();
+  window.ChallengeEngine = ChallengeEngine;
+  ChallengeEngine.init();
+
+export {
+  createCalamitySigil,
+  signSpecialChallengeContract,
+  abandonSpecialChallenge,
+  ChallengeEngine,
+};

@@ -3,7 +3,7 @@
    Houses all procedural paths, gradients, and rendering blueprints.
    ========================================================================= */
 
-window.AssetCatalog = {
+export const AssetCatalog = {
   // Helper to compile inner SVG pathways into a unified, responsive HTML wrapper
   compile(
     viewBox,
@@ -5210,7 +5210,7 @@ window.AssetCatalog = {
   },
 };
 
-window.getAchievementBadgeHtml = function (ach, unlocked, size = 32) {
+export const getAchievementBadgeHtml = function (ach, unlocked, size = 32) {
   let id = ach.id;
   let isSingle = !!ach.isSingleTier;
 
@@ -5468,7 +5468,7 @@ window.getAchievementBadgeHtml = function (ach, unlocked, size = 32) {
     `;
 };
 
-window.getIconSvgData = function (itemOrName) {
+export const getIconSvgData = function (itemOrName) {
   let innerSvg = "";
   let color = "#00d2ff";
   let viewBox = "0 0 32 32";
@@ -5761,7 +5761,7 @@ window.getIconSvgData = function (itemOrName) {
 
 window.canvasIconImageCache = window.canvasIconImageCache || {};
 
-window.getCanvasIconImage = function (itemOrName) {
+export const getCanvasIconImage = function (itemOrName) {
   if (!itemOrName) return null;
   let key =
     typeof itemOrName === "string"
@@ -5801,7 +5801,7 @@ window.getCanvasIconImage = function (itemOrName) {
 
 window.canvasCutoutImageCache = window.canvasCutoutImageCache || {};
 
-window.getCanvasCutoutImage = function (itemOrName) {
+export const getCanvasCutoutImage = function (itemOrName) {
   if (!itemOrName) return null;
   let key =
     typeof itemOrName === "string"
@@ -5831,7 +5831,7 @@ window.getCanvasCutoutImage = function (itemOrName) {
   return img;
 };
 
-window.getEquipIconHtml = function (item, size = 32) {
+export const getEquipIconHtml = function (item, size = 32) {
   let data = window.getIconSvgData(item);
   if (!data) return "";
   let rgb = window.hexToRgbValues
@@ -5847,7 +5847,7 @@ window.getEquipIconHtml = function (item, size = 32) {
   );
 };
 
-window.getEtcIconHtml = function (name, size = 32) {
+export const getEtcIconHtml = function (name, size = 32) {
   let data = window.getIconSvgData(name);
   if (!data) return "";
   let rgb = window.hexToRgbValues
@@ -5863,7 +5863,7 @@ window.getEtcIconHtml = function (name, size = 32) {
   );
 };
 
-window.getUseIconHtml = function (name, size = 32) {
+export const getUseIconHtml = function (name, size = 32) {
   let data = window.getIconSvgData(name);
   if (!data) return "";
   let rgb = window.hexToRgbValues
@@ -5883,7 +5883,7 @@ window.getUseIconHtml = function (name, size = 32) {
 // --- APPENDABLE SKILL TREE SVG VECTOR ICON CATALOG ---
 // Append custom vector path definitions node-by-node below!
 // ==========================================================================
-window.AssetCatalog.skillIcons = {
+AssetCatalog.skillIcons = {
   // Tree 1: Shield Mastery Custom Vector Icons
   shield_starter: {
     color: "#38bdf8",
@@ -6058,7 +6058,7 @@ window.AssetCatalog.skillIcons = {
   },
 };
 
-window.getSkillIconSvg = function (iconKey, size = 28) {
+export const getSkillIconSvg = function (iconKey, size = 28) {
   let icon = window.AssetCatalog.skillIcons[iconKey];
   if (!icon) {
     // Graceful procedural fallback frame for skills awaiting custom icons
@@ -6487,7 +6487,7 @@ window.NEW_ARTIFACT_SVGS.speed_to_momentum = function (size) {
 };
 
 // Global interceptor hook executing modular dynamic lookups for all artifact traits
-window.getArtifactIconHtml = function (trait, size = 36) {
+export const getArtifactIconHtml = function (trait, size = 36) {
   if (!trait) return "";
 
   // 1. Check newly registered standalone SVG generators

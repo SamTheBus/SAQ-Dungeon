@@ -3,7 +3,6 @@
    Topological Path Solver for Extraction Points, and Frustum-Culled Tile Renderer.
    ========================================================================= */
 
-(function () {
   class DungeonMapGenerator {
     constructor() {
       this.reset();
@@ -885,7 +884,7 @@
     }
   }
 
-  window.drawBreakableProp = function (ctx, prop, px, py, tileSize) {
+  const drawBreakableProp = function (ctx, prop, px, py, tileSize) {
     if (!prop) return;
     let cx = px + tileSize / 2;
     let cy = py + tileSize / 2;
@@ -1027,12 +1026,19 @@
 
     ctx.restore();
   };
+  window.drawBreakableProp = drawBreakableProp;
 
   window.DungeonMapGenerator = DungeonMapGenerator;
-  window.DungeonCamera = new Camera();
-  window.activeDungeonMap = new DungeonMapGenerator();
+  const DungeonCamera = new Camera();
+  window.DungeonCamera = DungeonCamera;
+  const activeDungeonMap = new DungeonMapGenerator();
+  window.activeDungeonMap = activeDungeonMap;
 
-  window.preRenderStaticMap = function (map) {
+  function getActiveDungeonMap() {
+    return activeDungeonMap;
+  }
+
+  const preRenderStaticMap = function (map) {
     if (!map || !map.grid || map.grid.length === 0) return;
     let tileSize = map.tileSize;
 
@@ -1709,8 +1715,9 @@
     }
     map.needsPreRender = false;
   };
+  window.preRenderStaticMap = preRenderStaticMap;
 
-  window.drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
+  const drawDungeonPortalTile = function (ctx, tileType, cx, cy, tileSize) {
     let map = window.activeDungeonMap;
     let time = Date.now();
     let isChallengeActive =
@@ -2133,8 +2140,9 @@
 
     ctx.restore();
   };
+  window.drawDungeonPortalTile = drawDungeonPortalTile;
 
-  window.renderTopDownMap = function (ctx, canvas) {
+  const renderTopDownMap = function (ctx, canvas) {
     let map = window.activeDungeonMap;
     if (!map || !map.grid || map.grid.length === 0) return;
 
@@ -5747,8 +5755,9 @@
 
     ctx.restore();
   };
+  window.renderTopDownMap = renderTopDownMap;
 
-  window.renderMinimap = function (ctx, canvas) {
+  const renderMinimap = function (ctx, canvas) {
     let map = window.activeDungeonMap;
     if (!map || !map.grid || map.grid.length === 0) return;
 
@@ -5908,4 +5917,16 @@
 
     ctx.restore();
   };
-})();
+  window.renderMinimap = renderMinimap;
+
+export {
+  drawBreakableProp,
+  DungeonMapGenerator,
+  DungeonCamera,
+  activeDungeonMap,
+  getActiveDungeonMap,
+  preRenderStaticMap,
+  drawDungeonPortalTile,
+  renderTopDownMap,
+  renderMinimap,
+};

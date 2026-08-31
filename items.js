@@ -2,17 +2,119 @@
    PRIMARY PURPOSE: Procedural Item Generation, Unique Styling,
    Sack Management, Forge/Crafting, and Shop Transaction Logic.
    ========================================================================= */
+
+export let
+  getRarityMultiplier,
+  isItemUnique,
+  getUniqueKey,
+  getEquippedItemForComparison,
+  getCombinedEquippedTorso,
+  getComparisonDeltaBadge,
+  buildGeneralTooltipHtml,
+  generateItemCardHtml,
+  executeSpectralShatter,
+  PitySystem,
+  getSlotUpgradeCost,
+  setEnchantMode,
+  toggleEnchantmentModal,
+  selectEnchantItem,
+  renderEnchantInstructionPane,
+  renderEnchantmentTab,
+  hexToRgbValues,
+  ItemFactory,
+  rollSetForItem,
+  getSetRerollGoldCost,
+  generateForgePreviewHtml,
+  getForgeDiffLines,
+  renderForgeTab,
+  getUniqueItemStyle,
+  rollSigilStatValue,
+  formatSigilStatDesc,
+  generateCavernSigilName,
+  createItemObject,
+  buildProceduralName,
+  getStatBaseRange,
+  formatStatRangeStr,
+  scaleItemBonusStats,
+  recalculateItemStats,
+  addRandomStatLineToItem,
+  toggleLock,
+  equipItem,
+  unequipItem,
+  executeSalvageItemLogic,
+  salvageItem,
+  checkAutoSalvage,
+  ForgeManager,
+  getMaxTemper,
+  getRequiredScrapForTemper,
+  getRequiredScrapAmountForTemper,
+  getTemperGoldCost,
+  getTierUpScrapName,
+  getMaxEnchants,
+  getEnchantmentSymbol,
+  getStatEnchantSuffix,
+  getStatIcon,
+  selectForgeItem,
+  selectForgeSlot,
+  toggleForgeModal,
+  setForgeMode,
+  switchForgeStation,
+  changeAutoSalvage,
+  selectBulkSalvageRarity,
+  triggerBulkSalvage,
+  temperItem,
+  enchantItem,
+  resetItemEnchants,
+  getStatLabel,
+  lockForgeStat,
+  selectReforgeStat,
+  reforgeItemStat,
+  buyGachaCrate,
+  rollGachaCrateItem,
+  getGoldUpgradeCost,
+  updateShopHeaderWallet,
+  toggleShopModal,
+  switchShopTab,
+  refreshShopStock,
+  executeManualShopRefresh,
+  renderMarketShop,
+  renderMysticalShop,
+  renderGoldUpgrades,
+  buyShopItem,
+  buyMysticalItem,
+  buyGoldUpgrade,
+  transmutePotion,
+  rerollItemSet,
+  buyAstralShopItem,
+  executeSlotCavernSigil,
+  recalculateAllInventoryItems,
+  runArtifactTestHarness,
+  triggerRobberyConfirmation,
+  initiateMerchantRobbery,
+  executeParagonUpgrade,
+  toggleGachaModal,
+  openGachaModal,
+  switchGachaMachine,
+  updateGachaBalances,
+  populateGachaCapsules,
+  initGachaPhysics,
+  triggerGachaSpin,
+  triggerGachaPull,
+  buyDungeonMerchantItem,
+  calculateDungeonSellValue,
+  sellItemToDungeonMerchant,
+  getDynamicArtifactDescription;
 (function () {
   // Subphase 11: Static Mutually Exclusive Debuff Matrix
   const DEBUFF_EXCLUSIONS = window.DEBUFF_EXCLUSIONS;
 
-  window.getRarityMultiplier = function (stars) {
+  getRarityMultiplier = function (stars) {
       if (stars === "UNIQUE" || stars === "unique") return 1.35;
       const multipliers = [1.0, 1.07, 1.14, 1.21, 1.28, 1.35];
       return multipliers[stars] || 1.0;
     };
 
-  window.isItemUnique = function (item) {
+  isItemUnique = function (item) {
     if (!item) return false;
     return !!(
       item.isUniqueStaff ||
@@ -31,7 +133,7 @@
     );
   };
 
-  window.getUniqueKey = function (item) {
+  getUniqueKey = function (item) {
     if (!item) return null;
     if (item.type === "artifact" || item.statsRolled === "UNIQUE") {
       return "art_" + item.trait;
@@ -49,7 +151,7 @@
   };
 
   // --- COMPARISON TARGET RESOLUTION ---
-  window.getEquippedItemForComparison = function (type) {
+  getEquippedItemForComparison = function (type) {
     let slotKey = type;
     if (type === "overall") {
       if (window.equippedSlots && window.equippedSlots.overall) {
@@ -76,7 +178,7 @@
     return item;
   };
 
-  window.getCombinedEquippedTorso = function () {
+  getCombinedEquippedTorso = function () {
     if (!window.equippedSlots) return null;
     let chest = window.equippedSlots.chest;
     let leggings = window.equippedSlots.leggings;
@@ -113,7 +215,7 @@
     };
   };
 
-  window.getComparisonDeltaBadge = function (item) {
+  getComparisonDeltaBadge = function (item) {
     if (item.type === "artifact") return "";
     let eq = window.getEquippedItemForComparison(item.type);
     if (!eq)
@@ -122,7 +224,7 @@
   };
 
   // --- GENERAL TOOLTIP BUILDER ---
-  window.buildGeneralTooltipHtml = function (item, isBagItem = false) {
+  buildGeneralTooltipHtml = function (item, isBagItem = false) {
     let eq = isBagItem ? window.getEquippedItemForComparison(item.type) : null;
     let html = "";
 
@@ -183,7 +285,7 @@
   };
 
   // --- ITEM CARD TEMPLATE HTML GENERATOR ---
-  window.generateItemCardHtml = function (
+  generateItemCardHtml = function (
     item,
     compareItem = null,
     isEquipped = false,
@@ -1037,7 +1139,7 @@
     return html;
   };
 
-  window.executeSpectralShatter = function (id) {
+  executeSpectralShatter = function (id) {
     if (typeof window.hideTooltip === "function") window.hideTooltip();
     let item =
       window.inventory.EQUIP.find((i) => i.id === id) ||
@@ -1172,7 +1274,7 @@
     }
   };
 
-  window.PitySystem = {
+  PitySystem = {
     increment() {
       window.playerStats.lootPityCounter =
         (window.playerStats.lootPityCounter || 0) + 1;
@@ -1188,7 +1290,7 @@
     },
   };
 
-  window.getSlotUpgradeCost = function (slotKey, currentLevel) {
+  getSlotUpgradeCost = function (slotKey, currentLevel) {
     let targetLevel = currentLevel + 1; // 1 to 100
     let gold = BigNum.from(0);
     if (targetLevel <= 10) {
@@ -1269,7 +1371,7 @@
   window.enchantSelectedItem = null;
   window.enchantMode = "enchant";
 
-  window.setEnchantMode = function (mode) {
+  setEnchantMode = function (mode) {
     window.enchantMode = mode;
     const modes = ["enchant", "purge", "set", "shatter"];
     modes.forEach((m) => {
@@ -1298,7 +1400,7 @@
     }
   };
 
-  window.toggleEnchantmentModal = function () {
+  toggleEnchantmentModal = function () {
     if (typeof window.hideTooltip === "function") window.hideTooltip();
     let modal = document.getElementById("enchantment-modal");
     if (!modal) return;
@@ -1326,7 +1428,7 @@
     }
   };
 
-  window.selectEnchantItem = function (id) {
+  selectEnchantItem = function (id) {
     let item =
       (window.inventory.EQUIP &&
         window.inventory.EQUIP.find((i) => i.id === id)) ||
@@ -1350,7 +1452,7 @@
     }
   };
 
-  window.renderEnchantInstructionPane = function (detailEl, mode) {
+  renderEnchantInstructionPane = function (detailEl, mode) {
     let modeInfo = {
       enchant: {
         title: "Celestial Enchantment",
@@ -1397,7 +1499,7 @@
   `;
   };
 
-  window.renderEnchantmentTab = function () {
+  renderEnchantmentTab = function () {
     let listEl = document.getElementById("enchant-list");
     let detailEl = document.getElementById("enchant-details");
     if (!listEl || !detailEl) return;
@@ -1728,7 +1830,7 @@
 
   window.hexToRgbCache = window.hexToRgbCache || {};
 
-  window.hexToRgbValues = function (hex) {
+  hexToRgbValues = function (hex) {
     if (!hex || hex.charAt(0) !== "#") return "30, 41, 59";
     if (!window.hexToRgbCache[hex]) {
       let r = parseInt(hex.slice(1, 3), 16);
@@ -1740,7 +1842,7 @@
   };
 
   // Initialize window.ItemFactory Namespace to encapsulate item math and properties
-  window.ItemFactory = {
+  ItemFactory = {
     // Universal Set generation roller with targeted theme biases for Dungeons and Rift hunts
     rollSetForItem(isBoss, isRare, isDungeon, currentDungeon) {
       let setChance = 0.15; // 15% base rate
@@ -1787,7 +1889,7 @@
   };
 
   // Legacy Compatibility Aliases to protect existing cross-file references
-  window.rollSetForItem = (isBoss, isRare, isDungeon, currentDungeon) =>
+  rollSetForItem = (isBoss, isRare, isDungeon, currentDungeon) =>
     window.ItemFactory.rollSetForItem(
       isBoss,
       isRare,
@@ -1796,7 +1898,7 @@
     );
 
   // Calculates gold expenses for set re-resonating
-  window.getSetRerollGoldCost = function (item) {
+  getSetRerollGoldCost = function (item) {
     let itemLvlMultiplier = BigNum.from(1.045).pow(
       Math.max(0, (item.stageLevel - 1) * 5),
     );
@@ -1805,7 +1907,7 @@
       .mul(BigNum.from(1.5).pow(item.statsRolled));
   };
 
-  window.generateForgePreviewHtml = function (item, currentLvl, nextLvl) {
+  generateForgePreviewHtml = function (item, currentLvl, nextLvl) {
     if (!item) {
       return `
       <div style="margin-top:12px; padding:10px; background:rgba(0,0,0,0.3); border:1px dashed #334155; border-radius:6px; font-size:10.5px; color:#94a3b8; text-align:center;">
@@ -1890,7 +1992,7 @@
   };
 
   // Generates highly detailed comparison layouts for Temper and Tier Up forge previews
-  window.getForgeDiffLines = function (item, previewItem) {
+  getForgeDiffLines = function (item, previewItem) {
     let diffLines = "";
 
     // 1. Render Base parameters comparative
@@ -2090,7 +2192,7 @@
   };
 
   // Renders the entire Blacksmith and Enchanter selection pane with custom comparison values
-  window.renderForgeTab = function () {
+  renderForgeTab = function () {
     let listEl = document.getElementById("forge-list");
     let detailEl = document.getElementById("forge-details");
     if (!listEl || !detailEl) return;
@@ -3037,7 +3139,7 @@
   // --- UNIQUE STYLE SYSTEM ---
 
   // Append Unique Style System directly inside the ItemFactory namespace
-  Object.assign(window.ItemFactory, {
+  Object.assign(ItemFactory, {
     getUniqueItemStyle(item) {
       if (!item) return null;
       let isUnique =
@@ -3118,10 +3220,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getUniqueItemStyle = (item) =>
+  getUniqueItemStyle = (item) =>
     window.ItemFactory.getUniqueItemStyle(item);
 
-  window.rollSigilStatValue = function (statKey, stars, isBuff) {
+  rollSigilStatValue = function (statKey, stars, isBuff) {
     let variance = 0.8 + Math.random() * 0.4; // +/-20% random variance
     let baseVal = 0;
     let tier = stars <= 1 ? 0 : stars <= 3 ? 1 : 2;
@@ -3150,7 +3252,7 @@
     return parseFloat(baseVal.toFixed(4));
   };
 
-  window.formatSigilStatDesc = function (statKey, val, isBuff) {
+  formatSigilStatDesc = function (statKey, val, isBuff) {
     let absPct = Math.round(Math.abs(val) * 100) + "%";
     let direction = isBuff ? "increased" : "decreased";
     let statLabels = {
@@ -3166,7 +3268,7 @@
     return `${label} ${direction} by ${isBuff ? "+" : "-"}${absPct}.`;
   };
 
-  window.generateCavernSigilName = function (item) {
+  generateCavernSigilName = function (item) {
     let stars = item.statsRolled;
     let buffPrefixes = {
       giant_might: "Might",
@@ -3223,7 +3325,7 @@
   };
 
   // Append Item Generation and Procedural Naming inside ItemFactory
-  Object.assign(window.ItemFactory, {
+  Object.assign(ItemFactory, {
     createItemObject(
       chosenType,
       statLinesCount,
@@ -3935,7 +4037,7 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.createItemObject = (
+  createItemObject = (
     chosenType,
     statLinesCount,
     stageScale,
@@ -3949,13 +4051,13 @@
       minStars,
       allowedTraits,
     );
-  window.buildProceduralName = (item) =>
+  buildProceduralName = (item) =>
     window.ItemFactory.buildProceduralName(item);
 
   // --- STAT RANGES & PREVIEWS ---
 
   // Encapsulate getStatBaseRange directly inside window.ItemFactory
-  Object.assign(window.ItemFactory, {
+  Object.assign(ItemFactory, {
     getStatBaseRange(item, statKey) {
       let stageLevel = item.stageLevel || 1;
       let isArt = item.type === "artifact";
@@ -4174,10 +4276,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getStatBaseRange = (item, statKey) =>
+  getStatBaseRange = (item, statKey) =>
     window.ItemFactory.getStatBaseRange(item, statKey);
   // Encapsulate formatStatRangeStr directly inside window.ItemFactory
-  Object.assign(window.ItemFactory, {
+  Object.assign(ItemFactory, {
     formatStatRangeStr(item, statKey, isPct = false) {
       let range = this.getStatBaseRange(item, statKey);
       if (range.min === 0 && range.max === 0) return "";
@@ -4214,11 +4316,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.formatStatRangeStr = (item, statKey, isPct) =>
+  formatStatRangeStr = (item, statKey, isPct) =>
     window.ItemFactory.formatStatRangeStr(item, statKey, isPct);
 
   // Append Math Scaling Directly inside window.ItemFactory
-  Object.assign(window.ItemFactory, {
+  Object.assign(ItemFactory, {
     scaleItemBonusStats(item, oldStars, newStars) {
       if (
         item.type === "artifact" ||
@@ -4282,11 +4384,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.scaleItemBonusStats = (item, oldStars, newStars) =>
+  scaleItemBonusStats = (item, oldStars, newStars) =>
     window.ItemFactory.scaleItemBonusStats(item, oldStars, newStars);
 
   // Append Stat Recalculation directly inside ItemFactory
-  Object.assign(window.ItemFactory, {
+  Object.assign(ItemFactory, {
     recalculateItemStats(item) {
       if (!item || typeof item !== "object") return;
       if (item.type === "tome") {
@@ -4992,13 +5094,13 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.recalculateItemStats = function (item) {
+  recalculateItemStats = function (item) {
     // Directly routing to the main dynamic recalculator solves a legacy bug where upgraded item base stats remained permanently flat
     window.ItemFactory.recalculateItemStats(item);
   };
 
   // Append Item Upgrade Logic directly inside ItemFactory
-  Object.assign(window.ItemFactory, {
+  Object.assign(ItemFactory, {
     addRandomStatLineToItem(item) {
       let pool = [];
       if (item.type === "ring") {
@@ -5185,12 +5287,12 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.addRandomStatLineToItem = (item) =>
+  addRandomStatLineToItem = (item) =>
     window.ItemFactory.addRandomStatLineToItem(item);
 
   // --- INVENTORY LOCKS & EQUIP ACTIONS ---
 
-  window.toggleLock = function (id) {
+  toggleLock = function (id) {
     let item =
       window.inventory.EQUIP.find((i) => i.id === id) ||
       (window.inventory.ARTIFACT &&
@@ -5361,7 +5463,7 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.equipItem = (id) => window.GameState.equipItem(id);
+  equipItem = (id) => window.GameState.equipItem(id);
 
   // Append unequipItem inside window.GameState namespace
   window.GameState = window.GameState || {};
@@ -5437,9 +5539,9 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.unequipItem = (slotKey) => window.GameState.unequipItem(slotKey);
+  unequipItem = (slotKey) => window.GameState.unequipItem(slotKey);
 
-  window.executeSalvageItemLogic = function (
+  executeSalvageItemLogic = function (
     item,
     id,
     isEquipped,
@@ -5447,11 +5549,6 @@
     isArtifactSack,
     isSigilSack,
   ) {
-    if (window.playerStats.pendingClanProgress) {
-      window.playerStats.pendingClanProgress.salvage =
-        (window.playerStats.pendingClanProgress.salvage || 0) + 1;
-    }
-
     if (isEquipped) {
       window.equippedSlots[slotToClear] = null;
     } else if (isArtifactSack) {
@@ -5569,7 +5666,7 @@
     if (typeof window.saveGame === "function") window.saveGame();
   };
 
-  window.salvageItem = function (id) {
+  salvageItem = function (id) {
     if (typeof window.hideTooltip === "function") window.hideTooltip();
     let item = window.inventory.EQUIP.find((i) => i.id === id);
     let isEquipped = false;
@@ -5734,13 +5831,13 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.checkAutoSalvage = (item, silent) =>
+  checkAutoSalvage = (item, silent) =>
     window.GameState.checkAutoSalvage(item, silent);
 
   // --- FORGE ENGINE ACTIONS & CRAFTING MATH ---
 
   // Initialize the ForgeManager namespace and define getMaxTemper
-  window.ForgeManager = {
+  ForgeManager = {
     getMaxTemper(stars, type = "") {
       if (stars === "UNIQUE") return 6;
       // Shifted design restriction: maximum temper matches stars rating tier + 1
@@ -5749,11 +5846,11 @@
   };
 
   // Legacy Compatibility Aliases to protect references
-  window.getMaxTemper = (stars, type = "") =>
+  getMaxTemper = (stars, type = "") =>
     window.ForgeManager.getMaxTemper(stars, type);
 
   // Append getRequiredScrapForTemper inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getRequiredScrapForTemper(item) {
       if (!item) return "Monster Soul";
       if (item.type === "artifact" || item.statsRolled === "UNIQUE")
@@ -5773,11 +5870,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getRequiredScrapForTemper = (item) =>
+  getRequiredScrapForTemper = (item) =>
     window.ForgeManager.getRequiredScrapForTemper(item);
 
   // Append getRequiredScrapAmountForTemper inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getRequiredScrapAmountForTemper(item) {
       if (!item) return 1;
       let isArtifact =
@@ -5798,11 +5895,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getRequiredScrapAmountForTemper = (item) =>
+  getRequiredScrapAmountForTemper = (item) =>
     window.ForgeManager.getRequiredScrapAmountForTemper(item);
 
   // Append getTemperGoldCost inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getTemperGoldCost(item) {
       let baseCost = item.type === "artifact" ? 1000 : 100;
       let itemLvlMultiplier = BigNum.from(1.045).pow(
@@ -5815,11 +5912,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getTemperGoldCost = (item) =>
+  getTemperGoldCost = (item) =>
     window.ForgeManager.getTemperGoldCost(item);
 
   // Append getTierUpScrapName inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getTierUpScrapName(stars) {
       if (stars === 5) return "Mythic Scrap";
       if (stars === 4) return "Legendary Scrap";
@@ -5831,11 +5928,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getTierUpScrapName = (stars) =>
+  getTierUpScrapName = (stars) =>
     window.ForgeManager.getTierUpScrapName(stars);
 
   // Append getMaxEnchants inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getMaxEnchants(item) {
       if (item.statsRolled === "UNIQUE" || !item.statsRolled) return 0;
       if (item.statsRolled === 2) return 1;
@@ -5847,10 +5944,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getMaxEnchants = (item) => window.ForgeManager.getMaxEnchants(item);
+  getMaxEnchants = (item) => window.ForgeManager.getMaxEnchants(item);
 
   // Append Enchantment Helpers inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getEnchantmentSymbol(count) {
       if (!count || count <= 0) return "";
       if (count === 1) return "✦";
@@ -5870,25 +5967,25 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getEnchantmentSymbol = (count) =>
+  getEnchantmentSymbol = (count) =>
     window.ForgeManager.getEnchantmentSymbol(count);
-  window.getStatEnchantSuffix = (item, statKey) =>
+  getStatEnchantSuffix = (item, statKey) =>
     window.ForgeManager.getStatEnchantSuffix(item, statKey);
 
   // Append getStatIcon inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getStatIcon(stat) {
       return window.getUiIconSvg(stat, 12) || "❖";
     },
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getStatIcon = (stat) => window.ForgeManager.getStatIcon(stat);
+  getStatIcon = (stat) => window.ForgeManager.getStatIcon(stat);
 
   // --- FORGE UI INTERACTIONS ---
 
   // Append selectForgeItem inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     selectForgeItem(id) {
       let item =
         window.inventory.EQUIP.find((i) => i.id === id) ||
@@ -5912,11 +6009,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.selectForgeItem = (id) => window.ForgeManager.selectForgeItem(id);
-  window.selectForgeSlot = (slotKey) =>
+  selectForgeItem = (id) => window.ForgeManager.selectForgeItem(id);
+  selectForgeSlot = (slotKey) =>
     window.ForgeManager.selectForgeSlot(slotKey);
 
-  window.toggleForgeModal = function () {
+  toggleForgeModal = function () {
     if (typeof window.hideTooltip === "function") window.hideTooltip();
     let modal = document.getElementById("forge-modal");
     if (!modal) return;
@@ -5932,7 +6029,7 @@
   };
 
   // Append setForgeMode inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     setForgeMode(mode) {
       window.forgeMode = mode;
       const modes = ["temper", "reforge", "tier"];
@@ -5975,10 +6072,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.setForgeMode = (mode) => window.ForgeManager.setForgeMode(mode);
+  setForgeMode = (mode) => window.ForgeManager.setForgeMode(mode);
 
   // Append switchForgeStation inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     switchForgeStation(station) {
       let bm = document.getElementById("blacksmith-modes");
       let em = document.getElementById("enchanter-modes");
@@ -6019,11 +6116,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.switchForgeStation = (station) =>
+  switchForgeStation = (station) =>
     window.ForgeManager.switchForgeStation(station);
 
   // Append changeAutoSalvage inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     changeAutoSalvage(val) {
       window.playerStats.autoSalvageThreshold = parseInt(val, 10);
       if (typeof window.saveGame === "function") window.saveGame();
@@ -6040,11 +6137,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.changeAutoSalvage = (val) =>
+  changeAutoSalvage = (val) =>
     window.ForgeManager.changeAutoSalvage(val);
 
   // Append selectBulkSalvageRarity inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     selectBulkSalvageRarity(val) {
       window.state.bulkSalvageTarget = parseInt(val, 10);
       if (typeof window.updateSalvagePadUI === "function")
@@ -6053,11 +6150,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.selectBulkSalvageRarity = (val) =>
+  selectBulkSalvageRarity = (val) =>
     window.ForgeManager.selectBulkSalvageRarity(val);
 
   // Append triggerBulkSalvage inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     triggerBulkSalvage() {
       if (typeof window.hideTooltip === "function") window.hideTooltip();
       let maxStars =
@@ -6130,12 +6227,6 @@
             if (typeof window.progressMission === "function") {
               window.progressMission("salvage", targetItems.length);
             }
-            if (window.playerStats.pendingClanProgress) {
-              window.playerStats.pendingClanProgress.salvage =
-                (window.playerStats.pendingClanProgress.salvage || 0) +
-                targetItems.length;
-            }
-
             let targetIds = new Set(targetItems.map((item) => item.id));
             window.inventory.EQUIP = window.inventory.EQUIP.filter(
               (item) => !targetIds.has(item.id),
@@ -6206,12 +6297,12 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.triggerBulkSalvage = () => window.ForgeManager.triggerBulkSalvage();
+  triggerBulkSalvage = () => window.ForgeManager.triggerBulkSalvage();
 
   // --- FORGE CRAFTING PROCESSES ---
 
   // Append temperItem inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     temperItem() {
       if (window.forgeMode === "temper") {
         let slotKey = window.state.selectedForgeSlot || "weapon";
@@ -6294,10 +6385,6 @@
         window.playerStats.totalTempers =
           (window.playerStats.totalTempers || 0) + 1;
 
-        if (window.playerStats.pendingClanProgress) {
-          window.playerStats.pendingClanProgress.tempers =
-            (window.playerStats.pendingClanProgress.tempers || 0) + 1;
-        }
         if (typeof window.progressMission === "function") {
           window.progressMission("tempers", 1);
         }
@@ -6396,10 +6483,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.temperItem = () => window.ForgeManager.temperItem();
+  temperItem = () => window.ForgeManager.temperItem();
 
   // Append enchantItem inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     enchantItem() {
       if (!window.forgeSelectedItem) return;
       let item = window.forgeSelectedItem;
@@ -6569,10 +6656,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.enchantItem = () => window.ForgeManager.enchantItem();
+  enchantItem = () => window.ForgeManager.enchantItem();
 
   // Append resetItemEnchants inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     resetItemEnchants() {
       if (!window.forgeSelectedItem) return;
       let item = window.forgeSelectedItem;
@@ -6647,10 +6734,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.resetItemEnchants = () => window.ForgeManager.resetItemEnchants();
+  resetItemEnchants = () => window.ForgeManager.resetItemEnchants();
 
   // Append getStatLabel inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     getStatLabel(propKey) {
       const labels = {
         bonusAtk: "Attack",
@@ -6696,10 +6783,10 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.getStatLabel = (propKey) => window.ForgeManager.getStatLabel(propKey);
+  getStatLabel = (propKey) => window.ForgeManager.getStatLabel(propKey);
 
   // Append lockForgeStat inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     lockForgeStat(propKey) {
       if (!window.forgeSelectedItem) return;
       window.forgeSelectedItem.reforgedProperty = propKey;
@@ -6710,11 +6797,11 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.lockForgeStat = (propKey) =>
+  lockForgeStat = (propKey) =>
     window.ForgeManager.lockForgeStat(propKey);
 
   // Append selectReforgeStat inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     selectReforgeStat(propKey) {
       if (!window.forgeSelectedItem) return;
       window.forgeSelectedItem.tempReforgeProp = propKey;
@@ -6723,19 +6810,14 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.selectReforgeStat = (propKey) =>
+  selectReforgeStat = (propKey) =>
     window.ForgeManager.selectReforgeStat(propKey);
 
   // Append reforgeItemStat inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     reforgeItemStat() {
       if (!window.forgeSelectedItem) return;
       let item = window.forgeSelectedItem;
-      if (window.playerStats.pendingClanProgress) {
-        window.playerStats.pendingClanProgress.reforges =
-          (window.playerStats.pendingClanProgress.reforges || 0) + 1;
-      }
-
       if (!item.reforgedProperty) {
         if (!item.tempReforgeProp) {
           if (typeof window.pushHeaderToast === "function")
@@ -6940,17 +7022,17 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.reforgeItemStat = () => window.ForgeManager.reforgeItemStat();
+  reforgeItemStat = () => window.ForgeManager.reforgeItemStat();
 
   // ==========================================================================
   // --- MARKET & SHOP TRANSACTION LOGIC ---
   // ==========================================================================
 
-  window.buyGachaCrate = function () {
+  buyGachaCrate = function () {
     window.openGachaModal();
   };
 
-  window.rollGachaCrateItem = function (
+  rollGachaCrateItem = function (
     isGlimmering = false,
     useStandardForGlimmering = false,
   ) {
@@ -7090,7 +7172,7 @@
 
   // --- MERCHANT & TRANSACTION OPERATIONS ---
 
-  window.getGoldUpgradeCost = function (type, level) {
+  getGoldUpgradeCost = function (type, level) {
     let lvl = Math.max(0, level || 0);
     if (type === "vending") {
       return BigNum.from(15000).mul(BigNum.from(1.75).pow(lvl));
@@ -7108,7 +7190,7 @@
 
   window.activeShopTab = "gear";
 
-  window.updateShopHeaderWallet = function () {
+  updateShopHeaderWallet = function () {
     let goldEl = document.getElementById("shop-wallet-gold");
     let soulsEl = document.getElementById("shop-wallet-souls");
     if (goldEl && window.playerStats) {
@@ -7120,7 +7202,7 @@
     }
   };
 
-  window.toggleShopModal = function () {
+  toggleShopModal = function () {
     if (typeof window.hideTooltip === "function") window.hideTooltip();
     let modal = document.getElementById("shop-modal");
     if (!modal) return;
@@ -7136,7 +7218,7 @@
     }
   };
 
-  window.switchShopTab = function (tabKey) {
+  switchShopTab = function (tabKey) {
     window.activeShopTab = tabKey;
     ["gear", "alchemy", "sinks"].forEach((t) => {
       let btn = document.getElementById(`shop-tab-${t}`);
@@ -7157,7 +7239,7 @@
     }
   };
 
-  window.refreshShopStock = function (force = false) {
+  refreshShopStock = function (force = false) {
     let now = Date.now();
     let nextRefresh = window.playerStats.shopRefreshTime || 0;
 
@@ -7250,7 +7332,7 @@
     if (typeof window.saveGame === "function") window.saveGame();
   };
 
-  window.executeManualShopRefresh = function () {
+  executeManualShopRefresh = function () {
     let soulsOwned =
       window.inventory && window.inventory.ETC
         ? window.inventory.ETC["Monster Soul"] || 0
@@ -7275,7 +7357,7 @@
     window.renderMarketShop();
   };
 
-  window.renderMarketShop = function () {
+  renderMarketShop = function () {
     let content = document.getElementById("shop-content-panel");
     if (!content) return;
 
@@ -7537,7 +7619,7 @@
       `;
   };
 
-  window.renderMysticalShop = function () {
+  renderMysticalShop = function () {
     let content = document.getElementById("shop-content-panel");
     if (!content) return;
 
@@ -7670,7 +7752,7 @@
   `;
   };
 
-  window.renderGoldUpgrades = function () {
+  renderGoldUpgrades = function () {
     let content = document.getElementById("shop-content-panel");
     if (!content) return;
 
@@ -7773,7 +7855,7 @@
   `;
   };
 
-  window.buyShopItem = function (index) {
+  buyShopItem = function (index) {
     let item = window.playerStats.shopItems[index];
     if (!item || item.purchased) return;
 
@@ -7818,7 +7900,7 @@
     window.saveGame();
   };
 
-  window.buyMysticalItem = function (index) {
+  buyMysticalItem = function (index) {
     let item = window.MYSTICAL_STOCK[index];
     let cost = item.cost;
     let currency = item.currency;
@@ -7870,7 +7952,7 @@
     window.saveGame();
   };
 
-  window.buyGoldUpgrade = function (type) {
+  buyGoldUpgrade = function (type) {
     let p = window.playerStats;
     if (type === "flask_capacity") {
       if ((p.maxFlaskCharges || 1) >= 4) {
@@ -7980,7 +8062,7 @@
     window.saveGame();
   };
 
-  window.transmutePotion = function (index) {
+  transmutePotion = function (index) {
     let recipe = window.POTION_TRANSMUTATIONS[index];
     if (!recipe) return;
 
@@ -8018,7 +8100,7 @@
   };
 
   // Append rerollItemSet inside ForgeManager
-  Object.assign(window.ForgeManager, {
+  Object.assign(ForgeManager, {
     rerollItemSet() {
       if (!window.forgeSelectedItem) return;
       let item = window.forgeSelectedItem;
@@ -8096,9 +8178,9 @@
   });
 
   // Legacy Compatibility Aliases to protect references
-  window.rerollItemSet = () => window.ForgeManager.rerollItemSet();
+  rerollItemSet = () => window.ForgeManager.rerollItemSet();
 
-  window.buyAstralShopItem = function (index) {
+  buyAstralShopItem = function (index) {
     let item = window.ASTRAL_SHOP_STOCK[index];
     if (!item) return;
 
@@ -8147,7 +8229,7 @@
   };
 
   // --- PROC-GEN CAVERN SIGIL APPLICATION SLOTTER ---
-  window.executeSlotCavernSigil = function (id) {
+  executeSlotCavernSigil = function (id) {
     let sigil = window.inventory.SIGIL.find((item) => item.id === id);
     if (!sigil) return;
 
@@ -8160,7 +8242,7 @@
   };
 
   // --- ENDGAME PARAGON INFUSION MATRIX SYSTEM ---
-  window.recalculateAllInventoryItems = function () {
+  recalculateAllInventoryItems = function () {
     let allItems = [];
     if (window.equippedSlots) {
       for (let k in window.equippedSlots) {
@@ -8184,7 +8266,7 @@
     });
   };
 
-  window.runArtifactTestHarness = function () {
+  runArtifactTestHarness = function () {
     console.log("=== STARTING ARTIFACT TEST HARNESS ===");
     let p = window.player;
     let stats = window.playerStats;
@@ -8260,7 +8342,7 @@
     if (typeof window.renderInventory === "function") window.renderInventory();
   };
 
-  window.triggerRobberyConfirmation = function (event) {
+  triggerRobberyConfirmation = function (event) {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
@@ -8293,7 +8375,7 @@
     }
   };
 
-  window.initiateMerchantRobbery = function () {
+  initiateMerchantRobbery = function () {
     let map = window.activeDungeonMap;
     if (!map || !map.merchantTile) return;
 
@@ -8368,11 +8450,10 @@
       });
     }
 
-    // Immediate execution after script load
-    window.recalculateAllInventoryItems();
+    // Immediate execution occurs in the compatibility bridge after public aliases are installed.
   })();
 
-window.executeParagonUpgrade = function () {
+executeParagonUpgrade = function () {
   let p = window.playerStats;
   let parLevel = p.paragonLevel || 0;
 
@@ -8457,7 +8538,7 @@ window.gachaState = {
   hasBallDispensed: false,
 };
 
-window.toggleGachaModal = function () {
+toggleGachaModal = function () {
   if (typeof window.hideTooltip === "function") window.hideTooltip();
   let modal = document.getElementById("gacha-modal");
   if (!modal) return;
@@ -8476,11 +8557,11 @@ window.toggleGachaModal = function () {
   }
 };
 
-window.openGachaModal = function () {
+openGachaModal = function () {
   window.toggleGachaModal();
 };
 
-window.switchGachaMachine = function (machineType) {
+switchGachaMachine = function (machineType) {
   window.gachaState.activeMachine = machineType;
   let modal = document.getElementById("gacha-modal");
   if (!modal) return;
@@ -8527,7 +8608,7 @@ window.switchGachaMachine = function (machineType) {
   window.populateGachaCapsules();
 };
 
-window.updateGachaBalances = function () {
+updateGachaBalances = function () {
   let panelStd = document.getElementById("gacha-panel-standard-keys");
   let panelGlim = document.getElementById("gacha-panel-glimmering-keys");
   let stdCount =
@@ -8567,7 +8648,7 @@ window.updateGachaBalances = function () {
   }
 };
 
-window.populateGachaCapsules = function () {
+populateGachaCapsules = function () {
   let standardCapsuleColors = [
     "#f1c40f",
     "#3498db",
@@ -8600,7 +8681,7 @@ window.populateGachaCapsules = function () {
   }
 };
 
-window.initGachaPhysics = function () {
+initGachaPhysics = function () {
   let canvas = document.getElementById("gacha-physics-canvas");
   if (!canvas) return;
   let ctx = canvas.getContext("2d");
@@ -8796,7 +8877,7 @@ function renderPhysics(ctx, canvas) {
   });
 }
 
-window.triggerGachaSpin = function () {
+triggerGachaSpin = function () {
   if (window.gachaState.isSpinning) return;
 
   let machine = window.gachaState.activeMachine;
@@ -8870,7 +8951,7 @@ window.triggerGachaSpin = function () {
   }, 650);
 };
 
-window.triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
+triggerGachaPull = function (isGlimmering, useStandardForGlimmering) {
   if (typeof window.hideTooltip === "function") window.hideTooltip();
 
   let result = window.rollGachaCrateItem(
@@ -8962,7 +9043,7 @@ if (typeof window.cloneItemForTooltip !== "function") {
   };
 }
 
-window.buyDungeonMerchantItem = function (event, itemId) {
+buyDungeonMerchantItem = function (event, itemId) {
   if (event) {
     event.stopPropagation();
     event.preventDefault();
@@ -9042,7 +9123,7 @@ window.buyDungeonMerchantItem = function (event, itemId) {
   if (typeof window.saveGame === "function") window.saveGame();
 };
 
-window.calculateDungeonSellValue = function (item) {
+calculateDungeonSellValue = function (item) {
   if (!item) return BigNum.from(0);
   let stars = item.statsRolled === "UNIQUE" ? 5 : (item.statsRolled ?? 0);
   let stageScale = item.stageLevel || 1;
@@ -9051,7 +9132,7 @@ window.calculateDungeonSellValue = function (item) {
   return BigNum.from(Math.ceil(sellValue));
 };
 
-window.sellItemToDungeonMerchant = function (itemId) {
+sellItemToDungeonMerchant = function (itemId) {
   if (typeof window.hideTooltip === "function") window.hideTooltip();
 
   let bag = window.player.bag || [];
@@ -9114,7 +9195,7 @@ window.sellItemToDungeonMerchant = function (itemId) {
 };
 
 // --- DYNAMIC ART_TRAIT BLUEPRINT PARSER ---
-window.getDynamicArtifactDescription = function (item) {
+getDynamicArtifactDescription = function (item) {
   if (!item || item.type !== "artifact") return "";
 
   let power = item.relicPower !== undefined ? item.relicPower : 1.0;
