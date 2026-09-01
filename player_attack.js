@@ -4,27 +4,18 @@ import {
   updateFinitePeakHit,
 } from "./combat_scaling.js?v=1.001";
 import { isActiveAttackReady } from "./attack_speed_contract.js?v=1.001";
-import {
-  awardMainAttackMasteryXp,
-  awardSpellProcMasteryXp,
-} from "./mastery_authority.js?v=1.003";
+import { awardMainAttackMasteryXp } from "./mastery_authority.js?v=1.003";
 import {
   applyPlayerBleed,
   applyPlayerPoison,
   clearPeriodicEffect,
-  getCanonicalSpellPacketElements,
   getActivePeriodicEffectCount,
   resolveOnHitArtifactEffects,
-  resolveTomeProcSustain,
 } from "./combat_effect_authority.js?v=1.001";
 import { isTomeCombatProfile } from "./combat_reach.js?v=1.001";
-import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.001";
-import {
-  PRODUCTION_FIRE_TOME_BURN_PROFILE,
-  PRODUCTION_FROST_CONTROL_PROFILE,
-  isEligiblePlayerElementTarget,
-  resolveTomeElementSecondaryEffect,
-} from "./element_effect_authority.js?v=1.001";
+import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.002";
+import { isEligiblePlayerElementTarget } from "./element_effect_authority.js?v=1.001";
+import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js?v=1.001";
 
   export const resolvePlayerAttack = function (
     p,
@@ -652,185 +643,24 @@ import {
         let activeSpellChance = p.nullifierDisrupted
           ? 0
           : pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-        let activeSpellType = pStats.spellType || "tri";
 
         if (
           isTomeEquipped &&
           isEligiblePlayerElementTarget(m) &&
           Math.random() < activeSpellChance
         ) {
-          awardSpellProcMasteryXp(pStats);
-
-          if (typeof window.progressMission === "function") {
-            window.progressMission("spells", 1);
-          }
-
-          let spellDmg = BigNum.from(pStats.atk || 15).mul(
-            pStats.spellPower || 1.5,
-          );
-          const spellPacketElements = getCanonicalSpellPacketElements(
-            pStats.hasTriadConvergence,
-            activeSpellType,
-          );
-          if (spellPacketElements.length === 1) {
-            m.hp = m.hp.sub(spellDmg);
-          }
-          m.flashTimer = 8;
-
-          let spellEffectType = activeSpellType;
-          if (activeSpellType === "tri") {
-            const triElements = ["fire", "lightning", "frost"];
-            spellEffectType =
-              triElements[Math.floor(Math.random() * triElements.length)];
-          } else if (activeSpellType === "dual_fire_lightning") {
-            spellEffectType = Math.random() < 0.5 ? "fire" : "lightning";
-          } else if (activeSpellType === "dual_fire_frost") {
-            spellEffectType = Math.random() < 0.5 ? "fire" : "frost";
-          } else if (activeSpellType === "dual_lightning_frost") {
-            spellEffectType = Math.random() < 0.5 ? "lightning" : "frost";
-          }
-
-          // Trigger actual visual spells
-          if (pStats.hasTriadConvergence) {
-            if (window.castVisualSpell) {
-              window.castVisualSpell("fire", p, m, pStats, true);
-              window.castVisualSpell("lightning", p, m, pStats, true);
-              window.castVisualSpell("frost", p, m, pStats, true);
-            }
-          } else {
-            if (window.castVisualSpell) {
-              window.castVisualSpell(
-                spellEffectType,
-                p,
-                m,
-                pStats,
-                pStats.hasElementalOverload,
-              );
-            }
-          }
-
-          // Spell Weaving: Shifting between different element casts boosts Spell Power
-          if (pStats.hasSpellWeaving) {
-            if (
-              window.playerStats.lastSpellCastType &&
-              window.playerStats.lastSpellCastType !== spellEffectType
-            ) {
-              let prevStacks = window.playerStats.spellWeavingStacks || 0;
-              window.playerStats.spellWeavingStacks = Math.min(
-                4,
-                prevStacks + 1,
-              );
-              window.playerStats.spellWeavingTimer = 240; // 4 seconds
-              if (
-                window.playerStats.spellWeavingStacks > prevStacks &&
-                typeof window.spawnFloatingText === "function"
-              ) {
-                window.spawnFloatingText(
-                  p.x,
-                  p.y - 22,
-                  `SPELL WEAVING (${window.playerStats.spellWeavingStacks}/4)`,
-                  "#38bdf8",
-                  true,
-                );
-              }
-            }
-            window.playerStats.lastSpellCastType = spellEffectType;
-          }
-
-          const sustainEvents = resolveTomeProcSustain(p, pStats);
-          if (typeof window.spawnFloatingText === "function") {
-            sustainEvents.forEach((event, index) => {
-              if (event.mechanic === "nexus") return;
-              const label = event.mechanic === "arcane_syphon" ? "SYPHON" : "MANA SHIELD";
-              const parts = [];
-              if (event.shieldGained > 0) parts.push(`+${event.shieldGained} SHIELD`);
-              if (event.hpHealed > 0) parts.push(`+${event.hpHealed} HP`);
-              if (parts.length > 0) {
-                window.spawnFloatingText(
-                  p.x,
-                  p.y - 12 - index * 5,
-                  `${parts.join(" / ")} (${label})`,
-                  "#00ffff",
-                  true,
-                );
-              }
-            });
-          }
-
-          if (pStats.hasTriadConvergence) {
-            spellPacketElements.forEach((elem, eIdx) => {
-              m.hp = m.hp.sub(spellDmg);
-              if (
-                window.RenderEngine &&
-                window.RenderEngine.spawnDamageEffect
-              ) {
-                window.RenderEngine.spawnDamageEffect(
-                  mobCenterX + (eIdx - 1) * 12,
-                  mobCenterY - 12 - eIdx * 6,
-                  spellDmg,
-                  elem,
-                  false,
-                );
-              }
-
-              resolveTomeElementSecondaryEffect({
-                element: elem,
-                originTarget: m,
-                spellDamage: spellDmg,
-                player: p,
-                playerStats: pStats,
-                targets: window.activeDungeonMobs,
-                map: options.activeDungeonMap || window.activeDungeonMap,
-                collisionCheck: window.checkCollisionAt,
-                fireProfile:
-                  pStats.fireTomeBurnProfile ??
-                  PRODUCTION_FIRE_TOME_BURN_PROFILE,
-                frostProfile:
-                  pStats.frostControlProfile ??
-                  PRODUCTION_FROST_CONTROL_PROFILE,
-              });
-              return;
-
-            });
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_fire");
-            }
-          } else {
-            resolveTomeElementSecondaryEffect({
-              element: spellEffectType,
-              originTarget: m,
-              spellDamage: spellDmg,
-              player: p,
-              playerStats: pStats,
-              targets: window.activeDungeonMobs,
-              map: options.activeDungeonMap || window.activeDungeonMap,
-              collisionCheck: window.checkCollisionAt,
-              fireProfile:
-                pStats.fireTomeBurnProfile ??
-                PRODUCTION_FIRE_TOME_BURN_PROFILE,
-              frostProfile:
-                pStats.frostControlProfile ??
-                PRODUCTION_FROST_CONTROL_PROFILE,
-            });
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_" + spellEffectType);
-            }
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 12,
-                spellDmg,
-                spellEffectType,
-                false,
-              );
-            }
-          }
+          resolveCanonicalTomeSpellProcEvent({
+            player: p,
+            resolvedStats: pStats,
+            playerStats: window.playerStats,
+            tome: window.equippedSlots?.subweapon,
+            originTarget: m,
+            targets: window.activeDungeonMobs,
+            map: options.activeDungeonMap || window.activeDungeonMap,
+            collisionCheck: window.checkCollisionAt,
+            frame: window.logicClock,
+            progressMission: true,
+          });
         }
 
         // Directional knockback impulse vector

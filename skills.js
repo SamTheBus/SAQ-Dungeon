@@ -794,8 +794,8 @@
           costPerRank: 5,
           isKeystone: true,
           prereqs: ["tome_spell_weaving"],
-          desc: "Tome Spells cast Fireball, Chain Zap, and Frost Nova simultaneously on every spell proc!",
-          getStatText: () => "Simultaneous Triple Element Casts",
+          desc: "Each successful Tome spell proc is one cast that produces exactly three packets: Fire + Lightning + Frost.",
+          getStatText: () => "1 Proc: Exactly Fire + Lightning + Frost",
         },
         {
                   id: "tome_keystone_singularity",

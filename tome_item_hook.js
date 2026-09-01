@@ -40,6 +40,10 @@
 
     item.spellType = spellType;
 
+    // The generated noun remains cosmetic and stable. Persisted spellType is
+    // the runtime identity, and item detail presents that attunement directly.
+    // Do not rename or regenerate equipment to make legacy nouns authoritative.
+
     let spellName = "";
     let spellDesc = "";
 

@@ -1,6 +1,7 @@
 import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
 import { prepareMobTetherRecipients } from "./mob_renderer.js?v=1.012";
+import { renderTomeDeliveryProjectile } from "./tome_projectile.js?v=1.002";
 
 export const ACTIVE_MOB_RENDER_PADDING = 64;
 
@@ -1190,16 +1191,9 @@ export function isActiveMobInRenderViewport(
           ctx.lineWidth = 1.2;
           ctx.stroke();
         } else if (proj.type === "tome_bolt") {
-          ctx.fillStyle = "#67e8f9";
-          ctx.beginPath();
-          ctx.arc(proj.x, proj.y, r + 1, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#c4b5fd";
-          ctx.stroke();
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath();
-          ctx.arc(proj.x, proj.y, Math.max(1.5, r * 0.35), 0, Math.PI * 2);
-          ctx.fill();
+          // Neutral arcane delivery shard. A Tome's Fire/Lightning/Frost
+          // identity is presented only when a legal impact actually procs it.
+          renderTomeDeliveryProjectile(ctx, proj, r);
         } else if (proj.type === "void") {
           ctx.fillStyle = "#8e44ad";
           ctx.beginPath();

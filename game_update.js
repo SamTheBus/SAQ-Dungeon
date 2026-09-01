@@ -1,4 +1,5 @@
 import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
+import { advanceSpellWeavingTimer } from "./tome_rotation_authority.js?v=1.001";
 import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
 
   export const updateGame = function (canvas, isPointerHolding, checkCollisionAt) {
@@ -335,12 +336,7 @@ import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
           window.playerStats.syphonIntStacks = 0;
         }
       }
-      if (window.playerStats.spellWeavingTimer > 0) {
-        window.playerStats.spellWeavingTimer--;
-        if (window.playerStats.spellWeavingTimer === 0) {
-          window.playerStats.spellWeavingStacks = 0;
-        }
-      }
+      advanceSpellWeavingTimer(window.playerStats);
       if (window.playerStats.colossusApTimer > 0) {
         window.playerStats.colossusApTimer--;
         if (window.playerStats.colossusApTimer === 0) {

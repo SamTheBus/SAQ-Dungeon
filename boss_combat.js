@@ -13,7 +13,6 @@ import { isActiveAttackReady } from "./attack_speed_contract.js?v=1.001";
 import {
   awardDefeatMasteryXp,
   awardMainAttackMasteryXp,
-  awardSpellProcMasteryXp,
 } from "./mastery_authority.js?v=1.003";
 import {
   MONSTER_DROP_DOMAINS,
@@ -24,23 +23,17 @@ import {
   applyPlayerBleed,
   applyPlayerPoison,
   clearPeriodicEffect,
-  getCanonicalSpellPacketElements,
   getActivePeriodicEffectCount,
   resolveOnHitArtifactEffects,
-  resolveTomeProcSustain,
 } from "./combat_effect_authority.js?v=1.001";
 import {
   canPlayerReachCombatTarget,
   getCombatTargetCenter,
   isTomeCombatProfile,
 } from "./combat_reach.js?v=1.001";
-import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.001";
-import {
-  PRODUCTION_FIRE_TOME_BURN_PROFILE,
-  PRODUCTION_FROST_CONTROL_PROFILE,
-  isEligiblePlayerElementTarget,
-  resolveTomeElementSecondaryEffect,
-} from "./element_effect_authority.js?v=1.001";
+import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.002";
+import { isEligiblePlayerElementTarget } from "./element_effect_authority.js?v=1.001";
+import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js?v=1.001";
 
   export const updateBossCombat = function (
     p,
@@ -554,168 +547,23 @@ import {
               window.equippedSlots.subweapon.type === "tome"));
         let activeSpellChance =
           pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
-        let activeSpellType = pStats.spellType || "tri";
 
         if (
           isTomeEquipped &&
           isEligiblePlayerElementTarget(bm) &&
           Math.random() < activeSpellChance
         ) {
-          awardSpellProcMasteryXp(pStats);
-
-          let spellDmg = BigNum.from(pStats.atk || 15).mul(
-            pStats.spellPower || 1.5,
-          );
-          const spellPacketElements = getCanonicalSpellPacketElements(
-            pStats.hasTriadConvergence,
-            activeSpellType,
-          );
-          if (spellPacketElements.length === 1) {
-            bm.hp = bm.hp.sub(spellDmg);
-          }
-          bm.flashTimer = 8;
-
-          let spellEffectType = activeSpellType;
-          if (activeSpellType === "tri") {
-            const triElements = ["fire", "lightning", "frost"];
-            spellEffectType =
-              triElements[Math.floor(Math.random() * triElements.length)];
-          } else if (activeSpellType === "dual_fire_lightning") {
-            spellEffectType = Math.random() < 0.5 ? "fire" : "lightning";
-          } else if (activeSpellType === "dual_fire_frost") {
-            spellEffectType = Math.random() < 0.5 ? "fire" : "frost";
-          } else if (activeSpellType === "dual_lightning_frost") {
-            spellEffectType = Math.random() < 0.5 ? "lightning" : "frost";
-          }
-
-          // Trigger actual visual spells (Boss)
-          if (pStats.hasTriadConvergence) {
-            if (window.castVisualSpell) {
-              window.castVisualSpell("fire", p, bm, pStats, true);
-              window.castVisualSpell("lightning", p, bm, pStats, true);
-              window.castVisualSpell("frost", p, bm, pStats, true);
-            }
-          } else {
-            if (window.castVisualSpell) {
-              window.castVisualSpell(
-                spellEffectType,
-                p,
-                bm,
-                pStats,
-                pStats.hasElementalOverload,
-              );
-            }
-          }
-
-          // Spell Weaving (Boss)
-          if (pStats.hasSpellWeaving) {
-            if (
-              window.playerStats.lastSpellCastType &&
-              window.playerStats.lastSpellCastType !== spellEffectType
-            ) {
-              window.playerStats.spellWeavingStacks = Math.min(
-                4,
-                (window.playerStats.spellWeavingStacks || 0) + 1,
-              );
-              window.playerStats.spellWeavingTimer = 240;
-            }
-            window.playerStats.lastSpellCastType = spellEffectType;
-          }
-
-          const sustainEvents = resolveTomeProcSustain(p, pStats);
-          if (typeof window.spawnFloatingText === "function") {
-            sustainEvents.forEach((event, index) => {
-              if (event.mechanic === "nexus") return;
-              const label = event.mechanic === "arcane_syphon" ? "SYPHON" : "MANA SHIELD";
-              const parts = [];
-              if (event.shieldGained > 0) parts.push(`+${event.shieldGained} SHIELD`);
-              if (event.hpHealed > 0) parts.push(`+${event.hpHealed} HP`);
-              if (parts.length > 0) {
-                window.spawnFloatingText(
-                  p.x,
-                  p.y - 12 - index * 5,
-                  `${parts.join(" / ")} (${label})`,
-                  "#00ffff",
-                  true,
-                );
-              }
-            });
-          }
-
-          if (pStats.hasTriadConvergence) {
-            spellPacketElements.forEach((elem, eIdx) => {
-              bm.hp = bm.hp.sub(spellDmg);
-              if (
-                window.RenderEngine &&
-                window.RenderEngine.spawnDamageEffect
-              ) {
-                window.RenderEngine.spawnDamageEffect(
-                  bossCenterX + (eIdx - 1) * 12,
-                  bossCenterY - 12 - eIdx * 6,
-                  spellDmg,
-                  elem,
-                  false,
-                );
-              }
-
-              resolveTomeElementSecondaryEffect({
-                element: elem,
-                originTarget: bm,
-                spellDamage: spellDmg,
-                player: p,
-                playerStats: pStats,
-                targets: getActiveDungeonMobs(),
-                map: activeDungeonMap,
-                collisionCheck: window.checkCollisionAt,
-                fireProfile:
-                  pStats.fireTomeBurnProfile ??
-                  PRODUCTION_FIRE_TOME_BURN_PROFILE,
-                frostProfile:
-                  pStats.frostControlProfile ??
-                  PRODUCTION_FROST_CONTROL_PROFILE,
-              });
-              return;
-
-            });
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_fire");
-            }
-          } else {
-            resolveTomeElementSecondaryEffect({
-              element: spellEffectType,
-              originTarget: bm,
-              spellDamage: spellDmg,
-              player: p,
-              playerStats: pStats,
-              targets: getActiveDungeonMobs(),
-              map: activeDungeonMap,
-              collisionCheck: window.checkCollisionAt,
-              fireProfile:
-                pStats.fireTomeBurnProfile ??
-                PRODUCTION_FIRE_TOME_BURN_PROFILE,
-              frostProfile:
-                pStats.frostControlProfile ??
-                PRODUCTION_FROST_CONTROL_PROFILE,
-            });
-            if (
-              window.SoundManager &&
-              typeof window.SoundManager.play === "function"
-            ) {
-              window.SoundManager.play("spell_" + spellEffectType);
-            }
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                bossCenterX,
-                bossCenterY - 12,
-                spellDmg,
-                spellEffectType,
-                false,
-              );
-            }
-          }
+          resolveCanonicalTomeSpellProcEvent({
+            player: p,
+            resolvedStats: pStats,
+            playerStats: window.playerStats,
+            tome: window.equippedSlots?.subweapon,
+            originTarget: bm,
+            targets: getActiveDungeonMobs(),
+            map: activeDungeonMap,
+            collisionCheck: window.checkCollisionAt,
+            frame: window.logicClock,
+          });
         }
 
         }

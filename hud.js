@@ -1,5 +1,48 @@
 import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
+import { getTomeRotationSnapshot } from "./tome_rotation_authority.js?v=1.001";
+
+export function renderDungeonDepthLabel(
+  depthLabel,
+  {
+    depth = 1,
+    isCrucibleMode = false,
+    crucibleWave = 1,
+    xpMultiplier,
+    recoveryActive = false,
+  } = {},
+) {
+  if (!depthLabel) return;
+  const baseText = isCrucibleMode
+    ? `ONSLAUGHT WAVE ${crucibleWave || 1}`
+    : `DUNGEON FLOOR ${depth}`;
+  depthLabel.textContent = baseText;
+
+  if (xpMultiplier !== undefined) {
+    const badge = document.createElement("span");
+    badge.style.fontSize = "9px";
+    if (xpMultiplier === 0) {
+      badge.style.color = "#ef4444";
+      badge.textContent = "[TRIVIAL]";
+    } else if (xpMultiplier > 1) {
+      const bonus = Math.round((xpMultiplier - 1) * 100);
+      badge.style.color = "#38bdf8";
+      badge.textContent = `[HEROIC +${bonus}%]`;
+    } else if (xpMultiplier < 1) {
+      const penalty = Math.round((1 - xpMultiplier) * 100);
+      badge.style.color = "#facc15";
+      badge.textContent = `[-${penalty}% XP]`;
+    } else {
+      badge.style.color = "#4ade80";
+      badge.textContent = "[IDEAL XP]";
+    }
+    depthLabel.append(document.createTextNode(" "), badge);
+  }
+
+  if (recoveryActive) {
+    depthLabel.append(document.createTextNode(" [RECOVERY ACTIVE]"));
+  }
+}
 
   export function updateFlaskCooldownHUDOnly() {
     let stats = window.playerStats || {};
@@ -130,20 +173,15 @@ import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
         // Subphase 19: Display active special challenge name and progress
         depthLabel.innerText = `${activeChallenge.name.toUpperCase()} [STAGE ${p.depth} OF 4]`;
       } else {
-                let text = window.playerStats.isCrucibleMode ? `ONSLAUGHT WAVE ${window.playerStats.crucibleWave || 1}` : `DUNGEON FLOOR ${p.depth}`;
-        if (window.lastXpMultiplier !== undefined) {
-          let mult = window.lastXpMultiplier;
-          if (mult === 0) { text += ` <span style="color:#ef4444; font-size:9px;">[TRIVIAL]</span>`; }
-          else if (mult > 1.0) { let bonus = Math.round((mult - 1.0) * 100); text += ` <span style="color:#38bdf8; font-size:9px;">[HEROIC +${bonus}%]</span>`; }
-          else if (mult < 1.0) { let penalty = Math.round((1.0 - mult) * 100); text += ` <span style="color:#facc15; font-size:9px;">[-${penalty}% XP]</span>`; }
-          else { text += ` <span style="color:#4ade80; font-size:9px;">[IDEAL XP]</span>`; }
-        }
-
         let rec = window.playerStats && window.playerStats.recoveryLoot;
-        if (rec && rec.floor === p.depth && hasRecoveryAssets(rec)) {
-          text += " [RECOVERY ACTIVE]";
-        }
-        depthLabel.innerText = text;
+        renderDungeonDepthLabel(depthLabel, {
+          depth: p.depth,
+          isCrucibleMode: window.playerStats.isCrucibleMode,
+          crucibleWave: window.playerStats.crucibleWave || 1,
+          xpMultiplier: window.lastXpMultiplier,
+          recoveryActive:
+            Boolean(rec) && rec.floor === p.depth && hasRecoveryAssets(rec),
+        });
       }
     }
     if (objectiveLabel) {
@@ -392,6 +430,40 @@ import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
     let stats = window.playerStats || {};
     let p = window.player || {};
     let badges = [];
+
+    const tome = window.equippedSlots?.subweapon;
+    const isTome =
+      tome && (tome.subType === "tome" || tome.type === "tome");
+    if (isTome) {
+      const rotation = getTomeRotationSnapshot({ tome, playerStats: stats });
+      const elementLabel =
+        rotation.nextElement === "fire"
+          ? "FIRE"
+          : rotation.nextElement === "lightning"
+            ? "LIGHTNING"
+            : "FROST";
+      badges.push({
+        label: "TOME NEXT",
+        val: elementLabel,
+        col: "#38bdf8",
+        title: `Next successful Tome proc: ${elementLabel}. Sequence: ${rotation.elements.join(" → ")}.`,
+      });
+
+      const resolved =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      if (resolved.hasSpellWeaving) {
+        badges.push({
+          label: `WEAVE x${rotation.spellWeavingStacks}`,
+          val: `${(rotation.spellWeavingTimer / 60).toFixed(1)}s`,
+          col: "#c084fc",
+          title: `Spell Weaving ${rotation.spellWeavingStacks}/4; ${(
+            rotation.spellWeavingTimer / 60
+          ).toFixed(1)}s remaining. Only a successful changed rotation anchor adds one stack.`,
+        });
+      }
+    }
 
     // --- PLAYER DEBUFFS (POISON, SNARE, GLITCH) ---
     let poisonTimer = p.poisonTimer || stats.poisonTimer || 0;

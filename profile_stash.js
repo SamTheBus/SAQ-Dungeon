@@ -4,6 +4,7 @@
   } from "./ui_state.js?v=1.004";
   import { formatActiveAttackCadence } from "./attack_speed_contract.js?v=1.001";
   import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
+  import { resetTomeRotation } from "./tome_rotation_authority.js?v=1.001";
 
   export function renderProfileModal() {
     let statsListEl = document.getElementById("profile-stats-list");
@@ -724,6 +725,9 @@
       window.equippedSlots[targetSlot] = item;
       item.isEquippedSlot = targetSlot;
       item.wasAutoEquipped = true;
+      if (targetSlot === "subweapon") {
+        resetTomeRotation({ tome: item, reason: "tome-auto-equip" });
+      }
       if (typeof window.invalidatePlayerStats === "function") {
         window.invalidatePlayerStats();
       }
@@ -830,6 +834,9 @@
     });
     window.equippedSlots[slotKey] = item;
     item.isEquippedSlot = slotKey;
+    if (slotKey === "subweapon") {
+      resetTomeRotation({ tome: item, reason: "tome-bag-equip" });
+    }
 
     if (typeof window.invalidatePlayerStats === "function")
       window.invalidatePlayerStats();
@@ -923,6 +930,9 @@
     window.equippedSlots[slotKey] = item;
     item.isEquippedSlot = slotKey;
     stash.splice(idx, 1);
+    if (slotKey === "subweapon") {
+      resetTomeRotation({ tome: item, reason: "tome-stash-equip" });
+    }
 
     if (typeof window.invalidatePlayerStats === "function")
       window.invalidatePlayerStats();

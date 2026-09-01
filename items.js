@@ -14,6 +14,10 @@ import {
   getAffixDomainPresentation,
   getSetThresholdPresentation,
 } from "./set_affix_authority.js?v=1.000";
+import {
+  getTomeIdentityPresentation,
+  resetTomeRotation,
+} from "./tome_rotation_authority.js?v=1.001";
 
 export let
   getRarityMultiplier,
@@ -532,13 +536,8 @@ export let
                           </div>
                         `;
       } else if (item.subType === "tome") {
-        let nameMap = {
-          fire: "Fireball",
-          lightning: "Chain Zap",
-          frost: "Frost Nova",
-          tri: "Tri-Element Burst",
-        };
-        let spellName = nameMap[item.spellType || "tri"] || "Arcane Burst";
+        const tomeIdentity = getTomeIdentityPresentation(item);
+        let spellName = tomeIdentity.title;
         let spellChance = Math.round(
           (item.spellChance !== undefined ? item.spellChance : 0.33) * 100,
         );
@@ -554,6 +553,7 @@ export let
                       </div>
                       <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 9.5px;">
                         <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Active Spell:</span> <strong style="color:#f1c40f;">${spellName}</strong></div>
+                        <div style="display:flex; justify-content:space-between; gap:8px;"><span style="color:#94a3b8;">Sequence:</span> <strong style="color:#38bdf8; text-align:right;">${tomeIdentity.sequence}</strong></div>
                         <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Proc Chance:</span> <strong style="color:#2ecc71;">${spellChance}% per swing</strong></div>
                         <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Spell Power:</span> <strong style="color:#3498db;">${spellPower}% Attack</strong></div>
                       </div>
@@ -625,22 +625,17 @@ export let
           let delaySec = (item.barrierRechargeDelay || 3.0).toFixed(1);
                     let regenRatePct = Math.round((item.barrierRegenRate || 0.10) * 100);
 
-                    let tomeDesc = `Spells trigger with equal 33.3% chance between Fireball (Burst Dmg), Chain Zap (3x Lightning Bounce), and Frost Nova (AoE Slow). Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
-                    let tomeTitle = "✦ Arcane Triad Array & Barrier:";
-                    let tomeTitleColor = "#9b59b6";
-                    if (item.spellType === "fire") {
-                      tomeTitle = "✦ Fireball Burst & Barrier:";
-                      tomeTitleColor = "#e67e22";
-                      tomeDesc = `Launches concentrated Fireball bursts dealing heavy burst damage. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
-                    } else if (item.spellType === "lightning") {
-                      tomeTitle = "✦ Chain Zap Arcs & Barrier:";
-                      tomeTitleColor = "#f1c40f";
-                      tomeDesc = `Triggers rapid Chain Zap electrical arcs with high proc frequency. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
-                    } else if (item.spellType === "frost") {
-                      tomeTitle = "✦ Glacial Frost Nova & Barrier:";
-                      tomeTitleColor = "#34d399";
-                      tomeDesc = `Emits Glacial Frost Novas dealing area frost damage. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
-                    }
+                    const tomeIdentity = getTomeIdentityPresentation(item);
+                    let tomeDesc = `Persisted attunement sequence: ${tomeIdentity.sequence}. The item title is cosmetic; this listed attunement is the runtime authority. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
+                    let tomeTitle = `✦ ${tomeIdentity.title} & Barrier:`;
+                    let tomeTitleColor =
+                      tomeIdentity.elements.length === 3
+                        ? "#9b59b6"
+                        : tomeIdentity.elements[0] === "fire"
+                          ? "#e67e22"
+                          : tomeIdentity.elements[0] === "lightning"
+                            ? "#f1c40f"
+                            : "#34d399";
 
           specialtyHtml = `
                           <div style="font-size: 9.5px; color: #cbd5e1; line-height: 1.4; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px;">
@@ -4720,12 +4715,14 @@ export let
                       let noun = item.noun ? item.noun.toLowerCase() : "";
                       let stars =
                         typeof item.statsRolled === "number" ? item.statsRolled : 0;
-                      if (noun.includes("grimoire")) item.spellType = "fire";
-                      else if (noun.includes("codex")) item.spellType = "lightning";
-                      else if (noun.includes("lexicon")) item.spellType = "frost";
-                      else if (noun.includes("spellbook") || noun.includes("chronicle"))
-                        item.spellType = "tri";
-                      else if (!item.spellType) item.spellType = "tri";
+                      // Persisted attunement is authoritative. Nouns are a legacy
+                      // fallback only and may never overwrite an authored roll.
+                      if (!item.spellType) {
+                        if (noun.includes("grimoire")) item.spellType = "fire";
+                        else if (noun.includes("codex")) item.spellType = "lightning";
+                        else if (noun.includes("lexicon")) item.spellType = "frost";
+                        else item.spellType = "tri";
+                      }
 
                       if (item.spellType === "fire") {
                         item.spellChance = Math.min(0.5, 0.25 + stars * 0.02);
@@ -5459,6 +5456,13 @@ export let
         window.inventory.EQUIP.splice(index, 1);
       }
 
+      if (item.isEquippedSlot === "subweapon") {
+        resetTomeRotation({
+          tome: item,
+          reason: "tome-equip-change",
+        });
+      }
+
       if (typeof window.invalidatePlayerStats === "function")
         window.invalidatePlayerStats();
       if (typeof window.updateUI === "function") window.updateUI();
@@ -5541,6 +5545,13 @@ export let
           window.inventory.EQUIP = window.inventory.EQUIP || [];
           window.inventory.EQUIP.push(item);
         }
+      }
+
+      if (slotKey === "subweapon") {
+        resetTomeRotation({
+          tome: window.equippedSlots.subweapon,
+          reason: "tome-unequip-change",
+        });
       }
 
       if (typeof window.invalidatePlayerStats === "function")

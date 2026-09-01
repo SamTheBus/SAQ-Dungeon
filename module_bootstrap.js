@@ -29,7 +29,7 @@ import {
 import * as dataApi from "./data.js?v=1.081";
 import * as assetApi from "./assets.js?v=1.043";
 import * as audioApi from "./audio.js?v=1.045";
-import * as itemsApi from "./items.js?v=1.054";
+import * as itemsApi from "./items.js?v=1.055";
 import { openCavernSigilSackAnimation } from "./sigil_sack_animation.js?v=1.002";
 import {
   updateDpsOverlayStyle,
@@ -88,7 +88,7 @@ import {
   SKILL_TREE_DATA,
   SkillTreeManager,
   resolvePlayerStats as skillsResolvePlayerStats,
-} from "./skills.js?v=1.008";
+} from "./skills.js?v=1.009";
 import {
   drawBreakableProp,
   DungeonMapGenerator,
@@ -145,7 +145,8 @@ import {
   updateHUD,
   getChallengeObjectiveText,
   updateHudBuffTray,
-} from "./hud.js?v=1.015";
+  renderDungeonDepthLabel,
+} from "./hud.js?v=1.017";
 import { renderLightingOverlay } from "./lighting.js?v=1.013";
 import {
   switchBagTab,
@@ -199,7 +200,7 @@ import {
   calculateInsurancePremium,
   calculateRunInsuranceTotals,
   toggleInsurance,
-  } from "./profile_stash.js?v=1.030";
+  } from "./profile_stash.js?v=1.031";
 import {
   spawnChestEruptionParticles,
   isChestOpened,
@@ -262,7 +263,7 @@ import {
   checkAndSpawnNoxiousBloom,
   triggerWindRazorStrike,
 } from "./defense_hooks.js?v=1.034";
-import { rollTomeSpells } from "./tome_item_hook.js?v=1.026";
+import { rollTomeSpells } from "./tome_item_hook.js?v=1.027";
 import {
   loadHub,
   enterDungeonRun,
@@ -287,7 +288,7 @@ import {
   decrementPotionRunCharges,
   triggerExtraction,
   startDeathSequence,
-} from "./lifecycle.js?v=1.052";
+} from "./lifecycle.js?v=1.053";
 import { BossAIEngine } from "./boss_ai.js?v=1.049";
 import {
   openTactileSackCrateAnimation,
@@ -325,16 +326,35 @@ import {
 } from "./element_effect_authority.js?v=1.001";
 import {
   TOME_PROJECTILE_SPEED,
+  TOME_PROJECTILE_VISUAL_PROFILE,
   launchTomeAttackProjectile,
+  renderTomeDeliveryProjectile,
   resolveTomeProjectileImpact,
-} from "./tome_projectile.js?v=1.001";
+} from "./tome_projectile.js?v=1.002";
+import {
+  TOME_ELEMENT_ORDER,
+  SPELL_WEAVING_DURATION_FRAMES,
+  resolvePersistedTomeElementList,
+  formatTomeElementSequence,
+  getTomeIdentityPresentation,
+  resetTomeRotation,
+  getTomeRotationSnapshot,
+  commitSuccessfulTomeProcAnchor,
+  advanceSpellWeavingTimer,
+  resolveCanonicalTomeSpellProcEvent,
+  presentCanonicalTomeSpellProcEvent,
+  getLastTomeProcSnapshot,
+} from "./tome_rotation_authority.js?v=1.001";
 import { updateCombatTargeting } from "./combat_targeting.js?v=1.039";
-import { resolvePlayerAttack } from "./player_attack.js?v=1.044";
-import { updateStandardMobCombat } from "./mob_combat.js?v=1.051";
-import { updateBossCombat } from "./boss_combat.js?v=1.052";
+import { resolvePlayerAttack } from "./player_attack.js?v=1.045";
+import {
+  ensureMobBuffState,
+  updateStandardMobCombat,
+} from "./mob_combat.js?v=1.052";
+import { updateBossCombat } from "./boss_combat.js?v=1.053";
 import { updateDungeonCombat } from "./dungeon_combat.js?v=1.049";
-import { updateGame } from "./game_update.js?v=1.044";
-import { renderGame } from "./game_render.js?v=1.048";
+import { updateGame } from "./game_update.js?v=1.045";
+import { renderGame } from "./game_render.js?v=1.049";
 import { startGameLoop } from "./game_loop.js?v=1.041";
 import {
   checkOrientation,
@@ -489,6 +509,7 @@ window.showForgeTooltip = showForgeTooltip;
 window.toggleRingComparisonSlot = toggleRingComparisonSlot;
 window.updateFlaskCooldownHUDOnly = updateFlaskCooldownHUDOnly;
 window.updateHUD = updateHUD;
+window.renderDungeonDepthLabel = renderDungeonDepthLabel;
 window.getChallengeObjectiveText = getChallengeObjectiveText;
 window.updateHudBuffTray = updateHudBuffTray;
 window.renderLightingOverlay = renderLightingOverlay;
@@ -612,6 +633,7 @@ window.SHIELD_DAGGER_CLEAR_HULL_GAP = SHIELD_DAGGER_CLEAR_HULL_GAP;
 window.TOME_CLEAR_HULL_GAP = TOME_CLEAR_HULL_GAP;
 window.TOME_PROJECTILE_RADIUS = TOME_PROJECTILE_RADIUS;
 window.TOME_PROJECTILE_SPEED = TOME_PROJECTILE_SPEED;
+window.TOME_PROJECTILE_VISUAL_PROFILE = TOME_PROJECTILE_VISUAL_PROFILE;
 window.canPlayerReachCombatTarget = canPlayerReachCombatTarget;
 window.getClearHullGap = getClearHullGap;
 window.hasCombatLineOfEffect = hasCombatLineOfEffect;
@@ -632,10 +654,24 @@ window.getLastLightningChainSnapshot = getLastLightningChainSnapshot;
 window.isEligiblePlayerElementTarget = isEligiblePlayerElementTarget;
 window.resolveTomeElementSecondaryEffect = resolveTomeElementSecondaryEffect;
 window.launchTomeAttackProjectile = launchTomeAttackProjectile;
+window.renderTomeDeliveryProjectile = renderTomeDeliveryProjectile;
 window.resolveTomeProjectileImpact = resolveTomeProjectileImpact;
+window.TOME_ELEMENT_ORDER = TOME_ELEMENT_ORDER;
+window.SPELL_WEAVING_DURATION_FRAMES = SPELL_WEAVING_DURATION_FRAMES;
+window.resolvePersistedTomeElementList = resolvePersistedTomeElementList;
+window.formatTomeElementSequence = formatTomeElementSequence;
+window.getTomeIdentityPresentation = getTomeIdentityPresentation;
+window.resetTomeRotation = resetTomeRotation;
+window.getTomeRotationSnapshot = getTomeRotationSnapshot;
+window.commitSuccessfulTomeProcAnchor = commitSuccessfulTomeProcAnchor;
+window.advanceSpellWeavingTimer = advanceSpellWeavingTimer;
+window.resolveCanonicalTomeSpellProcEvent = resolveCanonicalTomeSpellProcEvent;
+window.presentCanonicalTomeSpellProcEvent = presentCanonicalTomeSpellProcEvent;
+window.getLastTomeProcSnapshot = getLastTomeProcSnapshot;
 window.updateCombatTargeting = updateCombatTargeting;
 window.resolvePlayerAttack = resolvePlayerAttack;
 window.updateStandardMobCombat = updateStandardMobCombat;
+window.ensureMobBuffState = ensureMobBuffState;
 window.updateBossCombat = updateBossCombat;
 window.updateDungeonCombat = updateDungeonCombat;
 window.updateGame = updateGame;

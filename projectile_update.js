@@ -2,7 +2,7 @@ import {
   isFriendlyCombatMob,
   isPlayerTargetableMob,
 } from "./combat_factions.js?v=1.001";
-import { resolveTomeProjectileImpact } from "./tome_projectile.js?v=1.001";
+import { resolveTomeProjectileImpact } from "./tome_projectile.js?v=1.002";
 import {
   renderRandom,
   renderRandFloat,
@@ -244,7 +244,7 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
           style = "streak";
           drag = 0.95;
         } else if (proj.type === "tome_bolt") {
-          color = presentationRandom() < 0.5 ? "#67e8f9" : "#c4b5fd";
+          color = presentationRandom() < 0.5 ? "#8b5cf6" : "#facc15";
           style = "streak";
           scaleDecay = 0.05;
         }

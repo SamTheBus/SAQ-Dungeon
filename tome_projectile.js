@@ -10,6 +10,39 @@ import { renderRandom } from "./render_rng.js?v=1.000";
 
 // Provisional presentation/feel value for G.6C1. Gameplay reach is distance-capped.
 export const TOME_PROJECTILE_SPEED = 8;
+export const TOME_PROJECTILE_VISUAL_PROFILE = "arcane_delivery";
+
+export function renderTomeDeliveryProjectile(ctx, projectile, radius) {
+  const r = Number(radius || projectile?.r || 5);
+  const angle = Math.atan2(
+    Number(projectile?.vy || 0),
+    Number(projectile?.vx || 0),
+  );
+  ctx.translate(Number(projectile?.x || 0), Number(projectile?.y || 0));
+  ctx.rotate(angle);
+  ctx.shadowColor = "#8b5cf6";
+  ctx.shadowBlur = 7;
+  ctx.fillStyle = "#6d28d9";
+  ctx.beginPath();
+  ctx.moveTo(r + 3, 0);
+  ctx.lineTo(-r, r * 0.72);
+  ctx.lineTo(-r * 0.45, 0);
+  ctx.lineTo(-r, -r * 0.72);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#facc15";
+  ctx.lineWidth = 1.25;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#f5d0fe";
+  ctx.beginPath();
+  ctx.moveTo(r * 0.45, 0);
+  ctx.lineTo(-r * 0.42, r * 0.25);
+  ctx.lineTo(-r * 0.12, 0);
+  ctx.lineTo(-r * 0.42, -r * 0.25);
+  ctx.closePath();
+  ctx.fill();
+}
 
 function snapshotAttackStats(playerStats) {
   return { ...(playerStats || {}) };
@@ -34,6 +67,9 @@ export function launchTomeAttackProjectile({
   const projectile = {
     owner: "player",
     type: "tome_bolt",
+    // The delivery bolt is the neutral carrier for a primary Tome attack.
+    // Element selection remains impact/proc authority and must not be implied here.
+    visualProfile: TOME_PROJECTILE_VISUAL_PROFILE,
     x: Number(player.x || 0),
     y: Number(player.y || 0),
     vx: (dx / distance) * TOME_PROJECTILE_SPEED,

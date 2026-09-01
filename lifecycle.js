@@ -54,6 +54,7 @@ import {
 import { getStandardPortalTraversalState } from "./portal_guardian_contract.js?v=1.000";
 import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
 import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.000";
+import { resetTomeRotation } from "./tome_rotation_authority.js?v=1.001";
 
   export const loadHub = function () {
     const resolvedInterruptedRun = shouldResolveInterruptedDungeonRun(
@@ -1508,6 +1509,11 @@ import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.000";
 
   export const loadDungeonFloor = function (depth) {
     if (!window.activeDungeonMap) return;
+
+    resetTomeRotation({
+      tome: window.equippedSlots?.subweapon,
+      reason: "floor-stage-entry",
+    });
 
     // Synchronize stage progress with current depth
     if (window.playerStats) {

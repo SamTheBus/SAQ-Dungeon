@@ -26,6 +26,25 @@ const MOB_SEPARATION_DISTANCE = 18;
 const MOB_SPATIAL_SEPARATION_THRESHOLD = 128;
 const separationCandidates = [];
 
+export function ensureMobBuffState(mob) {
+  if (!mob || typeof mob !== "object") return null;
+  if (
+    !mob.buffStacks ||
+    typeof mob.buffStacks !== "object" ||
+    Array.isArray(mob.buffStacks)
+  ) {
+    mob.buffStacks = { haste: 0, def: 0, atk: 0 };
+  }
+  if (
+    !mob.buffTimers ||
+    typeof mob.buffTimers !== "object" ||
+    Array.isArray(mob.buffTimers)
+  ) {
+    mob.buffTimers = { haste: 0, def: 0, atk: 0 };
+  }
+  return mob;
+}
+
 function addCombatIndexedMob(nextMob) {
   const addedMob = addActiveDungeonMob(nextMob);
   insertIndexedMob(addedMob);
@@ -521,6 +540,7 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
                 let ady = m2.y + (m2.h || 24) / 2 - mobCenterY;
                 if (adx * adx + ady * ady <= 14400) {
                   // 120px ally radius
+                  ensureMobBuffState(m2);
                   m2.buffStacks.haste = 3;
                   m2.buffTimers.haste = 180; // 3 seconds of Frenzy
                 }
