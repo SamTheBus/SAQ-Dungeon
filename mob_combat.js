@@ -1,7 +1,7 @@
 import {
   addActiveDungeonMob,
   removeActiveDungeonMobById,
-} from "./encounter_state.js?v=1.004";
+} from "./encounter_state.js?v=1.007";
 import {
   getIndexedMobOrdinal,
   insertIndexedMob,
@@ -10,6 +10,17 @@ import {
   removeIndexedMob,
 } from "./mob_spatial_index.js?v=1.002";
 import { isFriendlyCombatMob } from "./combat_factions.js?v=1.001";
+import {
+  canStandardMobApplyOpeningPressure,
+  canStandardMobFireRanged,
+} from "./opening_fairness.js?v=1.000";
+import {
+  MONSTER_DROP_DOMAINS,
+  calculateEligibleMonsterDropChance,
+  rollEligibleMonsterDrop,
+} from "./drop_rate_contract.js?v=1.000";
+import { awardDefeatMasteryXp } from "./mastery_authority.js?v=1.003";
+import { applyHostilePlayerPoison } from "./combat_effect_authority.js?v=1.001";
 
 const MOB_SEPARATION_DISTANCE = 18;
 const MOB_SPATIAL_SEPARATION_THRESHOLD = 128;
@@ -357,9 +368,12 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
           // Detonate on direct contact
           if (sDist < m.w / 2 + (p.radius || 9)) {
             window.damagePlayer(Math.round(m.atk * 1.25), m);
-            // Apply 3 stacks of poison
-            p.poisonStacks = Math.min(5, (p.poisonStacks || 0) + 3);
-            p.poisonTimer = 240; // 4s tick
+            applyHostilePlayerPoison(p, {
+              stacks: 3,
+              maxStacks: 5,
+              sourceId: m.id,
+              mechanic: "toxic_spore",
+            });
 
             if (window.combatVisuals) {
               window.combatVisuals.triggerScreenShake(4, 6);
@@ -523,6 +537,7 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
                 m.type,
               );
             }
+            awardDefeatMasteryXp(m);
 
             let pLvl = window.playerStats ? window.playerStats.level || 1 : 1;
                         let depthVal = window.player ? window.player.depth || 1 : 1;
@@ -612,12 +627,16 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
 
             let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
             for (let i = 0; i < extraLootCount; i++) {
-              let rolledRarity = window.rollItemRarity(
-                stageScale * 8,
-                playerQuality * 1.5,
-                false,
-              );
-              if (rolledRarity < minRarity) rolledRarity = minRarity;
+              let rolledRarity = window.rollItemRarity({
+                progressionStage: stageScale,
+                resolvedQuality: playerQuality * 1.5,
+                source: window.EQUIPMENT_RARITY_SOURCES.HOARD_MIMIC,
+              });
+              rolledRarity = window.applyEquipmentRarityException(rolledRarity, {
+                minimumRarity: minRarity,
+                exception:
+                  window.EQUIPMENT_RARITY_EXCEPTIONS.AUTHORED_MIMIC_MINIMUM,
+              });
               let chosenType = types[Math.floor(Math.random() * types.length)];
               let droppedItem = window.createItemObject(
                 chosenType,
@@ -865,6 +884,7 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
               m.type,
             );
           }
+          awardDefeatMasteryXp(m);
           let rewardGold = Math.floor(15 * (1 + window.player.depth * 0.5));
           let rewardXp = Math.floor(15 + window.player.depth * 4);
           window.spawnHomingGold(mobCenterX, mobCenterY, rewardGold);
@@ -880,8 +900,13 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
           }
 
           // Monster Souls & Scraps Mob Drop Logic
-          let dropMult = pStats.drop || 1.0;
-          if (Math.random() < 0.45 * dropMult) {
+          if (
+            rollEligibleMonsterDrop(
+              0.45,
+              pStats,
+              MONSTER_DROP_DOMAINS.MATERIAL,
+            )
+          ) {
             let soulCount = Math.floor(Math.random() * 2) + 1;
             window.addDungeonRunScrap(
               "Monster Soul",
@@ -893,10 +918,7 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
 
           if (m.isRare) {
             // Utility Keystone: Fortune's Favor (+50% Gold Multiplier for 15s)
-            if (
-              window.SkillTreeManager &&
-              window.SkillTreeManager.getSkillLevel("utility_keystone") > 0
-            ) {
+            if (pStats.hasFortunesFavor) {
               window.playerStats.fortunesFavorTimer = 900; // 15 seconds
               if (typeof window.spawnFloatingText === "function") {
                 window.spawnFloatingText(
@@ -910,7 +932,10 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
 
             // Artifact: Void Pull (Heal 15% Max HP on Rare kill)
             if (window.checkArtifactTrait("void_pull")) {
-              let healAmt = Math.round(p.maxHp * 0.15);
+              const healRate = window.scaleArtifactMechanic
+                ? window.scaleArtifactMechanic("void_pull", 0.15)
+                : 0.15;
+              let healAmt = Math.round(p.maxHp * healRate);
               p.hp = Math.min(p.maxHp, p.hp + healAmt);
               if (typeof window.spawnFloatingText === "function") {
                 window.spawnFloatingText(
@@ -982,7 +1007,15 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
               (window.playerStats.frenzyKillCount || 0) + 1;
             if (window.playerStats.frenzyKillCount >= 15) {
               window.playerStats.frenzyKillCount = 0;
-              window.playerStats.frenzyTimer = 300; // 5 seconds of Frenzy
+              const frenzyDuration = window.scaleArtifactMechanic
+                ? window.scaleArtifactMechanic("frenzy", 300)
+                : 300;
+              const chronoExtension = window.scaleArtifactMechanic
+                ? window.scaleArtifactMechanic("extend_buffs", 180)
+                : 0;
+              window.playerStats.frenzyTimer = Math.round(
+                frenzyDuration + chronoExtension,
+              );
               if (typeof window.spawnFloatingText === "function") {
                 window.spawnFloatingText(
                   p.x,
@@ -999,7 +1032,11 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
 
           // Cavern Sigil Drop Logic
           let sigilBaseRate = m.isRare ? 0.08 : 0.006;
-          let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
+          let sigilRollRate = calculateEligibleMonsterDropChance(
+            sigilBaseRate,
+            pStats,
+            MONSTER_DROP_DOMAINS.SIGIL,
+          );
           if (Math.random() < sigilRollRate) {
             let maxSigilStars = 0;
             let cleared = window.playerStats.maxFloorCleared || 0;
@@ -1025,10 +1062,15 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
           }
 
           // Procedural Card Drop Roll (Regular: 0.5% base, Rare/Mimic: 20% base, multiplied by Drop Rate)
-          dropMult = pStats.drop || 1.0;
           let cardBaseChance =
             m.isRare || m.visualType === "hoard_mimic" ? 0.2 : 0.005;
-          if (Math.random() < cardBaseChance * dropMult) {
+          if (
+            rollEligibleMonsterDrop(
+              cardBaseChance,
+              pStats,
+              MONSTER_DROP_DOMAINS.CARD,
+            )
+          ) {
             let cardKey = m.visualType || m.type;
             if (window.MONSTER_CARDS_DATA[cardKey]) {
               let cardItem = {
@@ -1049,15 +1091,19 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
           if (
                       !window.playerStats.isCrucibleMode &&
                       !isChallengeActive &&
-                      Math.random() < 0.05
+                      rollEligibleMonsterDrop(
+                        0.05,
+                        pStats,
+                        MONSTER_DROP_DOMAINS.EQUIPMENT,
+                      )
                     ) {
                       let depthVal = window.player ? window.player.depth || 1 : 1;
                       let stageScale = window.getFloorItemLevel ? window.getFloorItemLevel(depthVal) : Math.floor(depthVal / 4) + 1;
-                      let rolledRarity = window.rollItemRarity(
-                        depthVal,
-                        pStats.qly || 1.0,
-                        false,
-                      );
+                      let rolledRarity = window.rollItemRarity({
+                        progressionStage: depthVal,
+                        resolvedQuality: pStats.qly || 1.0,
+                        source: window.EQUIPMENT_RARITY_SOURCES.ORDINARY_MONSTER,
+                      });
                       let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
                       let chosenType = types[Math.floor(Math.random() * types.length)];
                       let droppedItem = window.createItemObject(
@@ -1103,6 +1149,18 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
 
         if (m.isStopped) continue;
 
+        let openingPressureReady = canStandardMobApplyOpeningPressure({
+          depth: p.depth || window.player?.depth || 1,
+          floorActiveTicks: window.playerStats?.floorActiveTicks || 0,
+          isChallenge: Boolean(window.playerStats?.activeSpecialChallenge),
+          isRift: window.playerStats?.isRiftMode === true,
+          isCrucible: window.playerStats?.isCrucibleMode === true,
+        });
+        if (!openingPressureReady) {
+          if (useMobSpatialSeparation) refreshIndexedMob(m);
+          continue;
+        }
+
         // 2. Mob Contact Melee Attack on Player or a nearby friendly decoy
         if (dist < 20 && m.attackCooldown <= 0) {
           m.attackCooldown = 60; // 1s attack cooldown
@@ -1127,8 +1185,12 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
                       // 2-second Internal Cooldown (120 frames) & max 3 stacks to prevent instant death from fast hits
                       if (!m.lastToxicApplyTime || now - m.lastToxicApplyTime >= 120) {
                         m.lastToxicApplyTime = now;
-                        p.poisonStacks = Math.min(3, (p.poisonStacks || 0) + 1);
-                        p.poisonTimer = 240; // 4s tick
+                        applyHostilePlayerPoison(p, {
+                          stacks: 1,
+                          maxStacks: 3,
+                          sourceId: m.id,
+                          mechanic: "toxic_decay",
+                        });
                         if (window.spawnFloatingText) {
                           window.spawnFloatingText(
                             p.x,
@@ -1171,7 +1233,20 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
 
           if (m.isRanged) {
             // Ranged Projectile Attack Execution
-            if (m.rangedCooldown <= 0 && dist <= 220) {
+            let openingRangedReady = canStandardMobFireRanged({
+              depth: p.depth || window.player?.depth || 1,
+              floorActiveTicks: window.playerStats?.floorActiveTicks || 0,
+              isChallenge: Boolean(
+                window.playerStats?.activeSpecialChallenge,
+              ),
+              isRift: window.playerStats?.isRiftMode === true,
+              isCrucible: window.playerStats?.isCrucibleMode === true,
+            });
+            if (
+              openingRangedReady &&
+              m.rangedCooldown <= 0 &&
+              dist <= 220
+            ) {
               m.rangedCooldown = window.randInt(90, 150);
               let projAngle = Math.atan2(
                 combatTargetY - mCy,
@@ -1187,6 +1262,7 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
                 r: 6,
                 type: m.projectileType || "thorn",
                 owner: "enemy",
+                sourceMob: m,
                 targetFriendlyId: friendlyDecoy?.id,
                 damage: m.atk,
                 life: 180,

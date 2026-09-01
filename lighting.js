@@ -1,4 +1,4 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
 
   let lightingCanvas = null;
   let lightingCtx = null;

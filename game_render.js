@@ -1,5 +1,6 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
-import { prepareMobTetherRecipients } from "./mob_renderer.js?v=1.010";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
+import { prepareMobTetherRecipients } from "./mob_renderer.js?v=1.012";
 
 export const ACTIVE_MOB_RENDER_PADDING = 64;
 
@@ -1188,6 +1189,17 @@ export function isActiveMobInRenderViewport(
           ctx.strokeStyle = "#55efc4";
           ctx.lineWidth = 1.2;
           ctx.stroke();
+        } else if (proj.type === "tome_bolt") {
+          ctx.fillStyle = "#67e8f9";
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, r + 1, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#c4b5fd";
+          ctx.stroke();
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, Math.max(1.5, r * 0.35), 0, Math.PI * 2);
+          ctx.fill();
         } else if (proj.type === "void") {
           ctx.fillStyle = "#8e44ad";
           ctx.beginPath();
@@ -1496,9 +1508,7 @@ export function isActiveMobInRenderViewport(
       let recLoot = window.playerStats && window.playerStats.recoveryLoot;
       let hasRecovery =
         st.type === window.TILE_TYPES.STATION_PORTAL &&
-        recLoot &&
-        recLoot.items &&
-        recLoot.items.length > 0;
+        hasRecoveryAssets(recLoot);
 
       // Pre-allocate and reuse part configurations on the global window to enforce zero GC allocations in the loop
       if (!window._proxParts) {

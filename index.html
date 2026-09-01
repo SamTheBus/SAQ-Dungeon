@@ -2036,7 +2036,7 @@
         DUNGEON_CONFIG,
         GAME_STATES,
         BOSS_BAR_THEMES,
-      } from "./constants.js?v=1.043";
+      } from "./constants.js?v=1.048";
 
       Object.assign(window, {
         MYSTICAL_STOCK,
@@ -2064,7 +2064,7 @@
     </script>
     <script type="module">
       import "./player_runtime.js?v=1.001";
-      import * as dataApi from "./data.js?v=1.071";
+      import * as dataApi from "./data.js?v=1.080";
 
       Object.assign(window, dataApi);
       dataApi.loadGame();
@@ -2080,11 +2080,11 @@
       Object.assign(window, audioApi);
     </script>
     <script type="module">
-      import * as itemsApi from "./items.js?v=1.046";
+      import * as itemsApi from "./items.js?v=1.054";
 
       Object.assign(window, itemsApi);
       itemsApi.recalculateAllInventoryItems();
     </script>
-    <script type="module" src="module_bootstrap.js?v=1.172"></script>
+    <script type="module" src="module_bootstrap.js?v=1.194"></script>
   </body>
 </html>

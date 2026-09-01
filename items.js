@@ -3,6 +3,18 @@
    Sack Management, Forge/Crafting, and Shop Transaction Logic.
    ========================================================================= */
 
+import {
+  beginMarcusRobberyState,
+  completeMarcusRobberyState,
+} from "./portal_guardian_contract.js?v=1.000";
+import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
+import { getUniqueKeyAuthority } from "./artifact_authority.js?v=1.002";
+import {
+  countEquippedSetPieces,
+  getAffixDomainPresentation,
+  getSetThresholdPresentation,
+} from "./set_affix_authority.js?v=1.000";
+
 export let
   getRarityMultiplier,
   isItemUnique,
@@ -91,6 +103,7 @@ export let
   runArtifactTestHarness,
   triggerRobberyConfirmation,
   initiateMerchantRobbery,
+  completeMarcusRobberyDefeat,
   executeParagonUpgrade,
   toggleGachaModal,
   openGachaModal,
@@ -134,20 +147,7 @@ export let
   };
 
   getUniqueKey = function (item) {
-    if (!item) return null;
-    if (item.type === "artifact" || item.statsRolled === "UNIQUE") {
-      return "art_" + item.trait;
-    }
-    if (item.isUniqueStaff) return "weapon_staff";
-    if (item.isUniqueSword) return "weapon_sword";
-    if (item.isUniqueSingularity) return "weapon_singularity";
-    if (item.isUniqueMaelstrom) return "weapon_maelstrom";
-    if (item.isUniqueAegis) return "shield_aegis";
-    if (item.isUniqueWatch) return "tome_watch";
-    if (item.isUniqueChronicle) return "tome_chronicle";
-    if (item.isUniqueWarpCore) return "boots_warpcore";
-    if (item.isUniqueTempest) return "helmet_tempest";
-    return null;
+    return getUniqueKeyAuthority(item);
   };
 
   // --- COMPARISON TARGET RESOLUTION ---
@@ -608,19 +608,16 @@ export let
               : { int: 5 };
           let effInt = Math.max(0, (pStats.int || 5) - 5);
           let intBonus = Math.min(0.15, (effInt * 0.15) / (effInt + 150));
-          let potentialBarrier = 0.2 + intBonus;
+          let runicBarrierRank = getMasteryNodeRank(
+            window.playerStats,
+            "tome_runic_barrier",
+          );
+          let potentialBarrier =
+            (item.baseBarrierPct ?? 0.2) + runicBarrierRank * 0.1 + intBonus;
 
-          // Arcane Barrier Shatter & Keystone overrides
+          // Aetheric Singularity adds its communicated +50% Max HP capacity.
           if (pStats.hasAethericSingularity) {
-            potentialBarrier = 0.45; // Singularity Keystone sets a flat 45% barrier
-          } else if (
-            window.SkillTreeManager &&
-            window.SkillTreeManager.getSkillLevel("tome_runic_barrier") > 0
-          ) {
-            let rank =
-              window.SkillTreeManager.getSkillLevel("tome_runic_barrier");
-            potentialBarrier = 0.2 + rank * 0.04 + intBonus;
-            if (potentialBarrier > 0.4) potentialBarrier = 0.4; // cap runic shielding at 40%
+            potentialBarrier += 0.5;
           }
 
           let barrierPct = Math.round(potentialBarrier * 100);
@@ -907,6 +904,8 @@ export let
     if (item.id !== "dummy") {
       let affixes = [];
       let rangeLines = [];
+      const affixLabel = (field, fallback) =>
+        getAffixDomainPresentation(field)?.label || fallback;
       const statsKeys = [
         { key: "atk", label: "Attack", baseKey: "baseAtk" },
         { key: "maxHp", label: "Max HP", baseKey: "baseMaxHp" },
@@ -941,20 +940,29 @@ export let
         },
         {
           key: "activeAttackSpeed",
-          label: "Active Atk Spd",
+          label: affixLabel("activeAttackSpeed", "Active Attack Speed"),
           isPct: true,
           baseKey: "baseActiveSpeed",
         },
         {
           key: "idleAttackSpeed",
-          label: "Idle Atk Spd",
+          label: affixLabel("idleAttackSpeed", "Idle Attack Speed (Idle only)"),
           isPct: true,
           baseKey: "baseIdleSpeed",
         },
-        { key: "dropRate", label: "Drop Rate", isPct: true },
-                { key: "quality", label: "Drop Quality", isPct: true },
-                { key: "goldMulti", label: "Gold Multi", isPct: true },
-                { key: "bonusAreaRadius", label: "Area Radius", isPct: true },
+        { key: "atkPct", label: "Attack Power", isPct: true },
+        { key: "maxHpPct", label: "Max HP", isPct: true },
+        { key: "defPct", label: "Defense", isPct: true },
+        { key: "moveSpeedPct", label: "Move Speed", isPct: true },
+        { key: "strPct", label: "STR", isPct: true },
+        { key: "dexPct", label: "DEX", isPct: true },
+        { key: "intPct", label: "INT", isPct: true },
+        { key: "dropRate", label: affixLabel("dropRate", "Eligible Monster Drop Rate"), isPct: true },
+        { key: "quality", label: affixLabel("quality", "Unlocked-tier Drop Quality"), isPct: true },
+        { key: "goldMulti", label: affixLabel("goldMulti", "Gold Multiplier"), isPct: true },
+        { key: "rareSpawn", label: affixLabel("rareSpawn", "Rare Spawn Rate"), isPct: true },
+        { key: "fairySpawn", label: affixLabel("fairySpawn", "Fairy Spawn Rate"), isPct: true },
+        { key: "bonusAreaRadius", label: affixLabel("bonusAreaRadius", "Global AoE Radius (supported effects only)"), isPct: true },
       ];
 
       statsKeys.forEach((s) => {
@@ -1011,39 +1019,31 @@ export let
       ) {
         let setDef = window.SET_DEFINITIONS[setName];
 
-        let currentSetCount = 0;
-        if (window.equippedSlots) {
-          const eligibleSetSlots = [
-            "weapon",
-            "subweapon",
-            "helmet",
-            "chest",
-            "leggings",
-            "overall",
-            "boots",
-          ];
-          eligibleSetSlots.forEach((slot) => {
-            let eqItem = window.equippedSlots[slot];
-            if (eqItem) {
-              let eqSetName = window.getItemSetName
-                ? window.getItemSetName(eqItem)
-                : null;
-              if (eqSetName === setName) {
-                currentSetCount += slot === "overall" ? 2 : 1;
-              }
-            }
-          });
-        }
+        const currentSetCount =
+          countEquippedSetPieces({
+            equippedSlots: window.equippedSlots,
+            getItemSetName: window.getItemSetName,
+          })[setName] || 0;
 
         html += `<div style="margin-top:10px; padding-top:6px; border-top:1px dashed #555;">`;
         html += `<div style="font-weight:bold; color:#f1c40f; font-size:10px;">✦ SET: ${setDef.name} <span style="color:#aaa; font-size:9px; font-weight:normal;">(${currentSetCount} Equipped)</span></div>`;
-        setDef.bonuses.forEach((b) => {
+        setDef.bonuses.forEach((b, thresholdIndex) => {
           let isActive = currentSetCount >= b.count;
           let color = isActive ? "#2ecc71" : "#64748b";
           let weightStyle = isActive
             ? "font-weight:bold;"
             : "font-weight:normal; opacity:0.65;";
-          html += `<div style="font-size:9px; color:${color}; ${weightStyle} margin-top:2px;">• (${b.count} pieces): ${b.desc}</div>`;
+          const presentation = getSetThresholdPresentation(
+            setName,
+            b,
+            thresholdIndex,
+          );
+          html += `<div style="font-size:9px; color:${color}; ${weightStyle} margin-top:2px;">• (${b.count} pieces): ${presentation.description}</div>`;
+          if (presentation.note) {
+            const noteColor =
+              presentation.status === "unresolved-design" ? "#f59e0b" : "#94a3b8";
+            html += `<div style="font-size:8.5px; color:${noteColor}; margin:1px 0 3px 10px;">${presentation.note}</div>`;
+          }
         });
         html += `</div>`;
       }
@@ -3612,24 +3612,36 @@ export let
         item.desc = chosenArt.desc;
         item.breakdown = chosenArt.breakdown;
         item.statsRolled = "UNIQUE";
-        item.baseAtk = chosenArt.atk || 0;
-        item.baseMaxHp = chosenArt.maxHp || 0;
-        item.baseDef = chosenArt.def || 0;
-        item.baseMoveSpeed = chosenArt.moveSpeed || 0;
-        item.baseCritChance = chosenArt.critChance || 0;
-        item.bonusCritDamage = chosenArt.critDamage || 0;
-        item.baseBlock = chosenArt.block || 0;
-        item.baseParry = chosenArt.parry || 0;
-        item.bonusActiveSpeed = chosenArt.activeAttackSpeed || 0;
-        item.bonusIdleSpeed = chosenArt.idleAttackSpeed || 0;
-        item.dropRate = chosenArt.dropRate || 0;
-        item.quality = chosenArt.quality || 0;
-        item.goldMulti = chosenArt.goldMulti || 0;
-        item.rareSpawn = chosenArt.rareSpawn || 0;
-        item.fairySpawn = chosenArt.fairySpawn || 0;
-        item.baseStr = chosenArt.str || 0;
-        item.baseDex = chosenArt.dex || 0;
-        item.baseInt = chosenArt.int || 0;
+        const traitStats =
+          (window.ARTIFACT_BASE_STATS &&
+            window.ARTIFACT_BASE_STATS[chosenArt.trait]) ||
+          chosenArt;
+        item.baseAtk = traitStats.atk || 0;
+        item.baseMaxHp = traitStats.maxHp || 0;
+        item.baseDef = traitStats.def || 0;
+        item.baseMoveSpeed = traitStats.moveSpeed || 0;
+        item.baseCritChance = traitStats.critChance || 0;
+        item.baseCritDamage = traitStats.critDamage || 0;
+        item.baseBlock = traitStats.block || 0;
+        item.baseParry = traitStats.parry || 0;
+        item.bonusActiveSpeed = traitStats.activeAttackSpeed || 0;
+        item.bonusIdleSpeed = traitStats.idleAttackSpeed || 0;
+        item.dropRate = traitStats.dropRate || 0;
+        item.quality = traitStats.quality || 0;
+        item.goldMulti = traitStats.goldMulti || 0;
+        item.rareSpawn = traitStats.rareSpawn || 0;
+        item.fairySpawn = traitStats.fairySpawn || 0;
+        item.baseStr = traitStats.str || 0;
+        item.baseDex = traitStats.dex || 0;
+        item.baseInt = traitStats.int || 0;
+        item.atkPct = traitStats.atkPct || 0;
+        item.maxHpPct = traitStats.maxHpPct || 0;
+        item.defPct = traitStats.defPct || 0;
+        item.moveSpeedPct = traitStats.moveSpeedPct || 0;
+        item.strPct = traitStats.strPct || 0;
+        item.dexPct = traitStats.dexPct || 0;
+        item.intPct = traitStats.intPct || 0;
+        item.bonusAreaRadius = traitStats.bonusAreaRadius || 0;
         statLinesCount = 3;
       }
 
@@ -5469,57 +5481,65 @@ export let
   window.GameState = window.GameState || {};
   Object.assign(window.GameState, {
     unequipItem(slotKey) {
-      let maxBag = window.getMaxBagSlots ? window.getMaxBagSlots() : 20;
       if (typeof window.hideTooltip === "function") window.hideTooltip();
       let item = window.equippedSlots[slotKey];
-      if (!item) return;
+      if (!item) return false;
 
-      delete item.isEquippedSlot;
       let oldMaxHp = 100;
       if (typeof window.resolvePlayerStats === "function")
         oldMaxHp = window.resolvePlayerStats().maxHp;
 
       let inDungeonRun = window.currentGameState !== window.GAME_STATES.HUB;
 
-      if (item.type === "artifact") {
-        window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
-        if (window.inventory.ARTIFACT.length >= maxBag) {
-          if (typeof window.pushHeaderToast === "function")
-            window.pushHeaderToast(`Artifact Sack Full!`, "#e74c3c");
-          return;
-        }
+      if (item.isStarterItem) {
+        // Cleanly discard temporary starter/provisioned gear instead of letting it clog bag/stash.
+        delete item.isEquippedSlot;
         window.equippedSlots[slotKey] = null;
-        window.inventory.ARTIFACT.push(item);
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            `[DISCARDED] Temporary starter item removed.`,
+            "#7f8c8d",
+          );
+        }
+      } else if (inDungeonRun) {
+        window.player.bag = window.player.bag || [];
+        let prospectiveSlots = { ...window.equippedSlots, [slotKey]: null };
+        let nextCapacity = window.getMaxBagSlots({
+          equippedSlots: prospectiveSlots,
+        });
+        let transition = window.evaluateRunSatchelTransition(
+          window.player.bag.length + 1,
+          {
+            bag: window.player.bag,
+            nextCapacity,
+          },
+        );
+        if (!transition.allowed) {
+          let capacityShrinks = nextCapacity < transition.currentCapacity;
+          window.notifyRunSatchelBlocked({
+            count: window.player.bag.length,
+            capacity: nextCapacity,
+            overflow: transition.overflow,
+            markFullEncounter: !capacityShrinks,
+            message: capacityShrinks
+              ? `Cannot remove Dimensional Pouch: remove ${transition.overflow} carried item${transition.overflow === 1 ? "" : "s"} first.`
+              : `Cannot unequip ${item.name}: Carried Satchel is full.`,
+          });
+          return false;
+        }
+
+        delete item.isEquippedSlot;
+        window.equippedSlots[slotKey] = null;
+        window.addToRunSatchel(item, { notify: false });
       } else {
-        if (item.isStarterItem) {
-          // Cleanly discard temporary starter/provisioned gear instead of letting it clog bag/stash
-          window.equippedSlots[slotKey] = null;
-          if (typeof window.pushHeaderToast === "function") {
-            window.pushHeaderToast(
-              `[DISCARDED] Temporary starter item removed.`,
-              "#7f8c8d",
-            );
-          }
+        delete item.isEquippedSlot;
+        window.equippedSlots[slotKey] = null;
+        if (item.type === "artifact") {
+          window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+          window.inventory.ARTIFACT.push(item);
         } else {
-          if (inDungeonRun) {
-            window.player.bag = window.player.bag || [];
-            if (window.player.bag.length >= maxBag) {
-              if (typeof window.pushHeaderToast === "function")
-                window.pushHeaderToast(`Satchel Full!`, "#e74c3c");
-              return;
-            }
-            window.equippedSlots[slotKey] = null;
-            window.player.bag.push(item);
-          } else {
-            window.inventory.EQUIP = window.inventory.EQUIP || [];
-            if (window.inventory.EQUIP.length >= maxBag) {
-              if (typeof window.pushHeaderToast === "function")
-                window.pushHeaderToast(`Inventory Full!`, "#e74c3c");
-              return;
-            }
-            window.equippedSlots[slotKey] = null;
-            window.inventory.EQUIP.push(item);
-          }
+          window.inventory.EQUIP = window.inventory.EQUIP || [];
+          window.inventory.EQUIP.push(item);
         }
       }
 
@@ -5535,6 +5555,7 @@ export let
         window.renderInventory();
       if (typeof window.renderForgeTab === "function") window.renderForgeTab();
       if (typeof window.saveGame === "function") window.saveGame();
+      return true;
     },
   });
 
@@ -6375,6 +6396,7 @@ export let
         let eqItem = window.equippedSlots[slotKey];
         if (eqItem) {
           if (eqItem.isStarterItem) {
+            delete eqItem.locked;
             delete eqItem.isStarterItem; // Permanently promote starter item into standard gear
           }
           window.recalculateItemStats(eqItem);
@@ -6550,7 +6572,9 @@ export let
         "idleAttackSpeed",
       ];
       ENCHANTABLE_STATS.forEach((stat) => {
-        if (stat === "activeAttackSpeed" || stat === "idleAttackSpeed") {
+        if (stat === "activeAttackSpeed") {
+          if (item[stat] > 0) validStats.push(stat);
+        } else if (stat === "idleAttackSpeed") {
           if (item[stat] < 0) validStats.push(stat);
         } else {
           if (item[stat] > 0) validStats.push(stat);
@@ -6994,6 +7018,7 @@ export let
       item[newProp] = rolledValue;
       item.reforgedProperty = newProp;
       if (item.isStarterItem) {
+        delete item.locked;
         delete item.isStarterItem; // Permanently promote starter item into standard gear
       }
 
@@ -7037,7 +7062,6 @@ export let
     useStandardForGlimmering = false,
   ) {
     let p = window.resolvePlayerStats();
-    let maxBag = window.getMaxBagSlots();
 
     let keyName = isGlimmering
       ? useStandardForGlimmering
@@ -7065,16 +7089,6 @@ export let
       ? "artifact"
       : types[Math.floor(Math.random() * types.length)];
 
-    if (chosenType === "artifact") {
-      if (window.inventory.ARTIFACT.length >= maxBag) {
-        return { error: "Artifact Sack Full!" };
-      }
-    } else {
-      if (window.inventory.EQUIP.length >= maxBag) {
-        return { error: "Inventory Full!" };
-      }
-    }
-
     // Deduct key & save state
     window.inventory.ETC[keyName] -= keysNeeded;
     if (window.inventory.ETC[keyName] === 0)
@@ -7100,41 +7114,43 @@ export let
 
     let statLinesCount = 1;
     if (isPityTriggered) {
-      statLinesCount = 5; // Guaranteed Mythic
+      statLinesCount = window.applyEquipmentRarityException(0, {
+        minimumRarity: 5,
+        exception: window.EQUIPMENT_RARITY_EXCEPTIONS.GACHA_PITY_MYTHIC,
+      });
     } else {
       let vendingLvl = window.playerStats.vendingQLevel || 0;
       let effectiveVendingLvl =
         vendingLvl * window.getMilestoneMultiplier(vendingLvl);
       let peakRunStage =
         window.playerStats.lifetimePeakStage || window.playerStats.stage || 1;
-      let probs = window.calculateRarityProbabilities(
-        p.qly + effectiveVendingLvl * 0.01,
-        true,
-        peakRunStage,
-      );
-      let roll = Math.random() * 100;
-      let cumulative = 0;
+      let naturalRarity = window.rollItemRarity({
+        progressionStage: peakRunStage,
+        resolvedQuality: p.qly + effectiveVendingLvl * 0.01,
+        isGacha: true,
+        source: window.EQUIPMENT_RARITY_SOURCES.GACHA,
+      });
+      statLinesCount = window.applyEquipmentRarityException(naturalRarity, {
+        minimumRarity: 1,
+        exception:
+          window.EQUIPMENT_RARITY_EXCEPTIONS.GACHA_BASE_RARE_MINIMUM,
+      });
 
-      if (roll < (cumulative += probs[5])) {
-        statLinesCount = 5;
+      if (naturalRarity === 5) {
         if (isGlimmering) {
           window.playerStats.glimmeringPity = 0;
         } else {
           window.playerStats.vendingPity = 0; // Natural pull resets pity
         }
-      } else if (roll < (cumulative += probs[4])) {
-        statLinesCount = 4;
-      } else if (roll < (cumulative += probs[3])) {
-        statLinesCount = 3;
-      } else if (roll < (cumulative += probs[2])) {
-        statLinesCount = 2;
-      } else {
-        statLinesCount = 1;
       }
     }
 
     if (isGlimmering && chosenType !== "artifact") {
-      statLinesCount = Math.max(3, statLinesCount);
+      statLinesCount = window.applyEquipmentRarityException(statLinesCount, {
+        minimumRarity: 3,
+        exception:
+          window.EQUIPMENT_RARITY_EXCEPTIONS.GLIMMERING_GACHA_EPIC_MINIMUM,
+      });
     }
 
     let checkpoints = window.playerStats.unlockedCheckpoints || [1];
@@ -7271,22 +7287,11 @@ export let
 
     for (let i = 0; i < 4; i++) {
       let chosenType = types[Math.floor(Math.random() * types.length)];
-      let probs = window.calculateRarityProbabilities(
-        1.0 + shopLvl * 0.02,
-        false,
-        stageScale,
-      );
-      let roll = Math.random() * 100;
-      let cumulative = 0;
-      let stars = 0;
-
-      for (let s = 5; s >= 0; s--) {
-        cumulative += probs[s];
-        if (roll <= cumulative) {
-          stars = s;
-          break;
-        }
-      }
+      let stars = window.rollItemRarity({
+        progressionStage: highestFloor,
+        resolvedQuality: 1.0 + shopLvl * 0.02,
+        source: window.EQUIPMENT_RARITY_SOURCES.HUB_EQUIPMENT_MARKET,
+      });
 
       let item = window.createItemObject(chosenType, stars, stageScale, 0);
       let costMult = 250 * (1 + stageScale * 0.65) * Math.pow(1.65, stars);
@@ -7297,22 +7302,11 @@ export let
 
     // Generate 5th item: The premium "Item of the Day" with elevated baseline quality (+50% bonus) & 20% price markup
     let chosenTypeDaily = types[Math.floor(Math.random() * types.length)];
-    let probsDaily = window.calculateRarityProbabilities(
-      1.5 + shopLvl * 0.02,
-      false,
-      stageScale,
-    );
-    let rollDaily = Math.random() * 100;
-    let cumulativeDaily = 0;
-    let starsDaily = 0;
-
-    for (let s = 5; s >= 0; s--) {
-      cumulativeDaily += probsDaily[s];
-      if (rollDaily <= cumulativeDaily) {
-        starsDaily = s;
-        break;
-      }
-    }
+    let starsDaily = window.rollItemRarity({
+      progressionStage: highestFloor,
+      resolvedQuality: 1.5 + shopLvl * 0.02,
+      source: window.EQUIPMENT_RARITY_SOURCES.HUB_EQUIPMENT_MARKET,
+    });
 
     let dailyItemObj = window.createItemObject(
       chosenTypeDaily,
@@ -7779,8 +7773,8 @@ export let
         type: "global",
         title: "GLOBAL EXTRACTION QUALITY",
         field: "globalQLevel",
-        desc: "Increases baseline item drop quality and star rolls across all dungeon runs.",
-        statBonus: `+${(p.globalQLevel || 0) * 1}% Global Drop Quality`,
+        desc: "Each effective level adds +1% Drop Quality and +1% Drop Rate. Quality improves only currently unlocked equipment rarities and does not unlock tiers.",
+        statBonus: `+${((p.globalQLevel || 0) * window.getMilestoneMultiplier(p.globalQLevel || 0)).toFixed(1)}% Drop Quality & Drop Rate`,
         iconSvg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
       },
       {
@@ -7863,12 +7857,6 @@ export let
     let cost = BigNum.from(item.cost);
     if (coins.lt(cost)) {
       window.pushHeaderToast("[X] Insufficient Gold!", "#e74c3c");
-      return;
-    }
-
-    let maxBag = window.getMaxBagSlots();
-    if (window.inventory.EQUIP.length >= maxBag) {
-      window.pushHeaderToast("[X] Inventory Full!", "#e74c3c");
       return;
     }
 
@@ -8355,7 +8343,7 @@ export let
         `<div style="color: #cbd5e1; font-size: 11px; line-height: 1.45; text-align: left; font-family: monospace; white-space: normal;">
             <span style="color: #ef4444; font-weight: bold; display: block; margin-bottom: 8px;">[WARNING: HIGH DANGER]</span>
             You are about to steal Marcus's entire inventory. He will defend his life's work with extreme, calamitous force.<br><br>
-            The escape and descent portals on this floor will be <span style="color: #ef4444; font-weight: bold;">hermetically locked</span> until he is slain. Retreat is impossible. Proceed at your own peril!
+            Robbery adds a <span style="color: #ef4444; font-weight: bold;">second portal seal</span> until Marcus is slain. The Portal Sentinel seal remains separate: both active conditions must be cleared before traversal. Retreat is impossible. Proceed at your own peril!
           </div>`,
         "ROB WARES",
         "ABORT",
@@ -8367,7 +8355,7 @@ export let
     } else {
       if (
         confirm(
-          "Are you sure you want to rob Marcus? Portals will be locked and he will attack!",
+          "Rob Marcus? His robbery seal and the Portal Sentinel seal are separate; every active seal must be cleared before traversal.",
         )
       ) {
         window.initiateMerchantRobbery();
@@ -8378,6 +8366,9 @@ export let
   initiateMerchantRobbery = function () {
     let map = window.activeDungeonMap;
     if (!map || !map.merchantTile) return;
+
+    const robberyStart = beginMarcusRobberyState(map, window.playerStats);
+    if (!robberyStart.changed) return robberyStart;
 
     let mx = map.merchantTile.x;
     let my = map.merchantTile.y;
@@ -8426,18 +8417,48 @@ export let
 
     if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast(
-        "[LOCK] PORTALS LOCKED! DEFEAT MARCUS TO ESCAPE!",
+        "[LOCK] ROBBERY SEAL ACTIVE! DEFEAT MARCUS; SENTINEL RULE STILL APPLIES.",
         "#ef4444",
       );
     }
     if (typeof window.pushLog === "function") {
       window.pushLog(
-        "<span style='color:#ef4444; font-weight:bold;'>[HEIST]</span> You have initiated a heist on Marcus! Portals are sealed.",
+        "<span style='color:#ef4444; font-weight:bold;'>[HEIST]</span> Marcus's robbery seal is active. The Portal Sentinel condition remains independently required.",
       );
     }
 
     if (typeof window.updateUI === "function") window.updateUI();
     if (typeof window.saveGame === "function") window.saveGame();
+    return robberyStart;
+  };
+
+  completeMarcusRobberyDefeat = function () {
+    let map = window.activeDungeonMap;
+    const completion = completeMarcusRobberyState(map, window.playerStats);
+    if (!completion.changed) return completion;
+
+    if (map) map.needsPreRender = true;
+    if (typeof window.refillFlaskCharges === "function") {
+      window.refillFlaskCharges(false);
+    }
+    if (typeof window.pushHeaderToast === "function") {
+      window.pushHeaderToast(
+        completion.portal.guardianLocked
+          ? "Marcus defeated. The Portal Sentinel seal remains."
+          : "Marcus defeated. The cleared portal is usable.",
+        completion.portal.guardianLocked ? "#ef4444" : "#2ecc71",
+      );
+    }
+    if (typeof window.pushLog === "function") {
+      window.pushLog(
+        completion.portal.guardianLocked
+          ? "<span style='color:#ef4444; font-weight:bold;'>[HEIST]</span> Marcus is defeated, but the Portal Sentinel still seals this floor."
+          : "<span style='color:#2ecc71; font-weight:bold;'>[HEIST]</span> Marcus is defeated and the Guardian-cleared portal remains usable.",
+      );
+    }
+    if (typeof window.updateUI === "function") window.updateUI();
+    if (typeof window.saveGame === "function") window.saveGame();
+    return completion;
   };
 
   if (window.ARTIFACT_POOL && !window.ARTIFACT_POOL.some((a) => a.trait === "astral_expansion")) {
@@ -9063,13 +9084,12 @@ buyDungeonMerchantItem = function (event, itemId) {
     return;
   }
 
-  let maxBag =
-    typeof window.getMaxBagSlots === "function" ? window.getMaxBagSlots() : 20;
-  window.player.bag = window.player.bag || [];
-  if (window.player.bag.length >= maxBag) {
-    if (typeof window.pushHeaderToast === "function") {
-      window.pushHeaderToast("❌ Carried Satchel is Full!", "#e74c3c");
-    }
+  if (
+    !window.canAddToRunSatchel ||
+    !window.canAddToRunSatchel(1, {
+      message: `Cannot buy ${item.name}: Carried Satchel is full.`,
+    })
+  ) {
     return;
   }
 
@@ -9086,7 +9106,7 @@ buyDungeonMerchantItem = function (event, itemId) {
   }
 
   // Transfer item to player's carried bag
-  window.player.bag.push(item);
+  window.addToRunSatchel(item, { notify: false });
 
   // Dismiss active tooltip
   window.activeDungeonMerchantItem = null;
@@ -9212,67 +9232,69 @@ getDynamicArtifactDescription = function (item) {
 
   const b = (val) => Math.ceil(val * power * slotMult);
   const p = (val) => (val * power * slotMult * 100).toFixed(1);
-  const u = (val) => (val * slotMult).toFixed(0);
+  const m = (val, places = 1) => (val * power).toFixed(places);
 
   switch (item.trait) {
     case "frenzy":
-      return `Grants Frenzy Mode for 5s every 15 kills. Passive +${p(0.03)}% Crit Chance.`;
+      return `Grants Frenzy Mode for ${m(5)}s every 15 kills (guaranteed crit, +30% Crit Damage, 4-frame Active haste). Passive +${p(0.03)}% Crit Chance.`;
     case "vampirism":
-      return `Heals ${(0.5 * slotMult).toFixed(1)}% of damage dealt on hit (Capped at 3% Max HP per second globally). Passive +${b(20)} Max HP.`;
+      return `Heals ${m(0.5)}% of damage dealt on hit (Capped at ${m(3)}% Max HP per second globally). Passive +${b(20)} Max HP.`;
     case "gold_hoard":
       return `Permanent x${(1.0 + 0.3 * power * slotMult).toFixed(2)} Gold Multiplier bonus. Passive +${b(10)} Attack.`;
     case "magic_find":
-      return `Increases Drop Rate by +${p(0.25)}% and Drop Quality by +${p(0.15)}%. Passive +${b(5)} DEX.`;
+      return `Increases eligible random monster equipment, material, sigil, and card chance multiplier by +${p(0.25)}% (each chance caps at 100%; guaranteed/direct rewards unchanged) and Drop Quality by +${p(0.15)}% for higher-rarity odds among currently unlocked tiers. Quality does not unlock tiers. Passive +${b(5)} DEX.`;
     case "move_speed":
       return `Grants +${p(0.1)}% Movement Speed and +${p(0.03)}% Parry Rate.`;
     case "defense":
       return `Grants +${p(0.06)}% Max HP and +${p(0.08)}% Defense.`;
     case "parry_strike":
-      return `Parrying instantly counters for ${u(50)}% damage. Passive +${p(0.02)}% Parry Rate.`;
+      return `Parrying instantly counters for ${m(50, 0)}% weapon damage. Passive +${p(0.02)}% Parry Rate.`;
     case "echo_strike":
-      return `Attacks have 30% chance to hit a second time for ${u(25)}% damage. Passive +${b(3)} Attack.`;
+      return `Attacks have ${m(30)}% chance to hit a second time for 25% damage. Passive +${b(3)} Attack.`;
     case "idle_spd":
       return `Increases Idle Attack Speed by +${p(0.15)}%. Passive +${p(0.05)}% Gold Multiplier.`;
     case "active_spd":
-      return `Increases Active Attack Speed limit by +${p(0.1)}%. Passive +${p(0.03)}% Crit Chance.`;
+      return `Increases Active Attack Speed by +${p(0.1)}%. Passive +${p(0.03)}% Crit Chance.`;
     case "dodge_buff":
-      return `Blocking/Parrying grants +30% Dmg for 6s. Passive +${p(0.02)}% Block & Parry.`;
+      return `Blocking/Parrying grants +${m(30)}% Dmg for 6s. Passive +${p(0.02)}% Block & Parry.`;
     case "extend_buffs":
-      return `Extends all temporary buffs by 3 seconds. Passive +${b(3)} INT.`;
+      return `Extends Frenzy and Adrenaline by ${m(3)} seconds. Passive +${b(3)} INT.`;
     case "bag_space":
-      return `Expands equipment sack capacity to 50. Passive +${p(0.1)}% Drop Rate.`;
+      return `Expands expedition satchel base capacity to 50 items. Passive +${p(0.1)}% eligible random monster equipment, material, sigil, and card chance multiplier (each chance caps at 100%; guaranteed/direct rewards unchanged).`;
     case "second_wind":
       return `Ignore a fatal blow once per stage attempt (40% Heal). Passive +${b(5)} STR & +${b(30)} Max HP.`;
     case "golem_stance":
-      return `Increases Attack Power by +20% while healthy (>80% HP). Passive +${b(5)} STR.`;
+      return `Increases Attack Power by +${m(20)}% while healthy (>80% HP). Passive +${b(5)} STR.`;
     case "fairy_wealth":
-      return `Increases Fairy Spawn Rate by +${p(0.15)}%. Fairies have 8% chance to drop 1 Luminous Soul. Passive +${p(0.06)}% Gold.`;
+      return `Increases Fairy Spawn Rate by +${p(0.15)}%. Fairies have ${m(8)}% chance to drop 1 Luminous Soul. Passive +${p(0.06)}% Gold.`;
     case "void_pull":
-      return `Increases Rare Spawn Rate by +${p(0.2)}%. Defeating Rares heals 15% Max HP. Passive +${b(3)} DEX.`;
+      return `Increases Rare Spawn Rate by +${p(0.2)}%. Defeating Rares heals ${m(15)}% Max HP. Passive +${b(3)} DEX.`;
     case "titan_grip":
-      return `Increases Block Cap to ${u(25)}% (with Shield) and Parry Cap to ${u(30)}% (with Dagger). Passive +${p(0.04)}% Block & Parry.`;
+      return `Uses the current Titan caps: 50% Block with Shield; 45% Parry with Dagger or 55% with Main-gauche (20%/15% off-archetype access). Passive +${p(0.04)}% Block & Parry.`;
     case "alchemist_alembic":
-      return `All consumed elixirs are ${u(15)}% more potent. Passive +${b(3)} INT.`;
+      return `All consumed elixirs are ${m(15)}% more potent. Passive +${b(3)} INT.`;
     case "philosopher_catalyst":
-      return `Consuming an elixir has a ${u(12)}% chance to not consume the item. Passive +${b(4)} INT.`;
+      return `Consuming an elixir has a ${m(12)}% chance to not consume the item. Passive +${b(4)} INT.`;
     case "cauldron_eternity":
-      return `While any potion buff is active, reduces Idle Attack delay by 2 frames. Passive +${p(0.05)}% Max HP.`;
+      return `While any potion buff is active, reduces Idle Attack delay by ${m(2)} frames. Passive +${p(0.05)}% Max HP.`;
     case "breach_adrenaline":
-      return `Upon entering a new floor, gain +${u(40)}% Movement Speed and +${u(25)}% Critical Strike Chance, decaying over 30s. Passive +${p(0.02)}% base Crit Chance.`;
+      return `Upon entering a new floor, gain +${m(40)}% Movement Speed and +${m(25)}% Critical Strike Chance, decaying over 30s. Passive +${p(0.02)}% base Crit Chance.`;
     case "breach_barrier":
-      return `Upon floor entry, immediately project an overshield equal to ${u(100)}% of your Maximum HP, decaying by 5% Max HP/sec. Passive +${b(5)} flat Defense.`;
+      return `Upon floor entry, immediately project an overshield equal to ${m(100)}% of your Maximum HP, decaying by 5% Max HP/sec. Passive +${b(5)} flat Defense.`;
     case "breach_scouting":
-      return `For the first 15s of a floor, reveal the path to the nearest Chest, Merchant, or Portal and gain +${u(50)}% Drop Rate. Passive +${p(0.05)}% Gold Multiplier.`;
+      return `For the first 15s of a floor, reveal the path to the nearest Chest, Merchant, or Portal and gain +${m(50)}% eligible random monster equipment, material, sigil, and card chance multiplier (each chance caps at 100%; guaranteed/direct rewards unchanged). Passive +${p(0.05)}% Gold Multiplier.`;
     case "friction_kinetic":
-      return `Generate 1 charge of Kinetic Build per 10 pixels traveled (Max 50). Each charge grants +${(0.5 * slotMult).toFixed(2)}% Attack Speed and +${(0.5 * slotMult).toFixed(2)}% Damage. Standing still for 1.5s dissipates charges. Passive +${b(3)} DEX.`;
+      return `Generate 1 charge of Kinetic Build per 10 pixels traveled (Max 50). Each charge grants +${m(0.5, 2)}% Attack Speed and +${m(0.5, 2)}% Damage. Standing still for 1.5s dissipates charges. Passive +${b(3)} DEX.`;
     case "friction_tenacity":
-      return `Each second spent in active combat grants 1 stack of Tenacity (Max 15). Each stack grants +${(2 * slotMult).toFixed(1)}% Defense and +${(1.5 * slotMult).toFixed(1)}% Block/Parry Mitigation. Stacks decay by 1/sec out of combat. Passive +${b(4)} STR.`;
+      return `Each second spent in active combat grants 1 stack of Tenacity (Max 15). Each stack grants +${m(2)}% Defense and +${m(1.5)}% Block/Parry Mitigation. Stacks decay by 1/sec out of combat. Passive +${b(4)} STR.`;
     case "friction_accretion":
-      return `For every 10 seconds spent on a floor, gain +${(3 * slotMult).toFixed(1)}% damage (Max ${(30 * slotMult).toFixed(0)}% after 100 seconds). Passive +${p(0.05)}% Drop Quality.`;
+      return `For every 10 seconds spent on a floor, gain +${m(3)}% damage (Max ${m(30, 0)}% after 100 seconds). Passive +${p(0.05)}% Drop Quality.`;
     case "synergy_nexus":
-      return `Equipping specific offhands unlocks dual-resonance: Shields have ${u(20)}% cast-on-block spell chance; Dagger parries reset Field Flask; Tomes boost Block/Parry by ${u(5)}% for 3s. Passive +${b(4)} INT.`;
+      return `Equipping specific offhands unlocks dual-resonance: Shields have ${m(20)}% cast-on-block spell chance; Dagger parries reset Field Flask; Tomes boost Block/Parry by ${m(5)}% for 3s. Passive +${b(4)} INT.`;
     case "synergy_sanguine":
-          return `Increases all damage dealt to targets by +${(8 * slotMult).toFixed(1)}% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +${p(0.03)}% base Crit Chance.`;
+          return `Increases all damage dealt to targets by +${m(8)}% per unique active damage-over-time effect (Poison, Bleed, Burn) active on them. Passive +${p(0.03)}% base Crit Chance.`;
+    case "speed_to_momentum":
+      return `Converts each 1% raw Movement Speed beyond the +150% movement cap into +${m(2.5, 2)}% Critical Damage. Passive +${b(5)} DEX.`;
         case "astral_expansion":
           return `Expands all Shield, Dagger, and Tome AoE radii by +${p(0.25)}%. Passive +${b(5)} INT.`;
     default:

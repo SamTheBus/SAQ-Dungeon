@@ -1,5 +1,5 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
-import { isBossOrMinibossMob } from "./mob_liveness.js?v=1.003";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { isBossOrMinibossMob } from "./mob_liveness.js?v=1.005";
 import {
   emitBerserkBossEmber,
   emitCalamitySpecterParticle,

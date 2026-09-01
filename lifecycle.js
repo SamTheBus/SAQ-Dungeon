@@ -8,12 +8,52 @@ import {
   resetEncounterState,
   setActiveDungeonMobs,
   setPrimaryMob,
-} from "./encounter_state.js?v=1.004";
+} from "./encounter_state.js?v=1.007";
 import { resetCombatHazardRuntimeState } from "./combat_hazards.js?v=1.035";
 import {
   calculateEmergencySalvageGold,
   shouldResolveInterruptedDungeonRun,
 } from "./run_recovery.js?v=1.002";
+import {
+  captureStandardRunEntryLoadout,
+  isStandardVoluntaryRetreatMode,
+  requestStandardVoluntaryRetreat,
+} from "./standard_retreat.js?v=1.000";
+import {
+  buildStandardExtractionConfirmation,
+  buildStandardExtractionSummary,
+  getStandardExtractionPortalRule,
+  getStandardExtractionPreview,
+  isStandardSuccessfulExtractionMode,
+} from "./standard_extraction.js?v=1.000";
+import {
+  finalizeOnslaughtModeExit,
+  finalizeRiftModeExit,
+  isSafeModeExitFinalized,
+  resetSafeModeExitAuthority,
+} from "./safe_mode_finalization.js?v=1.001";
+import {
+  renderChallengeExitSummary,
+  renderSafeModeExitSummary,
+  requestActiveModeVoluntaryRetreat,
+} from "./mode_exit_communication.js?v=1.002";
+import {
+  commitRecoveryChestOverwrite,
+  describeRecoveryAssets,
+  getRecoveryRecordForFloor,
+  hasRecoveryAssets,
+} from "./recovery_contract.js?v=1.000";
+import {
+  buildStandardMobComposition,
+  getDeploymentItemRiskPresentation,
+  getInitialStandardRangedCooldown,
+  hasUninsuredPermanentEquipment,
+  normalizeProvisionedStarterItem,
+  selectStandardMobSpawns,
+} from "./opening_fairness.js?v=1.000";
+import { getStandardPortalTraversalState } from "./portal_guardian_contract.js?v=1.000";
+import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
+import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.000";
 
   export const loadHub = function () {
     const resolvedInterruptedRun = shouldResolveInterruptedDungeonRun(
@@ -132,9 +172,11 @@ import {
             w.isEquippedSlot = "weapon";
           } else {
             let starterSword = window.createItemObject("weapon", 0, 1, 0);
-            starterSword.noun = "Broadsword";
-            starterSword.name = "Novice Blade (Starter)";
-            starterSword.isStarterItem = true;
+            normalizeProvisionedStarterItem(starterSword, {
+              noun: "Broadsword",
+              name: "Novice Blade (Starter)",
+              recalculate: window.recalculateItemStats,
+            });
             starterSword.isEquippedSlot = "weapon";
             window.equippedSlots.weapon = starterSword;
           }
@@ -151,6 +193,7 @@ import {
 
   export const enterDungeonRun = function (startFloor = 1) {
     setCurrentGameState(window.GAME_STATES.DUNGEON);
+    resetSafeModeExitAuthority();
     window.playerStats.dungeonRunInProgress = true;
     let startFloorNum = Math.max(1, Number(startFloor) || 1);
     window.player.depth = startFloorNum;
@@ -162,7 +205,15 @@ import {
       window.refillFlaskCharges(true);
     }
 
-    let st = window.SkillTreeManager;
+    let provisionRanks = {
+      weapon: getMasteryNodeRank(window.playerStats, "utility_start_weapon"),
+      armor: getMasteryNodeRank(window.playerStats, "utility_start_armor"),
+      headFeet: getMasteryNodeRank(
+        window.playerStats,
+        "utility_start_head_feet",
+      ),
+      ring: getMasteryNodeRank(window.playerStats, "utility_start_ring"),
+    };
         let starterStageScale = window.getFloorItemLevel ? window.getFloorItemLevel(startFloorNum) : Math.floor(startFloorNum / 4) + 1;
 
     // 1. Offhand Starter Provisioning
@@ -181,15 +232,17 @@ import {
         starterStageScale,
         0,
       );
-      starterItem.name = `Starter ${activeStarter.charAt(0).toUpperCase() + activeStarter.slice(1)}`;
-      starterItem.isStarterItem = true;
+      normalizeProvisionedStarterItem(starterItem, {
+        name: `Starter ${activeStarter.charAt(0).toUpperCase() + activeStarter.slice(1)}`,
+        recalculate: window.recalculateItemStats,
+      });
       window.equippedSlots.subweapon = starterItem;
       starterItem.isEquippedSlot = "subweapon";
     }
 
     // 2. Main Hand Weapon Provisioning (utility_start_weapon: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
-    if (st && window.equippedSlots && !window.equippedSlots.weapon) {
-      let weapRank = st.getSkillLevel("utility_start_weapon");
+    if (window.equippedSlots && !window.equippedSlots.weapon) {
+      let weapRank = provisionRanks.weapon || 0;
       if (weapRank > 0) {
         let stars = Math.min(2, weapRank - 1);
         let item = window.createItemObject(
@@ -198,9 +251,11 @@ import {
           starterStageScale,
           0,
         );
-        item.noun = "Broadsword"; // Aligns graphic asset with "Blade" nomenclature
-        item.name = `Provisioned ${window.getTierName(stars)} Blade`;
-        item.isStarterItem = true;
+        normalizeProvisionedStarterItem(item, {
+          noun: "Broadsword",
+          name: `Provisioned ${window.getTierName(stars)} Blade`,
+          recalculate: window.recalculateItemStats,
+        });
         window.equippedSlots.weapon = item;
         item.isEquippedSlot = "weapon";
       }
@@ -208,12 +263,11 @@ import {
 
     // 3. Chest/Overall Armor Provisioning (utility_start_armor: Rank 1 -> 0★, Rank 2 -> 1★, Rank 3 -> 2★)
     if (
-      st &&
       window.equippedSlots &&
       !window.equippedSlots.chest &&
       !window.equippedSlots.overall
     ) {
-      let armorRank = st.getSkillLevel("utility_start_armor");
+      let armorRank = provisionRanks.armor || 0;
       if (armorRank > 0) {
         let stars = Math.min(2, armorRank - 1);
         let item = window.createItemObject(
@@ -222,8 +276,10 @@ import {
           starterStageScale,
           0,
         );
-        item.name = `Provisioned ${window.getTierName(stars)} Plate Suit`;
-        item.isStarterItem = true;
+        normalizeProvisionedStarterItem(item, {
+          name: `Provisioned ${window.getTierName(stars)} Plate Suit`,
+          recalculate: window.recalculateItemStats,
+        });
 
         // Safe unequip of leggings if equipped to prevent slot overlap
         if (window.equippedSlots.leggings) {
@@ -240,8 +296,8 @@ import {
     }
 
     // 4. Helmet & Boots Provisioning (utility_start_head_feet)
-    if (st && window.equippedSlots) {
-      let hfRank = st.getSkillLevel("utility_start_head_feet");
+    if (window.equippedSlots) {
+      let hfRank = provisionRanks.headFeet || 0;
       if (hfRank > 0) {
         let stars = Math.min(2, hfRank - 1);
         if (!window.equippedSlots.helmet) {
@@ -251,8 +307,10 @@ import {
             starterStageScale,
             0,
           );
-          helm.name = `Provisioned ${window.getTierName(stars)} Helm`;
-          helm.isStarterItem = true;
+          normalizeProvisionedStarterItem(helm, {
+            name: `Provisioned ${window.getTierName(stars)} Helm`,
+            recalculate: window.recalculateItemStats,
+          });
           window.equippedSlots.helmet = helm;
           helm.isEquippedSlot = "helmet";
         }
@@ -263,8 +321,10 @@ import {
             starterStageScale,
             0,
           );
-          boots.name = `Provisioned ${window.getTierName(stars)} Boots`;
-          boots.isStarterItem = true;
+          normalizeProvisionedStarterItem(boots, {
+            name: `Provisioned ${window.getTierName(stars)} Boots`,
+            recalculate: window.recalculateItemStats,
+          });
           window.equippedSlots.boots = boots;
           boots.isEquippedSlot = "boots";
         }
@@ -272,8 +332,8 @@ import {
     }
 
     // 5. Ring Provisioning (utility_start_ring)
-    if (st && window.equippedSlots) {
-      let ringRank = st.getSkillLevel("utility_start_ring");
+    if (window.equippedSlots) {
+      let ringRank = provisionRanks.ring || 0;
       if (ringRank > 0) {
         let stars = Math.min(2, ringRank - 1);
         if (!window.equippedSlots.ring1) {
@@ -283,8 +343,10 @@ import {
             starterStageScale,
             0,
           );
-          ring1.name = `Provisioned ${window.getTierName(stars)} Band`;
-          ring1.isStarterItem = true;
+          normalizeProvisionedStarterItem(ring1, {
+            name: `Provisioned ${window.getTierName(stars)} Band`,
+            recalculate: window.recalculateItemStats,
+          });
           window.equippedSlots.ring1 = ring1;
           ring1.isEquippedSlot = "ring1";
         }
@@ -295,8 +357,10 @@ import {
             starterStageScale,
             0,
           );
-          ring2.name = `Provisioned ${window.getTierName(stars)} Signet`;
-          ring2.isStarterItem = true;
+          normalizeProvisionedStarterItem(ring2, {
+            name: `Provisioned ${window.getTierName(stars)} Signet`,
+            recalculate: window.recalculateItemStats,
+          });
           window.equippedSlots.ring2 = ring2;
           ring2.isEquippedSlot = "ring2";
         }
@@ -304,8 +368,8 @@ import {
     }
 
     // Hook 2: Field Medic Run-Long Basic Elixir Effects
-    if (window.SkillTreeManager) {
-      let medicRank = window.SkillTreeManager.getSkillLevel("utility_elixir");
+    {
+      let medicRank = getMasteryNodeRank(window.playerStats, "utility_elixir");
       if (medicRank > 0) {
         const basicElixirs = [
           {
@@ -389,6 +453,10 @@ import {
         }
       }
     }
+
+    // Capture after all entry provisioning so the authoritative standard
+    // retreat contract protects exactly what crossed the run boundary.
+    captureStandardRunEntryLoadout();
 
     if (typeof window.invalidatePlayerStats === "function") {
       window.invalidatePlayerStats();
@@ -682,7 +750,9 @@ import {
             let sectorNum = Math.floor((startFloor - 1) / 12) + 1;
             let isSelected = startFloor === selectedFloor ? "selected" : "";
             let recBadge =
-              rec && rec.floor === startFloor ? " [RECOVERY CHEST]" : "";
+              rec && rec.floor === startFloor && hasRecoveryAssets(rec)
+                ? " [RECOVERY CHEST]"
+                : "";
 
             let tag =
               startFloor === 1
@@ -695,11 +765,11 @@ import {
           .join("");
 
         let recBannerHtml = "";
-        if (rec && rec.items && rec.items.length > 0) {
+        if (hasRecoveryAssets(rec)) {
           recBannerHtml = `
                           <div style="width: 100%; background: rgba(231, 76, 60, 0.15); border: 1.5px dashed #e74c3c; border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 9.5px; color: #ff7675; text-align: left; box-sizing: border-box;">
-                            <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED LOST GEAR</strong>
-                            <span>${rec.items.length} item(s) lost on Floor ${rec.floor}. Reach this floor again to retrieve them!</span>
+                            <strong style="color: #f1c40f; display: block; font-size: 10px; margin-bottom: 1px;">[RECOVERY ALERT] UNCLAIMED RECOVERY CHEST</strong>
+                            <span>${describeRecoveryAssets(rec)} on Floor ${rec.floor}. Reach this floor again to return them to an active run.</span>
                           </div>
                         `;
         }
@@ -798,9 +868,15 @@ import {
         let col = window.getTierColor(item.statsRolled);
         let isLocked = !!item.locked;
         let rawPremium = window.calculateInsurancePremium(item);
-
-        let cardStatusClass = isLocked ? "is-insured" : "is-uninsured";
+        let riskPresentation = getDeploymentItemRiskPresentation(item);
+        let cardStatusClass = riskPresentation.statusClass;
         let btnStatusClass = isLocked ? "active" : "";
+        let detailText = riskPresentation.detail
+          ? riskPresentation.detail
+          : `LV.${item.stageLevel || 1} • Soul Bond: ${window.formatNumber(rawPremium)} Gold`;
+        let insuranceAction = riskPresentation.canToggleInsurance
+          ? `onclick="event.stopPropagation(); window.toggleDeploymentInsurance('${slotKey}')"`
+          : `disabled aria-disabled="true"`;
 
         itemsHtml += `
                       <div class="deploy-gear-card ${cardStatusClass}" style="border-left: 3.5px solid ${col};">
@@ -808,11 +884,11 @@ import {
                           ${window.getEquipIconHtml(item, 28)}
                           <div style="display: flex; flex-direction: column; min-width: 0; text-align: left;">
                             <span style="color:${col}; font-weight: bold; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
-                            <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">LV.${item.stageLevel || 1} • Soul Bond: ${window.formatNumber(rawPremium)} Gold</span>
+                            <span style="font-size: 8.5px; color: ${item.isStarterItem ? "#67e8f9" : "#94a3b8"}; font-family: monospace;">${detailText}</span>
                           </div>
                         </div>
-                        <button class="tactical-insure-btn ${btnStatusClass}" onclick="event.stopPropagation(); window.toggleDeploymentInsurance('${slotKey}')">
-                          ${isLocked ? "[ SOUL INSURED ]" : "[ AT RISK ]"}
+                        <button class="tactical-insure-btn ${btnStatusClass}" ${insuranceAction}>
+                          ${riskPresentation.label}
                         </button>
                       </div>
                     `;
@@ -899,11 +975,21 @@ import {
 
       let btnDeploySecure = document.getElementById("btn-deploy-secure");
       if (btnDeploySecure) {
+        let hasPermanentRisk = hasUninsuredPermanentEquipment(
+          window.equippedSlots,
+        );
+        let hasStarterProvision = Object.values(window.equippedSlots).some(
+          (item) => item?.isStarterItem,
+        );
         btnDeploySecure.disabled = !canAfford || !canAffordSouls;
         btnDeploySecure.innerText =
           totals.insuredCount > 0
             ? `DESCEND INTO DUNGEON (BOUND ${totals.insuredCount}/3)`
-            : "DESCEND INTO DUNGEON (UNPROTECTED)";
+            : hasPermanentRisk
+              ? "DESCEND INTO DUNGEON (UNPROTECTED)"
+              : hasStarterProvision
+                ? "DESCEND INTO DUNGEON (STARTER PROVISIONED)"
+                : "DESCEND INTO DUNGEON (NO GEAR AT RISK)";
       }
     }
   };
@@ -911,6 +997,17 @@ import {
   export const toggleDeploymentInsurance = function (slotKey) {
     let item = window.equippedSlots[slotKey];
     if (!item) return;
+    if (item.isStarterItem) {
+      delete item.locked;
+      if (typeof window.pushHeaderToast === "function") {
+        window.pushHeaderToast(
+          "[TEMPORARY] Starter gear cannot be Soul Bound; a basic weapon is reissued if needed.",
+          "#67e8f9",
+        );
+      }
+      window.renderDeploymentModal();
+      return;
+    }
 
     let allSlots = [
       "weapon",
@@ -929,6 +1026,7 @@ import {
     let currentlyInsuredCount = allSlots.filter(
       (s) =>
         window.equippedSlots[s] &&
+        !window.equippedSlots[s].isStarterItem &&
         window.equippedSlots[s].locked &&
         s !== slotKey,
     ).length;
@@ -951,8 +1049,16 @@ import {
   export const executeDeployment = function (bypassWarning = false) {
     let totals = window.calculateRunInsuranceTotals();
     let isCrucible = window.playerStats.isCrucibleMode;
+    let hasPermanentRisk = hasUninsuredPermanentEquipment(
+      window.equippedSlots,
+    );
 
-    if (!isCrucible && totals.insuredCount === 0 && !bypassWarning) {
+    if (
+      !isCrucible &&
+      totals.insuredCount === 0 &&
+      hasPermanentRisk &&
+      !bypassWarning
+    ) {
       if (typeof window.showCustomConfirm === "function") {
         window.showCustomConfirm(
           "Unprotected Descent",
@@ -1035,6 +1141,7 @@ import {
       }
     }
 
+    resetSafeModeExitAuthority();
     if (!isCrucible) {
       window.playerStats.dungeonRunInProgress = true;
     }
@@ -1278,6 +1385,23 @@ import {
     let map = window.activeDungeonMap;
     let depth = window.player.depth || 1;
 
+    if (window.checkArtifactTrait?.("frenzy")) {
+      window.playerStats.frenzyKillCount =
+        (window.playerStats.frenzyKillCount || 0) + 1;
+      if (window.playerStats.frenzyKillCount >= 15) {
+        window.playerStats.frenzyKillCount = 0;
+        const frenzyDuration = window.scaleArtifactMechanic
+          ? window.scaleArtifactMechanic("frenzy", 300)
+          : 300;
+        const chronoExtension = window.scaleArtifactMechanic
+          ? window.scaleArtifactMechanic("extend_buffs", 180)
+          : 0;
+        window.playerStats.frenzyTimer = Math.round(
+          frenzyDuration + chronoExtension,
+        );
+      }
+    }
+
     // Refill Field Flask charges upon defeating a boss
     window.refillFlaskCharges(false);
 
@@ -1396,6 +1520,11 @@ import {
 
     // Reset floor-specific active trackers
     if (window.playerStats) {
+      if (typeof window.beginArtifactStageAttempt === "function") {
+        window.beginArtifactStageAttempt(window.playerStats);
+      } else {
+        window.playerStats.usedSecondWind = false;
+      }
       window.playerStats.floorActiveTicks = 0;
       window.playerStats.kineticFrictionCharges = 0;
       window.playerStats.kineticDistanceTraveled = 0;
@@ -1463,10 +1592,8 @@ import {
     window.player.targetY = window.player.y;
 
     // Fairy Sanctuary Spawn Check
-    let fairyLevel = window.SkillTreeManager
-      ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary")
-      : 0;
-    let fairyChance = fairyLevel * 0.05;
+    let fairyChance =
+      getMasteryNodeRank(window.playerStats, "utility_fairy_sanctuary") * 0.05;
     if (
       fairyChance > 0 &&
       Math.random() < fairyChance &&
@@ -1581,8 +1708,24 @@ import {
           : {};
       let rareRate = pStats.rareSpawn !== undefined ? pStats.rareSpawn : 0.01;
 
-      map.mobSpawns.forEach((sp) => {
-        let mobInfo = window.getMobPoolForDepth(depth);
+      let standardMobSpawns = selectStandardMobSpawns({
+        depth,
+        spawns: map.mobSpawns,
+        isChallenge,
+        isRift,
+        isCrucible: window.playerStats.isCrucibleMode,
+      });
+      let mobComposition = buildStandardMobComposition({
+        depth,
+        spawns: standardMobSpawns,
+        isChallenge,
+        isRift,
+        isCrucible: window.playerStats.isCrucibleMode,
+        rollMobInfo: () => window.getMobPoolForDepth(depth),
+      });
+
+      standardMobSpawns.forEach((sp, spawnIndex) => {
+        let mobInfo = mobComposition[spawnIndex];
         let isRare = Math.random() < rareRate;
 
         // Roll Elite Support Affixes on higher floors (Sector-Bridged Step Model)
@@ -1670,6 +1813,9 @@ import {
           type: "mob",
           visualTier: mobInfo.tier,
           visualType: mobInfo.type,
+          name:
+            window.MONSTER_CARDS_DATA?.[mobInfo.type]?.name ||
+            mobInfo.type.replaceAll("_", " "),
           x: spawnX,
           y: spawnY,
           homeX: spawnX,
@@ -1681,7 +1827,13 @@ import {
           atk: finalAtk,
           flashTimer: 0,
           attackCooldown: 0,
-          rangedCooldown: window.randInt(30, 90),
+          rangedCooldown: getInitialStandardRangedCooldown({
+            depth,
+            isChallenge,
+            isRift,
+            isCrucible: window.playerStats.isCrucibleMode,
+            randomInt: window.randInt,
+          }),
           isRanged: isRanged,
           projectileType: projType,
           moveProfile:
@@ -1700,6 +1852,15 @@ import {
           wanderVy: 0,
           isWandering: false,
           hopTimer: window.randInt(0, 29),
+        });
+        triggerVoidTouchedRareFrenzy({
+          isRare,
+          resolvedStats: pStats,
+          playerStats: window.playerStats,
+          chronoExtensionFrames:
+            typeof window.scaleArtifactMechanic === "function"
+              ? window.scaleArtifactMechanic("extend_buffs", 180)
+              : 0,
         });
       });
     }
@@ -2344,6 +2505,15 @@ import {
         discovered: true,
         hopTimer: 0,
       });
+      triggerVoidTouchedRareFrenzy({
+        isRare,
+        resolvedStats: pStats,
+        playerStats: window.playerStats,
+        chronoExtensionFrames:
+          typeof window.scaleArtifactMechanic === "function"
+            ? window.scaleArtifactMechanic("extend_buffs", 180)
+            : 0,
+      });
     }
 
     window.updateHUD();
@@ -2417,26 +2587,14 @@ import {
   export const requestAbandonRun = function () {
     if (window.currentGameState === window.GAME_STATES.HUB) return;
 
-    if (typeof window.showCustomConfirm === "function") {
-      window.showCustomConfirm(
-        "Retreat to Hub",
-        "Are you sure you want to abandon the current run?<br><br><span style='color: #e74c3c;'><strong>WARNING:</strong> All uninsured equipped gear and items in your carried satchel will be permanently lost!</span>",
-        "RETREAT",
-        "CANCEL",
-        "#e74c3c",
-        function () {
-          window.triggerExtraction(false, true);
-        },
-      );
-    } else {
-      if (
-        confirm(
-          "Are you sure you want to retreat? All uninsured equipped gear and items in your carried satchel will be permanently lost!",
-        )
-      ) {
-        window.triggerExtraction(false, true);
-      }
+    if (isStandardVoluntaryRetreatMode()) {
+      requestStandardVoluntaryRetreat();
+      return;
     }
+
+    requestActiveModeVoluntaryRetreat(function () {
+      window.triggerExtraction(false, true);
+    });
   };
 
   export const openPortalChoiceModal = function () {
@@ -2444,6 +2602,7 @@ import {
     let titleEl = document.getElementById("portal-modal-title");
     let subEl = document.getElementById("portal-modal-subtitle");
     let descendBtn = document.getElementById("portal-btn-descend");
+    let extractBtn = document.getElementById("portal-btn-extract");
 
     if (!modal) return;
 
@@ -2458,6 +2617,9 @@ import {
 
     let isChallenge = window.playerStats.activeSpecialChallenge !== null;
     let isRift = window.playerStats.isRiftMode === true;
+    let isStandardExtraction = isStandardSuccessfulExtractionMode();
+
+    if (extractBtn) extractBtn.innerText = "EXTRACT & SECURE LOOT";
 
     if (isRift) {
       if (titleEl) titleEl.innerText = "RIFT TRIAL COMPLETED!";
@@ -2520,32 +2682,36 @@ import {
           descendBtn.style.borderColor = "#c084fc";
         }
       }
+
+      if (isStandardExtraction) {
+        if (subEl) {
+          subEl.innerText = `${subEl.innerText} ${getStandardExtractionPortalRule()}`;
+        }
+        if (extractBtn) extractBtn.innerText = "EXTRACT CARRIED LOOT";
+      }
     }
 
     modal.style.display = "flex";
   };
 
   export const checkRecoveryChestUnclaimed = function () {
-    let rec = window.playerStats && window.playerStats.recoveryLoot;
-    if (
-      rec &&
-      rec.floor === window.player.depth &&
-      rec.items &&
-      rec.items.length > 0
-    ) {
-      return true;
-    }
-    return false;
+    return Boolean(getRecoveryRecordForFloor(window.player?.depth));
   };
 
   export const executePortalDescend = function (bypassWarning = false) {
-    if (window.activeDungeonMap.portalLocked) {
+    const portalState = getStandardPortalTraversalState(
+      window.activeDungeonMap,
+      window.playerStats,
+    );
+    if (portalState.traversalLocked) {
       let p = window.player;
       if (window.logicClock % 60 === 0) {
         window.spawnFloatingText(
           p.x,
           p.y - 25,
-          "PORTAL SEALED: DEFEAT THE SENTINEL!",
+          portalState.reason === "marcus"
+            ? "PORTAL SEALED: DEFEAT MARCUS!"
+            : "PORTAL SEALED: DEFEAT THE SENTINEL!",
           "#ef4444",
         );
         if (window.combatVisuals) {
@@ -2559,25 +2725,31 @@ import {
     if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
       let modal = document.getElementById("portal-modal");
       if (modal) modal.style.display = "none";
+      let rec = getRecoveryRecordForFloor(window.player?.depth);
+      let recoverySummary = describeRecoveryAssets(rec);
 
       if (typeof window.showCustomConfirm === "function") {
         window.showCustomConfirm(
           "Unclaimed Recovery Chest",
-          "WARNING: Your dropped Recovery Chest is still unclaimed on this floor! If you descend without claiming it, your lost items and Gold will be permanently overwritten. Proceed anyway?",
+          `WARNING: Your Recovery Chest still contains ${recoverySummary} on this floor. Descending without claiming it will permanently clear this recovery record. Proceed anyway?`,
           "DESCEND WITHOUT LOOT",
           "RETURN TO FIND IT",
           "#e74c3c",
           function () {
-            window.executePortalDescend(true);
+            if (commitRecoveryChestOverwrite(window.player?.depth)) {
+              window.executePortalDescend(true);
+            }
           },
         );
       } else {
         if (
           confirm(
-            "WARNING: Your dropped Recovery Chest is still unclaimed on this floor! Proceed anyway?",
+            `WARNING: Your Recovery Chest still contains ${recoverySummary}. Descending will permanently clear this recovery record. Proceed anyway?`,
           )
         ) {
-          window.executePortalDescend(true);
+          if (commitRecoveryChestOverwrite(window.player?.depth)) {
+            window.executePortalDescend(true);
+          }
         }
       }
       return;
@@ -2604,14 +2776,23 @@ import {
     window.loadDungeonFloor(window.player.depth);
   };
 
-  export const executePortalExtract = function (bypassWarning = false) {
-    if (window.activeDungeonMap.portalLocked) {
+  export const executePortalExtract = function (
+    bypassWarning = false,
+    standardExtractionConfirmed = false,
+  ) {
+    const portalState = getStandardPortalTraversalState(
+      window.activeDungeonMap,
+      window.playerStats,
+    );
+    if (portalState.traversalLocked) {
       let p = window.player;
       if (window.logicClock % 60 === 0) {
         window.spawnFloatingText(
           p.x,
           p.y - 25,
-          "PORTAL SEALED: DEFEAT THE SENTINEL!",
+          portalState.reason === "marcus"
+            ? "PORTAL SEALED: DEFEAT MARCUS!"
+            : "PORTAL SEALED: DEFEAT THE SENTINEL!",
           "#ef4444",
         );
         if (window.combatVisuals) {
@@ -2622,28 +2803,68 @@ import {
       return;
     }
 
+    if (
+      isStandardSuccessfulExtractionMode() &&
+      !standardExtractionConfirmed
+    ) {
+      let modal = document.getElementById("portal-modal");
+      if (modal) modal.style.display = "none";
+      let preview = getStandardExtractionPreview();
+      let confirmation = buildStandardExtractionConfirmation(preview, {
+        formatNumber: window.formatNumber,
+      });
+
+      if (typeof window.showCustomConfirm === "function") {
+        window.showCustomConfirm(
+          "Confirm Standard Extraction",
+          confirmation,
+          "SECURE CARRIED LOOT",
+          "KEEP EXPLORING",
+          "#2ecc71",
+          function () {
+            window.executePortalExtract(bypassWarning, true);
+          },
+        );
+      } else if (
+        confirm(
+          confirmation
+            .replaceAll("<br>", "\n")
+            .replace(/<[^>]*>/g, ""),
+        )
+      ) {
+        window.executePortalExtract(bypassWarning, true);
+      }
+      return;
+    }
+
     if (window.checkRecoveryChestUnclaimed() && !bypassWarning) {
       let modal = document.getElementById("portal-modal");
       if (modal) modal.style.display = "none";
+      let rec = getRecoveryRecordForFloor(window.player?.depth);
+      let recoverySummary = describeRecoveryAssets(rec);
 
       if (typeof window.showCustomConfirm === "function") {
         window.showCustomConfirm(
           "Unclaimed Recovery Chest",
-          "WARNING: Your dropped Recovery Chest is still unclaimed on this floor! If you extract without claiming it, your lost items and Gold will be permanently overwritten. Proceed anyway?",
+          `WARNING: Your Recovery Chest still contains ${recoverySummary} on this floor. Extracting without claiming it will permanently clear this recovery record. Proceed anyway?`,
           "EXTRACT WITHOUT LOOT",
           "RETURN TO FIND IT",
           "#e74c3c",
           function () {
-            window.executePortalExtract(true);
+            if (commitRecoveryChestOverwrite(window.player?.depth)) {
+              window.executePortalExtract(true, standardExtractionConfirmed);
+            }
           },
         );
       } else {
         if (
           confirm(
-            "WARNING: Your dropped Recovery Chest is still unclaimed on this floor! Proceed anyway?",
+            `WARNING: Your Recovery Chest still contains ${recoverySummary}. Extracting will permanently clear this recovery record. Proceed anyway?`,
           )
         ) {
-          window.executePortalExtract(true);
+          if (commitRecoveryChestOverwrite(window.player?.depth)) {
+            window.executePortalExtract(true, standardExtractionConfirmed);
+          }
         }
       }
       return;
@@ -2755,221 +2976,78 @@ import {
   };
 
   export const triggerExtraction = function (success = true, isAbandon = false) {
-    window.playerStats.dungeonRunInProgress = false;
-    window.decrementPotionRunCharges();
-    window.playerStats.activeDungeonSigil = null; // Clear and consume active Sigil on run end
+    if (isSafeModeExitFinalized()) return false;
+
+    let challengeAtExit = window.playerStats.activeSpecialChallenge || null;
+    let riftOutcome = window.playerStats.isRiftMode
+      ? finalizeRiftModeExit(success, isAbandon)
+      : null;
+    let onslaughtOutcome =
+      !riftOutcome && window.playerStats.isCrucibleMode
+        ? finalizeOnslaughtModeExit(success, isAbandon)
+        : null;
+
+    if (!riftOutcome && !onslaughtOutcome) {
+      window.playerStats.dungeonRunInProgress = false;
+      window.playerStats.standardRunEntryLoadoutIds = [];
+      window.decrementPotionRunCharges();
+      window.playerStats.activeDungeonSigil = null; // Clear and consume active Sigil on run end
+    }
 
     let activeRunGold = BigNum.from(window.playerStats.runGold || 0);
 
     // --- RIFT MODE EXTRACTION INTERCEPT ---
-    if (window.playerStats.isRiftMode) {
-      let summaryModal = document.getElementById("summary-modal");
-      let titleEl = document.getElementById("summary-title");
-      let subEl = document.getElementById("summary-subtitle");
-      let listEl = document.getElementById("summary-loot-list");
-      let btnEl = document.getElementById("summary-action-btn");
-      let nemesisCard = document.getElementById("death-nemesis-card");
-
-      if (!summaryModal || !titleEl || !listEl) return;
-
-      if (nemesisCard) nemesisCard.style.display = "none";
-
-      let L = window.playerStats.activeRiftLevel || 1;
-      let gName = (window.playerStats.selectedRiftGuardian || "aegis_goliath")
-        .replace("_", " ")
-        .toUpperCase();
-
-      if (success) {
-        window.playerStats.highestRiftLevelCleared = Math.max(
-          window.playerStats.highestRiftLevelCleared || 0,
-          L,
-        );
-
-        titleEl.innerText = "RIFT TRIAL CLEARED";
-        titleEl.style.color = "#2ecc71";
-        if (subEl) subEl.innerText = `${gName} Defeated | Rift Level ${L}`;
-
-        // Compute rewards using balanced power curves
-        let xpGranted = Math.round(250 * Math.pow(L, 0.85));
-        let shardsGranted = Math.floor(15 + 3.0 * L);
-        let dustGranted = Math.floor(30 + 6.0 * L);
-
-        // Catalyst Cores: Math.floor(L/10) + fractional chance of (L % 10) * 10%
-        let coreCount = Math.floor(L / 10);
-        let remainder = L % 10;
-        if (remainder > 0 && Math.random() < remainder * 0.1) {
-          coreCount++;
-        }
-
-        // Astral Essence chance: min(100%, 5% + 1.8% * L)
-        let essenceChance = Math.min(1.0, 0.05 + 0.018 * L);
-        let gotEssence = Math.random() < essenceChance;
-
-        // Apply rewards
-        window.playerStats.astralShards =
-          (window.playerStats.astralShards || 0) + shardsGranted;
-        window.playerStats.astralDust =
-          (window.playerStats.astralDust || 0) + dustGranted;
-
-        if (coreCount > 0) {
-          window.addEtcDrop("Catalyst Core", coreCount, true);
-        }
-        if (gotEssence) {
-          window.addEtcDrop("Astral Essence", 1, true);
-        }
-
-        // Gain Subweapon Mastery XP
-        if (window.equippedSlots && window.equippedSlots.subweapon) {
-          let sub = window.equippedSlots.subweapon;
-          let subType = sub.subType || sub.type || "shield";
-          if (["shield", "dagger", "tome"].includes(subType)) {
-            window.gainSubweaponXp(subType, xpGranted);
-          }
-        }
-
-        let rewardListHtml = `
-            <div style="display:flex; flex-direction:column; gap:6px; text-align:left; font-family:monospace; font-size:11px;">
-              <div style="background:#091a10; border:1px solid #10b981; border-left:4px solid #2ecc71; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:#a3fd83; font-weight:bold;">[MASTERY XP] Mastery XP Gained:</span>
-                <strong style="color:#ffffff; font-size:12px;">+${xpGranted.toLocaleString()} XP</strong>
-              </div>
-              <div style="background:#0c0d14; border:1px solid #1e293b; border-left:4px solid #00ffff; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:#94a3b8; font-weight:bold;">[VAULT] Astral Shards Secured:</span>
-                <strong style="color:#00ffff; font-size:12px;">+${shardsGranted.toLocaleString()} Shards</strong>
-              </div>
-              <div style="background:#0d0615; border:1px solid #4c1d95; border-left:4px solid #a855f7; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:#cbd5e1; font-weight:bold;">[VAULT] Astral Dust Secured:</span>
-                <strong style="color:#a855f7; font-size:12px;">+${dustGranted.toLocaleString()} Dust</strong>
-              </div>
-              ${
-                coreCount > 0
-                  ? `
-              <div style="background:#0a100d; border:1px solid #06241a; border-left:4px solid #2ecc71; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:#64748b; font-weight:bold;">[MATERIAL] Catalyst Cores:</span>
-                <strong style="color:#2ecc71; font-size:12px;">+${coreCount} Cores</strong>
-              </div>`
-                  : ""
-              }
-              ${
-                gotEssence
-                  ? `
-              <div style="background:#0a0c1a; border:1px solid #3b0764; border-left:4px solid #df9ffb; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:#94a3b8; font-weight:bold;">[MATERIAL] Astral Essence:</span>
-                <strong style="color:#df9ffb; font-size:12px;">+1 Essence</strong>
-              </div>`
-                  : ""
-              }
-            </div>
-          `;
-        listEl.innerHTML = rewardListHtml;
-      } else {
-        titleEl.innerText = "RIFT TRIAL FAILED";
-        titleEl.style.color = "#e74c3c";
-        if (subEl) subEl.innerText = `${gName} Defeated You | Rift Level ${L}`;
-
-        listEl.innerHTML = `
-            <div style="background:rgba(231,76,60,0.06); border:1px dashed #ef4444; border-radius:6px; padding:12px; text-align:center; font-family:monospace; font-size:10px; line-height:1.5; color:#f87171;">
-              <strong>[RIFT TRIAL PENALTY EXEMPTION]</strong><br><br>
-              All equipped gear and inventory items are 100% safe and have been preserved intact.<br>
-              Practice your timing, refine your build, and challenge the Rift Altar again!
-            </div>
-          `;
-      }
-
-      if (btnEl) btnEl.innerText = "RETURN TO HUB ALTAR";
-      summaryModal.style.display = "flex";
-
-      // Reset Rift State
-      window.playerStats.isRiftMode = false;
-
-      if (typeof window.saveGame === "function") window.saveGame();
-      return;
+    if (riftOutcome) {
+      renderSafeModeExitSummary(riftOutcome);
+      return riftOutcome;
     }
 
     // --- ONSLAUGHT / CRUCIBLE MODE EXTRACTION INTERCEPT ---
-    if (window.playerStats.isCrucibleMode) {
-      let summaryModal = document.getElementById("summary-modal");
-      let titleEl = document.getElementById("summary-title");
-      let subEl = document.getElementById("summary-subtitle");
-      let listEl = document.getElementById("summary-loot-list");
-      let btnEl = document.getElementById("summary-action-btn");
-      let nemesisCard = document.getElementById("death-nemesis-card");
-
-      if (!summaryModal || !titleEl || !listEl) return;
-
-      // Hide nemesis card since Arena death is a standard progression conclusion
-      if (nemesisCard) nemesisCard.style.display = "none";
-
-      let wavesCleared = Math.max(
-        0,
-        (window.playerStats.crucibleWave || 1) - 1,
-      );
-      let shardsSecured = window.playerStats.crucibleAccumulatedShards || 0;
-      let coresSecured = window.playerStats.crucibleAccumulatedCores || 0;
-
-      // Secure resources permanently to the Vault database
-      window.playerStats.astralShards =
-        (window.playerStats.astralShards || 0) + shardsSecured;
-      if (coresSecured > 0 && typeof window.addEtcDrop === "function") {
-        window.addEtcDrop("Catalyst Core", coresSecured, true);
-      }
-
-      // Update personal best peak waves survived
-      window.playerStats.cruciblePeak = Math.max(
-        window.playerStats.cruciblePeak || 0,
-        wavesCleared,
-      );
-
-      titleEl.innerText = "ONSLAUGHT CONCLUDED";
-      titleEl.style.color = "#a855f7";
-
-      if (subEl) {
-        subEl.innerText = `Waves Survived: ${wavesCleared} | Personal Best: Wave ${window.playerStats.cruciblePeak}`;
-      }
-
-      // Render clean, informative summary panel with NO Emojis
-      listEl.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; text-align:left; font-family:monospace; font-size:11px;">
-          <div style="background:#0e0a1a; border:1px solid #3b0764; border-left:4px solid #a855f7; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#df9ffb; font-weight:bold;">[PERFORMANCE] Waves Cleared:</span>
-            <strong style="color:#ffffff; font-size:12px;">${wavesCleared} Waves</strong>
-          </div>
-          <div style="background:#0c0d14; border:1px solid #1e293b; border-left:4px solid #00ffff; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#94a3b8; font-weight:bold;">[REWARD] Astral Shards Gained:</span>
-            <strong style="color:#00ffff; font-size:12px;">+${shardsSecured} Shards</strong>
-          </div>
-          <div style="background:#0a100d; border:1px solid #06241a; border-left:4px solid #2ecc71; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="color:#64748b; font-weight:bold;">[REWARD] Catalyst Cores Gained:</span>
-            <strong style="color:#2ecc71; font-size:12px;">+${coresSecured} Cores</strong>
-          </div>
-          <div style="background:rgba(255,255,255,0.01); border:1px dashed #334155; padding:8px 12px; border-radius:6px; text-align:center; color:#94a3b8; font-size:9.5px; line-height:1.45;">
-            [SAFE ZONE PROTECTION ACTIVE]<br>
-            As a trial of pure skill, no equipped gear or items from your carried satchel were at risk of being lost. All items are 100% protected and safe.
-          </div>
-        </div>
-      `;
-
-      if (btnEl) btnEl.innerText = "RETURN TO ADVENTURER'S HUB";
-      summaryModal.style.display = "flex";
-
-      if (typeof window.saveGame === "function") window.saveGame();
-      return;
+    if (onslaughtOutcome) {
+      renderSafeModeExitSummary(onslaughtOutcome);
+      return onslaughtOutcome;
     }
 
-    // Vacuum any remaining ground items and materials into satchel before extraction processing
-    if (window.groundLoot && window.groundLoot.length > 0) {
-      window.groundLoot.forEach((gl) => {
-        if (gl && gl.item) {
-          let isEquipped = window.tryAutoEquip
-            ? window.tryAutoEquip(gl.item)
-            : false;
-          if (!isEquipped && window.player) {
-            if (!window.player.bag) window.player.bag = [];
-            window.player.bag.push(gl.item);
-          }
-        }
-      });
+    let isStandardSuccessfulExtraction =
+      success && isStandardSuccessfulExtractionMode(window.playerStats);
+    let standardExtractionOutcome = isStandardSuccessfulExtraction
+      ? getStandardExtractionPreview()
+      : null;
+    let directlySecuredGroundMaterials = (window.groundMaterials || [])
+      .filter(
+        (drop) =>
+          drop?.name &&
+          (drop.name === "Luminous Soul" || drop.name.includes("Key")),
+      )
+      .map((drop) => ({
+        name: drop.name,
+        quantity: Math.max(0, Math.floor(Number(drop.qty) || 0)),
+      }))
+      .filter((entry) => entry.quantity > 0);
+
+    if (isStandardSuccessfulExtraction) {
+      // A standard successful extraction secures only loot already collected
+      // into the run satchel. Uncollected ground items are deliberately
+      // forfeited; materials keep their established counter routing below.
       window.groundLoot = [];
+    } else {
+      // Preserve the established collection contract for non-standard-success
+      // consumers (standard loss and Special Challenge finalization).
+      if (window.groundLoot && window.groundLoot.length > 0) {
+        window.groundLoot.forEach((gl) => {
+          if (gl && gl.item) {
+            let isEquipped = window.tryAutoEquip
+              ? window.tryAutoEquip(gl.item)
+              : false;
+            if (!isEquipped && window.player) {
+              if (!window.player.bag) window.player.bag = [];
+              window.player.bag.push(gl.item);
+            }
+          }
+        });
+        window.groundLoot = [];
+      }
+
     }
 
     if (window.groundMaterials && window.groundMaterials.length > 0) {
@@ -3018,7 +3096,10 @@ import {
       (item) => !item.isStarterItem,
     );
     let savedInsuredItems = [];
+    let provisionedItems = [];
     let lostItems = [];
+    let retainedGold = BigNum.from(0);
+    let retainedScraps = [];
 
     let pendingScrapsList = [];
     if (window.player && window.player.pendingScraps) {
@@ -3036,13 +3117,6 @@ import {
 
       window.playerStats.successfulExtractions =
         (window.playerStats.successfulExtractions || 0) + 1;
-      let maxBag =
-        typeof window.getMaxBagSlots === "function"
-          ? window.getMaxBagSlots()
-          : 20;
-      if (extractedLoot.length >= maxBag) {
-        window.playerStats.hasTriggeredFullBag = true;
-      }
 
       if (typeof window.progressMission === "function") {
         if (window.player && window.player.bag) {
@@ -3054,7 +3128,7 @@ import {
       }
 
       // Subphase 16: Claim Contract rewards and clear active challenge states
-      let challenge = window.playerStats.activeSpecialChallenge;
+      let challenge = challengeAtExit;
       if (challenge) {
         let goldReward = BigNum.from(challenge.rewards.gold);
         let xpReward = BigNum.from(challenge.rewards.xp);
@@ -3108,6 +3182,11 @@ import {
       if (subEl) {
         if (challenge) {
           subEl.innerText = `Contract Complete! Secured ${extractedLoot.length} items, ${window.formatNumber(BigNum.from(challenge.rewards.gold).add(activeRunGold))} Gold & ${pendingScrapsList.length} scraps!`;
+        } else if (standardExtractionOutcome) {
+          subEl.innerText = buildStandardExtractionSummary(
+            standardExtractionOutcome,
+            { formatNumber: window.formatNumber },
+          );
         } else {
           subEl.innerText = `Secured ${extractedLoot.length} items, ${window.formatNumber(activeRunGold)} Gold & ${pendingScrapsList.length} scraps to Vault! (+25% Bonus XP)`;
         }
@@ -3129,13 +3208,9 @@ import {
       if (window.inventory) window.inventory.EQUIP = window.player.stash;
       if (typeof window.saveGame === "function") window.saveGame();
     } else {
-      let salvageRank = window.SkillTreeManager
-        ? window.SkillTreeManager.getSkillLevel("utility_emergency_salvage")
-        : 0;
-      let salvageRatio = salvageRank * 0.05; // 5% to 25%
-
-      let retainedGold = BigNum.from(0);
-      let retainedScraps = [];
+      let salvageRatio =
+        getMasteryNodeRank(window.playerStats, "utility_emergency_salvage") *
+        0.05;
 
       if (salvageRatio > 0) {
         // 1. Gold Salvage
@@ -3161,14 +3236,17 @@ import {
               if (retQty > 0) {
                 window.addEtcDrop(sName, retQty, true);
                 window.player.pendingScraps[sName] -= retQty;
-                retainedScraps.push(`${retQty}x ${sName}`);
+                retainedScraps.push({ name: sName, quantity: retQty });
               }
             }
           }
         }
 
         if (retainedGold.gt(0) || retainedScraps.length > 0) {
-          let toastMsg = `✦ Emergency Evac (${salvageRank * 5}%): Saved ${retainedGold.gt(0) ? window.formatNumber(retainedGold) + " Gold" : ""}${retainedGold.gt(0) && retainedScraps.length > 0 ? " & " : ""}${retainedScraps.join(", ")} to Vault!`;
+          let retainedScrapText = retainedScraps
+            .map((entry) => `${entry.quantity}x ${entry.name}`)
+            .join(", ");
+          let toastMsg = `✦ Emergency Evac (${Math.round(salvageRatio * 100)}%): Saved ${retainedGold.gt(0) ? window.formatNumber(retainedGold) + " Gold" : ""}${retainedGold.gt(0) && retainedScraps.length > 0 ? " & " : ""}${retainedScrapText} to Vault!`;
           if (typeof window.pushHeaderToast === "function") {
             window.pushHeaderToast(toastMsg, "#34d399");
           }
@@ -3220,16 +3298,18 @@ import {
               window.player.stash.some((i) => i.type === "weapon");
             if (!hasWeapon) {
               let starterSword = window.createItemObject("weapon", 0, 1, 0);
-              starterSword.noun = "Broadsword"; // Aligns graphic asset with "Blade" nomenclature
-              starterSword.name = "Novice Blade (Starter)";
-              starterSword.isStarterItem = true;
+              normalizeProvisionedStarterItem(starterSword, {
+                noun: "Broadsword",
+                name: "Novice Blade (Starter)",
+                recalculate: window.recalculateItemStats,
+              });
               starterSword.isEquippedSlot = "weapon";
               window.equippedSlots.weapon = starterSword;
-              savedInsuredItems.push(starterSword);
+              provisionedItems.push(starterSword);
             }
 
       // Corpse Recovery: Store lost items and lost gold in Recovery Loot object for next attempt
-      let challengeActive = window.playerStats.activeSpecialChallenge !== null;
+      let challengeActive = challengeAtExit !== null;
       if (
         !isAbandon &&
         !challengeActive &&
@@ -3276,10 +3356,10 @@ import {
       }
 
       // Clear special challenge on defeat
-      if (window.playerStats.activeSpecialChallenge) {
+      if (challengeAtExit) {
         if (typeof window.pushLog === "function") {
           window.pushLog(
-            `<strong style='color:#e74c3c;'>[CONTRACT FAILED]</strong> Failed Special Contract: <span style='color:#ef4444;'>${window.playerStats.activeSpecialChallenge.name}</span>.`,
+            `<strong style='color:#e74c3c;'>[CONTRACT FAILED]</strong> Failed Special Contract: <span style='color:#ef4444;'>${challengeAtExit.name}</span>.`,
           );
         }
         window.playerStats.activeSpecialChallenge = null;
@@ -3288,6 +3368,57 @@ import {
 
       if (window.inventory) window.inventory.EQUIP = window.player.stash;
       if (typeof window.saveGame === "function") window.saveGame();
+    }
+
+    if (challengeAtExit) {
+      let retainedMaterialCounts = new Map(
+        retainedScraps.map((entry) => [entry.name, entry.quantity]),
+      );
+      let securedMaterials = success
+        ? pendingScrapsList.map((entry) => ({
+            name: entry.name,
+            quantity: entry.count,
+          }))
+        : retainedScraps.map((entry) => ({ ...entry }));
+      securedMaterials.push(...directlySecuredGroundMaterials);
+
+      let lostMaterials = success
+        ? []
+        : pendingScrapsList
+            .map((entry) => ({
+              name: entry.name,
+              quantity:
+                entry.count - (retainedMaterialCounts.get(entry.name) || 0),
+            }))
+            .filter((entry) => entry.quantity > 0);
+
+      let challengeOutcome = {
+        mode: "challenge",
+        result: isAbandon ? "retreat" : success ? "success" : "defeat",
+        success,
+        isAbandon,
+        challengeName: challengeAtExit.name,
+        rewards: {
+          gold: challengeAtExit.rewards.gold,
+          xp: challengeAtExit.rewards.xp,
+          shards: challengeAtExit.rewards.shards,
+          cores: challengeAtExit.rewards.cores,
+        },
+        assets: {
+          extractedItems: success ? extractedLoot : [],
+          savedSoulBoundItems: success ? [] : savedInsuredItems,
+          provisionedItems: success ? [] : provisionedItems,
+          lostItems: success ? [] : lostItems,
+          securedGold: success ? activeRunGold : retainedGold,
+          lostGold: success ? BigNum.from(0) : activeRunGold,
+          securedMaterials,
+          lostMaterials,
+          recoveryChestCreated: false,
+        },
+      };
+
+      renderChallengeExitSummary(challengeOutcome);
+      return challengeOutcome;
     }
 
     // Render summary breakdown
@@ -3317,9 +3448,26 @@ import {
         )
         .join("");
 
+      let forfeitedItemsHtml = (
+        standardExtractionOutcome?.assets?.forfeitedGroundItems || []
+      )
+        .map(
+          (item) => `
+                <div style="background:#1a0a0a; border:1px solid #4a1515; border-left:3px solid #e74c3c; padding:5px 8px; border-radius:4px; font-size:10px; display:flex; justify-content:space-between;">
+                  <span style="color:#e74c3c; text-decoration:line-through;">${item.name}</span>
+                  <span style="color:#ff7675; font-family:monospace;">FORFEITED ON GROUND</span>
+                </div>
+              `,
+        )
+        .join("");
+
+      let standardCommitmentHtml = standardExtractionOutcome
+        ? `<div style="color:#bdc3c7; font-size:10px; margin-top:6px; border-top:1px dashed #333; padding-top:6px;">${standardExtractionOutcome.assets.forfeitedGroundItems.length} uncollected ground item(s) forfeited. Ground materials were secured through material counters. No Recovery Chest created.</div>`
+        : "";
+
       listEl.innerHTML =
-        lootHtml || scrapsHtml
-          ? `<div style="display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto;">${lootHtml}${scrapsHtml}</div>`
+        lootHtml || scrapsHtml || forfeitedItemsHtml || standardCommitmentHtml
+          ? `<div style="display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto;">${lootHtml}${scrapsHtml}${forfeitedItemsHtml}${standardCommitmentHtml}</div>`
           : `<div style="color:#7f8c8d; font-style:italic; padding:10px; text-align:center;">No carried loot extracted.<br><span style="color:#f1c40f; font-weight:bold;">100% Collected Gold Secured in Wallet!</span></div>`;
     } else {
       let savedHtml = savedInsuredItems
@@ -3328,6 +3476,17 @@ import {
                   <div style="background:#0a1a10; border:1px solid #1e4620; border-left:3px solid #2ecc71; padding:5px 8px; border-radius:4px; font-size:10px; display:flex; justify-content:space-between;">
                     <span style="color:#2ecc71; font-weight:bold;">[ SOUL INSURED ] ${i.name}</span>
                     <span style="color:#81ecec; font-family:monospace;">SAVED</span>
+                  </div>
+                `,
+        )
+        .join("");
+
+      let provisionedHtml = provisionedItems
+        .map(
+          (i) => `
+                  <div style="background:#07181a; border:1px solid #164e63; border-left:3px solid #22d3ee; padding:5px 8px; border-radius:4px; font-size:10px; display:flex; justify-content:space-between;">
+                    <span style="color:#81ecec; font-weight:bold;">[ PROVISIONED ] ${i.name}</span>
+                    <span style="color:#67e8f9; font-family:monospace;">REISSUED</span>
                   </div>
                 `,
         )
@@ -3347,8 +3506,9 @@ import {
       listEl.innerHTML = `
                   <div style="display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto;">
                     ${savedHtml}
+                    ${provisionedHtml}
                     ${lostHtml}
-                    ${savedInsuredItems.length === 0 && lostItems.length === 0 ? '<div style="color:#aaa; font-size:10px;">No gear lost.</div>' : ""}
+                    ${savedInsuredItems.length === 0 && provisionedItems.length === 0 && lostItems.length === 0 ? '<div style="color:#aaa; font-size:10px;">No gear lost.</div>' : ""}
                   </div>
                   <div style="color:#e74c3c; font-weight:bold; font-size:11px; margin-top:8px; border-top:1px dashed #333; padding-top:6px;">
                     ${activeRunGold.gt(0) ? `Collected Run Gold (${window.formatNumber(activeRunGold)}) was lost in the depths!` : "No Run Gold was secured."}
@@ -3359,6 +3519,7 @@ import {
     if (btnEl) btnEl.innerText = "RETURN TO ADVENTURER'S HUB";
 
     summaryModal.style.display = "flex";
+    return standardExtractionOutcome || undefined;
   };
 
   export const startDeathSequence = function () {

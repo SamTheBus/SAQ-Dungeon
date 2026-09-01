@@ -1,9 +1,9 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
 import { rebuildMobSpatialIndex } from "./mob_spatial_index.js?v=1.002";
 import {
   advanceDungeonMobLiveness,
   prepareDungeonMobLiveness,
-} from "./mob_liveness.js?v=1.003";
+} from "./mob_liveness.js?v=1.005";
 
   export const updateDungeonCombat = function (checkCollisionAt) {
     let p = window.player;
@@ -23,7 +23,7 @@ import {
     pStats = window.updateCombatHazards(p, map, pStats);
     rebuildMobSpatialIndex(window.activeDungeonMobs || []);
     window.updateCombatPeriodic(p, pStats);
-    let closestTarget = window.updateCombatTargeting(p);
+    let closestTarget = window.updateCombatTargeting(p, pStats, map);
     window.resolvePlayerAttack(p, pStats, closestTarget);
     window.updateStandardMobCombat(p, pStats, map);
     window.updateBossCombat(p, pStats, map);

@@ -1,3 +1,11 @@
+import { clearAllPeriodicEffects } from "./combat_effect_authority.js?v=1.001";
+import { clearElementStates } from "./element_effect_authority.js?v=1.001";
+
+function clearEncounterCombatStates(target) {
+  clearAllPeriodicEffects(target);
+  clearElementStates(target);
+}
+
 const encounterState = {
   activeDungeonMobs: Object.prototype.hasOwnProperty.call(
     window,
@@ -15,6 +23,9 @@ export function getActiveDungeonMobs() {
 }
 
 export function setActiveDungeonMobs(nextMobs) {
+  for (const currentMob of encounterState.activeDungeonMobs || []) {
+    if (!(nextMobs || []).includes(currentMob)) clearEncounterCombatStates(currentMob);
+  }
   encounterState.activeDungeonMobs = nextMobs;
   return encounterState.activeDungeonMobs;
 }
@@ -29,7 +40,9 @@ export function removeActiveDungeonMobById(mobId) {
     (activeMob) => activeMob.id === mobId,
   );
   if (mobIndex === -1) return null;
-  return encounterState.activeDungeonMobs.splice(mobIndex, 1)[0];
+  const removed = encounterState.activeDungeonMobs.splice(mobIndex, 1)[0];
+  clearEncounterCombatStates(removed);
+  return removed;
 }
 
 export function getPrimaryMob() {
@@ -37,6 +50,9 @@ export function getPrimaryMob() {
 }
 
 export function setPrimaryMob(nextMob) {
+  if (encounterState.primaryMob && encounterState.primaryMob !== nextMob) {
+    clearEncounterCombatStates(encounterState.primaryMob);
+  }
   encounterState.primaryMob = nextMob;
   return encounterState.primaryMob;
 }
@@ -44,6 +60,7 @@ export function setPrimaryMob(nextMob) {
 export function resetEncounterState() {
   setActiveDungeonMobs([]);
   setPrimaryMob(null);
+  if (window.player) clearEncounterCombatStates(window.player);
 }
 
 // Temporary compatibility bridges for legacy readers and writers.

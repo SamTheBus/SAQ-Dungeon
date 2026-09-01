@@ -1,4 +1,8 @@
-import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
+import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
+import {
+  getRecoveryItemCount,
+  getRecoveryRecordForFloor,
+} from "./recovery_contract.js?v=1.000";
 
   // --- POLYSCOPIC CHEST ERUPTION ENGINE (SUBPHASE C.1) ---
   export function spawnChestEruptionParticles(
@@ -219,10 +223,10 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
           );
         }
 
-        let rec = window.playerStats && window.playerStats.recoveryLoot;
+        let rec = getRecoveryRecordForFloor(window.player?.depth);
         if (rec) {
-          let itemsToRecover = rec.items || [];
-          let recoveredCount = itemsToRecover.length;
+          let itemsToRecover = (rec.items || []).filter(Boolean);
+          let recoveredCount = getRecoveryItemCount(rec);
 
           itemsToRecover.forEach((item) => {
             window.spawnGroundLoot(item, p.x, p.y - 10);
@@ -255,16 +259,34 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
             window.combatVisuals.triggerScreenShake(6, 12);
           }
 
-          let msg = `RECOVERY SUCCESS!`;
+          let msg = `RECOVERY RETURNED — STILL AT RISK`;
           if (recoveredCount > 0) msg += ` (${recoveredCount} ITEMS)`;
-          if (recoveredGold.gt(0))
-            msg += ` (+${window.formatNumber(recoveredGold)} GOLD)`;
+          if (recoveredGold.gt(0)) {
+            msg += ` (+${window.formatNumber(recoveredGold)} RUN GOLD)`;
+          }
 
           window.spawnFloatingText(p.x, p.y - 25, msg, "#f1c40f");
 
+          let returnParts = [];
+          if (recoveredCount > 0) {
+            returnParts.push(
+              `${recoveredCount} item${recoveredCount === 1 ? "" : "s"} as nearby ground loot`,
+            );
+          }
+          if (recoveredGold.gt(0)) {
+            returnParts.push(
+              `${window.formatNumber(recoveredGold)} Gold as run Gold`,
+            );
+          }
+          let riskMessage = `Recovery returned ${returnParts.join(" and ")} to this active run. These assets remain at risk until successful extraction.`;
+
           if (typeof window.pushHeaderToast === "function") {
-            let toastMsg = `✦ Recovered lost items${recoveredGold.gt(0) ? " & " + window.formatNumber(recoveredGold) + " Gold" : ""}!`;
-            window.pushHeaderToast(toastMsg, "#2ecc71");
+            window.pushHeaderToast(riskMessage, "#f1c40f");
+          }
+          if (typeof window.pushLog === "function") {
+            window.pushLog(
+              `<strong style='color:#f1c40f;'>[RECOVERY — STILL AT RISK]</strong> ${riskMessage}`,
+            );
           }
 
           window.playerStats.recoveryLoot = null;
@@ -423,15 +445,16 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
             return;
           }
 
-          let effectiveStage = stageScale;
-          let rolledRarity = window.rollItemRarity(
-            effectiveStage,
-            qualityMult,
-            false,
-          );
-          if (rolledRarity < minRarity) {
-            rolledRarity = minRarity;
-          }
+          let rolledRarity = window.rollItemRarity({
+            progressionStage: window.player.depth || 1,
+            resolvedQuality: qualityMult,
+            source: window.EQUIPMENT_RARITY_SOURCES.CHEST,
+          });
+          rolledRarity = window.applyEquipmentRarityException(rolledRarity, {
+            minimumRarity: minRarity,
+            exception:
+              window.EQUIPMENT_RARITY_EXCEPTIONS.AUTHORED_CHEST_MINIMUM,
+          });
           let types = ["weapon", "subweapon", "helmet", "chest", "leggings", "overall", "boots", "ring"];
           let chosenType = types[Math.floor(Math.random() * types.length)];
           let newItem = window.createItemObject(
@@ -477,7 +500,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
             window.SoundManager.playCoinCollect();
           }
 
-          // 2. Guaranteed 1 Equipment item with +25% quality floor 1★ (Rare)
+          // 2. Guaranteed equipment: +25% Quality plus an authored 1★ Rare minimum
           spawnTieredEquipment(playerQuality * 1.25, 1);
 
           // 3. 15% Chance for Cavern Sigil (max 3★)
@@ -508,7 +531,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
             window.SoundManager.playCoinCollect();
           }
 
-          // 2. Guaranteed 2 Equipment items with +60% quality floor 2★ (Magic)
+          // 2. Two guaranteed equipment items: +60% Quality plus an authored 2★ Magic minimum
           spawnTieredEquipment(playerQuality * 1.6, 2);
           spawnTieredEquipment(playerQuality * 1.6, 2);
 

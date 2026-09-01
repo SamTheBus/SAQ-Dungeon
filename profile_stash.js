@@ -2,6 +2,8 @@
     getActiveProfileMobileTab,
     getActiveStashTab,
   } from "./ui_state.js?v=1.004";
+  import { formatActiveAttackCadence } from "./attack_speed_contract.js?v=1.001";
+  import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
 
   export function renderProfileModal() {
     let statsListEl = document.getElementById("profile-stats-list");
@@ -238,16 +240,12 @@
                                                                                   1.5) *
                                                                                   100,
                                                                               );
-                                                                            let activeRelicLvl =
-                                                                              window.getArtifactTemperLevel
-                                                                                ? window.getArtifactTemperLevel(
+                                                                            let relicMult =
+                                                                              window.getArtifactMechanicScale
+                                                                                ? window.getArtifactMechanicScale(
                                                                                     "speed_to_momentum",
                                                                                   )
-                                                                                : 0;
-                                                                            let relicMult =
-                                                                              1.0 +
-                                                                              activeRelicLvl *
-                                                                                0.01;
+                                                                                : 1;
                                                                             let conversionText =
                                                                               window.checkArtifactTrait(
                                                                                 "speed_to_momentum",
@@ -285,11 +283,12 @@
                                                                       </span>
                                                                     </div>
                                                                     <div class="stat-line"><span class="stat-label">${iconSvg("critDamage")} CRIT MULTI</span><span class="stat-val">${formatStatValWithDiff("critDamage", curStats.critDamage, draftStats.critDamage, true, 1)}</span></div>
+                                  <div class="stat-line" title="Active attacks use a 60-frame simulation clock. +% Active Attack Speed is haste: it lowers the 15-frame base recovery to a 4-frame minimum."><span class="stat-label">${iconSvg("activeAttackSpeed")} ACTIVE ATTACK CADENCE</span><span class="stat-val">${formatActiveAttackCadence(curStats.activeAttackSpeed)}</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("block")} BLOCK RATE</span><span class="stat-val">${formatStatValWithDiff("block", curStats.block, draftStats.block, true, 1)} (Cap: ${formatStatValWithDiff("maxBlockCap", curStats.maxBlockCap, draftStats.maxBlockCap, true, 1)})</span></div>
                                                                     <div class="stat-line"><span class="stat-label">${iconSvg("parry")} PARRY RATE</span><span class="stat-val">${formatStatValWithDiff("parry", curStats.parry, draftStats.parry, true, 1)} (Cap: ${formatStatValWithDiff("maxParryCap", curStats.maxParryCap, draftStats.maxParryCap, true, 1)})</span></div>
                                   <div class="stat-line"><span class="stat-label">${iconSvg("barrier")} BARRIER</span><span class="stat-val">${formatStatValWithDiff("arcaneBarrier", curStats.arcaneBarrier, draftStats.arcaneBarrier, true, 1)}</span></div>
-                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("dropRate")} DROP RATE</span><span class="stat-val">${formatStatValWithDiff("drop", curStats.drop, draftStats.drop, true, 0)}</span></div>
-                                                                    <div class="stat-line"><span class="stat-label">${iconSvg("quality")} DROP QUALITY</span><span class="stat-val">${formatStatValWithDiff("qly", curStats.qly, draftStats.qly, true, 0)}</span></div>
+                                                                    <div class="stat-line" title="Drop Rate multiplies eligible random monster equipment, Monster Soul/material, Cavern Sigil, and Monster Card chances. Each chance caps at 100%. Guaranteed, chest, cache, milestone, and direct rewards are unchanged."><span class="stat-label">${iconSvg("dropRate")} DROP RATE</span><span class="stat-val">${formatStatValWithDiff("drop", curStats.drop, draftStats.drop, true, 0)}</span></div>
+                                                                    <div class="stat-line" title="Drop Quality improves the odds of higher equipment rarities that are currently unlocked. It does not unlock rarity tiers. It also affects eligible Cavern Sigil, artifact-trait, gacha, shop, and reward quality checks; named minimum-rarity, pity, and guaranteed rewards remain separate rules."><span class="stat-label">${iconSvg("quality")} DROP QUALITY</span><span class="stat-val">${formatStatValWithDiff("qly", curStats.qly, draftStats.qly, true, 0)}</span></div>
                                                                     <div class="stat-line"><span class="stat-label">${iconSvg("goldMulti")} GOLD MULTI</span><span class="stat-val">${formatStatValWithDiff("gold", curStats.gold, draftStats.gold, true, 0)}</span></div>
                                                                   `;
 
@@ -741,7 +740,7 @@
     if (!window.player.bag) window.player.bag = [];
     let bag = window.player.bag;
     let idx = bag.findIndex((i) => i.id == itemId);
-    if (idx === -1) return;
+    if (idx === -1) return false;
 
     let item = bag[idx];
     if (!window.equippedSlots) {
@@ -762,6 +761,7 @@
     }
 
     let slotKey = item.type;
+    let displacementSlotKeys = [];
     if (
       item.type === "shield" ||
       item.type === "dagger" ||
@@ -780,34 +780,56 @@
             ? "art3"
             : "art1";
     } else if (item.type === "overall") {
-      if (window.equippedSlots.chest) {
-        delete window.equippedSlots.chest.isEquippedSlot;
-        bag.push(window.equippedSlots.chest);
-        window.equippedSlots.chest = null;
-      }
-      if (window.equippedSlots.leggings) {
-        delete window.equippedSlots.leggings.isEquippedSlot;
-        bag.push(window.equippedSlots.leggings);
-        window.equippedSlots.leggings = null;
-      }
       slotKey = "overall";
+      displacementSlotKeys.push("chest", "leggings");
     } else if (item.type === "chest" || item.type === "leggings") {
-      if (window.equippedSlots.overall) {
-        delete window.equippedSlots.overall.isEquippedSlot;
-        bag.push(window.equippedSlots.overall);
-        window.equippedSlots.overall = null;
-      }
       slotKey = item.type;
+      displacementSlotKeys.push("overall");
     }
 
-    let currentEquipped = window.equippedSlots[slotKey];
-    if (currentEquipped) {
-      delete currentEquipped.isEquippedSlot;
-      bag.push(currentEquipped);
+    displacementSlotKeys.push(slotKey);
+    displacementSlotKeys = [...new Set(displacementSlotKeys)];
+    let displacedItems = displacementSlotKeys
+      .map((key) => window.equippedSlots[key])
+      .filter(Boolean);
+    let prospectiveSlots = { ...window.equippedSlots };
+    displacementSlotKeys.forEach((key) => {
+      prospectiveSlots[key] = null;
+    });
+    prospectiveSlots[slotKey] = item;
+
+    let nextCount = bag.length - 1 + displacedItems.length;
+    let nextCapacity = window.getMaxBagSlots({
+      equippedSlots: prospectiveSlots,
+    });
+    let transition = window.evaluateRunSatchelTransition(nextCount, {
+      bag,
+      nextCapacity,
+    });
+    if (!transition.allowed) {
+      let capacityShrinks = nextCapacity < transition.currentCapacity;
+      window.notifyRunSatchelBlocked({
+        count: bag.length,
+        capacity: nextCapacity,
+        overflow: transition.overflow,
+        markFullEncounter: !capacityShrinks,
+        message: capacityShrinks
+          ? `Cannot remove Dimensional Pouch: remove ${transition.overflow} carried item${transition.overflow === 1 ? "" : "s"} first.`
+          : `Cannot equip ${item.name}: this swap needs ${transition.overflow} more satchel slot${transition.overflow === 1 ? "" : "s"}.`,
+      });
+      return false;
     }
+
+    bag.splice(idx, 1);
+    displacementSlotKeys.forEach((key) => {
+      let displaced = window.equippedSlots[key];
+      if (!displaced) return;
+      delete displaced.isEquippedSlot;
+      bag.push(displaced);
+      window.equippedSlots[key] = null;
+    });
     window.equippedSlots[slotKey] = item;
     item.isEquippedSlot = slotKey;
-    bag.splice(idx, 1);
 
     if (typeof window.invalidatePlayerStats === "function")
       window.invalidatePlayerStats();
@@ -823,6 +845,7 @@
       window.toggleLootBag();
       window.toggleLootBag();
     }
+    return true;
   }
 
   export function equipFromStash(itemId) {
@@ -984,7 +1007,7 @@
 
     allSlots.forEach((slotKey) => {
       let item = window.equippedSlots[slotKey];
-      if (item && item.locked) {
+      if (item && item.locked && !item.isStarterItem) {
         premiums.push({
           item: item,
           cost: window.calculateInsurancePremium(item),
@@ -1016,11 +1039,11 @@
     }
 
     // Insurance Underwriter Skill Tree Discount
-    if (window.SkillTreeManager) {
-      let insuranceRank =
-        window.SkillTreeManager.getSkillLevel("utility_insurance");
-      if (insuranceRank > 0 && totalPremium.gt(0)) {
-        let discountMult = 1.0 - insuranceRank * 0.1;
+    {
+      let insuranceDiscount =
+        getMasteryNodeRank(window.playerStats, "utility_insurance") * 0.1;
+      if (insuranceDiscount > 0 && totalPremium.gt(0)) {
+        let discountMult = 1.0 - insuranceDiscount;
         totalPremium = totalPremium.mul(discountMult);
       }
     }

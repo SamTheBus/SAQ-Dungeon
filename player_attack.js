@@ -3,27 +3,76 @@ import {
   isOverkillHit,
   updateFinitePeakHit,
 } from "./combat_scaling.js?v=1.001";
+import { isActiveAttackReady } from "./attack_speed_contract.js?v=1.001";
+import {
+  awardMainAttackMasteryXp,
+  awardSpellProcMasteryXp,
+} from "./mastery_authority.js?v=1.003";
+import {
+  applyPlayerBleed,
+  applyPlayerPoison,
+  clearPeriodicEffect,
+  getCanonicalSpellPacketElements,
+  getActivePeriodicEffectCount,
+  resolveOnHitArtifactEffects,
+  resolveTomeProcSustain,
+} from "./combat_effect_authority.js?v=1.001";
+import { isTomeCombatProfile } from "./combat_reach.js?v=1.001";
+import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.001";
+import {
+  PRODUCTION_FIRE_TOME_BURN_PROFILE,
+  PRODUCTION_FROST_CONTROL_PROFILE,
+  isEligiblePlayerElementTarget,
+  resolveTomeElementSecondaryEffect,
+} from "./element_effect_authority.js?v=1.001";
 
-  export const resolvePlayerAttack = function (p, pStats, closestTarget) {
-    if (closestTarget && p.attackTimer >= 20) {
-      p.attackTimer = 0;
-      window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
+  export const resolvePlayerAttack = function (
+    p,
+    pStats,
+    closestTarget,
+    options = {},
+  ) {
+    const tomeProjectileImpact = options.tomeProjectileImpact === true;
+    if (
+      closestTarget &&
+      (tomeProjectileImpact || isActiveAttackReady(p.attackTimer, pStats))
+    ) {
+      if (!tomeProjectileImpact) {
+        p.attackTimer = 0;
+        window.hero.slashTimer = 8; // Trigger 8-frame slash animation arc
 
-      if (
-        window.SoundManager &&
-        typeof window.SoundManager.play === "function"
-      ) {
-        window.SoundManager.play("swing");
+        if (
+          window.SoundManager &&
+          typeof window.SoundManager.play === "function"
+        ) {
+          window.SoundManager.play("swing");
+        }
+
+        // Face the target being attacked!
+        let dxToTarget = closestTarget.x - p.x;
+        if (dxToTarget < -0.1) p.facing = -1;
+        else if (dxToTarget > 0.1) p.facing = 1;
       }
-
-      // Face the target being attacked!
-      let dxToTarget = closestTarget.x - p.x;
-      if (dxToTarget < -0.1) p.facing = -1;
-      else if (dxToTarget > 0.1) p.facing = 1;
 
       if (closestTarget.type === "mob") {
         let m = closestTarget.obj;
         if (!isPlayerTargetableMob(m)) return;
+
+        if (
+          !tomeProjectileImpact &&
+          isTomeCombatProfile(pStats, window.equippedSlots?.subweapon)
+        ) {
+          if (typeof window.triggerCombatState === "function") {
+            window.triggerCombatState();
+          }
+          return launchTomeAttackProjectile({
+            player: p,
+            playerStats: pStats,
+            target: m,
+            map: window.activeDungeonMap,
+          });
+        }
+
         m.lastHitTime = window.logicClock; // Set hit timestamp for regenerative brood tracking
 
         // Transition into active combat state
@@ -48,15 +97,11 @@ import {
 
         // Synergy Sanguine DoT damage scaling (+8% damage per Poison, Bleed, Burn)
         if (window.checkArtifactTrait("synergy_sanguine")) {
-          let slotLvl = window.getArtifactTemperLevel
-            ? window.getArtifactTemperLevel("synergy_sanguine")
-            : 0;
-          let slotMult = 1.0 + slotLvl * 0.01;
-          let uniqueDoTs = 0;
-          if ((m.poisonStacks || 0) > 0) uniqueDoTs++;
-          if ((m.bleedStacks || 0) > 0) uniqueDoTs++;
-          if ((m.burnStacks || 0) > 0 || m.isBurning) uniqueDoTs++;
-          let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
+          let uniqueDoTs = getActivePeriodicEffectCount(m);
+          let perEffect = window.scaleArtifactMechanic
+            ? window.scaleArtifactMechanic("synergy_sanguine", 0.08)
+            : 0.08;
+          let multiplier = 1.0 + perEffect * uniqueDoTs;
           pAtk = pAtk.mul(multiplier);
         }
 
@@ -101,19 +146,17 @@ import {
         m.hp = m.hp.sub(finalDmg);
         m.hasTakenDamage = true;
         m.flashTimer = 6;
+        awardMainAttackMasteryXp();
 
         // Roll bleed from dagger base bleedChance
         if (pStats.bleedChance && pStats.bleedChance > 0) {
           if (Math.random() < pStats.bleedChance) {
-            m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
-            m.dotTickTimer = m.dotTickTimer || 0;
+            applyPlayerBleed(m, pStats, { mechanic: "dagger_main_bleed" });
           }
         }
 
         // Track Critical Streaks for Wind-Razor Flurry
-        let windFlurryLevel = window.SkillTreeManager
-          ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
-          : 0;
+        let windFlurryLevel = pStats.windRazorFlurryLevel || 0;
         if (windFlurryLevel > 0) {
           if (isCrit) {
             window.playerStats.critStreak =
@@ -332,45 +375,28 @@ import {
           );
         }
 
-        // Artifact: Vampirism (Blood-Soaked Chalice)
-        if (window.checkArtifactTrait("vampirism")) {
-          let now = Date.now();
-          window.playerStats.recentHeals = (
-            window.playerStats.recentHeals || []
-          ).filter((h) => now - h.time < 1000);
-          let totalHealedLastSec = window.playerStats.recentHeals.reduce(
-            (sum, h) => sum + h.amt,
-            0,
+        const onHitArtifacts = resolveOnHitArtifactEffects({
+          target: m,
+          damage: pAtk,
+          player: p,
+        });
+        if (
+          onHitArtifacts.vampirismHeal > 0 &&
+          typeof window.spawnFloatingText === "function"
+        ) {
+          window.spawnFloatingText(
+            p.x,
+            p.y - 12,
+            `+${onHitArtifacts.vampirismHeal} HP`,
+            "#e74c3c",
           );
-          let maxHealPerSec = p.maxHp * 0.03;
-          let allowedHeal = Math.max(0, maxHealPerSec - totalHealedLastSec);
-
-          let rawHeal = pAtk.mul(0.005).toFiniteNumber();
-          let finalHeal = Math.min(allowedHeal, rawHeal);
-          if (finalHeal > 0) {
-            finalHeal = Math.round(finalHeal);
-            p.hp = Math.min(p.maxHp, p.hp + finalHeal);
-            window.playerStats.recentHeals.push({ time: now, amt: finalHeal });
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 12,
-                `+${finalHeal} HP`,
-                "#e74c3c",
-              );
-            }
-          }
         }
-
-        // Artifact: Echo Strike (Phantom Blade)
-        if (window.checkArtifactTrait("echo_strike") && Math.random() < 0.3) {
-          let echoDmg = pAtk.mul(0.25);
-          m.hp = m.hp.sub(echoDmg);
+        if (onHitArtifacts.echoProc) {
           if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
             window.RenderEngine.spawnDamageEffect(
               mobCenterX,
               mobCenterY - 8,
-              echoDmg,
+              onHitArtifacts.echoDamage,
               "echo",
               false,
             );
@@ -379,11 +405,12 @@ import {
 
         // Unique: Sanguine Reaver (Sword Bleed Rupture)
         if (window.hasUniquePassive("weapon_sword")) {
-          m.bleedStacks = (m.bleedStacks || 0) + 1;
-          m.bleedTimer = 300; // 5-second duration
-          if (m.bleedStacks >= 5) {
-            m.bleedStacks = 0;
-            m.bleedTimer = 0;
+          const reaverBleed = applyPlayerBleed(m, pStats, {
+            durationFrames: 300,
+            mechanic: "sanguine_reaver",
+          });
+          if (reaverBleed && reaverBleed.stacks >= 5) {
+            clearPeriodicEffect(m, "bleed");
             let ruptureDmg = BigNum.from(pStats.atk || p.atk || 15).mul(3.0);
             m.hp = m.hp.sub(ruptureDmg);
             let siphonedHp = Math.round(p.maxHp * 0.1);
@@ -412,22 +439,6 @@ import {
                 20,
                 "magma_elemental",
                 4,
-              );
-            }
-          } else {
-            let bleedTick = BigNum.from(pStats.atk || 15).mul(0.2);
-            if (pStats.bleedDamageMultiplier) {
-              bleedTick = bleedTick.mul(pStats.bleedDamageMultiplier);
-            }
-            m.hp = m.hp.sub(bleedTick);
-            m.bleedTimer = 300; // Refresh 5-second duration
-            if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
-              window.RenderEngine.spawnDamageEffect(
-                mobCenterX,
-                mobCenterY - 10,
-                bleedTick,
-                "bleed",
-                false,
               );
             }
           }
@@ -520,49 +531,13 @@ import {
           }
         }
 
-        // Artifact: Midas Touch (3% Chance on hit against non-boss mobs for Gold Transmutation)
-        if (
-          !isBossTarget &&
-          m.hp.gt(0) &&
-          window.checkArtifactTrait("gold_hoard") &&
-          Math.random() < 0.03
-        ) {
-          let remHp = m.hp;
-          m.hp = BigNum.from(0);
-          if (typeof window.spawnFloatingText === "function") {
-            window.spawnFloatingText(
-              mobCenterX,
-              mobCenterY - 18,
-              "GOLD TRANSMUTATION!",
-              "#ffd700",
-            );
-          }
-          let bonusGold = Math.floor(75 * (1 + window.player.depth * 0.5));
-          window.spawnHomingGold(mobCenterX, mobCenterY, bonusGold);
-          if (window.combatVisuals) {
-            window.combatVisuals.spawnParticles(
-              mobCenterX,
-              mobCenterY,
-              25,
-              "gold_dungeon",
-              5,
-            );
-          }
-          if (
-            window.SoundManager &&
-            typeof window.SoundManager.playCoinCollect === "function"
-          ) {
-            window.SoundManager.playCoinCollect();
-          }
-        }
-
         // Dagger Offhand Multi-Strike & DoT Application (Blocked if Nullifier Disrupted)
         if (pStats.subType === "dagger") {
           let finalOffhandChance = p.nullifierDisrupted
             ? 0
             : pStats.offhandChance || 0.35;
           if (Math.random() < finalOffhandChance) {
-            let offhandDmgMult = pStats.offhandDmgMultiplier || 1.0;
+            let offhandDmgMult = pStats.offhandDamageMultiplier || 1.0;
             let offhandHit = BigNum.from(pStats.atk || 15).mul(
               (pStats.offhandDmg || 0.45) * offhandDmgMult,
             );
@@ -582,26 +557,26 @@ import {
             // Roll bleed from dagger base bleedChance
             if (pStats.bleedChance && pStats.bleedChance > 0) {
               if (Math.random() < pStats.bleedChance) {
-                m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
-                m.dotTickTimer = m.dotTickTimer || 0;
+                applyPlayerBleed(m, pStats, { mechanic: "dagger_offhand_bleed" });
               }
             }
 
             // 1. Viper's Coating (Apply Stacking Poison & Bleeding)
             let vipersLvl = pStats.vipersCoatingLvl || 0;
             if (vipersLvl > 0) {
-              m.poisonStacks = Math.min(5, (m.poisonStacks || 0) + 1);
-              m.poisonLevel = vipersLvl;
-              m.dotTickTimer = m.dotTickTimer || 0;
+              const poisonEffect = applyPlayerPoison(m, pStats, {
+                rank: vipersLvl,
+                mechanic: "vipers_coating",
+              });
 
               let bleedChance = vipersLvl * 0.05;
               if (Math.random() < bleedChance) {
-                m.bleedStacks = Math.min(5, (m.bleedStacks || 0) + 1);
+                applyPlayerBleed(m, pStats, { mechanic: "vipers_coating_bleed" });
               }
 
               // Shadow Assassin Keystone check at 5 stacks
-              if (pStats.hasKeystoneAssassin && m.poisonStacks >= 5) {
-                m.poisonStacks = 0; // consume
+              if (pStats.hasKeystoneAssassin && poisonEffect?.stacks >= 5) {
+                clearPeriodicEffect(m, "poison");
                 let flurryStrike = BigNum.from(pStats.atk || 15);
                 for (let s = 0; s < 3; s++) {
                   m.hp = m.hp.sub(flurryStrike);
@@ -649,7 +624,9 @@ import {
           // 3. Shadow Flurry (Crit proc Offhand Strike)
           if (isCrit && pStats.hasShadowFlurry) {
             let flurryDmg = BigNum.from(pStats.atk || 15).mul(
-              (pStats.offhandDmg || 0.45) * 1.5,
+              (pStats.offhandDmg || 0.45) *
+                (pStats.offhandFlurryDamageMultiplier || 1) *
+                1.5,
             );
             m.hp = m.hp.sub(flurryDmg);
             if (window.combatVisuals) {
@@ -677,26 +654,27 @@ import {
           : pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
         let activeSpellType = pStats.spellType || "tri";
 
-        if (isTomeEquipped && Math.random() < activeSpellChance) {
-          // Gain +3 Tome Mastery XP on Spell Proc (Buffed)
-          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 3);
+        if (
+          isTomeEquipped &&
+          isEligiblePlayerElementTarget(m) &&
+          Math.random() < activeSpellChance
+        ) {
+          awardSpellProcMasteryXp(pStats);
 
           if (typeof window.progressMission === "function") {
             window.progressMission("spells", 1);
           }
 
-          // Nexus Harmonizer: Tomes boost Block/Parry by 5% for 3s (180 frames)
-          if (
-            window.playerStats &&
-            window.checkArtifactTrait("synergy_nexus")
-          ) {
-            window.playerStats.nexusTomeShieldTimer = 180;
-          }
-
           let spellDmg = BigNum.from(pStats.atk || 15).mul(
             pStats.spellPower || 1.5,
           );
-          m.hp = m.hp.sub(spellDmg);
+          const spellPacketElements = getCanonicalSpellPacketElements(
+            pStats.hasTriadConvergence,
+            activeSpellType,
+          );
+          if (spellPacketElements.length === 1) {
+            m.hp = m.hp.sub(spellDmg);
+          }
           m.flashTimer = 8;
 
           let spellEffectType = activeSpellType;
@@ -713,12 +691,7 @@ import {
           }
 
           // Trigger actual visual spells
-          if (
-            pStats.hasTriadConvergence ||
-            (window.SkillTreeManager &&
-              window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-              Math.random() < 0.15)
-          ) {
+          if (pStats.hasTriadConvergence) {
             if (window.castVisualSpell) {
               window.castVisualSpell("fire", p, m, pStats, true);
               window.castVisualSpell("lightning", p, m, pStats, true);
@@ -764,56 +737,28 @@ import {
             window.playerStats.lastSpellCastType = spellEffectType;
           }
 
-          // Arcane Syphon: Spell procs recharge Arcane Shield (overflows 50% to HP)
-                    if (pStats.hasArcaneSyphon) {
-                      let rechargeAmt = Math.round(
-                        (p.arcaneShieldMax || p.maxHp) * (pStats.arcaneSyphonLevel * 0.015),
-                      );
-                      if (typeof window.rechargePlayerArcaneShield === "function") {
-                        window.rechargePlayerArcaneShield(rechargeAmt);
-                      }
-                      window.playerStats.syphonIntStacks = Math.min(
-                        3,
-                        (window.playerStats.syphonIntStacks || 0) + 1,
-                      );
-                      window.playerStats.syphonIntTimer = 360; // 6s at 60 FPS
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(
-                          p.x,
-                          p.y - 12,
-                          `+${rechargeAmt} SHIELD (SYPHON)`,
-                          "#00ffff",
-                          true,
-                        );
-                      }
-                    }
+          const sustainEvents = resolveTomeProcSustain(p, pStats);
+          if (typeof window.spawnFloatingText === "function") {
+            sustainEvents.forEach((event, index) => {
+              if (event.mechanic === "nexus") return;
+              const label = event.mechanic === "arcane_syphon" ? "SYPHON" : "MANA SHIELD";
+              const parts = [];
+              if (event.shieldGained > 0) parts.push(`+${event.shieldGained} SHIELD`);
+              if (event.hpHealed > 0) parts.push(`+${event.hpHealed} HP`);
+              if (parts.length > 0) {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 12 - index * 5,
+                  `${parts.join(" / ")} (${label})`,
+                  "#00ffff",
+                  true,
+                );
+              }
+            });
+          }
 
-                    // Mana Shielding: Recharges Arcane Shield on spell cast
-                    if (pStats.manaShieldingRecharge && pStats.manaShieldingRecharge > 0) {
-                      let rechargeAmt = Math.round((p.arcaneShieldMax || p.maxHp) * pStats.manaShieldingRecharge);
-                      if (typeof window.rechargePlayerArcaneShield === "function") {
-                        window.rechargePlayerArcaneShield(rechargeAmt);
-                      }
-                      if (typeof window.spawnFloatingText === "function") {
-                        window.spawnFloatingText(
-                          p.x,
-                          p.y - 15,
-                          `+${rechargeAmt} SHIELD (MANA SHIELD)`,
-                          "#00ffff",
-                          true,
-                        );
-                      }
-                    }
-
-          // Triad Convergence / Aetheric Overload Check
-          let isOverload =
-            window.SkillTreeManager &&
-            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-            Math.random() < 0.15;
-
-          if (pStats.hasTriadConvergence || isOverload) {
-            const triElements = ["fire", "lightning", "frost"];
-            triElements.forEach((elem, eIdx) => {
+          if (pStats.hasTriadConvergence) {
+            spellPacketElements.forEach((elem, eIdx) => {
               m.hp = m.hp.sub(spellDmg);
               if (
                 window.RenderEngine &&
@@ -828,115 +773,24 @@ import {
                 );
               }
 
-              // Apply Elemental Overload on each part of the Triad Convergence
-              if (pStats.hasElementalOverload || elem === "lightning") {
-                if (elem === "fire" && pStats.hasElementalOverload) {
-                                  let splashDmg = spellDmg.mul(
-                                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                                  );
-                                  let fbRadius = 80 * (pStats.areaRadiusMult || 1.0);
-                                  if (window.activeDungeonMobs) {
-                                    window.activeDungeonMobs.forEach((otherMob) => {
-                                      if (
-                                        otherMob.id !== m.id &&
-                                        isPlayerTargetableMob(otherMob)
-                                      ) {
-                                        let dist = Math.hypot(
-                                          m.x - otherMob.x,
-                                          m.y - otherMob.y,
-                                        );
-                                        if (dist <= fbRadius) {
-                          otherMob.hp = otherMob.hp.sub(splashDmg);
-                          otherMob.flashTimer = 6;
-                          if (window.combatVisuals) {
-                            window.combatVisuals.spawnDamageEffect(
-                              otherMob.x + otherMob.w / 2,
-                              otherMob.y + otherMob.h / 2,
-                              splashDmg,
-                              "fire",
-                              false,
-                            );
-                          }
-                        }
-                      }
-                    });
-                  }
-                } else if (elem === "lightning") {
-                                  let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
-                                  let hitIds = new Set([m.id]);
-                                  let currentTarget = m;
-                                  let chainSearchR = 120 * (pStats.areaRadiusMult || 1.0);
-                                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                                    let nextTarget = window.activeDungeonMobs.find(
-                                      (other) =>
-                                        !hitIds.has(other.id) &&
-                                        isPlayerTargetableMob(other) &&
-                                        Math.hypot(
-                                          currentTarget.x +
-                                            (currentTarget.w || 24) / 2 -
-                                            (other.x + (other.w || 24) / 2),
-                                          currentTarget.y +
-                                            (currentTarget.h || 24) / 2 -
-                                            (other.y + (other.h || 24) / 2),
-                                        ) <= chainSearchR,
-                                    );
-                    if (nextTarget) {
-                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                      nextTarget.flashTimer = 6;
-                      hitIds.add(nextTarget.id);
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnDamageEffect(
-                          nextTarget.x + nextTarget.w / 2,
-                          nextTarget.y + nextTarget.h / 2,
-                          spellDmg,
-                          "lightning",
-                          false,
-                        );
-                      }
-                      // Spawn physical, crackling procedural cavern lightning arc lines
-                      window.cavernInteractives =
-                        window.cavernInteractives || [];
-                      window.cavernInteractives.push({
-                        id: window.idCounter++,
-                        type: "lightning_arc",
-                        x: currentTarget.x + (currentTarget.w || 24) / 2,
-                        y: currentTarget.y + (currentTarget.h || 24) / 2,
-                        x2: nextTarget.x + (nextTarget.w || 24) / 2,
-                        y2: nextTarget.y + (nextTarget.h || 24) / 2,
-                        life: 15,
-                      });
-                      currentTarget = nextTarget;
-                      bouncesLeft--;
-                    } else {
-                      break;
-                    }
-                  }
-                } else if (elem === "frost" && pStats.hasElementalOverload) {
-                  let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
-                  if (window.activeDungeonMobs) {
-                    window.activeDungeonMobs.forEach((otherMob) => {
-                      if (
-                        isPlayerTargetableMob(otherMob) &&
-                        Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= 80
-                      ) {
-                        otherMob.speedMultiplier = Math.max(
-                          0.2,
-                          (otherMob.speedMultiplier || 1.0) - slowPct,
-                        );
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnParticles(
-                            otherMob.x + otherMob.w / 2,
-                            otherMob.y + otherMob.h / 2,
-                            8,
-                            "void_orb",
-                            1,
-                          );
-                        }
-                      }
-                    });
-                  }
-                }
-              }
+              resolveTomeElementSecondaryEffect({
+                element: elem,
+                originTarget: m,
+                spellDamage: spellDmg,
+                player: p,
+                playerStats: pStats,
+                targets: window.activeDungeonMobs,
+                map: options.activeDungeonMap || window.activeDungeonMap,
+                collisionCheck: window.checkCollisionAt,
+                fireProfile:
+                  pStats.fireTomeBurnProfile ??
+                  PRODUCTION_FIRE_TOME_BURN_PROFILE,
+                frostProfile:
+                  pStats.frostControlProfile ??
+                  PRODUCTION_FROST_CONTROL_PROFILE,
+              });
+              return;
+
             });
             if (
               window.SoundManager &&
@@ -945,131 +799,22 @@ import {
               window.SoundManager.play("spell_fire");
             }
           } else {
-            // Apply single-spell Overload logic
-            if (
-              pStats.hasElementalOverload ||
-              spellEffectType === "lightning"
-            ) {
-              if (spellEffectType === "fire" && pStats.hasElementalOverload) {
-                let splashDmg = spellDmg.mul(
-                  pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                );
-                if (window.activeDungeonMobs) {
-                  window.activeDungeonMobs.forEach((otherMob) => {
-                    if (
-                      otherMob.id !== m.id &&
-                      isPlayerTargetableMob(otherMob)
-                    ) {
-                      let dist = Math.hypot(m.x - otherMob.x, m.y - otherMob.y);
-                      if (dist <= 80) {
-                        otherMob.hp = otherMob.hp.sub(splashDmg);
-                        otherMob.flashTimer = 6;
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnDamageEffect(
-                            otherMob.x + otherMob.w / 2,
-                            otherMob.y + otherMob.h / 2,
-                            splashDmg,
-                            "fire",
-                            false,
-                          );
-                        }
-                      }
-                    }
-                  });
-                }
-              } else if (spellEffectType === "lightning") {
-                let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
-                let hitIds = new Set([m.id]);
-                let currentTarget = m;
-                while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                  let nextTarget = window.activeDungeonMobs.find(
-                    (other) =>
-                      !hitIds.has(other.id) &&
-                      isPlayerTargetableMob(other) &&
-                      Math.hypot(
-                        currentTarget.x +
-                          (currentTarget.w || 24) / 2 -
-                          (other.x + (other.w || 24) / 2),
-                        currentTarget.y +
-                          (currentTarget.h || 24) / 2 -
-                          (other.y + (other.h || 24) / 2),
-                      ) <= 120,
-                  );
-                  if (nextTarget) {
-                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                    nextTarget.flashTimer = 6;
-                    hitIds.add(nextTarget.id);
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnDamageEffect(
-                        nextTarget.x + nextTarget.w / 2,
-                        nextTarget.y + nextTarget.h / 2,
-                        spellDmg,
-                        "lightning",
-                        false,
-                      );
-                    }
-                    // Spawn physical, crackling procedural cavern lightning arc lines
-                    window.cavernInteractives = window.cavernInteractives || [];
-                    window.cavernInteractives.push({
-                      id: window.idCounter++,
-                      type: "lightning_arc",
-                      x: currentTarget.x + (currentTarget.w || 24) / 2,
-                      y: currentTarget.y + (currentTarget.h || 24) / 2,
-                      x2: nextTarget.x + (nextTarget.w || 24) / 2,
-                      y2: nextTarget.y + (nextTarget.h || 24) / 2,
-                      life: 15,
-                    });
-                    currentTarget = nextTarget;
-                    bouncesLeft--;
-                  } else {
-                    break;
-                  }
-                }
-              } else if (spellEffectType === "frost") {
-                              // Inherent 15% slow on primary target
-                              m.speedMultiplier = Math.max(0.2, (m.speedMultiplier || 1.0) - 0.15);
-
-                              // AoE Wave Slow & Splash Damage when Elemental Overload or Area Amplification is active
-                              let slowPct = pStats.hasElementalOverload ? (pStats.overloadLevel === 1 ? 0.25 : 0.4) : 0.15;
-                                                            let novaRadius = 80 * (pStats.areaRadiusMult || 1.0);
-
-                              if (window.activeDungeonMobs && (pStats.hasElementalOverload || (pStats.spellRadiusMult || 1.0) > 1.0)) {
-                                window.activeDungeonMobs.forEach((otherMob) => {
-                                  if (
-                                    isPlayerTargetableMob(otherMob) &&
-                                    Math.hypot(m.x - otherMob.x, m.y - otherMob.y) <= novaRadius
-                                  ) {
-                                    otherMob.speedMultiplier = Math.max(
-                                      0.2,
-                                      (otherMob.speedMultiplier || 1.0) - slowPct,
-                                    );
-                                    // Apply 25% Frost Nova AoE Splash Damage
-                                    let frostSplashDmg = spellDmg.mul(0.25);
-                                    otherMob.hp = otherMob.hp.sub(frostSplashDmg);
-                                    otherMob.flashTimer = 5;
-
-                                    if (window.combatVisuals) {
-                                      window.combatVisuals.spawnDamageEffect(
-                                        otherMob.x + otherMob.w / 2,
-                                        otherMob.y + otherMob.h / 2,
-                                        frostSplashDmg,
-                                        "frost",
-                                        false,
-                                      );
-                                      window.combatVisuals.spawnParticles(
-                                        otherMob.x + otherMob.w / 2,
-                                        otherMob.y + otherMob.h / 2,
-                                        6,
-                                        "void_orb",
-                                        1,
-                                      );
-                                    }
-                                  }
-                                });
-                              }
-                            }
-            }
-
+            resolveTomeElementSecondaryEffect({
+              element: spellEffectType,
+              originTarget: m,
+              spellDamage: spellDmg,
+              player: p,
+              playerStats: pStats,
+              targets: window.activeDungeonMobs,
+              map: options.activeDungeonMap || window.activeDungeonMap,
+              collisionCheck: window.checkCollisionAt,
+              fireProfile:
+                pStats.fireTomeBurnProfile ??
+                PRODUCTION_FIRE_TOME_BURN_PROFILE,
+              frostProfile:
+                pStats.frostControlProfile ??
+                PRODUCTION_FROST_CONTROL_PROFILE,
+            });
             if (
               window.SoundManager &&
               typeof window.SoundManager.play === "function"

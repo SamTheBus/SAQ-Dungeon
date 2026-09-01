@@ -1,5 +1,6 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
-import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
+import { applyPlayerPoison } from "./combat_effect_authority.js?v=1.001";
 
 /* ==========================================================================
    PRIMARY PURPOSE: Clean Top-Down Extraction Crawler Core Engine & Game Loop.
@@ -295,8 +296,11 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
       let worldX = clickX / zoom + cam.x;
       let worldY = clickY / zoom + cam.y;
 
-      let targetMob = window.activeDungeonMobs
-        ? window.activeDungeonMobs.find((m) => {
+      const perfectStrikeTargets = [
+        ...(window.activeDungeonMobs || []),
+        ...(window.mob ? [window.mob] : []),
+      ];
+      let targetMob = perfectStrikeTargets.find((m) => {
             return (
               m.perfectStrikeTimer > 0 &&
               worldX >= m.x &&
@@ -304,8 +308,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
               worldY >= m.y &&
               worldY <= m.y + m.h
             );
-          })
-        : null;
+          }) || null;
 
       if (targetMob) {
         e.preventDefault();
@@ -334,6 +337,10 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
           targetMob.hp = targetMob.hp.sub(dmg);
           targetMob.flashTimer = 8;
           targetMob.perfectStrikeTimer = 0; // consume
+          applyPlayerPoison(targetMob, pStats, {
+            mechanic: "vipers_perfect_stiletto",
+            sourceId: "player",
+          });
 
           if (
             window.SoundManager &&
@@ -1117,10 +1124,30 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
       return;
     }
 
+    let isHub = window.currentGameState === window.GAME_STATES.HUB;
+    let grantsCarriedRunItem =
+      !isHub &&
+      (name === "Astral Singularity Cache" ||
+        name === "Astral Artifact Cache" ||
+        ((name.includes("Sack") || name.includes("Crate")) &&
+          name !== "Monster Card Sack"));
+    if (
+      grantsCarriedRunItem &&
+      (!window.canAddToRunSatchel ||
+        !window.canAddToRunSatchel(1, {
+          message: `Cannot open ${name}: Carried Satchel is full. Free 1 slot first.`,
+        }))
+    ) {
+      return false;
+    }
+
     let isSpared =
       window.checkArtifactTrait &&
       window.checkArtifactTrait("philosopher_catalyst") &&
-      Math.random() < 0.12;
+      Math.random() <
+        (window.scaleArtifactMechanic
+          ? window.scaleArtifactMechanic("philosopher_catalyst", 0.12)
+          : 0.12);
     if (isSpared) {
       if (typeof window.pushHeaderToast === "function") {
         window.pushHeaderToast(
@@ -1203,7 +1230,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
       p.hastePotionStrength = str;
       p.hastePotionTimer = 0;
       window.pushHeaderToast(
-        `Consumed ${name}! (+Speed for ${p.hastePotionRuns} Run(s))`,
+        `Consumed ${name}! (+${str * 3} Move Speed, +${str * 10}% Active Attack Speed for ${p.hastePotionRuns} Run(s))`,
         "#f1c40f",
       );
     } else if (name.includes("Double XP Elixir")) {
@@ -1246,20 +1273,28 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
           p.stage || 1,
           p.maxFloorCleared || 1,
         );
-        let stageScale = peakRunStage;
-        let rolledRarity = window.rollItemRarity(
-          peakRunStage,
-          p.baseQuality || 1.0,
-          false,
-        );
+        let itemPowerLevel = peakRunStage;
+        let resolvedStats =
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : {};
+        let rolledRarity = window.rollItemRarity({
+          progressionStage: peakRunStage,
+          resolvedQuality: resolvedStats.qly || p.baseQuality || 1,
+          source: window.EQUIPMENT_RARITY_SOURCES.CAVERN_SIGIL_SACK,
+        });
         let sigilItem = window.createItemObject(
           "sigil",
           rolledRarity,
-          stageScale,
+          itemPowerLevel,
           0,
         );
-        if (!window.inventory.SIGIL) window.inventory.SIGIL = [];
-        window.inventory.SIGIL.push(sigilItem);
+        if (window.currentGameState === window.GAME_STATES.HUB) {
+          if (!window.inventory.SIGIL) window.inventory.SIGIL = [];
+          window.inventory.SIGIL.push(sigilItem);
+        } else {
+          window.addToRunSatchel(sigilItem, { notify: false });
+        }
         window.openCavernSigilSackAnimation(sigilItem);
       }
     } else if (name === "Monster Card Sack") {
@@ -1359,8 +1394,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
         if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
         window.inventory.EQUIP.push(newItem);
       } else {
-        if (!window.player.bag) window.player.bag = [];
-        window.player.bag.push(newItem);
+        window.addToRunSatchel(newItem, { notify: false });
       }
       window.pushHeaderToast(
         `Opened ${name}! Found: ${newItem.name}`,
@@ -1383,8 +1417,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
         if (!window.inventory.ARTIFACT) window.inventory.ARTIFACT = [];
         window.inventory.ARTIFACT.push(newItem);
       } else {
-        if (!window.player.bag) window.player.bag = [];
-        window.player.bag.push(newItem);
+        window.addToRunSatchel(newItem, { notify: false });
       }
       window.pushHeaderToast(
         `Opened ${name}! Found: ${newItem.name} and +${coresGained} Catalyst Cores`,
@@ -1400,13 +1433,15 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
       let itemLevel = window.getFloorItemLevel
         ? window.getFloorItemLevel(peakRunStage)
         : Math.floor(peakRunStage / 4) + 1;
-      let stageScale = itemLevel;
-
-      let rolledRarity = window.rollItemRarity(
-        peakRunStage,
-        p.baseQuality || 1.0,
-        false,
-      );
+      let resolvedStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      let rolledRarity = window.rollItemRarity({
+        progressionStage: peakRunStage,
+        resolvedQuality: resolvedStats.qly || p.baseQuality || 1,
+        source: window.EQUIPMENT_RARITY_SOURCES.REWARD_CONTAINER,
+      });
       let types = [
         "weapon",
         "subweapon",
@@ -1421,7 +1456,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
       let newItem = window.createItemObject(
         chosenType,
         rolledRarity,
-        stageScale,
+        itemLevel,
         0,
       );
 
@@ -1457,8 +1492,7 @@ import { addActiveDungeonMob } from "./encounter_state.js?v=1.004";
         if (!window.inventory.EQUIP) window.inventory.EQUIP = [];
         window.inventory.EQUIP.push(newItem);
       } else {
-        if (!window.player.bag) window.player.bag = [];
-        window.player.bag.push(newItem);
+        window.addToRunSatchel(newItem, { notify: false });
       }
 
       if (typeof window.openTactileSackCrateAnimation === "function") {

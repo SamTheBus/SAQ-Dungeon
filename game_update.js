@@ -1,4 +1,5 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
 
   export const updateGame = function (canvas, isPointerHolding, checkCollisionAt) {
     window.logicClock = (window.logicClock || 0) + 1;
@@ -307,6 +308,15 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
       if (window.playerStats.frenzyTimer > 0) {
         window.playerStats.frenzyTimer--;
       }
+      if (window.playerStats.maelstromSpeedTimer > 0) {
+        window.playerStats.maelstromSpeedTimer--;
+        if (window.playerStats.maelstromSpeedTimer === 0) {
+          window.playerStats.maelstromSpeedStacks = 0;
+        }
+      }
+      if (window.playerStats.warpCoreSprintTimer > 0) {
+        window.playerStats.warpCoreSprintTimer--;
+      }
       if (window.playerStats.adrenalineTimer > 0) {
         window.playerStats.adrenalineTimer--;
       }
@@ -342,58 +352,16 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
       }
 
       // --- POTION AND ELIXIR TIMER DECAY & REFRESH ENGINE ---
-      const potTypes = [
-        {
-          runKey: "atkPotionRuns",
-          timerKey: "atkPotionTimer",
-          name: "Attack Elixir",
-        },
-        {
-          runKey: "hpPotionRuns",
-          timerKey: "hpPotionTimer",
-          name: "Vitality Elixir",
-        },
-        {
-          runKey: "defPotionRuns",
-          timerKey: "defPotionTimer",
-          name: "Armored Elixir",
-        },
-        {
-          runKey: "hastePotionRuns",
-          timerKey: "hastePotionTimer",
-          name: "Haste Elixir",
-        },
-        {
-          runKey: "xpPotionRuns",
-          timerKey: "xpPotionTimer",
-          name: "Double XP Elixir",
-        },
-        {
-          runKey: "dropPotionRuns",
-          timerKey: "dropPotionTimer",
-          name: "Double Drop Elixir",
-        },
-        {
-          runKey: "qlyPotionRuns",
-          timerKey: "qlyPotionTimer",
-          name: "Drop Quality Elixir",
-        },
-      ];
-
       let isDungeon = window.currentGameState === window.GAME_STATES.DUNGEON;
-
-      potTypes.forEach((pot) => {
-        // If we are in a dungeon run, and the timer is expired or uninitialized,
-        // but we have reserve run charges, consume 1 charge and start the timer.
-        if (
-          isDungeon &&
-          (!window.playerStats[pot.timerKey] ||
-            window.playerStats[pot.timerKey] <= 0) &&
-          (window.playerStats[pot.runKey] || 0) > 0
-        ) {
-          window.playerStats[pot.runKey]--;
-          window.playerStats[pot.timerKey] = 18000; // Reset to 300 seconds (5 minutes) active duration
-
+      const potionResolvedStats =
+        isDungeon && typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      advanceCanonicalPotionTimers({
+        playerStats: window.playerStats,
+        isDungeon,
+        resolvedStats: potionResolvedStats,
+        onActivated: (pot) => {
           if (typeof window.invalidatePlayerStats === "function") {
             window.invalidatePlayerStats();
           }
@@ -409,28 +377,21 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
               "#34d399",
             );
           }
-        }
-
-        // Tick down the active timer only while in the dungeon
-        if (isDungeon && window.playerStats[pot.timerKey] > 0) {
-          window.playerStats[pot.timerKey]--;
-
-          // If the timer reaches exactly 0, notify and invalidate stats
-          if (window.playerStats[pot.timerKey] === 0) {
-            if (typeof window.invalidatePlayerStats === "function") {
-              window.invalidatePlayerStats();
-            }
-            if (typeof window.updateUI === "function") {
-              window.updateUI();
-            }
-            if (typeof window.pushHeaderToast === "function") {
-              window.pushHeaderToast(
-                `[!] ${pot.name} duration has expired!`,
-                "#f87171",
-              );
-            }
+        },
+        onExpired: (pot) => {
+          if (typeof window.invalidatePlayerStats === "function") {
+            window.invalidatePlayerStats();
           }
-        }
+          if (typeof window.updateUI === "function") {
+            window.updateUI();
+          }
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              `[!] ${pot.name} duration has expired!`,
+              "#f87171",
+            );
+          }
+        },
       });
     }
     if (p.snareTimer && p.snareTimer > 0) {
@@ -438,71 +399,7 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
       p.speedMultiplier = Math.min(p.speedMultiplier || 1.0, 0.4);
     }
 
-    // --- PLAYER POISON DOT & TIMER DECAY ENGINE ---
-    if (p.poisonTimer && p.poisonTimer > 0) {
-      p.poisonTimer--;
-      if (window.playerStats) {
-        window.playerStats.poisonTimer = p.poisonTimer;
-        window.playerStats.poisonStacks = p.poisonStacks;
-      }
-
-      p.poisonTickTimer = (p.poisonTickTimer || 0) + 1;
-            if (p.poisonTickTimer >= 60) {
-              p.poisonTickTimer = 0;
-              let stacks = p.poisonStacks || 1;
-              let tickDmg = Math.max(1, Math.round(p.maxHp * 0.012 * stacks)); // Reduced to 1.2% Max HP per stack / sec
-
-        p.hp = Math.max(0, p.hp - tickDmg);
-        p.lastDamageTimer = 30;
-
-        if (typeof window.spawnFloatingText === "function") {
-          window.spawnFloatingText(
-            p.x,
-            p.y - 16,
-            `-${tickDmg} POISON`,
-            "#2ecc71",
-            true,
-          );
-        }
-
-        if (window.combatVisuals && window.combatVisuals.particlePool) {
-          window.combatVisuals.particlePool.get(
-            p.x + window.randFloat(-6, 6),
-            p.y - 8 + window.randFloat(-6, 6),
-            window.randFloat(-0.3, 0.3),
-            -window.randFloat(0.5, 1.2),
-            window.randFloat(1.5, 2.8),
-            "#2ecc71",
-            0.85,
-            20,
-            20,
-            -0.02,
-            true,
-          );
-        }
-
-        if (
-          window.SoundManager &&
-          typeof window.SoundManager.play === "function"
-        ) {
-          window.SoundManager.play("hit");
-        }
-
-        if (p.hp <= 0 && typeof window.startDeathSequence === "function") {
-          window.startDeathSequence();
-        }
-      }
-
-      if (p.poisonTimer <= 0) {
-        p.poisonStacks = 0;
-        p.poisonTimer = 0;
-        p.poisonTickTimer = 0;
-        if (window.playerStats) {
-          window.playerStats.poisonTimer = 0;
-          window.playerStats.poisonStacks = 0;
-        }
-      }
-    }
+    // Poison/Bleed/Burn cadence is advanced only by updateCombatPeriodic.
     p.inDilationField = false; // Reset on every frame
 
     let map = activeDungeonMap;

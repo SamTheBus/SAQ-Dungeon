@@ -1,3 +1,5 @@
+import { getFrostMovementMultiplier } from "./element_effect_authority.js?v=1.001";
+
     // --- ZERO-ALLOCATION TANGENTIAL STEERING & CORNER UNSTICK ENGINE ---
     const PROBE_OFFSETS_CW = [
       Math.PI / 12, // 15 deg
@@ -50,6 +52,9 @@
       radius,
     ) {
       if (!entity) return false;
+      const frostMovementMultiplier = getFrostMovementMultiplier(entity);
+      if (frostMovementMultiplier <= 0) return false;
+      speed *= frostMovementMultiplier;
       let w = entity.w || 24;
       let h = entity.h || 24;
 

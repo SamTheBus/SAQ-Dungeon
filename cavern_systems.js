@@ -1,5 +1,6 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
 import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
 
   export function updateCavernEffects() {
     if (window.currentGameState !== window.GAME_STATES.DUNGEON) {
@@ -524,18 +525,33 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
       );
 
       let depth = window.player ? window.player.depth || 1 : 1;
-            let itemLevel = window.getFloorItemLevel ? window.getFloorItemLevel(depth) : Math.floor(depth / 4) + 1;
-            let fairyEquip = window.createItemObject(
-              "weapon",
-              Math.max(1, window.rollItemRarity(depth, 1.2, false)),
-              itemLevel,
-              0,
-            );
+      let itemLevel = window.getFloorItemLevel ? window.getFloorItemLevel(depth) : Math.floor(depth / 4) + 1;
+      let fairyStats =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : {};
+      let fairyRarity = window.rollItemRarity({
+        progressionStage: depth,
+        resolvedQuality: (fairyStats.qly || 1) * 1.2,
+        source: window.EQUIPMENT_RARITY_SOURCES.GLIMMERING_FAIRY,
+      });
+      fairyRarity = window.applyEquipmentRarityException(fairyRarity, {
+        minimumRarity: 1,
+        exception:
+          window.EQUIPMENT_RARITY_EXCEPTIONS.AUTHORED_FAIRY_MINIMUM,
+      });
+      let fairyEquip = window.createItemObject(
+        "weapon",
+        fairyRarity,
+        itemLevel,
+        0,
+      );
       window.spawnGroundLoot(fairyEquip, item.x, item.y);
 
-      let fairyRank = window.SkillTreeManager
-        ? window.SkillTreeManager.getSkillLevel("utility_fairy_sanctuary")
-        : 0;
+      let fairyRank = getMasteryNodeRank(
+        window.playerStats,
+        "utility_fairy_sanctuary",
+      );
       let elixirChance = fairyRank === 4 ? 0.35 : fairyRank === 5 ? 0.5 : 0.0;
 
       if (Math.random() < elixirChance) {
@@ -573,6 +589,21 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
           window.pushHeaderToast(
             "✦ Glimmering Fairy Blessing Claimed!",
             "#34d399",
+          );
+        }
+      }
+
+      const luminousSoulChance = window.scaleArtifactMechanic
+        ? window.scaleArtifactMechanic("fairy_wealth", 0.08)
+        : window.checkArtifactTrait?.("fairy_wealth")
+          ? 0.08
+          : 0;
+      if (luminousSoulChance > 0 && Math.random() < luminousSoulChance) {
+        window.addEtcDrop("Luminous Soul", 1, true);
+        if (typeof window.pushHeaderToast === "function") {
+          window.pushHeaderToast(
+            "✦ Fairy Queen's Crown found 1 Luminous Soul!",
+            "#ffb6c1",
           );
         }
       }

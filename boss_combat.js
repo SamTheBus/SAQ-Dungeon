@@ -1,38 +1,122 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
 import {
   getActiveDungeonMobs,
   removeActiveDungeonMobById,
   setPrimaryMob,
-} from "./encounter_state.js?v=1.004";
+} from "./encounter_state.js?v=1.007";
 import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
 import {
   isOverkillHit,
   updateFinitePeakHit,
 } from "./combat_scaling.js?v=1.001";
+import { isActiveAttackReady } from "./attack_speed_contract.js?v=1.001";
+import {
+  awardDefeatMasteryXp,
+  awardMainAttackMasteryXp,
+  awardSpellProcMasteryXp,
+} from "./mastery_authority.js?v=1.003";
+import {
+  MONSTER_DROP_DOMAINS,
+  calculateEligibleMonsterDropChance,
+  rollEligibleMonsterDrop,
+} from "./drop_rate_contract.js?v=1.000";
+import {
+  applyPlayerBleed,
+  applyPlayerPoison,
+  clearPeriodicEffect,
+  getCanonicalSpellPacketElements,
+  getActivePeriodicEffectCount,
+  resolveOnHitArtifactEffects,
+  resolveTomeProcSustain,
+} from "./combat_effect_authority.js?v=1.001";
+import {
+  canPlayerReachCombatTarget,
+  getCombatTargetCenter,
+  isTomeCombatProfile,
+} from "./combat_reach.js?v=1.001";
+import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.001";
+import {
+  PRODUCTION_FIRE_TOME_BURN_PROFILE,
+  PRODUCTION_FROST_CONTROL_PROFILE,
+  isEligiblePlayerElementTarget,
+  resolveTomeElementSecondaryEffect,
+} from "./element_effect_authority.js?v=1.001";
 
   export const updateBossCombat = function (
     p,
     pStats,
     activeDungeonMap = getActiveDungeonMap(),
+    options = {},
   ) {
     // Process Boss Warden Combat
     if (window.mob && window.mob.hp) {
-      let bm = window.mob;
-      window.BossAIEngine.update(bm, activeDungeonMap);
+      const tomeProjectileImpact = options.tomeProjectileImpact === true;
+      let bm = options.impactTarget || window.mob;
+      const resolvingPendingDefeat = bm.hp.lte(0) && bm.periodicDeathPending;
+      if (!tomeProjectileImpact && !resolvingPendingDefeat) {
+        window.BossAIEngine.update(bm, activeDungeonMap);
+      }
 
       let dx = p.x - (bm.x + bm.w / 2);
       let dy = p.y - (bm.y + bm.h / 2);
       let dist = Math.hypot(dx, dy);
+      const canReachBoss = canPlayerReachCombatTarget({
+        player: p,
+        target: bm,
+        playerStats: pStats,
+        subweapon: window.equippedSlots?.subweapon,
+        map: activeDungeonMap,
+        collisionCheck: window.checkCollisionAt,
+      });
 
-      if (dist < 48 && p.attackTimer >= 20) {
-        p.attackTimer = 0;
+      if (
+        resolvingPendingDefeat ||
+        tomeProjectileImpact ||
+        (canReachBoss && isActiveAttackReady(p.attackTimer, pStats))
+      ) {
+        if (!resolvingPendingDefeat) {
+        const tomeEquipped = isTomeCombatProfile(
+          pStats,
+          window.equippedSlots?.subweapon,
+        );
+        if (tomeEquipped && !tomeProjectileImpact) {
+          p.attackTimer = 0;
+
+          if (typeof window.triggerCombatState === "function") {
+            window.triggerCombatState();
+          }
+
+          if (
+            window.SoundManager &&
+            typeof window.SoundManager.play === "function"
+          ) {
+            window.SoundManager.play("swing");
+          }
+
+          const bossCenter = getCombatTargetCenter(bm);
+          let dxToBoss = bossCenter.x - p.x;
+          if (dxToBoss < -0.1) p.facing = -1;
+          else if (dxToBoss > 0.1) p.facing = 1;
+
+          launchTomeAttackProjectile({
+            player: p,
+            playerStats: pStats,
+            target: bm,
+            map: activeDungeonMap,
+          });
+        } else {
+        if (!tomeProjectileImpact) p.attackTimer = 0;
 
         // Transition into active combat state
-        if (typeof window.triggerCombatState === "function") {
+        if (
+          !tomeProjectileImpact &&
+          typeof window.triggerCombatState === "function"
+        ) {
           window.triggerCombatState();
         }
 
         if (
+          !tomeProjectileImpact &&
           window.SoundManager &&
           typeof window.SoundManager.play === "function"
         ) {
@@ -42,8 +126,10 @@ import {
         let bossCenterX = bm.x + bm.w / 2;
         // Face the boss being attacked!
         let dxToBoss = bossCenterX - p.x;
-        if (dxToBoss < -0.1) p.facing = -1;
-        else if (dxToBoss > 0.1) p.facing = 1;
+        if (!tomeProjectileImpact) {
+          if (dxToBoss < -0.1) p.facing = -1;
+          else if (dxToBoss > 0.1) p.facing = 1;
+        }
 
         let isCrit = Math.random() < (pStats.critChance || 0.05);
         if (window.playerStats && window.playerStats.guaranteedCrit) {
@@ -62,22 +148,16 @@ import {
 
         // Synergy Sanguine DoT damage scaling (Boss)
         if (window.checkArtifactTrait("synergy_sanguine")) {
-          let slotLvl = window.getArtifactTemperLevel
-            ? window.getArtifactTemperLevel("synergy_sanguine")
-            : 0;
-          let slotMult = 1.0 + slotLvl * 0.01;
-          let uniqueDoTs = 0;
-          if ((bm.poisonStacks || 0) > 0) uniqueDoTs++;
-          if ((bm.bleedStacks || 0) > 0) uniqueDoTs++;
-          if ((bm.burnStacks || 0) > 0 || bm.isBurning) uniqueDoTs++;
-          let multiplier = 1.0 + 0.08 * uniqueDoTs * slotMult;
+          let uniqueDoTs = getActivePeriodicEffectCount(bm);
+          let perEffect = window.scaleArtifactMechanic
+            ? window.scaleArtifactMechanic("synergy_sanguine", 0.08)
+            : 0.08;
+          let multiplier = 1.0 + perEffect * uniqueDoTs;
           pAtk = pAtk.mul(multiplier);
         }
 
         // Track Critical Streaks for Wind-Razor Flurry (Boss)
-        let windFlurryLevel = window.SkillTreeManager
-          ? window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry")
-          : 0;
+        let windFlurryLevel = pStats.windRazorFlurryLevel || 0;
         if (windFlurryLevel > 0) {
           if (isCrit) {
             window.playerStats.critStreak =
@@ -210,12 +290,12 @@ import {
         bm.hp = bm.hp.sub(finalDmg);
         bm.hasTakenDamage = true;
         bm.flashTimer = 6;
+        awardMainAttackMasteryXp();
 
         // Roll bleed from dagger base bleedChance
         if (pStats.bleedChance && pStats.bleedChance > 0) {
           if (Math.random() < pStats.bleedChance) {
-            bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
-            bm.dotTickTimer = bm.dotTickTimer || 0;
+            applyPlayerBleed(bm, pStats, { mechanic: "dagger_main_bleed" });
           }
         }
 
@@ -286,6 +366,50 @@ import {
           );
         }
 
+        const onHitArtifacts = resolveOnHitArtifactEffects({
+          target: bm,
+          damage: pAtk,
+          player: p,
+        });
+        if (
+          isCrit &&
+          window.hasUniquePassive("dagger_viper") &&
+          Math.random() < 0.25
+        ) {
+          bm.perfectStrikeTimer = 120;
+          bm.perfectStrikeMax = 120;
+          if (typeof window.pushHeaderToast === "function") {
+            window.pushHeaderToast(
+              "[!] Viper's Reticle active! Tap target to execute!",
+              "#a855f7",
+            );
+          }
+        }
+        if (
+          onHitArtifacts.vampirismHeal > 0 &&
+          typeof window.spawnFloatingText === "function"
+        ) {
+          window.spawnFloatingText(
+            p.x,
+            p.y - 12,
+            `+${onHitArtifacts.vampirismHeal} HP`,
+            "#e74c3c",
+          );
+        }
+        if (
+          onHitArtifacts.echoProc &&
+          window.RenderEngine &&
+          window.RenderEngine.spawnDamageEffect
+        ) {
+          window.RenderEngine.spawnDamageEffect(
+            bm.x + bm.w / 2,
+            bm.y + bm.h / 2 - 8,
+            onHitArtifacts.echoDamage,
+            "echo",
+            false,
+          );
+        }
+
         if (
           window.SoundManager &&
           typeof window.SoundManager.playHitImpact === "function"
@@ -311,7 +435,7 @@ import {
         if (pStats.subType === "dagger") {
           let finalOffhandChance = pStats.offhandChance || 0.35;
           if (Math.random() < finalOffhandChance) {
-            let offhandDmgMult = pStats.offhandDmgMultiplier || 1.0;
+            let offhandDmgMult = pStats.offhandDamageMultiplier || 1.0;
             let offhandHit = BigNum.from(pStats.atk || 15).mul(
               (pStats.offhandDmg || 0.45) * offhandDmgMult,
             );
@@ -331,26 +455,26 @@ import {
             // Roll bleed from dagger base bleedChance
             if (pStats.bleedChance && pStats.bleedChance > 0) {
               if (Math.random() < pStats.bleedChance) {
-                bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
-                bm.dotTickTimer = bm.dotTickTimer || 0;
+                applyPlayerBleed(bm, pStats, { mechanic: "dagger_offhand_bleed" });
               }
             }
 
             // 1. Viper's Coating
             let vipersLvl = pStats.vipersCoatingLvl || 0;
             if (vipersLvl > 0) {
-              bm.poisonStacks = Math.min(5, (bm.poisonStacks || 0) + 1);
-              bm.poisonLevel = vipersLvl;
-              bm.dotTickTimer = bm.dotTickTimer || 0;
+              const poisonEffect = applyPlayerPoison(bm, pStats, {
+                rank: vipersLvl,
+                mechanic: "vipers_coating",
+              });
 
               let bleedChance = vipersLvl * 0.05;
               if (Math.random() < bleedChance) {
-                bm.bleedStacks = Math.min(5, (bm.bleedStacks || 0) + 1);
+                applyPlayerBleed(bm, pStats, { mechanic: "vipers_coating_bleed" });
               }
 
               // Shadow Assassin Keystone check at 5 stacks
-              if (pStats.hasKeystoneAssassin && bm.poisonStacks >= 5) {
-                bm.poisonStacks = 0; // consume
+              if (pStats.hasKeystoneAssassin && poisonEffect?.stacks >= 5) {
+                clearPeriodicEffect(bm, "poison");
                 let flurryStrike = BigNum.from(pStats.atk || 15);
                 for (let s = 0; s < 3; s++) {
                   bm.hp = bm.hp.sub(flurryStrike);
@@ -398,7 +522,9 @@ import {
           // 3. Shadow Flurry
           if (isCrit && pStats.hasShadowFlurry) {
             let flurryDmg = BigNum.from(pStats.atk || 15).mul(
-              (pStats.offhandDmg || 0.45) * 1.5,
+              (pStats.offhandDmg || 0.45) *
+                (pStats.offhandFlurryDamageMultiplier || 1) *
+                1.5,
             );
             bm.hp = bm.hp.sub(flurryDmg);
             if (window.combatVisuals) {
@@ -414,58 +540,6 @@ import {
           }
         }
 
-        if (
-          (bm.poisonStacks && bm.poisonStacks > 0) ||
-          (bm.bleedStacks && bm.bleedStacks > 0)
-        ) {
-          bm.dotTickTimer = (bm.dotTickTimer || 0) + 1;
-          if (bm.dotTickTimer >= 60) {
-            bm.dotTickTimer = 0;
-            let baseAtk = pStats.atk || p.atk || 15;
-
-            if (bm.poisonStacks && bm.poisonStacks > 0) {
-              let poisonPower = 0.1 * (bm.poisonLevel || 1);
-              if (pStats.poisonDamageMultiplier)
-                poisonPower *= pStats.poisonDamageMultiplier;
-              let pDmg = BigNum.from(baseAtk)
-                .mul(poisonPower)
-                .mul(bm.poisonStacks);
-              bm.hp = bm.hp.sub(pDmg);
-              bm.flashTimer = 4;
-              if (window.combatVisuals) {
-                window.combatVisuals.spawnDamageEffect(
-                  bm.x + bm.w / 2,
-                  bm.y + bm.h / 2,
-                  pDmg,
-                  "poison",
-                  false,
-                  bm,
-                );
-              }
-            }
-
-            if (bm.bleedStacks && bm.bleedStacks > 0) {
-              let bleedPower = 0.05;
-              if (pStats.bleedDamageMultiplier)
-                bleedPower *= pStats.bleedDamageMultiplier;
-              let bDmg = BigNum.from(baseAtk)
-                .mul(bleedPower)
-                .mul(bm.bleedStacks);
-              bm.hp = bm.hp.sub(bDmg);
-              bm.flashTimer = 4;
-              if (window.combatVisuals) {
-                window.combatVisuals.spawnDamageEffect(
-                  bm.x + bm.w / 2,
-                  bm.y + bm.h / 2,
-                  bDmg,
-                  "bleed",
-                  false,
-                  bm,
-                );
-              }
-            }
-          }
-        }
         if (bm.shredTimer && bm.shredTimer > 0) {
           bm.shredTimer--;
           if (bm.shredTimer === 0) bm.shredPercent = 0;
@@ -482,14 +556,23 @@ import {
           pStats.spellChance || (isTomeEquipped ? 0.35 : 0);
         let activeSpellType = pStats.spellType || "tri";
 
-        if (isTomeEquipped && Math.random() < activeSpellChance) {
-          // Gain +3 Tome Mastery XP on Spell Proc (Buffed) (Boss)
-          if (window.gainSubweaponXp) window.gainSubweaponXp("tome", 3);
+        if (
+          isTomeEquipped &&
+          isEligiblePlayerElementTarget(bm) &&
+          Math.random() < activeSpellChance
+        ) {
+          awardSpellProcMasteryXp(pStats);
 
           let spellDmg = BigNum.from(pStats.atk || 15).mul(
             pStats.spellPower || 1.5,
           );
-          bm.hp = bm.hp.sub(spellDmg);
+          const spellPacketElements = getCanonicalSpellPacketElements(
+            pStats.hasTriadConvergence,
+            activeSpellType,
+          );
+          if (spellPacketElements.length === 1) {
+            bm.hp = bm.hp.sub(spellDmg);
+          }
           bm.flashTimer = 8;
 
           let spellEffectType = activeSpellType;
@@ -506,12 +589,7 @@ import {
           }
 
           // Trigger actual visual spells (Boss)
-          if (
-            pStats.hasTriadConvergence ||
-            (window.SkillTreeManager &&
-              window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-              Math.random() < 0.15)
-          ) {
+          if (pStats.hasTriadConvergence) {
             if (window.castVisualSpell) {
               window.castVisualSpell("fire", p, bm, pStats, true);
               window.castVisualSpell("lightning", p, bm, pStats, true);
@@ -544,52 +622,28 @@ import {
             window.playerStats.lastSpellCastType = spellEffectType;
           }
 
-          // Arcane Syphon (Boss)
-          if (pStats.hasArcaneSyphon) {
-            let healAmt = Math.round(
-              p.maxHp * (pStats.arcaneSyphonLevel * 0.01),
-            );
-            p.hp = Math.min(p.maxHp, p.hp + healAmt);
-            window.playerStats.syphonIntStacks = Math.min(
-              3,
-              (window.playerStats.syphonIntStacks || 0) + 1,
-            );
-            window.playerStats.syphonIntTimer = 360;
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 12,
-                `+${healAmt} HP (SYPHON)`,
-                "#2ecc71",
-                true,
-              );
-            }
+          const sustainEvents = resolveTomeProcSustain(p, pStats);
+          if (typeof window.spawnFloatingText === "function") {
+            sustainEvents.forEach((event, index) => {
+              if (event.mechanic === "nexus") return;
+              const label = event.mechanic === "arcane_syphon" ? "SYPHON" : "MANA SHIELD";
+              const parts = [];
+              if (event.shieldGained > 0) parts.push(`+${event.shieldGained} SHIELD`);
+              if (event.hpHealed > 0) parts.push(`+${event.hpHealed} HP`);
+              if (parts.length > 0) {
+                window.spawnFloatingText(
+                  p.x,
+                  p.y - 12 - index * 5,
+                  `${parts.join(" / ")} (${label})`,
+                  "#00ffff",
+                  true,
+                );
+              }
+            });
           }
 
-          // Mana Shielding (Restored original Tome heal on spell proc - Boss)
-          if (pStats.manaShieldingHeal && pStats.manaShieldingHeal > 0) {
-            let healAmt = Math.round(p.maxHp * pStats.manaShieldingHeal);
-            p.hp = Math.min(p.maxHp, p.hp + healAmt);
-            if (typeof window.spawnFloatingText === "function") {
-              window.spawnFloatingText(
-                p.x,
-                p.y - 15,
-                `+${healAmt} HP (MANA SHIELD)`,
-                "#2ecc71",
-                true,
-              );
-            }
-          }
-
-          // Triad Convergence / Aetheric Overload Check (Boss)
-          let isOverload =
-            window.SkillTreeManager &&
-            window.SkillTreeManager.getSkillLevel("tome_keystone") > 0 &&
-            Math.random() < 0.15;
-
-          if (pStats.hasTriadConvergence || isOverload) {
-            const triElements = ["fire", "lightning", "frost"];
-            triElements.forEach((elem, eIdx) => {
+          if (pStats.hasTriadConvergence) {
+            spellPacketElements.forEach((elem, eIdx) => {
               bm.hp = bm.hp.sub(spellDmg);
               if (
                 window.RenderEngine &&
@@ -604,107 +658,24 @@ import {
                 );
               }
 
-              if (pStats.hasElementalOverload || elem === "lightning") {
-                if (elem === "fire" && pStats.hasElementalOverload) {
-                  let splashDmg = spellDmg.mul(
-                    pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                  );
-                  if (window.activeDungeonMobs) {
-                    window.activeDungeonMobs.forEach((otherMob) => {
-                      let dist = Math.hypot(
-                        bm.x - otherMob.x,
-                        bm.y - otherMob.y,
-                      );
-                      if (dist <= 100 && isPlayerTargetableMob(otherMob)) {
-                        otherMob.hp = otherMob.hp.sub(splashDmg);
-                        otherMob.flashTimer = 6;
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnDamageEffect(
-                            otherMob.x + otherMob.w / 2,
-                            otherMob.y + otherMob.h / 2,
-                            splashDmg,
-                            "fire",
-                            false,
-                          );
-                        }
-                      }
-                    });
-                  }
-                } else if (elem === "lightning") {
-                  let bouncesLeft = 1 + (pStats.overloadLevel || 0); // Chains exactly 1 time by default, scales higher with overload
-                  let hitIds = new Set();
-                  let currentTarget = bm;
-                  while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                    let nextTarget = window.activeDungeonMobs.find(
-                      (other) =>
-                        !hitIds.has(other.id) &&
-                        isPlayerTargetableMob(other) &&
-                        Math.hypot(
-                          currentTarget.x +
-                            (currentTarget.w || 24) / 2 -
-                            (other.x + (other.w || 24) / 2),
-                          currentTarget.y +
-                            (currentTarget.h || 24) / 2 -
-                            (other.y + (other.h || 24) / 2),
-                        ) <= 120,
-                    );
-                    if (nextTarget) {
-                      nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                      nextTarget.flashTimer = 6;
-                      hitIds.add(nextTarget.id);
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnDamageEffect(
-                          nextTarget.x + nextTarget.w / 2,
-                          nextTarget.y + nextTarget.h / 2,
-                          spellDmg,
-                          "lightning",
-                          false,
-                        );
-                      }
-                      // Spawn physical, crackling procedural cavern lightning arc lines
-                      window.cavernInteractives =
-                        window.cavernInteractives || [];
-                      window.cavernInteractives.push({
-                        id: window.idCounter++,
-                        type: "lightning_arc",
-                        x: currentTarget.x + (currentTarget.w || 24) / 2,
-                        y: currentTarget.y + (currentTarget.h || 24) / 2,
-                        x2: nextTarget.x + (nextTarget.w || 24) / 2,
-                        y2: nextTarget.y + (nextTarget.h || 24) / 2,
-                        life: 15,
-                      });
-                      currentTarget = nextTarget;
-                      bouncesLeft--;
-                    } else {
-                      break;
-                    }
-                  }
-                } else if (elem === "frost" && pStats.hasElementalOverload) {
-                  let slowPct = pStats.overloadLevel === 1 ? 0.2 : 0.4;
-                  if (window.activeDungeonMobs) {
-                    window.activeDungeonMobs.forEach((otherMob) => {
-                      if (
-                        isPlayerTargetableMob(otherMob) &&
-                        Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= 100
-                      ) {
-                        otherMob.speedMultiplier = Math.max(
-                          0.2,
-                          (otherMob.speedMultiplier || 1.0) - slowPct,
-                        );
-                        if (window.combatVisuals) {
-                          window.combatVisuals.spawnParticles(
-                            otherMob.x + otherMob.w / 2,
-                            otherMob.y + otherMob.h / 2,
-                            8,
-                            "void_orb",
-                            1,
-                          );
-                        }
-                      }
-                    });
-                  }
-                }
-              }
+              resolveTomeElementSecondaryEffect({
+                element: elem,
+                originTarget: bm,
+                spellDamage: spellDmg,
+                player: p,
+                playerStats: pStats,
+                targets: getActiveDungeonMobs(),
+                map: activeDungeonMap,
+                collisionCheck: window.checkCollisionAt,
+                fireProfile:
+                  pStats.fireTomeBurnProfile ??
+                  PRODUCTION_FIRE_TOME_BURN_PROFILE,
+                frostProfile:
+                  pStats.frostControlProfile ??
+                  PRODUCTION_FROST_CONTROL_PROFILE,
+              });
+              return;
+
             });
             if (
               window.SoundManager &&
@@ -713,103 +684,22 @@ import {
               window.SoundManager.play("spell_fire");
             }
           } else {
-            if (pStats.hasElementalOverload) {
-                            if (spellEffectType === "fire") {
-                              let splashDmg = spellDmg.mul(
-                                pStats.overloadLevel === 1 ? 0.35 : 0.7,
-                              );
-                              let splashRadius = 100 * (pStats.areaRadiusMult || 1.0);
-                              if (window.activeDungeonMobs) {
-                                window.activeDungeonMobs.forEach((otherMob) => {
-                                  let dist = Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y);
-                                  if (
-                                    dist <= splashRadius &&
-                                    isPlayerTargetableMob(otherMob)
-                                  ) {
-                      otherMob.hp = otherMob.hp.sub(splashDmg);
-                      otherMob.flashTimer = 6;
-                      if (window.combatVisuals) {
-                        window.combatVisuals.spawnDamageEffect(
-                          otherMob.x + otherMob.w / 2,
-                          otherMob.y + otherMob.h / 2,
-                          splashDmg,
-                          "fire",
-                          false,
-                        );
-                      }
-                    }
-                  });
-                }
-              } else if (spellEffectType === "lightning") {
-                              let bouncesLeft = pStats.overloadLevel;
-                              let hitIds = new Set();
-                              let currentTarget = bm;
-                              let chainSearchR = 120 * (pStats.areaRadiusMult || 1.0);
-                              while (bouncesLeft > 0 && window.activeDungeonMobs) {
-                                let nextTarget = window.activeDungeonMobs.find(
-                                  (other) =>
-                                    !hitIds.has(other.id) &&
-                                    isPlayerTargetableMob(other) &&
-                                    Math.hypot(
-                                      currentTarget.x - other.x,
-                                      currentTarget.y - other.y,
-                                    ) <= chainSearchR,
-                                );
-                  if (nextTarget) {
-                    nextTarget.hp = nextTarget.hp.sub(spellDmg);
-                    nextTarget.flashTimer = 6;
-                    hitIds.add(nextTarget.id);
-                    if (window.combatVisuals) {
-                      window.combatVisuals.spawnDamageEffect(
-                        nextTarget.x + nextTarget.w / 2,
-                        nextTarget.y + nextTarget.h / 2,
-                        spellDmg,
-                        "lightning",
-                        false,
-                      );
-                    }
-                    currentTarget = nextTarget;
-                    bouncesLeft--;
-                  } else {
-                    break;
-                  }
-                }
-              } else if (spellEffectType === "frost") {
-                              // Inherent 15% slow on Boss
-                              bm.speedMultiplier = Math.max(0.2, (bm.speedMultiplier || 1.0) - 0.15);
-
-                              let slowPct = pStats.hasElementalOverload ? (pStats.overloadLevel === 1 ? 0.25 : 0.4) : 0.15;
-                                                            let novaRadius = 100 * (pStats.areaRadiusMult || 1.0);
-
-                              if (window.activeDungeonMobs && (pStats.hasElementalOverload || (pStats.spellRadiusMult || 1.0) > 1.0)) {
-                                window.activeDungeonMobs.forEach((otherMob) => {
-                                  if (
-                                    isPlayerTargetableMob(otherMob) &&
-                                    Math.hypot(bm.x - otherMob.x, bm.y - otherMob.y) <= novaRadius
-                                  ) {
-                                    otherMob.speedMultiplier = Math.max(
-                                      0.2,
-                                      (otherMob.speedMultiplier || 1.0) - slowPct,
-                                    );
-                                    let frostSplashDmg = spellDmg.mul(0.25);
-                                    otherMob.hp = otherMob.hp.sub(frostSplashDmg);
-                                    otherMob.flashTimer = 5;
-
-                                    if (window.combatVisuals) {
-                                      window.combatVisuals.spawnDamageEffect(
-                                        otherMob.x + otherMob.w / 2,
-                                        otherMob.y + otherMob.h / 2,
-                                        frostSplashDmg,
-                                        "frost",
-                                        false,
-                                      );
-                                    }
-                                  }
-                                });
-                              }
-                            }
-            }
-
+            resolveTomeElementSecondaryEffect({
+              element: spellEffectType,
+              originTarget: bm,
+              spellDamage: spellDmg,
+              player: p,
+              playerStats: pStats,
+              targets: getActiveDungeonMobs(),
+              map: activeDungeonMap,
+              collisionCheck: window.checkCollisionAt,
+              fireProfile:
+                pStats.fireTomeBurnProfile ??
+                PRODUCTION_FIRE_TOME_BURN_PROFILE,
+              frostProfile:
+                pStats.frostControlProfile ??
+                PRODUCTION_FROST_CONTROL_PROFILE,
+            });
             if (
               window.SoundManager &&
               typeof window.SoundManager.play === "function"
@@ -828,7 +718,12 @@ import {
           }
         }
 
+        }
+        }
+
         if (bm.hp.lte(0)) {
+          bm.periodicDeathPending = false;
+          awardDefeatMasteryXp(bm);
           let depth = p ? p.depth || 1 : 1; // Defined depth globally for this block
           window.playerStats.totalLifetimeKills =
             (window.playerStats.totalLifetimeKills || 0) + 1;
@@ -989,7 +884,14 @@ import {
                 bossCenterY,
               );
 
-              if (depth >= 12 && Math.random() < 0.6) {
+              if (
+                depth >= 12 &&
+                rollEligibleMonsterDrop(
+                  0.6,
+                  pStats,
+                  MONSTER_DROP_DOMAINS.MATERIAL,
+                )
+              ) {
                 window.addDungeonRunScrap(
                   "Eridium Shard",
                   1,
@@ -1002,7 +904,11 @@ import {
             // Cavern Sigil Drop Logic for Bosses
             let isMini = bm.type === "dungeon_miniboss";
             let sigilBaseRate = isMini ? 0.2 : 0.5;
-            let sigilRollRate = sigilBaseRate * (pStats.drop || 1.0);
+            let sigilRollRate = calculateEligibleMonsterDropChance(
+              sigilBaseRate,
+              pStats,
+              MONSTER_DROP_DOMAINS.SIGIL,
+            );
             if (Math.random() < sigilRollRate) {
               let maxSigilStars = 0;
               let cleared = window.playerStats.maxFloorCleared || 0;
@@ -1032,8 +938,13 @@ import {
             }
 
             // Boss Card Drop Roll (10% base chance, multiplied by Drop Rate)
-            let dropMult = pStats.drop || 1.0;
-            if (Math.random() < 0.1 * dropMult) {
+            if (
+              rollEligibleMonsterDrop(
+                0.1,
+                pStats,
+                MONSTER_DROP_DOMAINS.CARD,
+              )
+            ) {
               let cardKey = bm.visualType || bm.type;
               if (window.MONSTER_CARDS_DATA[cardKey]) {
                 let cardItem = {
@@ -1080,11 +991,11 @@ import {
                               0,
                             );
                           } else {
-                            let rolledRarity = window.rollItemRarity(
-                              depth,
-                              pStats.qly || 1.0,
-                              false,
-                            );
+                            let rolledRarity = window.rollItemRarity({
+                              progressionStage: depth,
+                              resolvedQuality: pStats.qly || 1.0,
+                              source: window.EQUIPMENT_RARITY_SOURCES.STANDARD_BOSS,
+                            });
                             bossEquip = window.createItemObject(
                               chosenType,
                               rolledRarity,
@@ -1135,18 +1046,32 @@ import {
                     window.recalculateItemStats(guaranteedArtifact);
                   }
 
+                  let artifactDelivery = "Vaulted";
                   if (window.currentGameState === window.GAME_STATES.HUB) {
                     if (!window.inventory.ARTIFACT)
                       window.inventory.ARTIFACT = [];
                     window.inventory.ARTIFACT.push(guaranteedArtifact);
                   } else {
-                    if (!window.player.bag) window.player.bag = [];
-                    window.player.bag.push(guaranteedArtifact);
+                    let wasCarried =
+                      typeof window.addToRunSatchel === "function" &&
+                      window.addToRunSatchel(guaranteedArtifact, {
+                        notify: false,
+                      });
+                    if (wasCarried) {
+                      artifactDelivery = "Added to Carried Satchel";
+                    } else {
+                      artifactDelivery = "Satchel full — left on the ground";
+                      window.spawnGroundLoot(
+                        guaranteedArtifact,
+                        bossCenterX,
+                        bossCenterY,
+                      );
+                    }
                   }
 
                   if (typeof window.pushHeaderToast === "function") {
                     window.pushHeaderToast(
-                      `✦ FIRST CLEAR BONUS: Gained Clamped ${guaranteedArtifact.name}!`,
+                      `✦ FIRST CLEAR BONUS: ${guaranteedArtifact.name} — ${artifactDelivery}.`,
                       "#1abc9c",
                     );
                   }
@@ -1191,7 +1116,11 @@ import {
             let tileX = bm.bossTileX || Math.floor(bm.x / 32);
             let tileY = bm.bossTileY || Math.floor(bm.y / 32);
             setPrimaryMob(null);
-            window.onBossDefeated(tileX, tileY);
+            if (isMarcus) {
+              window.completeMarcusRobberyDefeat();
+            } else {
+              window.onBossDefeated(tileX, tileY);
+            }
           }
         }
       }

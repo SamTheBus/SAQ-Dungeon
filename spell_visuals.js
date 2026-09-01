@@ -87,32 +87,6 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
   };
 
   const spawnResonantAegisRipple = function (x, y) {
-    if (
-      window.equippedSlots &&
-      window.equippedSlots.subweapon &&
-      window.gainSubweaponXp &&
-      window.SkillTreeManager
-    ) {
-      let activeSub = window.equippedSlots.subweapon;
-      let subType = activeSub.subType || activeSub.type;
-      if (subType === "shield") {
-        let rA =
-          window.SkillTreeManager.getSkillLevel("shield_impact_tremor") || 0;
-        let baseXp = 10 + rA * 5;
-        let depth = 1;
-        if (
-          window.playerStats &&
-          window.playerStats.isDungeonMode &&
-          window.player
-        ) {
-          depth = window.player.depth || 1;
-        } else if (window.playerStats) {
-          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-        }
-        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
-        window.gainSubweaponXp("shield", Math.round(baseXp * triggerMult));
-      }
-    }
     if (!window.activeSpellAnims) return;
     window.activeSpellAnims.push({
       type: "resonant_aegis",
@@ -309,33 +283,6 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
   };
 
   const spawnWindRazor = function (x, y, angle, damage) {
-    if (
-      window.equippedSlots &&
-      window.equippedSlots.subweapon &&
-      window.gainSubweaponXp &&
-      window.SkillTreeManager
-    ) {
-      let activeSub = window.equippedSlots.subweapon;
-      let subType = activeSub.subType || activeSub.type;
-      if (subType === "dagger") {
-        let wR =
-          window.SkillTreeManager.getSkillLevel("dagger_wind_razor_flurry") ||
-          0;
-        let baseXp = 12 + wR * 4;
-        let depth = 1;
-        if (
-          window.playerStats &&
-          window.playerStats.isDungeonMode &&
-          window.player
-        ) {
-          depth = window.player.depth || 1;
-        } else if (window.playerStats) {
-          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-        }
-        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
-        window.gainSubweaponXp("dagger", Math.round(baseXp * triggerMult));
-      }
-    }
     if (!window.activeSpellAnims) return;
     window.activeSpellAnims.push({
       type: "wind_razor",
@@ -353,49 +300,8 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
   };
 
   const castVisualSpell = function (spellType, p, m, pStats, isOverload) {
-    // Award active Spell Proc and Triad Convergence multi-cast Mastery XP
-    if (
-      window.equippedSlots &&
-      window.equippedSlots.subweapon &&
-      window.gainSubweaponXp &&
-      window.SkillTreeManager
-    ) {
-      let activeSub = window.equippedSlots.subweapon;
-      let subType = activeSub.subType || activeSub.type;
-      if (subType === "tome") {
-        let triad =
-          window.SkillTreeManager.getSkillLevel("tome_keystone_triad") || 0;
-        let depth = 1;
-        if (
-          window.playerStats &&
-          window.playerStats.isDungeonMode &&
-          window.player
-        ) {
-          depth = window.player.depth || 1;
-        } else if (window.playerStats) {
-          depth = Math.max(1, Math.floor((window.playerStats.stage || 1) / 5));
-        }
-        let triggerMult = Math.max(1.0, Math.pow(depth, 0.35));
-
-        if (triad > 0) {
-          // Triad Convergence triggers three visual spells simultaneously; award 5 base XP per spell node cast (+15 XP total)
-          window.gainSubweaponXp("tome", Math.round(5 * triggerMult));
-        } else {
-          // Standard single elemental spell proc cast
-          let cat =
-            window.SkillTreeManager.getSkillLevel("tome_empowered_catalysts") ||
-            0;
-          let baseXp = 2 + cat * 1;
-          window.gainSubweaponXp("tome", Math.round(baseXp * triggerMult));
-        }
-        // Arcane Syphon: +15 Base XP when an active Syphon stack is gained on spell proc
-        let syphonLvl =
-          window.SkillTreeManager.getSkillLevel("tome_arcane_syphon") || 0;
-        if (syphonLvl > 0) {
-          window.gainSubweaponXp("tome", Math.round(15 * triggerMult));
-          window.spawnArcaneSyphonVisual(p, m);
-        }
-      }
+    if (pStats.hasArcaneSyphon && window.spawnArcaneSyphonVisual) {
+      window.spawnArcaneSyphonVisual(p, m);
     }
 
     let mainTargetX = m.x + (m.w || 24) / 2;

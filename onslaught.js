@@ -1,9 +1,10 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
 import {
   addActiveDungeonMob,
   resetEncounterState,
   setPrimaryMob,
-} from "./encounter_state.js?v=1.004";
+} from "./encounter_state.js?v=1.007";
+import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.000";
 
   export function triggerOnslaughtShatterAnimation() {
     let map = getActiveDungeonMap();
@@ -413,6 +414,15 @@ import {
           wanderVy: 0,
           isWandering: false,
           hopTimer: window.randInt(0, 29),
+        });
+        triggerVoidTouchedRareFrenzy({
+          isRare,
+          resolvedStats: pStats,
+          playerStats: window.playerStats,
+          chronoExtensionFrames:
+            typeof window.scaleArtifactMechanic === "function"
+              ? window.scaleArtifactMechanic("extend_buffs", 180)
+              : 0,
         });
       }
     }

@@ -1,4 +1,5 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
 
   export function updateFlaskCooldownHUDOnly() {
     let stats = window.playerStats || {};
@@ -139,7 +140,7 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
         }
 
         let rec = window.playerStats && window.playerStats.recoveryLoot;
-        if (rec && rec.floor === p.depth && rec.items && rec.items.length > 0) {
+        if (rec && rec.floor === p.depth && hasRecoveryAssets(rec)) {
           text += " [RECOVERY ACTIVE]";
         }
         depthLabel.innerText = text;
@@ -171,16 +172,22 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
         : p.bag
           ? p.bag.length
           : 0;
-      let label = isHub ? "VAULT" : "BAG";
-      bagBtn.innerHTML = `${label} (<span id="hud-bag-count">${count}</span>)`;
+      let label = isHub ? "VAULT" : "SATCHEL";
+      let countText = isHub
+        ? `${count}`
+        : `${count}/${window.getMaxBagSlots ? window.getMaxBagSlots() : 20}`;
+      bagBtn.innerHTML = `${label} (<span id="hud-bag-count">${countText}</span>)`;
     } else if (bagCount) {
-      bagCount.innerText = isHub
+      let count = isHub
         ? p.stash
           ? p.stash.length
           : 0
         : p.bag
           ? p.bag.length
           : 0;
+      bagCount.innerText = isHub
+        ? count
+        : `${count}/${window.getMaxBagSlots ? window.getMaxBagSlots() : 20}`;
     }
 
     if (ctrlSettingBtn) {
@@ -508,10 +515,10 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
           ? `${Math.ceil(stats.dropPotionTimer / 60)}s`
           : `${stats.dropPotionRuns}R`;
       badges.push({
-        label: "2x DROP",
+        label: "DROP +100%",
         val: valStr,
         col: "#34d399",
-        title: `Double Drop Elixir (+100% Drop Rate, ${stats.dropPotionRuns} run(s) left)`,
+        title: `Double Drop Elixir (+100% eligible random monster equipment/material/sigil/card chance multiplier; each chance caps at 100%; guaranteed/direct rewards unchanged; ${stats.dropPotionRuns} run(s) left)`,
       });
     }
 
@@ -524,7 +531,7 @@ import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
         label: "QLY",
         val: valStr,
         col: "#f472b6",
-        title: `Drop Quality Elixir (+50% Drop Quality, ${stats.qlyPotionRuns} run(s) left)`,
+        title: `Drop Quality Elixir (+50% Drop Quality, ${stats.qlyPotionRuns} run(s) left). Improves higher-rarity odds among currently unlocked tiers; does not unlock tiers or create a minimum rarity.`,
       });
     }
 

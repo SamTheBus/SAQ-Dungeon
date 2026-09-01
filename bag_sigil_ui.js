@@ -2,7 +2,7 @@
     getActiveBagTab,
     getActiveProfileMobileTab,
   } from "./ui_state.js?v=1.004";
-  import { getActiveDungeonMap } from "./dungeon_map.js?v=1.004";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
 
   // --- LOOT SATCHEL & VAULT TOGGLE ---
   export function renderBagModalContent() {
@@ -19,7 +19,8 @@
         : 20;
 
     if (headerEl) {
-      headerEl.innerHTML = `CARRIED EXPEDITION SATCHEL <span style="font-size:10px; color:var(--text-gold-amber); font-family:monospace; margin-left:6px;">(${displayList.length} / ${maxBag} Gear)</span>`;
+      let countColor = displayList.length > maxBag ? "#ef4444" : "var(--text-gold-amber)";
+      headerEl.innerHTML = `CARRIED EXPEDITION SATCHEL <span style="font-size:10px; color:${countColor}; font-family:monospace; margin-left:6px;">(${displayList.length} / ${maxBag} Items)</span>`;
     }
 
     if (tab === "EQUIP") {

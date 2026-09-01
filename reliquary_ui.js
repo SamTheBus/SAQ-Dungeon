@@ -5,6 +5,39 @@
     setSelectedAspectTrait,
   } from "./ui_state.js?v=1.004";
 
+  function isActiveDungeonRun() {
+    return window.currentGameState !== window.GAME_STATES.HUB;
+  }
+
+  function canCommitReliquarySatchelChange(
+    nextActiveRelics,
+    nextEquippedSlots,
+    nextBagCount,
+  ) {
+    if (!isActiveDungeonRun()) return true;
+    let bag = (window.player && window.player.bag) || [];
+    let nextCapacity = window.getMaxBagSlots({
+      activeRelics: nextActiveRelics,
+      equippedSlots: nextEquippedSlots,
+    });
+    let transition = window.evaluateRunSatchelTransition(nextBagCount, {
+      bag,
+      nextCapacity,
+    });
+    if (transition.allowed) return true;
+
+    let capacityShrinks = nextCapacity < transition.currentCapacity;
+    return window.notifyRunSatchelBlocked({
+      count: bag.length,
+      capacity: nextCapacity,
+      overflow: transition.overflow,
+      markFullEncounter: !capacityShrinks,
+      message: capacityShrinks
+        ? `Cannot remove Dimensional Pouch: remove ${transition.overflow} carried item${transition.overflow === 1 ? "" : "s"} first.`
+        : `Cannot change Reliquary loadout: this requires ${transition.overflow} more satchel slot${transition.overflow === 1 ? "" : "s"}.`,
+    });
+  }
+
   export function switchReliquarySubTab(tabKey) {
     setReliquarySubTab(tabKey);
     window.renderReliquaryTab();
@@ -16,17 +49,46 @@
 
     let slotKey = ["art1", "art2", "art3"][slotIdx];
 
-    // Clear Codex Aspect in this slot
     let stats = window.playerStats;
     stats.activeRelics = stats.activeRelics || [null, null, null];
-    stats.activeRelics[slotIdx] = null;
-
-    // Equip physical artifact
-    if (window.equippedSlots[slotKey]) {
-      window.unequipItem(slotKey);
+    let nextActiveRelics = [...stats.activeRelics];
+    nextActiveRelics[slotIdx] = null;
+    let nextEquippedSlots = { ...window.equippedSlots, [slotKey]: item };
+    let displacedItem = window.equippedSlots[slotKey];
+    let currentBagCount = (window.player && window.player.bag
+      ? window.player.bag.length
+      : 0);
+    let nextBagCount =
+      currentBagCount +
+      (isActiveDungeonRun() && displacedItem && !displacedItem.isStarterItem
+        ? 1
+        : 0);
+    if (
+      !canCommitReliquarySatchelChange(
+        nextActiveRelics,
+        nextEquippedSlots,
+        nextBagCount,
+      )
+    ) {
+      return false;
     }
 
-    // Manual equip to bypass standard bag logic
+    stats.activeRelics = nextActiveRelics;
+
+    if (displacedItem) {
+      delete displacedItem.isEquippedSlot;
+      if (isActiveDungeonRun()) {
+        if (!displacedItem.isStarterItem) {
+          window.player.bag = window.player.bag || [];
+          window.equippedSlots[slotKey] = item;
+          window.addToRunSatchel(displacedItem, { notify: false });
+        }
+      } else {
+        window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+        window.inventory.ARTIFACT.push(displacedItem);
+      }
+    }
+
     window.inventory.ARTIFACT.splice(
       window.inventory.ARTIFACT.indexOf(item),
       1,
@@ -39,6 +101,7 @@
     window.updateUI();
     window.renderReliquaryTab();
     window.saveGame();
+    return true;
   }
 
   export function renderReliquaryTab() {
@@ -64,12 +127,15 @@
 
       if (item) {
         // Physical Item Power
-        if (item.atk)
-          activeStatsTexts.push(`ATK +${window.formatNumber(item.atk)}`);
-        if (item.def)
-          activeStatsTexts.push(`DEF +${window.formatNumber(item.def)}`);
-        if (item.maxHp)
-          activeStatsTexts.push(`HP +${window.formatNumber(item.maxHp)}`);
+        const resolvedPhysical = window.resolvePhysicalArtifactStats
+          ? window.resolvePhysicalArtifactStats(item, slotMult)
+          : item;
+        if (resolvedPhysical.atk)
+          activeStatsTexts.push(`ATK +${window.formatNumber(resolvedPhysical.atk)}`);
+        if (resolvedPhysical.def)
+          activeStatsTexts.push(`DEF +${window.formatNumber(resolvedPhysical.def)}`);
+        if (resolvedPhysical.maxHp)
+          activeStatsTexts.push(`HP +${window.formatNumber(resolvedPhysical.maxHp)}`);
       } else if (trait) {
         // Codex Aspect Power
         let power = codex[trait] || 0.0;
@@ -209,12 +275,25 @@
       if (selectedTrait) {
         let art = pool.find((a) => a.trait === selectedTrait);
         if (art) {
+          const selectedPower = codex[selectedTrait] || 0;
+          const selectedIndex = activeRelics.indexOf(selectedTrait);
+          const resolvedDescription = window.getDynamicArtifactDescription
+            ? window.getDynamicArtifactDescription({
+                type: "artifact",
+                trait: selectedTrait,
+                relicPower: selectedPower,
+                isEquippedSlot:
+                  selectedIndex >= 0 ? slotNames[selectedIndex] : null,
+                breakdown: art.breakdown,
+                desc: art.desc,
+              })
+            : art.breakdown || art.desc;
           inspectorHtml = `<div class="relic-inspector-drawer" style="padding:10px; margin-bottom:10px; background:rgba(0,0,0,0.5); border:1px solid #1abc9c; border-radius:6px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <strong style="color:#1abc9c; font-size:12px;">${art.name}</strong>
               <button class="close-btn" onclick="window.showRelicDetails(null)">CLOSE</button>
             </div>
-            <p style="font-size:10px; color:#cbd5e1; margin:6px 0;">${art.breakdown || art.desc}</p>
+            <p style="font-size:10px; color:#cbd5e1; margin:6px 0;">${resolvedDescription}</p>
           </div>`;
         }
       }
@@ -301,38 +380,82 @@
     let stats = window.playerStats;
     stats.activeRelics = stats.activeRelics || [null, null, null];
 
-    // Unequip physical artifact in this slot
     let slotKey = ["art1", "art2", "art3"][slotIndex];
-    if (window.equippedSlots[slotKey]) {
-      window.unequipItem(slotKey);
-    }
-
-    // Ensure this trait isn't already assigned in another slot
-    let existingIdx = stats.activeRelics.indexOf(trait);
+    let nextActiveRelics = [...stats.activeRelics];
+    let existingIdx = nextActiveRelics.indexOf(trait);
     if (existingIdx !== -1) {
-      stats.activeRelics[existingIdx] = null;
+      nextActiveRelics[existingIdx] = null;
+    }
+    nextActiveRelics[slotIndex] = trait;
+
+    let displacedItem = window.equippedSlots[slotKey];
+    let nextEquippedSlots = { ...window.equippedSlots, [slotKey]: null };
+    let currentBagCount = (window.player && window.player.bag
+      ? window.player.bag.length
+      : 0);
+    let nextBagCount =
+      currentBagCount +
+      (isActiveDungeonRun() && displacedItem && !displacedItem.isStarterItem
+        ? 1
+        : 0);
+    if (
+      !canCommitReliquarySatchelChange(
+        nextActiveRelics,
+        nextEquippedSlots,
+        nextBagCount,
+      )
+    ) {
+      return false;
     }
 
-    // Assign to the target slot
-    stats.activeRelics[slotIndex] = trait;
+    stats.activeRelics = nextActiveRelics;
+    if (displacedItem) {
+      delete displacedItem.isEquippedSlot;
+      window.equippedSlots[slotKey] = null;
+      if (isActiveDungeonRun()) {
+        if (!displacedItem.isStarterItem) {
+          window.player.bag = window.player.bag || [];
+          window.addToRunSatchel(displacedItem, { notify: false });
+        }
+      } else {
+        window.inventory.ARTIFACT = window.inventory.ARTIFACT || [];
+        window.inventory.ARTIFACT.push(displacedItem);
+      }
+    }
 
     if (window.SoundManager) window.SoundManager.play("swing");
     window.invalidatePlayerStats();
     window.updateUI();
     window.renderReliquaryTab();
     window.saveGame();
+    return true;
   }
 
   export function unassignRelic(slotIndex) {
     let stats = window.playerStats;
     stats.activeRelics = stats.activeRelics || [];
-    stats.activeRelics[slotIndex] = null;
+    let nextActiveRelics = [...stats.activeRelics];
+    nextActiveRelics[slotIndex] = null;
+    let bagCount = (window.player && window.player.bag
+      ? window.player.bag.length
+      : 0);
+    if (
+      !canCommitReliquarySatchelChange(
+        nextActiveRelics,
+        window.equippedSlots,
+        bagCount,
+      )
+    ) {
+      return false;
+    }
+    stats.activeRelics = nextActiveRelics;
 
     if (window.SoundManager) window.SoundManager.play("death");
     window.invalidatePlayerStats();
     window.updateUI();
     window.renderReliquaryTab();
     window.saveGame();
+    return true;
   }
 
   // Protected accessor enforcing the in-tab Aspect Inspector Drawer

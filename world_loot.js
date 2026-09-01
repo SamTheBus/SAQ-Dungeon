@@ -1,3 +1,5 @@
+import { applyArcaneShieldRecharge } from "./combat_effect_authority.js?v=1.001";
+
   export function spawnGroundLoot(item, x, y) {
     if (!item) return;
     if (!window.groundLoot) window.groundLoot = [];
@@ -102,8 +104,21 @@
                 ? window.tryAutoEquip(gl.item)
                 : false;
               if (!isEquipped) {
-                if (!p.bag) p.bag = [];
-                p.bag.push(gl.item);
+                let now = Date.now();
+                let shouldNotify =
+                  !gl.satchelFullNoticeAt || now - gl.satchelFullNoticeAt >= 2500;
+                let wasAdded =
+                  typeof window.addToRunSatchel === "function"
+                    ? window.addToRunSatchel(gl.item, {
+                        notify: shouldNotify,
+                        message: `Carried Satchel Full (${(p.bag || []).length}/${window.getMaxBagSlots()} Items). ${gl.item.name} remains on the ground.`,
+                      })
+                    : false;
+                if (!wasAdded) {
+                  if (shouldNotify) gl.satchelFullNoticeAt = now;
+                  gl.magnetSpeed = 0;
+                  continue;
+                }
               }
 
               if (
@@ -127,28 +142,13 @@
     }
   }
 
-  export function rechargePlayerArcaneShield(amount) {
+  export function rechargePlayerArcaneShield(amount, overflowToHpRate = 0.5) {
       let p = window.player;
       if (!p || p.hp <= 0) return;
 
       let pStats = typeof window.resolvePlayerStats === "function" ? window.resolvePlayerStats() : {};
       let maxShield = pStats.arcaneShieldMax || p.arcaneShieldMax || 0;
-      if (maxShield <= 0) {
-        p.hp = Math.min(p.maxHp, p.hp + Math.round(amount * 0.5));
-        return;
-      }
-
-      p.arcaneShield = p.arcaneShield || 0;
-      let needed = maxShield - p.arcaneShield;
-
-      if (amount <= needed) {
-        p.arcaneShield += amount;
-      } else {
-        p.arcaneShield = maxShield;
-        let overflow = amount - needed;
-        let hpHeal = Math.round(overflow * 0.5);
-        p.hp = Math.min(p.maxHp, p.hp + hpHeal);
-      }
+      return applyArcaneShieldRecharge(p, maxShield, amount, overflowToHpRate);
     }
 
     export function addGoldFloatingText(p, amount) {

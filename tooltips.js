@@ -485,18 +485,18 @@
         : name.includes("Greater")
           ? "2"
           : "1";
-      effectText = `Doubles item drop rate by <strong style="color: #22c55e;">+100%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      effectText = `Adds <strong style="color: #22c55e;">+100%</strong> to eligible random monster equipment, Monster Soul/material, Cavern Sigil, and Monster Card chance multipliers for the next <strong style="color: #f1c40f;">${runs}</strong> run(s). Each chance caps at 100%; guaranteed and direct rewards are unchanged.`;
     } else if (name.includes("Drop Quality Elixir")) {
       let runs = name.includes("Supernal")
         ? "3"
         : name.includes("Greater")
           ? "2"
           : "1";
-      effectText = `Increases item drop quality floor by <strong style="color: #3b82f6;">+50%</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s).`;
+      effectText = `Adds <strong style="color: #3b82f6;">+50% Drop Quality</strong> for the next <strong style="color: #f1c40f;">${runs}</strong> run(s), improving higher-rarity odds among equipment tiers already unlocked. It does not unlock rarity tiers or create a minimum rarity.`;
     } else if (name.includes("SP Reset Scroll")) {
       effectText = `Instantly resets and <strong style="color: #9b59b6;">refunds all uncommitted and committed Attribute SP allocations</strong> back to your character pool.`;
     } else if (name.includes("Cavern Sigil Sack")) {
-      effectText = `Guarantees <strong style="color: #c084fc;">1x random Cavern Sigil</strong> scaled up to your peak stage level, with affix rolls affected by base drop quality.`;
+      effectText = `Guarantees <strong style="color: #c084fc;">1x random Cavern Sigil</strong> scaled to peak progression, with its star roll affected by your resolved Drop Quality without unlocking future tiers.`;
     } else if (name === "Monster Card Sack") {
       effectText = `Guarantees <strong style="color: #ffd700;">5x random Monster Cards</strong> added to your Bestiary Album. Complete sets to earn massive passive milestone bonuses.`;
     } else if (name === "Astral Singularity Cache") {
@@ -504,9 +504,9 @@
     } else if (name === "Astral Artifact Cache") {
       effectText = `Guarantees <strong style="color: #1abc9c;">1x Rare Artifact</strong> and unseals <strong style="color: #2ecc71;">2 to 4 Catalyst Cores</strong> directly into your stash.`;
     } else if (name === "Daily Reward Sack") {
-      effectText = `Standardized Daily Reward. Consume to initiate unboxing. Guarantees <strong style="color: #ffd700;">1 QP</strong>, <strong style="color: #38bdf8;">1x Equipment</strong> scaled to Lifetime Peak Stage, and rolls extra loot with consecutive item chances!`;
+      effectText = `Standardized Daily Reward. Guarantees <strong style="color: #ffd700;">1 QP</strong> and <strong style="color: #38bdf8;">1x Equipment</strong> scaled to Lifetime Peak Stage. Equipment rarity uses your resolved Drop Quality and currently unlocked tiers; extra loot rolls remain separate.`;
     } else if (name.includes("Sack") || name.includes("Crate")) {
-      effectText = `Guarantees <strong style="color: #f1c40f;">1x Equipment item</strong> scaled to peak stage level plus <strong style="color: #34d399;">1 to 2 basic elixirs</strong>.`;
+      effectText = `Guarantees <strong style="color: #f1c40f;">1x Equipment item</strong> scaled to peak stage plus <strong style="color: #34d399;">1 to 2 basic elixirs</strong>. Equipment rarity uses resolved Drop Quality and only tiers unlocked at peak progression.`;
     } else {
       effectText = data.desc || "Consumable Item";
     }

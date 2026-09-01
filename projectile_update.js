@@ -2,6 +2,12 @@ import {
   isFriendlyCombatMob,
   isPlayerTargetableMob,
 } from "./combat_factions.js?v=1.001";
+import { resolveTomeProjectileImpact } from "./tome_projectile.js?v=1.001";
+import {
+  renderRandom,
+  renderRandFloat,
+  renderRandInt,
+} from "./render_rng.js?v=1.000";
 
 const projectileOverlaps = (proj, target, defaultRadius) => {
   const targetX = target.x + (target.w || 0) / 2;
@@ -48,6 +54,26 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
     for (let i = window.projectiles.length - 1; i >= 0; i--) {
       let proj = window.projectiles[i];
       proj.life--;
+      let stepVx = proj.vx;
+      let stepVy = proj.vy;
+      let reachedTravelLimit = false;
+
+      if (Number.isFinite(proj.maxTravelDistance)) {
+        const traveled = Math.max(0, Number(proj.distanceTraveled || 0));
+        const remaining = Math.max(0, proj.maxTravelDistance - traveled);
+        const plannedStep = Math.hypot(stepVx, stepVy);
+        if (remaining <= 0 || plannedStep <= 0) {
+          spawnProjectileImpact(proj);
+          window.projectiles.splice(i, 1);
+          continue;
+        }
+        if (plannedStep >= remaining) {
+          const scale = remaining / plannedStep;
+          stepVx *= scale;
+          stepVy *= scale;
+          reachedTravelLimit = true;
+        }
+      }
 
       // Custom Boomerang Shield Kinematics
       if (proj.type === "boomerang" && window.mob) {
@@ -119,14 +145,29 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
         }
       }
 
-      proj.x += proj.vx;
-      proj.y += proj.vy;
+      proj.x += stepVx;
+      proj.y += stepVy;
+      if (Number.isFinite(proj.maxTravelDistance)) {
+        proj.distanceTraveled =
+          Math.max(0, Number(proj.distanceTraveled || 0)) +
+          Math.hypot(stepVx, stepVy);
+      }
 
       // Spawning Style-Mapped Projectile Trails (Subphase C.3)
-      if (window.particles && window.ParticlePool && Math.random() < 0.45) {
+      const isTomeBolt = proj.type === "tome_bolt";
+      const presentationRandom = isTomeBolt ? renderRandom : Math.random;
+      const presentationRandFloat = isTomeBolt
+        ? renderRandFloat
+        : window.randFloat;
+      const presentationRandInt = isTomeBolt ? renderRandInt : window.randInt;
+      if (
+        window.particles &&
+        window.ParticlePool &&
+        presentationRandom() < 0.45
+      ) {
         let color = "#ffffff";
         let style = "circle";
-        let pSize = window.randFloat(1.2, 2.4);
+        let pSize = presentationRandFloat(1.2, 2.4);
         let gravity = 0;
         let drag = 1.0;
         let spinSpeed = 0;
@@ -202,14 +243,18 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
           color = "#a3fd83";
           style = "streak";
           drag = 0.95;
+        } else if (proj.type === "tome_bolt") {
+          color = presentationRandom() < 0.5 ? "#67e8f9" : "#c4b5fd";
+          style = "streak";
+          scaleDecay = 0.05;
         }
 
-        let pLife = window.randInt(11, 20);
+        let pLife = presentationRandInt(11, 20);
         let pt = window.ParticlePool.get(
           proj.x - proj.vx * 0.35,
           proj.y - proj.vy * 0.35,
-          -proj.vx * 0.15 + window.randFloat(-0.3, 0.3),
-          -proj.vy * 0.15 + window.randFloat(-0.3, 0.3),
+          -proj.vx * 0.15 + presentationRandFloat(-0.3, 0.3),
+          -proj.vy * 0.15 + presentationRandFloat(-0.3, 0.3),
           pSize,
           color,
           0.72,
@@ -234,10 +279,14 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
       if (proj.owner === "player") {
         const hitMob = findPlayerProjectileTarget(proj);
         if (hitMob) {
-          hitMob.hp = hitMob.hp.sub(proj.damage);
-          hitMob.flashTimer = 6;
-          hitMob.hasTakenDamage = true;
-          hitMob.lastHitTime = window.logicClock || 0;
+          if (proj.type === "tome_bolt") {
+            resolveTomeProjectileImpact(proj, hitMob);
+          } else {
+            hitMob.hp = hitMob.hp.sub(proj.damage);
+            hitMob.flashTimer = 6;
+            hitMob.hasTakenDamage = true;
+            hitMob.lastHitTime = window.logicClock || 0;
+          }
           spawnProjectileImpact(proj, 8);
           window.projectiles.splice(i, 1);
           continue;
@@ -255,9 +304,15 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
         }
       }
 
+      if (reachedTravelLimit) {
+        spawnProjectileImpact(proj);
+        window.projectiles.splice(i, 1);
+        continue;
+      }
+
       let projDist = Math.hypot(p.x - proj.x, p.y - proj.y);
       if (proj.owner !== "player" && projDist < proj.r + (p.radius || 9)) {
-        window.damagePlayer(proj.damage, null);
+        window.damagePlayer(proj.damage, proj.sourceMob || null);
         spawnProjectileImpact(proj, 8);
         window.projectiles.splice(i, 1);
         if (p.hp <= 0) window.startDeathSequence();

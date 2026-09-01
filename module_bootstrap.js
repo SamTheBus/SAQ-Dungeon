@@ -1,6 +1,6 @@
 import "./entity_id.js?v=1.002";
 import "./runtime_state.js?v=1.002";
-import "./encounter_state.js?v=1.004";
+import "./encounter_state.js?v=1.007";
 import { getPlayer } from "./player_runtime.js?v=1.001";
 
 import {
@@ -25,11 +25,11 @@ import {
   DUNGEON_CONFIG,
   GAME_STATES,
   BOSS_BAR_THEMES,
-} from "./constants.js?v=1.043";
-import * as dataApi from "./data.js?v=1.071";
+} from "./constants.js?v=1.048";
+import * as dataApi from "./data.js?v=1.081";
 import * as assetApi from "./assets.js?v=1.043";
 import * as audioApi from "./audio.js?v=1.045";
-import * as itemsApi from "./items.js?v=1.046";
+import * as itemsApi from "./items.js?v=1.054";
 import { openCavernSigilSackAnimation } from "./sigil_sack_animation.js?v=1.002";
 import {
   updateDpsOverlayStyle,
@@ -46,7 +46,7 @@ import {
 } from "./system_controls.js?v=1.002";
 import { drawSingleHero } from "./hero_renderer.js?v=1.002";
 import { calculateActiveDps } from "./active_dps.js?v=1.002";
-import { drawSingleMob } from "./mob_renderer.js?v=1.010";
+import { drawSingleMob } from "./mob_renderer.js?v=1.014";
 import {
   drawJaggedLine,
   RenderEngine,
@@ -56,13 +56,13 @@ import {
   spawnPurchaseCelebration,
   spawnDamageEffect,
   renderNemesisPreview,
-} from "./entity_render_effects.js?v=1.002";
+} from "./entity_render_effects.js?v=1.003";
 import {
   PARTICLE_THEMES as entityParticleThemes,
   combatVisuals as entityCombatVisuals,
   ParticlePool as entityParticlePool,
   spawnCombatImpactParticles as entitySpawnCombatImpactParticles,
-} from "./entity_particle_core.js?v=1.003";
+} from "./entity_particle_core.js?v=1.004";
 import {
   activeSpellAnims,
   activeSpellLights,
@@ -80,7 +80,7 @@ import {
   castVisualSpell,
   updateSpellAnimations,
   renderSpellAnimations,
-} from "./spell_visuals.js?v=1.003";
+} from "./spell_visuals.js?v=1.004";
 import {
   showCustomConfirm as skillsShowCustomConfirm,
   getSubweaponXpRequired,
@@ -88,7 +88,7 @@ import {
   SKILL_TREE_DATA,
   SkillTreeManager,
   resolvePlayerStats as skillsResolvePlayerStats,
-} from "./skills.js?v=1.004";
+} from "./skills.js?v=1.008";
 import {
   drawBreakableProp,
   DungeonMapGenerator,
@@ -98,16 +98,16 @@ import {
   drawDungeonPortalTile,
   renderTopDownMap,
   renderMinimap,
-} from "./dungeon_map.js?v=1.004";
+} from "./dungeon_map.js?v=1.009";
 import {
   createCalamitySigil,
   signSpecialChallengeContract,
   abandonSpecialChallenge,
   ChallengeEngine,
-} from "./challenges.js?v=1.004";
+} from "./challenges.js?v=1.005";
 import { MONSTER_CARDS_DATA } from "./bestiary_data.js?v=1.004";
 import { spawnFloatingText } from "./floating_text.js?v=1.003";
-import { moveEntityWithSmartSteering } from "./smart_steering.js?v=1.005";
+import { moveEntityWithSmartSteering } from "./smart_steering.js?v=1.007";
 import {
   toggleEditHudMode,
   updateEditHudModeStyle,
@@ -139,14 +139,14 @@ import {
   showSlotTooltip,
   showForgeTooltip,
   toggleRingComparisonSlot,
-} from "./tooltips.js?v=1.008";
+} from "./tooltips.js?v=1.010";
 import {
   updateFlaskCooldownHUDOnly,
   updateHUD,
   getChallengeObjectiveText,
   updateHudBuffTray,
-} from "./hud.js?v=1.011";
-import { renderLightingOverlay } from "./lighting.js?v=1.011";
+} from "./hud.js?v=1.015";
+import { renderLightingOverlay } from "./lighting.js?v=1.013";
 import {
   switchBagTab,
   switchStashTab,
@@ -167,7 +167,7 @@ import {
   showRelicDetails,
   assignRelic,
   unassignRelic,
-} from "./reliquary_ui.js?v=1.014";
+} from "./reliquary_ui.js?v=1.015";
 import {
   switchAchievementFilter,
   renderAchievementsTab,
@@ -188,7 +188,7 @@ import {
   selectDeploymentSigil,
   renderSigilPickerList,
   closeDeploymentModal,
-  } from "./bag_sigil_ui.js?v=1.021";
+  } from "./bag_sigil_ui.js?v=1.024";
 import {
   renderProfileModal,
   tryAutoEquip,
@@ -199,7 +199,7 @@ import {
   calculateInsurancePremium,
   calculateRunInsuranceTotals,
   toggleInsurance,
-  } from "./profile_stash.js?v=1.023";
+  } from "./profile_stash.js?v=1.030";
 import {
   spawnChestEruptionParticles,
   isChestOpened,
@@ -207,7 +207,7 @@ import {
   getChestProgress,
   dispenseChestLootAt,
   setChestOpened,
-} from "./chests.js?v=1.019";
+} from "./chests.js?v=1.022";
 import {
   getMobPoolForDepth,
   refillFlaskCharges,
@@ -223,7 +223,7 @@ import {
   spawnHomingHearts,
   updateHeartOrbs,
   spawnOnslaughtWave,
-} from "./onslaught.js?v=1.025";
+} from "./onslaught.js?v=1.029";
 import {
   openTrialsAltarModal,
   switchTrialsAltarTab,
@@ -234,7 +234,7 @@ import {
   executeRiftSummon,
   launchRiftDuel,
   spawnRiftGuardianEncounter,
-} from "./trials_rift.js?v=1.026";
+} from "./trials_rift.js?v=1.031";
 import {
   spawnGroundLoot,
   updateGroundLoot,
@@ -244,14 +244,14 @@ import {
   spawnHomingGold,
   updateGoldParticles,
   updateHeroBuffParticles,
-} from "./world_loot.js?v=1.023";
+} from "./world_loot.js?v=1.025";
 import {
   updateCavernEffects,
   spawnCavernInteractive,
   triggerCavernTouch,
   triggerCavernShatter,
   drawCavernInteractive,
-} from "./cavern_systems.js?v=1.025";
+} from "./cavern_systems.js?v=1.029";
 import {
   spawnResonantAegisRipple,
   spawnCombatImpactParticles,
@@ -261,7 +261,7 @@ import {
   handleVanguardParryTrigger,
   checkAndSpawnNoxiousBloom,
   triggerWindRazorStrike,
-} from "./defense_hooks.js?v=1.029";
+} from "./defense_hooks.js?v=1.034";
 import { rollTomeSpells } from "./tome_item_hook.js?v=1.026";
 import {
   loadHub,
@@ -287,22 +287,54 @@ import {
   decrementPotionRunCharges,
   triggerExtraction,
   startDeathSequence,
-} from "./lifecycle.js?v=1.039";
-import { BossAIEngine } from "./boss_ai.js?v=1.046";
+} from "./lifecycle.js?v=1.052";
+import { BossAIEngine } from "./boss_ai.js?v=1.049";
 import {
   openTactileSackCrateAnimation,
   openMonsterCardSackAnimation,
-} from "./unboxing.js?v=1.033";
-import { updateActiveProjectiles } from "./projectile_update.js?v=1.031";
-import { updateCombatPeriodic } from "./combat_periodic.js?v=1.034";
+} from "./unboxing.js?v=1.034";
+import { updateActiveProjectiles } from "./projectile_update.js?v=1.033";
+import { updateCombatPeriodic } from "./combat_periodic.js?v=1.037";
 import { updateCombatHazards } from "./combat_hazards.js?v=1.035";
-import { updateCombatTargeting } from "./combat_targeting.js?v=1.036";
-import { resolvePlayerAttack } from "./player_attack.js?v=1.038";
-import { updateStandardMobCombat } from "./mob_combat.js?v=1.045";
-import { updateBossCombat } from "./boss_combat.js?v=1.041";
-import { updateDungeonCombat } from "./dungeon_combat.js?v=1.044";
-import { updateGame } from "./game_update.js?v=1.039";
-import { renderGame } from "./game_render.js?v=1.045";
+import {
+  PLAYER_COMBAT_RADIUS,
+  SHIELD_DAGGER_CLEAR_HULL_GAP,
+  TOME_CLEAR_HULL_GAP,
+  TOME_PROJECTILE_RADIUS,
+  canPlayerReachCombatTarget,
+  getClearHullGap,
+  hasCombatLineOfEffect,
+  hasTomeLineOfSight,
+  isTomeCombatProfile,
+} from "./combat_reach.js?v=1.001";
+import {
+  ELEMENT_AREA_BASE_RADIUS,
+  LIGHTNING_CHAIN_BASE_RADIUS,
+  PRODUCTION_FIRE_TOME_BURN_PROFILE,
+  PRODUCTION_FROST_CONTROL_PROFILE,
+  advanceCanonicalElementStates,
+  applyCanonicalFireTomeBurn,
+  applyCanonicalFrostControl,
+  clearElementStates,
+  getCanonicalElementAreaRadius,
+  getElementStateSnapshot,
+  getFrostMovementMultiplier,
+  getLastLightningChainSnapshot,
+  isEligiblePlayerElementTarget,
+  resolveTomeElementSecondaryEffect,
+} from "./element_effect_authority.js?v=1.001";
+import {
+  TOME_PROJECTILE_SPEED,
+  launchTomeAttackProjectile,
+  resolveTomeProjectileImpact,
+} from "./tome_projectile.js?v=1.001";
+import { updateCombatTargeting } from "./combat_targeting.js?v=1.039";
+import { resolvePlayerAttack } from "./player_attack.js?v=1.044";
+import { updateStandardMobCombat } from "./mob_combat.js?v=1.051";
+import { updateBossCombat } from "./boss_combat.js?v=1.052";
+import { updateDungeonCombat } from "./dungeon_combat.js?v=1.049";
+import { updateGame } from "./game_update.js?v=1.044";
+import { renderGame } from "./game_render.js?v=1.048";
 import { startGameLoop } from "./game_loop.js?v=1.041";
 import {
   checkOrientation,
@@ -328,7 +360,7 @@ import {
   updateMasterVolume,
   updateSfxVolume,
   updateBgmVolume,
-} from "./main.js?v=1.007";
+} from "./main.js?v=1.012";
 
 window.MYSTICAL_STOCK ??= MYSTICAL_STOCK;
 window.POTION_TRANSMUTATIONS ??= POTION_TRANSMUTATIONS;
@@ -575,6 +607,32 @@ window.openMonsterCardSackAnimation = openMonsterCardSackAnimation;
 window.updateActiveProjectiles = updateActiveProjectiles;
 window.updateCombatPeriodic = updateCombatPeriodic;
 window.updateCombatHazards = updateCombatHazards;
+window.PLAYER_COMBAT_RADIUS = PLAYER_COMBAT_RADIUS;
+window.SHIELD_DAGGER_CLEAR_HULL_GAP = SHIELD_DAGGER_CLEAR_HULL_GAP;
+window.TOME_CLEAR_HULL_GAP = TOME_CLEAR_HULL_GAP;
+window.TOME_PROJECTILE_RADIUS = TOME_PROJECTILE_RADIUS;
+window.TOME_PROJECTILE_SPEED = TOME_PROJECTILE_SPEED;
+window.canPlayerReachCombatTarget = canPlayerReachCombatTarget;
+window.getClearHullGap = getClearHullGap;
+window.hasCombatLineOfEffect = hasCombatLineOfEffect;
+window.hasTomeLineOfSight = hasTomeLineOfSight;
+window.isTomeCombatProfile = isTomeCombatProfile;
+window.ELEMENT_AREA_BASE_RADIUS = ELEMENT_AREA_BASE_RADIUS;
+window.LIGHTNING_CHAIN_BASE_RADIUS = LIGHTNING_CHAIN_BASE_RADIUS;
+window.PRODUCTION_FIRE_TOME_BURN_PROFILE = PRODUCTION_FIRE_TOME_BURN_PROFILE;
+window.PRODUCTION_FROST_CONTROL_PROFILE = PRODUCTION_FROST_CONTROL_PROFILE;
+window.advanceCanonicalElementStates = advanceCanonicalElementStates;
+window.applyCanonicalFireTomeBurn = applyCanonicalFireTomeBurn;
+window.applyCanonicalFrostControl = applyCanonicalFrostControl;
+window.clearElementStates = clearElementStates;
+window.getCanonicalElementAreaRadius = getCanonicalElementAreaRadius;
+window.getElementStateSnapshot = getElementStateSnapshot;
+window.getFrostMovementMultiplier = getFrostMovementMultiplier;
+window.getLastLightningChainSnapshot = getLastLightningChainSnapshot;
+window.isEligiblePlayerElementTarget = isEligiblePlayerElementTarget;
+window.resolveTomeElementSecondaryEffect = resolveTomeElementSecondaryEffect;
+window.launchTomeAttackProjectile = launchTomeAttackProjectile;
+window.resolveTomeProjectileImpact = resolveTomeProjectileImpact;
 window.updateCombatTargeting = updateCombatTargeting;
 window.resolvePlayerAttack = resolvePlayerAttack;
 window.updateStandardMobCombat = updateStandardMobCombat;

@@ -197,15 +197,15 @@ export const useDex = {
     color: "#38bdf8",
   },
   "Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +10% for 1 Run.",
+    desc: "Grants +3 Move Speed and +10% Active Attack Speed for 1 Run.",
     color: "#f1c40f",
   },
   "Greater Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +20% for 2 Runs.",
+    desc: "Grants +6 Move Speed and +20% Active Attack Speed for 2 Runs.",
     color: "#fbbf24",
   },
   "Supernal Haste Elixir": {
-    desc: "Increases movement speed and attack recovery by +35% for 3 Runs.",
+    desc: "Grants +9 Move Speed and +30% Active Attack Speed for 3 Runs.",
     color: "#ffaa00",
   },
   "Double XP Elixir": {
@@ -213,11 +213,11 @@ export const useDex = {
     color: "#c084fc",
   },
   "Double Drop Elixir": {
-    desc: "Doubles current drop rate multiplier (+100%) for 1 Run.",
+    desc: "Adds +100% to the Drop Rate multiplier for eligible random monster equipment, Monster Soul/material, Cavern Sigil, and Monster Card chances for 1 Run. Each chance caps at 100%; guaranteed and direct rewards are unchanged.",
     color: "#34d399",
   },
   "Drop Quality Elixir": {
-    desc: "Boosts item drop quality checks by +50% for 1 Run.",
+    desc: "Adds +50% Drop Quality for 1 Run. Improves higher-rarity odds among tiers already unlocked; does not unlock rarity tiers.",
     color: "#f472b6",
   },
 };
@@ -265,9 +265,9 @@ export const ARTIFACT_POOL = [
   {
     name: "Gilded Scarab",
     trait: "magic_find",
-    desc: "+25% Drop Rate and +15% Drop Quality. Passive +5 DEX.",
+    desc: "+25% eligible monster Drop Rate multiplier and +15% Drop Quality. Passive +5 DEX.",
     breakdown:
-      "<strong>Scarab Hunting Breakdown:</strong><br>• Drop Rate: <span style='color:#2ecc71;'>+25% Item Frequency</span><br>• Drop Quality: <span style='color:#9b59b6;'>+15% Higher Stat Line Probability</span><br>• Passive: <span style='color:#3498db;'>+5 Flat DEX</span>",
+      "<strong>Scarab Hunting Breakdown:</strong><br>• Drop Rate: <span style='color:#2ecc71;'>+25% to eligible random monster equipment, material, sigil, and card chance multiplier</span> (each chance caps at 100%; guaranteed/direct rewards unchanged)<br>• Drop Quality: <span style='color:#9b59b6;'>+15% to higher-rarity odds among currently unlocked tiers</span> (does not unlock tiers; named minimums and guarantees are separate)<br>• Passive: <span style='color:#3498db;'>+5 Flat DEX</span>",
     dex: 5,
     dropRate: 0.25,
     quality: 0.15,
@@ -345,9 +345,9 @@ export const ARTIFACT_POOL = [
   {
     name: "Zealot's Charm",
     trait: "active_spd",
-    desc: "Increases Active Attack Speed limit by +10%. Passive +3% Crit Chance.",
+    desc: "Increases Active Attack Speed by +10%. Passive +3% Crit Chance.",
     breakdown:
-      "<strong>Feverish Swings:</strong><br>• Speed Increase: Increases active clicking speed limit by <span style='color:#2ecc71;'>10%</span>.<br>• Passive: <span style='color:#e67e22;'>+3% Base Crit Chance</span>",
+      "<strong>Feverish Swings:</strong><br>• Speed Increase: Active attacks recover <span style='color:#2ecc71;'>10% faster</span>.<br>• Passive: <span style='color:#e67e22;'>+3% Base Crit Chance</span>",
     activeAttackSpeed: 0.1,
     critChance: 0.03,
     dropRate: 0,
@@ -373,7 +373,7 @@ export const ARTIFACT_POOL = [
   {
     name: "Chrono Hourglass",
     trait: "extend_buffs",
-    desc: "Extends all temporary buffs by 3 seconds. Passive +3 INT.",
+    desc: "Extends Frenzy and Adrenaline by 3 seconds. Passive +3 INT.",
     breakdown:
       "<strong>Chronology:</strong><br>• Buff Hold: Extends active Frenzy or Adrenaline by <span style='color:#f1c40f;'>3s</span>.<br>• Passive: Adds <span style='color:#9b59b6;'>+3 INT</span> to extend potion durations and boost defense.",
     int: 3,
@@ -386,9 +386,9 @@ export const ARTIFACT_POOL = [
   {
     name: "Dimensional Pouch",
     trait: "bag_space",
-    desc: "Expands equipment sack capacity to 50. Passive +10% Drop Rate.",
+    desc: "Expands expedition satchel base capacity to 50 items. Passive +10% eligible monster Drop Rate multiplier.",
     breakdown:
-      "<strong>Bottomless Bag:</strong><br>• Space: Expanded bag capacity.<br>• Passive: Adds <span style='color:#2ecc71;'>+10% Drop Rate</span> to help fill your larger satchel.",
+      "<strong>Bottomless Bag:</strong><br>• Space: Expands base satchel capacity from 20 to 50 items; Satchel Expansion slots are added afterward.<br>• Passive: Adds <span style='color:#2ecc71;'>+10% to eligible random monster equipment, material, sigil, and card chance multiplier</span> (each chance caps at 100%; guaranteed/direct rewards unchanged).",
     dropRate: 0.1,
     quality: 0,
     goldMulti: 0,
@@ -450,9 +450,9 @@ export const ARTIFACT_POOL = [
   {
     name: "Titan's Shield Grip",
     trait: "titan_grip",
-    desc: "Increases Block Cap to 25% (with Shield) and Parry Cap to 30% (with Dagger). Passive +4% Block & Parry.",
+    desc: "Uses current Titan caps: 50% Block with Shield; 45% Parry with Dagger or 55% with Main-gauche. Passive +4% Block & Parry.",
     breakdown:
-      "<strong>Titan's Grip Breakdown:</strong><br>• Raising Caps: Increases your Block ceiling to <span style='color:#3498db;'>25%</span> (with Shield) and Parry ceiling to <span style='color:#e74c3c;'>30%</span> (with Dagger).<br>• Passive: Adds <span style='color:#3498db;'>+4% base Block Rate</span> and <span style='color:#e74c3c;'>+4% base Parry Rate</span>.",
+      "<strong>Titan's Grip Breakdown:</strong><br>• Current Caps: <span style='color:#3498db;'>50% Block</span> with Shield; <span style='color:#e74c3c;'>45% Parry</span> with Dagger or <span style='color:#e74c3c;'>55%</span> with Main-gauche.<br>• Off-archetype Access: 20% Block / 15% Parry.<br>• Passive: Adds <span style='color:#3498db;'>+4% base Block Rate</span> and <span style='color:#e74c3c;'>+4% base Parry Rate</span>.",
     block: 0.04,
     parry: 0.04,
     dropRate: 0,
@@ -567,9 +567,9 @@ export const ARTIFACT_POOL = [
       {
         name: "Scout's Cartographic Compass",
         trait: "breach_scouting",
-        desc: "For the first 15s of a floor, reveal the path to the nearest Chest, Merchant, or Portal and gain +50% Drop Rate. Passive +5% Gold Multiplier.",
+        desc: "For the first 15s of a floor, reveal the path to the nearest Chest, Merchant, or Portal and gain +50% eligible monster Drop Rate multiplier. Passive +5% Gold Multiplier.",
         breakdown:
-          "<strong>Cartography:</strong><br>• Radar Window: <span style='color:#ffd700;'>First 15s of any floor</span><br>• Treasure Find: <span style='color:#2ecc71;'>+50% Drop Rate during window</span><br>• Passive: <span style='color:#ffd700;'>+5% Gold Multiplier</span>",
+          "<strong>Cartography:</strong><br>• Radar Window: <span style='color:#ffd700;'>First 15s of any floor</span><br>• Treasure Find: <span style='color:#2ecc71;'>+50% to eligible random monster equipment, material, sigil, and card chance multiplier</span> during the window (each chance caps at 100%; guaranteed/direct rewards unchanged)<br>• Passive: <span style='color:#ffd700;'>+5% Gold Multiplier</span>",
         tier: 2,
         goldMulti: 0.05,
         dropRate: 0,
@@ -896,7 +896,7 @@ export const SET_DEFINITIONS = {
       },
       {
         count: 3,
-        desc: "+30% Gold Multiplier, +10% Drop Rate Mod",
+        desc: "+30% Gold Multiplier, +10% eligible monster Drop Rate multiplier",
         apply: (p) => {
           p.gold += 0.3;
           p.drop += 0.1;
@@ -939,6 +939,7 @@ export const SET_DEFINITIONS = {
         desc: "+10% Attack Power, +10% Potion Duration",
         apply: (p) => {
           p.atkPctBonus = (p.atkPctBonus || 0) + 0.1;
+          p.potionDurationPct = (p.potionDurationPct || 0) + 0.1;
         },
       },
     ],
@@ -2517,13 +2518,13 @@ export const ASTRAL_SHOP_STOCK = [
     name: "Double Drop Elixir",
     cost: 250,
     color: "#22c55e",
-    desc: "Doubles global drop rate multiplier (+100%) for 1 Run.",
+    desc: "Adds +100% to the Drop Rate multiplier for eligible random monster equipment, Monster Soul/material, Cavern Sigil, and Monster Card chances for 1 Run. Each chance caps at 100%; guaranteed and direct rewards are unchanged.",
   },
   {
     name: "Drop Quality Elixir",
     cost: 350,
     color: "#ec4899",
-    desc: "Boosts drop quality checks (+50% Qly) for 1 Run.",
+    desc: "Adds +50% Drop Quality for 1 Run. Improves higher-rarity odds among tiers already unlocked; does not unlock tiers.",
   },
   {
     name: "Monster Card Sack",
@@ -2685,7 +2686,7 @@ export const MONSTER_CARDS_DATA = {
     baseStat: "dropRate",
     baseVal: 0.02,
     isPct: true,
-    desc: "Gravitational collapse pulls more loot into your sack.",
+    desc: "Adds to eligible random monster equipment, material, sigil, and card chances; each chance caps at 100%.",
     set: "Void Singularity",
   },
   void_crawler: {

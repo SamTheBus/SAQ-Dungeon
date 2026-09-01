@@ -1,10 +1,16 @@
 import { setGamePaused } from "./runtime_state.js?v=1.002";
-import { setPrimaryMob } from "./encounter_state.js?v=1.004";
+import { setPrimaryMob } from "./encounter_state.js?v=1.007";
 import {
   getNextPersistedEntityId,
   setEntityIdCounter,
 } from "./entity_id.js?v=1.002";
 import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+import {
+  ACTIVE_ATTACK_BASE_DELAY_FRAMES,
+  ACTIVE_ATTACK_MIN_DELAY_FRAMES,
+  calculateActiveAttackDelayFrames,
+  normalizeActiveAttackDelayFrames,
+} from "./attack_speed_contract.js?v=1.001";
 import {
   ENGINE_PLAYER_STAT_FIELDS,
   EngineSaveSchemaError,
@@ -12,6 +18,98 @@ import {
   hydrateEngineSavePayload,
   stableStringifyEngineSave,
 } from "./save_schema.js?v=1.004";
+import {
+  EQUIPMENT_RARITY_EXCEPTIONS,
+  EQUIPMENT_RARITY_SOURCES,
+  EQUIPMENT_RARITY_UNLOCK_STAGE,
+  QUALITY_PLAYER_RULE,
+  applyEquipmentRarityException,
+  calculateEquipmentRarityProbabilities,
+  getUnlockedEquipmentRarities,
+  rollEquipmentRarity,
+} from "./quality_rarity_contract.js?v=1.001";
+import {
+  applyCanonicalMasteryStats,
+  awardResonantAegisMasteryXp,
+  migrateLegacyMasteryNodeIds,
+} from "./mastery_authority.js?v=1.003";
+import {
+  detonateRemainingPeriodicDamage,
+  getActivePoisonBleedStackCount,
+} from "./combat_effect_authority.js?v=1.001";
+import {
+  ARTIFACT_TRAIT_STATS,
+  beginArtifactStageAttempt,
+  checkArtifactTraitAuthority,
+  consumePhoenixProtection,
+  getArtifactMechanicScale,
+  getArtifactSource,
+  getCanonicalGuardCaps,
+  hasUniquePassiveAuthority,
+  resolveArtifactTraitStats,
+  resolvePhysicalArtifactStats,
+  scaleArtifactMechanic,
+} from "./artifact_authority.js?v=1.002";
+import {
+  resolveCanonicalSetState,
+} from "./set_affix_authority.js?v=1.000";
+export {
+  EQUIPMENT_RARITY_EXCEPTIONS,
+  EQUIPMENT_RARITY_SOURCES,
+  EQUIPMENT_RARITY_UNLOCK_STAGE,
+  QUALITY_PLAYER_RULE,
+  applyEquipmentRarityException,
+  getUnlockedEquipmentRarities,
+};
+export {
+  RUN_SATCHEL_BASE_SLOTS,
+  DIMENSIONAL_POUCH_BASE_SLOTS,
+  SATCHEL_EXPANSION_SLOTS_PER_RANK,
+  SATCHEL_EXPANSION_MAX_RANK,
+  getSatchelExpansionRank,
+  hasDimensionalPouch,
+  getMaxBagSlots,
+  getRunSatchelState,
+  markRunSatchelFullEncounter,
+  notifyRunSatchelBlocked,
+  canAddToRunSatchel,
+  evaluateRunSatchelTransition,
+  canApplyRunSatchelTransition,
+  addToRunSatchel,
+} from "./run_satchel.js?v=1.001";
+export {
+  ARTIFACT_SLOT_KEYS,
+  ARTIFACT_TRAIT_STATS,
+  LIVE_ARTIFACT_TRAIT_IDS,
+  LIVE_UNIQUE_DEFINITIONS,
+  beginArtifactStageAttempt,
+  checkArtifactTraitAuthority,
+  consumePhoenixProtection,
+  getArtifactMechanicScale,
+  getArtifactSource,
+  getArtifactSources,
+  getCanonicalGuardCaps,
+  getCompassPath,
+  getUniqueKeyAuthority,
+  hasUniquePassiveAuthority,
+  resolveArtifactTraitStats,
+  resolvePhysicalArtifactStats,
+  scaleArtifactMechanic,
+} from "./artifact_authority.js?v=1.002";
+export {
+  EQUIPMENT_AFFIX_DOMAIN_TRUTH,
+  POTION_BASE_DURATION_FRAMES,
+  POTION_TIMER_TYPES,
+  SET_CAPSTONE_CONTRACTS,
+  SET_ELIGIBLE_SLOTS,
+  advanceCanonicalPotionTimers,
+  countEquippedSetPieces,
+  getAffixDomainPresentation,
+  getCanonicalPotionDurationFrames,
+  getSetThresholdPresentation,
+  resolveCanonicalSetState,
+  triggerVoidTouchedRareFrenzy,
+} from "./set_affix_authority.js?v=1.000";
 
 /* ==========================================================================
    PRIMARY PURPOSE: Stores global game state, constant dictionaries,
@@ -127,7 +225,7 @@ export const CAVERN_MUTATORS = {
   scavenger_insight: {
     id: "scavenger_insight",
     name: "Scavenger's Insight",
-    desc: "Item Drop Rate increased by +50%.",
+    desc: "Eligible random monster equipment, material, sigil, and card chance multiplier increased by +50%. Each chance caps at 100%; guaranteed and direct rewards are unchanged.",
     isBuff: true,
     type: "event",
     minStars: 2,
@@ -191,7 +289,7 @@ export const CAVERN_MUTATORS = {
   artisan_luck: {
     id: "artisan_luck",
     name: "Artisan's Luck",
-    desc: "Drop Quality increased by +25%.",
+    desc: "Drop Quality +25%: improves higher-rarity odds among currently unlocked tiers; does not unlock tiers.",
     isBuff: true,
     type: "event",
     minStars: 4,
@@ -1098,67 +1196,14 @@ export const randInt = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 export const randFloat = (min, max) => Math.random() * (max - min) + min;
 
-window.rarityProbCache = window.rarityProbCache || {};
-
-// Continuous Dynamic Unlock Rarity Probability Engine
-export const calculateRarityProbabilities = function (
-  quality = 1.0,
-  isGacha = false,
-  stage = 1,
-) {
-  let S = Math.max(1, stage || 1);
-  let Q = Math.max(0.5, quality || 1.0);
-
-  // Dynamic Continuous Weight Functions
-  let w0 = Math.max(5, 100 - 0.3 * S);
-  let w1 = Math.max(
-    10,
-    30 + 0.4 * Math.min(S, 100) - 0.1 * Math.max(0, S - 100),
-  );
-  let w2 = S >= 25 ? Math.max(0, 0.6 * (S - 25)) : 0;
-  let w3 = S >= 100 ? Math.max(0, 0.5 * (S - 100)) : 0;
-  let w4 = S >= 250 ? Math.max(0, 0.4 * (S - 250)) : 0;
-  let w5 = S >= 500 ? Math.max(0, 0.3 * (S - 500)) : 0;
-
-  // Apply Quality Boost
-  if (Q > 1.0) {
-    let qBonus = (Q - 1.0) * 15;
-    w3 *= 1 + qBonus * 0.02;
-    w4 *= 1 + qBonus * 0.03;
-    w5 *= 1 + qBonus * 0.04;
-  }
-
-  if (isGacha) {
-    w3 *= 1.5;
-    w4 *= 2.0;
-    w5 *= 2.5;
-  }
-
-  let totalWeight = w0 + w1 + w2 + w3 + w4 + w5;
-  if (totalWeight <= 0) totalWeight = 1.0;
-
-  return {
-    0: (w0 / totalWeight) * 100,
-    1: (w1 / totalWeight) * 100,
-    2: (w2 / totalWeight) * 100,
-    3: (w3 / totalWeight) * 100,
-    4: (w4 / totalWeight) * 100,
-    5: (w5 / totalWeight) * 100,
-  };
+// Equipment rarity accepts one explicit raw progression-stage input. Item power
+// level is deliberately not part of this contract.
+export const calculateRarityProbabilities = function (options) {
+  return calculateEquipmentRarityProbabilities(options);
 };
 
-export const rollItemRarity = function (stage = 1, quality = 1.0, isGacha = false) {
-  let probs = window.calculateRarityProbabilities(quality, isGacha, stage);
-  let roll = Math.random() * 100;
-  let cumulative = 0;
-
-  for (let s = 5; s >= 0; s--) {
-    cumulative += probs[s] || 0;
-    if (roll <= cumulative) {
-      return s;
-    }
-  }
-  return 0;
+export const rollItemRarity = function (options) {
+  return rollEquipmentRarity(options);
 };
 
 export const rollSigilRarity = function (maxStars, qly = 1.0) {
@@ -1746,123 +1791,24 @@ export const isCavernEffectActive = function (id) {
 };
 
 export const checkArtifactTrait = function (trait) {
-  if (
-    window.playerStats &&
-    window.playerStats.activeRelics &&
-    window.playerStats.activeRelics.includes(trait)
-  ) {
-    return true;
-  }
-  if (!window.equippedSlots) return false;
-  return (
-    (window.equippedSlots.art1 && window.equippedSlots.art1.trait === trait) ||
-    (window.equippedSlots.art2 && window.equippedSlots.art2.trait === trait) ||
-    (window.equippedSlots.art3 && window.equippedSlots.art3.trait === trait)
-  );
+  return checkArtifactTraitAuthority(trait);
 };
 
 export const getArtifactTemperLevel = function (trait) {
-  if (window.playerStats && window.playerStats.activeRelics) {
-    let idx = window.playerStats.activeRelics.indexOf(trait);
-    if (idx !== -1) {
-      let slotKey = ["art1", "art2", "art3"][idx];
-      let slotLvl =
-        (window.playerStats.slotUpgrades &&
-          window.playerStats.slotUpgrades[slotKey]) ||
-        0;
-      return Math.floor(slotLvl / 10); // Converts slot levels 0-100 to temper levels 0-10 dynamically
-    }
-  }
-  if (!window.equippedSlots) return 0;
-  if (window.equippedSlots.art1 && window.equippedSlots.art1.trait === trait)
-    return window.equippedSlots.art1.temperLevel || 0;
-  if (window.equippedSlots.art2 && window.equippedSlots.art2.trait === trait)
-    return window.equippedSlots.art2.temperLevel || 0;
-  if (window.equippedSlots.art3 && window.equippedSlots.art3.trait === trait)
-    return window.equippedSlots.art3.temperLevel || 0;
-  return 0;
+  const source = getArtifactSource(trait);
+  if (!source) return 0;
+  if (source.form === "physical") return source.temperLevel || 0;
+  return Math.floor(Number(window.playerStats?.slotUpgrades?.[source.slotKey] || 0) / 10);
 };
 
 export const hasUniquePassive = function (uniqueKey) {
-  if (
-    window.playerStats &&
-    window.playerStats.activeSpectralResonance === uniqueKey
-  )
-    return true;
-  if (!window.equippedSlots) return false;
-
-  switch (uniqueKey) {
-    case "weapon_staff":
-      return !!(
-        window.equippedSlots.weapon && window.equippedSlots.weapon.isUniqueStaff
-      );
-    case "weapon_sword":
-      return !!(
-        window.equippedSlots.weapon && window.equippedSlots.weapon.isUniqueSword
-      );
-    case "weapon_singularity":
-      return !!(
-        window.equippedSlots.weapon &&
-        window.equippedSlots.weapon.isUniqueSingularity
-      );
-    case "weapon_maelstrom":
-      return !!(
-        window.equippedSlots.weapon &&
-        window.equippedSlots.weapon.isUniqueMaelstrom
-      );
-    case "shield_aegis":
-      return !!(
-        window.equippedSlots.subweapon &&
-        window.equippedSlots.subweapon.isUniqueAegis
-      );
-    case "tome_watch":
-      return !!(
-        window.equippedSlots.subweapon &&
-        window.equippedSlots.subweapon.isUniqueWatch
-      );
-    case "tome_chronicle":
-      return !!(
-        window.equippedSlots.subweapon &&
-        window.equippedSlots.subweapon.isUniqueChronicle
-      );
-    case "boots_warpcore":
-      return !!(
-        window.equippedSlots.boots &&
-        window.equippedSlots.boots.isUniqueWarpCore
-      );
-    case "helmet_tempest":
-      return !!(
-        window.equippedSlots.helmet &&
-        window.equippedSlots.helmet.isUniqueTempest
-      );
-    case "dagger_viper":
-      return !!(
-        window.equippedSlots.subweapon &&
-        window.equippedSlots.subweapon.isUniqueViper
-      );
-    case "tome_conduit":
-      return !!(
-        window.equippedSlots.subweapon &&
-        window.equippedSlots.subweapon.isUniqueConduit
-      );
-    default:
-      return false;
-  }
+  return hasUniquePassiveAuthority(uniqueKey);
 };
 
 export const getItemSetName = function (item) {
   if (!item || item.type === "artifact" || item.statsRolled === "UNIQUE")
     return null;
   return item.setName || null;
-};
-
-export const getMaxBagSlots = function () {
-  let base = window.checkArtifactTrait("bag_space") ? 50 : 20;
-  let missionBag =
-    ((window.playerStats.missionUpgrades &&
-      window.playerStats.missionUpgrades.bag) ||
-      0) * 10;
-  return base + missionBag;
 };
 
 export const getTierName = function (stars) {
@@ -1900,6 +1846,42 @@ export const getScrapYieldName = function (stars) {
 // --- CORE STATS RESOLVER WITH CACHING ---
 window.cachedPlayerStats = null;
 window.playerStatsDirty = true;
+window.cachedActiveAttackRuntimeSignature = null;
+
+export const getActiveAttackRuntimeSignature = function () {
+  const stats = window.playerStats || {};
+  const player = window.player || {};
+  const boss = window.mob;
+  let bossHpRatio = 1;
+
+  if (boss && boss.hp != null && boss.maxHp != null) {
+    if (boss.hp && typeof boss.hp.div === "function") {
+      bossHpRatio = Number(boss.hp.div(boss.maxHp).valueOf());
+    } else {
+      const maxHp = Number(boss.maxHp);
+      bossHpRatio = maxHp > 0 ? Number(boss.hp) / maxHp : 1;
+    }
+  }
+
+  if (!Number.isFinite(bossHpRatio)) bossHpRatio = 1;
+
+  return [
+    player.inDilationField ? 1 : 0,
+    Number(stats.kineticFrictionCharges || 0),
+    Number(stats.maelstromSpeedStacks || 0),
+    Number(stats.maelstromSpeedTimer || 0) > 0 ? 1 : 0,
+    Number(stats.shadowStepTimer || 0) > 0 ? 1 : 0,
+    Number(stats.frenzyTimer || 0) > 0 ? 1 : 0,
+    Number(stats.astralAwakeningTimer || 0) > 0 ? 1 : 0,
+    Number(stats.watchActiveTimer || 0) > 0 ? 1 : 0,
+    Number(stats.warpCoreSprintTimer || 0) > 0 ? 1 : 0,
+    Array.isArray(window.activeRiftOrbs)
+      ? window.activeRiftOrbs.filter((orb) => orb?.type === "anomalous_shard")
+          .length
+      : 0,
+    bossHpRatio.toFixed(4),
+  ].join("|");
+};
 
 export const invalidatePlayerStats = function () {
   window.playerStatsDirty = true;
@@ -1956,44 +1938,16 @@ export const updateUI = function () {
   }
 };
 
-export const ARTIFACT_BASE_STATS = {
-  frenzy: { critChance: 0.03 },
-  vampirism: { maxHp: 20 },
-  gold_hoard: { atk: 10, goldMulti: 0.3 },
-  magic_find: { dex: 5, dropRate: 0.25, quality: 0.15 },
-  move_speed: { moveSpeedPct: 0.1, parry: 0.03 },
-  defense: { maxHpPct: 0.06, defPct: 0.08 },
-  parry_strike: { parry: 0.02 },
-  echo_strike: { atk: 3 },
-  idle_spd: { idleAttackSpeed: 0.15, goldMulti: 0.05 },
-  active_spd: { activeAttackSpeed: 0.1, critChance: 0.03 },
-  dodge_buff: { block: 0.02, parry: 0.02 },
-  extend_buffs: { int: 3 },
-  bag_space: { dropRate: 0.1 },
-  second_wind: { str: 5, maxHp: 30 },
-  golem_stance: { str: 5 },
-  fairy_wealth: { goldMulti: 0.06, fairySpawn: 0.15 },
-  void_pull: { dex: 3, rareSpawn: 0.2 },
-  titan_grip: { block: 0.04, parry: 0.04 },
-  alchemist_alembic: { int: 3 },
-  philosopher_catalyst: { int: 4 },
-  cauldron_eternity: { maxHpPct: 0.05 },
-
-  // --- PHASE 3 BASE RELIC MODIFIERS ---
-  breach_adrenaline: { critChance: 0.02 },
-  breach_barrier: { def: 5 },
-  breach_scouting: { goldMulti: 0.05 },
-  friction_kinetic: { dex: 3 },
-  friction_tenacity: { str: 4 },
-  friction_accretion: { quality: 0.05 },
-  synergy_nexus: { int: 4 },
-  synergy_sanguine: { critChance: 0.03 },
-  speed_to_momentum: { dex: 5 },
-    astral_expansion: { int: 5, bonusAreaRadius: 0.25 },
-};
+export const ARTIFACT_BASE_STATS = ARTIFACT_TRAIT_STATS;
 
 export const resolvePlayerStats = function (useDraft = false) {
-  if (!useDraft && !window.playerStatsDirty && window.cachedPlayerStats) {
+  const activeAttackRuntimeSignature = getActiveAttackRuntimeSignature();
+  if (
+    !useDraft &&
+    !window.playerStatsDirty &&
+    window.cachedPlayerStats &&
+    window.cachedActiveAttackRuntimeSignature === activeAttackRuntimeSignature
+  ) {
     return window.cachedPlayerStats;
   }
 
@@ -2066,6 +2020,11 @@ export const resolvePlayerStats = function (useDraft = false) {
       p.spellChance =
         subItem.spellChance !== undefined ? subItem.spellChance : 0.33;
       p.spellPower = subItem.spellPower || 1.5;
+      if (p.spellType === "tri") {
+        p.spellPower *= 0.8;
+      } else if (p.spellType.startsWith("dual_")) {
+        p.spellPower *= 0.9;
+      }
     } else {
       p.spellType = subItem.spellType || null;
       p.spellChance = subItem.spellChance || 0;
@@ -2312,6 +2271,7 @@ export const resolvePlayerStats = function (useDraft = false) {
   let itemIntPct = 0;
   let idleSpeedPct = 0.0 + (aT.idleSpeedPct || 0) + (p.idleSpeedPct || 0);
   let activeSpeedPct = 0.0 + (aT.activeSpeedPct || 0) + (p.activeSpeedPct || 0);
+  let activeAttackDelayMultiplier = 1.0;
 
   for (let key in window.equippedSlots) {
     let item = window.equippedSlots[key];
@@ -2326,6 +2286,14 @@ export const resolvePlayerStats = function (useDraft = false) {
           p.crucibleSlotBonuses[key]) ||
         0;
       let slotMult = 1.0 + slotLvl * 0.01 + runBonus;
+      const artifactStats =
+        item.type === "artifact"
+          ? resolvePhysicalArtifactStats(item, slotMult)
+          : null;
+      const resolvedItemStat = (field) =>
+        artifactStats
+          ? Number(artifactStats[field] || 0)
+          : Number(item[field] || 0) * slotMult;
 
       // Flat base additions from Forge Slot Attunements (completely level-independent!)
       if (key === "weapon") flatGearAtk = flatGearAtk.add(slotLvl * 15);
@@ -2342,41 +2310,41 @@ export const resolvePlayerStats = function (useDraft = false) {
       }
 
       // Flat item stats (safely handled regardless of source type)
-      flatGearAtk = flatGearAtk.add(BigNum.from(item.atk || 0).mul(slotMult));
-      flatGearHp = flatGearHp.add(BigNum.from(item.maxHp || 0).mul(slotMult));
-      flatGearDef = flatGearDef.add(BigNum.from(item.def || 0).mul(slotMult));
-      flatSpeedBonus += (item.moveSpeed || 0) * slotMult;
+      flatGearAtk = flatGearAtk.add(BigNum.from(resolvedItemStat("atk")));
+      flatGearHp = flatGearHp.add(BigNum.from(resolvedItemStat("maxHp")));
+      flatGearDef = flatGearDef.add(BigNum.from(resolvedItemStat("def")));
+      flatSpeedBonus += resolvedItemStat("moveSpeed");
 
-      let itemIdleSpeed = item.idleAttackSpeed || 0;
+      let itemIdleSpeed = resolvedItemStat("idleAttackSpeed");
       if (itemIdleSpeed < 0) itemIdleSpeed = Math.abs(itemIdleSpeed) * 0.05;
-      idleSpeedPct += itemIdleSpeed * slotMult;
+      idleSpeedPct += itemIdleSpeed;
 
-      let itemActiveSpeed = item.activeAttackSpeed || 0;
+      let itemActiveSpeed = resolvedItemStat("activeAttackSpeed");
       if (itemActiveSpeed < 0)
         itemActiveSpeed = Math.abs(itemActiveSpeed) * 0.05;
-      activeSpeedPct += itemActiveSpeed * slotMult;
+      activeSpeedPct += itemActiveSpeed;
 
-      p.drop += (item.dropRate || 0) * slotMult;
-      p.qly += (item.quality || 0) * slotMult;
-      p.gold += (item.goldMulti || 0) * slotMult;
-      p.critChance += (item.critChance || 0) * slotMult;
-      p.critDamage += (item.critDamage || 0) * slotMult;
-      p.block += (item.block || 0) * slotMult;
-      p.parry += (item.parry || 0) * slotMult;
-      p.str += (item.str || 0) * slotMult;
-      p.dex += (item.dex || 0) * slotMult;
-      p.int += (item.int || 0) * slotMult;
-      p.rareSpawn += (item.rareSpawn || 0) * slotMult;
-      p.fairySpawn += (item.fairySpawn || 0) * slotMult;
+      p.drop += resolvedItemStat("dropRate");
+      p.qly += resolvedItemStat("quality");
+      p.gold += resolvedItemStat("goldMulti");
+      p.critChance += resolvedItemStat("critChance");
+      p.critDamage += resolvedItemStat("critDamage");
+      p.block += resolvedItemStat("block");
+      p.parry += resolvedItemStat("parry");
+      p.str += resolvedItemStat("str");
+      p.dex += resolvedItemStat("dex");
+      p.int += resolvedItemStat("int");
+      p.rareSpawn += resolvedItemStat("rareSpawn");
+      p.fairySpawn += resolvedItemStat("fairySpawn");
 
-      if (item.atkPct) itemAtkPct += item.atkPct * slotMult;
-      if (item.maxHpPct) itemHpPct += item.maxHpPct * slotMult;
-      if (item.defPct) itemDefPct += item.defPct * slotMult;
-      if (item.moveSpeedPct) itemSpdPct += item.moveSpeedPct * slotMult;
-      if (item.strPct) itemStrPct += item.strPct * slotMult;
-      if (item.dexPct) itemDexPct += item.dexPct * slotMult;
-      if (item.intPct) itemIntPct += item.intPct * slotMult;
-            if (item.bonusAreaRadius) p.bonusAreaRadius += item.bonusAreaRadius * slotMult;
+      itemAtkPct += resolvedItemStat("atkPct");
+      itemHpPct += resolvedItemStat("maxHpPct");
+      itemDefPct += resolvedItemStat("defPct");
+      itemSpdPct += resolvedItemStat("moveSpeedPct");
+      itemStrPct += resolvedItemStat("strPct");
+      itemDexPct += resolvedItemStat("dexPct");
+      itemIntPct += resolvedItemStat("intPct");
+      p.bonusAreaRadius += resolvedItemStat("bonusAreaRadius");
 
       // Commented out to prevent flat-to-percentage double-dipping in late game
       // itemAtkPct += (BigNum.from(item.bonusAtk || 0).div(100).mul(slotMult).valueOf());
@@ -2411,11 +2379,10 @@ export const resolvePlayerStats = function (useDraft = false) {
             0;
           let slotMult = 1.0 + slotLvl * 0.01 + runBonus;
 
-          let baseStats = window.ARTIFACT_BASE_STATS[trait];
+          let baseStats = resolveArtifactTraitStats(trait, savedPower, slotMult);
           if (baseStats) {
             for (let sKey in baseStats) {
-              let val = baseStats[sKey];
-              let scaledVal = val * savedPower * slotMult;
+              let scaledVal = baseStats[sKey];
 
               if (
                 sKey === "atk" ||
@@ -2430,7 +2397,7 @@ export const resolvePlayerStats = function (useDraft = false) {
                   flatGearHp = flatGearHp.add(scaledVal);
                 else if (sKey === "def")
                   flatGearDef = flatGearDef.add(scaledVal);
-                else p[sKey] += Math.ceil(scaledVal);
+                else p[sKey] += scaledVal;
               } else if (sKey === "moveSpeedPct") {
                 itemSpdPct += scaledVal;
               } else if (sKey === "idleAttackSpeed") {
@@ -2459,61 +2426,14 @@ export const resolvePlayerStats = function (useDraft = false) {
     Number(window.player.maxHp) > 0 &&
     Number(window.player.hp) / Number(window.player.maxHp) >= 0.8
   )
-    itemAtkPct += 0.2;
+    itemAtkPct += scaleArtifactMechanic("golem_stance", 0.2);
 
-  let setCounts = {};
-  const eligibleSetSlots = [
-    "weapon",
-    "subweapon",
-    "helmet",
-    "chest",
-    "leggings",
-    "overall",
-    "boots",
-  ];
-  eligibleSetSlots.forEach((slot) => {
-    let item = window.equippedSlots[slot];
-    if (item) {
-      let setName = window.getItemSetName(item);
-      if (setName)
-        setCounts[setName] =
-          (setCounts[setName] || 0) + (slot === "overall" ? 2 : 1);
-    }
+  const canonicalSetState = resolveCanonicalSetState({
+    setDefinitions: window.SET_DEFINITIONS,
+    equippedSlots: window.equippedSlots,
+    getItemSetName: window.getItemSetName,
   });
-
-  let setCtx = {
-    atk: 0,
-    maxHp: 0,
-    moveSpeed: 0,
-    idleSpeedPct: 0,
-    activeSpeedPct: 0,
-    critChance: 0,
-    critDamage: 0,
-    block: 0,
-    parry: 0,
-    atkPctBonus: 0,
-    maxHpPctBonus: 0,
-    defPctBonus: 0,
-    flatDefBonus: 0,
-    str: 0,
-    dex: 0,
-    int: 0,
-    gold: 0,
-    drop: 0,
-    qly: 0,
-    rareSpawn: 0,
-    hasCorrosiveSet: false,
-    hasShatterSet: false,
-    hasSingularitySet: false,
-  };
-  for (let setName in setCounts) {
-    let count = setCounts[setName];
-    let setDef = window.SET_DEFINITIONS[setName];
-    if (setDef)
-      setDef.bonuses.forEach((b) => {
-        if (count >= b.count) b.apply(setCtx);
-      });
-  }
+  const setCtx = canonicalSetState.stats;
 
   p.atk = p.atk.add(BigNum.from(setCtx.atk));
   p.maxHp = p.maxHp.add(BigNum.from(setCtx.maxHp));
@@ -2535,10 +2455,18 @@ export const resolvePlayerStats = function (useDraft = false) {
   p.hasCorrosiveSet = setCtx.hasCorrosiveSet;
   p.hasShatterSet = setCtx.hasShatterSet;
   p.hasSingularitySet = setCtx.hasSingularitySet;
+  p.potionDurationPct = setCtx.potionDurationPct || 0;
+  p.equippedSetCounts = { ...canonicalSetState.counts };
+  p.activeSetThresholds = canonicalSetState.thresholds;
 
   achAtkPct += setCtx.atkPctBonus;
   achMaxHpPct += setCtx.maxHpPctBonus;
-  achDefPct += setCtx.defPctBonus;
+
+  // Equipment and set percentage-attribute fields share the same downstream
+  // attribute formulas and are applied exactly once before the integer floor.
+  achStrPct *= 1.0 + itemStrPct + (setCtx.strPctBonus || 0);
+  achDexPct *= 1.0 + itemDexPct + (setCtx.dexPctBonus || 0);
+  achIntPct *= 1.0 + itemIntPct + (setCtx.intPctBonus || 0);
 
   p.str = Math.floor(p.str * achStrPct);
   p.dex = Math.floor(p.dex * achDexPct);
@@ -2636,11 +2564,8 @@ export const resolvePlayerStats = function (useDraft = false) {
 
     // Convert excess speed if Kinetic Momentum Converter is active
     if (window.checkArtifactTrait("speed_to_momentum")) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("speed_to_momentum")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
-      p.critDamage += excessSpeed * 2.5 * slotMult;
+      p.critDamage +=
+        excessSpeed * scaleArtifactMechanic("speed_to_momentum", 2.5);
     }
   }
 
@@ -2671,231 +2596,11 @@ export const resolvePlayerStats = function (useDraft = false) {
   }
   p.def = flatTotalDef.mul(defMultiplier + itemDefPct).mul(achDefPct);
 
-  // Apply Active Skill Tree Passive Modifiers
-  if (window.SkillTreeManager) {
-    let st = window.SkillTreeManager;
-
-    // --- SHIELD MASTERY (BASTION TREE) ---
-    let shieldHpRank = st.getSkillLevel("shield_hp");
-    if (shieldHpRank > 0) p.maxHpPct = (p.maxHpPct || 0) + shieldHpRank * 0.04;
-
-    let shieldDefRank = st.getSkillLevel("shield_def");
-    if (shieldDefRank > 0)
-      p.defPctBonus = (p.defPctBonus || 0) + shieldDefRank * 0.03;
-
-    let spikedRimRank = st.getSkillLevel("shield_spiked_rim");
-    if (spikedRimRank > 0) {
-      p.reflectDamage = [0.6, 0.8, 1.0][spikedRimRank - 1];
-    }
-
-    let ironWallRank = st.getSkillLevel("shield_iron_wall");
-    if (ironWallRank > 0) {
-      p.block += ironWallRank * 0.01; // Restored +1% Block Rate per rank
-      p.blockCapBonus = (p.blockCapBonus || 0) + ironWallRank * 0.02; // Restored Block Cap expansion
-    }
-
-    let impactTremorRank = st.getSkillLevel("shield_impact_tremor");
-    if (impactTremorRank > 0) {
-      p.hasImpactTremor = true;
-      p.impactTremorChance = impactTremorRank * 0.2;
-    }
-
-    let fortifiedGuardRank = st.getSkillLevel("shield_fortified_guard");
-    if (fortifiedGuardRank > 0) {
-      p.fortifiedGuardMultiplier = fortifiedGuardRank * 0.04;
-    }
-
-    let shieldFortitudeRank = st.getSkillLevel("shield_fortitude");
-    if (shieldFortitudeRank > 0) {
-      p.blockMitigationBonus = shieldFortitudeRank * 0.1; // Restored -10% damage taken on block per rank
-    }
-
-    if (st.getSkillLevel("shield_retaliatory_strike") > 0) {
-      p.hasRetaliatoryStrike = true;
-    }
-
-    let aegisPulseRank = st.getSkillLevel("shield_aegis_pulse");
-    if (aegisPulseRank > 0) {
-      p.hasAegisPulse = true;
-      p.aegisPulseHeal = aegisPulseRank * 0.03;
-    }
-
-    let shieldRetaliationRank = st.getSkillLevel("shield_retaliation");
-    if (shieldRetaliationRank > 0) {
-      p.reflectDamage = (p.reflectDamage || 1.0) + shieldRetaliationRank * 0.12;
-      p.bashAtkBonus = (p.bashAtkBonus || 0) + shieldRetaliationRank * 0.15; // Restored +15% Shield Bash base damage per rank
-    }
-
-    if (st.getSkillLevel("shield_keystone_colossus") > 0) {
-      p.blockMitigation = 1.0;
-      p.hasColossusKeystone = true;
-    }
-
-    if (st.getSkillLevel("shield_keystone_reflect") > 0) {
-      p.hasReflectKeystone = true;
-      p.reflectDamage = 1.8;
-    }
-
-    // --- DAGGER MASTERY (SHADOW & VENOM TREE) ---
-    let daggerCritRank = st.getSkillLevel("dagger_crit");
-    if (daggerCritRank > 0) p.critChance += daggerCritRank * 0.015; // Restored Crit Chance bonus
-
-    let daggerCritDmgRank = st.getSkillLevel("dagger_crit_dmg");
-    if (daggerCritDmgRank > 0) p.critDamage += daggerCritDmgRank * 0.06; // Restored Crit Damage multiplier
-
-    let lethalPrecisionRank = st.getSkillLevel("dagger_lethal_precision");
-    if (lethalPrecisionRank > 0) {
-      p.offhandChance = [0.48, 0.56, 0.65][lethalPrecisionRank - 1];
-      p.offhandDmg = [0.4, 0.48, 0.55][lethalPrecisionRank - 1];
-      p.flurryDamageBonus = lethalPrecisionRank * 0.1; // Restored +10% Offhand Flurry damage per rank
-    }
-
-    let vipersCoatingRank = st.getSkillLevel("dagger_vipers_coating");
-    if (vipersCoatingRank > 0) {
-      p.hasViperCoating = true;
-      p.viperPoisonStrength = vipersCoatingRank * 0.1;
-      p.bleedChance = (p.bleedChance || 0) + vipersCoatingRank * 0.05; // Restored Bleed DoT chance
-      p.vipersCoatingLvl = vipersCoatingRank;
-    }
-
-    let daggerParryRank = st.getSkillLevel("dagger_parry");
-    if (daggerParryRank > 0) {
-      p.parry += daggerParryRank * 0.01; // Restored base parry chance
-      p.parryCapBonus = (p.parryCapBonus || 0) + daggerParryRank * 0.02; // Restored Parry Cap expansion
-    }
-
-    let shadowStepRank = st.getSkillLevel("dagger_shadow_step");
-    if (shadowStepRank > 0) {
-      p.hasShadowStep = true;
-      p.shadowStepLevel = shadowStepRank;
-      p.riposteDamage = (p.riposteDamage || 0.8) + shadowStepRank * 0.2; // Restored +20% Riposte Damage per rank
-    }
-
-    let exposeWeaknessRank = st.getSkillLevel("dagger_expose_weakness");
-    if (exposeWeaknessRank > 0) {
-      p.hasExposeWeakness = true;
-      p.exposeWeaknessShred = exposeWeaknessRank * 0.04;
-    }
-
-    if (st.getSkillLevel("dagger_shadow_flurry") > 0) {
-      p.hasShadowFlurry = true;
-    }
-
-    let SanguineRuptureRank = st.getSkillLevel("dagger_sanguine_rupture");
-    if (SanguineRuptureRank > 0) {
-      p.hasSanguineRupture = true;
-      p.sanguineRuptureMult = SanguineRuptureRank * 1.5;
-    }
-
-    if (st.getSkillLevel("dagger_keystone_assassin") > 0) {
-      p.hasShadowAssassin = true;
-    }
-
-    if (st.getSkillLevel("dagger_keystone_duellist") > 0) {
-      p.hasMasterDuellist = true;
-      p.parryCapBonus = (p.parryCapBonus || 0) + 0.15;
-    }
-
-    // --- TOME MASTERY (ARCHMAGE ARCANA TREE) ---
-    let tomeAtkRank = st.getSkillLevel("tome_atk");
-    if (tomeAtkRank > 0) p.atkPct = (p.atkPct || 0) + tomeAtkRank * 0.035; // Restored base Spell Power/Atk %
-
-    let tomeExpRank = st.getSkillLevel("tome_exp");
-    if (tomeExpRank > 0) p.xpRate += tomeExpRank * 0.03; // Restored XP Gain boost
-
-    let empoweredCatalystsRank = st.getSkillLevel("tome_empowered_catalysts");
-    if (empoweredCatalystsRank > 0) {
-      p.spellChance = [0.4, 0.45, 0.5][empoweredCatalystsRank - 1];
-      p.spellPower = [1.75, 2.0, 2.25][empoweredCatalystsRank - 1];
-    }
-
-    let runicShieldingRank = st.getSkillLevel("tome_runic_barrier");
-    if (runicShieldingRank > 0 && p.arcaneBarrier > 0) {
-      p.arcaneBarrier = [0.24, 0.28, 0.32][runicShieldingRank - 1];
-      p.arcaneBarrierCap = 0.4;
-    }
-
-    let elementalOverloadRank = st.getSkillLevel("tome_elemental_overload");
-    if (elementalOverloadRank > 0) {
-      p.hasElementalOverload = true;
-      p.overloadLevel = elementalOverloadRank;
-    }
-
-    let arcaneSyphonRank = st.getSkillLevel("tome_arcane_syphon");
-    if (arcaneSyphonRank > 0) {
-      p.hasArcaneSyphon = true;
-      p.arcaneSyphonLevel = arcaneSyphonRank;
-    }
-
-    if (st.getSkillLevel("tome_barrier_shatter") > 0) {
-      p.hasBarrierShatter = true;
-    }
-
-    let spellWeavingRank = st.getSkillLevel("tome_spell_weaving");
-    if (spellWeavingRank > 0) {
-      p.hasSpellWeaving = true;
-      p.spellWeavingPower = spellWeavingRank * 0.15;
-    }
-
-    let resilienceRank = st.getSkillLevel("tome_resilience");
-    if (resilienceRank > 0) {
-      p.manaShieldingHeal = resilienceRank * 0.02; // Restored +2% Max HP heal on spell cast
-    }
-
-    if (st.getSkillLevel("tome_keystone_triad") > 0) {
-      p.hasTriadConvergence = true;
-    }
-
-    if (st.getSkillLevel("tome_keystone_singularity") > 0) {
-      p.arcaneBarrier = 0.45;
-      p.hasAethericSingularity = true;
-    }
-
-    // --- UTILITY TREE (GLOBAL MP) ---
-    let pioneerRank = st.getSkillLevel("utility_pioneer");
-    if (pioneerRank > 0) {
-      p.gold += 0.05;
-      p.drop += 0.05;
-    }
-
-    let utilityGoldRank = st.getSkillLevel("utility_gold");
-    if (utilityGoldRank > 0) p.gold += utilityGoldRank * 0.05;
-
-    let qualityRank = st.getSkillLevel("utility_quality");
-    if (qualityRank > 0) p.qly += qualityRank * 0.02;
-
-    let utilityVitalityRank = st.getSkillLevel("utility_vitality");
-    if (utilityVitalityRank > 0) {
-      p.maxHpPct = (p.maxHpPct || 0) + utilityVitalityRank * 0.03;
-      flatSpeedBonus += utilityVitalityRank * 2.0;
-    }
-
-    let bagRank = st.getSkillLevel("utility_bag");
-    if (bagRank > 0) {
-      p.bonusBagSpace = (p.bonusBagSpace || 0) + bagRank * 5;
-    }
-  }
-
-  // Fortitude stack check
-  if ((window.playerStats.fortitudeStacks || 0) > 0) {
-    let multiplier =
-      window.playerStats.fortitudeStacks * (p.fortifiedGuardMultiplier || 0.04);
-    p.defPctBonus = (p.defPctBonus || 0) + multiplier;
-  }
-
-  // Arcane Syphon stack check
-  if ((window.playerStats.syphonIntStacks || 0) > 0) {
-    let multiplier =
-      window.playerStats.syphonIntStacks * ((p.arcaneSyphonLevel || 1) * 0.04);
-    p.intPctBonus = (p.intPctBonus || 0) + multiplier;
-  }
-
-  // Spell Weaving stack check
-  if ((window.playerStats.spellWeavingStacks || 0) > 0) {
-    let extraPower =
-      window.playerStats.spellWeavingStacks * (p.spellWeavingPower || 0.15);
-    p.spellPower = (p.spellPower || 1.5) + extraPower;
-  }
+  // G.6B1: all mastery/skill/keystone stats resolve exactly once here.
+  applyCanonicalMasteryStats(p, {
+    playerStats: window.playerStats,
+    subweapon: window.equippedSlots?.subweapon,
+  });
 
   // Bulwark Colossus AP temporary bonus
   if ((window.playerStats.colossusApBonus || 0) > 0) {
@@ -2952,10 +2657,7 @@ export const resolvePlayerStats = function (useDraft = false) {
             10,
             Math.round(p.idleAttackSpeed / 1.25),
           );
-          p.activeAttackSpeed = Math.max(
-            4,
-            Math.round(p.activeAttackSpeed / 1.25),
-          );
+          activeSpeedPct += 0.25;
         } else if (b.id === "giant_might") {
           p.atk = p.atk.mul(1.3);
         } else if (b.id === "iron_aegis") {
@@ -3002,7 +2704,7 @@ export const resolvePlayerStats = function (useDraft = false) {
           // Legacy/Event Fallbacks
           if (d.id === "iron_gaze") {
             p.idleAttackSpeed = Math.round(p.idleAttackSpeed * 1.2);
-            p.activeAttackSpeed = Math.round(p.activeAttackSpeed * 1.2);
+            activeAttackDelayMultiplier *= 1.2;
           } else if (d.id === "shattered_armour") {
             p.def = p.def.mul(0.75);
           } else if (d.id === "frail_vessel") {
@@ -3037,7 +2739,7 @@ export const resolvePlayerStats = function (useDraft = false) {
     });
   }
   if (window.checkArtifactTrait("alchemist_alembic"))
-    potStrengthMultiplier += 0.3;
+    potStrengthMultiplier += scaleArtifactMechanic("alchemist_alembic", 0.15);
 
   if (window.playerStats.astralAwakeningTimer > 0) {
     p.atk = p.atk.mul(2.0);
@@ -3093,19 +2795,11 @@ export const resolvePlayerStats = function (useDraft = false) {
     p.qly += 0.5 * potStrengthMultiplier;
   }
 
-  if (window.checkArtifactTrait("move_speed")) flatSpeedBonus += 10;
-  if (window.checkArtifactTrait("gold_hoard")) p.gold += 0.5;
-  if (window.checkArtifactTrait("idle_spd")) idleSpeedPct += 0.35;
-  if (window.checkArtifactTrait("active_spd")) activeSpeedPct += 0.25;
-
   // Kinetic Friction Turbine dynamic attack speed injection
   if (window.checkArtifactTrait("friction_kinetic")) {
-    let slotLvl = window.getArtifactTemperLevel
-      ? window.getArtifactTemperLevel("friction_kinetic")
-      : 0;
-    let slotMult = 1.0 + slotLvl * 0.01;
     let charges = window.playerStats.kineticFrictionCharges || 0;
-    let bonusSpeedPct = 0.005 * charges * slotMult;
+    let bonusSpeedPct =
+      scaleArtifactMechanic("friction_kinetic", 0.005) * charges;
     activeSpeedPct += bonusSpeedPct;
     idleSpeedPct += bonusSpeedPct;
   }
@@ -3117,21 +2811,22 @@ export const resolvePlayerStats = function (useDraft = false) {
     idleSpeedPct += 0.15;
     activeSpeedPct += 0.15;
   }
+  let finalIdleDivisor = Math.max(0.1, 1 + idleSpeedPct);
+  p.idleAttackSpeed = Math.max(10, Math.round(60 / finalIdleDivisor));
+
   if (
     window.checkArtifactTrait("cauldron_eternity") &&
     (hasAtkPot || hasHpPot || hasDefPot || hasHastePot)
   ) {
-    idleSpeedPct += 0.08;
+    p.idleAttackSpeed = Math.max(
+      5,
+      p.idleAttackSpeed -
+        Math.round(scaleArtifactMechanic("cauldron_eternity", 2)),
+    );
   }
-
-  let finalIdleDivisor = Math.max(0.1, 1 + idleSpeedPct);
-  let finalActiveDivisor = Math.max(0.1, 1 + activeSpeedPct);
-  p.idleAttackSpeed = Math.max(10, Math.round(60 / finalIdleDivisor));
-  p.activeAttackSpeed = Math.max(4, Math.round(15 / finalActiveDivisor));
 
   if (p.inDilationField) {
     p.idleAttackSpeed = Math.round(p.idleAttackSpeed * 1.67);
-    p.activeAttackSpeed = Math.round(p.activeAttackSpeed * 1.67);
   }
 
   if (
@@ -3139,18 +2834,12 @@ export const resolvePlayerStats = function (useDraft = false) {
     window.playerStats.warpCoreSprintTimer > 0
   ) {
     p.idleAttackSpeed = 10;
-    p.activeAttackSpeed = 4;
   }
 
   if (window.playerStats.frenzyTimer > 0) {
     p.critChance = 1.0;
-    p.critDamage += 0.5;
-    p.activeAttackSpeed = 4;
-    p.idleAttackSpeed = 15;
+    p.critDamage += 0.3;
   }
-
-  let maxBlockCap = 0.4; // Elevated base block cap
-  let maxParryCap = 0.35; // Elevated base parry cap
 
   subItem = window.equippedSlots ? window.equippedSlots.subweapon : null;
   let hasShield =
@@ -3160,31 +2849,18 @@ export const resolvePlayerStats = function (useDraft = false) {
   let hasTitanGrip =
     window.checkArtifactTrait && window.checkArtifactTrait("titan_grip");
 
-  if (hasShield) {
-    maxBlockCap = hasTitanGrip ? 0.5 : 0.4;
-  } else if (hasTitanGrip) {
-    maxBlockCap = 0.2;
-  } else {
-    p.block = 0.0;
-  }
-
-  if (hasDagger) {
-    let noun = subItem.noun ? subItem.noun.toLowerCase() : "";
-    if (noun.includes("main-gauche")) {
-      maxParryCap = hasTitanGrip ? 0.55 : 0.45;
-    } else {
-      maxParryCap = hasTitanGrip ? 0.45 : 0.35;
-    }
-  } else if (hasTitanGrip) {
-    maxParryCap = 0.15;
-  } else {
-    p.parry = 0.0;
-  }
-
-  maxBlockCap += p.crucibleCapBonus || 0;
-  maxParryCap += p.crucibleCapBonus || 0;
-  maxBlockCap += p.blockCapBonus || 0;
-  maxParryCap += p.parryCapBonus || 0;
+  if (!hasShield && !hasTitanGrip) p.block = 0;
+  if (!hasDagger && !hasTitanGrip) p.parry = 0;
+  const canonicalGuardCaps = getCanonicalGuardCaps({
+    subweapon: subItem,
+    hasTitanGrip,
+    blockCapBonus: p.blockCapBonus,
+    parryCapBonus: p.parryCapBonus,
+    crucibleCapBonus: p.crucibleCapBonus,
+    forcedMaxParryCap: p.forcedMaxParryCap,
+  });
+  let maxBlockCap = canonicalGuardCaps.block;
+  let maxParryCap = canonicalGuardCaps.parry;
 
   // STR and DEX Attribute Scaling
   if (p.block > 0.0) {
@@ -3217,8 +2893,15 @@ export const resolvePlayerStats = function (useDraft = false) {
   // Calculate Tome Arcane Shield Capacity (Energy Shield)
     let hasTome = subItem && (subItem.subType === "tome" || subItem.type === "tome");
     if (hasTome) {
-      let baseShieldPct = 0.20 + (p.arcaneShieldBonusPct || 0);
-      let intBonusPct = Math.min(0.20, (effectiveInt * 0.20) / (effectiveInt + 150));
+      let baseShieldPct =
+        (subItem.baseBarrierPct !== undefined ? subItem.baseBarrierPct : 0.2) +
+        (p.arcaneShieldBonusPct || 0);
+      let resolvedInt = Math.max(0, Number(p.int || 5) - 5);
+      let intBonusPct = Math.min(
+        0.15,
+        (resolvedInt * 0.15) / (resolvedInt + 150),
+      );
+      p.arcaneShieldPct = baseShieldPct + intBonusPct;
       let maxHpVal = BigNum.from(p.maxHp || 100).toFiniteNumber(
         Number.MAX_VALUE / 16,
       );
@@ -3238,7 +2921,7 @@ export const resolvePlayerStats = function (useDraft = false) {
     }
 
   let rawRare = p.rareSpawn;
-  let limit = window.checkArtifactTrait("void_pull") ? 0.1 : 0.075;
+  let limit = 0.075;
   let excessRare = Math.max(0, rawRare - 0.01);
   let scale = limit - 0.01;
   p.rareSpawn = 0.01 + (excessRare * scale) / (excessRare + scale);
@@ -3255,12 +2938,6 @@ export const resolvePlayerStats = function (useDraft = false) {
     activeSpeedPct += speedBonus;
   }
 
-  if (window.playerStats.maelstromSpeedTimer > 0) {
-    window.playerStats.maelstromSpeedTimer--;
-    if (window.playerStats.maelstromSpeedTimer <= 0) {
-      window.playerStats.maelstromSpeedStacks = 0;
-    }
-  }
   if (window.playerStats.maelstromSpeedStacks > 0) {
     idleSpeedPct += window.playerStats.maelstromSpeedStacks * 0.1;
     activeSpeedPct += window.playerStats.maelstromSpeedStacks * 0.1;
@@ -3271,6 +2948,29 @@ export const resolvePlayerStats = function (useDraft = false) {
     : [];
   if (activeShardsList.length > 0) {
     activeSpeedPct -= activeShardsList.length * 0.1;
+  }
+
+  p.activeAttackSpeed = calculateActiveAttackDelayFrames(activeSpeedPct);
+  p.activeAttackSpeedBonusPct = activeSpeedPct;
+
+  if (activeAttackDelayMultiplier !== 1.0) {
+    p.activeAttackSpeed = normalizeActiveAttackDelayFrames(
+      p.activeAttackSpeed * activeAttackDelayMultiplier,
+    );
+  }
+  if (p.inDilationField) {
+    p.activeAttackSpeed = normalizeActiveAttackDelayFrames(
+      p.activeAttackSpeed * 1.67,
+    );
+  }
+  if (
+    window.hasUniquePassive("boots_warpcore") &&
+    window.playerStats.warpCoreSprintTimer > 0
+  ) {
+    p.activeAttackSpeed = ACTIVE_ATTACK_MIN_DELAY_FRAMES;
+  }
+  if (window.playerStats.frenzyTimer > 0) {
+    p.activeAttackSpeed = ACTIVE_ATTACK_MIN_DELAY_FRAMES;
   }
 
   if (
@@ -3319,7 +3019,9 @@ export const resolvePlayerStats = function (useDraft = false) {
   }
 
   let expBonusMult =
-    1.0 + (window.playerStats.prestigeUpgrades?.exp || 0) * 0.1;
+    1.0 +
+    (window.playerStats.prestigeUpgrades?.exp || 0) * 0.1 +
+    (p.experienceRateBonus || 0);
 
   let wisdom = Math.min(
     30,
@@ -3359,7 +3061,10 @@ export const resolvePlayerStats = function (useDraft = false) {
       });
     }
     if (window.checkArtifactTrait("alchemist_alembic"))
-      potStrengthMultiplier += 0.3;
+      potStrengthMultiplier += scaleArtifactMechanic(
+        "alchemist_alembic",
+        0.15,
+      );
 
     expBonusMult +=
       (window.playerStats.xpPotionStrength || 1.0) * potStrengthMultiplier;
@@ -3369,13 +3074,6 @@ export const resolvePlayerStats = function (useDraft = false) {
       expBonusMult = 2.0 + (3.0 * (expBonusMult - 2.0)) / ((expBonusMult - 2.0) + 3.0);
     }
     p.xpRate = parseFloat(expBonusMult.toFixed(2));
-
-  if (p.hasReflectKeystone) {
-    p.atk = p.atk.add(BigNum.from(p.def || 0).mul(0.4).round());
-  }
-  if (p.hasAethericSingularity) {
-    p.atk = p.atk.add(Math.round(p.int * 0.8));
-  }
 
   let activeStage = window.playerStats.stage;
   if (window.playerStats.isDungeonMode && window.playerStats.currentDungeon) {
@@ -3443,7 +3141,7 @@ export const resolvePlayerStats = function (useDraft = false) {
         Math.round(p.idleAttackSpeed / (1.0 + 0.25 * buffStrength)),
       );
       p.activeAttackSpeed = Math.max(
-        4,
+        ACTIVE_ATTACK_MIN_DELAY_FRAMES,
         Math.round(p.activeAttackSpeed / (1.0 + 0.25 * buffStrength)),
       );
     } else if (b.id === "giant_might") {
@@ -3477,6 +3175,9 @@ export const resolvePlayerStats = function (useDraft = false) {
       if (d.id === "iron_gaze") {
         p.idleAttackSpeed = Math.round(
           p.idleAttackSpeed * (1.0 + 0.2 * debuffStrength),
+        );
+        p.activeAttackSpeed = normalizeActiveAttackDelayFrames(
+          p.activeAttackSpeed * (1.0 + 0.2 * debuffStrength),
         );
       } else if (d.id === "shattered_armour") {
         p.def = p.def.mul(Math.max(0.1, 1.0 - 0.25 * debuffStrength));
@@ -3526,12 +3227,9 @@ export const resolvePlayerStats = function (useDraft = false) {
     !isFinite(p.idleAttackSpeed)
   )
     p.idleAttackSpeed = 60;
-  if (
-    isNaN(p.activeAttackSpeed) ||
-    p.activeAttackSpeed <= 0 ||
-    !isFinite(p.activeAttackSpeed)
-  )
-    p.activeAttackSpeed = 15;
+  p.activeAttackSpeed = normalizeActiveAttackDelayFrames(
+    p.activeAttackSpeed || ACTIVE_ATTACK_BASE_DELAY_FRAMES,
+  );
 
   let rawDropBonus = p.drop - 1.0;
   if (rawDropBonus > 1.0) {
@@ -3584,26 +3282,26 @@ export const resolvePlayerStats = function (useDraft = false) {
       p.bashAtkBonus = (p.bashAtkBonus || 0) * 2.0;
       p.blockCapBonus = (p.blockCapBonus || 0) + 0.15;
 
-      let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
-      maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
+      let maxBlockCap = getCanonicalGuardCaps({
+        subweapon: subItemRef,
+        hasTitanGrip: hasTitanGripRef,
+        blockCapBonus: p.blockCapBonus,
+        parryCapBonus: p.parryCapBonus,
+        crucibleCapBonus: p.crucibleCapBonus,
+      }).block;
       p.rawBlock = p.rawBlock !== undefined ? p.rawBlock : p.block;
       p.block = p.rawBlock > maxBlockCap ? maxBlockCap : p.rawBlock;
     } else if (p.subType === "dagger") {
       p.riposteDamage = (p.riposteDamage || 0.8) * 3.0;
       p.parryCapBonus = (p.parryCapBonus || 0) + 0.15;
 
-      let maxParryCap = 0.15;
-      let noun = subItemRef
-        ? subItemRef.noun
-          ? subItemRef.noun.toLowerCase()
-          : ""
-        : "";
-      if (noun.includes("main-gauche")) {
-        maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
-      } else {
-        maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
-      }
-      maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
+      let maxParryCap = getCanonicalGuardCaps({
+        subweapon: subItemRef,
+        hasTitanGrip: hasTitanGripRef,
+        blockCapBonus: p.blockCapBonus,
+        parryCapBonus: p.parryCapBonus,
+        crucibleCapBonus: p.crucibleCapBonus,
+      }).parry;
       p.rawParry = p.rawParry !== undefined ? p.rawParry : p.parry;
       p.parry = p.rawParry > maxParryCap ? maxParryCap : p.rawParry;
     }
@@ -3618,29 +3316,31 @@ export const resolvePlayerStats = function (useDraft = false) {
     p.parry = (p.parry || 0) * 2.0;
 
     if (hasShieldRef) {
-      let maxBlockCap = hasTitanGripRef ? 0.25 : 0.2;
-      maxBlockCap += (p.blockCapBonus || 0) + (p.crucibleCapBonus || 0);
+      let maxBlockCap = getCanonicalGuardCaps({
+        subweapon: subItemRef,
+        hasTitanGrip: hasTitanGripRef,
+        blockCapBonus: p.blockCapBonus,
+        parryCapBonus: p.parryCapBonus,
+        crucibleCapBonus: p.crucibleCapBonus,
+      }).block;
       let doubledCap = maxBlockCap * 2.0;
       if (p.block > doubledCap) p.block = doubledCap;
     }
     if (hasDaggerRef) {
-      let maxParryCap = 0.15;
-      let noun = subItemRef
-        ? subItemRef.noun
-          ? subItemRef.noun.toLowerCase()
-          : ""
-        : "";
-      if (noun.includes("main-gauche")) {
-        maxParryCap = hasTitanGripRef ? 0.35 : 0.3;
-      } else {
-        maxParryCap = hasTitanGripRef ? 0.3 : 0.15;
-      }
-      maxParryCap += (p.parryCapBonus || 0) + (p.crucibleCapBonus || 0);
+      let maxParryCap = getCanonicalGuardCaps({
+        subweapon: subItemRef,
+        hasTitanGrip: hasTitanGripRef,
+        blockCapBonus: p.blockCapBonus,
+        parryCapBonus: p.parryCapBonus,
+        crucibleCapBonus: p.crucibleCapBonus,
+      }).parry;
       let doubledCap = maxParryCap * 2.0;
       if (p.parry > doubledCap) p.parry = doubledCap;
     }
 
-    p.activeAttackSpeed = Math.max(2, Math.round(p.activeAttackSpeed / 2.0));
+    p.activeAttackSpeed = normalizeActiveAttackDelayFrames(
+      p.activeAttackSpeed / 2.0,
+    );
     p.idleAttackSpeed = Math.max(5, Math.round(p.idleAttackSpeed / 2.0));
   }
   // ----------------------------------------------------------
@@ -3651,84 +3351,83 @@ export const resolvePlayerStats = function (useDraft = false) {
 
     // 1. Breacher's Adrenaline Glass
     if (window.checkArtifactTrait("breach_adrenaline")) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("breach_adrenaline")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
+      let mechanicScale = getArtifactMechanicScale("breach_adrenaline");
       let decayRatio = Math.max(0, 1.0 - floorActiveTicks / 1800); // Linear decay over 30s
       if (decayRatio > 0) {
-        p.moveSpeed *= 1.0 + 0.4 * decayRatio * slotMult;
-        p.critChance += 0.25 * decayRatio * slotMult;
+        p.moveSpeed *= 1.0 + 0.4 * decayRatio * mechanicScale;
+        p.critChance += 0.25 * decayRatio * mechanicScale;
       }
     }
 
     // 2. Scout's Cartographic Compass
     if (window.checkArtifactTrait("breach_scouting")) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("breach_scouting")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
       if (floorActiveTicks < 900) {
         // Active during the first 15s
-        p.drop += 0.5 * slotMult;
+        p.drop += scaleArtifactMechanic("breach_scouting", 0.5);
       }
     }
 
     // 3. Kinetic Friction Turbine (Attack power scaling)
     if (window.checkArtifactTrait("friction_kinetic")) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("friction_kinetic")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
       let charges = window.playerStats.kineticFrictionCharges || 0;
       if (charges > 0) {
-        p.atk = p.atk.mul(1.0 + 0.005 * charges * slotMult);
+        p.atk = p.atk.mul(
+          1.0 + scaleArtifactMechanic("friction_kinetic", 0.005) * charges,
+        );
       }
     }
 
     // 4. Obsidian Core of Tenacity
     if (window.checkArtifactTrait("friction_tenacity")) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("friction_tenacity")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
       let stacks = window.playerStats.tenacityStacks || 0;
       if (stacks > 0) {
-        p.def = p.def.mul(1.0 + 0.02 * stacks * slotMult);
+        p.def = p.def.mul(
+          1.0 + scaleArtifactMechanic("friction_tenacity", 0.02) * stacks,
+        );
         p.blockMitigationBonus =
-          (p.blockMitigationBonus || 0) + 0.015 * stacks * slotMult;
+          (p.blockMitigationBonus || 0) +
+          scaleArtifactMechanic("friction_tenacity", 0.015) * stacks;
         p.parryMitigation =
-          (p.parryMitigation || 0.6) + 0.015 * stacks * slotMult;
+          (p.parryMitigation || 0.6) +
+          scaleArtifactMechanic("friction_tenacity", 0.015) * stacks;
       }
     }
 
     // 5. Void Accretion Engine (+3% damage every 10s, max 30%)
     if (window.checkArtifactTrait("friction_accretion")) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("friction_accretion")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
       let accretionStacks = Math.min(10, Math.floor(floorActiveTicks / 600));
       if (accretionStacks > 0) {
-        p.atk = p.atk.mul(1.0 + 0.03 * accretionStacks * slotMult);
+        p.atk = p.atk.mul(
+          1.0 +
+            scaleArtifactMechanic("friction_accretion", 0.03) *
+              accretionStacks,
+        );
       }
     }
 
     // 6. Nexus Harmonizer (Temporary block/parry tome buff)
     if (window.checkArtifactTrait("synergy_nexus")) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("synergy_nexus")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
       if (window.playerStats.nexusTomeShieldTimer > 0) {
-        p.block += 0.05 * slotMult;
-        p.parry += 0.05 * slotMult;
+        p.block += scaleArtifactMechanic("synergy_nexus", 0.05);
+        p.parry += scaleArtifactMechanic("synergy_nexus", 0.05);
       }
+    }
+
+    // Survivor's Adrenaline: the timer was already canonical; this is its
+    // previously missing outgoing-damage consumer.
+    if (
+      window.playerStats.adrenalineTimer > 0 &&
+      window.checkArtifactTrait("dodge_buff")
+    ) {
+      p.atk = p.atk.mul(
+        1 + scaleArtifactMechanic("dodge_buff", 0.3),
+      );
     }
   }
 
   // Hard physical engine limit safeguard: No combination of temporary buffs can exceed 3x base speed
   p.moveSpeed = Math.min(window.playerStats.baseMoveSpeed * 3.0, p.moveSpeed);
+  p.activeAttackSpeed = normalizeActiveAttackDelayFrames(p.activeAttackSpeed);
 
   // Calculate Universal Area of Effect Multiplier (Asymptotic Soft-Cap)
     let rawAreaBonus = p.bonusAreaRadius || 0;
@@ -3738,6 +3437,7 @@ export const resolvePlayerStats = function (useDraft = false) {
     if (!useDraft) {
       window.cachedPlayerStats = p;
       window.playerStatsDirty = false;
+      window.cachedActiveAttackRuntimeSignature = activeAttackRuntimeSignature;
     }
 
   return p;
@@ -3757,21 +3457,19 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
   if (window.checkArtifactTrait("breach_barrier")) {
     let floorActiveTicks =
       (window.playerStats && window.playerStats.floorActiveTicks) || 0;
-    let decayRatio = Math.max(0, 1.0 - floorActiveTicks / 1200);
-    if (decayRatio > 0) {
-      let slotLvl = window.getArtifactTemperLevel
-        ? window.getArtifactTemperLevel("breach_barrier")
-        : 0;
-      let slotMult = 1.0 + slotLvl * 0.01;
+    if (floorActiveTicks < 1200) {
       let maxHpVal = BigNum.from(p.maxHp || 100).toFiniteNumber(
         Number.MAX_VALUE / 16,
       );
       window.playerStats.overshieldConsumed =
         window.playerStats.overshieldConsumed || 0;
-      let maxOvershield = maxHpVal * slotMult;
+      let maxOvershield =
+        maxHpVal * getArtifactMechanicScale("breach_barrier");
       let currentOvershield = Math.max(
         0,
-        maxOvershield * decayRatio - window.playerStats.overshieldConsumed,
+        maxOvershield -
+          maxHpVal * 0.05 * (floorActiveTicks / 60) -
+          window.playerStats.overshieldConsumed,
       );
       if (currentOvershield > 0) {
         let absorbedByOvershield = Math.min(rawDmg, currentOvershield);
@@ -3933,7 +3631,9 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
         window.DEFLECTION_FATIGUE_FRAMES || 30;
     }
     if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-      window.playerStats.adrenalineTimer = 360;
+      window.playerStats.adrenalineTimer =
+        360 +
+        Math.round(scaleArtifactMechanic("extend_buffs", 180));
     }
 
     // Gain +10 Dagger Mastery XP on Parry
@@ -4066,16 +3766,14 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
       // Sanguine Rupture DoT explosion detonation on parry
       if (
         pStats.hasSanguineRupture &&
-        ((sourceMob.bleedStacks || 0) > 0 || (sourceMob.poisonStacks || 0) > 0)
+        getActivePoisonBleedStackCount(sourceMob) > 0
       ) {
-        let dotCount =
-          (sourceMob.bleedStacks || 0) + (sourceMob.poisonStacks || 0);
-        let detonationDmg = BigNum.from(pStats.atk || 15)
-          .mul(dotCount)
-          .mul(pStats.sanguineRuptureMult || 1.5);
-        sourceMob.hp = sourceMob.hp.sub(detonationDmg);
-        sourceMob.bleedStacks = 0; // consume
-        sourceMob.poisonStacks = 0; // consume
+        const detonation = detonateRemainingPeriodicDamage(
+          sourceMob,
+          pStats.sanguineRuptureMult || 1.5,
+        );
+        let dotCount = detonation.stacksConsumed;
+        let detonationDmg = detonation.damage;
         sourceMob.flashTimer = 8;
 
         if (typeof window.spawnFloatingText === "function") {
@@ -4138,33 +3836,23 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
         );
       }
 
-      // Dagger Keystone: Viper's Shadow Dance (100% Crit Charges & Bleed Stacks on Parry)
-      if (
-        window.SkillTreeManager &&
-        window.SkillTreeManager.getSkillLevel("dagger_keystone") > 0
-      ) {
-        window.playerStats.viperShadowDanceCharges = 2;
-        let bleedTick = BigNum.from(pStats.atk || 15).mul(0.5);
-        sourceMob.hp = sourceMob.hp.sub(bleedTick);
-        sourceMob.flashTimer = 8;
+      if (window.checkArtifactTrait("parry_strike")) {
+        const artifactCounterDmg = BigNum.from(pStats.atk || 15).mul(
+          scaleArtifactMechanic("parry_strike", 0.5),
+        );
+        sourceMob.hp = sourceMob.hp.sub(artifactCounterDmg);
         if (window.combatVisuals) {
           window.combatVisuals.spawnDamageEffect(
             mobCx,
-            mobCy - 10,
-            bleedTick,
-            "bleed",
+            mobCy - 8,
+            artifactCounterDmg,
+            "parry_counter",
             false,
-          );
-        }
-        if (typeof window.spawnFloatingText === "function") {
-          window.spawnFloatingText(
-            p.x,
-            p.y - 25,
-            "VIPER'S SHADOW DANCE (100% CRIT)",
-            "#a855f7",
+            sourceMob,
           );
         }
       }
+
       if (sourceMob.hp.lte(0)) {
         let rewardGold = Math.floor(
           15 * (1 + (window.player ? window.player.depth : 1) * 0.5),
@@ -4188,7 +3876,9 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
         window.DEFLECTION_FATIGUE_FRAMES || 30;
     }
     if (window.checkArtifactTrait && window.checkArtifactTrait("dodge_buff")) {
-      window.playerStats.adrenalineTimer = 360;
+      window.playerStats.adrenalineTimer =
+        360 +
+        Math.round(scaleArtifactMechanic("extend_buffs", 180));
     }
 
     // Gain +16 Shield Mastery XP on Block
@@ -4225,7 +3915,9 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
 
     if (window.SoundManager) window.SoundManager.play("block");
 
-    let baseMitigation = 0.7 + (pStats.blockMitigationBonus || 0); // Applies restored Fortified Stance 10%-30% block mitigation bonus
+    let baseMitigation =
+      (pStats.blockMitigation || 0.7) +
+      (pStats.blockMitigationBonus || 0);
     let blockMitigation = pStats.hasColossusKeystone
       ? 1.0
       : Math.min(0.95, baseMitigation);
@@ -4313,6 +4005,7 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
       pStats.hasImpactTremor &&
       Math.random() < pStats.impactTremorChance
     ) {
+      awardResonantAegisMasteryXp(pStats);
       if (isBoss && window.playerStats) {
         window.playerStats.counterCooldownTimer =
           window.COUNTER_COOLDOWN_FRAMES || 60;
@@ -4321,7 +4014,10 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
       if (window.activeDungeonMobs) {
         window.activeDungeonMobs.forEach((m) => {
           let dist = Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2));
-          if (dist <= 75 && isPlayerTargetableMob(m)) {
+          if (
+            dist <= 75 * (pStats.areaRadiusMult || 1.0) &&
+            isPlayerTargetableMob(m)
+          ) {
             m.hp = m.hp.sub(shockwaveDmg);
             m.flashTimer = 8;
             let dx = m.x + m.w / 2 - p.x;
@@ -4388,7 +4084,7 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
       if (
         window.checkArtifactTrait("synergy_nexus") &&
         pStats.subType === "shield" &&
-        Math.random() < 0.2
+        Math.random() < scaleArtifactMechanic("synergy_nexus", 0.2)
       ) {
         let spellDmg = BigNum.from(pStats.atk || 15)
           .mul(pStats.spellPower || 1.5)
@@ -4452,37 +4148,6 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
             sourceMob,
           );
         }
-      }
-    }
-
-    // Shield Keystone: Unbreakable Bulwark AoE Shockwave on Block (Respects Safeguard 3 ICD)
-    if (
-      canCounterShield &&
-      window.SkillTreeManager &&
-      window.SkillTreeManager.getSkillLevel("shield_keystone") > 0
-    ) {
-      let shockwaveDmg = BigNum.from(pStats.def || 5).mul(1.5);
-      if (window.activeDungeonMobs) {
-        window.activeDungeonMobs.forEach((m) => {
-          let dist = Math.hypot(p.x - (m.x + m.w / 2), p.y - (m.y + m.h / 2));
-          if (dist <= 64 && isPlayerTargetableMob(m)) {
-            m.hp = m.hp.sub(shockwaveDmg);
-            m.flashTimer = 8;
-            if (window.combatVisuals) {
-              window.combatVisuals.spawnDamageEffect(
-                m.x + m.w / 2,
-                m.y + m.h / 2,
-                shockwaveDmg,
-                "counter",
-                false,
-              );
-            }
-          }
-        });
-      }
-      if (window.combatVisuals) {
-        window.combatVisuals.spawnParticles(p.x, p.y, 18, "animated_armor", 4);
-        window.combatVisuals.triggerScreenShake(6, 10);
       }
     }
 
@@ -4557,13 +4222,7 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
 
   if (p.hp <= 0) {
     // Phoenix Ankh Second Wind Interceptor
-    if (
-      window.checkArtifactTrait &&
-      window.checkArtifactTrait("second_wind") &&
-      !window.playerStats.usedSecondWind
-    ) {
-      window.playerStats.usedSecondWind = true;
-      p.hp = Math.round(p.maxHp * 0.4);
+    if (consumePhoenixProtection({ player: p, playerStats: window.playerStats })) {
       if (typeof window.spawnFloatingText === "function") {
         window.spawnFloatingText(
           p.x,
@@ -4796,32 +4455,7 @@ window.playerStats = {
     shield: { xp: 0, level: 1, sp: 0, spentSp: 0 },
     dagger: { xp: 0, level: 1, sp: 0, spentSp: 0 },
     tome: { xp: 0, level: 1, sp: 0, spentSp: 0 },
-    nodes: {
-      shield_spiked_rim: 0,
-      shield_iron_wall: 0,
-      shield_impact_tremor: 0,
-      shield_fortified_guard: 0,
-      shield_retaliatory_strike: 0,
-      shield_aegis_pulse: 0,
-      shield_keystone_colossus: 0,
-      shield_keystone_reflect: 0,
-      dagger_lethal_precision: 0,
-      dagger_vipers_coating: 0,
-      dagger_shadow_step: 0,
-      dagger_expose_weakness: 0,
-      dagger_shadow_flurry: 0,
-      dagger_sanguine_rupture: 0,
-      dagger_keystone_assassin: 0,
-      dagger_keystone_duellist: 0,
-      tome_empowered_catalysts: 0,
-      tome_runic_barrier: 0,
-      tome_elemental_overload: 0,
-      tome_arcane_syphon: 0,
-      tome_barrier_shatter: 0,
-      tome_spell_weaving: 0,
-      tome_keystone_triad: 0,
-      tome_keystone_singularity: 0,
-    },
+    nodes: {},
   },
   masteryPoints: 0,
   activeStarterSubweapon: "none",
@@ -4978,7 +4612,7 @@ window.playerStats = {
   activityTimer: 0,
   fairyClicksWindow: [],
   canvasClicksWindow: [],
-  recentHeals: [], // Track siphoned heals in a sliding 1,000ms window
+  recentHeals: [], // Track siphoned heals in a sliding 60-frame simulation window
   // Achievement Checkpoint Flags
   hasTriggeredMurphysLaw: false,
   hasTriggeredAgainstOdds: false,
@@ -5635,6 +5269,7 @@ const commitEngineSaveState = function (hydratedSave) {
     hydratedDefaults.playerStats,
     hydratedSave.playerStats,
   );
+  migrateLegacyMasteryNodeIds(window.playerStats);
 
   window.equippedSlots = hydratedSave.equippedSlots;
   window.inventory = hydratedSave.inventory;
@@ -5919,7 +5554,7 @@ export const renderBestiaryAlbum = function () {
     block: "Block Rate",
     parry: "Parry Rate",
     xpRate: "XP Rate Multiplier",
-    dropRate: "Drop Rate Mod",
+    dropRate: "Eligible Monster Drop Rate",
     gold: "Gold Multiplier",
     rareSpawn: "Rare Spawn Rate",
   };

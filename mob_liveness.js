@@ -1,4 +1,5 @@
 import { isBelowHealthFraction } from "./combat_scaling.js?v=1.001";
+import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
 
 export function isBossOrMinibossMob(mob) {
   return !!(
@@ -44,11 +45,10 @@ export function prepareMimicTier(mob, map) {
   }
 
   if (!foundTier) {
-    let treasureHunterLevel =
-      (window.playerStats &&
-        window.playerStats.skillTree &&
-        window.playerStats.skillTree.utility_treasure_hunter) ||
-      0;
+    let treasureHunterLevel = getMasteryNodeRank(
+      window.playerStats,
+      "utility_treasure_hunter",
+    );
     let seedValue =
       Math.sin(mob.x * 12.9898 + mob.y * 78.233) * 43758.5453;
     let roll = Math.abs(seedValue - Math.floor(seedValue));

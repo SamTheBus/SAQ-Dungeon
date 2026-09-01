@@ -1,3 +1,8 @@
+import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
+import { getStandardPortalTraversalState } from "./portal_guardian_contract.js?v=1.000";
+import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
+import { getCompassPath } from "./artifact_authority.js?v=1.002";
+
 /* ==========================================================================
    PRIMARY PURPOSE: Top-Down Procedural Dungeon Map Generator (BSP),
    Topological Path Solver for Extraction Points, and Frustum-Culled Tile Renderer.
@@ -34,6 +39,7 @@
       this.chestTiers = {};
       this.chestAnimations = {};
       this.portalLocked = false;
+      this.marcusRobberyState = "available";
     }
 
     getGridDimensions(depth) {
@@ -185,8 +191,7 @@
       if (
         rec &&
         rec.floor === this.depth &&
-        rec.items &&
-        rec.items.length > 0
+        hasRecoveryAssets(rec)
       ) {
         let rcX = cx - 4;
         let rcY = 3;
@@ -493,12 +498,10 @@
       if (
         rec &&
         rec.floor === this.depth &&
-        rec.items &&
-        rec.items.length > 0
+        hasRecoveryAssets(rec)
       ) {
         let spawnInPortalRoom =
-          window.SkillTreeManager &&
-          window.SkillTreeManager.getSkillLevel("utility_soul_beacon") > 0;
+          getMasteryNodeRank(window.playerStats, "utility_soul_beacon") > 0;
         let targetRoom = chosen;
 
         if (!spawnInPortalRoom && this.rooms.length > 0) {
@@ -596,11 +599,11 @@
 
       for (let i = 0; i < 3; i++) {
         let chosenType = types[Math.floor(Math.random() * types.length)];
-        let rolledRarity = window.rollItemRarity(
-          Math.max(this.depth, window.playerStats.maxFloorCleared || 0) * 8,
-          playerQuality,
-          false,
-        );
+        let rolledRarity = window.rollItemRarity({
+          progressionStage: this.depth,
+          resolvedQuality: playerQuality,
+          source: window.EQUIPMENT_RARITY_SOURCES.DUNGEON_MERCHANT,
+        });
         let item = window.createItemObject(
           chosenType,
           rolledRarity,
@@ -662,11 +665,10 @@
             this.grid[cy][cx] = window.TILE_TYPES.CHEST_SPAWN;
             this.chests.push({ x: cx, y: cy, opened: false });
 
-            let rLevel = 0;
-            if (window.playerStats && window.playerStats.skillTree) {
-              rLevel =
-                window.playerStats.skillTree.utility_treasure_hunter || 0;
-            }
+            let rLevel = getMasteryNodeRank(
+              window.playerStats,
+              "utility_treasure_hunter",
+            );
             let r = Math.random();
             let tier = "iron_bound";
             if (rLevel === 1) {
@@ -2058,7 +2060,9 @@
     }
 
     // 9. MAGICAL SEALS / CHAINS (If portal is locked by a Sentinel)
-    if (map.portalLocked) {
+    if (
+      getStandardPortalTraversalState(map, window.playerStats).visualLocked
+    ) {
       let sector = Math.floor((map.depth - 1) / 12);
       ctx.save();
       ctx.translate(cx, pCenterY);
@@ -3207,7 +3211,7 @@
 
         // Recovery Chest Warning Beacon Indicator
         let rec = window.playerStats && window.playerStats.recoveryLoot;
-        if (rec && rec.items && rec.items.length > 0) {
+        if (hasRecoveryAssets(rec)) {
           let warnPulse = Math.sin(time / 140) * 3;
           let warnY = centerPortalY - 32 + warnPulse;
 
@@ -5822,6 +5826,42 @@
             Math.max(1, scaleY),
           );
         }
+      }
+    }
+
+    // Compass route overlay: reveal a path without mutating exploration/fog state.
+    if (
+      Number(window.playerStats?.floorActiveTicks || 0) < 900 &&
+      window.checkArtifactTrait?.("breach_scouting") &&
+      p
+    ) {
+      const compassPath = getCompassPath(map, p, window.TILE_TYPES);
+      if (compassPath.length > 1) {
+        ctx.save();
+        ctx.strokeStyle = "#facc15";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 2]);
+        ctx.beginPath();
+        compassPath.forEach((tile, index) => {
+          const x = mx + (tile.x + 0.5) * scaleX;
+          const y = my + (tile.y + 0.5) * scaleY;
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const target = compassPath[compassPath.length - 1];
+        ctx.fillStyle = "#fde047";
+        ctx.beginPath();
+        ctx.arc(
+          mx + (target.x + 0.5) * scaleX,
+          my + (target.y + 0.5) * scaleY,
+          2.5,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.restore();
       }
     }
 
