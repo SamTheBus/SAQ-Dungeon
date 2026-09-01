@@ -98,7 +98,7 @@ import {
   drawDungeonPortalTile,
   renderTopDownMap,
   renderMinimap,
-} from "./dungeon_map.js?v=1.009";
+} from "./dungeon_map.js?v=1.010";
 import {
   createCalamitySigil,
   signSpecialChallengeContract,

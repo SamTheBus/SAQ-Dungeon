@@ -739,10 +739,17 @@ import { getCompassPath } from "./artifact_authority.js?v=1.002";
     }
 
     revealSightRadius(px, py, pInt = 0) {
-      if (!this.exploredGrid || !this.grid) return;
+      if (
+        !Array.isArray(this.exploredGrid) ||
+        !Array.isArray(this.grid) ||
+        this.grid.length === 0
+      ) {
+        return;
+      }
       let tileSize = this.tileSize;
       let centerC = Math.floor(px / tileSize);
       let centerR = Math.floor(py / tileSize);
+      if (!Number.isFinite(centerC) || !Number.isFinite(centerR)) return;
 
       let radius = 12;
       if (pInt < 0) {
@@ -755,16 +762,23 @@ import { getCompassPath } from "./artifact_authority.js?v=1.002";
       let radiusSq = radius * radius;
 
       let minR = Math.max(0, centerR - radius);
-      let maxR = Math.min(this.height - 1, centerR + radius);
+      let maxR = Math.min(this.grid.length - 1, centerR + radius);
       let minC = Math.max(0, centerC - radius);
-      let maxC = Math.min(this.width - 1, centerC + radius);
 
       for (let r = minR; r <= maxR; r++) {
+        const gridRow = this.grid[r];
+        if (!Array.isArray(gridRow) || gridRow.length === 0) continue;
+        if (!Array.isArray(this.exploredGrid[r])) {
+          this.exploredGrid[r] = Array(gridRow.length).fill(false);
+        }
+        const maxC = Math.min(gridRow.length - 1, centerC + radius);
         let dr = r - centerR;
         for (let c = minC; c <= maxC; c++) {
           let dc = c - centerC;
           if (dr * dr + dc * dc <= radiusSq) {
-            this.exploredGrid[r][c] = true;
+            if (c < this.exploredGrid[r].length) {
+              this.exploredGrid[r][c] = true;
+            }
           }
         }
       }

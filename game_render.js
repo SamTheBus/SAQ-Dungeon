@@ -1,4 +1,4 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
 import { prepareMobTetherRecipients } from "./mob_renderer.js?v=1.012";
 

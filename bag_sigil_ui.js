@@ -2,7 +2,7 @@
     getActiveBagTab,
     getActiveProfileMobileTab,
   } from "./ui_state.js?v=1.004";
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 
   // --- LOOT SATCHEL & VAULT TOGGLE ---
   export function renderBagModalContent() {

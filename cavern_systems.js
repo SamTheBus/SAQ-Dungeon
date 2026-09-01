@@ -1,4 +1,4 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
 import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
 

@@ -1,4 +1,4 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
 import {
   awardResonantAegisMasteryXp,

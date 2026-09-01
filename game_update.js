@@ -1,4 +1,4 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
 
   export const updateGame = function (canvas, isPointerHolding, checkCollisionAt) {

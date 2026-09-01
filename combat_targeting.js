@@ -1,4 +1,4 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import {
   findNearestIndexedMobInRadius,
 } from "./mob_spatial_index.js?v=1.002";

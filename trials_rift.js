@@ -1,5 +1,5 @@
 import { setCurrentGameState } from "./runtime_state.js?v=1.002";
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { setPrimaryMob } from "./encounter_state.js?v=1.007";
 import { resetSafeModeExitAuthority } from "./safe_mode_finalization.js?v=1.001";
 
