@@ -1,4 +1,4 @@
-import { getFrostMovementMultiplier } from "./element_effect_authority.js?v=1.001";
+import { getFrostMovementMultiplier } from "./element_effect_authority.js?v=1.003";
 
     // --- ZERO-ALLOCATION TANGENTIAL STEERING & CORNER UNSTICK ENGINE ---
     const PROBE_OFFSETS_CW = [

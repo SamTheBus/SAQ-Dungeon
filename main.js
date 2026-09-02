@@ -1,6 +1,6 @@
 import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
-import { applyPlayerPoison } from "./combat_effect_authority.js?v=1.001";
+import { applyPlayerPoison } from "./combat_effect_authority.js?v=1.002";
 
 /* ==========================================================================
    PRIMARY PURPOSE: Clean Top-Down Extraction Crawler Core Engine & Game Loop.
@@ -64,6 +64,17 @@ import { applyPlayerPoison } from "./combat_effect_authority.js?v=1.001";
 
     window.canvas = canvas;
     window.ctx = ctx;
+
+    document.addEventListener("keydown", (event) => {
+      const target = event.target;
+      const editing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable;
+      if (event.code !== "Space" || event.repeat || editing) return;
+      const result = window.requestShadowDash?.();
+      if (result?.applied) event.preventDefault();
+    });
 
     window.resizeCanvas();
     window.addEventListener("resize", window.resizeCanvas);
@@ -256,6 +267,7 @@ import { applyPlayerPoison } from "./combat_effect_authority.js?v=1.001";
       let { clickX, clickY } = handlePointerPosition(e);
       window.cursorPointer.screenX = clickX;
       window.cursorPointer.screenY = clickY;
+      window.cursorPointer.hasPosition = true;
 
       // Check Station Prompt Interaction
       if (
@@ -571,6 +583,7 @@ import { applyPlayerPoison } from "./combat_effect_authority.js?v=1.001";
     if (typeof window.initFlaskButtonDrag === "function") {
       window.initFlaskButtonDrag();
     }
+    window.initShadowDashButtonDrag?.();
 
     // Start inside Adventurer's Hub
     window.loadHub();

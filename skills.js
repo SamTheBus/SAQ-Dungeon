@@ -727,8 +727,8 @@
                   maxRank: 2,
                   costPerRank: 1,
                   prereqs: ["tome_exp"],
-                  desc: "Fireball deals 35%/70% splash; Chain Zap bounces +1/+2 times; Frost Nova slows by 20%/40%. Increases Area Radius by +20% per rank.",
-                  getStatText: (rank) => `Overload Level ${rank} & +${rank * 20}% Area Radius`,
+                  desc: "Fireball deals 35%/70% splash; Chain Zap bounces +1/+2 times; Frost Nova applies a non-stacking 20%/40% slow (80%/60% movement). Repeated Frost procs reapply the same rank magnitude but do not deepen it. Increases Area Radius by +20% per rank.",
+                  getStatText: (rank) => `Overload Level ${rank}: non-stacking ${rank * 20}% Frost slow & +${rank * 20}% Area Radius`,
                 },
         {
                   id: "tome_arcane_syphon",

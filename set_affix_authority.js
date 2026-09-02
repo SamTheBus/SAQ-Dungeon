@@ -15,17 +15,18 @@ export const SET_ELIGIBLE_SLOTS = Object.freeze([
 
 export const SET_CAPSTONE_CONTRACTS = Object.freeze({
   Biohazard: Object.freeze({
-    status: "unresolved-design",
+    status: "functional",
     threshold: 3,
     flag: "hasCorrosiveSet",
     reason:
-      "Inactive — poison rank/damage and life-steal rate/cap are not authored.",
+      "Functional — eligible attack actions have one 20% Corrosive Spores roll; Poison uses the strongest active Viper/Biohazard coefficient and heals 5% of actual Poison tick damage within a shared 1.5% Max-HP-per-second cap.",
   }),
   Warlord: Object.freeze({
-    status: "unresolved-design",
+    status: "functional",
     threshold: 3,
     flag: "hasShatterSet",
-    reason: "Inactive — the secondary-hit damage coefficient is not authored.",
+    reason:
+      "Functional — eligible critical attack actions have one 25% Shattering Blows roll for a same-target 50% resolved-ATK physical packet that bypasses guard, cannot Crit, and cannot recurse.",
   }),
   VoidTouched: Object.freeze({
     status: "functional",
@@ -66,7 +67,7 @@ const AFFIX_DOMAIN_ROWS = [
   ["block", "Block Rate", ["shield"], "incoming defense", "functional"],
   ["parry", "Parry Rate", ["dagger"], "incoming defense", "functional"],
   ["activeAttackSpeed", "Active Attack Speed", ["weapon", "helmet", "boots", "tome"], "active combat only", "functional"],
-  ["idleAttackSpeed", "Idle Attack Speed (Idle only)", ["weapon", "helmet", "boots", "tome"], "Idle-only", "intentionally-idle-only"],
+  ["idleAttackSpeed", "Idle Attack Speed — Future Idle Expedition only — no current active-dungeon effect", ["weapon", "helmet", "boots", "tome"], "future Idle Expedition only; excluded from active-dungeon comparisons", "intentionally-idle-only"],
   ["moveSpeed", "Move Speed", ["boots", "ring", "shield", "dagger"], "global movement", "functional"],
   ["bonusAreaRadius", "Global AoE Radius (supported effects only)", ["helmet", "ring", "shield", "dagger", "tome"], "accepted G.6B3 global AoE consumers", "functional"],
   ["dropRate", "Eligible Monster Drop Rate", ["artifact"], "economy only", "functional"],
@@ -171,10 +172,6 @@ export function resolveCanonicalSetState({
     hasShatterSet: Boolean(stats.hasShatterSet),
     hasSingularitySet: Boolean(stats.hasSingularitySet),
   };
-  for (const contract of Object.values(SET_CAPSTONE_CONTRACTS)) {
-    if (contract.status === "unresolved-design") stats[contract.flag] = false;
-  }
-
   return {
     counts,
     thresholds,

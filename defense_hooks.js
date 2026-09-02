@@ -4,7 +4,7 @@ import {
   awardResonantAegisMasteryXp,
   awardWindRazorMasteryXp,
 } from "./mastery_authority.js?v=1.003";
-import { hasPeriodicEffect } from "./combat_effect_authority.js?v=1.001";
+import { hasPeriodicEffect } from "./combat_effect_authority.js?v=1.002";
 
     // The base damage pipeline owns mitigation/counters. This narrow decorator
     // supplies only the communicated Master Duellist combat companion.
@@ -43,6 +43,16 @@ import { hasPeriodicEffect } from "./combat_effect_authority.js?v=1.001";
     }
 
     export function handleVanguardBlockTrigger(attacker) {
+      // Compatibility export only. damagePlayer now owns both the distinct
+      // Block-only Resonant Aegis event and the canonical Shield Bash event.
+      // Keeping this entrypoint inert prevents old callers from creating a
+      // second damage/proc authority.
+      return Object.freeze({
+        applied: false,
+        reason: "canonical_damage_player_block_authority",
+        attackerId: attacker?.id ?? null,
+      });
+
       let p = window.player;
       let pStats =
         typeof window.resolvePlayerStats === "function"

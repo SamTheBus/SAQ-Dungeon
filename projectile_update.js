@@ -2,12 +2,16 @@ import {
   isFriendlyCombatMob,
   isPlayerTargetableMob,
 } from "./combat_factions.js?v=1.001";
-import { resolveTomeProjectileImpact } from "./tome_projectile.js?v=1.002";
+import { resolveTomeProjectileImpact } from "./tome_projectile.js?v=1.003";
 import {
   renderRandom,
   renderRandFloat,
   renderRandInt,
 } from "./render_rng.js?v=1.000";
+import {
+  classifyTomeProjectileBlock,
+  recordTomeDeliveryCommunication,
+} from "./tome_delivery_communication.js?v=1.000";
 
 const projectileOverlaps = (proj, target, defaultRadius) => {
   const targetX = target.x + (target.w || 0) / 2;
@@ -63,6 +67,9 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
         const remaining = Math.max(0, proj.maxTravelDistance - traveled);
         const plannedStep = Math.hypot(stepVx, stepVy);
         if (remaining <= 0 || plannedStep <= 0) {
+          if (proj.type === "tome_bolt") {
+            recordTomeDeliveryCommunication("expired-range", { projectile: proj });
+          }
           spawnProjectileImpact(proj);
           window.projectiles.splice(i, 1);
           continue;
@@ -271,6 +278,12 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
       }
 
       if (map && map.grid && checkCollisionAt(map, proj.x, proj.y, proj.r)) {
+        if (proj.type === "tome_bolt") {
+          recordTomeDeliveryCommunication(
+            classifyTomeProjectileBlock(map, proj.x, proj.y),
+            { projectile: proj },
+          );
+        }
         spawnProjectileImpact(proj);
         window.projectiles.splice(i, 1);
         continue;
@@ -280,7 +293,13 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
         const hitMob = findPlayerProjectileTarget(proj);
         if (hitMob) {
           if (proj.type === "tome_bolt") {
-            resolveTomeProjectileImpact(proj, hitMob);
+            const resolved = resolveTomeProjectileImpact(proj, hitMob);
+            if (resolved) {
+              recordTomeDeliveryCommunication(
+                hitMob.id === proj.intendedTargetId ? "impact" : "intercepted",
+                { projectile: proj, actualTarget: hitMob },
+              );
+            }
           } else {
             hitMob.hp = hitMob.hp.sub(proj.damage);
             hitMob.flashTimer = 6;
@@ -305,6 +324,9 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
       }
 
       if (reachedTravelLimit) {
+        if (proj.type === "tome_bolt") {
+          recordTomeDeliveryCommunication("expired-range", { projectile: proj });
+        }
         spawnProjectileImpact(proj);
         window.projectiles.splice(i, 1);
         continue;
@@ -320,6 +342,9 @@ const spawnProjectileImpact = (proj, particleCount = 6) => {
       }
 
       if (proj.life <= 0) {
+        if (proj.type === "tome_bolt") {
+          recordTomeDeliveryCommunication("expired", { projectile: proj });
+        }
         if (
           window.combatVisuals &&
           typeof window.combatVisuals.spawnProjectileImpact === "function"

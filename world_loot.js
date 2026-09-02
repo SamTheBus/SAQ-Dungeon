@@ -1,4 +1,4 @@
-import { applyArcaneShieldRecharge } from "./combat_effect_authority.js?v=1.001";
+import { applyArcaneShieldRecharge } from "./combat_effect_authority.js?v=1.002";
 
   export function spawnGroundLoot(item, x, y) {
     if (!item) return;

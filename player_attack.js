@@ -11,11 +11,21 @@ import {
   clearPeriodicEffect,
   getActivePeriodicEffectCount,
   resolveOnHitArtifactEffects,
-} from "./combat_effect_authority.js?v=1.001";
+} from "./combat_effect_authority.js?v=1.002";
 import { isTomeCombatProfile } from "./combat_reach.js?v=1.001";
-import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.002";
-import { isEligiblePlayerElementTarget } from "./element_effect_authority.js?v=1.001";
+import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.003";
+import { isEligiblePlayerElementTarget } from "./element_effect_authority.js?v=1.003";
 import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js?v=1.001";
+import {
+  canApplyDaggerMainBleed,
+  canApplyVipersCoating,
+  canExecuteDaggerOffhand,
+} from "./dagger_identity_contract.js?v=1.000";
+import { resolveSuccessfulShieldMainAttack } from "./shield_guard_pressure.js?v=1.002";
+import {
+  presentSetCapstoneAttackAction,
+  resolveCanonicalSetCapstoneAttackAction,
+} from "./set_capstone_authority.js?v=1.000";
 
   export const resolvePlayerAttack = function (
     p,
@@ -138,9 +148,23 @@ import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js
         m.hasTakenDamage = true;
         m.flashTimer = 6;
         awardMainAttackMasteryXp();
+        resolveSuccessfulShieldMainAttack({
+          player: p,
+          playerStats: window.playerStats,
+          resolvedStats: pStats,
+          target: m,
+        });
+        const setCapstoneResult = resolveCanonicalSetCapstoneAttackAction({
+          target: m,
+          player: p,
+          resolvedStats: pStats,
+          isCritical: isCrit,
+          frame: window.logicClock,
+        });
+        presentSetCapstoneAttackAction(setCapstoneResult, m);
 
         // Roll bleed from dagger base bleedChance
-        if (pStats.bleedChance && pStats.bleedChance > 0) {
+        if (canApplyDaggerMainBleed({ resolvedStats: pStats })) {
           if (Math.random() < pStats.bleedChance) {
             applyPlayerBleed(m, pStats, { mechanic: "dagger_main_bleed" });
           }
@@ -382,6 +406,14 @@ import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js
             "#e74c3c",
           );
         }
+        if (pStats.subType === "dagger" || pStats.subType === "shield") {
+          window.spawnMeleeFeelImpact?.(
+            mobCenterX,
+            mobCenterY,
+            pStats.subType,
+            false,
+          );
+        }
         if (onHitArtifacts.echoProc) {
           if (window.RenderEngine && window.RenderEngine.spawnDamageEffect) {
             window.RenderEngine.spawnDamageEffect(
@@ -523,7 +555,7 @@ import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js
         }
 
         // Dagger Offhand Multi-Strike & DoT Application (Blocked if Nullifier Disrupted)
-        if (pStats.subType === "dagger") {
+        if (canExecuteDaggerOffhand({ resolvedStats: pStats })) {
           let finalOffhandChance = p.nullifierDisrupted
             ? 0
             : pStats.offhandChance || 0.35;
@@ -544,6 +576,12 @@ import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js
                 m,
               );
             }
+            window.spawnMeleeFeelImpact?.(
+              mobCenterX,
+              mobCenterY - 6,
+              "dagger",
+              true,
+            );
 
             // Roll bleed from dagger base bleedChance
             if (pStats.bleedChance && pStats.bleedChance > 0) {
@@ -554,11 +592,23 @@ import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js
 
             // 1. Viper's Coating (Apply Stacking Poison & Bleeding)
             let vipersLvl = pStats.vipersCoatingLvl || 0;
-            if (vipersLvl > 0) {
+            if (
+              vipersLvl > 0 &&
+              canApplyVipersCoating({ resolvedStats: pStats })
+            ) {
               const poisonEffect = applyPlayerPoison(m, pStats, {
                 rank: vipersLvl,
                 mechanic: "vipers_coating",
               });
+              if (poisonEffect) {
+                window.spawnMeleeFeelImpact?.(
+                  mobCenterX,
+                  mobCenterY,
+                  "dagger",
+                  true,
+                  "poison",
+                );
+              }
 
               let bleedChance = vipersLvl * 0.05;
               if (Math.random() < bleedChance) {

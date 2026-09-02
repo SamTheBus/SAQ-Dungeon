@@ -3,7 +3,7 @@ import {
   applyPeriodicEffect,
   clearPeriodicEffect,
   getPeriodicEffect,
-} from "./combat_effect_authority.js?v=1.001";
+} from "./combat_effect_authority.js?v=1.002";
 import {
   hasLivingCombatHp,
   isPlayerTargetableMob,
@@ -16,9 +16,28 @@ import {
 export const ELEMENT_AREA_BASE_RADIUS = 80;
 export const LIGHTNING_CHAIN_BASE_RADIUS = 120;
 
-// G.6D0 must replace these null gates with explicit authored profiles.
-export const PRODUCTION_FIRE_TOME_BURN_PROFILE = null;
-export const PRODUCTION_FROST_CONTROL_PROFILE = null;
+export const PRODUCTION_FIRE_TOME_BURN_PROFILE = Object.freeze({
+  profileId: "g6d_fire_burn_v1",
+  damageBasis: "capturedResolvedAtk",
+  damagePerTickMultiplier: 0.15,
+  tickFrames: 60,
+  durationFrames: 240,
+  maxStacks: 1,
+  reapplication: "refresh-preserve-tick-phase",
+});
+export const PRODUCTION_FROST_CONTROL_PROFILE = Object.freeze({
+  profileId: "g6d_frost_control_v1",
+  stackCap: 4,
+  slowPerStack: 0.1,
+  chillDurationFrames: 240,
+  ordinaryFreezeFrames: 60,
+  eliteFreezeFrames: 30,
+  bossSlowFrames: 90,
+  frigidReprieveBasis: "maxArcaneBarrier",
+  frigidReprieveMultiplier: 0.06,
+  capPhaseProcPolicy: "ignore-without-refresh-cancel-or-banking",
+  movementComposition: "strongest-slow-wins",
+});
 
 export function getCanonicalElementAreaRadius(playerStats = {}) {
   const overloadRank = playerStats.hasElementalOverload
@@ -149,21 +168,24 @@ function hasExplicitFireProfile(profile) {
       profile.profileId.length > 0 &&
       Number.isFinite(Number(profile.durationFrames)) &&
       Number(profile.durationFrames) > 0 &&
-      profile.damagePerTick !== undefined &&
-      profile.damagePerTick !== null,
+      ((profile.damagePerTick !== undefined && profile.damagePerTick !== null) ||
+        (Number.isFinite(Number(profile.damagePerTickMultiplier)) &&
+          Number(profile.damagePerTickMultiplier) > 0)),
   );
 }
 
 function hasExplicitFrostProfile(profile) {
   const requiredPositive = [
     "stackCap",
-    "slowMagnitude",
     "chillDurationFrames",
     "ordinaryFreezeFrames",
     "eliteFreezeFrames",
     "bossSlowFrames",
-    "frigidReprieveAmount",
   ];
+  const slow = Number(profile?.slowPerStack ?? profile?.slowMagnitude);
+  const reprieve = Number(
+    profile?.frigidReprieveMultiplier ?? profile?.frigidReprieveAmount,
+  );
   return Boolean(
     profile &&
       typeof profile.profileId === "string" &&
@@ -171,7 +193,11 @@ function hasExplicitFrostProfile(profile) {
       requiredPositive.every(
         (key) => Number.isFinite(Number(profile[key])) && Number(profile[key]) > 0,
       ) &&
-      Number(profile.slowMagnitude) < 1,
+      Number.isFinite(slow) &&
+      slow > 0 &&
+      slow < 1 &&
+      Number.isFinite(reprieve) &&
+      reprieve > 0,
   );
 }
 
@@ -192,7 +218,12 @@ export function clearElementStates(target) {
 export function applyCanonicalFireTomeBurn(
   target,
   profile,
-  { frame, sourceId = "tome_fire", mechanic = "tome_burning_impact" } = {},
+  {
+    frame,
+    sourceId = "tome_fire",
+    mechanic = "tome_burning_impact",
+    resolvedAtk,
+  } = {},
 ) {
   if (!isEligiblePlayerElementTarget(target)) {
     return { applied: false, reason: "ineligible-target", effect: null };
@@ -200,11 +231,21 @@ export function applyCanonicalFireTomeBurn(
   if (!hasExplicitFireProfile(profile)) {
     return { applied: false, reason: "missing-authored-profile", effect: null };
   }
+  const damagePerTick =
+    profile.damagePerTick !== undefined && profile.damagePerTick !== null
+      ? profile.damagePerTick
+      : multiplyDamage(
+          resolvedAtk,
+          Number(profile.damagePerTickMultiplier),
+        );
+  if (!(finite(damagePerTick) > 0)) {
+    return { applied: false, reason: "missing-captured-atk", effect: null };
+  }
   const effect = applyPeriodicEffect(target, "burn", {
     frame: currentFrame(frame),
-    damagePerStack: profile.damagePerTick,
+    damagePerStack: damagePerTick,
     durationFrames: Number(profile.durationFrames),
-    tickFrames: 60,
+    tickFrames: Number(profile.tickFrames || 60),
     maxStacks: 1,
     stacks: 1,
     reapplication: "replace",
@@ -241,18 +282,37 @@ export function applyCanonicalFrostControl({
   const resolvedFrame = currentFrame(frame);
   const states = ensureElementStates(target);
   const existing = states.frost;
+  if (
+    existing &&
+    (existing.phase === "freeze" || existing.phase === "boss_slow") &&
+    resolvedFrame < existing.expiresAt
+  ) {
+    return {
+      applied: false,
+      reason: "cap-phase-ignored",
+      transition: null,
+      state: existing,
+    };
+  }
   const existingChill =
     existing?.phase === "chill" && resolvedFrame < existing.expiresAt
       ? existing
       : null;
   const stackCap = Math.max(1, Math.floor(Number(profile.stackCap)));
   const stacks = Math.min(stackCap, (existingChill?.stacks || 0) + 1);
+  const perStackSlow = Number(
+    profile.slowPerStack ?? profile.slowMagnitude,
+  );
+  const slowMagnitude = profile.slowPerStack !== undefined
+    ? Math.min(1, perStackSlow * stacks)
+    : perStackSlow;
   const baseState = {
     profileId: profile.profileId,
     phase: "chill",
     stacks,
     stackCap,
-    slowMagnitude: Number(profile.slowMagnitude),
+    slowPerStack: perStackSlow,
+    slowMagnitude,
     appliedAt: existingChill?.appliedAt ?? resolvedFrame,
     lastAppliedAt: resolvedFrame,
     expiresAt: resolvedFrame + Number(profile.chillDurationFrames),
@@ -268,10 +328,13 @@ export function applyCanonicalFrostControl({
       0,
       finite(playerStats?.arcaneShieldMax || player?.arcaneShieldMax || 0),
     );
+    const reprieveAmount = profile.frigidReprieveMultiplier !== undefined
+      ? maxShield * Number(profile.frigidReprieveMultiplier)
+      : Number(profile.frigidReprieveAmount);
     const recharge = applyArcaneShieldRecharge(
       player,
       maxShield,
-      Number(profile.frigidReprieveAmount),
+      reprieveAmount,
       0,
     );
     const bossState = {
@@ -283,6 +346,14 @@ export function applyCanonicalFrostControl({
       frigidReprieve: { ...recharge },
     };
     states.frost = bossState;
+    const metrics = window.playerStats?.combatEffectMetrics;
+    if (metrics) {
+      metrics.barrierRecharge =
+        Number(metrics.barrierRecharge || 0) + Number(recharge.shieldGained || 0);
+      metrics.procCounts ||= {};
+      metrics.procCounts.frigidReprieve =
+        Number(metrics.procCounts.frigidReprieve || 0) + 1;
+    }
     return {
       applied: true,
       reason: "boss-resistant",
@@ -313,6 +384,34 @@ export function applyCanonicalFrostControl({
   };
 }
 
+export function applyElementalOverloadFrostSlow(target, rank, { frame } = {}) {
+  if (!isEligiblePlayerElementTarget(target)) {
+    return { applied: false, reason: "ineligible-target", state: null };
+  }
+  const resolvedRank = Math.min(2, Math.max(0, Math.floor(Number(rank || 0))));
+  if (resolvedRank < 1) {
+    return { applied: false, reason: "inactive-rank", state: null };
+  }
+
+  const resolvedFrame = currentFrame(frame);
+  const states = ensureElementStates(target);
+  const existing = states.elementalOverloadFrost;
+  const slowMagnitude = resolvedRank === 1 ? 0.2 : 0.4;
+  const state = {
+    source: "elemental_overload",
+    phase: "overload_slow",
+    rank: resolvedRank,
+    slowMagnitude,
+    movementMultiplier: 1 - slowMagnitude,
+    stackingRule: "non-stacking-reapplication",
+    appliedAt: existing?.appliedAt ?? resolvedFrame,
+    lastAppliedAt: resolvedFrame,
+    applicationCount: Number(existing?.applicationCount || 0) + 1,
+  };
+  states.elementalOverloadFrost = state;
+  return { applied: true, reason: "non-stacking-reapplication", state };
+}
+
 export function advanceCanonicalElementStates(targets, frame) {
   const resolvedFrame = currentFrame(frame);
   const uniqueTargets = new Set((targets || []).filter(Boolean));
@@ -328,7 +427,7 @@ export function advanceCanonicalElementStates(targets, frame) {
   }
 }
 
-export function getFrostMovementMultiplier(target, frame) {
+function getFrostProfileMovementMultiplier(target, frame) {
   const frost = target?.elementStates?.frost;
   const resolvedFrame = currentFrame(frame);
   if (!frost || resolvedFrame >= frost.expiresAt) return 1;
@@ -337,6 +436,53 @@ export function getFrostMovementMultiplier(target, frame) {
     return Math.max(0, 1 - Number(frost.slowMagnitude || 0));
   }
   return 1;
+}
+
+function getElementalOverloadFrostMovementMultiplier(target) {
+  const overload = target?.elementStates?.elementalOverloadFrost;
+  const multiplier = Number(overload?.movementMultiplier);
+  return Number.isFinite(multiplier)
+    ? Math.max(0, Math.min(1, multiplier))
+    : 1;
+}
+
+export function getFrostMovementMultiplier(target, frame) {
+  return Math.min(
+    getElementalOverloadFrostMovementMultiplier(target),
+    getFrostProfileMovementMultiplier(target, frame),
+  );
+}
+
+export function getFrostMovementCompositionSnapshot(target, frame) {
+  const resolvedFrame = currentFrame(frame);
+  const overload = target?.elementStates?.elementalOverloadFrost;
+  const frost = target?.elementStates?.frost;
+  const profileActive = Boolean(frost && resolvedFrame < frost.expiresAt);
+  return readonlyCopy({
+    compositionRule: "strongest-slow-wins",
+    elementalOverload: overload
+      ? {
+          active: true,
+          rank: overload.rank,
+          slowMagnitude: overload.slowMagnitude,
+          movementMultiplier: overload.movementMultiplier,
+          stackingRule: overload.stackingRule,
+          applicationCount: overload.applicationCount,
+          lastAppliedAt: overload.lastAppliedAt,
+        }
+      : { active: false, movementMultiplier: 1 },
+    chillFreeze: profileActive
+      ? {
+          active: true,
+          phase: frost.phase,
+          slowMagnitude: frost.slowMagnitude,
+          movementMultiplier: getFrostProfileMovementMultiplier(target, frame),
+          remainingFrames: frost.expiresAt - resolvedFrame,
+          bossConverted: frost.phase === "boss_slow",
+        }
+      : { active: false, movementMultiplier: 1, bossConverted: false },
+    effectiveMovementMultiplier: getFrostMovementMultiplier(target, frame),
+  });
 }
 
 function readonlyCopy(value) {
@@ -374,6 +520,18 @@ export function getElementStateSnapshot(target, frame) {
           remainingFrames: frost.expiresAt - resolvedFrame,
           eliteDuration: Boolean(frost.eliteDuration),
           frigidReprieve: frost.frigidReprieve || null,
+        }
+      : { active: false },
+    elementalOverloadFrost: target?.elementStates?.elementalOverloadFrost
+      ? {
+          active: true,
+          rank: target.elementStates.elementalOverloadFrost.rank,
+          slowMagnitude: target.elementStates.elementalOverloadFrost.slowMagnitude,
+          movementMultiplier:
+            target.elementStates.elementalOverloadFrost.movementMultiplier,
+          stackingRule: target.elementStates.elementalOverloadFrost.stackingRule,
+          applicationCount:
+            target.elementStates.elementalOverloadFrost.applicationCount,
         }
       : { active: false },
   });
@@ -417,7 +575,10 @@ function resolveFireSecondary(context) {
   });
   const burnResults = areaTargets.map((target) => ({
     target,
-    ...applyCanonicalFireTomeBurn(target, fireProfile, { frame }),
+    ...applyCanonicalFireTomeBurn(target, fireProfile, {
+      frame,
+      resolvedAtk: playerStats?.atk,
+    }),
   }));
   const splashHits = [];
   if (playerStats?.hasElementalOverload) {
@@ -484,11 +645,11 @@ function resolveFrostSecondary(context) {
         }),
       });
     }
-    const slowPct = Number(playerStats.overloadLevel) === 1 ? 0.2 : 0.4;
-    target.speedMultiplier = Math.max(
-      0.2,
-      Number(target.speedMultiplier || 1) - slowPct,
-    );
+    if (playerStats?.hasElementalOverload) {
+      applyElementalOverloadFrostSlow(target, playerStats.overloadLevel, {
+        frame,
+      });
+    }
   }
   return {
     element: "frost",
@@ -505,6 +666,9 @@ function resolveFrostSecondary(context) {
         ? 0.2
         : 0.4
       : 0,
+    overloadStackingRule: playerStats?.hasElementalOverload
+      ? "non-stacking-reapplication"
+      : "inactive",
   };
 }
 

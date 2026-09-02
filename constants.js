@@ -332,9 +332,9 @@ export const ARTIFACT_POOL = [
   {
     name: "Sloth's Blessing",
     trait: "idle_spd",
-    desc: "Increases Idle Attack Speed by +15%. Passive +5% Gold Multiplier.",
+    desc: "Increases Idle Attack Speed by +15% (Future Idle Expedition only — no current active-dungeon effect). Passive +5% Gold Multiplier.",
     breakdown:
-      "<strong>Lazy Haste:</strong><br>• Speed Increase: Attacks automatically trigger <span style='color:#3498db;'>15% faster</span>.<br>• Passive: Adds <span style='color:#f1c40f;'>+5% Gold Multiplier</span>.",
+      "<strong>Lazy Haste:</strong><br>• Future Idle Expedition only — no current active-dungeon effect: <span style='color:#3498db;'>+15% Idle Attack Speed</span>.<br>• Passive: Adds <span style='color:#f1c40f;'>+5% Gold Multiplier</span>.",
     idleAttackSpeed: 0.15,
     goldMulti: 0.05,
     dropRate: 0,
@@ -490,9 +490,9 @@ export const ARTIFACT_POOL = [
   {
     name: "Cauldron of Eternity",
     trait: "cauldron_eternity",
-    desc: "While any potion buff is active, reduces Idle Attack delay by 2 frames. Passive +5% Max HP.",
+    desc: "While any potion buff is active, reduces Idle Attack delay by 2 frames (Future Idle Expedition only — no current active-dungeon effect). Passive +5% Max HP.",
     breakdown:
-      "<strong>Cauldron of Eternity Breakdown:</strong><br>• Haste Trigger: Attacks automatically <span style='color:#3498db;'>2 frames faster</span> while any potion effect is running.<br>• Passive: Adds a <span style='color:#e74c3c;'>+5% Max HP</span> multiplier.",
+      "<strong>Cauldron of Eternity Breakdown:</strong><br>• Future Idle Expedition only — no current active-dungeon effect: <span style='color:#3498db;'>2 fewer Idle Attack frames</span> while any potion effect is running.<br>• Passive: Adds a <span style='color:#e74c3c;'>+5% Max HP</span> multiplier.",
     maxHpPct: 0.05,
     dropRate: 0,
     quality: 0,
@@ -736,7 +736,7 @@ export const SET_DEFINITIONS = {
       },
       {
         count: 3,
-        desc: "+15% Move Speed, +15% Idle Attack Speed", // Converted flat Move Speed to percentage
+        desc: "+15% Move Speed; +15% Idle Attack Speed (Future Idle Expedition only — no current active-dungeon effect)", // Converted flat Move Speed to percentage
         apply: (p) => {
           p.moveSpeedPctBonus = (p.moveSpeedPctBonus || 0) + 0.15;
           p.idleSpeedPct = (p.idleSpeedPct || 0) + 0.15;
@@ -856,7 +856,7 @@ export const SET_DEFINITIONS = {
       },
       {
         count: 3,
-        desc: "+15% Strength, +10% Idle Attack Speed", // Converted flat STR to percentage
+        desc: "+15% Strength; +10% Idle Attack Speed (Future Idle Expedition only — no current active-dungeon effect)", // Converted flat STR to percentage
         apply: (p) => {
           p.strPctBonus = (p.strPctBonus || 0) + 0.15;
           p.idleSpeedPct = (p.idleSpeedPct || 0) + 0.1;
@@ -977,7 +977,7 @@ export const SET_DEFINITIONS = {
       },
       {
         count: 3,
-        desc: "Corrosive Spores: 20% chance to poison targets for DoT & Life-stealing",
+        desc: "Corrosive Spores: each eligible attack action has one 20% chance to add one shared Poison stack at 20% captured ATK per 1s tick. The strongest active Viper/Biohazard coefficient wins. Heal 5% of actual Poison tick damage, capped across all targets at 1.5% Max HP per second.",
         apply: (p) => {
           p.hasCorrosiveSet = true;
         },
@@ -996,7 +996,7 @@ export const SET_DEFINITIONS = {
       },
       {
         count: 3,
-        desc: "Shattering Blows: Crits have 25% chance to trigger unblockable secondary hits",
+        desc: "Shattering Blows: each eligible critical attack action has one 25% chance to deal a same-target physical packet for 50% resolved ATK. It bypasses Block, Parry, and guard, but respects Defense, resistance, phase, invulnerability, and liveness; it cannot Crit or recurse.",
         apply: (p) => {
           p.hasShatterSet = true;
         },
@@ -2537,7 +2537,7 @@ export const ASTRAL_SHOP_STOCK = [
     cost: 25000,
     color: "#9b59b6",
     isTitle: true,
-    desc: "An exclusive permanent title badge of cosmic victory. Grants +10% Attack, +10% Max HP, and +5% Active/Idle Speed multiplier.",
+    desc: "An exclusive permanent title badge of cosmic victory. Grants +10% Attack, +10% Max HP, +5% Active Attack Speed, and +5% Idle Attack Speed (Future Idle Expedition only — no current active-dungeon effect).",
   },
 ];
 

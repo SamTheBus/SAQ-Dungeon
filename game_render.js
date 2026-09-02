@@ -1,7 +1,11 @@
 import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
 import { prepareMobTetherRecipients } from "./mob_renderer.js?v=1.012";
-import { renderTomeDeliveryProjectile } from "./tome_projectile.js?v=1.002";
+import { renderTomeDeliveryProjectile } from "./tome_projectile.js?v=1.003";
+import {
+  getPlayerTargetCommunicationSnapshot,
+  renderCombatReachCommunication,
+} from "./combat_communication_authority.js?v=1.001";
 
 export const ACTIVE_MOB_RENDER_PADDING = 64;
 
@@ -987,6 +991,21 @@ export function isActiveMobInRenderViewport(
     // Execute Depth Sorting: Render North to South
     depthQueue.sort((a, b) => a.yBase - b.yBase);
     depthQueue.forEach((item) => item.draw());
+
+    if (!isHub) {
+      renderCombatReachCommunication(
+        ctx,
+        getPlayerTargetCommunicationSnapshot({
+          player: p,
+          playerStats:
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : window.playerStats,
+          subweapon: window.equippedSlots?.subweapon,
+          map,
+        }),
+      );
+    }
 
     // Render Gold Homing Particles
     if (window.goldParticles && window.goldParticles.length > 0) {

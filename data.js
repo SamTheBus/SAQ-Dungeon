@@ -17,7 +17,7 @@ import {
   buildEngineSaveSnapshot,
   hydrateEngineSavePayload,
   stableStringifyEngineSave,
-} from "./save_schema.js?v=1.004";
+} from "./save_schema.js?v=1.005";
 import {
   EQUIPMENT_RARITY_EXCEPTIONS,
   EQUIPMENT_RARITY_SOURCES,
@@ -34,9 +34,13 @@ import {
   migrateLegacyMasteryNodeIds,
 } from "./mastery_authority.js?v=1.003";
 import {
+  fillGuardPressureFromBlock,
+  resolveCanonicalShieldBash,
+} from "./shield_guard_pressure.js?v=1.002";
+import {
   detonateRemainingPeriodicDamage,
   getActivePoisonBleedStackCount,
-} from "./combat_effect_authority.js?v=1.001";
+} from "./combat_effect_authority.js?v=1.002";
 import {
   ARTIFACT_TRAIT_STATS,
   beginArtifactStageAttempt,
@@ -52,7 +56,7 @@ import {
 } from "./artifact_authority.js?v=1.002";
 import {
   resolveCanonicalSetState,
-} from "./set_affix_authority.js?v=1.000";
+} from "./set_affix_authority.js?v=1.001";
 export {
   EQUIPMENT_RARITY_EXCEPTIONS,
   EQUIPMENT_RARITY_SOURCES,
@@ -109,7 +113,7 @@ export {
   getSetThresholdPresentation,
   resolveCanonicalSetState,
   triggerVoidTouchedRareFrenzy,
-} from "./set_affix_authority.js?v=1.000";
+} from "./set_affix_authority.js?v=1.001";
 
 /* ==========================================================================
    PRIMARY PURPOSE: Stores global game state, constant dictionaries,
@@ -3732,7 +3736,6 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
         false,
         p,
       );
-
     if (pStats.hasShadowStep) {
       window.playerStats.shadowStepTimer = 240; // Shadow Step speed burst active
     }
@@ -3883,6 +3886,11 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
 
     // Gain +16 Shield Mastery XP on Block
     if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 16);
+    fillGuardPressureFromBlock({
+      player: p,
+      playerStats: window.playerStats,
+      resolvedStats: pStats,
+    });
 
     if (typeof window.progressMission === "function") {
       window.progressMission("deflections", 1);
@@ -4049,6 +4057,7 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
         window.combatVisuals.spawnParticles(p.x, p.y, 15, "animated_armor", 3);
         window.combatVisuals.triggerScreenShake(4, 8);
       }
+      window.spawnResonantAegisRipple?.(p.x, p.y);
     }
 
     if (window.combatVisuals)
@@ -4077,9 +4086,6 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
         window.playerStats.counterCooldownTimer =
           window.COUNTER_COOLDOWN_FRAMES || 60;
       }
-      // Gain +10 Shield Mastery XP on Shield Bash reflect
-      if (window.gainSubweaponXp) window.gainSubweaponXp("shield", 10);
-
       // Nexus Harmonizer: Shields have 20% cast-on-block spell chance
       if (
         window.checkArtifactTrait("synergy_nexus") &&
@@ -4117,38 +4123,12 @@ export const damagePlayer = function (rawDmg, sourceMob = null) {
         }
       }
 
-      let defBash = BigNum.from(pStats.def || 5).mul(
-        pStats.reflectDamage || 1.0,
-      );
-      let atkBash = BigNum.from(pStats.atk || 15).mul(pStats.bashAtkBonus || 0);
-      let reflectDmg = defBash.add(atkBash);
-
-      if (reflectDmg.gt(0)) {
-        sourceMob.hp = sourceMob.hp.sub(reflectDmg);
-        sourceMob.flashTimer = 6;
-
-        // Apply Bulwark Stagger / Knockback impulse to the attacking monster
-        let mCx = sourceMob.x + (sourceMob.w || 24) / 2;
-        let mCy = sourceMob.y + (sourceMob.h || 24) / 2;
-        let bDx = mCx - p.x;
-        let bDy = mCy - p.y;
-        let bDist = Math.hypot(bDx, bDy);
-        if (bDist > 0) {
-          sourceMob.recoilX = (bDx / bDist) * 12;
-          sourceMob.recoilY = (bDy / bDist) * 12;
-        }
-
-        if (window.combatVisuals) {
-          window.combatVisuals.spawnDamageEffect(
-            mCx,
-            mCy,
-            reflectDmg,
-            "counter",
-            false,
-            sourceMob,
-          );
-        }
-      }
+      resolveCanonicalShieldBash({
+        source: "reactive_block",
+        player: p,
+        resolvedStats: pStats,
+        originTarget: sourceMob,
+      });
     }
 
     if (typeof window.updateHUD === "function") window.updateHUD();

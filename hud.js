@@ -1,6 +1,14 @@
 import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
 import { getTomeRotationSnapshot } from "./tome_rotation_authority.js?v=1.001";
+import {
+  getDaggerCommunicationSnapshot,
+  getGuardPressureCommunicationSnapshot,
+  getPlayerTargetCommunicationSnapshot,
+  getTargetPeriodicCommunicationSnapshot,
+  getTomeCommunicationSnapshot,
+} from "./combat_communication_authority.js?v=1.001";
+import { getTomeDeliveryCommunicationSnapshot } from "./tome_delivery_communication.js?v=1.000";
 
 export function renderDungeonDepthLabel(
   depthLabel,
@@ -435,7 +443,11 @@ export function renderDungeonDepthLabel(
     const isTome =
       tome && (tome.subType === "tome" || tome.type === "tome");
     if (isTome) {
-      const rotation = getTomeRotationSnapshot({ tome, playerStats: stats });
+      const tomeCommunication = getTomeCommunicationSnapshot({
+        tome,
+        playerStats: stats,
+      });
+      const rotation = tomeCommunication.rotation;
       const elementLabel =
         rotation.nextElement === "fire"
           ? "FIRE"
@@ -449,6 +461,68 @@ export function renderDungeonDepthLabel(
         title: `Next successful Tome proc: ${elementLabel}. Sequence: ${rotation.elements.join(" → ")}.`,
       });
 
+      const targetState = getPlayerTargetCommunicationSnapshot({
+        player: p,
+        playerStats:
+          typeof window.resolvePlayerStats === "function"
+            ? window.resolvePlayerStats()
+            : stats,
+        subweapon: tome,
+        map: getActiveDungeonMap(),
+      });
+      const targetColors = {
+        "valid-target": "#4ade80",
+        "out-of-range": "#f59e0b",
+        "los-blocked": "#ef4444",
+        "no-target": "#94a3b8",
+      };
+      badges.push({
+        label: "TOME REACH",
+        val: targetState.status.replaceAll("-", " ").toUpperCase(),
+        col: targetColors[targetState.status] || "#94a3b8",
+        title: `${targetState.reachText}. ${targetState.target ? `${targetState.target.label}: ${targetState.gap}px clear hull gap.` : "No hostile target detected."}`,
+      });
+
+      const delivery = getTomeDeliveryCommunicationSnapshot();
+      if (delivery.event !== "idle") {
+        badges.push({
+          label: "TOME BOLT",
+          val: delivery.event.replaceAll("-", " ").toUpperCase(),
+          col:
+            delivery.event === "impact" || delivery.event === "intercepted"
+              ? "#4ade80"
+              : delivery.event === "launched"
+                ? "#c084fc"
+                : "#f59e0b",
+          title: delivery.message,
+        });
+      }
+
+      if (tomeCommunication.identity.elements.includes("fire")) {
+        badges.push({
+          label: "BURN",
+          val: "INACTIVE",
+          col: "#94a3b8",
+          title: tomeCommunication.fire.message,
+        });
+      }
+      if (tomeCommunication.identity.elements.includes("frost")) {
+        badges.push({
+          label: "CHILL",
+          val: "INACTIVE",
+          col: "#94a3b8",
+          title: tomeCommunication.frost.message,
+        });
+      }
+      if (tomeCommunication.identity.elements.includes("lightning")) {
+        badges.push({
+          label: "CHAIN",
+          val: `${tomeCommunication.lightning.hopTargetIds?.length || 0} HOPS`,
+          col: "#facc15",
+          title: `Last committed Lightning chain: ${(tomeCommunication.lightning.orderedTargetIds || []).join(" → ") || "no hops yet"}.`,
+        });
+      }
+
       const resolved =
         typeof window.resolvePlayerStats === "function"
           ? window.resolvePlayerStats()
@@ -461,6 +535,65 @@ export function renderDungeonDepthLabel(
           title: `Spell Weaving ${rotation.spellWeavingStacks}/4; ${(
             rotation.spellWeavingTimer / 60
           ).toFixed(1)}s remaining. Only a successful changed rotation anchor adds one stack.`,
+        });
+      }
+    } else {
+      const resolved =
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : stats;
+      if (
+        tome &&
+        (tome.subType === "shield" || tome.type === "shield" || resolved.subType === "shield")
+      ) {
+        const guard = getGuardPressureCommunicationSnapshot({
+          player: p,
+          playerStats: stats,
+          subweapon: tome,
+        });
+        badges.push({
+          label: "GUARD",
+          val: `${guard.pressure}/3 ${guard.ready ? "BASH READY" : ""}`.trim(),
+          col: guard.ready ? "#facc15" : "#38bdf8",
+          title: `${guard.reactiveRule} ${guard.proactiveRule}`,
+        });
+      } else if (
+        tome &&
+        (tome.subType === "dagger" || tome.type === "dagger" || resolved.subType === "dagger")
+      ) {
+        const dagger = getDaggerCommunicationSnapshot({
+          resolvedStats: resolved,
+          subweapon: tome,
+        });
+        badges.push({
+          label: "DAGGER",
+          val: dagger.label.toUpperCase(),
+          col: "#a855f7",
+          title: `${dagger.role}. ${dagger.poisonRule} ${dagger.bleedRule}`,
+        });
+      }
+    }
+
+    const communicatedTarget = getPlayerTargetCommunicationSnapshot({
+      player: p,
+      playerStats:
+        typeof window.resolvePlayerStats === "function"
+          ? window.resolvePlayerStats()
+          : stats,
+      subweapon: tome,
+      map: getActiveDungeonMap(),
+    });
+    if (communicatedTarget.target?.ref) {
+      const periodic = getTargetPeriodicCommunicationSnapshot(
+        communicatedTarget.target.ref,
+      );
+      for (const effect of [periodic.poison, periodic.bleed]) {
+        if (!effect.active) continue;
+        badges.push({
+          label: `${effect.type.toUpperCase()} x${effect.stacks}/${effect.maxStacks}`,
+          val: `${effect.remainingSeconds.toFixed(1)}s`,
+          col: effect.type === "poison" ? "#2ecc71" : "#e74c3c",
+          title: `${effect.type} from ${effect.source || "canonical periodic authority"}; ${effect.remainingSeconds.toFixed(1)}s remaining.`,
         });
       }
     }

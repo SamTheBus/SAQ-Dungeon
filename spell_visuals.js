@@ -87,15 +87,60 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
   };
 
   const spawnResonantAegisRipple = function (x, y) {
+    spawnBarrierShatterVisual(x, y, "resonant_aegis");
+  };
+
+  const spawnPortalSealBreakVisual = function (x, y) {
     if (!window.activeSpellAnims) return;
     window.activeSpellAnims.push({
-      type: "resonant_aegis",
-      x: x,
-      y: y,
-      radius: 4,
-      maxRadius: 75, // Upgraded dynamic boundary limit
-      life: 20,
-      maxLife: 20,
+      type: "portal_seal_break",
+      x,
+      y,
+      radius: 8,
+      maxRadius: 76,
+      life: 28,
+      maxLife: 28,
+    });
+  };
+
+  const spawnShadowDashVisual = function (x, y, directionX, directionY, phase) {
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
+      type: "shadow_dash",
+      x,
+      y,
+      directionX,
+      directionY,
+      phase,
+      life: phase === "trail" ? 8 : 12,
+      maxLife: phase === "trail" ? 8 : 12,
+    });
+  };
+
+  const spawnMeleeFeelImpact = function (x, y, kind, isOffhand = false, status = null) {
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
+      type: "melee_feel_impact",
+      x,
+      y,
+      kind,
+      isOffhand,
+      status,
+      life: kind === "shield" ? 14 : 9,
+      maxLife: kind === "shield" ? 14 : 9,
+    });
+  };
+
+  const spawnGuardPressureVisual = function (x, y, pressure, maxPressure = 3) {
+    if (!window.activeSpellAnims) return;
+    window.activeSpellAnims.push({
+      type: "guard_pressure",
+      x,
+      y,
+      pressure,
+      maxPressure,
+      life: pressure >= maxPressure ? 28 : 14,
+      maxLife: pressure >= maxPressure ? 28 : 14,
     });
   };
 
@@ -228,7 +273,7 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
     });
   };
 
-  const spawnBarrierShatterVisual = function (x, y) {
+  const spawnBarrierShatterVisual = function (x, y, presentationSource = "barrier") {
     if (!window.activeSpellAnims) return;
     window.activeSpellAnims.push({
       type: "barrier_shatter",
@@ -238,10 +283,16 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
       maxRadius: 90, // Upgraded shatter radius
       life: 24,
       maxLife: 24,
+      presentationSource,
     });
 
-    // Spawn brilliant glass/crystal shard particles immediately
-    if (window.ParticlePool && window.particles) {
+    // The committed Resonant Aegis cue is deterministic presentation only.
+    // Legacy barrier shatters retain their existing shard embellishment.
+    if (
+      presentationSource !== "resonant_aegis" &&
+      window.ParticlePool &&
+      window.particles
+    ) {
       // Spawn 28 high-velocity iridescent glass shards
       for (let i = 0; i < 28; i++) {
         let angle = Math.random() * Math.PI * 2;
@@ -872,6 +923,18 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
                 window.particles.push(pt);
               }
             }
+          }
+        } else if (
+          anim.type === "shadow_dash" ||
+          anim.type === "melee_feel_impact" ||
+          anim.type === "guard_pressure" ||
+          anim.type === "portal_seal_break"
+        ) {
+          anim.life--;
+          if (anim.life <= 0) window.activeSpellAnims.splice(i, 1);
+          else if (anim.type === "portal_seal_break") {
+            const tRatio = 1 - anim.life / anim.maxLife;
+            anim.radius = anim.maxRadius * tRatio;
           }
         } else if (anim.type === "barrier_shatter") {
           anim.life--;
@@ -1738,6 +1801,70 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
         ctx.stroke();
 
         ctx.restore();
+      } else if (anim.type === "shadow_dash") {
+        ctx.save();
+        const alpha = anim.life / anim.maxLife;
+        const angle = Math.atan2(anim.directionY, anim.directionX);
+        ctx.translate(anim.x, anim.y);
+        ctx.rotate(angle);
+        ctx.strokeStyle = `rgba(167, 139, 250, ${alpha})`;
+        ctx.lineWidth = anim.phase === "trail" ? 3 : 5;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "#7c3aed";
+        ctx.beginPath();
+        ctx.moveTo(-22, -7);
+        ctx.lineTo(5, 0);
+        ctx.lineTo(-22, 7);
+        ctx.stroke();
+        ctx.restore();
+      } else if (anim.type === "melee_feel_impact") {
+        ctx.save();
+        const alpha = anim.life / anim.maxLife;
+        const shield = anim.kind === "shield";
+        const color = anim.status === "poison" ? "#4ade80" : anim.status === "bleed" ? "#fb2c36" : shield ? "#fbbf24" : "#e9d5ff";
+        ctx.translate(anim.x, anim.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = shield ? 5 : anim.isOffhand ? 2 : 3;
+        ctx.shadowBlur = shield ? 12 : 7;
+        ctx.shadowColor = color;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        if (shield) {
+          ctx.arc(0, 0, 11 + (1 - alpha) * 11, -0.8, 0.8);
+        } else {
+          ctx.moveTo(-14, anim.isOffhand ? 7 : -7);
+          ctx.lineTo(15, anim.isOffhand ? -8 : 8);
+        }
+        ctx.stroke();
+        ctx.restore();
+      } else if (anim.type === "guard_pressure") {
+        ctx.save();
+        const alpha = anim.life / anim.maxLife;
+        ctx.strokeStyle = anim.pressure >= anim.maxPressure ? `rgba(250, 204, 21, ${alpha})` : `rgba(148, 163, 184, ${alpha * 0.7})`;
+        ctx.lineWidth = anim.pressure >= anim.maxPressure ? 3 : 1.5;
+        for (let j = 0; j < anim.pressure; j++) {
+          ctx.beginPath();
+          ctx.arc(anim.x, anim.y, 16 + j * 4, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else if (anim.type === "portal_seal_break") {
+        ctx.save();
+        const alpha = anim.life / anim.maxLife;
+        ctx.translate(anim.x, anim.y);
+        ctx.rotate((1 - alpha) * 0.35);
+        ctx.strokeStyle = `rgba(217, 70, 239, ${alpha})`;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "#7e22ce";
+        for (let j = 0; j < 6; j++) {
+          const a = j * Math.PI / 3;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * anim.radius * 0.35, Math.sin(a) * anim.radius * 0.18);
+          ctx.lineTo(Math.cos(a) * anim.radius, Math.sin(a) * anim.radius * 0.48);
+          ctx.stroke();
+        }
+        ctx.restore();
       } else if (anim.type === "barrier_shatter") {
         ctx.save();
         let alpha = anim.life / anim.maxLife;
@@ -1969,6 +2096,10 @@ export {
   spawnVisualSpell,
   spawnSpellLight,
   spawnResonantAegisRipple,
+  spawnPortalSealBreakVisual,
+  spawnShadowDashVisual,
+  spawnMeleeFeelImpact,
+  spawnGuardPressureVisual,
   spawnAegisPulseVisual,
   spawnNoxiousBloomVisual,
   spawnSanguineRuptureVisual,

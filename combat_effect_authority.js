@@ -2,6 +2,13 @@ import { getArtifactMechanicScale } from "./artifact_authority.js?v=1.002";
 
 export const COMBAT_EFFECT_CLOCK_HZ = 60;
 
+export const BIOHAZARD_POISON_HEALING_PROFILE = Object.freeze({
+  profileId: "g6d_biohazard_v1",
+  healingFraction: 0.05,
+  capMaxHpPerSecond: 0.015,
+  capWindowFrames: 60,
+});
+
 function resolvedArtifactScale(trait) {
   const scale = getArtifactMechanicScale(trait);
   if (scale > 0) return scale;
@@ -77,14 +84,35 @@ function zeroDamage() {
 
 function ensureCombatEffectMetrics() {
   if (!window.playerStats) return null;
-  return (window.playerStats.combatEffectMetrics ||= {
+  const metrics = (window.playerStats.combatEffectMetrics ||= {
     dotDamage: 0,
     dotDamageByEffect: { poison: 0, bleed: 0, burn: 0 },
     dotTicks: { poison: 0, bleed: 0, burn: 0 },
     procCounts: {},
     barrierRecharge: 0,
     hpSustain: 0,
+    secondaryDamage: 0,
+    secondaryDamageByMechanic: {},
+    biohazardHealingEligibleDamage: 0,
+    biohazardHealingPotential: 0,
+    biohazardHealing: 0,
+    biohazardHealingCap: 0,
+    biohazardHealingCapSaturatedTicks: 0,
   });
+  metrics.dotDamage ||= 0;
+  metrics.dotDamageByEffect ||= { poison: 0, bleed: 0, burn: 0 };
+  metrics.dotTicks ||= { poison: 0, bleed: 0, burn: 0 };
+  metrics.procCounts ||= {};
+  metrics.barrierRecharge ||= 0;
+  metrics.hpSustain ||= 0;
+  metrics.secondaryDamage ||= 0;
+  metrics.secondaryDamageByMechanic ||= {};
+  metrics.biohazardHealingEligibleDamage ||= 0;
+  metrics.biohazardHealingPotential ||= 0;
+  metrics.biohazardHealing ||= 0;
+  metrics.biohazardHealingCap ||= 0;
+  metrics.biohazardHealingCapSaturatedTicks ||= 0;
+  return metrics;
 }
 
 function recordProc(procName, count = 1) {
@@ -102,6 +130,13 @@ export function resetCombatEffectMetrics(playerStats = window.playerStats) {
     procCounts: {},
     barrierRecharge: 0,
     hpSustain: 0,
+    secondaryDamage: 0,
+    secondaryDamageByMechanic: {},
+    biohazardHealingEligibleDamage: 0,
+    biohazardHealingPotential: 0,
+    biohazardHealing: 0,
+    biohazardHealingCap: 0,
+    biohazardHealingCapSaturatedTicks: 0,
   };
   return playerStats.combatEffectMetrics;
 }
@@ -114,11 +149,16 @@ function isAlive(target) {
 }
 
 function subtractDamage(target, damage) {
+  const before = Math.max(0, toFiniteNumber(target?.hp));
+  const requested = Math.max(0, toFiniteNumber(damage));
+  const actualDamage = Math.min(before, requested);
   if (target.hp && typeof target.hp.sub === "function") {
     target.hp = target.hp.sub(damage);
+    if (target.hp.lte?.(0)) target.hp = toDamageValue(0);
   } else {
-    target.hp = Math.max(0, target.hp - toFiniteNumber(damage));
+    target.hp = Math.max(0, before - requested);
   }
+  return { before, requested, actualDamage, after: Math.max(0, before - actualDamage) };
 }
 
 function ensureEffects(target) {
@@ -261,20 +301,67 @@ export function applyPeriodicEffect(target, effectType, options = {}) {
 export function applyPlayerPoison(target, pStats, options = {}) {
   const rank = Math.max(1, options.rank || 1);
   const poisonMultiplier = pStats?.poisonDamageMultiplier || 1;
-  const damagePerStack = multiplyDamage(
-    toDamageValue(pStats?.atk || window.player?.atk || 15),
-    0.1 * rank * poisonMultiplier,
+  const authoredCoefficient = Number(
+    options.authoredCoefficient ?? 0.1 * rank * poisonMultiplier,
   );
+  const capturedAtk = toDamageValue(
+    options.capturedAtk ?? pStats?.atk ?? window.player?.atk ?? 15,
+  );
+  const damagePerStack = multiplyDamage(
+    capturedAtk,
+    authoredCoefficient,
+  );
+  const frame = currentFrame(options.frame);
+  const durationFrames = options.durationFrames || 600;
+  const existingSources = getPeriodicEffect(target, "poison")?.poisonSources || {};
+  const poisonSources = Object.fromEntries(
+    Object.entries(existingSources).filter(([, source]) =>
+      Number(source?.expiresAt || 0) >= frame,
+    ),
+  );
+  const sourceKey = String(
+    options.poisonSourceKey || options.mechanic || "player_poison",
+  );
+  poisonSources[sourceKey] = {
+    sourceKey,
+    mechanic: options.mechanic || "player_poison",
+    sourceId: options.sourceId || sourceKey,
+    authoredCoefficient,
+    capturedAtk,
+    damagePerStack,
+    rank,
+    appliedAt: frame,
+    expiresAt: frame + durationFrames,
+  };
   const effect = applyPeriodicEffect(target, "poison", {
     ...options,
+    frame,
     rank,
     damagePerStack,
-    durationFrames: options.durationFrames || 600,
+    durationFrames,
     maxStacks: 5,
     owner: "player",
     targetKind: "enemy",
   });
-  if (effect) recordProc("poisonApplications");
+  if (effect) {
+    effect.poisonSources = poisonSources;
+    const strongest = Object.values(poisonSources).sort((left, right) => {
+      if (right.authoredCoefficient !== left.authoredCoefficient) {
+        return right.authoredCoefficient - left.authoredCoefficient;
+      }
+      if (right.rank !== left.rank) return right.rank - left.rank;
+      return right.appliedAt - left.appliedAt;
+    })[0];
+    if (strongest) {
+      effect.damagePerStack = toDamageValue(strongest.damagePerStack);
+      effect.activePoisonSource = strongest.sourceKey;
+      effect.activeAuthoredCoefficient = strongest.authoredCoefficient;
+      effect.rank = strongest.rank;
+      effect.mechanic = strongest.mechanic;
+      effect.sourceId = strongest.sourceId;
+    }
+    recordProc("poisonApplications");
+  }
   return effect;
 }
 
@@ -346,23 +433,152 @@ function emitPeriodicPresentation(target, effectType, damage) {
   }
 }
 
-function advanceTargetEffect(target, effectType, frame) {
+function periodicDamageTakenMultiplier(target, effectType) {
+  const explicit = [
+    target?.[`${effectType}DamageTakenMultiplier`],
+    target?.periodicDamageTakenMultiplier,
+    target?.damageTakenMultiplier,
+  ].find((value) => Number.isFinite(Number(value)));
+  return explicit === undefined ? 1 : Math.max(0, Number(explicit));
+}
+
+function resolveActivePoisonSource(effect, frame) {
+  if (!effect?.poisonSources) return null;
+  effect.poisonSources = Object.fromEntries(
+    Object.entries(effect.poisonSources).filter(([, source]) =>
+      Number(source?.expiresAt || 0) >= frame,
+    ),
+  );
+  const strongest = Object.values(effect.poisonSources).sort((left, right) => {
+    if (right.authoredCoefficient !== left.authoredCoefficient) {
+      return right.authoredCoefficient - left.authoredCoefficient;
+    }
+    if (right.rank !== left.rank) return right.rank - left.rank;
+    return right.appliedAt - left.appliedAt;
+  })[0] || null;
+  if (strongest) {
+    effect.damagePerStack = toDamageValue(strongest.damagePerStack);
+    effect.activePoisonSource = strongest.sourceKey;
+    effect.activeAuthoredCoefficient = strongest.authoredCoefficient;
+    effect.rank = strongest.rank;
+    effect.mechanic = strongest.mechanic;
+    effect.sourceId = strongest.sourceId;
+  }
+  return strongest;
+}
+
+export function resolveBiohazardPoisonHealing({
+  player,
+  playerStats = window.playerStats,
+  resolvedStats,
+  actualDamage,
+  frame,
+} = {}) {
+  const eligibleDamage = Math.max(0, toFiniteNumber(actualDamage));
+  if (
+    !resolvedStats?.hasCorrosiveSet ||
+    !player ||
+    !playerStats ||
+    !(toFiniteNumber(player.hp) > 0) ||
+    eligibleDamage <= 0
+  ) {
+    return {
+      eligible: false,
+      eligibleDamage,
+      potentialHeal: 0,
+      actualHeal: 0,
+      capRemaining: 0,
+      capped: false,
+    };
+  }
+  const resolvedFrame = currentFrame(frame);
+  const maxHp = Math.max(0, toFiniteNumber(player.maxHp || resolvedStats.maxHp));
+  const cap = maxHp * BIOHAZARD_POISON_HEALING_PROFILE.capMaxHpPerSecond;
+  const ledger = (playerStats.biohazardRecentHeals ||= []).filter(
+    (entry) =>
+      Number.isFinite(entry.frame) &&
+      entry.frame <= resolvedFrame &&
+      resolvedFrame - entry.frame < BIOHAZARD_POISON_HEALING_PROFILE.capWindowFrames,
+  );
+  playerStats.biohazardRecentHeals = ledger;
+  const used = ledger.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const capRemaining = Math.max(0, cap - used);
+  const potentialHeal =
+    eligibleDamage * BIOHAZARD_POISON_HEALING_PROFILE.healingFraction;
+  const missingHp = Math.max(0, maxHp - toFiniteNumber(player.hp));
+  const actualHeal = Math.min(potentialHeal, capRemaining, missingHp);
+  if (actualHeal > 0) {
+    if (player.hp && typeof player.hp.add === "function") {
+      player.hp = player.hp.add(actualHeal);
+    } else {
+      player.hp = toFiniteNumber(player.hp) + actualHeal;
+    }
+    ledger.push({ frame: resolvedFrame, amount: actualHeal });
+  }
+  const state = ensureCombatEffectMetrics();
+  if (state) {
+    state.biohazardHealingEligibleDamage += eligibleDamage;
+    state.biohazardHealingPotential += potentialHeal;
+    state.biohazardHealing += actualHeal;
+    state.biohazardHealingCap = cap;
+    state.hpSustain += actualHeal;
+    if (potentialHeal > actualHeal && capRemaining <= potentialHeal) {
+      state.biohazardHealingCapSaturatedTicks++;
+    }
+    if (actualHeal > 0) recordProc("biohazardHealingTicks");
+  }
+  return {
+    eligible: true,
+    eligibleDamage,
+    potentialHeal,
+    actualHeal,
+    cap,
+    capRemaining: Math.max(0, capRemaining - actualHeal),
+    capped: potentialHeal > actualHeal && capRemaining <= potentialHeal,
+  };
+}
+
+function advanceTargetEffect(
+  target,
+  effectType,
+  frame,
+  { player = null, resolvedStats = null } = {},
+) {
   const effect = getPeriodicEffect(target, effectType);
   if (!effect) return [];
   const tickEvents = [];
 
   while (frame >= effect.nextTickAt && effect.nextTickAt <= effect.expiresAt) {
     if (!isAlive(target)) break;
-    const damage = multiplyDamage(effect.damagePerStack, effect.stacks);
-    subtractDamage(target, damage);
+    if (effectType === "poison") resolveActivePoisonSource(effect, effect.nextTickAt);
+    const rawDamage = multiplyDamage(effect.damagePerStack, effect.stacks);
+    const damage = multiplyDamage(
+      rawDamage,
+      periodicDamageTakenMultiplier(target, effectType),
+    );
+    const applied = subtractDamage(target, damage);
+    const biohazardHealing =
+      effectType === "poison" && effect.owner === "player"
+        ? resolveBiohazardPoisonHealing({
+            player,
+            resolvedStats,
+            actualDamage: applied.actualDamage,
+            frame: effect.nextTickAt,
+          })
+        : null;
     const event = {
       type: effectType,
       frame: effect.nextTickAt,
       damage,
+      rawDamage,
+      actualDamage: applied.actualDamage,
       stacks: effect.stacks,
       owner: effect.owner,
       sourceId: effect.sourceId,
       mechanic: effect.mechanic,
+      activePoisonSource: effect.activePoisonSource || null,
+      activeAuthoredCoefficient: effect.activeAuthoredCoefficient || null,
+      biohazardHealing,
       lethal: !isAlive(target),
     };
     tickEvents.push(event);
@@ -373,11 +589,13 @@ function advanceTargetEffect(target, effectType, frame) {
       sourceId: effect.sourceId,
       mechanic: effect.mechanic,
       frame: effect.nextTickAt,
-      damage: toFiniteNumber(damage),
+      damage: applied.actualDamage,
     };
     if (event.lethal) target.periodicDeathPending = true;
-    if (effect.owner === "player") recordPeriodicMetric(effectType, damage);
-    emitPeriodicPresentation(target, effectType, damage);
+    if (effect.owner === "player") {
+      recordPeriodicMetric(effectType, applied.actualDamage);
+    }
+    emitPeriodicPresentation(target, effectType, applied.actualDamage);
     effect.nextTickAt += effect.tickFrames;
   }
 
@@ -395,13 +613,23 @@ function advanceTargetEffect(target, effectType, frame) {
   return tickEvents;
 }
 
-export function advanceCanonicalPeriodicEffects(targets, player, frame) {
+export function advanceCanonicalPeriodicEffects(
+  targets,
+  player,
+  frame,
+  resolvedStats = null,
+) {
   const resolvedFrame = currentFrame(frame);
   const uniqueTargets = new Set((targets || []).filter(Boolean));
   const events = [];
   for (const target of uniqueTargets) {
     for (const effectType of TARGET_PERIODIC_EFFECTS) {
-      events.push(...advanceTargetEffect(target, effectType, resolvedFrame));
+      events.push(
+        ...advanceTargetEffect(target, effectType, resolvedFrame, {
+          player,
+          resolvedStats,
+        }),
+      );
     }
   }
   if (player) {
@@ -479,7 +707,7 @@ export function detonateRemainingPeriodicDamage(
 
 export function applyArcaneShieldRecharge(player, maxShield, amount, overflowToHpRate = 0) {
   const capacity = Math.max(0, toFiniteNumber(maxShield));
-  const requested = Math.max(0, Math.round(toFiniteNumber(amount)));
+  const requested = Math.max(0, toFiniteNumber(amount));
   if (!player || player.hp <= 0 || capacity <= 0 || requested <= 0) {
     return { requested, shieldGained: 0, hpHealed: 0, discarded: requested };
   }

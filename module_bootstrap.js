@@ -1,7 +1,13 @@
 import "./entity_id.js?v=1.002";
 import "./runtime_state.js?v=1.002";
-import "./encounter_state.js?v=1.007";
+import "./encounter_state.js?v=1.008";
 import { getPlayer } from "./player_runtime.js?v=1.001";
+import {
+  requestShadowDash,
+  resetShadowDash,
+  updateShadowDashHud,
+  initShadowDashButtonDrag,
+} from "./shadow_dash.js?v=1.001";
 
 import {
   MYSTICAL_STOCK,
@@ -26,10 +32,10 @@ import {
   GAME_STATES,
   BOSS_BAR_THEMES,
 } from "./constants.js?v=1.048";
-import * as dataApi from "./data.js?v=1.081";
+import * as dataApi from "./data.js?v=1.084";
 import * as assetApi from "./assets.js?v=1.043";
 import * as audioApi from "./audio.js?v=1.045";
-import * as itemsApi from "./items.js?v=1.055";
+import * as itemsApi from "./items.js?v=1.057";
 import { openCavernSigilSackAnimation } from "./sigil_sack_animation.js?v=1.002";
 import {
   updateDpsOverlayStyle,
@@ -69,6 +75,10 @@ import {
   spawnVisualSpell,
   spawnSpellLight,
   spawnResonantAegisRipple as spellVisualsSpawnResonantAegisRipple,
+  spawnPortalSealBreakVisual,
+  spawnShadowDashVisual,
+  spawnMeleeFeelImpact,
+  spawnGuardPressureVisual,
   spawnAegisPulseVisual,
   spawnNoxiousBloomVisual,
   spawnSanguineRuptureVisual,
@@ -80,7 +90,7 @@ import {
   castVisualSpell,
   updateSpellAnimations,
   renderSpellAnimations,
-} from "./spell_visuals.js?v=1.004";
+} from "./spell_visuals.js?v=1.005";
 import {
   showCustomConfirm as skillsShowCustomConfirm,
   getSubweaponXpRequired,
@@ -88,7 +98,7 @@ import {
   SKILL_TREE_DATA,
   SkillTreeManager,
   resolvePlayerStats as skillsResolvePlayerStats,
-} from "./skills.js?v=1.009";
+} from "./skills.js?v=1.010";
 import {
   drawBreakableProp,
   DungeonMapGenerator,
@@ -107,12 +117,12 @@ import {
 } from "./challenges.js?v=1.005";
 import { MONSTER_CARDS_DATA } from "./bestiary_data.js?v=1.004";
 import { spawnFloatingText } from "./floating_text.js?v=1.003";
-import { moveEntityWithSmartSteering } from "./smart_steering.js?v=1.007";
+import { moveEntityWithSmartSteering } from "./smart_steering.js?v=1.009";
 import {
   toggleEditHudMode,
   updateEditHudModeStyle,
   toggleSettingsModal,
-} from "./settings_ui.js?v=1.006";
+} from "./settings_ui.js?v=1.007";
 import {
   attachToastSwipeHandlers,
   processToastQueue,
@@ -146,7 +156,7 @@ import {
   getChallengeObjectiveText,
   updateHudBuffTray,
   renderDungeonDepthLabel,
-} from "./hud.js?v=1.017";
+} from "./hud.js?v=1.019";
 import { renderLightingOverlay } from "./lighting.js?v=1.013";
 import {
   switchBagTab,
@@ -215,7 +225,7 @@ import {
   useDungeonFlask,
   initFlaskButtonDrag,
   resetFlaskButtonPosition,
-} from "./mob_pool_flask.js?v=1.019";
+} from "./mob_pool_flask.js?v=1.020";
 import {
   triggerOnslaughtShatterAnimation,
   getOnslaughtSpawnPosition,
@@ -245,7 +255,7 @@ import {
   spawnHomingGold,
   updateGoldParticles,
   updateHeroBuffParticles,
-} from "./world_loot.js?v=1.025";
+} from "./world_loot.js?v=1.026";
 import {
   updateCavernEffects,
   spawnCavernInteractive,
@@ -253,16 +263,13 @@ import {
   triggerCavernShatter,
   drawCavernInteractive,
 } from "./cavern_systems.js?v=1.029";
-import {
-  spawnResonantAegisRipple,
-  spawnCombatImpactParticles,
-} from "./combat_effects.js?v=1.024";
+import { spawnCombatImpactParticles } from "./combat_effects.js?v=1.024";
 import {
   handleVanguardBlockTrigger,
   handleVanguardParryTrigger,
   checkAndSpawnNoxiousBloom,
   triggerWindRazorStrike,
-} from "./defense_hooks.js?v=1.034";
+} from "./defense_hooks.js?v=1.036";
 import { rollTomeSpells } from "./tome_item_hook.js?v=1.027";
 import {
   loadHub,
@@ -294,8 +301,8 @@ import {
   openTactileSackCrateAnimation,
   openMonsterCardSackAnimation,
 } from "./unboxing.js?v=1.034";
-import { updateActiveProjectiles } from "./projectile_update.js?v=1.033";
-import { updateCombatPeriodic } from "./combat_periodic.js?v=1.037";
+import { updateActiveProjectiles } from "./projectile_update.js?v=1.034";
+import { updateCombatPeriodic } from "./combat_periodic.js?v=1.038";
 import { updateCombatHazards } from "./combat_hazards.js?v=1.035";
 import {
   PLAYER_COMBAT_RADIUS,
@@ -316,21 +323,31 @@ import {
   advanceCanonicalElementStates,
   applyCanonicalFireTomeBurn,
   applyCanonicalFrostControl,
+  applyElementalOverloadFrostSlow,
   clearElementStates,
   getCanonicalElementAreaRadius,
   getElementStateSnapshot,
   getFrostMovementMultiplier,
+  getFrostMovementCompositionSnapshot,
   getLastLightningChainSnapshot,
   isEligiblePlayerElementTarget,
   resolveTomeElementSecondaryEffect,
-} from "./element_effect_authority.js?v=1.001";
+} from "./element_effect_authority.js?v=1.003";
+import {
+  BIOHAZARD_CAPSTONE_PROFILE,
+  WARLORD_CAPSTONE_PROFILE,
+  presentSetCapstoneAttackAction,
+  resolveBiohazardAttackAction,
+  resolveCanonicalSetCapstoneAttackAction,
+  resolveWarlordCriticalAction,
+} from "./set_capstone_authority.js?v=1.000";
 import {
   TOME_PROJECTILE_SPEED,
   TOME_PROJECTILE_VISUAL_PROFILE,
   launchTomeAttackProjectile,
   renderTomeDeliveryProjectile,
   resolveTomeProjectileImpact,
-} from "./tome_projectile.js?v=1.002";
+} from "./tome_projectile.js?v=1.003";
 import {
   TOME_ELEMENT_ORDER,
   SPELL_WEAVING_DURATION_FRAMES,
@@ -344,17 +361,54 @@ import {
   resolveCanonicalTomeSpellProcEvent,
   presentCanonicalTomeSpellProcEvent,
   getLastTomeProcSnapshot,
-} from "./tome_rotation_authority.js?v=1.001";
+} from "./tome_rotation_authority.js?v=1.002";
+import {
+  GUARD_PRESSURE_MAX,
+  EARTH_BREAKER_BASH_RANGE,
+  EARTH_BREAKER_CONE_HALF_ANGLE,
+  EARTH_BREAKER_STUN_FRAMES,
+  getGuardPressureSnapshot,
+  resetGuardPressure,
+  fillGuardPressureFromBlock,
+  calculateCanonicalShieldBashDamage,
+  resolveCanonicalShieldBash,
+  resolveSuccessfulShieldMainAttack,
+  getLastShieldBashSnapshot,
+} from "./shield_guard_pressure.js?v=1.002";
+import {
+  DAGGER_SUBTYPE_CONTRACTS,
+  resolveDaggerSubtypeIdentity,
+  getDaggerSubtypeContract,
+  isDaggerCombatProfile,
+  canApplyDaggerMainBleed,
+  canExecuteDaggerOffhand,
+  canApplyVipersCoating,
+} from "./dagger_identity_contract.js?v=1.000";
+import {
+  FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION,
+  INACTIVE_COEFFICIENT_COMMUNICATION,
+  getDaggerCommunicationSnapshot,
+  getGuardPressureCommunicationSnapshot,
+  getPlayerTargetCommunicationSnapshot,
+  getTargetPeriodicCommunicationSnapshot,
+  getTomeCommunicationSnapshot,
+  renderCombatReachCommunication,
+} from "./combat_communication_authority.js?v=1.002";
+import {
+  classifyTomeProjectileBlock,
+  getTomeDeliveryCommunicationSnapshot,
+  recordTomeDeliveryCommunication,
+} from "./tome_delivery_communication.js?v=1.000";
 import { updateCombatTargeting } from "./combat_targeting.js?v=1.039";
-import { resolvePlayerAttack } from "./player_attack.js?v=1.045";
+import { resolvePlayerAttack } from "./player_attack.js?v=1.048";
 import {
   ensureMobBuffState,
   updateStandardMobCombat,
-} from "./mob_combat.js?v=1.052";
-import { updateBossCombat } from "./boss_combat.js?v=1.053";
+} from "./mob_combat.js?v=1.054";
+import { updateBossCombat } from "./boss_combat.js?v=1.056";
 import { updateDungeonCombat } from "./dungeon_combat.js?v=1.049";
-import { updateGame } from "./game_update.js?v=1.045";
-import { renderGame } from "./game_render.js?v=1.049";
+import { updateGame } from "./game_update.js?v=1.046";
+import { renderGame } from "./game_render.js?v=1.051";
 import { startGameLoop } from "./game_loop.js?v=1.041";
 import {
   checkOrientation,
@@ -380,7 +434,7 @@ import {
   updateMasterVolume,
   updateSfxVolume,
   updateBgmVolume,
-} from "./main.js?v=1.012";
+} from "./main.js?v=1.014";
 
 window.MYSTICAL_STOCK ??= MYSTICAL_STOCK;
 window.POTION_TRANSMUTATIONS ??= POTION_TRANSMUTATIONS;
@@ -446,6 +500,10 @@ window.activeSpellLights = activeSpellLights;
 window.spawnVisualSpell = spawnVisualSpell;
 window.spawnSpellLight = spawnSpellLight;
 window.spawnResonantAegisRipple = spellVisualsSpawnResonantAegisRipple;
+window.spawnPortalSealBreakVisual = spawnPortalSealBreakVisual;
+window.spawnShadowDashVisual = spawnShadowDashVisual;
+window.spawnMeleeFeelImpact = spawnMeleeFeelImpact;
+window.spawnGuardPressureVisual = spawnGuardPressureVisual;
 window.spawnAegisPulseVisual = spawnAegisPulseVisual;
 window.spawnNoxiousBloomVisual = spawnNoxiousBloomVisual;
 window.spawnSanguineRuptureVisual = spawnSanguineRuptureVisual;
@@ -592,8 +650,11 @@ window.spawnCavernInteractive = spawnCavernInteractive;
 window.triggerCavernTouch = triggerCavernTouch;
 window.triggerCavernShatter = triggerCavernShatter;
 window.drawCavernInteractive = drawCavernInteractive;
-window.spawnResonantAegisRipple = spawnResonantAegisRipple;
 window.spawnCombatImpactParticles = spawnCombatImpactParticles;
+window.requestShadowDash = requestShadowDash;
+window.resetShadowDash = resetShadowDash;
+window.updateShadowDashHud = updateShadowDashHud;
+window.initShadowDashButtonDrag = initShadowDashButtonDrag;
 window.handleVanguardBlockTrigger = handleVanguardBlockTrigger;
 window.handleVanguardParryTrigger = handleVanguardParryTrigger;
 window.checkAndSpawnNoxiousBloom = checkAndSpawnNoxiousBloom;
@@ -646,13 +707,22 @@ window.PRODUCTION_FROST_CONTROL_PROFILE = PRODUCTION_FROST_CONTROL_PROFILE;
 window.advanceCanonicalElementStates = advanceCanonicalElementStates;
 window.applyCanonicalFireTomeBurn = applyCanonicalFireTomeBurn;
 window.applyCanonicalFrostControl = applyCanonicalFrostControl;
+window.applyElementalOverloadFrostSlow = applyElementalOverloadFrostSlow;
 window.clearElementStates = clearElementStates;
 window.getCanonicalElementAreaRadius = getCanonicalElementAreaRadius;
 window.getElementStateSnapshot = getElementStateSnapshot;
 window.getFrostMovementMultiplier = getFrostMovementMultiplier;
+window.getFrostMovementCompositionSnapshot = getFrostMovementCompositionSnapshot;
 window.getLastLightningChainSnapshot = getLastLightningChainSnapshot;
 window.isEligiblePlayerElementTarget = isEligiblePlayerElementTarget;
 window.resolveTomeElementSecondaryEffect = resolveTomeElementSecondaryEffect;
+window.BIOHAZARD_CAPSTONE_PROFILE = BIOHAZARD_CAPSTONE_PROFILE;
+window.WARLORD_CAPSTONE_PROFILE = WARLORD_CAPSTONE_PROFILE;
+window.resolveBiohazardAttackAction = resolveBiohazardAttackAction;
+window.resolveWarlordCriticalAction = resolveWarlordCriticalAction;
+window.resolveCanonicalSetCapstoneAttackAction =
+  resolveCanonicalSetCapstoneAttackAction;
+window.presentSetCapstoneAttackAction = presentSetCapstoneAttackAction;
 window.launchTomeAttackProjectile = launchTomeAttackProjectile;
 window.renderTomeDeliveryProjectile = renderTomeDeliveryProjectile;
 window.resolveTomeProjectileImpact = resolveTomeProjectileImpact;
@@ -668,6 +738,35 @@ window.advanceSpellWeavingTimer = advanceSpellWeavingTimer;
 window.resolveCanonicalTomeSpellProcEvent = resolveCanonicalTomeSpellProcEvent;
 window.presentCanonicalTomeSpellProcEvent = presentCanonicalTomeSpellProcEvent;
 window.getLastTomeProcSnapshot = getLastTomeProcSnapshot;
+window.GUARD_PRESSURE_MAX = GUARD_PRESSURE_MAX;
+window.EARTH_BREAKER_BASH_RANGE = EARTH_BREAKER_BASH_RANGE;
+window.EARTH_BREAKER_CONE_HALF_ANGLE = EARTH_BREAKER_CONE_HALF_ANGLE;
+window.EARTH_BREAKER_STUN_FRAMES = EARTH_BREAKER_STUN_FRAMES;
+window.getGuardPressureSnapshot = getGuardPressureSnapshot;
+window.resetGuardPressure = resetGuardPressure;
+window.fillGuardPressureFromBlock = fillGuardPressureFromBlock;
+window.calculateCanonicalShieldBashDamage = calculateCanonicalShieldBashDamage;
+window.resolveCanonicalShieldBash = resolveCanonicalShieldBash;
+window.resolveSuccessfulShieldMainAttack = resolveSuccessfulShieldMainAttack;
+window.getLastShieldBashSnapshot = getLastShieldBashSnapshot;
+window.DAGGER_SUBTYPE_CONTRACTS = DAGGER_SUBTYPE_CONTRACTS;
+window.resolveDaggerSubtypeIdentity = resolveDaggerSubtypeIdentity;
+window.getDaggerSubtypeContract = getDaggerSubtypeContract;
+window.isDaggerCombatProfile = isDaggerCombatProfile;
+window.canApplyDaggerMainBleed = canApplyDaggerMainBleed;
+window.canExecuteDaggerOffhand = canExecuteDaggerOffhand;
+window.canApplyVipersCoating = canApplyVipersCoating;
+window.FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION = FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION;
+window.INACTIVE_COEFFICIENT_COMMUNICATION = INACTIVE_COEFFICIENT_COMMUNICATION;
+window.getDaggerCommunicationSnapshot = getDaggerCommunicationSnapshot;
+window.getGuardPressureCommunicationSnapshot = getGuardPressureCommunicationSnapshot;
+window.getPlayerTargetCommunicationSnapshot = getPlayerTargetCommunicationSnapshot;
+window.getTargetPeriodicCommunicationSnapshot = getTargetPeriodicCommunicationSnapshot;
+window.getTomeCommunicationSnapshot = getTomeCommunicationSnapshot;
+window.renderCombatReachCommunication = renderCombatReachCommunication;
+window.classifyTomeProjectileBlock = classifyTomeProjectileBlock;
+window.getTomeDeliveryCommunicationSnapshot = getTomeDeliveryCommunicationSnapshot;
+window.recordTomeDeliveryCommunication = recordTomeDeliveryCommunication;
 window.updateCombatTargeting = updateCombatTargeting;
 window.resolvePlayerAttack = resolvePlayerAttack;
 window.updateStandardMobCombat = updateStandardMobCombat;

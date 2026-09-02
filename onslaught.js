@@ -4,7 +4,7 @@ import {
   resetEncounterState,
   setPrimaryMob,
 } from "./encounter_state.js?v=1.007";
-import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.000";
+import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.001";
 
   export function triggerOnslaughtShatterAnimation() {
     let map = getActiveDungeonMap();

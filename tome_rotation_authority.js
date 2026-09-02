@@ -1,12 +1,12 @@
 import { awardSpellProcMasteryXp } from "./mastery_authority.js?v=1.003";
-import { resolveTomeProcSustain } from "./combat_effect_authority.js?v=1.001";
+import { resolveTomeProcSustain } from "./combat_effect_authority.js?v=1.002";
 import {
   PRODUCTION_FIRE_TOME_BURN_PROFILE,
   PRODUCTION_FROST_CONTROL_PROFILE,
   isEligiblePlayerElementTarget,
   presentTomeElementSecondaryResult,
   resolveTomeElementSecondaryEffect,
-} from "./element_effect_authority.js?v=1.001";
+} from "./element_effect_authority.js?v=1.003";
 
 export const TOME_ELEMENT_ORDER = Object.freeze([
   "fire",

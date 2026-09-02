@@ -13,11 +13,16 @@ import {
   countEquippedSetPieces,
   getAffixDomainPresentation,
   getSetThresholdPresentation,
-} from "./set_affix_authority.js?v=1.000";
+} from "./set_affix_authority.js?v=1.001";
 import {
   getTomeIdentityPresentation,
   resetTomeRotation,
 } from "./tome_rotation_authority.js?v=1.001";
+import {
+  FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION,
+  INACTIVE_COEFFICIENT_COMMUNICATION,
+  getDaggerCommunicationSnapshot,
+} from "./combat_communication_authority.js?v=1.001";
 
 export let
   getRarityMultiplier,
@@ -481,7 +486,7 @@ export let
                               ${window.getUiIconSvg ? window.getUiIconSvg("block", 12) : "✦"} <span>BULWARK & BASH METRICS</span>
                             </div>
                             <div style="color: #cbd5e1; margin-bottom: 4px;">
-                              Blocks completely negate damage (Cap: ${activeCap}%). Base Block scales with STR. Boss attacks possess ${bossPen}% Guard Penetration. Successfully deflecting triggers a ${fatigueSec}s Deflection Fatigue.
+                              Blocks completely negate damage (Cap: ${activeCap}%). A successful Block immediately triggers one reactive Shield Bash and fills Guard Pressure to 3/3. Successful close-range main hits build one pressure; the next successful main hit while already full consumes it for one proactive Shield Bash. Shield/Dagger primary reach is a 20px clear hull gap. Base Block scales with STR. Boss attacks possess ${bossPen}% Guard Penetration. Successfully deflecting triggers a ${fatigueSec}s Deflection Fatigue.
                             </div>
                             <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 9.5px;">
                               <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Shield Bash Power:</span> <strong style="color:#3498db;">${bashFormulaStr}</strong></div>
@@ -495,17 +500,24 @@ export let
         let offhandChance = Math.round((item.offhandChance || 0) * 100);
         let offhandDmg = Math.round((item.offhandDmg || 0.35) * 100);
         let mitigationPct = Math.round((item.parryMitigation || 0.6) * 100);
+        const daggerCommunication = getDaggerCommunicationSnapshot({
+          resolvedStats:
+            typeof window.resolvePlayerStats === "function"
+              ? window.resolvePlayerStats()
+              : {},
+          subweapon: item,
+        });
 
         let metricLines = [
           `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Parry Mitigation:</span> <strong style="color:#3498db;">${mitigationPct}% Damage</strong></div>`,
           `<div style="display:flex; justify-content:space-between;"><span style="color:#a855f7;">Riposte Counter:</span> <strong style="color:#a855f7;">${riposteDmg}% Attack</strong></div>`,
         ];
-        if (bleedChance > 0) {
+        if (daggerCommunication.mainBleedEligible && bleedChance > 0) {
           metricLines.push(
             `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Bleed Chance:</span> <strong style="color:#e74c3c;">${bleedChance}% per swing</strong></div>`,
           );
         }
-        if (offhandChance > 0) {
+        if (daggerCommunication.offhandEligible && offhandChance > 0) {
           metricLines.push(
             `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Offhand Double-Strike:</span> <strong style="color:#2ecc71;">${offhandChance}% (${offhandDmg}% Dmg)</strong></div>`,
           );
@@ -528,7 +540,7 @@ export let
                               ${window.getUiIconSvg ? window.getUiIconSvg("parry", 12) : "✦"} <span>RIPOSTE & COMBAT METRICS</span>
                             </div>
                             <div style="color: #cbd5e1; margin-bottom: 4px;">
-                              Parries mitigate ${mitigationPct}% of damage (Cap: ${activeCap}%) and trigger an automatic Riposte counter strike. Base Parry scales with DEX. Boss attacks possess ${bossPen}% Guard Penetration. Successfully deflecting triggers a ${fatigueSec}s Deflection Fatigue.
+                              ${daggerCommunication.role}. ${daggerCommunication.poisonRule} ${daggerCommunication.bleedRule} Primary attacks use a 20px clear hull gap. Parries mitigate ${mitigationPct}% of damage (Cap: ${activeCap}%) and trigger an automatic Riposte counter strike. Base Parry scales with DEX. Boss attacks possess ${bossPen}% Guard Penetration. Successfully deflecting triggers a ${fatigueSec}s Deflection Fatigue.
                             </div>
                             <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 9.5px;">
                               ${metricLines.join("")}
@@ -543,6 +555,20 @@ export let
         );
         let spellPower = Math.round((item.spellPower || 1.5) * 100);
 
+        const elementNotes = [];
+        if (tomeIdentity.elements.includes("fire")) {
+          elementNotes.push(INACTIVE_COEFFICIENT_COMMUNICATION.fire);
+        }
+        if (tomeIdentity.elements.includes("frost")) {
+          elementNotes.push(INACTIVE_COEFFICIENT_COMMUNICATION.frost);
+        }
+        if (tomeIdentity.elements.includes("lightning")) {
+          elementNotes.push("Lightning chains from the actual impact target through eligible LOS-valid hostiles; hop arcs show the committed route.");
+        }
+        if (tomeIdentity.elements.length === 3) {
+          elementNotes.push("Tri rotates Fire → Lightning → Frost. Triad Convergence is one proc with exactly three packets: Fire + Lightning + Frost.");
+        }
+
         specialtyHtml = `
                     <div style="border: 1px solid ${tierColor}44; border-radius:6px; background: rgba(${rgbVals}, 0.04); padding: 6px 10px; font-size: 10px; line-height: 1.4; text-align: left; margin: 6px 0;">
                       <div style="color:${tierColor}; font-weight: 900; font-size: 9.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
@@ -556,6 +582,8 @@ export let
                         <div style="display:flex; justify-content:space-between; gap:8px;"><span style="color:#94a3b8;">Sequence:</span> <strong style="color:#38bdf8; text-align:right;">${tomeIdentity.sequence}</strong></div>
                         <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Proc Chance:</span> <strong style="color:#2ecc71;">${spellChance}% per swing</strong></div>
                         <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Spell Power:</span> <strong style="color:#3498db;">${spellPower}% Attack</strong></div>
+                        <div style="color:#cbd5e1; margin-top:4px;">Primary reach: 128px / four tiles of clear hull gap. Line of sight is required. Damage, procs, sustain, and Mastery XP occur only when the neutral delivery bolt impacts a legal hostile; walls, void, misses, interception-before-target, and expiry do not reward the intended target.</div>
+                        <div style="color:#f59e0b; margin-top:4px;">${elementNotes.join(" ")}</div>
                       </div>
                     </div>
                   `;
@@ -626,7 +654,7 @@ export let
                     let regenRatePct = Math.round((item.barrierRegenRate || 0.10) * 100);
 
                     const tomeIdentity = getTomeIdentityPresentation(item);
-                    let tomeDesc = `Persisted attunement sequence: ${tomeIdentity.sequence}. The item title is cosmetic; this listed attunement is the runtime authority. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
+                    let tomeDesc = `Persisted attunement sequence: ${tomeIdentity.sequence}. The item title is cosmetic; this listed attunement is the runtime authority. Primary reach is 128px/four tiles of clear hull gap with line of sight; damage and dependent effects resolve only on legal hostile bolt impact. Generates ${barrierPct}% Max HP Arcane Barrier that recharges (${regenRatePct}%/s) after ${delaySec}s without taking damage.`;
                     let tomeTitle = `✦ ${tomeIdentity.title} & Barrier:`;
                     let tomeTitleColor =
                       tomeIdentity.elements.length === 3
@@ -673,15 +701,15 @@ export let
 
           let shieldTitle = "✦ Bulwark Specialty:";
           let shieldDesc =
-            "Blocks completely negate damage (20%-28% cap). Every block triggers a Shield Bash counter scaling with Defense.";
+            "Close-range primary attacks use a 20px clear hull gap. A successful Block immediately triggers one reactive Shield Bash and fills Guard Pressure to 3/3. Successful main hits build one pressure; the next successful main hit while already full consumes it for one proactive Shield Bash.";
           if (item.subArchetype === "tower") {
             shieldTitle = "✦ Fortress Tower Bulwark:";
             shieldDesc =
-              "Heavy defensive tower shield. Expands Block Cap up to 28% and triggers massive Defense-scaling Shield Bashes (120%-200% Def).";
+              "Heavy defensive tower shield. Expands Block Cap up to 28%. Reactive Block Bash and the full-pressure proactive Bash share the same canonical Defense-scaling authority (120%-200% Def).";
           } else if (item.subArchetype === "buckler") {
             shieldTitle = "✦ Deflective Buckler Counter:";
             shieldDesc =
-              "Agile reactive shield with elevated base Block Rate. Shield Bashes deal hybrid damage scaling with 60% Defense + 50% Attack.";
+              "Agile shield with elevated base Block Rate. Reactive Block Bash and the full-pressure proactive Bash share hybrid scaling with 60% Defense + 50% Attack.";
           }
 
           specialtyHtml = `
@@ -718,9 +746,15 @@ export let
             icon: window.getUiIconSvg("critDamage", 13),
           });
 
-          let daggerTitle = "✦ Riposte & Bleed Specialty:";
-          let daggerDesc =
-            "Parries mitigate 60% of damage (15%-35% cap) and trigger an automatic Riposte counter strike + Bleed DoT.";
+          const daggerCommunication = getDaggerCommunicationSnapshot({
+            resolvedStats:
+              typeof window.resolvePlayerStats === "function"
+                ? window.resolvePlayerStats()
+                : {},
+            subweapon: item,
+          });
+          let daggerTitle = `✦ ${daggerCommunication.label} Identity:`;
+          let daggerDesc = `${daggerCommunication.role}. ${daggerCommunication.poisonRule} ${daggerCommunication.bleedRule} Close-range primary attacks use a 20px clear hull gap.`;
           if (item.subArchetype === "main_gauche") {
             daggerTitle = "✦ Main-Gauche Parry Mastery:";
             daggerDesc =
@@ -941,7 +975,7 @@ export let
         },
         {
           key: "idleAttackSpeed",
-          label: affixLabel("idleAttackSpeed", "Idle Attack Speed (Idle only)"),
+          label: affixLabel("idleAttackSpeed", `Idle Attack Speed — ${FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION}`),
           isPct: true,
           baseKey: "baseIdleSpeed",
         },
@@ -2139,7 +2173,7 @@ export let
       {
               key: "idleAttackSpeed",
               icon: window.getUiIconSvg("idleAttackSpeed", 11),
-              label: "Idle Atk Spd",
+              label: `Idle Attack Speed — ${FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION}`,
               isPct: true,
             },
             {
@@ -3921,7 +3955,7 @@ export let
               item.noun = "Maelstrom Glaive";
               item.name = `Maelstrom Gale-Glaive (Lv. ${stageScale})`;
               item.desc =
-                "Critical strikes project piercing wind gales. Casting gales grants +10% Active & Idle Attack Speed for 6s (stacks up to 3x).";
+                "Critical strikes project piercing wind gales. Casting gales grants +10% Active Attack Speed for 6s (stacks up to 3x). Its Idle Attack Speed line is Future Idle Expedition only — no current active-dungeon effect.";
             }
           } else if (chosenType === "subweapon") {
             let subOptions = ["aegis", "watch", "chronicle"];
@@ -5088,7 +5122,7 @@ export let
         } else if (item.isUniqueSword) {
           item.desc = `Strikes apply stacking Bleed (Max 5). Strikes at max stacks triggers Rupture, dealing ${Math.round(300 * slotMult)}% weapon damage and siphoning 10% Max HP.`;
         } else if (item.isUniqueMaelstrom) {
-          item.desc = `Critical strikes project piercing wind gales. Casting gales grants +${Math.round(10 * slotMult)}% Active & Idle Attack Speed for 6s (stacks up to 3x).`;
+          item.desc = `Critical strikes project piercing wind gales. Casting gales grants +${Math.round(10 * slotMult)}% Active Attack Speed for 6s (stacks up to 3x). Its Idle Attack Speed line is Future Idle Expedition only — no current active-dungeon effect.`;
         } else if (item.isUniqueWatch) {
           item.desc = `Triggers 4s Temporal Fracture every 20s. Accelerates attack speeds by ${Math.round(15 * slotMult)}% and slows enemies by ${Math.round(25 * slotMult)}%.`;
         } else if (item.isUniqueTempest) {
@@ -6784,7 +6818,7 @@ export let
         bonusBlock: "Block Rate",
         bonusParry: "Parry Rate",
         bonusActiveSpeed: "Active Atk Spd",
-        bonusIdleSpeed: "Idle Atk Spd",
+        bonusIdleSpeed: `Idle Attack Speed — ${FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION}`,
         bonusStr: "Strength",
         bonusDex: "Dexterity",
         bonusInt: "Intelligence",
@@ -6800,7 +6834,7 @@ export let
         block: "Block Rate",
         parry: "Parry Rate",
         activeAttackSpeed: "Active Atk Spd",
-        idleAttackSpeed: "Idle Atk Spd",
+        idleAttackSpeed: `Idle Attack Speed — ${FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION}`,
         str: "Strength",
         dex: "Dexterity",
         int: "Intelligence",
@@ -9263,7 +9297,7 @@ getDynamicArtifactDescription = function (item) {
     case "echo_strike":
       return `Attacks have ${m(30)}% chance to hit a second time for 25% damage. Passive +${b(3)} Attack.`;
     case "idle_spd":
-      return `Increases Idle Attack Speed by +${p(0.15)}%. Passive +${p(0.05)}% Gold Multiplier.`;
+      return `Increases Idle Attack Speed by +${p(0.15)}% (Future Idle Expedition only — no current active-dungeon effect). Passive +${p(0.05)}% Gold Multiplier.`;
     case "active_spd":
       return `Increases Active Attack Speed by +${p(0.1)}%. Passive +${p(0.03)}% Crit Chance.`;
     case "dodge_buff":
@@ -9287,7 +9321,7 @@ getDynamicArtifactDescription = function (item) {
     case "philosopher_catalyst":
       return `Consuming an elixir has a ${m(12)}% chance to not consume the item. Passive +${b(4)} INT.`;
     case "cauldron_eternity":
-      return `While any potion buff is active, reduces Idle Attack delay by ${m(2)} frames. Passive +${p(0.05)}% Max HP.`;
+      return `While any potion buff is active, reduces Idle Attack delay by ${m(2)} frames (Future Idle Expedition only — no current active-dungeon effect). Passive +${p(0.05)}% Max HP.`;
     case "breach_adrenaline":
       return `Upon entering a new floor, gain +${m(40)}% Movement Speed and +${m(25)}% Critical Strike Chance, decaying over 30s. Passive +${p(0.02)}% base Crit Chance.`;
     case "breach_barrier":

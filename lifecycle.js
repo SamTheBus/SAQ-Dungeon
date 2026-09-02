@@ -53,7 +53,7 @@ import {
 } from "./opening_fairness.js?v=1.000";
 import { getStandardPortalTraversalState } from "./portal_guardian_contract.js?v=1.000";
 import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
-import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.000";
+import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.001";
 import { resetTomeRotation } from "./tome_rotation_authority.js?v=1.001";
 
   export const loadHub = function () {

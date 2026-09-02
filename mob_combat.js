@@ -20,7 +20,7 @@ import {
   rollEligibleMonsterDrop,
 } from "./drop_rate_contract.js?v=1.000";
 import { awardDefeatMasteryXp } from "./mastery_authority.js?v=1.003";
-import { applyHostilePlayerPoison } from "./combat_effect_authority.js?v=1.001";
+import { applyHostilePlayerPoison } from "./combat_effect_authority.js?v=1.002";
 
 const MOB_SEPARATION_DISTANCE = 18;
 const MOB_SPATIAL_SEPARATION_THRESHOLD = 128;
@@ -592,8 +592,8 @@ function findNearestFriendlyDecoy(hostileMob, maxDistance = 220) {
               "PORTAL SEAL SHATTERED!",
               "#00ffff",
             );
-            if (window.spawnBarrierShatterVisual) {
-              window.spawnBarrierShatterVisual(m.x + m.w / 2, m.y + m.h / 2);
+            if (window.spawnPortalSealBreakVisual) {
+              window.spawnPortalSealBreakVisual(m.x + m.w / 2, m.y + m.h / 2);
             }
             if (typeof window.pushHeaderToast === "function") {
               window.pushHeaderToast(

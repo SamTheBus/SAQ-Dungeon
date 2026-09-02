@@ -1,6 +1,7 @@
 import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
 import { advanceSpellWeavingTimer } from "./tome_rotation_authority.js?v=1.001";
-import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
+import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.001";
+import { advanceShadowDash } from "./shadow_dash.js?v=1.001";
 
   export const updateGame = function (canvas, isPointerHolding, checkCollisionAt) {
     window.logicClock = (window.logicClock || 0) + 1;
@@ -450,11 +451,23 @@ import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
       }
     }
 
+    const dashStep = advanceShadowDash({
+      player: p,
+      map,
+      checkCollisionAt,
+    });
+    const dashMovementConsumed = dashStep.consumedMovement;
+    if (dashMovementConsumed) {
+      vx = 0;
+      vy = 0;
+    }
+
     // --- SUBPHASE 4: SLICK ICE DECELERATION SLIDING PHYSICS ---
     p.slideVx = p.slideVx || 0;
     p.slideVy = p.slideVy || 0;
 
     if (
+      !dashMovementConsumed &&
       window.isCavernEffectActive &&
       window.isCavernEffectActive("slick_ice")
     ) {
@@ -503,7 +516,7 @@ import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
       if (Math.abs(p.knockbackVy) < 0.1) p.knockbackVy = 0;
     }
 
-    if (vx !== 0 || vy !== 0) {
+    if (!dashMovementConsumed && (vx !== 0 || vy !== 0)) {
       if (vx < -0.1) p.facing = -1;
       else if (vx > 0.1) p.facing = 1;
 
@@ -531,7 +544,7 @@ import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.000";
         p.targetX = p.x;
         p.targetY = p.y;
       }
-    } else {
+    } else if (!dashMovementConsumed) {
       p.isMoving = false;
     }
 

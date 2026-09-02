@@ -323,6 +323,16 @@
     if (window.playerStats) {
       window.playerStats.flaskX = null;
       window.playerStats.flaskY = null;
+      window.playerStats.shadowDashX = null;
+      window.playerStats.shadowDashY = null;
+    }
+
+    let dashBtn = document.getElementById("hud-shadow-dash-button");
+    if (dashBtn) {
+      dashBtn.style.left = "auto";
+      dashBtn.style.top = "auto";
+      dashBtn.style.right = "34px";
+      dashBtn.style.bottom = "34px";
     }
 
     let btn = document.getElementById("hud-flask-button");
@@ -335,7 +345,7 @@
 
     if (typeof window.pushHeaderToast === "function") {
       window.pushHeaderToast(
-        "[HUD] Flask button reset to default position!",
+        "[HUD] Action buttons reset to default positions!",
         "#34d399",
       );
     }

@@ -365,6 +365,21 @@
         <span id="hud-flask-count-badge" class="flask-charge-badge">1/1</span>
       </div>
 
+      <button
+        id="hud-shadow-dash-button"
+        class="hud-shadow-dash-button"
+        style="display: none"
+        onclick="window.requestShadowDash()"
+        onpointerdown="event.stopPropagation()"
+        title="Shadow Dash — move or aim, then press Space/tap"
+        aria-label="Shadow Dash"
+      >
+        <span class="shadow-dash-icon">➤</span>
+        <span class="shadow-dash-label">DASH</span>
+        <span class="shadow-dash-key">SPACE</span>
+        <span class="shadow-dash-status">1/1</span>
+      </button>
+
       <!-- Toast Notification Overlay Container -->
       <div id="toast-container" class="toast-container"></div>
 
@@ -653,7 +668,7 @@
                   window.resetFlaskButtonPosition();
                 "
               >
-                RESET HUD FLASK POSITION
+                RESET HUD ACTION POSITIONS
               </button>
             </div>
 
@@ -2064,7 +2079,7 @@
     </script>
     <script type="module">
       import "./player_runtime.js?v=1.001";
-      import * as dataApi from "./data.js?v=1.080";
+      import * as dataApi from "./data.js?v=1.084";
 
       Object.assign(window, dataApi);
       dataApi.loadGame();
@@ -2080,11 +2095,11 @@
       Object.assign(window, audioApi);
     </script>
     <script type="module">
-      import * as itemsApi from "./items.js?v=1.055";
+      import * as itemsApi from "./items.js?v=1.057";
 
       Object.assign(window, itemsApi);
       itemsApi.recalculateAllInventoryItems();
     </script>
-    <script type="module" src="module_bootstrap.js?v=1.198"></script>
+    <script type="module" src="module_bootstrap.js?v=1.203"></script>
   </body>
 </html>

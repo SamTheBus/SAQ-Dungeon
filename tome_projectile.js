@@ -7,6 +7,7 @@ import {
 } from "./combat_reach.js?v=1.001";
 import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
 import { renderRandom } from "./render_rng.js?v=1.000";
+import { recordTomeDeliveryCommunication } from "./tome_delivery_communication.js?v=1.000";
 
 // Provisional presentation/feel value for G.6C1. Gameplay reach is distance-capped.
 export const TOME_PROJECTILE_SPEED = 8;
@@ -87,6 +88,7 @@ export function launchTomeAttackProjectile({
 
   if (!Array.isArray(window.projectiles)) window.projectiles = [];
   window.projectiles.push(projectile);
+  recordTomeDeliveryCommunication("launched", { projectile });
   return projectile;
 }
 

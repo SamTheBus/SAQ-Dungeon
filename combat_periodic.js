@@ -1,6 +1,6 @@
 import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
-import { advanceCanonicalPeriodicEffects } from "./combat_effect_authority.js?v=1.001";
-import { advanceCanonicalElementStates } from "./element_effect_authority.js?v=1.001";
+import { advanceCanonicalPeriodicEffects } from "./combat_effect_authority.js?v=1.002";
+import { advanceCanonicalElementStates } from "./element_effect_authority.js?v=1.003";
 
   export const updateCombatPeriodic = function (p, pStats) {
     let logicClock = window.logicClock || 0;
@@ -9,7 +9,7 @@ import { advanceCanonicalElementStates } from "./element_effect_authority.js?v=1
     if (window.mob && !periodicTargets.includes(window.mob)) {
       periodicTargets.push(window.mob);
     }
-    advanceCanonicalPeriodicEffects(periodicTargets, p, logicClock);
+    advanceCanonicalPeriodicEffects(periodicTargets, p, logicClock, pStats);
     advanceCanonicalElementStates(periodicTargets, logicClock);
 
     // --- UNIQUE ITEM PERIODIC TIMERS ---

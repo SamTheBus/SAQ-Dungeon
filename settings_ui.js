@@ -6,7 +6,7 @@
     if (typeof window.pushHeaderToast === "function") {
       if (window.playerStats.editHudMode) {
         window.pushHeaderToast(
-          "[HUD] Drag Mode Unlocked! Drag the potion button to position it.",
+          "[HUD] Drag Mode Unlocked! Drag the flask or Dash button to position it.",
           "#ffd700",
         );
       } else {
@@ -21,12 +21,23 @@
       window.playerStats && window.playerStats.editHudMode === true;
     let btn = document.getElementById("btn-settings-edit-hud");
     let flaskBtn = document.getElementById("hud-flask-button");
+    let dashBtn = document.getElementById("hud-shadow-dash-button");
 
     if (btn) {
       btn.innerText = isEditing
-        ? "HUD LAYOUT: UNLOCKED (DRAG FLASK TO MOVE)"
+        ? "HUD LAYOUT: UNLOCKED (DRAG ACTIONS TO MOVE)"
         : "HUD LAYOUT: LOCKED (TAP TO UNLOCK)";
       btn.className = isEditing ? "settings-btn active" : "settings-btn";
+    }
+
+    if (dashBtn) {
+      if (!dashBtn.querySelector(".flask-drag-overlay")) {
+        const overlay = document.createElement("div");
+        overlay.className = "flask-drag-overlay";
+        overlay.innerHTML = '<span style="color:#ffd700;font-size:9px">MOVE</span>';
+        dashBtn.appendChild(overlay);
+      }
+      dashBtn.classList.toggle("edit-hud-active", isEditing);
     }
 
     if (flaskBtn) {
