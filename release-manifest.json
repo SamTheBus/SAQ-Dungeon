@@ -1,13 +1,13 @@
 {
   "schema": 2,
   "deploymentLayout": "flat-bundle",
-  "buildId": "g6e1h2-79eb7a277d72d928",
+  "buildId": "g6e1h3-2667a0a8c57d47ea",
   "cacheStrategy": "generated-entry-query",
-  "entrypoint": "game.js?v=g6e1h2-79eb7a277d72d928",
-  "stylesheet": "style.css?v=g6e1h2-79eb7a277d72d928",
+  "entrypoint": "game.js?v=g6e1h3-2667a0a8c57d47ea",
+  "stylesheet": "style.css?v=g6e1h3-2667a0a8c57d47ea",
   "sourceGraph": {
-    "buildId": "g6i-1b0ad660ee36ad1e",
-    "moduleCount": 96,
+    "buildId": "g6i-cd8e790592635d95",
+    "moduleCount": 97,
     "dynamicImportCount": 0
   },
   "bundler": {
@@ -17,8 +17,8 @@
     "target": "es2020"
   },
   "files": {
-    "index.html": "924d645c1d930603331346f227f43fe2ff7dfa058e52b592a322926887095245",
-    "style.css": "3855fa04226e0e77217fd4ebfa86df18f3edd5a261436072e46533e42c39ab91",
-    "game.js": "605106f743a0d93e93c23b09d62a1a355a2fb848626804a94f66957bdf5b8e04"
+    "index.html": "6cf2423aa99f7818988c60f0d315b1b427ea888b2dd06565a4742eb06ba1bc2b",
+    "style.css": "8981b6ca28088769bee68d8335688355747fe393888cf021099f30841928c151",
+    "game.js": "6950a4f80de2e2b0a097eeb57ac7b37552df38d55e2b2276c4f7ef58620db782"
   }
 }

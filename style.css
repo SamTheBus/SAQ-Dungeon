@@ -6434,3 +6434,389 @@ summary {
   margin-top: 2px;
   line-height: 1;
 }
+
+/* ========================================================================== 
+   G.6E1-H3 CANONICAL MOBILE VIEWPORT AND RESPONSIVE UI
+   CSS consumes one JS-measured visual viewport. World/canvas geometry remains
+   in CSS pixels; these rules only arrange presentation and interaction regions.
+   ========================================================================= */
+:root {
+  --app-viewport-width: 100vw;
+  --app-viewport-height: 100vh;
+  --app-safe-top: max(6px, env(safe-area-inset-top, 0px));
+  --app-safe-right: max(6px, env(safe-area-inset-right, 0px));
+  --app-safe-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+  --app-safe-left: max(6px, env(safe-area-inset-left, 0px));
+}
+
+html,
+body {
+  width: var(--app-viewport-width);
+  height: var(--app-viewport-height);
+  min-width: 0;
+  min-height: 0;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+#game-container {
+  width: var(--app-viewport-width);
+  height: var(--app-viewport-height);
+  max-width: var(--app-viewport-width);
+  max-height: var(--app-viewport-height);
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.modal-overlay {
+  width: var(--app-viewport-width) !important;
+  height: var(--app-viewport-height) !important;
+  max-width: var(--app-viewport-width);
+  max-height: var(--app-viewport-height);
+  padding: var(--app-safe-top) var(--app-safe-right) var(--app-safe-bottom)
+    var(--app-safe-left);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.modal-card,
+.profile-card,
+.mastery-card,
+.shop-modal-card,
+.forge-modal-card,
+.enchant-card,
+.deploy-modal-card,
+.bounty-modal-card,
+.trials-altar-card,
+.sigil-picker-modal-card {
+  min-width: 0;
+  min-height: 0;
+  max-width: calc(
+    var(--app-viewport-width) - var(--app-safe-left) - var(--app-safe-right)
+  ) !important;
+  max-height: calc(
+    var(--app-viewport-height) - var(--app-safe-top) - var(--app-safe-bottom)
+  ) !important;
+}
+
+.modal-header,
+.shop-header-banner,
+.forge-header-banner,
+.deploy-header-banner,
+.bounty-header-banner {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.modal-header > :first-child,
+.shop-title-group,
+.forge-title-group,
+.deploy-title-group,
+.bounty-title-group {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.close-btn {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 6px;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+
+.modal-body,
+.settings-body,
+.profile-layout,
+.profile-section,
+.profile-section-body,
+.shop-content-panel,
+.forge-layout,
+.enchant-layout,
+.bounty-layout,
+.deploy-terminal-layout,
+.trials-altar-layout,
+.constellation-viewport {
+  min-width: 0;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.modal-body,
+.settings-body,
+.profile-section-body,
+.shop-content-panel,
+.forge-pane,
+.enchant-pane,
+.bounty-pane,
+.deploy-pane,
+.trials-pane {
+  touch-action: pan-y;
+}
+
+/* A full-screen menu owns the interaction surface. Combat-only HUD remains
+   available immediately after close without wasting permanent safe margins. */
+body:has(.modal-overlay:not([style*="display: none"])) #hud-overlay,
+body:has(.modal-overlay:not([style*="display: none"])) #hud-flask-button,
+body:has(.modal-overlay:not([style*="display: none"])) #hud-shadow-dash-button,
+body:has(.modal-overlay:not([style*="display: none"])) #dps-overlay-badge {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html[data-viewport-layout="wide-landscape"] #hud-overlay {
+  top: var(--app-safe-top) !important;
+  left: var(--app-safe-left) !important;
+  right: var(--app-safe-right) !important;
+  gap: 6px;
+}
+
+html[data-viewport-layout="wide-landscape"] .hud-pod {
+  padding: 3px 6px;
+}
+
+html[data-viewport-layout="wide-landscape"] .hud-center-pod {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(290px, 32vw);
+  transform: translateX(-50%);
+  padding-inline: 8px;
+}
+
+html[data-viewport-layout="wide-landscape"] .hud-right-pod {
+  margin-left: auto;
+  max-width: 44vw;
+  gap: 4px;
+}
+
+html[data-viewport-layout="wide-landscape"] .hud-btn {
+  min-height: 30px;
+  padding: 4px 6px;
+  font-size: 8px;
+}
+
+html[data-viewport-layout="wide-landscape"] .hud-buff-tray {
+  top: calc(var(--app-safe-top) + 38px);
+  left: var(--app-safe-left);
+  max-width: min(46vw, 360px);
+}
+
+html[data-viewport-layout="wide-landscape"] .hud-flask-container {
+  width: 54px;
+  height: 54px;
+}
+
+html[data-viewport-layout="wide-landscape"] .hud-shadow-dash-button {
+  width: 68px;
+  height: 68px;
+}
+
+html[data-viewport-layout="wide-landscape"] .modal-card,
+html[data-viewport-layout="wide-landscape"] .profile-card,
+html[data-viewport-layout="wide-landscape"] .mastery-card,
+html[data-viewport-layout="wide-landscape"] .shop-modal-card,
+html[data-viewport-layout="wide-landscape"] .forge-modal-card,
+html[data-viewport-layout="wide-landscape"] .enchant-card,
+html[data-viewport-layout="wide-landscape"] .deploy-modal-card,
+html[data-viewport-layout="wide-landscape"] .bounty-modal-card,
+html[data-viewport-layout="wide-landscape"] .trials-altar-card {
+  width: min(96%, 980px) !important;
+  height: calc(
+    var(--app-viewport-height) - var(--app-safe-top) - var(--app-safe-bottom)
+  ) !important;
+  padding: 8px 10px !important;
+  margin: 0 !important;
+}
+
+html[data-viewport-layout="wide-landscape"] .modal-header,
+html[data-viewport-layout="wide-landscape"] .shop-header-banner,
+html[data-viewport-layout="wide-landscape"] .forge-header-banner,
+html[data-viewport-layout="wide-landscape"] .deploy-header-banner,
+html[data-viewport-layout="wide-landscape"] .bounty-header-banner {
+  min-height: 38px;
+  padding: 4px 8px;
+  margin-bottom: 5px;
+}
+
+html[data-viewport-layout="wide-landscape"] .modal-body,
+html[data-viewport-layout="wide-landscape"] .settings-body,
+html[data-viewport-layout="wide-landscape"] .shop-content-panel {
+  max-height: none !important;
+  flex: 1;
+  overflow-y: auto;
+}
+
+html[data-viewport-layout="wide-landscape"] .profile-tab-bar,
+html[data-viewport-layout="wide-landscape"] .satchel-tab-bar,
+html[data-viewport-layout="wide-landscape"] .shop-tab-bar,
+html[data-viewport-layout="wide-landscape"] .forge-mode-bar,
+html[data-viewport-layout="wide-landscape"] .bounty-tab-bar,
+html[data-viewport-layout="wide-landscape"] .deploy-tab-bar {
+  min-height: 32px;
+  margin-bottom: 5px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  touch-action: pan-x;
+}
+
+html[data-viewport-layout="narrow-portrait"] #hud-overlay {
+  top: var(--app-safe-top) !important;
+  left: var(--app-safe-left) !important;
+  right: var(--app-safe-right) !important;
+  width: auto !important;
+  gap: 5px !important;
+}
+
+html[data-viewport-layout="narrow-portrait"] .hud-hero-pod {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+}
+
+html[data-viewport-layout="narrow-portrait"] .hero-crest-icon {
+  display: none;
+}
+
+html[data-viewport-layout="narrow-portrait"] .bars-column {
+  min-width: 0;
+  margin-inline: 4px !important;
+}
+
+html[data-viewport-layout="narrow-portrait"] .hud-right-pod {
+  width: 100% !important;
+  min-width: 0;
+  padding: 4px !important;
+  gap: 3px !important;
+  overflow-x: auto;
+  justify-content: flex-start !important;
+  touch-action: pan-x;
+}
+
+html[data-viewport-layout="narrow-portrait"] .hud-btn {
+  flex: 1 0 auto !important;
+  min-width: 70px;
+  min-height: 36px;
+  padding: 5px 6px !important;
+  font-size: 8px !important;
+}
+
+html[data-viewport-layout="narrow-portrait"] .hud-center-pod {
+  bottom: calc(var(--app-safe-bottom) + 2px) !important;
+  max-width: calc(100% - 160px) !important;
+  min-width: 150px !important;
+  padding: 4px 8px !important;
+}
+
+html[data-viewport-layout="narrow-portrait"] .hud-buff-tray {
+  top: calc(var(--app-safe-top) + 88px);
+  left: var(--app-safe-left);
+  max-width: calc(100% - var(--app-safe-left) - var(--app-safe-right));
+}
+
+html[data-viewport-layout="narrow-portrait"] .hud-flask-container {
+  width: 54px;
+  height: 54px;
+}
+
+html[data-viewport-layout="narrow-portrait"] .hud-shadow-dash-button {
+  width: 66px;
+  height: 66px;
+}
+
+html[data-viewport-layout="narrow-portrait"] .modal-overlay {
+  align-items: center !important;
+  padding: var(--app-safe-top) var(--app-safe-right) var(--app-safe-bottom)
+    var(--app-safe-left) !important;
+  overflow: hidden !important;
+}
+
+html[data-viewport-layout="narrow-portrait"] .modal-card,
+html[data-viewport-layout="narrow-portrait"] .profile-card,
+html[data-viewport-layout="narrow-portrait"] .mastery-card,
+html[data-viewport-layout="narrow-portrait"] .shop-modal-card,
+html[data-viewport-layout="narrow-portrait"] .forge-modal-card,
+html[data-viewport-layout="narrow-portrait"] .enchant-card,
+html[data-viewport-layout="narrow-portrait"] .deploy-modal-card,
+html[data-viewport-layout="narrow-portrait"] .bounty-modal-card,
+html[data-viewport-layout="narrow-portrait"] .trials-altar-card,
+html[data-viewport-layout="narrow-portrait"] #settings-modal .modal-card {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 8px !important;
+  border-radius: 7px !important;
+}
+
+html[data-viewport-layout="narrow-portrait"] .modal-header,
+html[data-viewport-layout="narrow-portrait"] .shop-header-banner,
+html[data-viewport-layout="narrow-portrait"] .forge-header-banner,
+html[data-viewport-layout="narrow-portrait"] .deploy-header-banner,
+html[data-viewport-layout="narrow-portrait"] .bounty-header-banner {
+  min-height: 40px;
+  padding: 4px 7px;
+  margin-bottom: 5px;
+  font-size: 10px;
+  letter-spacing: 0.7px;
+}
+
+html[data-viewport-layout="narrow-portrait"] .shop-merchant-badge,
+html[data-viewport-layout="narrow-portrait"] .forge-badge-icon,
+html[data-viewport-layout="narrow-portrait"] .deploy-badge-icon,
+html[data-viewport-layout="narrow-portrait"] .bounty-badge-icon {
+  width: 30px;
+  height: 30px;
+}
+
+html[data-viewport-layout="narrow-portrait"] .modal-body,
+html[data-viewport-layout="narrow-portrait"] .settings-body,
+html[data-viewport-layout="narrow-portrait"] .shop-content-panel,
+html[data-viewport-layout="narrow-portrait"] .deploy-terminal-layout {
+  max-height: none !important;
+  flex: 1 !important;
+  overflow-y: auto !important;
+}
+
+html[data-viewport-layout="narrow-portrait"] .profile-tab-bar,
+html[data-viewport-layout="narrow-portrait"] .satchel-tab-bar,
+html[data-viewport-layout="narrow-portrait"] .shop-tab-bar,
+html[data-viewport-layout="narrow-portrait"] .forge-mode-bar,
+html[data-viewport-layout="narrow-portrait"] .bounty-tab-bar,
+html[data-viewport-layout="narrow-portrait"] .deploy-tab-bar {
+  overflow-x: auto !important;
+  flex-wrap: nowrap !important;
+  flex-shrink: 0 !important;
+  touch-action: pan-x !important;
+}
+
+@media (max-width: 680px), (max-height: 430px) {
+  html[data-viewport-layout] .forge-layout,
+  html[data-viewport-layout] .enchant-layout,
+  html[data-viewport-layout] .bounty-layout,
+  html[data-viewport-layout] .deploy-terminal-layout,
+  html[data-viewport-layout] .trials-altar-layout {
+    grid-template-columns: 1fr !important;
+    flex: 1 !important;
+    height: auto !important;
+    overflow-y: auto !important;
+  }
+
+  html[data-viewport-layout] .forge-pane,
+  html[data-viewport-layout] .enchant-pane,
+  html[data-viewport-layout] .bounty-pane,
+  html[data-viewport-layout] .deploy-pane,
+  html[data-viewport-layout] .trials-pane {
+    flex: none !important;
+    max-height: none !important;
+    overflow: visible;
+  }
+}
