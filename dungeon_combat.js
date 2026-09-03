@@ -1,9 +1,9 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { rebuildMobSpatialIndex } from "./mob_spatial_index.js?v=1.002";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { rebuildMobSpatialIndex } from "./mob_spatial_index.js";
 import {
   advanceDungeonMobLiveness,
   prepareDungeonMobLiveness,
-} from "./mob_liveness.js?v=1.005";
+} from "./mob_liveness.js";
 
   export const updateDungeonCombat = function (checkCollisionAt) {
     let p = window.player;

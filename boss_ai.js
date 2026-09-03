@@ -1,6 +1,6 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
-import { isBelowHealthFraction } from "./combat_scaling.js?v=1.001";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { addActiveDungeonMob } from "./encounter_state.js";
+import { isBelowHealthFraction } from "./combat_scaling.js";
 
     export const BossAIEngine = {
       initBoss(m) {

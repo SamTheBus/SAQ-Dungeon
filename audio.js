@@ -1,7 +1,22 @@
-/* ==========================================================================
+/* ========================================================================== 
    PRIMARY PURPOSE: Procedural Sound Synthesis Engine (SoundManager).
    Generates all game audio in real-time using the Web Audio API.
    ========================================================================= */
+
+export const COMBAT_IMPACT_AUDIO_PROFILES = Object.freeze({
+  shield_hit: Object.freeze({ intervalMs: 55, duration: 0.13, gain: 0.18, layers: Object.freeze([["triangle", 110, 52], ["square", 260, 120]]) }),
+  shield_bash: Object.freeze({ intervalMs: 120, duration: 0.22, gain: 0.28, layers: Object.freeze([["triangle", 82, 32], ["sawtooth", 180, 58], ["sine", 420, 190]]) }),
+  dagger_main: Object.freeze({ intervalMs: 28, duration: 0.065, gain: 0.12, layers: Object.freeze([["sawtooth", 2200, 760], ["sine", 1350, 2100]]) }),
+  dagger_offhand: Object.freeze({ intervalMs: 25, duration: 0.052, gain: 0.085, layers: Object.freeze([["square", 2800, 1100], ["sine", 1900, 2500]]) }),
+  dagger_crit: Object.freeze({ intervalMs: 45, duration: 0.085, gain: 0.17, layers: Object.freeze([["sawtooth", 2600, 620], ["sine", 3400, 1700]]) }),
+  dagger_poison: Object.freeze({ intervalMs: 90, duration: 0.07, gain: 0.055, layers: Object.freeze([["sine", 720, 430]]) }),
+  dagger_bleed: Object.freeze({ intervalMs: 90, duration: 0.065, gain: 0.06, layers: Object.freeze([["triangle", 980, 510]]) }),
+  tome_arcane: Object.freeze({ intervalMs: 45, duration: 0.09, gain: 0.1, layers: Object.freeze([["sine", 760, 410], ["triangle", 1520, 880]]) }),
+  tome_fire: Object.freeze({ intervalMs: 80, duration: 0.14, gain: 0.18, layers: Object.freeze([["triangle", 240, 72], ["sawtooth", 520, 150]]) }),
+  tome_lightning: Object.freeze({ intervalMs: 35, duration: 0.055, gain: 0.13, layers: Object.freeze([["square", 1750, 3400], ["sine", 3100, 1850]]) }),
+  tome_frost: Object.freeze({ intervalMs: 75, duration: 0.13, gain: 0.12, layers: Object.freeze([["sine", 1700, 920], ["triangle", 820, 610]]) }),
+  tome_freeze: Object.freeze({ intervalMs: 120, duration: 0.2, gain: 0.16, layers: Object.freeze([["sine", 880, 660], ["sine", 1320, 990], ["sine", 1980, 1480]]) }),
+});
 
 export const SoundManager = {
   ctx: null,
@@ -89,8 +104,10 @@ export const SoundManager = {
           sampleRate,
         );
         const data = this.cachedNoiseBuffer.getChannelData(0);
+        let noiseState = 0x6d2b79f5;
         for (let i = 0; i < data.length; i++) {
-          data[i] = Math.random() * 2 - 1;
+          noiseState = (Math.imul(noiseState, 1664525) + 1013904223) >>> 0;
+          data[i] = (noiseState / 0x100000000) * 2 - 1;
         }
         this.setupVisibilitySentinel();
       } catch (e) {
@@ -2023,6 +2040,75 @@ export const SoundManager = {
       });
     }, 220);
   },
+};
+
+SoundManager.playCombatImpact = function (
+  cue,
+  { isCrit = false, chainCount = 0 } = {},
+) {
+  const profile = COMBAT_IMPACT_AUDIO_PROFILES[cue];
+  const settings = this.getSafeSettings();
+  if (
+    !profile ||
+    settings.mute ||
+    settings.master <= 0 ||
+    settings.sfx <= 0 ||
+    !this.init()
+  ) {
+    return false;
+  }
+
+  const now = this.ctx.currentTime;
+  const nowMs = now * 1000;
+  this._combatImpactLast ||= Object.create(null);
+  const last = this._combatImpactLast[cue];
+  if (Number.isFinite(last) && nowMs - last < profile.intervalMs) return false;
+  if (this.activeChannelCount >= this.maxConcurrent) return false;
+  this._combatImpactLast[cue] = nowMs;
+  this.activeChannelCount++;
+
+  const repeatCount = cue === "tome_lightning"
+    ? Math.min(3, Math.max(1, Math.floor(Number(chainCount || 0)) + 1))
+    : 1;
+  const outputGain = profile.gain * (isCrit ? 1.16 : 1);
+  const oscillators = [];
+  for (let repeat = 0; repeat < repeatCount; repeat++) {
+    const start = now + repeat * 0.018;
+    const pitch = 1 + repeat * 0.08;
+    for (const [wave, startFrequency, endFrequency] of profile.layers) {
+      const oscillator = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      oscillator.type = wave;
+      oscillator.frequency.setValueAtTime(startFrequency * pitch, start);
+      oscillator.frequency.exponentialRampToValueAtTime(
+        Math.max(20, endFrequency * pitch),
+        start + profile.duration,
+      );
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(
+        outputGain / profile.layers.length,
+        start + Math.min(0.006, profile.duration * 0.12),
+      );
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        start + profile.duration,
+      );
+      oscillator.connect(gain);
+      gain.connect(this.sfxGain);
+      oscillator.start(start);
+      oscillator.stop(start + profile.duration + 0.01);
+      oscillators.push(oscillator, gain);
+    }
+  }
+
+  const totalDuration = profile.duration + (repeatCount - 1) * 0.018;
+  setTimeout(() => {
+    for (const node of oscillators) {
+      try { node.disconnect(); } catch (_error) {}
+    }
+    this.activeChannelCount = Math.max(0, this.activeChannelCount - 1);
+  }, totalDuration * 1000 + 40);
+  return true;
 };
 
 /* --- PROCEDURAL LOOT DROP ACOUSTIC SYNTHESIZER --- */

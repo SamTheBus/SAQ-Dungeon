@@ -1,11 +1,11 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
-import { prepareMobTetherRecipients } from "./mob_renderer.js?v=1.012";
-import { renderTomeDeliveryProjectile } from "./tome_projectile.js?v=1.003";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { hasRecoveryAssets } from "./recovery_contract.js";
+import { prepareMobTetherRecipients } from "./mob_renderer.js";
+import { renderTomeDeliveryProjectile } from "./tome_projectile.js";
 import {
   getPlayerTargetCommunicationSnapshot,
   renderCombatReachCommunication,
-} from "./combat_communication_authority.js?v=1.001";
+} from "./combat_communication_authority.js";
 
 export const ACTIVE_MOB_RENDER_PADDING = 64;
 
@@ -992,7 +992,7 @@ export function isActiveMobInRenderViewport(
     depthQueue.sort((a, b) => a.yBase - b.yBase);
     depthQueue.forEach((item) => item.draw());
 
-    if (!isHub) {
+    if (!isHub && window.playerStats?.combatRangeGuides === true) {
       renderCombatReachCommunication(
         ctx,
         getPlayerTargetCommunicationSnapshot({

@@ -1,5 +1,5 @@
-import { clearAllPeriodicEffects } from "./combat_effect_authority.js?v=1.002";
-import { clearElementStates } from "./element_effect_authority.js?v=1.003";
+import { clearAllPeriodicEffects } from "./combat_effect_authority.js";
+import { clearElementStates } from "./element_effect_authority.js";
 
 function clearEncounterCombatStates(target) {
   clearAllPeriodicEffects(target);

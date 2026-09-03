@@ -6,23 +6,23 @@
 import {
   beginMarcusRobberyState,
   completeMarcusRobberyState,
-} from "./portal_guardian_contract.js?v=1.000";
-import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
-import { getUniqueKeyAuthority } from "./artifact_authority.js?v=1.002";
+} from "./portal_guardian_contract.js";
+import { getMasteryNodeRank } from "./mastery_authority.js";
+import { getUniqueKeyAuthority } from "./artifact_authority.js";
 import {
   countEquippedSetPieces,
   getAffixDomainPresentation,
   getSetThresholdPresentation,
-} from "./set_affix_authority.js?v=1.001";
+} from "./set_affix_authority.js";
 import {
   getTomeIdentityPresentation,
   resetTomeRotation,
-} from "./tome_rotation_authority.js?v=1.001";
+} from "./tome_rotation_authority.js";
 import {
   FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION,
   INACTIVE_COEFFICIENT_COMMUNICATION,
   getDaggerCommunicationSnapshot,
-} from "./combat_communication_authority.js?v=1.001";
+} from "./combat_communication_authority.js";
 
 export let
   getRarityMultiplier,

@@ -1,4 +1,4 @@
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+import { isPlayerTargetableMob } from "./combat_factions.js";
 import {
   SHIELD_DAGGER_CLEAR_HULL_GAP,
   TOME_CLEAR_HULL_GAP,
@@ -7,20 +7,23 @@ import {
   getPlayerClearHullReach,
   hasTomeLineOfSight,
   isTomeCombatProfile,
-} from "./combat_reach.js?v=1.001";
-import { getPeriodicEffect } from "./combat_effect_authority.js?v=1.002";
+} from "./combat_reach.js";
+import { getPeriodicEffect } from "./combat_effect_authority.js";
 import {
   PRODUCTION_FIRE_TOME_BURN_PROFILE,
   PRODUCTION_FROST_CONTROL_PROFILE,
   getLastLightningChainSnapshot,
-} from "./element_effect_authority.js?v=1.003";
+} from "./element_effect_authority.js";
 import {
   getLastTomeProcSnapshot,
   getTomeIdentityPresentation,
   getTomeRotationSnapshot,
-} from "./tome_rotation_authority.js?v=1.001";
-import { getGuardPressureSnapshot } from "./shield_guard_pressure.js?v=1.002";
-import { getDaggerSubtypeContract } from "./dagger_identity_contract.js?v=1.000";
+} from "./tome_rotation_authority.js";
+import { getGuardPressureSnapshot } from "./shield_guard_pressure.js";
+import {
+  getDaggerSubtypeContract,
+  isDaggerCombatProfile,
+} from "./dagger_identity_contract.js";
 
 export const FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION =
   "Future Idle Expedition only — no current active-dungeon effect";
@@ -70,6 +73,23 @@ function targetLabel(target) {
   );
 }
 
+export function resolveCombatCommunicationProfile({
+  playerStats,
+  subweapon = window.equippedSlots?.subweapon,
+} = {}) {
+  if (!subweapon) return "none";
+  if (isTomeCombatProfile(playerStats, subweapon)) return "tome";
+  if (isDaggerCombatProfile(playerStats, subweapon)) return "dagger";
+  if (
+    playerStats?.subType === "shield" ||
+    subweapon?.subType === "shield" ||
+    subweapon?.type === "shield"
+  ) {
+    return "shield";
+  }
+  return "none";
+}
+
 export function getPlayerTargetCommunicationSnapshot({
   player = window.player,
   playerStats,
@@ -85,7 +105,20 @@ export function getPlayerTargetCommunicationSnapshot({
     (typeof window.resolvePlayerStats === "function"
       ? window.resolvePlayerStats()
       : window.playerStats || {});
-  const tome = isTomeCombatProfile(resolvedStats, subweapon);
+  const profile = resolveCombatCommunicationProfile({
+    playerStats: resolvedStats,
+    subweapon,
+  });
+  if (profile === "none") {
+    return freeze({
+      profile: "none",
+      reach: null,
+      reachText: "No applicable subweapon equipped",
+      status: "not-applicable",
+      target: null,
+    });
+  }
+  const tome = profile === "tome";
   const candidates = uniqueTargets(targets, boss)
     .map((target) => ({ target, gap: getClearHullGap(player, target) }))
     .sort((left, right) => left.gap - right.gap);
@@ -93,7 +126,7 @@ export function getPlayerTargetCommunicationSnapshot({
   const reach = getPlayerClearHullReach(resolvedStats, subweapon);
   if (!nearest) {
     return freeze({
-      profile: tome ? "tome" : "melee",
+      profile,
       reach,
       reachText: tome
         ? `${TOME_CLEAR_HULL_GAP}px / 4 tiles clear hull gap`
@@ -114,7 +147,7 @@ export function getPlayerTargetCommunicationSnapshot({
       : "los-blocked";
   const center = getCombatTargetCenter(nearest.target);
   return freeze({
-    profile: tome ? "tome" : "melee",
+    profile,
     reach,
     reachText: tome
       ? `${TOME_CLEAR_HULL_GAP}px / 4 tiles clear hull gap`
@@ -213,6 +246,7 @@ export function getDaggerCommunicationSnapshot({ resolvedStats, subweapon } = {}
 }
 
 export function renderCombatReachCommunication(ctx, snapshot) {
+  if (window.playerStats?.combatRangeGuides !== true) return false;
   if (!ctx || !snapshot?.target || snapshot.status === "no-target") return false;
   const player = window.player;
   if (!player) return false;

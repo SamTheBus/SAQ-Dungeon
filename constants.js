@@ -3,8 +3,8 @@
    including items, sets, cosmetics, achievements, and modifiers.
    ========================================================================= */
 
-import { setCurrentGameState } from "./runtime_state.js?v=1.002";
-import "./player_runtime.js?v=1.001";
+import { setCurrentGameState } from "./runtime_state.js";
+import "./player_runtime.js";
 
 export const MYSTICAL_STOCK = [
   {

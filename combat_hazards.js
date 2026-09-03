@@ -1,4 +1,4 @@
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+import { isPlayerTargetableMob } from "./combat_factions.js";
 
   export const resetCombatHazardRuntimeState = function () {
     window.fatiguePenalty = 0;

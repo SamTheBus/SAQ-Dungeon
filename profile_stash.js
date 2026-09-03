@@ -1,10 +1,10 @@
   import {
     getActiveProfileMobileTab,
     getActiveStashTab,
-  } from "./ui_state.js?v=1.004";
-  import { formatActiveAttackCadence } from "./attack_speed_contract.js?v=1.001";
-  import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
-  import { resetTomeRotation } from "./tome_rotation_authority.js?v=1.001";
+  } from "./ui_state.js";
+  import { formatActiveAttackCadence } from "./attack_speed_contract.js";
+  import { getMasteryNodeRank } from "./mastery_authority.js";
+  import { resetTomeRotation } from "./tome_rotation_authority.js";
 
   export function renderProfileModal() {
     let statsListEl = document.getElementById("profile-stats-list");

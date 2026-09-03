@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>Top-Down Extraction Crawler</title>
-    <link rel="stylesheet" href="style.css?v=1.002" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <!-- Main Full-Screen Landscape Viewport -->
@@ -756,6 +756,18 @@
                 "
               >
                 PERFORMANCE: MAX FX (SAVER OFF)
+              </button>
+              <button
+                id="settings-toggle-combat-range-guides"
+                class="settings-btn"
+                style="margin-top: 6px"
+                onpointerdown="event.stopPropagation()"
+                onclick="
+                  event.stopPropagation();
+                  window.toggleCombatRangeGuides();
+                "
+              >
+                COMBAT RANGE GUIDES: OFF
               </button>
             </div>
 
@@ -2051,7 +2063,7 @@
         DUNGEON_CONFIG,
         GAME_STATES,
         BOSS_BAR_THEMES,
-      } from "./constants.js?v=1.048";
+      } from "./constants.js";
 
       Object.assign(window, {
         MYSTICAL_STOCK,
@@ -2078,28 +2090,28 @@
       });
     </script>
     <script type="module">
-      import "./player_runtime.js?v=1.001";
-      import * as dataApi from "./data.js?v=1.084";
+      import "./player_runtime.js";
+      import * as dataApi from "./data.js";
 
       Object.assign(window, dataApi);
       dataApi.loadGame();
     </script>
     <script type="module">
-      import * as assetApi from "./assets.js?v=1.043";
+      import * as assetApi from "./assets.js";
 
       Object.assign(window, assetApi);
     </script>
     <script type="module">
-      import * as audioApi from "./audio.js?v=1.045";
+      import * as audioApi from "./audio.js";
 
       Object.assign(window, audioApi);
     </script>
     <script type="module">
-      import * as itemsApi from "./items.js?v=1.057";
+      import * as itemsApi from "./items.js";
 
       Object.assign(window, itemsApi);
       itemsApi.recalculateAllInventoryItems();
     </script>
-    <script type="module" src="module_bootstrap.js?v=1.203"></script>
+    <script type="module" src="module_bootstrap.js"></script>
   </body>
 </html>

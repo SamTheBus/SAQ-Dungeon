@@ -1,5 +1,5 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { isBossOrMinibossMob } from "./mob_liveness.js?v=1.005";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { isBossOrMinibossMob } from "./mob_liveness.js";
 import {
   emitBerserkBossEmber,
   emitCalamitySpecterParticle,
@@ -10,12 +10,12 @@ import {
   emitLavaSerpentEmber,
   emitRareEliteEmber,
   emitWyrmlingFrostVapor,
-} from "./mob_presentation_effects.js?v=1.001";
+} from "./mob_presentation_effects.js";
 import {
   renderRandFloat,
   renderRandInt,
   renderRandom,
-} from "./render_rng.js?v=1.001";
+} from "./render_rng.js";
 
   // Scoped Date wrapper referencing window.Date to bypass local temporal dead zone checks
   const ScopedDate = class extends window.Date {

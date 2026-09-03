@@ -7,7 +7,7 @@ import {
   addActiveDungeonMob,
   getPrimaryMob,
   setPrimaryMob,
-} from "./encounter_state.js?v=1.007";
+} from "./encounter_state.js";
 
   // --- SUBPHASE 11: LOCAL MUTATOR EXCLUSION MATRIX ---
   const DEBUFF_EXCLUSIONS = window.DEBUFF_EXCLUSIONS || {};

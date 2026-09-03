@@ -2,7 +2,7 @@ import {
   renderRandFloat,
   renderRandInt,
   renderRandom,
-} from "./render_rng.js?v=1.001";
+} from "./render_rng.js";
 
 export function emitBerserkBossEmber(m, centerX) {
   if (

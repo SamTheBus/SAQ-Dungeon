@@ -3,7 +3,7 @@
     getSelectedAspectTrait,
     setReliquarySubTab,
     setSelectedAspectTrait,
-  } from "./ui_state.js?v=1.004";
+  } from "./ui_state.js";
 
   function isActiveDungeonRun() {
     return window.currentGameState !== window.GAME_STATES.HUB;

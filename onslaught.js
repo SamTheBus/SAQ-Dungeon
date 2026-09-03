@@ -1,10 +1,10 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
+import { getActiveDungeonMap } from "./dungeon_map.js";
 import {
   addActiveDungeonMob,
   resetEncounterState,
   setPrimaryMob,
-} from "./encounter_state.js?v=1.007";
-import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.001";
+} from "./encounter_state.js";
+import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js";
 
   export function triggerOnslaughtShatterAnimation() {
     let map = getActiveDungeonMap();

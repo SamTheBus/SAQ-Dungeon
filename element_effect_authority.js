@@ -3,15 +3,15 @@ import {
   applyPeriodicEffect,
   clearPeriodicEffect,
   getPeriodicEffect,
-} from "./combat_effect_authority.js?v=1.002";
+} from "./combat_effect_authority.js";
 import {
   hasLivingCombatHp,
   isPlayerTargetableMob,
-} from "./combat_factions.js?v=1.001";
+} from "./combat_factions.js";
 import {
   getCombatTargetCenter,
   hasCombatLineOfEffect,
-} from "./combat_reach.js?v=1.001";
+} from "./combat_reach.js";
 
 export const ELEMENT_AREA_BASE_RADIUS = 80;
 export const LIGHTNING_CHAIN_BASE_RADIUS = 120;
@@ -765,15 +765,21 @@ function resolveLightningSecondary(context) {
 export function presentTomeElementSecondaryResult(result) {
   if (!result) return;
   for (const hit of result.splashHits || []) {
+    const x = hit.target.x + (hit.target.w || 24) / 2;
+    const y = hit.target.y + (hit.target.h || 24) / 2;
     window.combatVisuals?.spawnDamageEffect?.(
-      hit.target.x + (hit.target.w || 24) / 2,
-      hit.target.y + (hit.target.h || 24) / 2,
+      x,
+      y,
       hit.damage,
       "fire",
       false,
     );
+    window.spawnTomeImpactVisual?.(x, y, "fire", {
+      phase: "splash",
+      playAudio: false,
+    });
   }
-  for (const hit of result.hopHits || []) {
+  for (const [index, hit] of (result.hopHits || []).entries()) {
     const fromCenter = getCombatTargetCenter(hit.from);
     const targetCenter = getCombatTargetCenter(hit.target);
     window.combatVisuals?.spawnDamageEffect?.(
@@ -782,6 +788,12 @@ export function presentTomeElementSecondaryResult(result) {
       hit.damage,
       "lightning",
       false,
+    );
+    window.spawnTomeImpactVisual?.(
+      targetCenter.x,
+      targetCenter.y,
+      "lightning",
+      { phase: "chain", chainCount: index + 1, playAudio: false },
     );
     window.cavernInteractives ||= [];
     const arcId = Number.isFinite(Number(window.idCounter)) ? Number(window.idCounter) : 0;

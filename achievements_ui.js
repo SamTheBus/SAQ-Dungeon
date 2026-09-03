@@ -1,7 +1,7 @@
   import {
     getAchievementFilter,
     setAchievementFilter,
-  } from "./ui_state.js?v=1.004";
+  } from "./ui_state.js";
 
   export function switchAchievementFilter(filterKey) {
     setAchievementFilter(filterKey);

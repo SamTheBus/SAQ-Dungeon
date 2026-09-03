@@ -4,7 +4,7 @@
     setActiveBagTab,
     setActiveProfileMobileTab,
     setActiveStashTab,
-  } from "./ui_state.js?v=1.004";
+  } from "./ui_state.js";
 
   export function switchBagTab(tabKey) {
     setActiveBagTab(tabKey);

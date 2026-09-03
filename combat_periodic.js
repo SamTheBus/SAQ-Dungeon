@@ -1,6 +1,6 @@
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
-import { advanceCanonicalPeriodicEffects } from "./combat_effect_authority.js?v=1.002";
-import { advanceCanonicalElementStates } from "./element_effect_authority.js?v=1.003";
+import { isPlayerTargetableMob } from "./combat_factions.js";
+import { advanceCanonicalPeriodicEffects } from "./combat_effect_authority.js";
+import { advanceCanonicalElementStates } from "./element_effect_authority.js";
 
   export const updateCombatPeriodic = function (p, pStats) {
     let logicClock = window.logicClock || 0;

@@ -5,7 +5,7 @@
     setBountyActiveTab,
     setSelectedBountyId,
     setSelectedQuestId,
-  } from "./ui_state.js?v=1.004";
+  } from "./ui_state.js";
 
   // Subphase 14: Bounty Board UI Toggle & Dynamic Ledger Binding
   export function toggleBountyModal() {

@@ -1,4 +1,4 @@
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+import { isPlayerTargetableMob } from "./combat_factions.js";
 
   const ScopedDate = class extends window.Date {
     static now() {
@@ -8,6 +8,7 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
   const Date = ScopedDate;
   const activeSpellAnims = [];
   const activeSpellLights = [];
+  let shadowDashFollowupUntil = -Infinity;
 
   const spawnVisualSpell = function (type, startX, startY, targets) {
     if (type === "fire") {
@@ -105,6 +106,9 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
 
   const spawnShadowDashVisual = function (x, y, directionX, directionY, phase) {
     if (!window.activeSpellAnims) return;
+    if (phase === "start") {
+      shadowDashFollowupUntil = Number(window.logicClock || 0) + 45;
+    }
     window.activeSpellAnims.push({
       type: "shadow_dash",
       x,
@@ -117,8 +121,29 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
     });
   };
 
-  const spawnMeleeFeelImpact = function (x, y, kind, isOffhand = false, status = null) {
+  const spawnMeleeFeelImpact = function (
+    x,
+    y,
+    kind,
+    isOffhand = false,
+    status = null,
+    isCrit = false,
+    variant = "hit",
+  ) {
     if (!window.activeSpellAnims) return;
+    const frame = Number(window.logicClock || 0);
+    const dashFollowup =
+      kind === "dagger" &&
+      !isOffhand &&
+      status === null &&
+      frame <= shadowDashFollowupUntil;
+    if (dashFollowup) {
+      variant = "dash_followup";
+      shadowDashFollowupUntil = -Infinity;
+    }
+    const life = kind === "shield"
+      ? variant === "bash" ? 18 : 14
+      : isCrit || dashFollowup ? 12 : 9;
     window.activeSpellAnims.push({
       type: "melee_feel_impact",
       x,
@@ -126,9 +151,58 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
       kind,
       isOffhand,
       status,
-      life: kind === "shield" ? 14 : 9,
-      maxLife: kind === "shield" ? 14 : 9,
+      isCrit,
+      variant,
+      dashFollowup,
+      life,
+      maxLife: life,
     });
+    const cue = kind === "shield"
+      ? variant === "bash" ? "shield_bash" : "shield_hit"
+      : status === "poison"
+        ? "dagger_poison"
+        : status === "bleed"
+          ? "dagger_bleed"
+          : isCrit || dashFollowup
+            ? "dagger_crit"
+            : isOffhand
+              ? "dagger_offhand"
+              : "dagger_main";
+    window.SoundManager?.playCombatImpact?.(cue, { isCrit });
+  };
+
+  const spawnTomeImpactVisual = function (
+    x,
+    y,
+    element = "arcane",
+    {
+      phase = "impact",
+      isCrit = false,
+      chainCount = 0,
+      playAudio = true,
+    } = {},
+  ) {
+    if (!window.activeSpellAnims) return;
+    const resolvedElement = ["fire", "lightning", "frost"].includes(element)
+      ? element
+      : "arcane";
+    const freeze = resolvedElement === "frost" && phase === "freeze";
+    const life = freeze ? 20 : resolvedElement === "lightning" ? 7 : resolvedElement === "fire" ? 14 : 11;
+    window.activeSpellAnims.push({
+      type: "tome_impact",
+      x,
+      y,
+      element: resolvedElement,
+      phase,
+      isCrit,
+      chainCount,
+      life,
+      maxLife: life,
+    });
+    if (playAudio) {
+      const cue = freeze ? "tome_freeze" : `tome_${resolvedElement}`;
+      window.SoundManager?.playCombatImpact?.(cue, { isCrit, chainCount });
+    }
   };
 
   const spawnGuardPressureVisual = function (x, y, pressure, maxPressure = 3) {
@@ -927,6 +1001,7 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
         } else if (
           anim.type === "shadow_dash" ||
           anim.type === "melee_feel_impact" ||
+          anim.type === "tome_impact" ||
           anim.type === "guard_pressure" ||
           anim.type === "portal_seal_break"
         ) {
@@ -1823,19 +1898,106 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
         const shield = anim.kind === "shield";
         const color = anim.status === "poison" ? "#4ade80" : anim.status === "bleed" ? "#fb2c36" : shield ? "#fbbf24" : "#e9d5ff";
         ctx.translate(anim.x, anim.y);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = shield ? 5 : anim.isOffhand ? 2 : 3;
-        ctx.shadowBlur = shield ? 12 : 7;
+        ctx.strokeStyle = anim.isCrit || anim.dashFollowup ? "#ffffff" : color;
+        ctx.lineWidth = shield ? (anim.variant === "bash" ? 6 : 5) : anim.isOffhand ? 1.8 : 2.8;
+        ctx.shadowBlur = shield ? 12 : anim.isCrit || anim.dashFollowup ? 11 : 6;
         ctx.shadowColor = color;
         ctx.globalAlpha = alpha;
         ctx.beginPath();
         if (shield) {
-          ctx.arc(0, 0, 11 + (1 - alpha) * 11, -0.8, 0.8);
+          const radius = 10 + (1 - alpha) * (anim.variant === "bash" ? 20 : 11);
+          ctx.arc(0, 0, radius, -0.9, 0.9);
+          if (anim.variant === "bash") {
+            ctx.moveTo(-radius * 0.7, -radius * 0.45);
+            ctx.lineTo(radius * 0.7, radius * 0.45);
+            ctx.moveTo(-radius * 0.7, radius * 0.45);
+            ctx.lineTo(radius * 0.7, -radius * 0.45);
+          }
         } else {
-          ctx.moveTo(-14, anim.isOffhand ? 7 : -7);
-          ctx.lineTo(15, anim.isOffhand ? -8 : 8);
+          const length = anim.isCrit || anim.dashFollowup ? 19 : 15;
+          ctx.moveTo(-length, anim.isOffhand ? 7 : -7);
+          ctx.lineTo(length, anim.isOffhand ? -7 : 7);
+          if (anim.isCrit || anim.dashFollowup) {
+            ctx.moveTo(-length * 0.65, anim.isOffhand ? -7 : 7);
+            ctx.lineTo(length * 0.65, anim.isOffhand ? 7 : -7);
+          }
         }
         ctx.stroke();
+        ctx.restore();
+      } else if (anim.type === "tome_impact") {
+        ctx.save();
+        const alpha = anim.life / anim.maxLife;
+        const expansion = 1 - alpha;
+        ctx.translate(anim.x, anim.y);
+        ctx.globalAlpha = alpha;
+        if (anim.element === "fire") {
+          const radius = 5 + expansion * 18;
+          ctx.fillStyle = "rgba(255, 248, 200, 0.9)";
+          ctx.strokeStyle = "#f97316";
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "#ef4444";
+          ctx.beginPath();
+          ctx.arc(0, 0, Math.max(2, 6 * alpha), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else if (anim.element === "lightning") {
+          ctx.strokeStyle = "#e0f2fe";
+          ctx.shadowBlur = 9;
+          ctx.shadowColor = "#22d3ee";
+          ctx.lineWidth = 2.2;
+          for (let branch = 0; branch < 3; branch++) {
+            const angle = branch * (Math.PI * 2) / 3 + anim.chainCount * 0.17;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(angle + 0.18) * 8, Math.sin(angle + 0.18) * 8);
+            ctx.lineTo(Math.cos(angle) * 18, Math.sin(angle) * 18);
+            ctx.stroke();
+          }
+        } else if (anim.element === "frost") {
+          const freeze = anim.phase === "freeze";
+          const shards = freeze ? 8 : 5;
+          const radius = 7 + expansion * (freeze ? 22 : 13);
+          ctx.strokeStyle = freeze ? "#ffffff" : "#bae6fd";
+          ctx.fillStyle = "rgba(56, 189, 248, 0.16)";
+          ctx.shadowBlur = freeze ? 14 : 8;
+          ctx.shadowColor = "#38bdf8";
+          ctx.lineWidth = freeze ? 2.6 : 1.8;
+          for (let shard = 0; shard < shards; shard++) {
+            const angle = shard * Math.PI * 2 / shards;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(angle) * 3, Math.sin(angle) * 3);
+            ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+            ctx.stroke();
+          }
+          if (freeze) {
+            ctx.beginPath();
+            for (let side = 0; side < 6; side++) {
+              const angle = side * Math.PI / 3;
+              const px = Math.cos(angle) * radius;
+              const py = Math.sin(angle) * radius;
+              if (side === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        } else {
+          const radius = 5 + expansion * 12;
+          ctx.strokeStyle = "#c4b5fd";
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "#8b5cf6";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, -radius);
+          ctx.lineTo(radius, 0);
+          ctx.lineTo(0, radius);
+          ctx.lineTo(-radius, 0);
+          ctx.closePath();
+          ctx.stroke();
+        }
         ctx.restore();
       } else if (anim.type === "guard_pressure") {
         ctx.save();
@@ -1869,6 +2031,7 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
         ctx.save();
         let alpha = anim.life / anim.maxLife;
         let r = anim.radius;
+        const resonantAegis = anim.presentationSource === "resonant_aegis";
 
         // 1. Radiant central white-hot flash
         let glowGrad = ctx.createRadialGradient(
@@ -1880,7 +2043,7 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
           Math.max(0.1, r * 0.5),
         );
         glowGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.6})`);
-        glowGrad.addColorStop(0.5, `rgba(0, 240, 255, ${alpha * 0.2})`);
+        glowGrad.addColorStop(0.5, resonantAegis ? `rgba(56, 189, 248, ${alpha * 0.3})` : `rgba(0, 240, 255, ${alpha * 0.2})`);
         glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = glowGrad;
         ctx.beginPath();
@@ -1896,10 +2059,10 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
         ctx.fill();
 
         // 2. Outer expanding crystalline octagon (Cyan)
-        ctx.strokeStyle = `rgba(0, 240, 255, ${alpha * 0.95})`;
+        ctx.strokeStyle = resonantAegis ? `rgba(186, 230, 253, ${alpha * 0.98})` : `rgba(0, 240, 255, ${alpha * 0.95})`;
         ctx.lineWidth = 2.0;
         ctx.shadowBlur = 12;
-        ctx.shadowColor = "#00ffff";
+        ctx.shadowColor = resonantAegis ? "#38bdf8" : "#00ffff";
 
         ctx.beginPath();
         for (let j = 0; j < 8; j++) {
@@ -1911,10 +2074,10 @@ import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
         ctx.closePath();
         ctx.stroke();
 
-        // 3. Inner concentric offset octagon (Magenta)
-        ctx.strokeStyle = `rgba(232, 67, 147, ${alpha * 0.85})`;
+        // 3. Inner concentric offset octagon
+        ctx.strokeStyle = resonantAegis ? `rgba(37, 99, 235, ${alpha * 0.88})` : `rgba(232, 67, 147, ${alpha * 0.85})`;
         ctx.lineWidth = 1.5;
-        ctx.shadowColor = "#e84393";
+        ctx.shadowColor = resonantAegis ? "#2563eb" : "#e84393";
 
         ctx.beginPath();
         for (let j = 0; j < 8; j++) {
@@ -2099,6 +2262,7 @@ export {
   spawnPortalSealBreakVisual,
   spawnShadowDashVisual,
   spawnMeleeFeelImpact,
+  spawnTomeImpactVisual,
   spawnGuardPressureVisual,
   spawnAegisPulseVisual,
   spawnNoxiousBloomVisual,

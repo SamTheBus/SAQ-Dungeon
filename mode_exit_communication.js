@@ -1,5 +1,5 @@
-import { calculateEmergencySalvageGold } from "./run_recovery.js?v=1.002";
-import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
+import { calculateEmergencySalvageGold } from "./run_recovery.js";
+import { getMasteryNodeRank } from "./mastery_authority.js";
 
 function formatAmount(value) {
   if (typeof window.formatNumber === "function") {

@@ -1,6 +1,6 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
-import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { isPlayerTargetableMob } from "./combat_factions.js";
+import { getMasteryNodeRank } from "./mastery_authority.js";
 
   export function updateCavernEffects() {
     if (window.currentGameState !== window.GAME_STATES.DUNGEON) {

@@ -1,7 +1,7 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { advanceSpellWeavingTimer } from "./tome_rotation_authority.js?v=1.001";
-import { advanceCanonicalPotionTimers } from "./set_affix_authority.js?v=1.001";
-import { advanceShadowDash } from "./shadow_dash.js?v=1.001";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { advanceSpellWeavingTimer } from "./tome_rotation_authority.js";
+import { advanceCanonicalPotionTimers } from "./set_affix_authority.js";
+import { advanceShadowDash } from "./shadow_dash.js";
 
   export const updateGame = function (canvas, isPointerHolding, checkCollisionAt) {
     window.logicClock = (window.logicClock || 0) + 1;

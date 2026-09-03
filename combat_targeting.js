@@ -1,14 +1,14 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
+import { getActiveDungeonMap } from "./dungeon_map.js";
 import {
   findNearestIndexedMobInRadius,
-} from "./mob_spatial_index.js?v=1.002";
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+} from "./mob_spatial_index.js";
+import { isPlayerTargetableMob } from "./combat_factions.js";
 import {
   canPlayerReachCombatTarget,
   getCombatTargetCenter,
   getCombatTargetRadius,
   getIndexedCombatReachQueryRadius,
-} from "./combat_reach.js?v=1.001";
+} from "./combat_reach.js";
 
 const MOB_SPATIAL_TARGETING_THRESHOLD = 32;
 

@@ -1,17 +1,17 @@
 import {
   isFriendlyCombatMob,
   isPlayerTargetableMob,
-} from "./combat_factions.js?v=1.001";
-import { resolveTomeProjectileImpact } from "./tome_projectile.js?v=1.003";
+} from "./combat_factions.js";
+import { resolveTomeProjectileImpact } from "./tome_projectile.js";
 import {
   renderRandom,
   renderRandFloat,
   renderRandInt,
-} from "./render_rng.js?v=1.000";
+} from "./render_rng.js";
 import {
   classifyTomeProjectileBlock,
   recordTomeDeliveryCommunication,
-} from "./tome_delivery_communication.js?v=1.000";
+} from "./tome_delivery_communication.js";
 
 const projectileOverlaps = (proj, target, defaultRadius) => {
   const targetX = target.x + (target.w || 0) / 2;

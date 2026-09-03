@@ -1,4 +1,4 @@
-import { getArtifactMechanicScale } from "./artifact_authority.js?v=1.002";
+import { getArtifactMechanicScale } from "./artifact_authority.js";
 
 export const COMBAT_EFFECT_CLOCK_HZ = 60;
 

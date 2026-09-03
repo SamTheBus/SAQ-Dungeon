@@ -1,23 +1,23 @@
-import { setGamePaused } from "./runtime_state.js?v=1.002";
-import { setPrimaryMob } from "./encounter_state.js?v=1.007";
+import { setGamePaused } from "./runtime_state.js";
+import { setPrimaryMob } from "./encounter_state.js";
 import {
   getNextPersistedEntityId,
   setEntityIdCounter,
-} from "./entity_id.js?v=1.002";
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+} from "./entity_id.js";
+import { isPlayerTargetableMob } from "./combat_factions.js";
 import {
   ACTIVE_ATTACK_BASE_DELAY_FRAMES,
   ACTIVE_ATTACK_MIN_DELAY_FRAMES,
   calculateActiveAttackDelayFrames,
   normalizeActiveAttackDelayFrames,
-} from "./attack_speed_contract.js?v=1.001";
+} from "./attack_speed_contract.js";
 import {
   ENGINE_PLAYER_STAT_FIELDS,
   EngineSaveSchemaError,
   buildEngineSaveSnapshot,
   hydrateEngineSavePayload,
   stableStringifyEngineSave,
-} from "./save_schema.js?v=1.005";
+} from "./save_schema.js";
 import {
   EQUIPMENT_RARITY_EXCEPTIONS,
   EQUIPMENT_RARITY_SOURCES,
@@ -27,20 +27,20 @@ import {
   calculateEquipmentRarityProbabilities,
   getUnlockedEquipmentRarities,
   rollEquipmentRarity,
-} from "./quality_rarity_contract.js?v=1.001";
+} from "./quality_rarity_contract.js";
 import {
   applyCanonicalMasteryStats,
   awardResonantAegisMasteryXp,
   migrateLegacyMasteryNodeIds,
-} from "./mastery_authority.js?v=1.003";
+} from "./mastery_authority.js";
 import {
   fillGuardPressureFromBlock,
   resolveCanonicalShieldBash,
-} from "./shield_guard_pressure.js?v=1.002";
+} from "./shield_guard_pressure.js";
 import {
   detonateRemainingPeriodicDamage,
   getActivePoisonBleedStackCount,
-} from "./combat_effect_authority.js?v=1.002";
+} from "./combat_effect_authority.js";
 import {
   ARTIFACT_TRAIT_STATS,
   beginArtifactStageAttempt,
@@ -53,10 +53,10 @@ import {
   resolveArtifactTraitStats,
   resolvePhysicalArtifactStats,
   scaleArtifactMechanic,
-} from "./artifact_authority.js?v=1.002";
+} from "./artifact_authority.js";
 import {
   resolveCanonicalSetState,
-} from "./set_affix_authority.js?v=1.001";
+} from "./set_affix_authority.js";
 export {
   EQUIPMENT_RARITY_EXCEPTIONS,
   EQUIPMENT_RARITY_SOURCES,
@@ -80,7 +80,7 @@ export {
   evaluateRunSatchelTransition,
   canApplyRunSatchelTransition,
   addToRunSatchel,
-} from "./run_satchel.js?v=1.001";
+} from "./run_satchel.js";
 export {
   ARTIFACT_SLOT_KEYS,
   ARTIFACT_TRAIT_STATS,
@@ -99,7 +99,7 @@ export {
   resolveArtifactTraitStats,
   resolvePhysicalArtifactStats,
   scaleArtifactMechanic,
-} from "./artifact_authority.js?v=1.002";
+} from "./artifact_authority.js";
 export {
   EQUIPMENT_AFFIX_DOMAIN_TRUTH,
   POTION_BASE_DURATION_FRAMES,
@@ -113,7 +113,7 @@ export {
   getSetThresholdPresentation,
   resolveCanonicalSetState,
   triggerVoidTouchedRareFrenzy,
-} from "./set_affix_authority.js?v=1.001";
+} from "./set_affix_authority.js";
 
 /* ==========================================================================
    PRIMARY PURPOSE: Stores global game state, constant dictionaries,
@@ -4560,6 +4560,7 @@ window.playerStats = {
   volumeMusic: 0.5,
   mute: false,
   ecoMode: false,
+  combatRangeGuides: false,
   fairiesClicked: 0,
   deathCount: 0,
   lootPityCounter: 0,

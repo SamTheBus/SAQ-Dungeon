@@ -1,7 +1,7 @@
-import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
-import { getStandardPortalTraversalState } from "./portal_guardian_contract.js?v=1.000";
-import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
-import { getCompassPath } from "./artifact_authority.js?v=1.002";
+import { hasRecoveryAssets } from "./recovery_contract.js";
+import { getStandardPortalTraversalState } from "./portal_guardian_contract.js";
+import { getMasteryNodeRank } from "./mastery_authority.js";
+import { getCompassPath } from "./artifact_authority.js";
 
 /* ==========================================================================
    PRIMARY PURPOSE: Top-Down Procedural Dungeon Map Generator (BSP),

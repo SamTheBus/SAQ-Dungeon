@@ -1,6 +1,6 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
-import { applyPlayerPoison } from "./combat_effect_authority.js?v=1.002";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { addActiveDungeonMob } from "./encounter_state.js";
+import { applyPlayerPoison } from "./combat_effect_authority.js";
 
 /* ==========================================================================
    PRIMARY PURPOSE: Clean Top-Down Extraction Crawler Core Engine & Game Loop.

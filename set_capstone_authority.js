@@ -1,11 +1,11 @@
 import {
   BIOHAZARD_POISON_HEALING_PROFILE,
   applyPlayerPoison,
-} from "./combat_effect_authority.js?v=1.002";
+} from "./combat_effect_authority.js";
 import {
   isElementTargetInvulnerable,
   isEligiblePlayerElementTarget,
-} from "./element_effect_authority.js?v=1.003";
+} from "./element_effect_authority.js";
 
 export const BIOHAZARD_CAPSTONE_PROFILE = Object.freeze({
   profileId: "g6d_biohazard_v1",

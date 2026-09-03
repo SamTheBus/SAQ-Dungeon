@@ -1,49 +1,49 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
+import { getActiveDungeonMap } from "./dungeon_map.js";
 import {
   getActiveDungeonMobs,
   removeActiveDungeonMobById,
   setPrimaryMob,
-} from "./encounter_state.js?v=1.007";
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+} from "./encounter_state.js";
+import { isPlayerTargetableMob } from "./combat_factions.js";
 import {
   isOverkillHit,
   updateFinitePeakHit,
-} from "./combat_scaling.js?v=1.001";
-import { isActiveAttackReady } from "./attack_speed_contract.js?v=1.001";
+} from "./combat_scaling.js";
+import { isActiveAttackReady } from "./attack_speed_contract.js";
 import {
   awardDefeatMasteryXp,
   awardMainAttackMasteryXp,
-} from "./mastery_authority.js?v=1.003";
+} from "./mastery_authority.js";
 import {
   MONSTER_DROP_DOMAINS,
   calculateEligibleMonsterDropChance,
   rollEligibleMonsterDrop,
-} from "./drop_rate_contract.js?v=1.000";
+} from "./drop_rate_contract.js";
 import {
   applyPlayerBleed,
   applyPlayerPoison,
   clearPeriodicEffect,
   getActivePeriodicEffectCount,
   resolveOnHitArtifactEffects,
-} from "./combat_effect_authority.js?v=1.002";
+} from "./combat_effect_authority.js";
 import {
   canPlayerReachCombatTarget,
   getCombatTargetCenter,
   isTomeCombatProfile,
-} from "./combat_reach.js?v=1.001";
-import { launchTomeAttackProjectile } from "./tome_projectile.js?v=1.003";
-import { isEligiblePlayerElementTarget } from "./element_effect_authority.js?v=1.003";
-import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js?v=1.001";
+} from "./combat_reach.js";
+import { launchTomeAttackProjectile } from "./tome_projectile.js";
+import { isEligiblePlayerElementTarget } from "./element_effect_authority.js";
+import { resolveCanonicalTomeSpellProcEvent } from "./tome_rotation_authority.js";
 import {
   canApplyDaggerMainBleed,
   canApplyVipersCoating,
   canExecuteDaggerOffhand,
-} from "./dagger_identity_contract.js?v=1.000";
-import { resolveSuccessfulShieldMainAttack } from "./shield_guard_pressure.js?v=1.002";
+} from "./dagger_identity_contract.js";
+import { resolveSuccessfulShieldMainAttack } from "./shield_guard_pressure.js";
 import {
   presentSetCapstoneAttackAction,
   resolveCanonicalSetCapstoneAttackAction,
-} from "./set_capstone_authority.js?v=1.000";
+} from "./set_capstone_authority.js";
 
   export const updateBossCombat = function (
     p,
@@ -312,7 +312,18 @@ import {
         // Roll bleed from dagger base bleedChance
         if (canApplyDaggerMainBleed({ resolvedStats: pStats })) {
           if (Math.random() < pStats.bleedChance) {
-            applyPlayerBleed(bm, pStats, { mechanic: "dagger_main_bleed" });
+            const bleedEffect = applyPlayerBleed(bm, pStats, {
+              mechanic: "dagger_main_bleed",
+            });
+            if (bleedEffect) {
+              window.spawnMeleeFeelImpact?.(
+                bm.x + (bm.w || 24) / 2,
+                bm.y + (bm.h || 24) / 2,
+                "dagger",
+                false,
+                "bleed",
+              );
+            }
           }
         }
 
@@ -382,13 +393,28 @@ import {
             isCrit,
           );
         }
+        let specializedImpact = false;
         if (pStats.subType === "dagger" || pStats.subType === "shield") {
           window.spawnMeleeFeelImpact?.(
-            bCenterX,
-            bCenterY,
+            bossCenterX,
+            bm.y + (bm.h || 24) / 2,
             pStats.subType,
             false,
+            null,
+            isCrit,
           );
+          specializedImpact = typeof window.spawnMeleeFeelImpact === "function";
+        } else if (
+          tomeProjectileImpact &&
+          isTomeCombatProfile(pStats, window.equippedSlots?.subweapon)
+        ) {
+          window.spawnTomeImpactVisual?.(
+            bossCenterX,
+            bm.y + (bm.h || 24) / 2,
+            "arcane",
+            { phase: "impact", isCrit },
+          );
+          specializedImpact = typeof window.spawnTomeImpactVisual === "function";
         }
 
         const onHitArtifacts = resolveOnHitArtifactEffects({
@@ -436,6 +462,7 @@ import {
         }
 
         if (
+          !specializedImpact &&
           window.SoundManager &&
           typeof window.SoundManager.playHitImpact === "function"
         ) {
@@ -477,8 +504,8 @@ import {
               );
             }
             window.spawnMeleeFeelImpact?.(
-              bCenterX,
-              bCenterY - 6,
+              bossCenterX,
+              bossCenterY - 6,
               "dagger",
               true,
             );
@@ -486,7 +513,18 @@ import {
             // Roll bleed from dagger base bleedChance
             if (pStats.bleedChance && pStats.bleedChance > 0) {
               if (Math.random() < pStats.bleedChance) {
-                applyPlayerBleed(bm, pStats, { mechanic: "dagger_offhand_bleed" });
+                const bleedEffect = applyPlayerBleed(bm, pStats, {
+                  mechanic: "dagger_offhand_bleed",
+                });
+                if (bleedEffect) {
+                  window.spawnMeleeFeelImpact?.(
+                    bossCenterX,
+                    bossCenterY - 6,
+                    "dagger",
+                    true,
+                    "bleed",
+                  );
+                }
               }
             }
 
@@ -502,8 +540,8 @@ import {
               });
               if (poisonEffect) {
                 window.spawnMeleeFeelImpact?.(
-                  bCenterX,
-                  bCenterY,
+                  bossCenterX,
+                  bossCenterY,
                   "dagger",
                   true,
                   "poison",

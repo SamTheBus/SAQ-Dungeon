@@ -1,26 +1,26 @@
 import {
   addActiveDungeonMob,
   removeActiveDungeonMobById,
-} from "./encounter_state.js?v=1.007";
+} from "./encounter_state.js";
 import {
   getIndexedMobOrdinal,
   insertIndexedMob,
   queryMobCandidatesInAabb,
   refreshIndexedMob,
   removeIndexedMob,
-} from "./mob_spatial_index.js?v=1.002";
-import { isFriendlyCombatMob } from "./combat_factions.js?v=1.001";
+} from "./mob_spatial_index.js";
+import { isFriendlyCombatMob } from "./combat_factions.js";
 import {
   canStandardMobApplyOpeningPressure,
   canStandardMobFireRanged,
-} from "./opening_fairness.js?v=1.000";
+} from "./opening_fairness.js";
 import {
   MONSTER_DROP_DOMAINS,
   calculateEligibleMonsterDropChance,
   rollEligibleMonsterDrop,
-} from "./drop_rate_contract.js?v=1.000";
-import { awardDefeatMasteryXp } from "./mastery_authority.js?v=1.003";
-import { applyHostilePlayerPoison } from "./combat_effect_authority.js?v=1.002";
+} from "./drop_rate_contract.js";
+import { awardDefeatMasteryXp } from "./mastery_authority.js";
+import { applyHostilePlayerPoison } from "./combat_effect_authority.js";
 
 const MOB_SEPARATION_DISTANCE = 18;
 const MOB_SPATIAL_SEPARATION_THRESHOLD = 128;

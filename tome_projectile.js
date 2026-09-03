@@ -4,10 +4,10 @@ import {
   getCombatTargetCenter,
   getCombatTargetRadius,
   getPlayerCombatRadius,
-} from "./combat_reach.js?v=1.001";
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
-import { renderRandom } from "./render_rng.js?v=1.000";
-import { recordTomeDeliveryCommunication } from "./tome_delivery_communication.js?v=1.000";
+} from "./combat_reach.js";
+import { isPlayerTargetableMob } from "./combat_factions.js";
+import { renderRandom } from "./render_rng.js";
+import { recordTomeDeliveryCommunication } from "./tome_delivery_communication.js";
 
 // Provisional presentation/feel value for G.6C1. Gameplay reach is distance-capped.
 export const TOME_PROJECTILE_SPEED = 8;

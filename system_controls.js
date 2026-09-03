@@ -39,6 +39,23 @@ const updateLightingStyle = function () {
     }
 };
 
+const toggleCombatRangeGuides = function () {
+    if (!window.playerStats) return;
+    window.playerStats.combatRangeGuides =
+      window.playerStats.combatRangeGuides !== true;
+    updateCombatRangeGuidesStyle();
+    if (typeof window.saveGame === "function") window.saveGame();
+};
+
+const updateCombatRangeGuidesStyle = function () {
+    const enabled = window.playerStats?.combatRangeGuides === true;
+    const btn = document.getElementById("settings-toggle-combat-range-guides");
+    if (btn) {
+      btn.innerText = `COMBAT RANGE GUIDES: ${enabled ? "ON" : "OFF"}`;
+      btn.className = enabled ? "settings-btn active" : "settings-btn";
+    }
+};
+
 const forceReloadCacheBust = function () {
     let baseUrl = window.location.href.split("?")[0];
     window.location.href = `${baseUrl}?v=${Date.now()}`;
@@ -84,6 +101,8 @@ export {
   updateEcoModeStyle,
   toggleLighting,
   updateLightingStyle,
+  toggleCombatRangeGuides,
+  updateCombatRangeGuidesStyle,
   forceReloadCacheBust,
   requestWipeSaveData,
 };

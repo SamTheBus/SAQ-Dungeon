@@ -682,6 +682,7 @@ const PLAYER_BOOLEAN_FIELDS = Object.freeze([
   "dungeonRunInProgress",
   "ecoMode",
   "enableLighting",
+  "combatRangeGuides",
   "hasTriggeredChallengesUnlock",
   "hasTriggeredEarlyBird",
   "hasTriggeredExactChange",

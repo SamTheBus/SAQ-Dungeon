@@ -1,4 +1,4 @@
-import { calculateEmergencySalvageGold } from "./run_recovery.js?v=1.002";
+import { calculateEmergencySalvageGold } from "./run_recovery.js";
 
 const ENTRY_LOADOUT_FIELD = "standardRunEntryLoadoutIds";
 const EMERGENCY_HAUL_SELECT_ID = "standard-retreat-emergency-haul-select";

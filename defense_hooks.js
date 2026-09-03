@@ -1,10 +1,10 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { addActiveDungeonMob } from "./encounter_state.js";
 import {
   awardResonantAegisMasteryXp,
   awardWindRazorMasteryXp,
-} from "./mastery_authority.js?v=1.003";
-import { hasPeriodicEffect } from "./combat_effect_authority.js?v=1.002";
+} from "./mastery_authority.js";
+import { hasPeriodicEffect } from "./combat_effect_authority.js";
 
     // The base damage pipeline owns mitigation/counters. This narrow decorator
     // supplies only the communicated Master Duellist combat companion.

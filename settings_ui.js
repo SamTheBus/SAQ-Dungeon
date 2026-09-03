@@ -89,6 +89,8 @@
         window.updateEcoModeStyle();
       if (typeof window.updateLightingStyle === "function")
         window.updateLightingStyle();
+      if (typeof window.updateCombatRangeGuidesStyle === "function")
+        window.updateCombatRangeGuidesStyle();
       if (typeof window.updateEditHudModeStyle === "function")
         window.updateEditHudModeStyle();
       window.updateHUD();

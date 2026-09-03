@@ -2,47 +2,47 @@ import {
   getIsGamePaused,
   setCurrentGameState,
   setGamePaused,
-} from "./runtime_state.js?v=1.002";
+} from "./runtime_state.js";
 import {
   addActiveDungeonMob,
   resetEncounterState,
   setActiveDungeonMobs,
   setPrimaryMob,
-} from "./encounter_state.js?v=1.007";
-import { resetCombatHazardRuntimeState } from "./combat_hazards.js?v=1.035";
+} from "./encounter_state.js";
+import { resetCombatHazardRuntimeState } from "./combat_hazards.js";
 import {
   calculateEmergencySalvageGold,
   shouldResolveInterruptedDungeonRun,
-} from "./run_recovery.js?v=1.002";
+} from "./run_recovery.js";
 import {
   captureStandardRunEntryLoadout,
   isStandardVoluntaryRetreatMode,
   requestStandardVoluntaryRetreat,
-} from "./standard_retreat.js?v=1.000";
+} from "./standard_retreat.js";
 import {
   buildStandardExtractionConfirmation,
   buildStandardExtractionSummary,
   getStandardExtractionPortalRule,
   getStandardExtractionPreview,
   isStandardSuccessfulExtractionMode,
-} from "./standard_extraction.js?v=1.000";
+} from "./standard_extraction.js";
 import {
   finalizeOnslaughtModeExit,
   finalizeRiftModeExit,
   isSafeModeExitFinalized,
   resetSafeModeExitAuthority,
-} from "./safe_mode_finalization.js?v=1.001";
+} from "./safe_mode_finalization.js";
 import {
   renderChallengeExitSummary,
   renderSafeModeExitSummary,
   requestActiveModeVoluntaryRetreat,
-} from "./mode_exit_communication.js?v=1.002";
+} from "./mode_exit_communication.js";
 import {
   commitRecoveryChestOverwrite,
   describeRecoveryAssets,
   getRecoveryRecordForFloor,
   hasRecoveryAssets,
-} from "./recovery_contract.js?v=1.000";
+} from "./recovery_contract.js";
 import {
   buildStandardMobComposition,
   getDeploymentItemRiskPresentation,
@@ -50,11 +50,11 @@ import {
   hasUninsuredPermanentEquipment,
   normalizeProvisionedStarterItem,
   selectStandardMobSpawns,
-} from "./opening_fairness.js?v=1.000";
-import { getStandardPortalTraversalState } from "./portal_guardian_contract.js?v=1.000";
-import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
-import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js?v=1.001";
-import { resetTomeRotation } from "./tome_rotation_authority.js?v=1.001";
+} from "./opening_fairness.js";
+import { getStandardPortalTraversalState } from "./portal_guardian_contract.js";
+import { getMasteryNodeRank } from "./mastery_authority.js";
+import { triggerVoidTouchedRareFrenzy } from "./set_affix_authority.js";
+import { resetTomeRotation } from "./tome_rotation_authority.js";
 
   export const loadHub = function () {
     const resolvedInterruptedRun = shouldResolveInterruptedDungeonRun(

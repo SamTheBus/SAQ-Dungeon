@@ -1,13 +1,13 @@
-import "./entity_id.js?v=1.002";
-import "./runtime_state.js?v=1.002";
-import "./encounter_state.js?v=1.008";
-import { getPlayer } from "./player_runtime.js?v=1.001";
+import "./entity_id.js";
+import "./runtime_state.js";
+import "./encounter_state.js";
+import { getPlayer } from "./player_runtime.js";
 import {
   requestShadowDash,
   resetShadowDash,
   updateShadowDashHud,
   initShadowDashButtonDrag,
-} from "./shadow_dash.js?v=1.001";
+} from "./shadow_dash.js";
 
 import {
   MYSTICAL_STOCK,
@@ -31,28 +31,30 @@ import {
   DUNGEON_CONFIG,
   GAME_STATES,
   BOSS_BAR_THEMES,
-} from "./constants.js?v=1.048";
-import * as dataApi from "./data.js?v=1.084";
-import * as assetApi from "./assets.js?v=1.043";
-import * as audioApi from "./audio.js?v=1.045";
-import * as itemsApi from "./items.js?v=1.057";
-import { openCavernSigilSackAnimation } from "./sigil_sack_animation.js?v=1.002";
+} from "./constants.js";
+import * as dataApi from "./data.js";
+import * as assetApi from "./assets.js";
+import * as audioApi from "./audio.js";
+import * as itemsApi from "./items.js";
+import { openCavernSigilSackAnimation } from "./sigil_sack_animation.js";
 import {
   updateDpsOverlayStyle,
   updateDpsOverlayPosition,
   initDpsOverlayDrag,
-} from "./dps_overlay_ui.js?v=1.004";
+} from "./dps_overlay_ui.js";
 import {
   toggleEcoMode,
   updateEcoModeStyle,
   toggleLighting,
   updateLightingStyle,
+  toggleCombatRangeGuides,
+  updateCombatRangeGuidesStyle,
   forceReloadCacheBust,
   requestWipeSaveData,
-} from "./system_controls.js?v=1.002";
-import { drawSingleHero } from "./hero_renderer.js?v=1.002";
-import { calculateActiveDps } from "./active_dps.js?v=1.002";
-import { drawSingleMob } from "./mob_renderer.js?v=1.014";
+} from "./system_controls.js";
+import { drawSingleHero } from "./hero_renderer.js";
+import { calculateActiveDps } from "./active_dps.js";
+import { drawSingleMob } from "./mob_renderer.js";
 import {
   drawJaggedLine,
   RenderEngine,
@@ -62,13 +64,13 @@ import {
   spawnPurchaseCelebration,
   spawnDamageEffect,
   renderNemesisPreview,
-} from "./entity_render_effects.js?v=1.003";
+} from "./entity_render_effects.js";
 import {
   PARTICLE_THEMES as entityParticleThemes,
   combatVisuals as entityCombatVisuals,
   ParticlePool as entityParticlePool,
   spawnCombatImpactParticles as entitySpawnCombatImpactParticles,
-} from "./entity_particle_core.js?v=1.004";
+} from "./entity_particle_core.js";
 import {
   activeSpellAnims,
   activeSpellLights,
@@ -78,6 +80,7 @@ import {
   spawnPortalSealBreakVisual,
   spawnShadowDashVisual,
   spawnMeleeFeelImpact,
+  spawnTomeImpactVisual,
   spawnGuardPressureVisual,
   spawnAegisPulseVisual,
   spawnNoxiousBloomVisual,
@@ -90,7 +93,7 @@ import {
   castVisualSpell,
   updateSpellAnimations,
   renderSpellAnimations,
-} from "./spell_visuals.js?v=1.005";
+} from "./spell_visuals.js";
 import {
   showCustomConfirm as skillsShowCustomConfirm,
   getSubweaponXpRequired,
@@ -98,7 +101,7 @@ import {
   SKILL_TREE_DATA,
   SkillTreeManager,
   resolvePlayerStats as skillsResolvePlayerStats,
-} from "./skills.js?v=1.010";
+} from "./skills.js";
 import {
   drawBreakableProp,
   DungeonMapGenerator,
@@ -108,21 +111,21 @@ import {
   drawDungeonPortalTile,
   renderTopDownMap,
   renderMinimap,
-} from "./dungeon_map.js?v=1.010";
+} from "./dungeon_map.js";
 import {
   createCalamitySigil,
   signSpecialChallengeContract,
   abandonSpecialChallenge,
   ChallengeEngine,
-} from "./challenges.js?v=1.005";
-import { MONSTER_CARDS_DATA } from "./bestiary_data.js?v=1.004";
-import { spawnFloatingText } from "./floating_text.js?v=1.003";
-import { moveEntityWithSmartSteering } from "./smart_steering.js?v=1.009";
+} from "./challenges.js";
+import { MONSTER_CARDS_DATA } from "./bestiary_data.js";
+import { spawnFloatingText } from "./floating_text.js";
+import { moveEntityWithSmartSteering } from "./smart_steering.js";
 import {
   toggleEditHudMode,
   updateEditHudModeStyle,
   toggleSettingsModal,
-} from "./settings_ui.js?v=1.007";
+} from "./settings_ui.js";
 import {
   attachToastSwipeHandlers,
   processToastQueue,
@@ -133,7 +136,7 @@ import {
   executePushMaterialToast,
   pushHeaderToast,
   executePushHeaderToast,
-} from "./toasts.js?v=1.007";
+} from "./toasts.js";
 import {
   getItemIconSvg,
   UIManager,
@@ -149,28 +152,28 @@ import {
   showSlotTooltip,
   showForgeTooltip,
   toggleRingComparisonSlot,
-} from "./tooltips.js?v=1.010";
+} from "./tooltips.js";
 import {
   updateFlaskCooldownHUDOnly,
   updateHUD,
   getChallengeObjectiveText,
   updateHudBuffTray,
   renderDungeonDepthLabel,
-} from "./hud.js?v=1.019";
-import { renderLightingOverlay } from "./lighting.js?v=1.013";
+} from "./hud.js";
+import { renderLightingOverlay } from "./lighting.js";
 import {
   switchBagTab,
   switchStashTab,
   switchProfileTab,
   navigateToAchievement,
   toggleProfileModal,
-  } from "./profile_navigation.js?v=1.015";
+  } from "./profile_navigation.js";
 import {
   renderBestiaryAlbum,
   stopBestiaryAnimLoop,
   startBestiaryAnimLoop,
   claimBestiarySetReward,
-} from "./bestiary_ui.js?v=1.012";
+} from "./bestiary_ui.js";
 import {
   switchReliquarySubTab,
   equipRelicItem,
@@ -178,11 +181,11 @@ import {
   showRelicDetails,
   assignRelic,
   unassignRelic,
-} from "./reliquary_ui.js?v=1.015";
+} from "./reliquary_ui.js";
 import {
   switchAchievementFilter,
   renderAchievementsTab,
-} from "./achievements_ui.js?v=1.017";
+} from "./achievements_ui.js";
 import {
   toggleBountyModal,
   switchBountyTab,
@@ -190,7 +193,7 @@ import {
   claimQuestReward,
   renderBountyBoard,
   selectBounty,
-} from "./bounty_board.js?v=1.017";
+} from "./bounty_board.js";
 import {
   renderBagModalContent,
   toggleLootBag,
@@ -199,7 +202,7 @@ import {
   selectDeploymentSigil,
   renderSigilPickerList,
   closeDeploymentModal,
-  } from "./bag_sigil_ui.js?v=1.024";
+  } from "./bag_sigil_ui.js";
 import {
   renderProfileModal,
   tryAutoEquip,
@@ -210,7 +213,7 @@ import {
   calculateInsurancePremium,
   calculateRunInsuranceTotals,
   toggleInsurance,
-  } from "./profile_stash.js?v=1.031";
+  } from "./profile_stash.js";
 import {
   spawnChestEruptionParticles,
   isChestOpened,
@@ -218,14 +221,14 @@ import {
   getChestProgress,
   dispenseChestLootAt,
   setChestOpened,
-} from "./chests.js?v=1.022";
+} from "./chests.js";
 import {
   getMobPoolForDepth,
   refillFlaskCharges,
   useDungeonFlask,
   initFlaskButtonDrag,
   resetFlaskButtonPosition,
-} from "./mob_pool_flask.js?v=1.020";
+} from "./mob_pool_flask.js";
 import {
   triggerOnslaughtShatterAnimation,
   getOnslaughtSpawnPosition,
@@ -234,7 +237,7 @@ import {
   spawnHomingHearts,
   updateHeartOrbs,
   spawnOnslaughtWave,
-} from "./onslaught.js?v=1.029";
+} from "./onslaught.js";
 import {
   openTrialsAltarModal,
   switchTrialsAltarTab,
@@ -245,7 +248,7 @@ import {
   executeRiftSummon,
   launchRiftDuel,
   spawnRiftGuardianEncounter,
-} from "./trials_rift.js?v=1.031";
+} from "./trials_rift.js";
 import {
   spawnGroundLoot,
   updateGroundLoot,
@@ -255,22 +258,22 @@ import {
   spawnHomingGold,
   updateGoldParticles,
   updateHeroBuffParticles,
-} from "./world_loot.js?v=1.026";
+} from "./world_loot.js";
 import {
   updateCavernEffects,
   spawnCavernInteractive,
   triggerCavernTouch,
   triggerCavernShatter,
   drawCavernInteractive,
-} from "./cavern_systems.js?v=1.029";
-import { spawnCombatImpactParticles } from "./combat_effects.js?v=1.024";
+} from "./cavern_systems.js";
+import { spawnCombatImpactParticles } from "./combat_effects.js";
 import {
   handleVanguardBlockTrigger,
   handleVanguardParryTrigger,
   checkAndSpawnNoxiousBloom,
   triggerWindRazorStrike,
-} from "./defense_hooks.js?v=1.036";
-import { rollTomeSpells } from "./tome_item_hook.js?v=1.027";
+} from "./defense_hooks.js";
+import { rollTomeSpells } from "./tome_item_hook.js";
 import {
   loadHub,
   enterDungeonRun,
@@ -295,15 +298,15 @@ import {
   decrementPotionRunCharges,
   triggerExtraction,
   startDeathSequence,
-} from "./lifecycle.js?v=1.053";
-import { BossAIEngine } from "./boss_ai.js?v=1.049";
+} from "./lifecycle.js";
+import { BossAIEngine } from "./boss_ai.js";
 import {
   openTactileSackCrateAnimation,
   openMonsterCardSackAnimation,
-} from "./unboxing.js?v=1.034";
-import { updateActiveProjectiles } from "./projectile_update.js?v=1.034";
-import { updateCombatPeriodic } from "./combat_periodic.js?v=1.038";
-import { updateCombatHazards } from "./combat_hazards.js?v=1.035";
+} from "./unboxing.js";
+import { updateActiveProjectiles } from "./projectile_update.js";
+import { updateCombatPeriodic } from "./combat_periodic.js";
+import { updateCombatHazards } from "./combat_hazards.js";
 import {
   PLAYER_COMBAT_RADIUS,
   SHIELD_DAGGER_CLEAR_HULL_GAP,
@@ -314,7 +317,7 @@ import {
   hasCombatLineOfEffect,
   hasTomeLineOfSight,
   isTomeCombatProfile,
-} from "./combat_reach.js?v=1.001";
+} from "./combat_reach.js";
 import {
   ELEMENT_AREA_BASE_RADIUS,
   LIGHTNING_CHAIN_BASE_RADIUS,
@@ -332,7 +335,7 @@ import {
   getLastLightningChainSnapshot,
   isEligiblePlayerElementTarget,
   resolveTomeElementSecondaryEffect,
-} from "./element_effect_authority.js?v=1.003";
+} from "./element_effect_authority.js";
 import {
   BIOHAZARD_CAPSTONE_PROFILE,
   WARLORD_CAPSTONE_PROFILE,
@@ -340,14 +343,14 @@ import {
   resolveBiohazardAttackAction,
   resolveCanonicalSetCapstoneAttackAction,
   resolveWarlordCriticalAction,
-} from "./set_capstone_authority.js?v=1.000";
+} from "./set_capstone_authority.js";
 import {
   TOME_PROJECTILE_SPEED,
   TOME_PROJECTILE_VISUAL_PROFILE,
   launchTomeAttackProjectile,
   renderTomeDeliveryProjectile,
   resolveTomeProjectileImpact,
-} from "./tome_projectile.js?v=1.003";
+} from "./tome_projectile.js";
 import {
   TOME_ELEMENT_ORDER,
   SPELL_WEAVING_DURATION_FRAMES,
@@ -361,7 +364,7 @@ import {
   resolveCanonicalTomeSpellProcEvent,
   presentCanonicalTomeSpellProcEvent,
   getLastTomeProcSnapshot,
-} from "./tome_rotation_authority.js?v=1.002";
+} from "./tome_rotation_authority.js";
 import {
   GUARD_PRESSURE_MAX,
   EARTH_BREAKER_BASH_RANGE,
@@ -374,7 +377,7 @@ import {
   resolveCanonicalShieldBash,
   resolveSuccessfulShieldMainAttack,
   getLastShieldBashSnapshot,
-} from "./shield_guard_pressure.js?v=1.002";
+} from "./shield_guard_pressure.js";
 import {
   DAGGER_SUBTYPE_CONTRACTS,
   resolveDaggerSubtypeIdentity,
@@ -383,33 +386,34 @@ import {
   canApplyDaggerMainBleed,
   canExecuteDaggerOffhand,
   canApplyVipersCoating,
-} from "./dagger_identity_contract.js?v=1.000";
+} from "./dagger_identity_contract.js";
 import {
   FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION,
   INACTIVE_COEFFICIENT_COMMUNICATION,
   getDaggerCommunicationSnapshot,
   getGuardPressureCommunicationSnapshot,
   getPlayerTargetCommunicationSnapshot,
+  resolveCombatCommunicationProfile,
   getTargetPeriodicCommunicationSnapshot,
   getTomeCommunicationSnapshot,
   renderCombatReachCommunication,
-} from "./combat_communication_authority.js?v=1.002";
+} from "./combat_communication_authority.js";
 import {
   classifyTomeProjectileBlock,
   getTomeDeliveryCommunicationSnapshot,
   recordTomeDeliveryCommunication,
-} from "./tome_delivery_communication.js?v=1.000";
-import { updateCombatTargeting } from "./combat_targeting.js?v=1.039";
-import { resolvePlayerAttack } from "./player_attack.js?v=1.048";
+} from "./tome_delivery_communication.js";
+import { updateCombatTargeting } from "./combat_targeting.js";
+import { resolvePlayerAttack } from "./player_attack.js";
 import {
   ensureMobBuffState,
   updateStandardMobCombat,
-} from "./mob_combat.js?v=1.054";
-import { updateBossCombat } from "./boss_combat.js?v=1.056";
-import { updateDungeonCombat } from "./dungeon_combat.js?v=1.049";
-import { updateGame } from "./game_update.js?v=1.046";
-import { renderGame } from "./game_render.js?v=1.051";
-import { startGameLoop } from "./game_loop.js?v=1.041";
+} from "./mob_combat.js";
+import { updateBossCombat } from "./boss_combat.js";
+import { updateDungeonCombat } from "./dungeon_combat.js";
+import { updateGame } from "./game_update.js";
+import { renderGame } from "./game_render.js";
+import { startGameLoop } from "./game_loop.js";
 import {
   checkOrientation,
   drawPortraitBossHealthBar,
@@ -434,7 +438,7 @@ import {
   updateMasterVolume,
   updateSfxVolume,
   updateBgmVolume,
-} from "./main.js?v=1.014";
+} from "./main.js";
 
 window.MYSTICAL_STOCK ??= MYSTICAL_STOCK;
 window.POTION_TRANSMUTATIONS ??= POTION_TRANSMUTATIONS;
@@ -478,6 +482,8 @@ window.toggleEcoMode = toggleEcoMode;
 window.updateEcoModeStyle = updateEcoModeStyle;
 window.toggleLighting = toggleLighting;
 window.updateLightingStyle = updateLightingStyle;
+window.toggleCombatRangeGuides = toggleCombatRangeGuides;
+window.updateCombatRangeGuidesStyle = updateCombatRangeGuidesStyle;
 window.forceReloadCacheBust = forceReloadCacheBust;
 window.requestWipeSaveData = requestWipeSaveData;
 window.drawSingleHero = drawSingleHero;
@@ -503,6 +509,7 @@ window.spawnResonantAegisRipple = spellVisualsSpawnResonantAegisRipple;
 window.spawnPortalSealBreakVisual = spawnPortalSealBreakVisual;
 window.spawnShadowDashVisual = spawnShadowDashVisual;
 window.spawnMeleeFeelImpact = spawnMeleeFeelImpact;
+window.spawnTomeImpactVisual = spawnTomeImpactVisual;
 window.spawnGuardPressureVisual = spawnGuardPressureVisual;
 window.spawnAegisPulseVisual = spawnAegisPulseVisual;
 window.spawnNoxiousBloomVisual = spawnNoxiousBloomVisual;
@@ -761,6 +768,7 @@ window.INACTIVE_COEFFICIENT_COMMUNICATION = INACTIVE_COEFFICIENT_COMMUNICATION;
 window.getDaggerCommunicationSnapshot = getDaggerCommunicationSnapshot;
 window.getGuardPressureCommunicationSnapshot = getGuardPressureCommunicationSnapshot;
 window.getPlayerTargetCommunicationSnapshot = getPlayerTargetCommunicationSnapshot;
+window.resolveCombatCommunicationProfile = resolveCombatCommunicationProfile;
 window.getTargetPeriodicCommunicationSnapshot = getTargetPeriodicCommunicationSnapshot;
 window.getTomeCommunicationSnapshot = getTomeCommunicationSnapshot;
 window.renderCombatReachCommunication = renderCombatReachCommunication;

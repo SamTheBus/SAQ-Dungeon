@@ -1,5 +1,5 @@
-import { isBelowHealthFraction } from "./combat_scaling.js?v=1.001";
-import { getMasteryNodeRank } from "./mastery_authority.js?v=1.003";
+import { isBelowHealthFraction } from "./combat_scaling.js";
+import { getMasteryNodeRank } from "./mastery_authority.js";
 
 export function isBossOrMinibossMob(mob) {
   return !!(

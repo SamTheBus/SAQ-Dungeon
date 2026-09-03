@@ -1,8 +1,8 @@
-import { addActiveDungeonMob } from "./encounter_state.js?v=1.007";
+import { addActiveDungeonMob } from "./encounter_state.js";
 import {
   getRecoveryItemCount,
   getRecoveryRecordForFloor,
-} from "./recovery_contract.js?v=1.000";
+} from "./recovery_contract.js";
 
   // --- POLYSCOPIC CHEST ERUPTION ENGINE (SUBPHASE C.1) ---
   export function spawnChestEruptionParticles(

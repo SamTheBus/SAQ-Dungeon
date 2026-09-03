@@ -1,8 +1,8 @@
-import { isPlayerTargetableMob } from "./combat_factions.js?v=1.001";
+import { isPlayerTargetableMob } from "./combat_factions.js";
 import {
   getCombatTargetCenter,
   hasCombatLineOfEffect,
-} from "./combat_reach.js?v=1.001";
+} from "./combat_reach.js";
 
 export const GUARD_PRESSURE_MAX = 3;
 export const EARTH_BREAKER_BASH_RANGE = 60;
@@ -217,8 +217,15 @@ function presentBash({ target, damage, earthBreaker }) {
     false,
     target,
   );
-  window.spawnMeleeFeelImpact?.(center.x, center.y, "shield", false);
-  window.SoundManager?.play?.("block");
+  window.spawnMeleeFeelImpact?.(
+    center.x,
+    center.y,
+    "shield",
+    false,
+    null,
+    false,
+    "bash",
+  );
 }
 
 export function resolveCanonicalShieldBash({

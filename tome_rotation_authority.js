@@ -1,12 +1,12 @@
-import { awardSpellProcMasteryXp } from "./mastery_authority.js?v=1.003";
-import { resolveTomeProcSustain } from "./combat_effect_authority.js?v=1.002";
+import { awardSpellProcMasteryXp } from "./mastery_authority.js";
+import { resolveTomeProcSustain } from "./combat_effect_authority.js";
 import {
   PRODUCTION_FIRE_TOME_BURN_PROFILE,
   PRODUCTION_FROST_CONTROL_PROFILE,
   isEligiblePlayerElementTarget,
   presentTomeElementSecondaryResult,
   resolveTomeElementSecondaryEffect,
-} from "./element_effect_authority.js?v=1.003";
+} from "./element_effect_authority.js";
 
 export const TOME_ELEMENT_ORDER = Object.freeze([
   "fire",
@@ -418,6 +418,7 @@ export function presentCanonicalTomeSpellProcEvent(result) {
   const centerY = originTarget.y + (originTarget.h || 24) / 2;
 
   summary.packetElements.forEach((element, index) => {
+    const secondaryResult = packetResults[index];
     window.castVisualSpell?.(
       element,
       player,
@@ -432,11 +433,22 @@ export function presentCanonicalTomeSpellProcEvent(result) {
       element,
       false,
     );
-    presentTomeElementSecondaryResult(packetResults[index]);
+    const frostTransition =
+      element === "frost"
+        ? secondaryResult?.primaryResult?.transition || "chill"
+        : "spell";
+    window.spawnTomeImpactVisual?.(
+      centerX + (summary.packetCount > 1 ? (index - 1) * 12 : 0),
+      centerY,
+      element,
+      {
+        phase: frostTransition,
+        chainCount: secondaryResult?.hopHits?.length || 0,
+        playAudio: summary.packetCount === 1 || index === 0,
+      },
+    );
+    presentTomeElementSecondaryResult(secondaryResult);
   });
-
-  const soundElement = summary.packetElements[0];
-  window.SoundManager?.play?.(`spell_${soundElement}`);
 
   if (summary.anchorEvent.stackAdded > 0) {
     window.spawnFloatingText?.(

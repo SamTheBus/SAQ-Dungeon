@@ -1,4 +1,4 @@
-import { setGamePaused } from "./runtime_state.js?v=1.002";
+import { setGamePaused } from "./runtime_state.js";
 
   export const openTactileSackCrateAnimation = function (name, newItem, elixirs) {
     setGamePaused(true);

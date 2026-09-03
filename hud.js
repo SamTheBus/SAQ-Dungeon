@@ -1,14 +1,14 @@
-import { getActiveDungeonMap } from "./dungeon_map.js?v=1.010";
-import { hasRecoveryAssets } from "./recovery_contract.js?v=1.000";
-import { getTomeRotationSnapshot } from "./tome_rotation_authority.js?v=1.001";
+import { getActiveDungeonMap } from "./dungeon_map.js";
+import { hasRecoveryAssets } from "./recovery_contract.js";
+import { getTomeRotationSnapshot } from "./tome_rotation_authority.js";
 import {
   getDaggerCommunicationSnapshot,
   getGuardPressureCommunicationSnapshot,
   getPlayerTargetCommunicationSnapshot,
   getTargetPeriodicCommunicationSnapshot,
   getTomeCommunicationSnapshot,
-} from "./combat_communication_authority.js?v=1.001";
-import { getTomeDeliveryCommunicationSnapshot } from "./tome_delivery_communication.js?v=1.000";
+} from "./combat_communication_authority.js";
+import { getTomeDeliveryCommunicationSnapshot } from "./tome_delivery_communication.js";
 
 export function renderDungeonDepthLabel(
   depthLabel,
