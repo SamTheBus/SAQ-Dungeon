@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>Top-Down Extraction Crawler</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=g6e1h2-79eb7a277d72d928" />
   </head>
   <body>
     <!-- Main Full-Screen Landscape Viewport -->
@@ -200,8 +200,6 @@
       <div
         id="hud-flask-button"
         class="hud-flask-container"
-        onclick="window.useDungeonFlask()"
-        onpointerdown="event.stopPropagation()"
         title="Emergency Field Flask (Tap to Drink)"
       >
         <!-- Ambient Underglow -->
@@ -369,8 +367,6 @@
         id="hud-shadow-dash-button"
         class="hud-shadow-dash-button"
         style="display: none"
-        onclick="window.requestShadowDash()"
-        onpointerdown="event.stopPropagation()"
         title="Shadow Dash — move or aim, then press Space/tap"
         aria-label="Shadow Dash"
       >
@@ -2040,78 +2036,6 @@
     </div>
 
     <!-- Core Modular Scripts -->
-    <script type="module">
-      import {
-        MYSTICAL_STOCK,
-        POTION_TRANSMUTATIONS,
-        etcDex,
-        useDex,
-        ARTIFACT_POOL,
-        SET_DEFINITIONS,
-        AchievementsData,
-        slotNouns,
-        COSMETIC_SKINS,
-        COSMETIC_COSTUMES,
-        CAVERN_BUFFS,
-        CAVERN_DEBUFFS,
-        ASTRAL_SHOP_STOCK,
-        TITLES_DATA,
-        CARD_UPGRADE_THRESHOLDS,
-        MONSTER_CARDS_DATA,
-        CARD_SETS_DATA,
-        TILE_TYPES,
-        DUNGEON_CONFIG,
-        GAME_STATES,
-        BOSS_BAR_THEMES,
-      } from "./constants.js";
-
-      Object.assign(window, {
-        MYSTICAL_STOCK,
-        POTION_TRANSMUTATIONS,
-        etcDex,
-        useDex,
-        ARTIFACT_POOL,
-        SET_DEFINITIONS,
-        AchievementsData,
-        slotNouns,
-        COSMETIC_SKINS,
-        COSMETIC_COSTUMES,
-        CAVERN_BUFFS,
-        CAVERN_DEBUFFS,
-        ASTRAL_SHOP_STOCK,
-        TITLES_DATA,
-        CARD_UPGRADE_THRESHOLDS,
-        MONSTER_CARDS_DATA,
-        CARD_SETS_DATA,
-        TILE_TYPES,
-        DUNGEON_CONFIG,
-        GAME_STATES,
-        BOSS_BAR_THEMES,
-      });
-    </script>
-    <script type="module">
-      import "./player_runtime.js";
-      import * as dataApi from "./data.js";
-
-      Object.assign(window, dataApi);
-      dataApi.loadGame();
-    </script>
-    <script type="module">
-      import * as assetApi from "./assets.js";
-
-      Object.assign(window, assetApi);
-    </script>
-    <script type="module">
-      import * as audioApi from "./audio.js";
-
-      Object.assign(window, audioApi);
-    </script>
-    <script type="module">
-      import * as itemsApi from "./items.js";
-
-      Object.assign(window, itemsApi);
-      itemsApi.recalculateAllInventoryItems();
-    </script>
-    <script type="module" src="module_bootstrap.js"></script>
+    <script src="game.js?v=g6e1h2-79eb7a277d72d928"></script>
   </body>
 </html>

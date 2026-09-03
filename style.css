@@ -195,6 +195,85 @@ body {
   line-height: 1;
 }
 
+.guard-pressure-badge {
+  gap: 5px;
+  border-color: #64748b;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  cursor: help;
+}
+
+.guard-pressure-label {
+  color: #cbd5e1;
+}
+
+.guard-pressure-pips {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.guard-pressure-pip {
+  width: 9px;
+  height: 5px;
+  border: 1px solid #64748b;
+  border-radius: 1px;
+  background: #111827;
+}
+
+.guard-pressure-pip.filled {
+  border-color: #fbbf24;
+  background: #d97706;
+  box-shadow: 0 0 3px rgba(251, 191, 36, 0.65);
+}
+
+.guard-pressure-state {
+  min-width: 19px;
+  color: #cbd5e1;
+  font-size: 7px;
+  text-align: right;
+}
+
+.guard-pressure-ready {
+  border-color: #f59e0b;
+  box-shadow: 0 0 7px rgba(245, 158, 11, 0.45);
+}
+
+.guard-pressure-ready .guard-pressure-state,
+.guard-pressure-consumed .guard-pressure-state {
+  color: #fbbf24;
+}
+
+.guard-pressure-block_fill {
+  border-color: #4ade80;
+  box-shadow: 0 0 7px rgba(74, 222, 128, 0.45);
+}
+
+.guard-pressure-block_fill .guard-pressure-pip.filled,
+.guard-pressure-block_fill .guard-pressure-state {
+  border-color: #86efac;
+  background: #16a34a;
+  color: #bbf7d0;
+}
+
+.guard-pressure-pip_gained .guard-pressure-pip.filled:last-child,
+.guard-pressure-ready .guard-pressure-pip.filled:last-child {
+  animation: guard-pressure-pip-pulse 180ms ease-out;
+}
+
+.guard-pressure-consumed {
+  border-color: #fb923c;
+  animation: guard-pressure-bash-pulse 220ms ease-out;
+}
+
+@keyframes guard-pressure-pip-pulse {
+  0% { transform: scale(0.7); filter: brightness(1.8); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes guard-pressure-bash-pulse {
+  0% { transform: scale(1.08); box-shadow: 0 0 12px rgba(251, 146, 60, 0.8); }
+  100% { transform: scale(1); box-shadow: 0 0 4px rgba(251, 146, 60, 0.3); }
+}
+
 @media (max-width: 820px), (max-height: 500px) {
   .hud-buff-tray {
     top: 40px;
@@ -940,7 +1019,7 @@ body {
   flex-direction: column;
   cursor: pointer;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
   font-family: "Press Start 2P", monospace;
 }
 

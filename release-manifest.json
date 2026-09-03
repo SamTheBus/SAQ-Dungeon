@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "deploymentLayout": "flat-bundle",
+  "buildId": "g6e1h2-79eb7a277d72d928",
+  "cacheStrategy": "generated-entry-query",
+  "entrypoint": "game.js?v=g6e1h2-79eb7a277d72d928",
+  "stylesheet": "style.css?v=g6e1h2-79eb7a277d72d928",
+  "sourceGraph": {
+    "buildId": "g6i-1b0ad660ee36ad1e",
+    "moduleCount": 96,
+    "dynamicImportCount": 0
+  },
+  "bundler": {
+    "name": "esbuild",
+    "version": "0.25.9",
+    "format": "iife",
+    "target": "es2020"
+  },
+  "files": {
+    "index.html": "924d645c1d930603331346f227f43fe2ff7dfa058e52b592a322926887095245",
+    "style.css": "3855fa04226e0e77217fd4ebfa86df18f3edd5a261436072e46533e42c39ab91",
+    "game.js": "605106f743a0d93e93c23b09d62a1a355a2fb848626804a94f66957bdf5b8e04"
+  }
+}
