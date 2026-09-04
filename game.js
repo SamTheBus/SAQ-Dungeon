@@ -9,7 +9,7 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\runtime_state.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\runtime_state.js
   function getCurrentGameState() {
     return runtimeState.currentGameState;
   }
@@ -26,7 +26,7 @@
   }
   var runtimeState;
   var init_runtime_state = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\runtime_state.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\runtime_state.js"() {
       runtimeState = {
         currentGameState: null,
         isGamePaused: false
@@ -46,7 +46,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\player_runtime.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\player_runtime.js
   var player_runtime_exports = {};
   __export(player_runtime_exports, {
     getPlayer: () => getPlayer,
@@ -54,7 +54,7 @@
   });
   var createInitialPlayer, player, getPlayer;
   var init_player_runtime = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\player_runtime.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\player_runtime.js"() {
       createInitialPlayer = () => ({
         x: 0,
         y: 0,
@@ -81,7 +81,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\constants.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\constants.js
   var constants_exports = {};
   __export(constants_exports, {
     ARTIFACT_POOL: () => ARTIFACT_POOL,
@@ -108,7 +108,7 @@
   });
   var MYSTICAL_STOCK, POTION_TRANSMUTATIONS, etcDex, useDex, ARTIFACT_POOL, SET_DEFINITIONS, AchievementsData, slotNouns, COSMETIC_SKINS, COSMETIC_COSTUMES, CAVERN_BUFFS, CAVERN_DEBUFFS, ASTRAL_SHOP_STOCK, TITLES_DATA, CARD_UPGRADE_THRESHOLDS, MONSTER_CARDS_DATA, CARD_SETS_DATA, TILE_TYPES, DUNGEON_CONFIG, GAME_STATES, BOSS_BAR_THEMES;
   var init_constants = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\constants.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\constants.js"() {
       init_runtime_state();
       init_player_runtime();
       MYSTICAL_STOCK = [
@@ -3011,22 +3011,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\control_preference.js
-  function getNewPlayerControlMode(environment = {}) {
-    let coarsePointer = false;
-    try {
-      coarsePointer = environment.matchMedia?.("(pointer: coarse)")?.matches === true;
-    } catch {
-    }
-    const touchPoints = Number(environment.navigator?.maxTouchPoints || 0);
-    return coarsePointer || touchPoints > 0 ? "joystick" : "cursor";
-  }
-  var init_control_preference = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\control_preference.js"() {
-    }
-  });
-
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\artifact_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\artifact_authority.js
   function getArtifactSources({
     equippedSlots = globalThis.window?.equippedSlots,
     playerStats = globalThis.window?.playerStats
@@ -3219,7 +3204,7 @@
   }
   var ARTIFACT_SLOT_KEYS, ARTIFACT_TRAIT_STATS, LIVE_ARTIFACT_TRAIT_IDS, LIVE_UNIQUE_DEFINITIONS, clampPower, TOTAL_FIELD_BY_STAT, BASE_FIELD_BY_STAT;
   var init_artifact_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\artifact_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\artifact_authority.js"() {
       ARTIFACT_SLOT_KEYS = Object.freeze(["art1", "art2", "art3"]);
       ARTIFACT_TRAIT_STATS = Object.freeze({
         frenzy: Object.freeze({ critChance: 0.03 }),
@@ -3317,7 +3302,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_effect_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_effect_authority.js
   function resolvedArtifactScale(trait) {
     const scale = getArtifactMechanicScale(trait);
     if (scale > 0) return scale;
@@ -3990,7 +3975,7 @@
   }
   var BIOHAZARD_POISON_HEALING_PROFILE, PERIODIC_EFFECT_CONTRACT, TARGET_PERIODIC_EFFECTS;
   var init_combat_effect_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_effect_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_effect_authority.js"() {
       init_artifact_authority();
       BIOHAZARD_POISON_HEALING_PROFILE = Object.freeze({
         profileId: "g6d_biohazard_v1",
@@ -4023,7 +4008,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_factions.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_factions.js
   function hasLivingCombatHp(entity) {
     if (!entity || entity.hp === void 0 || entity.hp === null) return false;
     if (typeof entity.hp.gt === "function") return entity.hp.gt(0);
@@ -4038,11 +4023,11 @@
     );
   }
   var init_combat_factions = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_factions.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_factions.js"() {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_reach.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_reach.js
   function getCombatTargetCenter(target) {
     if (!target) return null;
     const width = Number.isFinite(Number(target.w)) ? Number(target.w) : 24;
@@ -4171,7 +4156,7 @@
   }
   var PLAYER_COMBAT_RADIUS, SHIELD_DAGGER_CLEAR_HULL_GAP, TOME_CLEAR_HULL_GAP, TOME_PROJECTILE_RADIUS, MAX_INDEXED_TARGET_RADIUS, LOS_SAMPLE_STEP;
   var init_combat_reach = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_reach.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_reach.js"() {
       PLAYER_COMBAT_RADIUS = 9;
       SHIELD_DAGGER_CLEAR_HULL_GAP = 20;
       TOME_CLEAR_HULL_GAP = 128;
@@ -4181,7 +4166,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\element_effect_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\element_effect_authority.js
   function getCanonicalElementAreaRadius(playerStats = {}) {
     const overloadRank = playerStats.hasElementalOverload ? Math.min(2, Math.max(0, Math.floor(Number(playerStats.overloadLevel || 0)))) : 0;
     return ELEMENT_AREA_BASE_RADIUS * Number(playerStats.areaRadiusMult || 1) * (1 + overloadRank * 0.2);
@@ -4836,7 +4821,7 @@
   }
   var ELEMENT_AREA_BASE_RADIUS, LIGHTNING_CHAIN_BASE_RADIUS, PRODUCTION_FIRE_TOME_BURN_PROFILE, PRODUCTION_FROST_CONTROL_PROFILE, lastLightningChainSnapshot;
   var init_element_effect_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\element_effect_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\element_effect_authority.js"() {
       init_combat_effect_authority();
       init_combat_factions();
       init_combat_reach();
@@ -4876,7 +4861,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\encounter_state.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\encounter_state.js
   function clearEncounterCombatStates(target) {
     clearAllPeriodicEffects(target);
     clearElementStates(target);
@@ -4921,7 +4906,7 @@
   }
   var encounterState;
   var init_encounter_state = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\encounter_state.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\encounter_state.js"() {
       init_combat_effect_authority();
       init_element_effect_authority();
       encounterState = {
@@ -4946,7 +4931,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\entity_id.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\entity_id.js
   function getEntityIdCounter() {
     return entityIdCounter;
   }
@@ -4978,7 +4963,7 @@
   }
   var entityIdCounter;
   var init_entity_id = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\entity_id.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\entity_id.js"() {
       entityIdCounter = Object.prototype.hasOwnProperty.call(window, "idCounter") ? window.idCounter : 0;
       Object.defineProperty(window, "idCounter", {
         configurable: true,
@@ -4989,7 +4974,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\attack_speed_contract.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\attack_speed_contract.js
   function normalizeActiveAttackDelayFrames(value) {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue) || numericValue <= 0) {
@@ -5024,7 +5009,7 @@
   }
   var COMBAT_SIMULATION_FRAMES_PER_SECOND, ACTIVE_ATTACK_BASE_DELAY_FRAMES, ACTIVE_ATTACK_MIN_DELAY_FRAMES, ACTIVE_ATTACK_MAX_DELAY_FRAMES;
   var init_attack_speed_contract = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\attack_speed_contract.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\attack_speed_contract.js"() {
       COMBAT_SIMULATION_FRAMES_PER_SECOND = 60;
       ACTIVE_ATTACK_BASE_DELAY_FRAMES = 15;
       ACTIVE_ATTACK_MIN_DELAY_FRAMES = 4;
@@ -5032,10 +5017,10 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\save_schema.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\save_schema.js
   var ENGINE_SAVE_SCHEMA_VERSION, ENGINE_SAVE_ROOT_FIELDS, ENGINE_INVENTORY_FIELDS, ENGINE_EQUIPMENT_SLOT_FIELDS, ENGINE_RETIRED_PLAYER_STAT_FIELDS, ENGINE_COMPATIBILITY_FOSSIL_FIELDS, ENGINE_RUNTIME_ONLY_PLAYER_STAT_FIELDS, ENGINE_DERIVED_OR_OBSOLETE_PLAYER_STAT_FIELDS, MAX_STRING_LENGTH, MAX_RECORD_ENTRIES, MAX_ARRAY_LENGTH, FORBIDDEN_RECORD_KEYS, rule, numberRule, integerRule, booleanRule, stringRule, bigNumRule, statsRolledRule, nullable, arrayOf, recordOf, objectOf, stringArrayRule, numberArrayRule, numberRecordRule, booleanRecordRule, ENCHANTABLE_ITEM_STAT_FIELDS, itemStatSnapshotFields, itemStatSnapshotRule, sigilModifierRule, ITEM_NUMBER_FIELDS, ITEM_STRING_FIELDS, ITEM_BOOLEAN_FIELDS, itemFieldRules, itemRule, ENGINE_ITEM_FIELDS, equipmentSlotRules, equippedSlotsRule, inventoryRule, subweaponTrackRule, subweaponMasteryRule, slotUpgradesRule, spAllocationsRule, missionUpgradesRule, missionRule, challengeTargetRule, challengeRewardsRule, challengeRule, recoveryLootRule, PLAYER_BIG_NUM_FIELDS, PLAYER_NUMBER_FIELDS, PLAYER_BOOLEAN_FIELDS, PLAYER_STRING_FIELDS, playerStatRules, playerStatsRule, ENGINE_PLAYER_STAT_FIELDS, rootRule, EngineSaveSchemaError, fail, isPlainRecord, assertSafeRecordKey, normalizeBigNumWire, encodeEngineBigNum, hydrateEngineBigNum, withComposite, cloneByRule, cloneRoot, buildEngineSaveSnapshot, normalizeEngineSavePayload, hydrateEngineSavePayload, sortKeysDeep, stableStringifyEngineSave;
   var init_save_schema = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\save_schema.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\save_schema.js"() {
       ENGINE_SAVE_SCHEMA_VERSION = 1;
       ENGINE_SAVE_ROOT_FIELDS = Object.freeze([
         "schemaVersion",
@@ -5995,7 +5980,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\quality_rarity_contract.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\quality_rarity_contract.js
   function normalizeProgressionStage(value) {
     let numeric = Number(value);
     return Number.isFinite(numeric) ? Math.max(1, numeric) : 1;
@@ -6082,7 +6067,7 @@
   }
   var EQUIPMENT_RARITY_UNLOCK_STAGE, EQUIPMENT_RARITY_SOURCES, EQUIPMENT_RARITY_EXCEPTIONS, QUALITY_PLAYER_RULE, VALID_SOURCES, VALID_EXCEPTIONS, QUALITY_WEIGHT_SLOPES;
   var init_quality_rarity_contract = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\quality_rarity_contract.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\quality_rarity_contract.js"() {
       EQUIPMENT_RARITY_UNLOCK_STAGE = Object.freeze([1, 1, 26, 101, 251, 501]);
       EQUIPMENT_RARITY_SOURCES = Object.freeze({
         ORDINARY_MONSTER: "ordinary_monster",
@@ -6112,10 +6097,10 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mastery_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mastery_authority.js
   var SHIELD_NODE_IDS, DAGGER_NODE_IDS, TOME_NODE_IDS, UTILITY_NODE_IDS, LIVE_MASTERY_NODE_IDS, PASSIVE_STAT_NODE_IDS, MASTERY_NODE_BINDINGS, LEGACY_MASTERY_NODE_MIGRATIONS, RETIRED_MASTERY_NODE_IDS, finiteRank, getMasteryNodeRank, migrateLegacyMasteryNodeIds, multiplyBigStat, addBigStat, applyCanonicalMasteryStats, getMasteryEventDepth, getMasteryTriggerMultiplier, getActiveSubweaponMasteryType, awardMasteryGameplayXp, awardMainAttackMasteryXp, awardSpellProcMasteryXp, awardWindRazorMasteryXp, awardResonantAegisMasteryXp, NON_HOSTILE_DEFEAT_TYPES, BOSS_DEFEAT_TYPES, calculateDefeatMasteryXp, awardDefeatMasteryXp;
   var init_mastery_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mastery_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mastery_authority.js"() {
       SHIELD_NODE_IDS = Object.freeze([
         "shield_starter",
         "shield_hp",
@@ -6619,7 +6604,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\shield_guard_pressure.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\shield_guard_pressure.js
   function finiteNumber(value, fallback = 0) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -6967,7 +6952,7 @@
   }
   var GUARD_PRESSURE_MAX, EARTH_BREAKER_BASH_RANGE, EARTH_BREAKER_CONE_HALF_ANGLE, EARTH_BREAKER_STUN_FRAMES, shieldBashEventCounter, lastShieldBashSnapshot;
   var init_shield_guard_pressure = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\shield_guard_pressure.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\shield_guard_pressure.js"() {
       init_combat_factions();
       init_combat_reach();
       GUARD_PRESSURE_MAX = 3;
@@ -6985,7 +6970,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\set_affix_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\set_affix_authority.js
   function createSetContext() {
     return {
       atk: 0,
@@ -7136,7 +7121,7 @@
   }
   var SET_ELIGIBLE_SLOTS, SET_CAPSTONE_CONTRACTS, POTION_BASE_DURATION_FRAMES, POTION_TIMER_TYPES, AFFIX_DOMAIN_ROWS, EQUIPMENT_AFFIX_DOMAIN_TRUTH, AFFIX_PRESENTATION_BY_FIELD;
   var init_set_affix_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\set_affix_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\set_affix_authority.js"() {
       SET_ELIGIBLE_SLOTS = Object.freeze([
         "weapon",
         "subweapon",
@@ -7215,7 +7200,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\run_satchel.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\run_satchel.js
   function clampInteger(value, min, max) {
     let normalized = Math.floor(Number(value) || 0);
     return Math.max(min, Math.min(max, normalized));
@@ -7334,7 +7319,7 @@
   }
   var RUN_SATCHEL_BASE_SLOTS, DIMENSIONAL_POUCH_BASE_SLOTS, SATCHEL_EXPANSION_SLOTS_PER_RANK, SATCHEL_EXPANSION_MAX_RANK;
   var init_run_satchel = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\run_satchel.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\run_satchel.js"() {
       RUN_SATCHEL_BASE_SLOTS = 20;
       DIMENSIONAL_POUCH_BASE_SLOTS = 50;
       SATCHEL_EXPANSION_SLOTS_PER_RANK = 5;
@@ -7342,7 +7327,7 @@
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\data.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\data.js
   var data_exports = {};
   __export(data_exports, {
     ARTIFACT_BASE_STATS: () => ARTIFACT_BASE_STATS,
@@ -7501,9 +7486,8 @@
   }
   var GAME_VERSION, MIN_COMPATIBLE_VERSION, DEBUFF_EXCLUSIONS, CAVERN_MUTATORS, CAVERN_BUFFS2, CAVERN_DEBUFFS2, BOSS_GUARD_PENETRATION, DEFLECTION_FATIGUE_FRAMES, COUNTER_COOLDOWN_FRAMES, BigNumMin, escapeHTML, triggerCombatState, showCustomConfirm, getUiIconSvg, initSPDraft, stageSP, resetDraftSP, confirmSP, getEffectiveStage, getFloorItemLevel, isValidCheckpoint, getMilestoneMultiplier, getBountyRerollCost, isWeeklyQuestUnlocked, calculateRenownForStageRange, CARD_UPGRADE_THRESHOLDS2, BigNum2, formatNumber, randInt, randFloat, calculateRarityProbabilities, rollItemRarity, rollSigilRarity, getDepthQualityMultiplier, gainXp, addCoins, spendCoins, absorbGoldParticle, getAchievementProgress, recalculateAchievementTotals, checkAchievements, isCavernEffectActive, checkArtifactTrait, getArtifactTemperLevel, hasUniquePassive, getItemSetName, getTierName, getTierColor, getScrapYieldName, getActiveAttackRuntimeSignature, invalidatePlayerStats, updateUI, ARTIFACT_BASE_STATS, resolvePlayerStats, damagePlayer, CRUCIBLE_DRAFT_POOL, toggleControlMode, generateDailyMissions, generateWeeklyMissions, rerollBountyBoard, getPacificDate, getPacificTimeDiffs, formatRemainingTime, checkAndResetMissions, progressMission, recalculateXpRequirement, ENGINE_SAVE_STORAGE_KEY, createEngineBigNum, buildCurrentEngineSaveSnapshot, ENGINE_DEFAULT_SAVE_SNAPSHOT, lastEngineSaveResetInfo, getEngineSaveResetInfo, recalculateHydratedItems, commitEngineSaveState, rejectEngineSave, saveGame, hydrateCavernSigils, SET_RESONANCE_BASE_VALUES, SET_CARD_MULTIPLIERS, getCardDustRates, addMonsterCard, renderBestiaryAlbum, craftCard, salvageAllDuplicateCards, openMonsterCardSackAnimation, sanitizeBasePlayerStats, loadGame, calculateCumulativeOnslaughtShards, changeOnslaughtStartWave, renderDeploymentModal;
   var init_data = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\data.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\data.js"() {
       init_runtime_state();
-      init_control_preference();
       init_encounter_state();
       init_entity_id();
       init_combat_factions();
@@ -11167,7 +11151,6 @@ ${plainText}`)) {
           window.player.targetY = window.player.y;
         }
         if (window.updateHUD) window.updateHUD();
-        if (typeof window.saveGame === "function") window.saveGame();
       };
       window.QuestSystem = {
         getScaledTarget(type, peakStage) {
@@ -12449,7 +12432,6 @@ ${plainText}`)) {
         }
         if (!saved) {
           lastEngineSaveResetInfo = null;
-          window.playerStats.controlMode = getNewPlayerControlMode(window);
           return false;
         }
         try {
@@ -12496,7 +12478,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\assets.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\assets.js
   var assets_exports = {};
   __export(assets_exports, {
     AssetCatalog: () => AssetCatalog,
@@ -12512,7 +12494,7 @@ ${plainText}`)) {
   });
   var AssetCatalog, getAchievementBadgeHtml, getIconSvgData, getCanvasIconImage, getCanvasCutoutImage, getEquipIconHtml, getEtcIconHtml, getUseIconHtml, getSkillIconSvg, getArtifactIconHtml;
   var init_assets = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\assets.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\assets.js"() {
       AssetCatalog = {
         // Helper to compile inner SVG pathways into a unified, responsive HTML wrapper
         compile(viewBox, innerHtml, size = 32, bg = "rgba(170, 170, 170, 0.12)", border = "#444") {
@@ -18754,7 +18736,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\audio.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\audio.js
   var audio_exports = {};
   __export(audio_exports, {
     COMBAT_IMPACT_AUDIO_PROFILES: () => COMBAT_IMPACT_AUDIO_PROFILES,
@@ -18763,7 +18745,7 @@ ${plainText}`)) {
   });
   var COMBAT_IMPACT_AUDIO_PROFILES, SoundManager, MusicManager;
   var init_audio = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\audio.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\audio.js"() {
       COMBAT_IMPACT_AUDIO_PROFILES = Object.freeze({
         shield_hit: Object.freeze({ intervalMs: 55, duration: 0.13, gain: 0.18, layers: Object.freeze([["triangle", 110, 52], ["square", 260, 120]]) }),
         shield_bash: Object.freeze({ intervalMs: 120, duration: 0.22, gain: 0.28, layers: Object.freeze([["triangle", 82, 32], ["sawtooth", 180, 58], ["sine", 420, 190]]) }),
@@ -21683,7 +21665,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\portal_guardian_contract.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\portal_guardian_contract.js
   function getStandardPortalTraversalState(map, playerStats) {
     const guardianLocked = Boolean(map && map.portalLocked);
     const marcusRobberyActive = Boolean(
@@ -21739,7 +21721,7 @@ ${plainText}`)) {
   }
   var MARCUS_ROBBERY_STATES;
   var init_portal_guardian_contract = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\portal_guardian_contract.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\portal_guardian_contract.js"() {
       MARCUS_ROBBERY_STATES = Object.freeze({
         AVAILABLE: "available",
         ACTIVE: "active",
@@ -21748,7 +21730,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\tome_rotation_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\tome_rotation_authority.js
   function normalizedSpellType(source) {
     const raw = typeof source === "string" ? source : source?.spellType || source?.persistedSpellType;
     return Object.hasOwn(SPELL_TYPE_ELEMENTS, raw) ? raw : DEFAULT_TOME_SPELL_TYPE;
@@ -22110,7 +22092,7 @@ ${plainText}`)) {
   }
   var TOME_ELEMENT_ORDER, ELEMENT_LABELS, SPELL_TYPE_ELEMENTS, DEFAULT_TOME_SPELL_TYPE, SPELL_WEAVING_STACK_CAP, SPELL_WEAVING_DURATION_FRAMES, rotationState, sourceEventCounter, lastProcSnapshot;
   var init_tome_rotation_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\tome_rotation_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\tome_rotation_authority.js"() {
       init_mastery_authority();
       init_combat_effect_authority();
       init_element_effect_authority();
@@ -22162,7 +22144,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\dagger_identity_contract.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\dagger_identity_contract.js
   function normalizedText(value) {
     return String(value || "").trim().toLowerCase().replace(/[’']/g, "").replace(/[\s-]+/g, "_");
   }
@@ -22213,7 +22195,7 @@ ${plainText}`)) {
   }
   var DAGGER_SUBTYPE_CONTRACTS;
   var init_dagger_identity_contract = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\dagger_identity_contract.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\dagger_identity_contract.js"() {
       DAGGER_SUBTYPE_CONTRACTS = Object.freeze({
         flurry: Object.freeze({
           id: "flurry",
@@ -22243,7 +22225,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_communication_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_communication_authority.js
   function freeze(value) {
     if (Array.isArray(value)) return Object.freeze(value.map(freeze));
     if (value && typeof value === "object") {
@@ -22470,7 +22452,7 @@ ${plainText}`)) {
   }
   var FUTURE_IDLE_ATTACK_SPEED_COMMUNICATION, INACTIVE_COEFFICIENT_COMMUNICATION, guardPressurePresentation;
   var init_combat_communication_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_communication_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_communication_authority.js"() {
       init_combat_factions();
       init_combat_reach();
       init_combat_effect_authority();
@@ -22496,7 +22478,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\items.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\items.js
   var items_exports = {};
   __export(items_exports, {
     ForgeManager: () => ForgeManager,
@@ -22734,7 +22716,7 @@ ${plainText}`)) {
   }
   var getRarityMultiplier, isItemUnique, getUniqueKey, getEquippedItemForComparison, getCombinedEquippedTorso, getComparisonDeltaBadge, buildGeneralTooltipHtml, generateItemCardHtml, executeSpectralShatter, PitySystem, getSlotUpgradeCost, setEnchantMode, toggleEnchantmentModal, selectEnchantItem, renderEnchantInstructionPane, renderEnchantmentTab, hexToRgbValues, ItemFactory, rollSetForItem, getSetRerollGoldCost, generateForgePreviewHtml, getForgeDiffLines, renderForgeTab, getUniqueItemStyle, rollSigilStatValue, formatSigilStatDesc, generateCavernSigilName, createItemObject, buildProceduralName, getStatBaseRange, formatStatRangeStr, scaleItemBonusStats, recalculateItemStats, addRandomStatLineToItem, toggleLock, equipItem, unequipItem, executeSalvageItemLogic, salvageItem, checkAutoSalvage, ForgeManager, getMaxTemper, getRequiredScrapForTemper, getRequiredScrapAmountForTemper, getTemperGoldCost, getTierUpScrapName, getMaxEnchants, getEnchantmentSymbol, getStatEnchantSuffix, getStatIcon, selectForgeItem, selectForgeSlot, toggleForgeModal, setForgeMode, switchForgeStation, changeAutoSalvage, selectBulkSalvageRarity, triggerBulkSalvage, temperItem, enchantItem, resetItemEnchants, getStatLabel, lockForgeStat, selectReforgeStat, reforgeItemStat, buyGachaCrate, rollGachaCrateItem, getGoldUpgradeCost, updateShopHeaderWallet, toggleShopModal, switchShopTab, refreshShopStock, executeManualShopRefresh, renderMarketShop, renderMysticalShop, renderGoldUpgrades, buyShopItem, buyMysticalItem, buyGoldUpgrade, transmutePotion, rerollItemSet, buyAstralShopItem, executeSlotCavernSigil, recalculateAllInventoryItems, runArtifactTestHarness, triggerRobberyConfirmation, initiateMerchantRobbery, completeMarcusRobberyDefeat, executeParagonUpgrade, toggleGachaModal, openGachaModal, switchGachaMachine, updateGachaBalances, populateGachaCapsules, initGachaPhysics, triggerGachaSpin, triggerGachaPull, buyDungeonMerchantItem, calculateDungeonSellValue, sellItemToDungeonMerchant, getDynamicArtifactDescription;
   var init_items = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\items.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\items.js"() {
       init_portal_guardian_contract();
       init_mastery_authority();
       init_artifact_authority();
@@ -30037,7 +30019,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_action_input.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_action_input.js
   function pointerIdOf(eventOrId) {
     return typeof eventOrId === "object" ? eventOrId?.pointerId : eventOrId;
   }
@@ -30150,7 +30132,7 @@ ${plainText}`)) {
   }
   var movementOwner, actionOwners, boundElements, suppressedClickUntil;
   var init_combat_action_input = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_action_input.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_action_input.js"() {
       movementOwner = null;
       actionOwners = /* @__PURE__ */ new Map();
       boundElements = /* @__PURE__ */ new WeakSet();
@@ -30166,7 +30148,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\shadow_dash.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\shadow_dash.js
   function finite2(value, fallback = 0) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
@@ -30398,7 +30380,7 @@ ${plainText}`)) {
   }
   var SHADOW_DASH_DISTANCE, SHADOW_DASH_FRAMES, SHADOW_DASH_STEP, SHADOW_DASH_COOLDOWN_FRAMES;
   var init_shadow_dash = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\shadow_dash.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\shadow_dash.js"() {
       init_combat_action_input();
       SHADOW_DASH_DISTANCE = 64;
       SHADOW_DASH_FRAMES = 8;
@@ -30407,7 +30389,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\viewport_layout.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\viewport_layout.js
   function finite3(value, fallback) {
     const number = Number(value);
     return Number.isFinite(number) && number > 0 ? number : fallback;
@@ -30605,7 +30587,7 @@ ${plainText}`)) {
   }
   var viewportState;
   var init_viewport_layout = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\viewport_layout.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\viewport_layout.js"() {
       viewportState = {
         initialized: false,
         canvas: null,
@@ -30631,10 +30613,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\sigil_sack_animation.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\sigil_sack_animation.js
   var openCavernSigilSackAnimation;
   var init_sigil_sack_animation = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\sigil_sack_animation.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\sigil_sack_animation.js"() {
       openCavernSigilSackAnimation = function(newItem) {
         let overlay = document.createElement("div");
         overlay.id = "sack-opening-overlay";
@@ -30870,10 +30852,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\dps_overlay_ui.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\dps_overlay_ui.js
   var updateDpsOverlayStyle, updateDpsOverlayPosition, initDpsOverlayDrag;
   var init_dps_overlay_ui = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\dps_overlay_ui.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\dps_overlay_ui.js"() {
       updateDpsOverlayStyle = function() {
         updateDpsOverlayPosition();
       };
@@ -30962,10 +30944,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\system_controls.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\system_controls.js
   var toggleEcoMode, updateEcoModeStyle, toggleLighting, updateLightingStyle, toggleCombatRangeGuides, updateCombatRangeGuidesStyle, forceReloadCacheBust, requestWipeSaveData;
   var init_system_controls = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\system_controls.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\system_controls.js"() {
       toggleEcoMode = function() {
         window.playerStats.ecoMode = !window.playerStats.ecoMode;
         window.updateEcoModeStyle();
@@ -31049,10 +31031,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\hero_renderer.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\hero_renderer.js
   var ScopedDate, Date2, drawSingleHero;
   var init_hero_renderer = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\hero_renderer.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\hero_renderer.js"() {
       ScopedDate = class extends window.Date {
         static now() {
           return window.Date.now();
@@ -35320,10 +35302,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\active_dps.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\active_dps.js
   var ScopedDate2, Date3, calculateActiveDps;
   var init_active_dps = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\active_dps.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\active_dps.js"() {
       ScopedDate2 = class extends window.Date {
         static now() {
           return window.Date.now();
@@ -35361,7 +35343,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\recovery_contract.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\recovery_contract.js
   function recoveryGold(record) {
     return BigNum.from(record?.gold || 0);
   }
@@ -35411,17 +35393,17 @@ ${plainText}`)) {
     return outcome;
   }
   var init_recovery_contract = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\recovery_contract.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\recovery_contract.js"() {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\dungeon_map.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\dungeon_map.js
   function getActiveDungeonMap() {
     return activeDungeonMap;
   }
   var DungeonMapGenerator, Camera, drawBreakableProp, DungeonCamera, activeDungeonMap, preRenderStaticMap, drawDungeonPortalTile, renderTopDownMap, renderMinimap;
   var init_dungeon_map = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\dungeon_map.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\dungeon_map.js"() {
       init_recovery_contract();
       init_portal_guardian_contract();
       init_mastery_authority();
@@ -40100,7 +40082,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_scaling.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_scaling.js
   function isBelowHealthFraction(combatant, fraction) {
     if (!combatant?.hp || !combatant?.maxHp) return false;
     if (typeof combatant.hp.lt === "function" && typeof combatant.maxHp.mul === "function") {
@@ -40125,11 +40107,11 @@ ${plainText}`)) {
     return Math.max(current, hit);
   }
   var init_combat_scaling = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_scaling.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_scaling.js"() {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mob_liveness.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mob_liveness.js
   function isBossOrMinibossMob(mob) {
     return !!(mob && (mob.isBoss || mob.type === "dungeon_miniboss" || mob.type === "dungeon_boss" || mob.visualType === "brimstone_colossus" || mob.visualType === "gilded_vault_keeper" || mob.visualType === "corrosive_abomination" || mob.visualType === "overlord_iron_vault" || mob.type === "marcus_boss" || mob.type === "rift_guardian" || mob.type === "prestige_boss" || mob.type === "hooktail" || mob.type === "nexus_overseer" || mob.type === "chronos_arbitrator" || mob.type === "aegis_goliath"));
   }
@@ -40316,13 +40298,13 @@ ${plainText}`)) {
     }
   }
   var init_mob_liveness = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mob_liveness.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mob_liveness.js"() {
       init_combat_scaling();
       init_mastery_authority();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\render_rng.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\render_rng.js
   function createRenderRng(seed = DEFAULT_RENDER_SEED) {
     let state = seed >>> 0;
     const random = () => {
@@ -40344,7 +40326,7 @@ ${plainText}`)) {
   }
   var DEFAULT_RENDER_SEED, renderRng, renderRandom, renderRandFloat, renderRandInt;
   var init_render_rng = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\render_rng.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\render_rng.js"() {
       DEFAULT_RENDER_SEED = 1831565813;
       renderRng = createRenderRng();
       renderRandom = () => renderRng.random();
@@ -40353,7 +40335,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mob_presentation_effects.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mob_presentation_effects.js
   function emitBerserkBossEmber(m, centerX) {
     if (renderRandom() < 0.18 && !window.isGamePaused && window.ParticlePool && window.particles) {
       let pt = window.ParticlePool.get(
@@ -40518,12 +40500,12 @@ ${plainText}`)) {
     }
   }
   var init_mob_presentation_effects = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mob_presentation_effects.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mob_presentation_effects.js"() {
       init_render_rng();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mob_renderer.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mob_renderer.js
   function prepareMobTetherRecipients(mobs) {
     const hasteRecipients = mobTetherRecipientsScratch.haste;
     const defenseRecipients = mobTetherRecipientsScratch.def;
@@ -40598,7 +40580,7 @@ ${plainText}`)) {
   }
   var ScopedDate3, Date4, isFilterSupported, isSafari, isMobileDevice, useTintFallback, TINT_BUFFER_PADDING_X, TINT_BUFFER_PADDING_TOP, TINT_BUFFER_PADDING_BOTTOM, TINT_BUFFER_ANTIALIAS_BLEED, offscreenCanvas, offscreenCtx, tintBufferBoundsScratch, mobTetherRecipientsScratch, drawSingleMob;
   var init_mob_renderer = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mob_renderer.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mob_renderer.js"() {
       init_dungeon_map();
       init_mob_liveness();
       init_mob_presentation_effects();
@@ -45757,10 +45739,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\entity_render_effects.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\entity_render_effects.js
   var drawJaggedLine, RenderEngine, getStageTier, spawnDeathParticles, spawnTemperParticles, spawnPurchaseCelebration, spawnDamageEffect, renderNemesisPreview;
   var init_entity_render_effects = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\entity_render_effects.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\entity_render_effects.js"() {
       drawJaggedLine = function(ctx3, x1, y1, x2, y2, displace, minDisplace = 2) {
         if (displace < minDisplace) {
           ctx3.lineTo(x2, y2);
@@ -46096,10 +46078,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\entity_particle_core.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\entity_particle_core.js
   var ScopedDate4, Date5, PARTICLE_THEMES, PoolParticle, ParticlePool, PoolCombatEffect, CombatEffectPool, CombatVisualsEngine, combatVisuals, entityParticlePool, spawnCombatImpactParticles;
   var init_entity_particle_core = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\entity_particle_core.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\entity_particle_core.js"() {
       ScopedDate4 = class extends window.Date {
         static now() {
           return window.Date.now();
@@ -49356,10 +49338,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\spell_visuals.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\spell_visuals.js
   var ScopedDate5, Date6, activeSpellAnims, activeSpellLights, shadowDashFollowupUntil, spawnVisualSpell, spawnSpellLight, spawnResonantAegisRipple, spawnPortalSealBreakVisual, spawnShadowDashVisual, spawnMeleeFeelImpact, spawnTomeImpactVisual, spawnGuardPressureVisual, spawnAegisPulseVisual, spawnNoxiousBloomVisual, spawnSanguineRuptureVisual, spawnShadowDecoyVisual, spawnArcaneSyphonVisual, spawnBarrierShatterVisual, spawnEarthBreakerBashVisual, spawnWindRazor, castVisualSpell, updateSpellAnimations, renderSpellAnimations;
   var init_spell_visuals = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\spell_visuals.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\spell_visuals.js"() {
       init_combat_factions();
       ScopedDate5 = class extends window.Date {
         static now() {
@@ -51305,10 +51287,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\skills.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\skills.js
   var showCustomConfirm2, getSubweaponXpRequired, gainSubweaponXp, SKILL_TREE_DATA, SkillTreeManager, resolvePlayerStats2;
   var init_skills = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\skills.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\skills.js"() {
       showCustomConfirm2 = window.showCustomConfirm;
       if (typeof window.showCustomConfirm !== "function") {
         showCustomConfirm2 = function(title, message, confirmText, cancelText, color, onConfirm) {
@@ -53120,10 +53102,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\challenges.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\challenges.js
   var DEBUFF_EXCLUSIONS2, createCalamitySigil, signSpecialChallengeContract, abandonSpecialChallenge, SpecialChallengeEngine, ChallengeEngine;
   var init_challenges = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\challenges.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\challenges.js"() {
       init_encounter_state();
       DEBUFF_EXCLUSIONS2 = window.DEBUFF_EXCLUSIONS || {};
       window.SPECIAL_CHALLENGES_DATABASE = {};
@@ -53623,10 +53605,10 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\bestiary_data.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\bestiary_data.js
   var MONSTER_CARDS_DATA2;
   var init_bestiary_data = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\bestiary_data.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\bestiary_data.js"() {
       MONSTER_CARDS_DATA2 = Object.assign(window.MONSTER_CARDS_DATA || {}, {
         slime: {
           name: "Green Slime",
@@ -54232,7 +54214,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\floating_text.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\floating_text.js
   function spawnFloatingText(x, y, text, color, followPlayer = false) {
     let p = window.player;
     window.floatingTexts.push({
@@ -54248,11 +54230,11 @@ ${plainText}`)) {
     });
   }
   var init_floating_text = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\floating_text.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\floating_text.js"() {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\smart_steering.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\smart_steering.js
   function moveEntityWithSmartSteering(entity, targetX, targetY, speed, map, radius) {
     if (!entity) return false;
     const frostMovementMultiplier = getFrostMovementMultiplier(entity);
@@ -54329,7 +54311,7 @@ ${plainText}`)) {
   }
   var PROBE_OFFSETS_CW, PROBE_OFFSETS_CCW;
   var init_smart_steering = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\smart_steering.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\smart_steering.js"() {
       init_element_effect_authority();
       PROBE_OFFSETS_CW = [
         Math.PI / 12,
@@ -54384,7 +54366,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\settings_ui.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\settings_ui.js
   function toggleEditHudMode() {
     if (!window.playerStats) return;
     window.playerStats.editHudMode = !window.playerStats.editHudMode;
@@ -54476,11 +54458,11 @@ ${plainText}`)) {
     }
   }
   var init_settings_ui = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\settings_ui.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\settings_ui.js"() {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\toasts.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\toasts.js
   function attachToastSwipeHandlers(toast, onClickCallback) {
     let startX = 0, startY = 0;
     let deltaX = 0, deltaY = 0;
@@ -54958,12 +54940,12 @@ ${plainText}`)) {
     }, 2800);
   }
   var init_toasts = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\toasts.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\toasts.js"() {
       window.toastQueue = window.toastQueue || [];
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\tooltips.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\tooltips.js
   function getItemIconSvg(item, size = 28) {
     if (!item) return "";
     let itemName = typeof item === "string" ? item : item.name || "";
@@ -55355,7 +55337,7 @@ ${plainText}`)) {
   }
   var UIManager, hideTooltip, positionTooltip;
   var init_tooltips = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\tooltips.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\tooltips.js"() {
       window.UIManager = window.UIManager || {};
       UIManager = window.UIManager;
       window.tooltipHideTimeoutId = null;
@@ -55506,7 +55488,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\tome_delivery_communication.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\tome_delivery_communication.js
   function recordTomeDeliveryCommunication(event, { projectile, actualTarget = null, frame = window.logicClock || 0 } = {}) {
     lastDelivery = Object.freeze({
       event,
@@ -55532,7 +55514,7 @@ ${plainText}`)) {
   }
   var lastDelivery, MESSAGES;
   var init_tome_delivery_communication = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\tome_delivery_communication.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\tome_delivery_communication.js"() {
       lastDelivery = Object.freeze({
         event: "idle",
         frame: 0,
@@ -55553,7 +55535,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\hud.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\hud.js
   function renderDungeonDepthLabel(depthLabel, {
     depth = 1,
     isCrucibleMode = false,
@@ -56188,7 +56170,7 @@ ${plainText}`)) {
     }).join("");
   }
   var init_hud = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\hud.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\hud.js"() {
       init_dungeon_map();
       init_recovery_contract();
       init_tome_rotation_authority();
@@ -56197,7 +56179,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\lighting.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\lighting.js
   function renderLightingOverlay(mainCtx, mainCanvas) {
     if (!window.playerStats) return;
     let hasShroudedSight = typeof window.isCavernEffectActive === "function" && window.isCavernEffectActive("shrouded_sight");
@@ -56592,14 +56574,14 @@ ${plainText}`)) {
   }
   var lightingCanvas, lightingCtx;
   var init_lighting = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\lighting.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\lighting.js"() {
       init_dungeon_map();
       lightingCanvas = null;
       lightingCtx = null;
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\ui_state.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\ui_state.js
   function getActiveBagTab() {
     return profileNavigationState.activeBagTab;
   }
@@ -56656,7 +56638,7 @@ ${plainText}`)) {
   }
   var profileNavigationState, achievementState, bountyBoardState, reliquaryState;
   var init_ui_state = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\ui_state.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\ui_state.js"() {
       profileNavigationState = {
         activeBagTab: "EQUIP",
         activeStashTab: "EQUIP",
@@ -56677,7 +56659,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\profile_navigation.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\profile_navigation.js
   function switchBagTab(tabKey) {
     setActiveBagTab(tabKey);
     ["EQUIP", "SIGIL", "USE", "ETC"].forEach((t) => {
@@ -56788,12 +56770,12 @@ ${plainText}`)) {
     }
   }
   var init_profile_navigation = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\profile_navigation.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\profile_navigation.js"() {
       init_ui_state();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\bestiary_ui.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\bestiary_ui.js
   function renderBestiaryAlbum2() {
     let container = document.getElementById("bestiary-album-content");
     if (!container) {
@@ -57141,12 +57123,12 @@ ${plainText}`)) {
     if (typeof window.saveGame === "function") window.saveGame();
   }
   var init_bestiary_ui = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\bestiary_ui.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\bestiary_ui.js"() {
       window.bestiaryAnimFrameId = null;
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\reliquary_ui.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\reliquary_ui.js
   function isActiveDungeonRun() {
     return window.currentGameState !== window.GAME_STATES.HUB;
   }
@@ -57523,12 +57505,12 @@ ${plainText}`)) {
     return true;
   }
   var init_reliquary_ui = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\reliquary_ui.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\reliquary_ui.js"() {
       init_ui_state();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\achievements_ui.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\achievements_ui.js
   function switchAchievementFilter(filterKey) {
     setAchievementFilter(filterKey);
     window.renderAchievementsTab();
@@ -57726,12 +57708,12 @@ ${plainText}`)) {
   `;
   }
   var init_achievements_ui = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\achievements_ui.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\achievements_ui.js"() {
       init_ui_state();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\bounty_board.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\bounty_board.js
   function toggleBountyModal() {
     if (typeof window.hideTooltip === "function") window.hideTooltip();
     let modal = document.getElementById("bounty-modal");
@@ -58103,12 +58085,12 @@ ${plainText}`)) {
     window.renderBountyBoard();
   }
   var init_bounty_board = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\bounty_board.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\bounty_board.js"() {
       init_ui_state();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\bag_sigil_ui.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\bag_sigil_ui.js
   function renderBagModalContent() {
     let listEl = document.getElementById("bag-items-list");
     let modal = document.getElementById("bag-modal");
@@ -58419,13 +58401,13 @@ ${plainText}`)) {
     }
   }
   var init_bag_sigil_ui = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\bag_sigil_ui.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\bag_sigil_ui.js"() {
       init_ui_state();
       init_dungeon_map();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\profile_stash.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\profile_stash.js
   function renderProfileModal() {
     let statsListEl = document.getElementById("profile-stats-list");
     let paperdollEl = document.getElementById("paperdoll-grid");
@@ -59280,7 +59262,7 @@ ${plainText}`)) {
     window.renderProfileModal();
   }
   var init_profile_stash = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\profile_stash.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\profile_stash.js"() {
       init_ui_state();
       init_attack_speed_contract();
       init_mastery_authority();
@@ -59288,7 +59270,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\chests.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\chests.js
   function spawnChestEruptionParticles(worldX, worldY, isRecoveryOrTier = false) {
     if (!window.particles || !window.ParticlePool) return;
     let isRecovery = isRecoveryOrTier === true;
@@ -59742,13 +59724,13 @@ ${plainText}`)) {
     window.activeDungeonMap.openedChests.add(`${x},${y}`);
   }
   var init_chests = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\chests.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\chests.js"() {
       init_encounter_state();
       init_recovery_contract();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mob_pool_flask.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mob_pool_flask.js
   function getMobPoolForDepth(depth) {
     let sector = Math.floor((depth - 1) / 12);
     if (window.playerStats && window.playerStats.activeSpecialChallenge) {
@@ -60049,12 +60031,12 @@ ${plainText}`)) {
     }
   }
   var init_mob_pool_flask = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mob_pool_flask.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mob_pool_flask.js"() {
       init_combat_action_input();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\onslaught.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\onslaught.js
   function triggerOnslaughtShatterAnimation() {
     let map = getActiveDungeonMap();
     let tileSize = map ? map.tileSize : 32;
@@ -60394,14 +60376,14 @@ ${plainText}`)) {
     }
   }
   var init_onslaught = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\onslaught.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\onslaught.js"() {
       init_dungeon_map();
       init_encounter_state();
       init_set_affix_authority();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\safe_mode_finalization.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\safe_mode_finalization.js
   function ensureInventory() {
     if (!window.inventory) {
       window.inventory = {
@@ -60610,13 +60592,13 @@ ${plainText}`)) {
   }
   var FINALIZED_FIELD, FINALIZING_FIELD;
   var init_safe_mode_finalization = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\safe_mode_finalization.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\safe_mode_finalization.js"() {
       FINALIZED_FIELD = "safeModeExitFinalized";
       FINALIZING_FIELD = "safeModeExitFinalizing";
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\trials_rift.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\trials_rift.js
   function openTrialsAltarModal() {
     let modal = document.getElementById("trials-altar-modal");
     if (!modal) {
@@ -61035,7 +61017,7 @@ ${plainText}`)) {
     );
   }
   var init_trials_rift = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\trials_rift.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\trials_rift.js"() {
       init_runtime_state();
       init_dungeon_map();
       init_encounter_state();
@@ -61043,7 +61025,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\world_loot.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\world_loot.js
   function spawnGroundLoot(item, x, y) {
     if (!item) return;
     if (!window.groundLoot) window.groundLoot = [];
@@ -61310,12 +61292,12 @@ ${plainText}`)) {
     }
   }
   var init_world_loot = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\world_loot.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\world_loot.js"() {
       init_combat_effect_authority();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\cavern_systems.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\cavern_systems.js
   function updateCavernEffects() {
     if (window.currentGameState !== window.GAME_STATES.DUNGEON) {
       window.cavernInteractives = [];
@@ -62383,14 +62365,14 @@ ${plainText}`)) {
     ctx3.restore();
   }
   var init_cavern_systems = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\cavern_systems.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\cavern_systems.js"() {
       init_dungeon_map();
       init_combat_factions();
       init_mastery_authority();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_effects.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_effects.js
   function spawnCombatImpactParticles2(worldX, worldY, isCrit, dirX, dirY) {
     if (!window.particles || !window.ParticlePool) return;
     let speedMult = isCrit ? 1.4 : 1;
@@ -62482,7 +62464,7 @@ ${plainText}`)) {
   }
   var existingCombatVisuals;
   var init_combat_effects = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_effects.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_effects.js"() {
       window.particles = window.particles || [];
       window.ParticlePool = {
         pool: [],
@@ -62585,7 +62567,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\defense_hooks.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\defense_hooks.js
   function handleVanguardBlockTrigger(attacker) {
     return Object.freeze({
       applied: false,
@@ -62806,7 +62788,7 @@ ${plainText}`)) {
     }
   }
   var init_defense_hooks = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\defense_hooks.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\defense_hooks.js"() {
       init_dungeon_map();
       init_encounter_state();
       init_mastery_authority();
@@ -62846,7 +62828,7 @@ ${plainText}`)) {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\tome_item_hook.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\tome_item_hook.js
   function rollTomeSpells(item, stageScale, rarity) {
     let spellType = "fire";
     if (stageScale >= 13) {
@@ -62913,7 +62895,7 @@ Absorbs 20%-35% of incoming damage before Defense (scales with INT).`;
   }
   var originalCreateItemObject;
   var init_tome_item_hook = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\tome_item_hook.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\tome_item_hook.js"() {
       originalCreateItemObject = window.createItemObject;
       window.createItemObject = function(type, rarity, stageScale, ...args) {
         let item = originalCreateItemObject ? originalCreateItemObject.call(this, type, rarity, stageScale, ...args) : null;
@@ -62925,10 +62907,10 @@ Absorbs 20%-35% of incoming damage before Defense (scales with INT).`;
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_hazards.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_hazards.js
   var resetCombatHazardRuntimeState, updateCombatHazards;
   var init_combat_hazards = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_hazards.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_hazards.js"() {
       init_combat_factions();
       resetCombatHazardRuntimeState = function() {
         window.fatiguePenalty = 0;
@@ -63203,7 +63185,7 @@ Absorbs 20%-35% of incoming damage before Defense (scales with INT).`;
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\run_recovery.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\run_recovery.js
   function shouldResolveInterruptedDungeonRun(playerStats, player2) {
     if (playerStats?.dungeonRunInProgress === true) return true;
     if (Array.isArray(player2?.bag) && player2.bag.length > 0) return true;
@@ -63222,11 +63204,11 @@ Absorbs 20%-35% of incoming damage before Defense (scales with INT).`;
     return runGold.mul(ratio).floor();
   }
   var init_run_recovery = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\run_recovery.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\run_recovery.js"() {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\standard_retreat.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\standard_retreat.js
   function getItemId(item) {
     if (!item || item.id === void 0 || item.id === null) return null;
     return String(item.id);
@@ -63569,14 +63551,14 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var ENTRY_LOADOUT_FIELD, EMERGENCY_HAUL_SELECT_ID;
   var init_standard_retreat = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\standard_retreat.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\standard_retreat.js"() {
       init_run_recovery();
       ENTRY_LOADOUT_FIELD = "standardRunEntryLoadoutIds";
       EMERGENCY_HAUL_SELECT_ID = "standard-retreat-emergency-haul-select";
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\standard_extraction.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\standard_extraction.js
   function normalizeQuantity(value) {
     return Math.max(0, Math.floor(Number(value) || 0));
   }
@@ -63681,11 +63663,11 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     return "Extraction secures carried satchel items, collected run Gold, and materials. Uncollected ground items are forfeited; no Recovery Chest is created.";
   }
   var init_standard_extraction = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\standard_extraction.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\standard_extraction.js"() {
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mode_exit_communication.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mode_exit_communication.js
   function formatAmount3(value) {
     if (typeof window.formatNumber === "function") {
       return window.formatNumber(value);
@@ -64026,13 +64008,13 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     return true;
   }
   var init_mode_exit_communication = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mode_exit_communication.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mode_exit_communication.js"() {
       init_run_recovery();
       init_mastery_authority();
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\opening_fairness.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\opening_fairness.js
   function isStandardFloorOne({
     depth,
     isChallenge = false,
@@ -64176,7 +64158,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var OPENING_RANGED_GRACE_TICKS, FLOOR_ONE_MAX_RANGED_MOBS, FLOOR_ONE_MAX_RANGED_PER_ROOM, FLOOR_ONE_MAX_STANDARD_MOBS, FLOOR_ONE_MELEE_TYPES;
   var init_opening_fairness = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\opening_fairness.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\opening_fairness.js"() {
       OPENING_RANGED_GRACE_TICKS = 180;
       FLOOR_ONE_MAX_RANGED_MOBS = 2;
       FLOOR_ONE_MAX_RANGED_PER_ROOM = 1;
@@ -64185,10 +64167,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\lifecycle.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\lifecycle.js
   var loadHub, enterDungeonRun, openHubPortalModal, switchDeployTab, renderAstralShop, openDeploymentModal, changeDeploymentFloor, changeDeploymentSigil, renderDeploymentModal2, toggleDeploymentInsurance, executeDeployment, spawnBossEncounter, onBossDefeated, loadDungeonFloor, interactWithStation, requestAbandonRun, openPortalChoiceModal, checkRecoveryChestUnclaimed, executePortalDescend, executePortalExtract, decrementPotionRunCharges, triggerExtraction, startDeathSequence;
   var init_lifecycle = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\lifecycle.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\lifecycle.js"() {
       init_runtime_state();
       init_encounter_state();
       init_combat_hazards();
@@ -66949,10 +66931,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\boss_ai.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\boss_ai.js
   var BossAIEngine;
   var init_boss_ai = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\boss_ai.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\boss_ai.js"() {
       init_dungeon_map();
       init_encounter_state();
       init_combat_scaling();
@@ -70204,10 +70186,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\unboxing.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\unboxing.js
   var openTactileSackCrateAnimation, openMonsterCardSackAnimation2;
   var init_unboxing = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\unboxing.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\unboxing.js"() {
       init_runtime_state();
       openTactileSackCrateAnimation = function(name, newItem, elixirs) {
         setGamePaused(true);
@@ -71120,7 +71102,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\tome_projectile.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\tome_projectile.js
   function renderTomeDeliveryProjectile(ctx3, projectile, radius) {
     const r2 = Number(radius || projectile?.r || 5);
     const angle = Math.atan2(
@@ -71232,7 +71214,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var TOME_PROJECTILE_SPEED, TOME_PROJECTILE_VISUAL_PROFILE;
   var init_tome_projectile = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\tome_projectile.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\tome_projectile.js"() {
       init_combat_reach();
       init_combat_factions();
       init_render_rng();
@@ -71242,10 +71224,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\projectile_update.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\projectile_update.js
   var projectileOverlaps, findPlayerProjectileTarget, spawnProjectileImpact, updateActiveProjectiles;
   var init_projectile_update = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\projectile_update.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\projectile_update.js"() {
       init_combat_factions();
       init_tome_projectile();
       init_render_rng();
@@ -71553,10 +71535,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_periodic.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_periodic.js
   var updateCombatPeriodic;
   var init_combat_periodic = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_periodic.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_periodic.js"() {
       init_combat_factions();
       init_combat_effect_authority();
       init_element_effect_authority();
@@ -71827,7 +71809,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\set_capstone_authority.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\set_capstone_authority.js
   function finite4(value, fallback = 0) {
     if (value && typeof value.toFiniteNumber === "function") {
       return value.toFiniteNumber(Number.MAX_VALUE / 16);
@@ -72022,7 +72004,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var BIOHAZARD_CAPSTONE_PROFILE, WARLORD_CAPSTONE_PROFILE, STAGGER_PHASES;
   var init_set_capstone_authority = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\set_capstone_authority.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\set_capstone_authority.js"() {
       init_combat_effect_authority();
       init_element_effect_authority();
       BIOHAZARD_CAPSTONE_PROFILE = Object.freeze({
@@ -72050,7 +72032,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mob_spatial_index.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mob_spatial_index.js
   function getMobCenter(mob) {
     if (!mob || !Number.isFinite(mob.x) || !Number.isFinite(mob.y)) {
       return null;
@@ -72281,7 +72263,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var MOB_SPATIAL_CELL_SIZE, spatialColumns, mobRecords, nextOrdinal, nextSerial, indexedMobCount;
   var init_mob_spatial_index = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mob_spatial_index.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mob_spatial_index.js"() {
       MOB_SPATIAL_CELL_SIZE = 32;
       spatialColumns = /* @__PURE__ */ new Map();
       mobRecords = /* @__PURE__ */ new Map();
@@ -72291,10 +72273,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\combat_targeting.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\combat_targeting.js
   var MOB_SPATIAL_TARGETING_THRESHOLD, updateCombatTargeting;
   var init_combat_targeting = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\combat_targeting.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\combat_targeting.js"() {
       init_dungeon_map();
       init_mob_spatial_index();
       init_combat_factions();
@@ -72406,10 +72388,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\player_attack.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\player_attack.js
   var resolvePlayerAttack;
   var init_player_attack = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\player_attack.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\player_attack.js"() {
       init_combat_factions();
       init_combat_scaling();
       init_attack_speed_contract();
@@ -73073,7 +73055,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\drop_rate_contract.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\drop_rate_contract.js
   function normalizeFiniteNonNegative(value, fallback) {
     let numeric = Number(value);
     return Number.isFinite(numeric) ? Math.max(0, numeric) : fallback;
@@ -73095,7 +73077,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var MONSTER_DROP_DOMAINS, ELIGIBLE_DOMAINS;
   var init_drop_rate_contract = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\drop_rate_contract.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\drop_rate_contract.js"() {
       MONSTER_DROP_DOMAINS = Object.freeze({
         EQUIPMENT: "equipment",
         MATERIAL: "material",
@@ -73106,7 +73088,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\mob_combat.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\mob_combat.js
   function ensureMobBuffState(mob) {
     if (!mob || typeof mob !== "object") return null;
     if (!mob.buffStacks || typeof mob.buffStacks !== "object" || Array.isArray(mob.buffStacks)) {
@@ -73146,7 +73128,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var MOB_SEPARATION_DISTANCE, MOB_SPATIAL_SEPARATION_THRESHOLD, separationCandidates, updateStandardMobCombat;
   var init_mob_combat = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\mob_combat.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\mob_combat.js"() {
       init_encounter_state();
       init_mob_spatial_index();
       init_combat_factions();
@@ -74199,10 +74181,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\boss_combat.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\boss_combat.js
   var updateBossCombat;
   var init_boss_combat = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\boss_combat.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\boss_combat.js"() {
       init_dungeon_map();
       init_encounter_state();
       init_combat_factions();
@@ -75001,10 +74983,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\dungeon_combat.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\dungeon_combat.js
   var updateDungeonCombat;
   var init_dungeon_combat = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\dungeon_combat.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\dungeon_combat.js"() {
       init_dungeon_map();
       init_mob_spatial_index();
       init_mob_liveness();
@@ -75029,10 +75011,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\game_update.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\game_update.js
   var updateGame;
   var init_game_update = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\game_update.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\game_update.js"() {
       init_dungeon_map();
       init_tome_rotation_authority();
       init_set_affix_authority();
@@ -75783,7 +75765,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\station_prompt_hitbox.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\station_prompt_hitbox.js
   function clearStationPromptHitbox() {
     paintedPrompt = null;
   }
@@ -75807,12 +75789,12 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var paintedPrompt;
   var init_station_prompt_hitbox = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\station_prompt_hitbox.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\station_prompt_hitbox.js"() {
       paintedPrompt = null;
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\game_render.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\game_render.js
   function isActiveMobInRenderViewport(mob, camera, padding = ACTIVE_MOB_RENDER_PADDING) {
     if (!mob || !camera) return false;
     let zoom = camera.zoom || 1;
@@ -75826,7 +75808,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
   }
   var ACTIVE_MOB_RENDER_PADDING, renderGame;
   var init_game_render = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\game_render.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\game_render.js"() {
       init_dungeon_map();
       init_recovery_contract();
       init_station_prompt_hitbox();
@@ -77098,10 +77080,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\game_loop.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\game_loop.js
   var FIXED_SIMULATION_STEP_MS, MAX_FRAME_ELAPSED_MS, MAX_CATCH_UP_UPDATES, startGameLoop;
   var init_game_loop = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\game_loop.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\game_loop.js"() {
       FIXED_SIMULATION_STEP_MS = 1e3 / 60;
       MAX_FRAME_ELAPSED_MS = 250;
       MAX_CATCH_UP_UPDATES = 5;
@@ -77138,10 +77120,10 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\main.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\main.js
   var canvas, ctx2, isPointerHolding, checkCollisionAt2, checkOrientation, drawPortraitBossHealthBar, resizeCanvas, isAnyMenuOpen, spawnCalamitySpecter, spawnHomingXp, updateXpOrbs, addDungeonRunScrap, spawnGroundMaterial, updateGroundMaterials, executeMysticalTrade, addEtcDrop, addUseDrop, useConsumableItem, destroyBreakableProp, fitConstellationTreeToViewport, openSkillTree, toggleMasteryModal, toggleMute, updateMasterVolume, updateSfxVolume, updateBgmVolume;
   var init_main = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\main.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\main.js"() {
       init_dungeon_map();
       init_encounter_state();
       init_combat_effect_authority();
@@ -78544,11 +78526,11 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\module_bootstrap.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\module_bootstrap.js
   var module_bootstrap_exports = {};
   var engineSaveResetInfo;
   var init_module_bootstrap = __esm({
-    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-joystick\\module_bootstrap.js"() {
+    "saq-canonical-source:C:\\Users\\Sammy\\Documents\\Codex\\2026-08-30\\files-mentioned-by-the-user-saq-2\\work\\g6e1h4a-altar\\module_bootstrap.js"() {
       init_entity_id();
       init_runtime_state();
       init_encounter_state();
@@ -79005,7 +78987,7 @@ ${candidateNames}` : ": none available"}. Forfeit the remainder. No Recovery Che
     }
   });
 
-  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-joystick\tools\production_entry.js
+  // saq-canonical-source:C:\Users\Sammy\Documents\Codex\2026-08-30\files-mentioned-by-the-user-saq-2\work\g6e1h4a-altar\tools\production_entry.js
   void (async () => {
     const constantsApi = await Promise.resolve().then(() => (init_constants(), constants_exports));
     const {
