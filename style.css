@@ -84,9 +84,11 @@ body {
   text-transform: uppercase;
 }
 
-.satchel-tab-btn:hover {
-  border-color: var(--border-gold-filigree);
-  color: #f1f5f9;
+@media (hover: hover) and (pointer: fine) {
+  .satchel-tab-btn:hover {
+    border-color: var(--border-gold-filigree);
+    color: #f1f5f9;
+  }
 }
 
 .satchel-tab-btn.active {
@@ -519,16 +521,23 @@ body {
   text-shadow: 0 1px 2px #000000;
 }
 
-.hud-btn:hover {
-  border-color: var(--border-gold-filigree);
-  color: var(--text-gold-light);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+@media (hover: hover) and (pointer: fine) {
+  .hud-btn:hover {
+    border-color: var(--border-gold-filigree);
+    color: var(--text-gold-light);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  }
 }
 
 .hud-btn:active {
-  transform: translateY(2px);
-  border-bottom-width: 1.5px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hud-btn:active {
+    transform: translateY(2px);
+    border-bottom-width: 1.5px;
+  }
 }
 
 /* --- GOTHIC BOUNTY BOARD LEDGER MODAL STYLES --- */
@@ -691,9 +700,11 @@ body {
   text-transform: uppercase;
 }
 
-.bounty-tab-btn:hover {
-  border-color: var(--border-gold-filigree);
-  color: #f1f5f9;
+@media (hover: hover) and (pointer: fine) {
+  .bounty-tab-btn:hover {
+    border-color: var(--border-gold-filigree);
+    color: #f1f5f9;
+  }
 }
 
 .bounty-tab-btn.active {
@@ -911,8 +922,10 @@ body {
   white-space: nowrap;
 }
 
-.hud-btn:active {
-  transform: scale(0.95);
+@media (hover: hover) and (pointer: fine) {
+  .hud-btn:active {
+    transform: scale(0.95);
+  }
 }
 
 .abandon-btn {
@@ -2114,13 +2127,26 @@ summary {
   transition: all 0.15s ease;
 }
 
-.close-btn:hover,
 .close-btn:active {
   background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 100%);
   border-color: #f87171;
   color: #ffffff;
-  transform: scale(0.95);
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+/* A touch must activate the control, not first move/shrink its hit region into
+   a persistent emulated-hover state. Mouse feedback remains unchanged. */
+@media (hover: hover) and (pointer: fine) {
+  .close-btn:hover {
+    background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 100%);
+    border-color: #f87171;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  }
+  .close-btn:hover,
+  .close-btn:active {
+    transform: scale(0.95);
+  }
 }
 
 .modal-body {
@@ -3335,8 +3361,10 @@ summary {
   text-shadow: 0 1px 2px #000000;
 }
 
-.shop-tab-btn:active {
-  transform: scale(0.97);
+@media (hover: hover) and (pointer: fine) {
+  .shop-tab-btn:active {
+    transform: scale(0.97);
+  }
 }
 
 .shop-content-panel {
@@ -5822,9 +5850,11 @@ summary {
   text-transform: uppercase;
 }
 
-.deploy-tab-btn:hover {
-  border-color: var(--border-gold-filigree);
-  color: #f1f5f9;
+@media (hover: hover) and (pointer: fine) {
+  .deploy-tab-btn:hover {
+    border-color: var(--border-gold-filigree);
+    color: #f1f5f9;
+  }
 }
 
 .deploy-tab-btn.active {
@@ -6819,4 +6849,34 @@ html[data-viewport-layout="narrow-portrait"] .deploy-tab-bar {
     max-height: none !important;
     overflow: visible;
   }
+}
+
+/* H4A: the setup body, including equipment, summary and launch, owns scrolling.
+   Keep its title/close control outside that scroll area. The inner panels must
+   not compete for the gesture or clip the footer below the card's viewport. */
+#deployment-modal .deploy-modal-card {
+  overflow: hidden;
+}
+
+#deployment-modal .deploy-tab-bar {
+  flex-shrink: 0;
+}
+
+#deploy-setup-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  padding: 2px;
+}
+
+#deploy-setup-content .deploy-terminal-layout,
+#deploy-setup-content .deploy-pane,
+#deploy-setup-content .deploy-gear-list {
+  flex: none !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
