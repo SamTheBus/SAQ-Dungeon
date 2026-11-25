@@ -1884,6 +1884,8 @@ select {
   border-left: 1px solid #2f3a46;
   border-top: 3px solid var(--rarity, var(--brass));
   box-shadow: 0 0 0 100vmax #00000073, -12px 0 30px #000a;
+}
+.gx-sheet.is-opening {
   animation: gx-in 0.16s ease-out;
 }
 @keyframes gx-in {
@@ -2292,6 +2294,8 @@ select {
     max-height: 88%;
     border-left: 0;
     border-radius: 18px 18px 0 0;
+  }
+  .gx-sheet.is-opening {
     animation-name: gx-up;
   }
   .gx-sheetscroll {
@@ -2309,7 +2313,142 @@ select {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gx-sheet {
+  .gx-sheet.is-opening {
     animation: none;
   }
+}
+
+/* ---------- The Enchanter: enchant marks and resonance sets ---------- */
+.gx-ench {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 6px;
+  color: #c9a6ff;
+  font: 800 10px/1 var(--ui);
+  vertical-align: middle;
+}
+.gx-base.is-ench {
+  border-color: #6a4fb0;
+  box-shadow: inset 0 0 12px #8f6fd826;
+}
+.gx-enchn {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 3px;
+  border-radius: 5px;
+  background: #1c1530e6;
+  color: #d9c6ff;
+  font: 800 9px/1.2 var(--ui);
+  pointer-events: none;
+}
+.gx-enchn svg {
+  width: 9px;
+  height: 9px;
+}
+.gx-setbar {
+  position: absolute;
+  top: -2px;
+  left: 12px;
+  right: 12px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: var(--set);
+  box-shadow: 0 0 6px var(--set);
+  pointer-events: none;
+}
+.gx-worntag {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 1px 4px;
+  border-radius: 5px;
+  background: var(--brass);
+  color: #14100a;
+  font: 800 8.5px/1.2 var(--ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.gx-pips {
+  display: flex;
+  gap: 6px;
+  margin: 2px 0 4px;
+}
+.gx-pips span {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1.5px dashed #3e3360;
+  color: #4b3f70;
+}
+.gx-pips span.is-on {
+  border: 1.5px solid #8f6fd8;
+  background: #241a40;
+  color: #e6d6ff;
+  box-shadow: 0 0 10px #8f6fd855;
+}
+.gx-pips svg {
+  width: 14px;
+  height: 14px;
+}
+.gx-sets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.gx-set {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid #26313d;
+  border-left: 3px solid var(--set);
+  background: #111820;
+}
+.gx-set.is-now {
+  border-color: var(--set);
+  background: color-mix(in srgb, var(--set) 10%, #111820);
+}
+.gx-seth {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+.gx-seth b {
+  font: 700 14px/1.2 var(--title);
+  color: var(--set);
+}
+.gx-seth small {
+  font: 700 10px/1 var(--ui);
+  color: #aeb5b6;
+}
+.gx-pc {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #7f8a93;
+}
+.gx-pc i {
+  flex: none;
+  font: 800 10px/1.3 var(--ui);
+  font-style: normal;
+  color: #56636f;
+}
+.gx-pc.is-on {
+  color: #e6efe9;
+}
+.gx-pc.is-on i {
+  color: var(--set);
 }
