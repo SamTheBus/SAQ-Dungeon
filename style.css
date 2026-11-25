@@ -2554,3 +2554,142 @@ select {
     grid-column: 1 / -1;
   }
 }
+
+/* Hunter's Board bounties. */
+.bounties {
+  display: grid;
+  gap: 8px;
+}
+.bounty {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #26313d;
+  border-radius: 10px;
+  background: #121a23;
+}
+.bounty.is-weekly {
+  border-color: #5a4a2a;
+  background: linear-gradient(180deg, #1a1810, #121a23);
+}
+.bounty.is-done {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(233, 199, 102, 0.25), 0 0 14px rgba(233, 199, 102, 0.12);
+}
+.bounty.is-claimed {
+  opacity: 0.55;
+}
+.bounty-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #0a1019;
+  border: 1px solid #2b3642;
+  display: grid;
+  place-items: center;
+}
+.bounty-ico svg {
+  width: 26px;
+  height: 26px;
+}
+.bounty-mid {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.bounty-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #222c36;
+  overflow: hidden;
+}
+.bounty-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #8c6d3b, var(--gold));
+}
+.bounty.is-done .bounty-bar > span {
+  background: linear-gradient(90deg, #c9a24a, #ffe08a);
+}
+.bounty-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.bounty-row small {
+  color: #a9b4bf;
+  font-variant-numeric: tabular-nums;
+}
+.bounty-rw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.rw {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #0a1019;
+  border: 1px solid #2b3642;
+  color: #cfd8e0;
+  white-space: nowrap;
+}
+.rw.gold {
+  color: #ffd36a;
+}
+.rw.souls {
+  color: #d7b8ff;
+}
+.rw.rare {
+  color: #4aa3ff;
+}
+.rw.epic {
+  color: #b06cff;
+}
+.rw.legendary {
+  color: #ff9d2e;
+}
+.rw.is-item {
+  color: var(--c);
+  border-color: color-mix(in srgb, var(--c) 45%, #2b3642);
+}
+.bounty-why {
+  color: #e0907a;
+}
+h3 small {
+  font: 400 12px system-ui, sans-serif;
+}
+@media (max-width: 560px) {
+  .bounty {
+    grid-template-columns: 34px 1fr;
+  }
+  .bounty-ico {
+    width: 34px;
+    height: 34px;
+  }
+  .bounty > .btn,
+  .bounty > .tag {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    text-align: center;
+  }
+}
+/* On a phone the currency pills wrap under the title instead of being cut off. */
+@media (max-width: 560px) {
+  .win-head {
+    flex-wrap: wrap;
+  }
+  .win-head h2 {
+    flex: 1;
+  }
+  .win-sub {
+    order: 3;
+    flex: 1 0 100%;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
