@@ -43,11 +43,83 @@ textarea {
 
 /* ---------- Camp ---------- */
 #camp {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+#lobby {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+}
+#lobby-view {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+#lobby-top {
+  position: absolute;
+  left: 16px;
+  top: 12px;
+  right: 120px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  pointer-events: none;
+  text-shadow: 0 1px 3px #000;
+}
+#lobby-top h1 {
+  margin: 0;
+}
+#lobby-res {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#lobby-corner {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+#lobby-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  padding: 9px 16px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: #140f0ae6;
+  color: var(--gold-hi);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px #000a;
+}
+#lobby-prompt kbd {
+  display: inline-block;
+  min-width: 18px;
+  margin-right: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--gold);
+  border-radius: 5px;
+  font: 700 12px var(--ui);
+}
+#sheet {
+  position: absolute;
+  inset: 0;
   max-width: 1080px;
   margin: 0 auto;
-  height: 100%;
   display: flex;
   flex-direction: column;
+  background: #080d16f2;
+  box-shadow: 0 0 60px #000;
+}
+#sheet[hidden] {
+  display: none;
 }
 header {
   display: flex;
@@ -651,13 +723,15 @@ kbd {
   font-weight: 700;
 }
 #boss-bar {
-  margin-top: 8px;
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, 64vw);
+  pointer-events: none;
 }
-#boss-name {
+#boss-bar canvas {
   display: block;
-  font: 700 14px var(--title);
-  color: #ffb07a;
-  margin-bottom: 2px;
 }
 #corner {
   position: absolute;
@@ -1017,4 +1091,208 @@ select {
     padding: 6px 9px;
     font-size: 12px;
   }
+}
+
+/* Attributes */
+.attrs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin: 6px 0;
+}
+.attr {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 10px;
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--c);
+  border-radius: 9px;
+  background: #0b111c99;
+}
+.attr-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.attr-head b {
+  color: var(--c);
+  font: 700 15px var(--title);
+}
+.attr-head em {
+  margin-left: auto;
+  font: 700 18px var(--title);
+  font-style: normal;
+  color: var(--ivory);
+}
+#btn-points {
+  display: none;
+  margin-top: 4px;
+  padding: 3px 9px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: #2a1f0ccc;
+  color: var(--gold-hi);
+  font: 700 11px var(--ui);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: pts 1.2s ease-in-out infinite;
+}
+#btn-points.on {
+  display: inline-block;
+}
+@keyframes pts {
+  50% {
+    box-shadow: 0 0 12px #ffd36a99;
+  }
+}
+
+/* Constellation */
+.sky-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .sky-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+.sky {
+  position: relative;
+  aspect-ratio: 1 / 0.92;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 40%, #1a2440, #070a14 75%);
+  overflow: hidden;
+}
+.sky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(1px 1px at 12% 18%, #fff8, transparent), radial-gradient(1px 1px at 72% 12%, #fff6, transparent), radial-gradient(1px 1px at 36% 64%, #fff5, transparent), radial-gradient(1px 1px at 88% 78%, #fff7, transparent), radial-gradient(1px 1px at 58% 38%, #fff4, transparent), radial-gradient(1px 1px at 22% 88%, #fff6, transparent);
+}
+.sky svg {
+  position: absolute;
+  inset: 4% 6%;
+  width: 88%;
+  height: 92%;
+}
+.sky line {
+  stroke: #ffffff22;
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+.sky line.lit {
+  stroke: var(--c);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 3px var(--c));
+}
+.star {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff33;
+  background: #0d1424;
+  color: #ffffff66;
+  font-size: 16px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.star.passive {
+  width: 30px;
+  height: 30px;
+  font-size: 12px;
+}
+.star.keystone {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  font-size: 18px;
+}
+.star.keystone > * {
+  transform: rotate(-45deg);
+}
+.star em {
+  position: absolute;
+  bottom: -15px;
+  font: 600 9px var(--ui);
+  font-style: normal;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.star.keystone em {
+  bottom: auto;
+  right: -24px;
+}
+.star.open {
+  border-color: var(--gold);
+  color: var(--ivory);
+  box-shadow: 0 0 10px #ffd36a55;
+}
+.star.on,
+.star.max {
+  border-color: var(--c);
+  color: #fff;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c) 45%, #0d1424), #0d1424);
+  box-shadow: 0 0 12px var(--c);
+}
+.star.sel {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.star-card {
+  padding: 12px;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  background: #0b111c99;
+}
+.star-card h4 {
+  margin: 6px 0;
+  font: 700 16px var(--title);
+  color: var(--gold-hi);
+}
+.star-card p {
+  margin: 4px 0 8px;
+}
+.glyph-sm {
+  margin-right: 6px;
+}
+.star-card .row {
+  flex-wrap: wrap;
+}
+.star-card {
+  min-width: 0;
+}
+
+/* Drawn icons (src/ui/glyphs.js): the game shows no emoji. */
+.ico {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  display: inline-block;
+}
+.act .glyph .ico {
+  width: 24px;
+  height: 24px;
+}
+.glyph-sm .ico {
+  width: 18px;
+  height: 18px;
+  vertical-align: -4px;
+}
+.star span .ico {
+  width: 22px;
+  height: 22px;
+}
+.item u .ico {
+  width: 11px;
+  height: 11px;
 }
