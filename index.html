@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#080d16" />
     <title>SAQ Dungeon</title>
-    <link rel="stylesheet" href="./style.css?v=e2b0ee8646" />
+    <link rel="stylesheet" href="./style.css?v=c2cd9da662" />
   </head>
   <body>
     <!-- Camp: everything between runs -->
@@ -17,17 +17,8 @@
           <h1>SAQ Dungeon <small>go down, get out</small></h1>
           <div id="lobby-res"></div>
         </div>
-        <div id="lobby-corner"><button class="hud-btn" data-act="station" data-arg="settings">Settings</button></div>
+        <div class="menu-bar" id="lobby-menu"></div>
         <div id="lobby-prompt" hidden></div>
-      </div>
-      <div id="sheet" hidden>
-        <header>
-          <h1 id="sheet-title">Camp</h1>
-          <div id="res"></div>
-          <button class="btn" data-act="closeSheet" title="Back to camp (Esc)">&times;</button>
-        </header>
-        <nav id="tabs"></nav>
-        <main id="panel"></main>
       </div>
     </div>
 
@@ -39,7 +30,6 @@
           <div id="plate-top"><b id="hud-level"></b><span id="hud-status"></span></div>
           <div class="bar hp"><i id="hud-hp"></i><span id="hud-hp-text"></span></div>
           <div class="bar xp"><i id="hud-xp"></i></div>
-          <button id="btn-points" data-act="points" title="Spend attribute points (C)"></button>
         </div>
         <div id="floor-info">
           <div id="floor-name"></div>
@@ -51,10 +41,7 @@
           <div id="run-res"></div>
         </div>
         <div id="banner"></div>
-        <div id="menu-buttons">
-          <button class="hud-btn" id="btn-bag" title="Satchel (B)">Satchel <span id="bag-count"></span></button>
-          <button class="hud-btn" id="btn-pause" title="Pause (Esc)">Pause</button>
-        </div>
+        <div class="menu-bar" id="run-menu"></div>
         <div id="actions">
           <button class="act small" id="btn-flask" title="Flask (F)"><span class="key">F</span><b>Flask</b><em id="flask-count"></em></button>
           <div id="skill-buttons"></div>
@@ -66,6 +53,6 @@
 
     <div id="overlay" hidden></div>
     <div id="toast" role="status"></div>
-    <script type="module" src="./game.js?v=910e1737e1"></script>
+    <script type="module" src="./game.js?v=9e0cb657c9"></script>
   </body>
 </html>
