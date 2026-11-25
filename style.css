@@ -2452,3 +2452,105 @@ select {
 .gx-pc.is-on i {
   color: var(--set);
 }
+
+/* Economy: prices on shop tiles, rarity scrap pills, the supply row and the Forge's attune rows. */
+.gx-price {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffd36a;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.gx-price.is-short {
+  color: #c0605a;
+}
+.pill.mat {
+  color: var(--c);
+  border-color: color-mix(in srgb, var(--c) 45%, var(--edge));
+}
+.supply {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #26313d;
+  border-radius: 10px;
+  background: #121a23;
+}
+.supply-ico svg {
+  width: 44px;
+  height: 56px;
+  display: block;
+}
+.supply > div > span {
+  display: block;
+  margin-top: 3px;
+}
+.supply-pips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+.supply-pips i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #5a4a4a;
+  background: #1a1214;
+}
+.supply-pips i.on {
+  background: #e8404a;
+  border-color: #ff8a80;
+}
+.supply-pips span {
+  margin-left: 6px;
+}
+.attunes {
+  display: grid;
+  gap: 8px;
+}
+.attune-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #26313d;
+  border-radius: 10px;
+  background: #121a23;
+}
+.attune-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid var(--rarity);
+  background: #0a1019;
+  display: grid;
+  place-items: center;
+}
+.attune-ico img {
+  width: 34px;
+  height: 34px;
+  image-rendering: pixelated;
+}
+.attune-mid {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.attune-mid small {
+  color: #a9b4bf;
+}
+@media (max-width: 560px) {
+  .supply {
+    grid-template-columns: 40px 1fr;
+  }
+  .supply > .btn,
+  .supply > button {
+    grid-column: 1 / -1;
+  }
+}
