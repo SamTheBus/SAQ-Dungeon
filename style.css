@@ -2693,3 +2693,51 @@ h3 small {
     white-space: normal;
   }
 }
+
+/* The Barrow Mouth: expedition cards with your chest, and the Endless panel. */
+.depth.has-chest {
+  border-color: #e5bd69;
+}
+.depth-chest {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 11px;
+  color: #ffe3a3;
+}
+.depth-chest svg {
+  width: 14px;
+  height: 12px;
+}
+.tab-lock {
+  width: 11px;
+  height: 11px;
+  margin-left: 4px;
+  vertical-align: -1px;
+  opacity: 0.7;
+}
+.endless {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid #4a3a6a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #1a1426, #121a23);
+}
+.endless p {
+  margin: 6px 0 0;
+  color: #cfd8e0;
+}
+.endless-best small {
+  display: block;
+  color: #a99bc8;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.endless-best b {
+  font: 700 22px var(--title);
+  color: #d7b8ff;
+}
